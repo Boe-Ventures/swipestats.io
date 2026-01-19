@@ -18,6 +18,7 @@ export const env = createEnv({
     RESEND_API_KEY: z.string().optional(),
     LEMON_SQUEEZY_API_KEY: z.string(),
     LEMON_SQUEEZY_WEBHOOK_SECRET: z.string(),
+    ADMIN_TOKEN: z.string().min(32), // Require strong token (32+ chars)
   },
 
   /**
@@ -50,6 +51,7 @@ export const env = createEnv({
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     LEMON_SQUEEZY_API_KEY: process.env.LEMON_SQUEEZY_API_KEY,
     LEMON_SQUEEZY_WEBHOOK_SECRET: process.env.LEMON_SQUEEZY_WEBHOOK_SECRET,
+    ADMIN_TOKEN: process.env.ADMIN_TOKEN,
     NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
     NEXT_PUBLIC_MAPBOX_PUBLIC_API_KEY:
       process.env.NEXT_PUBLIC_MAPBOX_PUBLIC_API_KEY,
