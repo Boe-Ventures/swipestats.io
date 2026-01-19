@@ -1,0 +1,513 @@
+import { eq } from "drizzle-orm";
+import type {
+  AnonymizedHingeDataJSON,
+  HingeMedia,
+} from "@/lib/interfaces/HingeDataJSON";
+import { withTransaction } from "@/server/db";
+import {
+  hingeProfileTable,
+  matchTable,
+  mediaTable,
+  messageTable,
+  hingePromptTable,
+  hingeInteractionTable,
+  originalAnonymizedFileTable,
+  profileMetaTable,
+  type HingeProfile,
+  type MediaInsert,
+} from "@/server/db/schema";
+import { createId } from "@/server/db/utils";
+import { transformHingeJsonToProfile } from "./hinge-transform.service";
+import { createHingeMessagesAndMatches } from "./hinge-messages.service";
+import { createHingeProfileMeta } from "./hinge-meta.service";
+import { transformHingePromptsForDb } from "../profile/profile.service";
+
+/**
+ * Get a Hinge profile by hingeId
+ */
+export async function getHingeProfile(hingeId: string) {
+  const { db } = await import("@/server/db");
+  return db.query.hingeProfileTable.findFirst({
+    where: eq(hingeProfileTable.hingeId, hingeId),
+  });
+}
+
+/**
+ * Transform Hinge media to database media insert format
+ */
+function transformHingeMediaToDb(
+  media: HingeMedia[],
+  hingeProfileId: string,
+): MediaInsert[] {
+  if (!Array.isArray(media) || media.length === 0) {
+    return [];
+  }
+
+  return media.map((m) => ({
+    id: createId("media"),
+    type: m.type || "photo",
+    url: m.url,
+    prompt: m.prompt || null,
+    caption: null,
+    fromSoMe: null,
+    hingeProfileId,
+    tinderProfileId: null,
+  }));
+}
+
+/**
+ * Create a new Hinge profile from anonymized JSON data
+ * This is the main orchestrator that coordinates all profile creation steps
+ */
+export async function createHingeProfile(data: {
+  hingeId: string;
+  anonymizedHingeJson: AnonymizedHingeDataJSON;
+  userId: string;
+  timezone?: string;
+  country?: string;
+}): Promise<HingeProfile> {
+  const startTime = Date.now();
+
+  // Log JSON size
+  const jsonString = JSON.stringify(data.anonymizedHingeJson);
+  const jsonSizeMB = (jsonString.length / 1024 / 1024).toFixed(2);
+
+  console.log(`\n🚀 Starting Hinge profile creation for ${data.hingeId}`);
+  console.log(`   User ID: ${data.userId}`);
+  console.log(`   Timezone: ${data.timezone ?? "not provided"}`);
+  console.log(`   Country: ${data.country ?? "not provided"}`);
+  console.log(`   JSON size: ${jsonSizeMB} MB`);
+
+  // 1. Transform JSON data to database format
+  const transformStart = Date.now();
+  console.log(`\n🔄 [1/5] Transforming profile data...`);
+  const profileData = transformHingeJsonToProfile(data.anonymizedHingeJson, {
+    hingeId: data.hingeId,
+    userId: data.userId,
+    timezone: data.timezone,
+    country: data.country,
+  });
+  console.log(`✅ Profile transformed in ${Date.now() - transformStart}ms`);
+  console.log(`   Gender: ${profileData.gender}`);
+  console.log(`   Age: ${profileData.ageAtUpload}`);
+  console.log(`   Location: ${profileData.country}`);
+
+  // 2. Create interactions, matches, and messages
+  const messagesStart = Date.now();
+  console.log(`\n💬 [2/5] Processing conversations...`);
+  const { interactionsInput, matchesInput, messagesInput } =
+    createHingeMessagesAndMatches(
+      data.anonymizedHingeJson.Matches,
+      data.hingeId,
+    );
+  console.log(`✅ Processed in ${Date.now() - messagesStart}ms`);
+
+  // 3. Transform prompts
+  const promptsStart = Date.now();
+  console.log(`\n📝 [3/5] Processing prompts...`);
+  const promptsInput = transformHingePromptsForDb(
+    data.anonymizedHingeJson.Prompts,
+    data.hingeId,
+  );
+  console.log(
+    `✅ Processed ${promptsInput.length} prompts in ${Date.now() - promptsStart}ms`,
+  );
+
+  // 4. Log photo count
+  const photoCount = Array.isArray(data.anonymizedHingeJson.Media)
+    ? data.anonymizedHingeJson.Media.length
+    : 0;
+  console.log(`\n📷 [4/5] Photos ready for insert: ${photoCount}`);
+
+  // 5. Execute transaction to insert all data
+  const txStart = Date.now();
+  console.log(`\n💾 [5/5] Starting database transaction...`);
+  const result = await withTransaction(async (tx) => {
+    // Insert original file
+    const fileStart = Date.now();
+    const fileId = createId("oaf");
+    await tx.insert(originalAnonymizedFileTable).values({
+      id: fileId,
+      dataProvider: "HINGE",
+      swipestatsVersion: "SWIPESTATS_4",
+      file: data.anonymizedHingeJson as unknown as Record<string, unknown>,
+      blobUrl: null, // Blob upload disabled for now
+      userId: data.userId,
+    });
+    console.log(
+      `   ✓ Original file stored in DB (${Date.now() - fileStart}ms, ID: ${fileId})`,
+    );
+
+    // Insert profile
+    const profileStart = Date.now();
+    const [profile] = await tx
+      .insert(hingeProfileTable)
+      .values(profileData)
+      .returning();
+    console.log(`   ✓ Profile inserted (${Date.now() - profileStart}ms)`);
+
+    // Insert photos/media (respects consent - Media will be empty array if filtered)
+    const mediaInput = transformHingeMediaToDb(
+      data.anonymizedHingeJson.Media ?? [],
+      data.hingeId,
+    );
+    if (mediaInput.length > 0) {
+      const mediaInsertStart = Date.now();
+      await tx.insert(mediaTable).values(mediaInput);
+      console.log(
+        `   ✓ ${mediaInput.length} photos inserted (${Date.now() - mediaInsertStart}ms)`,
+      );
+    } else {
+      console.log(`   ✓ No photos to insert (user may not have consented)`);
+    }
+
+    // Bulk insert matches
+    if (matchesInput.length > 0) {
+      const matchesInsertStart = Date.now();
+      const BATCH_SIZE = 500;
+
+      for (let i = 0; i < matchesInput.length; i += BATCH_SIZE) {
+        const batch = matchesInput.slice(i, i + BATCH_SIZE);
+        await tx.insert(matchTable).values(batch);
+        const batchNum = Math.floor(i / BATCH_SIZE) + 1;
+        const totalBatches = Math.ceil(matchesInput.length / BATCH_SIZE);
+        console.log(
+          `   ✓ Batch ${batchNum}/${totalBatches}: ${batch.length} matches inserted`,
+        );
+      }
+
+      console.log(
+        `   ✓ ${matchesInput.length} matches inserted (${Date.now() - matchesInsertStart}ms)`,
+      );
+    }
+
+    // Bulk insert messages
+    if (messagesInput.length > 0) {
+      const messagesInsertStart = Date.now();
+      const BATCH_SIZE = 1000;
+
+      for (let i = 0; i < messagesInput.length; i += BATCH_SIZE) {
+        const batch = messagesInput.slice(i, i + BATCH_SIZE);
+        await tx.insert(messageTable).values(batch);
+        const batchNum = Math.floor(i / BATCH_SIZE) + 1;
+        const totalBatches = Math.ceil(messagesInput.length / BATCH_SIZE);
+        console.log(
+          `   ✓ Batch ${batchNum}/${totalBatches}: ${batch.length} messages inserted`,
+        );
+      }
+
+      console.log(
+        `   ✓ ${messagesInput.length} messages inserted (${Date.now() - messagesInsertStart}ms)`,
+      );
+    }
+
+    // Insert prompts
+    if (promptsInput.length > 0) {
+      const promptsInsertStart = Date.now();
+      await tx.insert(hingePromptTable).values(promptsInput);
+      console.log(
+        `   ✓ ${promptsInput.length} prompts inserted (${Date.now() - promptsInsertStart}ms)`,
+      );
+    }
+
+    // Insert interactions (likes, rejects, unmatches)
+    if (interactionsInput.length > 0) {
+      const interactionsInsertStart = Date.now();
+      const BATCH_SIZE = 1000;
+
+      for (let i = 0; i < interactionsInput.length; i += BATCH_SIZE) {
+        const batch = interactionsInput.slice(i, i + BATCH_SIZE);
+        await tx.insert(hingeInteractionTable).values(batch);
+        const batchNum = Math.floor(i / BATCH_SIZE) + 1;
+        const totalBatches = Math.ceil(interactionsInput.length / BATCH_SIZE);
+        console.log(
+          `   ✓ Batch ${batchNum}/${totalBatches}: ${batch.length} interactions inserted`,
+        );
+      }
+
+      console.log(
+        `   ✓ ${interactionsInput.length} interactions inserted (${Date.now() - interactionsInsertStart}ms)`,
+      );
+    }
+
+    // Fetch profile with all related data for meta computation
+    const fetchStart = Date.now();
+    console.log(`\n📊 Computing profile metadata...`);
+    const fullProfile = await tx.query.hingeProfileTable.findFirst({
+      where: eq(hingeProfileTable.hingeId, data.hingeId),
+      with: {
+        matches: {
+          with: {
+            messages: true,
+          },
+        },
+        interactions: true,
+      },
+    });
+    console.log(
+      `   ✓ Profile fetched with relations (${Date.now() - fetchStart}ms)`,
+    );
+
+    if (!fullProfile) {
+      throw new Error(
+        `Failed to fetch profile after creation: ${data.hingeId}`,
+      );
+    }
+
+    // Compute and insert profile meta
+    const metaComputeStart = Date.now();
+    const meta = createHingeProfileMeta(fullProfile);
+    console.log(`   ✓ Metadata computed (${Date.now() - metaComputeStart}ms)`);
+
+    const metaInsertStart = Date.now();
+    await tx.insert(profileMetaTable).values({
+      ...meta,
+      id: createId("pmeta"),
+      tinderProfileId: null,
+      hingeProfileId: data.hingeId,
+    });
+    console.log(`   ✓ Metadata inserted (${Date.now() - metaInsertStart}ms)`);
+
+    return profile!;
+  });
+
+  console.log(`\n✅ Transaction completed in ${Date.now() - txStart}ms`);
+
+  const totalTime = Date.now() - startTime;
+  console.log(`\n🎉 Hinge profile creation complete for ${data.hingeId}`);
+  console.log(
+    `⏱️  Total time: ${totalTime}ms (${(totalTime / 1000).toFixed(2)}s)`,
+  );
+  console.log(`────────────────────────────────────────\n`);
+
+  return result;
+}
+
+/**
+ * Update an existing Hinge profile from anonymized JSON data
+ * Replaces all profile data including photos, matches, messages, prompts, and interactions
+ */
+export async function updateHingeProfile(data: {
+  hingeId: string;
+  anonymizedHingeJson: AnonymizedHingeDataJSON;
+  userId: string;
+  timezone?: string;
+  country?: string;
+}): Promise<HingeProfile> {
+  const startTime = Date.now();
+
+  console.log(`\n🔄 Starting Hinge profile update for ${data.hingeId}`);
+  console.log(`   User ID: ${data.userId}`);
+
+  // 1. Transform JSON data to database format
+  const transformStart = Date.now();
+  console.log(`\n🔄 [1/5] Transforming profile data...`);
+  const profileData = transformHingeJsonToProfile(data.anonymizedHingeJson, {
+    hingeId: data.hingeId,
+    userId: data.userId,
+    timezone: data.timezone,
+    country: data.country,
+  });
+  console.log(`✅ Profile transformed in ${Date.now() - transformStart}ms`);
+
+  // 2. Create interactions, matches, and messages
+  const messagesStart = Date.now();
+  console.log(`\n💬 [2/5] Processing conversations...`);
+  const { interactionsInput, matchesInput, messagesInput } =
+    createHingeMessagesAndMatches(
+      data.anonymizedHingeJson.Matches,
+      data.hingeId,
+    );
+  console.log(`✅ Processed in ${Date.now() - messagesStart}ms`);
+
+  // 3. Transform prompts
+  const promptsStart = Date.now();
+  console.log(`\n📝 [3/5] Processing prompts...`);
+  const promptsInput = transformHingePromptsForDb(
+    data.anonymizedHingeJson.Prompts,
+    data.hingeId,
+  );
+  console.log(
+    `✅ Processed ${promptsInput.length} prompts in ${Date.now() - promptsStart}ms`,
+  );
+
+  // 4. Log photo count
+  const photoCount = Array.isArray(data.anonymizedHingeJson.Media)
+    ? data.anonymizedHingeJson.Media.length
+    : 0;
+  console.log(`\n📷 [4/5] Photos ready for insert: ${photoCount}`);
+
+  // 5. Execute transaction to update all data
+  const txStart = Date.now();
+  console.log(`\n💾 [5/5] Starting database transaction...`);
+  const result = await withTransaction(async (tx) => {
+    // Delete old related data
+    console.log(
+      `   ✓ Deleting old matches, messages, prompts, interactions, photos, and metadata...`,
+    );
+    const deleteStart = Date.now();
+
+    await tx
+      .delete(matchTable)
+      .where(eq(matchTable.hingeProfileId, data.hingeId));
+    await tx
+      .delete(hingePromptTable)
+      .where(eq(hingePromptTable.hingeProfileId, data.hingeId));
+    await tx
+      .delete(hingeInteractionTable)
+      .where(eq(hingeInteractionTable.hingeProfileId, data.hingeId));
+    await tx
+      .delete(mediaTable)
+      .where(eq(mediaTable.hingeProfileId, data.hingeId));
+    await tx
+      .delete(profileMetaTable)
+      .where(eq(profileMetaTable.hingeProfileId, data.hingeId));
+
+    console.log(`   ✓ Old data deleted (${Date.now() - deleteStart}ms)`);
+
+    // Update profile
+    const profileStart = Date.now();
+    const [profile] = await tx
+      .update(hingeProfileTable)
+      .set({
+        ...profileData,
+        updatedAt: new Date(),
+      })
+      .where(eq(hingeProfileTable.hingeId, data.hingeId))
+      .returning();
+    console.log(`   ✓ Profile updated (${Date.now() - profileStart}ms)`);
+
+    // Insert photos/media (respects consent - Media will be empty array if filtered)
+    const mediaInput = transformHingeMediaToDb(
+      data.anonymizedHingeJson.Media ?? [],
+      data.hingeId,
+    );
+    if (mediaInput.length > 0) {
+      const mediaInsertStart = Date.now();
+      await tx.insert(mediaTable).values(mediaInput);
+      console.log(
+        `   ✓ ${mediaInput.length} photos inserted (${Date.now() - mediaInsertStart}ms)`,
+      );
+    } else {
+      console.log(`   ✓ No photos to insert (user may not have consented)`);
+    }
+
+    // Bulk insert matches
+    if (matchesInput.length > 0) {
+      const matchesInsertStart = Date.now();
+      const BATCH_SIZE = 500;
+
+      for (let i = 0; i < matchesInput.length; i += BATCH_SIZE) {
+        const batch = matchesInput.slice(i, i + BATCH_SIZE);
+        await tx.insert(matchTable).values(batch);
+        const batchNum = Math.floor(i / BATCH_SIZE) + 1;
+        const totalBatches = Math.ceil(matchesInput.length / BATCH_SIZE);
+        console.log(
+          `   ✓ Batch ${batchNum}/${totalBatches}: ${batch.length} matches inserted`,
+        );
+      }
+
+      console.log(
+        `   ✓ ${matchesInput.length} matches inserted (${Date.now() - matchesInsertStart}ms)`,
+      );
+    }
+
+    // Bulk insert messages
+    if (messagesInput.length > 0) {
+      const messagesInsertStart = Date.now();
+      const BATCH_SIZE = 1000;
+
+      for (let i = 0; i < messagesInput.length; i += BATCH_SIZE) {
+        const batch = messagesInput.slice(i, i + BATCH_SIZE);
+        await tx.insert(messageTable).values(batch);
+        const batchNum = Math.floor(i / BATCH_SIZE) + 1;
+        const totalBatches = Math.ceil(messagesInput.length / BATCH_SIZE);
+        console.log(
+          `   ✓ Batch ${batchNum}/${totalBatches}: ${batch.length} messages inserted`,
+        );
+      }
+
+      console.log(
+        `   ✓ ${messagesInput.length} messages inserted (${Date.now() - messagesInsertStart}ms)`,
+      );
+    }
+
+    // Insert prompts
+    if (promptsInput.length > 0) {
+      const promptsInsertStart = Date.now();
+      await tx.insert(hingePromptTable).values(promptsInput);
+      console.log(
+        `   ✓ ${promptsInput.length} prompts inserted (${Date.now() - promptsInsertStart}ms)`,
+      );
+    }
+
+    // Insert interactions
+    if (interactionsInput.length > 0) {
+      const interactionsInsertStart = Date.now();
+      const BATCH_SIZE = 1000;
+
+      for (let i = 0; i < interactionsInput.length; i += BATCH_SIZE) {
+        const batch = interactionsInput.slice(i, i + BATCH_SIZE);
+        await tx.insert(hingeInteractionTable).values(batch);
+        const batchNum = Math.floor(i / BATCH_SIZE) + 1;
+        const totalBatches = Math.ceil(interactionsInput.length / BATCH_SIZE);
+        console.log(
+          `   ✓ Batch ${batchNum}/${totalBatches}: ${batch.length} interactions inserted`,
+        );
+      }
+
+      console.log(
+        `   ✓ ${interactionsInput.length} interactions inserted (${Date.now() - interactionsInsertStart}ms)`,
+      );
+    }
+
+    // Fetch profile with all related data for meta computation
+    const fetchStart = Date.now();
+    console.log(`\n📊 Computing profile metadata...`);
+    const fullProfile = await tx.query.hingeProfileTable.findFirst({
+      where: eq(hingeProfileTable.hingeId, data.hingeId),
+      with: {
+        matches: {
+          with: {
+            messages: true,
+          },
+        },
+        interactions: true,
+      },
+    });
+    console.log(
+      `   ✓ Profile fetched with relations (${Date.now() - fetchStart}ms)`,
+    );
+
+    if (!fullProfile) {
+      throw new Error(`Failed to fetch profile after update: ${data.hingeId}`);
+    }
+
+    // Compute and insert profile meta
+    const metaComputeStart = Date.now();
+    const meta = createHingeProfileMeta(fullProfile);
+    console.log(`   ✓ Metadata computed (${Date.now() - metaComputeStart}ms)`);
+
+    const metaInsertStart = Date.now();
+    await tx.insert(profileMetaTable).values({
+      ...meta,
+      id: createId("pmeta"),
+      tinderProfileId: null,
+      hingeProfileId: data.hingeId,
+    });
+    console.log(`   ✓ Metadata inserted (${Date.now() - metaInsertStart}ms)`);
+
+    return profile!;
+  });
+
+  console.log(`\n✅ Transaction completed in ${Date.now() - txStart}ms`);
+
+  const totalTime = Date.now() - startTime;
+  console.log(`\n🎉 Hinge profile update complete for ${data.hingeId}`);
+  console.log(
+    `⏱️  Total time: ${totalTime}ms (${(totalTime / 1000).toFixed(2)}s)`,
+  );
+  console.log(`────────────────────────────────────────\n`);
+
+  return result;
+}
