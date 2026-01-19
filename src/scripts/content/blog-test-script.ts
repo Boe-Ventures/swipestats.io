@@ -4,7 +4,7 @@ import { join } from "path";
 // Base URLs to check
 const BASE_URLS = {
   production: "https://www.swipestats.io",
-  beta: "https://swipestats-42.beta.localcan.dev",
+  beta: "https://swipestats-4-beta.vercel.app",
 };
 
 // Threshold for highlighting content length differences (percentage)

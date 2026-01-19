@@ -6,7 +6,7 @@ export const SWIPESTATS_PRICING = {
   PLUS: {
     monthly: 9,
     lifetime: 99,
-    lifetimeLaunchPrice: 50, // Limited time launch offer
+    lifetimeLaunchPrice: 49, // Limited time launch offer
   },
   ELITE: {
     monthly: 29,

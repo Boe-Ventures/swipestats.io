@@ -278,7 +278,7 @@ export function SwipestatsPlusCard({
             </p>
             {selectedPeriod === "lifetime" && (
               <p className="mt-2 text-xs font-semibold text-rose-600">
-                Save $49 • Limited time offer
+                Save $50 • Limited time offer
               </p>
             )}
 
