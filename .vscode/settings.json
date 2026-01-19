@@ -27,6 +27,7 @@
   },
   "typescript.tsdk": "node_modules/typescript/lib",
   "typescript.enablePromptUseWorkspaceTsdk": true,
+  "npm.packageManager": "bun",
   "[mdx]": {
     "editor.defaultFormatter": "unifiedjs.vscode-mdx"
   }
