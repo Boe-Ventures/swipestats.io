@@ -1,4 +1,5 @@
 import { and, eq, isNull, inArray, or } from "drizzle-orm";
+import { nanoid } from "nanoid";
 
 import { db, withTransaction } from "../db";
 import {
@@ -12,9 +13,9 @@ import {
   type educationLevelEnum,
 } from "../db/schema";
 
-// Generate a random share key
+// Generate a cryptographically secure random share key
 function generateShareKey(): string {
-  return Math.random().toString(36).substring(2, 10);
+  return nanoid(10); // 10 chars: ~55 bits of entropy, collision-resistant
 }
 
 /**
@@ -1089,7 +1090,7 @@ export async function getPhotoSummary(comparisonId: string, userId: string) {
           if (feedback.rating !== null && feedback.rating !== undefined) {
             photoData.ratings.push(feedback.rating);
           }
-          if (feedback.body && feedback.body.trim() && feedback.author) {
+          if (feedback.body?.trim() && feedback.author) {
             photoData.comments.push({
               id: feedback.id,
               body: feedback.body,
