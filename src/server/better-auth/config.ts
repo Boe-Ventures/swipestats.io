@@ -51,6 +51,16 @@ export const auth = betterAuth({
         defaultValue: false,
         input: false,
       },
+      // Location fields
+      city: {
+        type: "string",
+        required: false,
+      },
+      country: {
+        type: "string",
+        required: false,
+      },
+      // add more?
     },
   },
   trustedOrigins: [

@@ -28,6 +28,8 @@
   "typescript.tsdk": "node_modules/typescript/lib",
   "typescript.enablePromptUseWorkspaceTsdk": true,
   "npm.packageManager": "bun",
+  "eslint.cache": true,
+  "eslint.useFlatConfig": true,
   "[mdx]": {
     "editor.defaultFormatter": "unifiedjs.vscode-mdx"
   },
