@@ -5,7 +5,7 @@ import type {
   TinderPhoto,
 } from "@/lib/interfaces/TinderDataJSON";
 import type { PromptEntry } from "@/lib/interfaces/HingeDataJSON";
-import { withTransaction } from "@/server/db";
+import { withTransaction, db } from "@/server/db";
 import {
   matchTable,
   mediaTable,
@@ -32,7 +32,6 @@ import { createUsageRecords } from "./usage.service";
 export async function getTinderProfile(
   tinderId: string,
 ): Promise<TinderProfile | null> {
-  const { db } = await import("@/server/db");
   const result = await db.query.tinderProfileTable.findFirst({
     where: eq(tinderProfileTable.tinderId, tinderId),
   });
@@ -51,7 +50,6 @@ export async function getTinderProfileWithUser(
     })
   | null
 > {
-  const { db } = await import("@/server/db");
   const result = await db.query.tinderProfileTable.findFirst({
     where: eq(tinderProfileTable.tinderId, tinderId),
     with: {
@@ -76,8 +74,6 @@ export async function transferProfileOwnership(
   oldUserId: string,
   newUserId: string,
 ): Promise<void> {
-  const { db } = await import("@/server/db");
-
   console.log(`\n🔄 Transferring profile ownership: ${tinderId}`);
   console.log(`   From user: ${oldUserId}`);
   console.log(`   To user: ${newUserId}`);

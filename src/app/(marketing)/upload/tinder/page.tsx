@@ -28,5 +28,5 @@ export default async function TinderUpload({
   const update = params.update === "true";
   const debug = params.debug === "true";
 
-  return <TinderUploadPage isUpdate={update} isDebug={debug} session={null} />;
+  return <TinderUploadPage isUpdate={update} isDebug={debug} />;
 }

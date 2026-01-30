@@ -16,9 +16,8 @@ export const onRequestError = async (
 ) => {
   // Only run in Node.js runtime (not Edge)
   if (process.env.NEXT_RUNTIME === "nodejs") {
-    const { getPostHogServer } = await import(
-      "@/server/clients/posthog.client"
-    );
+    const { getPostHogServer } =
+      await import("@/server/clients/posthog.client");
 
     try {
       const posthog = getPostHogServer();
@@ -28,8 +27,8 @@ export const onRequestError = async (
 
       if (request.headers.get("cookie")) {
         const cookieString = request.headers.get("cookie")!;
-        const postHogCookieMatch = cookieString.match(
-          /ph_phc_.*?_posthog=([^;]+)/,
+        const postHogCookieMatch = /ph_phc_.*?_posthog=([^;]+)/.exec(
+          cookieString,
         );
 
         if (postHogCookieMatch?.[1]) {
@@ -46,7 +45,7 @@ export const onRequestError = async (
       }
 
       // Capture the exception
-      await posthog.captureException(err, distinctId);
+      posthog.captureException(err, distinctId);
     } catch (captureError) {
       console.error("[PostHog] Error capturing exception:", captureError);
     }

@@ -6,7 +6,6 @@ import { SubmitButton } from "../../_components/SubmitButton";
 import { useTRPC } from "@/trpc/react";
 import { useMutation } from "@tanstack/react-query";
 import type { SwipestatsProfilePayload } from "@/lib/interfaces/TinderDataJSON";
-import type { Session } from "@/server/better-auth/client";
 import { authClient } from "@/server/better-auth/client";
 import { isGenderDataUnknown } from "@/lib/utils/gender";
 import type { TinderJsonGender } from "@/server/db/constants";
@@ -16,7 +15,6 @@ import { filterPayloadByConsent } from "@/lib/utils/filterTinderPayload";
 interface TinderSubmitButtonProps {
   payload: SwipestatsProfilePayload;
   disabled?: boolean;
-  session: Session | null;
   timezone?: string;
   country?: string;
   consent: TinderConsentState;
@@ -25,13 +23,15 @@ interface TinderSubmitButtonProps {
 export function TinderSubmitButton({
   payload,
   disabled,
-  session,
   timezone,
   country,
   consent,
 }: TinderSubmitButtonProps) {
   const router = useRouter();
   const [isCreatingSession, setIsCreatingSession] = useState(false);
+
+  // Use Better Auth's built-in session hook
+  const { data: session } = authClient.useSession();
 
   const trpc = useTRPC();
   const uploadMutation = useMutation(

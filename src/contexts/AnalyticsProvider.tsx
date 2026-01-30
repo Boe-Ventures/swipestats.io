@@ -244,19 +244,10 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
 
     const user = session.data.user;
 
-    const traits = {
-      email: user.email,
-      name: user.name,
-      username: user.username,
-      isAnonymous: user.isAnonymous,
-      // Note: additionalFields like swipestatsTier, city, country should be
-      // identified server-side where types work properly
-    };
-
     console.log("🔵 [Analytics] Identifying user:", userId);
     providers.forEach((provider) => {
       if (provider.identify) {
-        provider.identify(userId, traits);
+        provider.identify(userId, user);
       }
     });
 

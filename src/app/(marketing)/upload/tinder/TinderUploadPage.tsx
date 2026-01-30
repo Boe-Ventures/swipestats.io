@@ -2,7 +2,6 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { authClient } from "@/server/better-auth/client";
 import { useTRPC } from "@/trpc/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { UploadLayout } from "../_components/UploadLayout";
@@ -24,23 +23,15 @@ import {
 interface TinderUploadPageProps {
   isUpdate: boolean;
   isDebug: boolean;
-  session: null; // Not used anymore, kept for type compatibility
 }
 
-export function TinderUploadPage({
-  isUpdate,
-  isDebug,
-  session: _session,
-}: TinderUploadPageProps) {
+export function TinderUploadPage({ isUpdate, isDebug }: TinderUploadPageProps) {
   const [payload, setPayload] = useState<SwipestatsProfilePayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [consent, setConsent] = useState<TinderConsentState>(
     DEFAULT_TINDER_CONSENT,
   );
   const [brokenImageUrls, setBrokenImageUrls] = useState<string[]>([]);
-
-  // Use Better Auth's built-in session hook
-  const { data: session } = authClient.useSession();
 
   // Detect timezone and country once on mount
   const browserTimezone = useMemo(() => getBrowserTimezone(), []);
@@ -181,7 +172,6 @@ export function TinderUploadPage({
             <TinderSubmitButton
               payload={getFilteredPayload()}
               disabled={!!error}
-              session={session}
               timezone={browserTimezone}
               country={browserCountry}
               consent={consent}
