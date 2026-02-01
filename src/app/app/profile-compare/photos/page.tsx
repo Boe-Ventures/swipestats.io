@@ -321,7 +321,7 @@ export default function PhotoGalleryPage() {
           <DialogHeader>
             <DialogTitle>Delete Photo?</DialogTitle>
             <DialogDescription>
-              This will permanently delete this photo. If it's used in any
+              This will permanently delete this photo. If it&apos;s used in any
               comparisons, it will be removed from them.
             </DialogDescription>
           </DialogHeader>

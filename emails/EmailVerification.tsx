@@ -28,7 +28,8 @@ export const EmailVerification = ({
         </Button>
       </Section>
       <Text className="mb-4 text-base leading-6 text-gray-700">
-        If you didn't request this verification email, you can safely ignore it.
+        If you didn&apos;t request this verification email, you can safely
+        ignore it.
       </Text>
       <Text className="text-sm text-gray-500">
         This verification link will expire in 24 hours for security reasons.

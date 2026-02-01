@@ -147,7 +147,7 @@ export function PercentileIndicator({
           {/* Additional context */}
           {showFullDistribution && (
             <div className="text-muted-foreground text-center text-xs">
-              You're performing better than approximately{" "}
+              You&apos;re performing better than approximately{" "}
               <span className="font-semibold">{Math.round(position)}%</span> of
               this cohort
             </div>

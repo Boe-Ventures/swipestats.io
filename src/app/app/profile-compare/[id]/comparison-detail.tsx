@@ -195,7 +195,7 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
   const handleCopyShareLink = () => {
     if (comparison.shareKey) {
       const shareUrl = `${window.location.origin}/share/profile-compare/${comparison.shareKey}`;
-      navigator.clipboard.writeText(shareUrl);
+      void navigator.clipboard.writeText(shareUrl);
       toast.success("Share link copied to clipboard! Ready to share.");
     }
   };
@@ -582,7 +582,7 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
                   <Button
                     onClick={() => {
                       const createUrl = `${window.location.origin}/share/create/${comparison.shareKey}`;
-                      navigator.clipboard.writeText(createUrl);
+                      void navigator.clipboard.writeText(createUrl);
                       toast.success("Friend creation link copied!");
                     }}
                     size="sm"

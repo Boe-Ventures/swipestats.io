@@ -41,7 +41,7 @@ export function ProviderSelector() {
 
   useEffect(() => {
     if (watchProvider !== provider) {
-      setProvider(watchProvider);
+      void setProvider(watchProvider);
     }
   }, [watchProvider, provider, setProvider]);
 

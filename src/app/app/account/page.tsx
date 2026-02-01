@@ -70,7 +70,7 @@ export default async function AccountPage() {
               <CardHeader>
                 <CardTitle>Dating Apps</CardTitle>
                 <p className="text-muted-foreground text-sm">
-                  Track which dating apps you're currently active on to get
+                  Track which dating apps you&apos;re currently active on to get
                   relevant insights and comparisons.
                 </p>
               </CardHeader>
@@ -104,7 +104,7 @@ export default async function AccountPage() {
           <div>
             <h2 className="text-lg font-semibold">Email Preferences</h2>
             <p className="text-muted-foreground text-sm">
-              Choose what emails you'd like to receive from us
+              Choose what emails you&apos;d like to receive from us
             </p>
           </div>
 
@@ -113,7 +113,7 @@ export default async function AccountPage() {
               <CardHeader>
                 <CardTitle>Newsletter Topics</CardTitle>
                 <p className="text-muted-foreground text-sm">
-                  Select which topics you're interested in receiving emails
+                  Select which topics you&apos;re interested in receiving emails
                   about.
                 </p>
               </CardHeader>

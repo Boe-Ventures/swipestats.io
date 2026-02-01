@@ -181,7 +181,7 @@ export default function FriendCreationPage() {
                   No photos available
                 </h3>
                 <p className="text-muted-foreground mb-4 max-w-md text-sm">
-                  The profile owner hasn't uploaded any photos yet.
+                  The profile owner hasn&apos;t uploaded any photos yet.
                 </p>
               </CardContent>
             </Card>

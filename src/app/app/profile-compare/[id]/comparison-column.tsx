@@ -534,8 +534,8 @@ export function ComparisonColumn({
           </div>
           {!title && (
             <p className="text-muted-foreground mt-1 text-xs">
-              Add a title to identify this version (e.g., "2023", "Summer
-              Edition")
+              Add a title to identify this version (e.g., &quot;2023&quot;,
+              &quot;Summer Edition&quot;)
             </p>
           )}
         </div>

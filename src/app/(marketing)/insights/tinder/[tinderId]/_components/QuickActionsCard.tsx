@@ -68,10 +68,10 @@ export function QuickActionsCard() {
             })
             .catch(() => {
               // Fallback: copy to clipboard
-              navigator.clipboard.writeText(window.location.href);
+              void navigator.clipboard.writeText(window.location.href);
             });
         } else {
-          navigator.clipboard.writeText(window.location.href);
+          void navigator.clipboard.writeText(window.location.href);
         }
       },
       color:

@@ -74,7 +74,7 @@ export function ProfilePhotoGrid({
       {/* Show warning if some images failed to load */}
       {brokenCount > 0 && (
         <div className="text-center text-xs text-white/70">
-          ⚠️ {brokenCount} image{brokenCount !== 1 ? "s" : ""} couldn't be
+          ⚠️ {brokenCount} image{brokenCount !== 1 ? "s" : ""} couldn&apos;t be
           loaded
           {brokenCount === photos.length ? " - these won't be saved" : ""}
         </div>

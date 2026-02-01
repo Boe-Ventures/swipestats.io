@@ -694,8 +694,8 @@ export function MasterActivityChart() {
                   No activity in this timeframe
                 </h3>
                 <p className="text-muted-foreground max-w-sm text-sm">
-                  There's no data to display for the selected time range. Try
-                  adjusting your filters or selecting a different period.
+                  There&apos;s no data to display for the selected time range.
+                  Try adjusting your filters or selecting a different period.
                 </p>
               </div>
               <div className="flex flex-wrap items-center justify-center gap-2 pt-2">

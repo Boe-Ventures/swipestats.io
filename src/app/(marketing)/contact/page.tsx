@@ -79,7 +79,7 @@ export default function ContactPage() {
 
       <div className="mx-auto max-w-xl lg:max-w-4xl">
         <h2 className="text-4xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-5xl">
-          Let's talk about your dating data
+          Let&apos;s talk about your dating data
         </h2>
         <p className="mt-2 text-lg/8 text-gray-600">
           Schedule a call with our team to learn how SwipeStats can help you
@@ -102,9 +102,9 @@ export default function ContactPage() {
             <figure className="mt-10">
               <blockquote className="text-lg/8 font-semibold text-gray-900">
                 <p>
-                  "SwipeStats helped me understand my dating patterns and gave
-                  me valuable insights. The data visualizations are incredible
-                  and the team was super helpful!"
+                  &quot;SwipeStats helped me understand my dating patterns and
+                  gave me valuable insights. The data visualizations are
+                  incredible and the team was super helpful!&quot;
                 </p>
               </blockquote>
               <figcaption className="mt-10 flex gap-x-6">

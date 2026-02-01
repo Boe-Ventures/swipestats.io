@@ -92,7 +92,9 @@ export function ConversionModal({
       }
     };
 
-    const timer = setTimeout(checkUsername, 500);
+    const timer = setTimeout(() => {
+      void checkUsername();
+    }, 500);
     return () => clearTimeout(timer);
   }, [username]);
 

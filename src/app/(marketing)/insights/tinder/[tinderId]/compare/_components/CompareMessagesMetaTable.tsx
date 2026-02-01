@@ -222,8 +222,8 @@ export function CompareMessagesMetaTable() {
                 No messaging data available
               </h3>
               <p className="text-muted-foreground max-w-sm text-sm">
-                This profile doesn't have any messaging metadata yet. Upload
-                your Tinder data export to see conversation insights.
+                This profile doesn&apos;t have any messaging metadata yet.
+                Upload your Tinder data export to see conversation insights.
               </p>
             </div>
           </div>

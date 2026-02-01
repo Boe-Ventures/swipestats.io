@@ -37,7 +37,9 @@ export function InsightsUpgradeCard() {
               <Crown className="h-8 w-8 text-white" />
             </div>
             <div>
-              <h3 className="text-2xl font-bold">You're on SwipeStats Elite</h3>
+              <h3 className="text-2xl font-bold">
+                You&apos;re on SwipeStats Elite
+              </h3>
               <p className="text-muted-foreground mt-2">
                 {isLifetime
                   ? "Lifetime access - You have the best plan!"
@@ -94,7 +96,7 @@ export function InsightsUpgradeCard() {
               {/* Features */}
               <div className="mb-4 flex items-center gap-x-4">
                 <h4 className="flex-none text-sm font-semibold text-pink-600 dark:text-pink-400">
-                  What's included
+                  What&apos;s included
                 </h4>
                 <div className="h-px flex-auto bg-gray-200 dark:bg-gray-700" />
               </div>

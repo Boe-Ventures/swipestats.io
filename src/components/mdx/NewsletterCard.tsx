@@ -117,8 +117,8 @@ export function NewsletterCard({
                   : "Thank you for subscribing! 🎉"}
               </h3>
               <p className="mt-2 text-gray-700">
-                You've successfully been added to our mailing list. Keep an eye
-                on your inbox for great content!
+                You&apos;ve successfully been added to our mailing list. Keep an
+                eye on your inbox for great content!
                 {subscribedEmail && (
                   <>
                     <br />

@@ -70,7 +70,7 @@ export function DirectoryFilters({
     sortBy !== "newest";
 
   const clearFilters = () => {
-    setFilters({
+    void setFilters({
       platform: null,
       gender: null,
       ageMin: null,
@@ -118,17 +118,17 @@ export function DirectoryFilters({
   const handleMatchRateChange = (type: "min" | "max", value: string) => {
     if (type === "min") {
       if (value === "all") {
-        setFilters({ matchRateMin: null });
+        void setFilters({ matchRateMin: null });
       } else {
         const minValue =
           value === "0.2" ? "0.2" : value === "0.1" ? "0.1" : "0";
-        setFilters({
+        void setFilters({
           matchRateMin: minValue === "0" ? null : minValue,
           matchRateMax: minValue === "0.2" ? null : matchRateMax,
         });
       }
     } else {
-      setFilters({ matchRateMax: value === "all" ? null : value });
+      void setFilters({ matchRateMax: value === "all" ? null : value });
     }
   };
 

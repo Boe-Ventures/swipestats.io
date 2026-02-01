@@ -76,8 +76,8 @@ export function EmailVerificationForm() {
           <AlertDescription>
             <strong>Temporary Email Detected</strong>
             <p className="mt-1 text-sm">
-              You're using a temporary email. Add a real email address to enable
-              password reset functionality.
+              You&apos;re using a temporary email. Add a real email address to
+              enable password reset functionality.
             </p>
           </AlertDescription>
         </Alert>
@@ -144,7 +144,7 @@ export function EmailVerificationForm() {
                 required
               />
               <p className="text-muted-foreground text-xs">
-                You'll need to verify the new email address.
+                You&apos;ll need to verify the new email address.
               </p>
             </div>
 
