@@ -300,7 +300,7 @@ function trimStructure(
 
     for (const key of keysToProcess) {
       const val = obj[key];
-      const analysis = analyzeValue(val, options, depth);
+      const _analysis = analyzeValue(val, options, depth);
       let trimmedValue = trimStructure(val, options, depth + 1, undefined, key);
 
       // Add metadata if we have schema info

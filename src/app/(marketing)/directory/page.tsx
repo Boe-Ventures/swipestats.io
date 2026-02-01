@@ -62,7 +62,7 @@ function DirectoryContent() {
         {/* Page Header */}
         <div className="space-y-4">
           <div className="space-y-3">
-            <h1 className="from-foreground to-foreground/70 bg-gradient-to-r bg-clip-text text-4xl font-bold tracking-tight text-transparent sm:text-5xl">
+            <h1 className="from-foreground to-foreground/70 bg-linear-to-r bg-clip-text text-4xl font-bold tracking-tight text-transparent sm:text-5xl">
               Profile Directory
             </h1>
             <p className="text-muted-foreground max-w-2xl text-lg leading-relaxed">
@@ -160,7 +160,7 @@ export default function DirectoryPage() {
           <div className="mx-auto max-w-7xl space-y-8 px-4 py-12 sm:px-6 lg:px-8">
             <div className="space-y-4">
               <div className="space-y-3">
-                <h1 className="from-foreground to-foreground/70 bg-gradient-to-r bg-clip-text text-4xl font-bold tracking-tight text-transparent sm:text-5xl">
+                <h1 className="from-foreground to-foreground/70 bg-linear-to-r bg-clip-text text-4xl font-bold tracking-tight text-transparent sm:text-5xl">
                   Profile Directory
                 </h1>
                 <p className="text-muted-foreground max-w-2xl text-lg leading-relaxed">

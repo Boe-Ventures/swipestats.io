@@ -19,7 +19,7 @@ const REQUIRED_FILES = [
 
 const OPTIONAL_FILES = [
   { key: "prompts", label: "prompts.json", fileName: "prompts.json" },
-  { key: "likes", label: "we-met.json", fileName: "we-met.json" },
+  { key: "media", label: "media.json", fileName: "media.json" },
 ];
 
 type FileStatus = "missing" | "loaded" | "error";

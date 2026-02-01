@@ -17,7 +17,7 @@ interface Photo {
   originalFilename: string;
 }
 
-interface PhotoGalleryModalProps {
+interface PhotoGalleryDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   photos: Photo[];
@@ -26,17 +26,17 @@ interface PhotoGalleryModalProps {
   maxSelectable?: number;
 }
 
-export function PhotoGalleryModal({
+export function PhotoGalleryDialog({
   open,
   onOpenChange,
   photos,
   selectedPhotos,
   onSelect,
   maxSelectable = 6,
-}: PhotoGalleryModalProps) {
+}: PhotoGalleryDialogProps) {
   const handlePhotoClick = (photoId: string) => {
     onSelect(photoId);
-    // Close modal after selection
+    // Close dialog after selection
     onOpenChange(false);
   };
 

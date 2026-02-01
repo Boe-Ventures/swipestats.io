@@ -169,7 +169,7 @@ export function ProfileCard({
       {/* Special Label in top-right (e.g., Creator of SwipeStats) */}
       {specialLabel && (
         <div className="absolute top-3 right-3 z-10">
-          <Badge className="border-0 bg-gradient-to-r from-pink-600 to-rose-600 text-white">
+          <Badge className="border-0 bg-linear-to-r from-pink-600 to-rose-600 text-white">
             <Sparkles className="mr-1 h-3 w-3" />
             {specialLabel}
           </Badge>
@@ -298,7 +298,7 @@ export function ProfileCard({
 
       {/* Selected overlay (select mode only) */}
       {variant === "select" && isSelected && (
-        <div className="from-primary/5 pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-br to-transparent" />
+        <div className="from-primary/5 pointer-events-none absolute inset-0 rounded-xl bg-linear-to-br to-transparent" />
       )}
     </>
   );

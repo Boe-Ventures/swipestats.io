@@ -61,9 +61,9 @@ export function PremiumFeatureWrapper({
 
       {/* Overlay with upgrade CTA */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="mx-auto max-w-md rounded-lg border bg-gradient-to-r from-pink-50 to-rose-50 p-6 shadow-lg dark:from-pink-950/50 dark:to-rose-950/50">
+        <div className="mx-auto max-w-md rounded-lg border bg-linear-to-r from-pink-50 to-rose-50 p-6 shadow-lg dark:from-pink-950/50 dark:to-rose-950/50">
           <div className="flex flex-col items-center gap-4 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-rose-500 shadow-md">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-linear-to-br from-pink-500 to-rose-500 shadow-md">
               <Crown className="h-6 w-6 text-white" />
             </div>
             <div>
@@ -76,7 +76,7 @@ export function PremiumFeatureWrapper({
               onClick={() => openUpgradeModal({ tier: requiredTier })}
               className={cn(
                 "w-full font-semibold",
-                "bg-gradient-to-r from-pink-600 to-rose-600",
+                "bg-linear-to-r from-pink-600 to-rose-600",
                 "hover:from-pink-700 hover:to-rose-700",
               )}
             >

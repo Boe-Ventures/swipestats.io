@@ -79,7 +79,7 @@ export function HingeProfilePreview({
   return (
     <div className="relative max-w-xl overflow-hidden rounded-lg bg-white shadow-lg">
       {/* Header with Photos */}
-      <div className="rounded-t-lg bg-gradient-to-r from-purple-700 via-purple-500 to-pink-400 p-4">
+      <div className="rounded-t-lg bg-linear-to-r from-purple-700 via-purple-500 to-pink-400 p-4">
         {hasPhotos ? (
           <ProfilePhotoGrid photos={photos} onImageError={handleImageError} />
         ) : (

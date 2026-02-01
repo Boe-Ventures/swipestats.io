@@ -13,7 +13,7 @@ import { useTRPC } from "@/trpc/react";
 import { useQuery } from "@tanstack/react-query";
 import { EmptyPhotoSlots } from "./empty-photo-slots";
 import { SelectedPhotosBar } from "./selected-photos-bar";
-import { PhotoGalleryModal } from "./photo-gallery-modal";
+import { PhotoGalleryDialog } from "./photo-gallery-dialog";
 import { PublishDialog } from "./publish-dialog";
 
 export default function FriendCreationPage() {
@@ -24,7 +24,7 @@ export default function FriendCreationPage() {
 
   const [selectedPhotos, setSelectedPhotos] = useState<string[]>([]);
   const [showPublishDialog, setShowPublishDialog] = useState(false);
-  const [showGalleryModal, setShowGalleryModal] = useState(false);
+  const [showGalleryDialog, setShowGalleryDialog] = useState(false);
   const [gallerySlotIndex, setGallerySlotIndex] = useState<number | null>(null);
 
   const { data, isLoading } = useQuery(
@@ -55,7 +55,7 @@ export default function FriendCreationPage() {
 
   const handleSlotClick = (index: number) => {
     setGallerySlotIndex(index);
-    setShowGalleryModal(true);
+    setShowGalleryDialog(true);
   };
 
   const handlePublishSuccess = () => {
@@ -66,7 +66,7 @@ export default function FriendCreationPage() {
   if (isLoading) {
     return (
       <div className="bg-background min-h-screen">
-        <header className="from-muted/30 to-background border-b bg-gradient-to-b">
+        <header className="from-muted/30 to-background border-b bg-linear-to-b">
           <div className="container mx-auto px-4 py-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex-1 space-y-2">
@@ -119,7 +119,7 @@ export default function FriendCreationPage() {
       />
       <div className="bg-background min-h-screen">
         {/* Header */}
-        <header className="from-muted/30 to-background border-b bg-gradient-to-b">
+        <header className="from-muted/30 to-background border-b bg-linear-to-b">
           <div className="container mx-auto px-4 py-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex-1 space-y-2">
@@ -211,10 +211,10 @@ export default function FriendCreationPage() {
                 </div>
               )}
 
-              {/* Photo Gallery Modal */}
-              <PhotoGalleryModal
-                open={showGalleryModal}
-                onOpenChange={setShowGalleryModal}
+              {/* Photo Gallery Dialog */}
+              <PhotoGalleryDialog
+                open={showGalleryDialog}
+                onOpenChange={setShowGalleryDialog}
                 photos={photos}
                 selectedPhotos={selectedPhotos}
                 onSelect={handlePhotoSelect}

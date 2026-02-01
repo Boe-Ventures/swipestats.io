@@ -20,7 +20,7 @@ import {
   profileMetaTable,
 } from "@/server/db/schema";
 import type { CohortStatsInsert, CohortDefinition } from "@/server/db/schema";
-import { eq, and, gte, lte, sql } from "drizzle-orm";
+import { eq, and, gte, lte, sql, type SQL } from "drizzle-orm";
 import { createId } from "@/server/db/utils";
 import { printHeader, printSuccess } from "../utils/cli";
 
@@ -100,7 +100,7 @@ async function queryProfilesForCohort(
   }>
 > {
   // Build filter conditions
-  const conditions: any[] = [];
+  const conditions: SQL[] = [];
 
   // Gender filter
   if (cohort.gender) {
@@ -314,7 +314,7 @@ export async function computeAllCohortStats(): Promise<void> {
             totalSkipped++;
           }
         } catch (error) {
-          console.error(`   Error: ${error}`);
+          console.error(`   Error: ${String(error)}`);
           totalSkipped++;
         }
       }

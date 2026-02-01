@@ -18,11 +18,11 @@ export default async function Home() {
 
   return (
     <HydrateClient>
-      <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
+      <main className="flex min-h-screen flex-col items-center justify-center bg-linear-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
         <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16">
           <h1 className="text-5xl font-extrabold tracking-tight sm:text-[5rem]">
             Swipe
-            <span className="bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
+            <span className="bg-linear-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
               Stats
             </span>
           </h1>
@@ -80,7 +80,7 @@ export default async function Home() {
               {!session ? (
                 <Link
                   href="/signin"
-                  className="rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-10 py-3 font-semibold no-underline shadow-lg transition hover:from-purple-500 hover:to-pink-500"
+                  className="rounded-full bg-linear-to-r from-purple-600 to-pink-600 px-10 py-3 font-semibold no-underline shadow-lg transition hover:from-purple-500 hover:to-pink-500"
                 >
                   Sign In / Sign Up
                 </Link>
@@ -89,7 +89,7 @@ export default async function Home() {
                   {session.user?.isAnonymous && (
                     <Link
                       href="/signup"
-                      className="rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-8 py-2 text-sm font-semibold no-underline shadow-lg transition hover:from-purple-500 hover:to-pink-500"
+                      className="rounded-full bg-linear-to-r from-purple-600 to-pink-600 px-8 py-2 text-sm font-semibold no-underline shadow-lg transition hover:from-purple-500 hover:to-pink-500"
                     >
                       Create Account to Save Progress
                     </Link>

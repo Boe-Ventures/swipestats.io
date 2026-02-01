@@ -246,7 +246,7 @@ export function DatingFunnel() {
                   </div>
                   <div className="bg-muted relative h-8 overflow-hidden rounded-lg">
                     <div
-                      className={`absolute inset-y-0 left-0 bg-gradient-to-r ${item.color} transition-all duration-500 ease-out`}
+                      className={`absolute inset-y-0 left-0 bg-linear-to-r ${item.color} transition-all duration-500 ease-out`}
                       style={{ width: `${Math.max(widthPercent, 2)}%` }}
                     />
                     {item.percent !== undefined && (

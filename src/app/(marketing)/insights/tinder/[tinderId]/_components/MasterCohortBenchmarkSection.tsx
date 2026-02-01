@@ -584,7 +584,7 @@ function PercentileDialog({
             {/* Percentile bar */}
             {currentPercentiles && (
               <div className="space-y-3 pt-4">
-                <div className="relative h-4 rounded-full bg-gradient-to-r from-red-200 via-yellow-200 to-green-200 dark:from-red-900/30 dark:via-yellow-900/30 dark:to-green-900/30">
+                <div className="relative h-4 rounded-full bg-linear-to-r from-red-200 via-yellow-200 to-green-200 dark:from-red-900/30 dark:via-yellow-900/30 dark:to-green-900/30">
                   <div
                     className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 transition-all duration-300"
                     style={{ left: `${position}%` }}

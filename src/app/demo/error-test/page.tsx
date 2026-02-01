@@ -38,7 +38,7 @@ export default function ErrorTestPage() {
   const handleServerError = async () => {
     try {
       const response = await fetch("/api/test/error");
-      const data = await response.json();
+      const data = (await response.json()) as unknown;
       console.log(data);
     } catch (err) {
       console.error("Server error response:", err);

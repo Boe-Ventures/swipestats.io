@@ -1,6 +1,6 @@
 "use client";
 
-import { BarChart3, Image as ImageIcon } from "lucide-react";
+import { BarChart3 } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";

@@ -30,10 +30,10 @@ export function InsightsUpgradeCard() {
   // If ELITE, show status card
   if (isElite) {
     return (
-      <Card className="border-2 border-amber-200 bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 shadow-lg transition-all hover:shadow-xl dark:border-amber-700 dark:from-amber-950/20 dark:via-orange-950/20 dark:to-yellow-950/20">
+      <Card className="border-2 border-amber-200 bg-linear-to-br from-amber-50 via-orange-50 to-yellow-50 shadow-lg transition-all hover:shadow-xl dark:border-amber-700 dark:from-amber-950/20 dark:via-orange-950/20 dark:to-yellow-950/20">
         <CardContent className="p-8">
           <div className="flex flex-col items-center gap-4 text-center">
-            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-amber-500 to-orange-500 shadow-lg">
+            <div className="flex h-16 w-16 items-center justify-center rounded-full bg-linear-to-br from-amber-500 to-orange-500 shadow-lg">
               <Crown className="h-8 w-8 text-white" />
             </div>
             <div>
@@ -69,8 +69,8 @@ export function InsightsUpgradeCard() {
         className={cn(
           "overflow-hidden border-2 shadow-lg transition-all hover:shadow-xl",
           displayTier === "PLUS"
-            ? "border-pink-200 bg-gradient-to-br from-pink-50 via-rose-50 to-purple-50 dark:border-pink-700 dark:from-pink-950/20 dark:via-rose-950/20 dark:to-purple-950/20"
-            : "border-amber-200 bg-gradient-to-br from-amber-50 via-orange-50 to-yellow-50 dark:border-amber-700 dark:from-amber-950/20 dark:via-orange-950/20 dark:to-yellow-950/20",
+            ? "border-pink-200 bg-linear-to-br from-pink-50 via-rose-50 to-purple-50 dark:border-pink-700 dark:from-pink-950/20 dark:via-rose-950/20 dark:to-purple-950/20"
+            : "border-amber-200 bg-linear-to-br from-amber-50 via-orange-50 to-yellow-50 dark:border-amber-700 dark:from-amber-950/20 dark:via-orange-950/20 dark:to-yellow-950/20",
         )}
       >
         <CardContent className="p-4 sm:p-6 lg:p-8">
@@ -165,8 +165,8 @@ export function InsightsUpgradeCard() {
                   className={cn(
                     "w-full font-semibold shadow-sm",
                     displayTier === "PLUS"
-                      ? "bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700"
-                      : "bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700",
+                      ? "bg-linear-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700"
+                      : "bg-linear-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700",
                   )}
                 >
                   Upgrade Now

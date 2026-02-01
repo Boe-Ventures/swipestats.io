@@ -75,7 +75,7 @@ async function main() {
   }
 
   // Check what tables exist
-  const result = await db.execute(`
+  const result = await db.execute<{ table_name: string }>(`
     SELECT table_name 
     FROM information_schema.tables 
     WHERE table_schema = 'public' 
@@ -88,7 +88,7 @@ async function main() {
     console.log("");
   } else {
     printWarning(`Found ${result.rows.length} tables that will be dropped:`);
-    result.rows.forEach((row: any) => {
+    result.rows.forEach((row) => {
       console.log(`  - ${row.table_name}`);
     });
     console.log("");

@@ -54,7 +54,7 @@ interface DiscoveredFiles {
 function analyzeValue(
   value: unknown,
   options: AnalysisOptions,
-  depth = 0,
+  _depth = 0,
 ): { type: string; details?: string } {
   if (value === null) {
     return { type: "null" };
@@ -292,7 +292,7 @@ function trimStructure(
 
     for (const key of keysToProcess) {
       const val = obj[key];
-      const analysis = analyzeValue(val, options, depth);
+      const _analysis = analyzeValue(val, options, depth);
       let trimmedValue = trimStructure(val, options, depth + 1);
 
       if (keySchema?.has(key)) {
@@ -402,13 +402,13 @@ function discoverFiles(folderPath: string): DiscoveredFiles {
 /**
  * Type guards for file detection (imported concept from extract-hinge-data.ts)
  */
-function isUserFile(data: unknown): boolean {
+function _isUserFile(data: unknown): boolean {
   if (typeof data !== "object" || data === null) return false;
   const obj = data as Record<string, unknown>;
   return !!(obj.preferences || obj.identity || obj.account || obj.profile);
 }
 
-function isMatchesFile(data: unknown): boolean {
+function _isMatchesFile(data: unknown): boolean {
   if (!Array.isArray(data)) return false;
   return (
     data.length === 0 ||
@@ -422,7 +422,7 @@ function isMatchesFile(data: unknown): boolean {
   );
 }
 
-function isPromptsFile(data: unknown): boolean {
+function _isPromptsFile(data: unknown): boolean {
   if (!Array.isArray(data)) return false;
   return (
     data.length === 0 ||

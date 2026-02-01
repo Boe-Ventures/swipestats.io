@@ -187,7 +187,7 @@ export async function computeAllProfileMeta(
         console.log(`   Computed metadata\n`);
       } catch (error) {
         errorCount++;
-        console.error(`   Error: ${error}\n`);
+        console.error(`   Error: ${String(error)}\n`);
       }
     }
 

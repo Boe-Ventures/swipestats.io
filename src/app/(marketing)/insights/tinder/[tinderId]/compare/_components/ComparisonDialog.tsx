@@ -55,7 +55,7 @@ export function ComparisonDialog() {
   );
 
   // Fetch synthetic cohort profiles
-  const { data: syntheticProfiles, isLoading: synthLoading } = useQuery(
+  const { data: syntheticProfiles } = useQuery(
     trpc.cohort.listSyntheticProfiles.queryOptions(),
   );
 
@@ -155,7 +155,7 @@ export function ComparisonDialog() {
           </div>
         </div>
       ) : !data?.profiles.length ? (
-        <div className="from-muted/30 to-muted/10 rounded-xl border border-dashed bg-gradient-to-br p-16 text-center">
+        <div className="from-muted/30 to-muted/10 rounded-xl border border-dashed bg-linear-to-br p-16 text-center">
           <div className="bg-muted/50 mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full">
             <Heart className="text-muted-foreground h-8 w-8" />
           </div>
@@ -310,7 +310,7 @@ export function ComparisonDialog() {
                     )}
                   </div>
                 ) : (
-                  <div className="rounded-lg border bg-gradient-to-r from-pink-50 to-rose-50 p-6 dark:from-pink-950/50 dark:to-rose-950/50">
+                  <div className="rounded-lg border bg-linear-to-r from-pink-50 to-rose-50 p-6 dark:from-pink-950/50 dark:to-rose-950/50">
                     <div className="space-y-4">
                       <div>
                         <h4 className="mb-2 font-semibold">
@@ -378,9 +378,9 @@ export function ComparisonDialog() {
                   </div>
 
                   <div className="absolute inset-0 flex items-center justify-center">
-                    <div className="mx-auto max-w-sm rounded-lg border bg-gradient-to-r from-pink-50 to-rose-50 p-6 shadow-lg dark:from-pink-950/50 dark:to-rose-950/50">
+                    <div className="mx-auto max-w-sm rounded-lg border bg-linear-to-r from-pink-50 to-rose-50 p-6 shadow-lg dark:from-pink-950/50 dark:to-rose-950/50">
                       <div className="flex flex-col items-center gap-4 text-center">
-                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-rose-500 shadow-md">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-linear-to-br from-pink-500 to-rose-500 shadow-md">
                           <Crown className="h-6 w-6 text-white" />
                         </div>
                         <div>
@@ -400,7 +400,7 @@ export function ComparisonDialog() {
                           }
                           className={cn(
                             "w-full font-semibold",
-                            "bg-gradient-to-r from-pink-600 to-rose-600",
+                            "bg-linear-to-r from-pink-600 to-rose-600",
                             "hover:from-pink-700 hover:to-rose-700",
                           )}
                         >

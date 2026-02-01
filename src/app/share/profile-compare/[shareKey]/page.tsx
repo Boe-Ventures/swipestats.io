@@ -47,7 +47,7 @@ export default function SharedComparisonPage() {
     return (
       <div className="bg-background min-h-screen">
         {/* Header Skeleton */}
-        <header className="from-muted/30 to-background border-b bg-gradient-to-b">
+        <header className="from-muted/30 to-background border-b bg-linear-to-b">
           <div className="container mx-auto px-4 py-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex-1 space-y-2">
@@ -107,7 +107,7 @@ export default function SharedComparisonPage() {
       />
       <div className="bg-background min-h-screen">
         {/* Header */}
-        <header className="from-muted/30 to-background border-b bg-gradient-to-b">
+        <header className="from-muted/30 to-background border-b bg-linear-to-b">
           <div className="container mx-auto px-4 py-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex-1 space-y-2">

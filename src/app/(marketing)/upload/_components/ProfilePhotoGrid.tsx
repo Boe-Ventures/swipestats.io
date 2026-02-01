@@ -7,14 +7,12 @@ interface Photo {
 
 interface ProfilePhotoGridProps {
   photos: Photo[];
-  gradientColors?: string; // Tailwind gradient classes
   initialPhotoCount?: number; // Number of photos to show initially
   onImageError?: (url: string, index: number) => void; // Callback when image fails to load
 }
 
 export function ProfilePhotoGrid({
   photos,
-  gradientColors = "from-purple-700 via-purple-500 to-pink-400",
   initialPhotoCount = 6,
   onImageError,
 }: ProfilePhotoGridProps) {

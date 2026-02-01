@@ -77,11 +77,10 @@ export function TinderProfilePreview({
   return (
     <div className="relative w-full max-w-xl overflow-hidden rounded-lg bg-white shadow-lg">
       {/* Header with Photos */}
-      <div className="rounded-t-lg bg-gradient-to-r from-rose-700 via-rose-500 to-rose-300 p-4">
+      <div className="rounded-t-lg bg-linear-to-r from-rose-700 via-rose-500 to-rose-300 p-4">
         {hasPhotos ? (
           <ProfilePhotoGrid
             photos={photos}
-            gradientColors="from-rose-700 via-rose-500 to-rose-300"
             initialPhotoCount={3}
             onImageError={handleImageError}
           />

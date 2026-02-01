@@ -347,7 +347,7 @@ export function CohortBenchmarksSection() {
               </div>
             </div>
           ) : (
-            <div className="rounded-lg border bg-gradient-to-r from-pink-50 to-rose-50 p-6 dark:from-pink-950/50 dark:to-rose-950/50">
+            <div className="rounded-lg border bg-linear-to-r from-pink-50 to-rose-50 p-6 dark:from-pink-950/50 dark:to-rose-950/50">
               <div className="space-y-4">
                 <div>
                   <h4 className="mb-2 font-semibold">

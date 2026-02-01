@@ -1,6 +1,21 @@
 // =====================================================
 // EVENT NAME DEFINITIONS
 // =====================================================
+//
+// NAMING CONVENTIONS:
+//
+// Server Events (past tense - completed actions):
+//   - {resource}_{past_tense_verb}: user_signed_up, profile_uploaded, subscription_activated
+//   - Describes what actually happened in the database/backend
+//
+// Client Events (present tense + action verb - user interactions):
+//   - {resource}_{action}_clicked: sign_up_clicked, upgrade_clicked
+//   - {resource}_dialog_opened: event_dialog_opened, upgrade_dialog_opened
+//   - {resource}_toggled: theme_toggled, settings_toggled
+//   - Describes user UI interactions, not outcomes
+//
+// Pattern: Track clicks (not useEffect/dialog state) to avoid duplicates
+// =====================================================
 
 export type ServerAnalyticsEventName =
   // ─────────────────────────────────────────────────
@@ -44,7 +59,14 @@ export type ServerAnalyticsEventName =
   | "billing_checkout_created" // LemonSqueezy checkout initiated
   | "billing_payment_successful" // Payment processed successfully
   | "billing_payment_failed" // Payment failed
-  | "billing_subscription_updated"; // Subscription modified
+  | "billing_subscription_updated" // Subscription modified
+
+  // ─────────────────────────────────────────────────
+  // Life Events (Feature engagement)
+  // ─────────────────────────────────────────────────
+  | "life_event_created" // User created a life event
+  | "life_event_updated" // User updated an existing event
+  | "life_event_deleted"; // User deleted an event
 
 export type ClientAnalyticsEventName =
   // ─────────────────────────────────────────────────
@@ -62,9 +84,9 @@ export type ClientAnalyticsEventName =
   // ─────────────────────────────────────────────────
   // Anonymous conversion funnel
   // ─────────────────────────────────────────────────
-  | "conversion_modal_opened" // Modal shown to anonymous user
-  | "conversion_modal_dismissed" // User dismissed without converting
-  | "conversion_modal_tab_changed" // Switched between signup/signin
+  | "conversion_dialog_opened" // Dialog shown to anonymous user
+  | "conversion_dialog_dismissed" // User dismissed without converting
+  | "conversion_dialog_tab_changed" // Switched between signup/signin
 
   // ─────────────────────────────────────────────────
   // Upload flow
@@ -96,7 +118,12 @@ export type ClientAnalyticsEventName =
   // Cookie consent
   // ─────────────────────────────────────────────────
   | "cookie_consent_accepted"
-  | "cookie_consent_declined";
+  | "cookie_consent_declined"
+
+  // ─────────────────────────────────────────────────
+  // Life Events (Feature engagement)
+  // ─────────────────────────────────────────────────
+  | "life_event_dialog_opened";
 
 // =====================================================
 // EVENT PROPERTIES DEFINITIONS - SERVER
@@ -237,6 +264,28 @@ export type ServerEventPropertiesDefinition = {
     previousTier?: "PLUS" | "ELITE";
     newTier?: "PLUS" | "ELITE";
   };
+
+  // ─────────────────────────────────────────────────
+  // Life Events
+  // ─────────────────────────────────────────────────
+  life_event_created: {
+    eventType: string; // EventType from schema
+    hasEndDate: boolean;
+    hasLocation: boolean;
+  };
+
+  life_event_updated: {
+    eventType: string;
+    previousEventType?: string; // If type changed
+    changedEndDate: boolean;
+    changedLocation: boolean;
+  };
+
+  life_event_deleted: {
+    eventType: string;
+    hadEndDate: boolean;
+    hadLocation: boolean;
+  };
 };
 
 // =====================================================
@@ -282,17 +331,17 @@ export type ClientEventPropertiesDefinition = {
   // ─────────────────────────────────────────────────
   // Anonymous conversion funnel
   // ─────────────────────────────────────────────────
-  conversion_modal_opened: {
+  conversion_dialog_opened: {
     reason: "upload_limit" | "feature_gate" | "share_prompt" | "manual";
     hasProfile: boolean;
   };
 
-  conversion_modal_dismissed: {
+  conversion_dialog_dismissed: {
     reason: "upload_limit" | "feature_gate" | "share_prompt" | "manual";
     timeSpentSeconds: number;
   };
 
-  conversion_modal_tab_changed: {
+  conversion_dialog_tab_changed: {
     from: "create" | "signin";
     to: "create" | "signin";
   };
@@ -368,6 +417,16 @@ export type ClientEventPropertiesDefinition = {
   // ─────────────────────────────────────────────────
   cookie_consent_accepted: undefined;
   cookie_consent_declined: undefined;
+
+  // ─────────────────────────────────────────────────
+  // Life Events
+  // ─────────────────────────────────────────────────
+  life_event_dialog_opened: {
+    source: "dashboard" | "insights_page";
+    trigger: "card_click" | "button_click"; // What UI element was clicked
+    hasExistingEvents: boolean;
+    eventCount: number;
+  };
 };
 
 // =====================================================

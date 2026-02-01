@@ -2,15 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Info,
-  Check,
-  Plus,
-  Image as ImageIcon,
-  MessageCircle,
-} from "lucide-react";
+import { Check, Plus, Image as ImageIcon, MessageCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -104,7 +96,7 @@ export function StackView({
 
             {/* Caption overlay if present */}
             {currentPhoto.caption && (
-              <div className="absolute right-0 bottom-0 left-0 bg-gradient-to-t from-black/70 to-transparent p-4">
+              <div className="absolute right-0 bottom-0 left-0 bg-linear-to-t from-black/70 to-transparent p-4">
                 <p className="text-sm text-white">{currentPhoto.caption}</p>
               </div>
             )}
@@ -136,8 +128,8 @@ export function StackView({
             <div
               className={`absolute inset-x-0 bottom-0 p-5 text-white ${
                 isTinder
-                  ? "bg-gradient-to-t from-black via-black/60 to-transparent"
-                  : "bg-gradient-to-t from-black/80 via-black/40 to-transparent"
+                  ? "bg-linear-to-t from-black via-black/60 to-transparent"
+                  : "bg-linear-to-t from-black/80 via-black/40 to-transparent"
               }`}
             >
               {/* Name and verified badge */}
@@ -203,7 +195,7 @@ export function StackView({
             </div>
           </div>
         ) : (
-          <div className="flex h-full w-full flex-col items-center justify-center bg-gradient-to-b from-gray-100 to-gray-200 p-6 text-center transition-all hover:from-gray-200 hover:to-gray-300">
+          <div className="flex h-full w-full flex-col items-center justify-center bg-linear-to-b from-gray-100 to-gray-200 p-6 text-center transition-all hover:from-gray-200 hover:to-gray-300">
             <div className="mb-4 rounded-full bg-white/80 p-4 shadow-sm">
               <Plus className="text-muted-foreground h-8 w-8" />
             </div>

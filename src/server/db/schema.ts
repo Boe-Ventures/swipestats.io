@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import {
+  foreignKey,
   index,
   pgEnum,
   pgTable,
@@ -1137,12 +1138,8 @@ export const profileComparisonFeedbackTable = pgTable(
       .primaryKey()
       .$defaultFn(() => createId("pcf")),
     // Polymorphic target - exactly one must be set
-    contentId: t.text().references(() => comparisonColumnContentTable.id, {
-      onDelete: "cascade",
-    }),
-    columnId: t
-      .text()
-      .references(() => comparisonColumnTable.id, { onDelete: "cascade" }),
+    contentId: t.text(),
+    columnId: t.text(),
     // Author - always required (anonymous users get userId via Better Auth)
     authorId: t
       .text()
@@ -1169,6 +1166,17 @@ export const profileComparisonFeedbackTable = pgTable(
     index("pcf_column_id_idx").on(table.columnId),
     index("pcf_author_id_idx").on(table.authorId),
     index("pcf_created_at_idx").on(table.createdAt),
+    // Custom FK names to avoid PostgreSQL 63-char identifier limit
+    foreignKey({
+      name: "pcf_content_fk",
+      columns: [table.contentId],
+      foreignColumns: [comparisonColumnContentTable.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "pcf_column_fk",
+      columns: [table.columnId],
+      foreignColumns: [comparisonColumnTable.id],
+    }).onDelete("cascade"),
   ],
 );
 

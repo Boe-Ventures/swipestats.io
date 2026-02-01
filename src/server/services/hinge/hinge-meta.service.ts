@@ -6,7 +6,7 @@ import type {
   HingeInteraction,
   ProfileMetaInsert,
 } from "@/server/db/schema";
-import { getMedian, getRatio } from "../meta-utils.service";
+import { getRatio } from "../meta-utils.service";
 
 type HingeProfileWithMatchesAndMessages = HingeProfile & {
   matches: (Match & { messages: Message[] })[];

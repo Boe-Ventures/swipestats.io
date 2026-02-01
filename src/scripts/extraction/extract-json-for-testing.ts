@@ -63,7 +63,7 @@ function ensureOutputDir() {
   }
 }
 
-function sanitizeFilename(str: string): string {
+function _sanitizeFilename(str: string): string {
   return str.replace(/[^a-z0-9_-]/gi, "_").toLowerCase();
 }
 

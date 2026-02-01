@@ -13,9 +13,9 @@ export function CTA({ label, href, variant = "primary", className }: CTAProps) {
 
   const variantClasses = {
     primary:
-      "bg-gradient-to-r from-rose-600 to-rose-700 text-white hover:from-rose-700 hover:to-rose-800 focus-visible:outline-rose-600",
+      "bg-linear-to-r from-rose-600 to-rose-700 text-white hover:from-rose-700 hover:to-rose-800 focus-visible:outline-rose-600",
     secondary:
-      "bg-gradient-to-r from-gray-700 to-gray-800 text-white hover:from-gray-800 hover:to-gray-900 focus-visible:outline-gray-700",
+      "bg-linear-to-r from-gray-700 to-gray-800 text-white hover:from-gray-800 hover:to-gray-900 focus-visible:outline-gray-700",
     ghost:
       "border-2 border-gray-300 text-gray-900 hover:border-gray-400 hover:bg-gray-50 focus-visible:outline-gray-500",
   };

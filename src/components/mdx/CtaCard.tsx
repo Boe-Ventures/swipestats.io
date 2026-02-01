@@ -94,7 +94,7 @@ export function CtaCard({
         aria-hidden="true"
         className="pointer-events-none absolute right-0 bottom-0 z-0 translate-x-[40%] translate-y-[43%] rotate-12 select-none"
       >
-        <div className="size-[38rem] rounded-full bg-gradient-to-br from-[#ff4694] to-[#E11D48] opacity-30 blur-3xl" />
+        <div className="size-[38rem] rounded-full bg-linear-to-br from-[#ff4694] to-[#E11D48] opacity-30 blur-3xl" />
       </div>
     </section>
   );

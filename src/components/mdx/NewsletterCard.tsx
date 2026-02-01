@@ -104,7 +104,7 @@ export function NewsletterCard({
 
   if (wasSubscribedOnMount || justSubscribed) {
     return (
-      <section className="not-prose relative my-8 overflow-hidden rounded-xl border border-emerald-200 bg-gradient-to-br from-emerald-50 to-white shadow-lg">
+      <section className="not-prose relative my-8 overflow-hidden rounded-xl border border-emerald-200 bg-linear-to-br from-emerald-50 to-white shadow-lg">
         <div className="relative z-10 p-6 sm:p-8">
           <div className="flex items-start gap-4">
             <div className="flex h-12 w-12 flex-none items-center justify-center rounded-full bg-emerald-100">
@@ -228,7 +228,7 @@ export function NewsletterCard({
             clipPath:
               "polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)",
           }}
-          className="absolute right-0 bottom-0 aspect-[1155/678] w-[36.125rem] translate-x-[20%] translate-y-[30%] rotate-12 bg-gradient-to-tr from-[#ff80b5] to-[#CF364C] opacity-20 sm:w-[48rem]"
+          className="absolute right-0 bottom-0 aspect-[1155/678] w-[36.125rem] translate-x-[20%] translate-y-[30%] rotate-12 bg-linear-to-tr from-[#ff80b5] to-[#CF364C] opacity-20 sm:w-[48rem]"
         />
       </div>
     </section>

@@ -18,7 +18,6 @@ import {
 } from "@/server/services/cohort/cohort.service";
 import { getEffectiveTier } from "@/server/services/gating.service";
 import { db } from "@/server/db";
-import type { Gender } from "@/server/db/schema";
 import { eq, sql, desc } from "drizzle-orm";
 import {
   userTable,

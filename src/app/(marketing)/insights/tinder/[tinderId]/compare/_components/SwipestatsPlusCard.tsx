@@ -71,12 +71,12 @@ export function SwipestatsPlusCard({
     return (
       <div
         className={cn(
-          "overflow-hidden rounded-3xl bg-gradient-to-br from-pink-50 via-rose-50 to-purple-50 p-8 shadow-lg ring-1 ring-gray-200",
+          "overflow-hidden rounded-3xl bg-linear-to-br from-pink-50 via-rose-50 to-purple-50 p-8 shadow-lg ring-1 ring-gray-200",
           className,
         )}
       >
         <div className="flex flex-col items-center gap-4 text-center">
-          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-to-br from-pink-500 to-rose-500 shadow-lg">
+          <div className="flex h-16 w-16 items-center justify-center rounded-full bg-linear-to-br from-pink-500 to-rose-500 shadow-lg">
             <Crown className="h-8 w-8 text-white" />
           </div>
           <div>
@@ -124,7 +124,7 @@ export function SwipestatsPlusCard({
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Link
               href="/directory"
-              className="flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-pink-600 to-rose-600 px-6 py-3 text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:scale-105 hover:from-pink-700 hover:to-rose-700 sm:w-auto"
+              className="flex w-full items-center justify-center gap-2 rounded-lg bg-linear-to-r from-pink-600 to-rose-600 px-6 py-3 text-sm font-semibold text-white shadow-lg transition-all duration-200 hover:scale-105 hover:from-pink-700 hover:to-rose-700 sm:w-auto"
             >
               Browse Directory
               <ArrowRight className="h-4 w-4" />
@@ -157,7 +157,7 @@ export function SwipestatsPlusCard({
           <h3 className="text-3xl font-semibold tracking-tight text-gray-900">
             SwipeStats+
           </h3>
-          <Badge className="bg-gradient-to-r from-pink-600 to-rose-600 text-white">
+          <Badge className="bg-linear-to-r from-pink-600 to-rose-600 text-white">
             Launch Offer
           </Badge>
         </div>

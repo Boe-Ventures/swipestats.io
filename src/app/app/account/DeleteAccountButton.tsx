@@ -18,11 +18,7 @@ import { useTRPC } from "@/trpc/react";
 import { useMutation } from "@tanstack/react-query";
 import { authClient } from "@/server/better-auth/client";
 
-interface DeleteAccountButtonProps {
-  userId: string;
-}
-
-export function DeleteAccountButton({ userId }: DeleteAccountButtonProps) {
+export function DeleteAccountButton() {
   const router = useRouter();
   const trpc = useTRPC();
   const [isDeleting, setIsDeleting] = useState(false);
@@ -43,6 +39,7 @@ export function DeleteAccountButton({ userId }: DeleteAccountButtonProps) {
     try {
       await deleteAccount.mutateAsync();
     } catch (error) {
+      console.error(error);
       setIsDeleting(false);
     }
   };

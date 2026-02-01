@@ -117,7 +117,7 @@ export function BlogSearch({ allPosts, resultCount }: BlogSearchProps) {
                 onClick={() => handleCategoryClick(category)}
                 className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-all ${
                   isActive
-                    ? "bg-gradient-to-r from-pink-600 to-rose-600 text-white shadow-sm"
+                    ? "bg-linear-to-r from-pink-600 to-rose-600 text-white shadow-sm"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >

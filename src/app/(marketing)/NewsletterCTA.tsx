@@ -95,7 +95,7 @@ export default function NewsletterCTA() {
         </p>
       </div>
       {wasSubscribedOnMount || justSubscribed ? (
-        <div className="thank-you-card mx-auto mt-10 max-w-lg rounded-lg bg-gradient-to-r from-rose-900 to-rose-500 p-8 text-white shadow-md">
+        <div className="thank-you-card mx-auto mt-10 max-w-lg rounded-lg bg-linear-to-r from-rose-900 to-rose-500 p-8 text-white shadow-md">
           <h2 className="mb-4 text-2xl font-semibold">
             {wasSubscribedOnMount && !justSubscribed
               ? "You're already subscribed! 🎉"

@@ -64,7 +64,7 @@ function AuthorInfo({
           className={`flex size-10 flex-none items-center justify-center rounded-full ${
             isDark
               ? "bg-white/10"
-              : "bg-gradient-to-br from-blue-500 to-purple-600"
+              : "bg-linear-to-br from-blue-500 to-purple-600"
           }`}
         >
           <span className="text-sm font-semibold text-white">
@@ -99,7 +99,7 @@ function BlogCardSimple({
           {format(parseISO(post.publishedAt), "MMM dd, yyyy")}
         </time>
         {post.category && (
-          <span className="relative z-10 rounded-md bg-gradient-to-r from-pink-600 to-rose-600 px-3 py-1.5 font-bold text-white shadow-sm">
+          <span className="relative z-10 rounded-md bg-linear-to-r from-pink-600 to-rose-600 px-3 py-1.5 font-bold text-white shadow-sm">
             {post.category}
           </span>
         )}
@@ -206,7 +206,7 @@ export function BlogGrid({
                   {/* Dark overlay */}
                   <div className="absolute inset-0 -z-10 bg-gray-900/60 mix-blend-multiply" />
                   {/* Gradient overlay */}
-                  <div className="absolute inset-0 -z-10 bg-gradient-to-t from-gray-900 via-gray-900/70" />
+                  <div className="absolute inset-0 -z-10 bg-linear-to-t from-gray-900 via-gray-900/70" />
                   <div className="absolute inset-0 -z-10 rounded-xl ring-1 ring-gray-900/10 ring-inset" />
                   <div className="flex flex-wrap items-center gap-2 overflow-hidden text-sm leading-6 text-gray-300">
                     <time
@@ -279,7 +279,7 @@ export function BlogGrid({
                   {/* Dark overlay */}
                   <div className="absolute inset-0 -z-10 bg-gray-900/60 mix-blend-multiply" />
                   {/* Gradient overlay */}
-                  <div className="absolute inset-0 -z-10 bg-gradient-to-t from-gray-900 via-gray-900/70" />
+                  <div className="absolute inset-0 -z-10 bg-linear-to-t from-gray-900 via-gray-900/70" />
                   <div className="absolute inset-0 -z-10 rounded-xl ring-1 ring-gray-900/10 ring-inset" />
                   <div className="flex flex-wrap items-center gap-2 overflow-hidden text-sm leading-6 text-gray-300">
                     <time dateTime={post.publishedAt} className="mr-2">

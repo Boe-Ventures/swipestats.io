@@ -28,6 +28,7 @@ export function SignUpForm() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [showEmailField, setShowEmailField] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isAnonymousLoading, setIsAnonymousLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Username availability checking
@@ -107,7 +108,7 @@ export function SignUpForm() {
   };
 
   const handleAnonymousSignIn = async () => {
-    setIsLoading(true);
+    setIsAnonymousLoading(true);
     setError(null);
 
     try {
@@ -131,7 +132,7 @@ export function SignUpForm() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
-      setIsLoading(false);
+      setIsAnonymousLoading(false);
     }
   };
 
@@ -347,9 +348,9 @@ export function SignUpForm() {
           variant="outline"
           className="w-full"
           onClick={handleAnonymousSignIn}
-          disabled={isLoading}
+          disabled={isAnonymousLoading}
         >
-          {isLoading ? (
+          {isAnonymousLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Loading...

@@ -208,7 +208,7 @@ export default async function AccountPage() {
                     your data including dating app profiles, matches, and
                     messages will be permanently removed.
                   </p>
-                  <DeleteAccountButton userId={session.user.id} />
+                  <DeleteAccountButton />
                 </div>
               </CardContent>
             </Card>
