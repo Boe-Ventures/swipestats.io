@@ -5,7 +5,10 @@ import {
   hingeProfileTable,
   profileMetaTable,
   userTable,
+  type Gender,
 } from "@/server/db/schema";
+import { GENDERS } from "@/server/db/constants";
+import { getGenderDisplayName } from "@/lib/utils/gender";
 import { publicProcedure } from "../trpc";
 import type { TRPCRouterRecord } from "@trpc/server";
 
@@ -39,7 +42,7 @@ export const directoryRouter = {
         conditions.push(eq(tinderProfileTable.computed, false));
 
         if (input.gender != null) {
-          conditions.push(eq(tinderProfileTable.genderStr, input.gender));
+          conditions.push(eq(tinderProfileTable.gender, input.gender));
         }
         if (input.ageMin != null) {
           conditions.push(gte(tinderProfileTable.ageAtUpload, input.ageMin));
@@ -116,7 +119,7 @@ export const directoryRouter = {
           id: tinderProfileTable.tinderId,
           platform: sql<"tinder">`'tinder'`,
           ageAtUpload: tinderProfileTable.ageAtUpload,
-          gender: tinderProfileTable.genderStr,
+          gender: tinderProfileTable.gender,
           city: tinderProfileTable.city,
           country: tinderProfileTable.country,
           createdAt: tinderProfileTable.createdAt,
@@ -303,12 +306,12 @@ export const directoryRouter = {
     const [tinderGenders, hingeGenders] = await Promise.all([
       ctx.db
         .select({
-          gender: tinderProfileTable.genderStr,
+          gender: tinderProfileTable.gender,
           count: sql<number>`count(*)`,
         })
         .from(tinderProfileTable)
         .where(eq(tinderProfileTable.computed, false)) // Exclude synthetic profiles
-        .groupBy(tinderProfileTable.genderStr),
+        .groupBy(tinderProfileTable.gender),
       ctx.db
         .select({
           gender: hingeProfileTable.gender,
@@ -318,19 +321,19 @@ export const directoryRouter = {
         .groupBy(hingeProfileTable.gender),
     ]);
 
-    const genderMap = new Map<string, number>();
+    const genderMap = new Map<Gender, number>();
     [...tinderGenders, ...hingeGenders].forEach(({ gender, count }) => {
       if (gender) {
         genderMap.set(gender, (genderMap.get(gender) ?? 0) + count);
       }
     });
 
-    const genders = Array.from(genderMap.entries())
-      .map(([value, count]) => ({
-        value,
-        label: value,
-        count,
-      }))
+    const genders = GENDERS.map((value) => ({
+      value,
+      label: getGenderDisplayName(value),
+      count: genderMap.get(value) ?? 0,
+    }))
+      .filter((g) => g.count > 0)
       .sort((a, b) => b.count - a.count);
 
     // Get age range

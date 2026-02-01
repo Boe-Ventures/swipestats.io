@@ -1,31 +1,14 @@
 import { differenceInDays, differenceInYears } from "date-fns";
 import he from "he";
 
-import type {
-  AnonymizedTinderDataJSON,
-  TinderJsonGender,
-} from "@/lib/interfaces/TinderDataJSON";
+import type { AnonymizedTinderDataJSON } from "@/lib/interfaces/TinderDataJSON";
 import { getFirstAndLastDayOnApp } from "@/lib/profile.utils";
 import type {
-  Gender,
   TinderProfileInsert,
   TinderUsageInsert,
 } from "@/server/db/schema";
 import type { ExpandedUsageValue } from "@/lib/profile.utils";
-
-/**
- * Maps Tinder JSON gender strings to our Gender enum
- */
-export function mapGender(gender: TinderJsonGender): Gender {
-  const genderMap: Record<TinderJsonGender, Gender> = {
-    M: "MALE",
-    F: "FEMALE",
-    Other: "OTHER",
-    More: "MORE",
-    Unknown: "UNKNOWN",
-  };
-  return genderMap[gender] ?? "UNKNOWN";
-}
+import { mapTinderGender } from "@/lib/utils/gender";
 
 /**
  * Transforms AnonymizedTinderDataJSON into database profile format
@@ -67,7 +50,7 @@ export function transformTinderJsonToProfile(
     ageAtLastUsage,
     createDate: new Date(user.create_date),
     activeTime: user.active_time ? new Date(user.active_time) : null,
-    gender: mapGender(user.gender),
+    gender: mapTinderGender(user.gender),
     genderStr: user.gender,
     bio: user.bio ? he.decode(user.bio) : null, // Decode HTML entities
     bioOriginal: user.bio ?? null,
@@ -92,9 +75,9 @@ export function transformTinderJsonToProfile(
     educationLevel: user.education ?? null,
     ageFilterMin: user.age_filter_min,
     ageFilterMax: user.age_filter_max,
-    interestedIn: mapGender(user.interested_in),
+    interestedIn: mapTinderGender(user.interested_in),
     interestedInStr: user.interested_in,
-    genderFilter: mapGender(user.gender_filter),
+    genderFilter: mapTinderGender(user.gender_filter),
     genderFilterStr: user.gender_filter,
     swipestatsVersion: "SWIPESTATS_4",
     firstDayOnApp,

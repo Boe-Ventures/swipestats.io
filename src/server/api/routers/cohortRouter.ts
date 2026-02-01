@@ -18,6 +18,7 @@ import {
 } from "@/server/services/cohort/cohort.service";
 import { getEffectiveTier } from "@/server/services/gating.service";
 import { db } from "@/server/db";
+import type { Gender } from "@/server/db/schema";
 import { eq, sql, desc } from "drizzle-orm";
 import {
   userTable,
@@ -88,14 +89,14 @@ export const cohortRouter = {
         }
 
         // Return Hinge cohorts
+        // Map MORE and UNKNOWN to OTHER for cohort matching
+        const gender = hingeProfile.gender;
+        const normalizedHingeGender =
+          gender === "MORE" || gender === "UNKNOWN" ? "OTHER" : gender;
+
         return getRelevantCohortsForProfile({
           dataProvider: "HINGE",
-          gender:
-            hingeProfile.gender === "Man"
-              ? "MALE"
-              : hingeProfile.gender === "Woman"
-                ? "FEMALE"
-                : "OTHER",
+          gender: normalizedHingeGender,
           age: hingeProfile.ageAtUpload,
           country: hingeProfile.user?.country,
         });

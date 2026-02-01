@@ -144,18 +144,9 @@ async function queryHingeProfilesForCohort(cohort: CohortDefinition): Promise<
 > {
   const conditions: SQL[] = [];
 
-  // Gender filter (Hinge uses text field)
+  // Gender filter
   if (cohort.gender) {
-    // Map to Hinge gender values
-    const hingeGender =
-      cohort.gender === "MALE"
-        ? "Man"
-        : cohort.gender === "FEMALE"
-          ? "Woman"
-          : null;
-    if (hingeGender) {
-      conditions.push(eq(hingeProfileTable.gender, hingeGender));
-    }
+    conditions.push(eq(hingeProfileTable.gender, cohort.gender));
   }
 
   // Age filter (using ageAtUpload)

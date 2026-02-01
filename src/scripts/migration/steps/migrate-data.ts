@@ -1,3 +1,9 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument */
+/* eslint-disable @typescript-eslint/no-unsafe-return */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access */
+/* eslint-disable @typescript-eslint/no-unsafe-call */
 /**
  * Migrate Data Step
  *
@@ -151,9 +157,8 @@ async function batchInsert<T>(
   log(`Completed ${tableName} migration in ${formatDuration(totalDuration)}`);
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type NeonSql = any;
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+
 type DrizzleDb = any;
 
 // ---- MIGRATION FUNCTIONS ------------------------------------------
