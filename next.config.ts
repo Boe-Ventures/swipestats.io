@@ -60,6 +60,22 @@ const config: NextConfig = {
       },
     ];
   },
+
+  // PostHog reverse proxy (improves tracking reliability, bypasses ad blockers)
+  async rewrites() {
+    return [
+      // PostHog static assets (session recordings, surveys, etc.)
+      {
+        source: "/ingest/static/:path*",
+        destination: "https://eu-assets.i.posthog.com/static/:path*",
+      },
+      // PostHog API (events, feature flags, decide endpoint, etc.)
+      {
+        source: "/ingest/:path*",
+        destination: "https://eu.i.posthog.com/:path*",
+      },
+    ];
+  },
 };
 
 export default config;

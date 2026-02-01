@@ -21,13 +21,8 @@ export const hingeProfileRouter = {
     )
     .query(async ({ ctx, input }) => {
       const profile = await getHingeProfile(input.hingeId);
-      if (!profile) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Profile not found",
-        });
-      }
-      return profile;
+      // Return null instead of throwing - better for optional queries
+      return profile ?? null;
     }),
 
   // Get profile with stats for insights page

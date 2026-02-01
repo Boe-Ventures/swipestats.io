@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { authClient } from "@/server/better-auth/client";
 import { useTRPC } from "@/trpc/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { UploadLayout } from "../_components/UploadLayout";
@@ -17,14 +16,9 @@ import { DEFAULT_HINGE_CONSENT } from "@/lib/interfaces/HingeConsent";
 interface HingeUploadPageProps {
   isUpdate: boolean;
   isDebug: boolean;
-  session: null; // Not used anymore, kept for type compatibility
 }
 
-export function HingeUploadPage({
-  isUpdate,
-  isDebug,
-  session: _session,
-}: HingeUploadPageProps) {
+export function HingeUploadPage({ isUpdate, isDebug }: HingeUploadPageProps) {
   const [payload, setPayload] = useState<SwipestatsHingeProfilePayload | null>(
     null,
   );
@@ -34,36 +28,27 @@ export function HingeUploadPage({
   );
   const [brokenImageUrls, setBrokenImageUrls] = useState<string[]>([]);
 
-  // Use Better Auth's built-in session hook
-  const { data: session } = authClient.useSession();
-
-  // Admin tools - check if profile exists (dev only, requires auth)
+  // Fetch profile data after drag-and-drop to check if updating vs creating
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const hingeId = payload?.hingeId;
   const isDevelopment = process.env.NODE_ENV === "development";
 
-  // Only fetch if authenticated - prevents UNAUTHORIZED errors in incognito/logged-out state
-  const isAuthenticated = !!session?.user;
-  const shouldFetchAdminData = !!hingeId && isDevelopment && isAuthenticated;
-
-  const { data: existingProfile } = useQuery(
-    trpc.admin.getHingeProfile.queryOptions(
-      { hingeId: hingeId ?? "" },
-      {
-        enabled: shouldFetchAdminData,
-        retry: false, // Don't retry on auth errors
-        staleTime: 60000, // Cache for 1 minute to avoid repeated calls
-      },
-    ),
-  );
+  // Preemptively fetch profile data (public endpoint, no auth required)
+  // This lets users see if they're updating an existing profile before submitting
+  const { data: existingProfile } = useQuery({
+    ...trpc.hingeProfile.get.queryOptions({ hingeId: hingeId ?? "" }),
+    enabled: !!hingeId,
+    retry: false,
+    staleTime: 60000, // Cache for 1 minute to avoid repeated calls
+  });
 
   const deleteProfileMutation = useMutation(
     trpc.admin.deleteHingeProfile.mutationOptions({
       onSuccess: () => {
-        // Invalidate the query so it refetches and returns null
+        // Invalidate the public profile query so it refetches and returns null
         void queryClient.invalidateQueries(
-          trpc.admin.getHingeProfile.queryOptions({ hingeId: hingeId ?? "" }),
+          trpc.hingeProfile.get.queryOptions({ hingeId: hingeId ?? "" }),
         );
         alert("Profile deleted successfully!");
         setPayload(null); // Reset to upload state
@@ -165,10 +150,22 @@ export function HingeUploadPage({
               payload={getFilteredPayload()}
               isUpdate={isUpdate}
               disabled={!!error}
-              session={session}
               consent={consent}
             />
           </div>
+
+          {/* User-facing notification - profile exists */}
+          {existingProfile && (
+            <div className="mt-6 rounded-lg border-2 border-blue-300 bg-blue-50 p-4">
+              <h3 className="mb-1 text-sm font-semibold text-blue-900">
+                ℹ️ Updating Existing Profile
+              </h3>
+              <p className="text-xs text-blue-700">
+                This profile already exists. Your data will be updated with the
+                latest information.
+              </p>
+            </div>
+          )}
 
           {/* Dev Admin Card - only visible in development */}
           {isDevelopment && existingProfile && (

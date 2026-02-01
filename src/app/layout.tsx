@@ -10,6 +10,8 @@ import { Toaster } from "@/components/ui/toast";
 
 import { TRPCReactProvider } from "@/trpc/react";
 import { UpgradeProvider } from "@/contexts/UpgradeContext";
+import { AnalyticsProvider } from "@/contexts/AnalyticsProvider";
+import { Analytics as VercelAnalytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: "Create T3 App",
@@ -43,12 +45,15 @@ export default function RootLayout({
       <body className="bg-background text-foreground min-h-screen font-sans antialiased">
         <TRPCReactProvider>
           <ThemeProvider>
-            <UpgradeProvider>
-              <NuqsAdapter>{children}</NuqsAdapter>
-            </UpgradeProvider>
+            <AnalyticsProvider>
+              <UpgradeProvider>
+                <NuqsAdapter>{children}</NuqsAdapter>
+              </UpgradeProvider>
+            </AnalyticsProvider>
           </ThemeProvider>
         </TRPCReactProvider>
         <Toaster />
+        <VercelAnalytics />
       </body>
     </html>
   );

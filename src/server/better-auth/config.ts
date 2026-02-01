@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { admin, anonymous, username } from "better-auth/plugins";
+import { nextCookies } from "better-auth/next-js";
 
 import { env } from "@/env";
 import { db } from "@/server/db";
@@ -50,6 +51,16 @@ export const auth = betterAuth({
         defaultValue: false,
         input: false,
       },
+      // Location fields
+      city: {
+        type: "string",
+        required: false,
+      },
+      country: {
+        type: "string",
+        required: false,
+      },
+      // add more?
     },
   },
   trustedOrigins: [
@@ -82,6 +93,8 @@ export const auth = betterAuth({
         console.log(`[Auth] Data transfer completed successfully`);
       },
     }),
+    // Next.js cookie helper - MUST be last plugin in array
+    nextCookies(),
   ],
 });
 

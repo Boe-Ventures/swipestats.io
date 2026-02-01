@@ -105,7 +105,7 @@ MIGRATION.md          # Database migration guide
 
 ## Project History
 
-This repository is a continuation and complete rewrite of the original [swipestats.io](https://github.com/kristianeboe/swipestats.io) project. The new version features:
+This repository is a continuation and complete rewrite of the original [swipestats.io](https://github.com/Boe-Ventures/swipestats.io) project. The new version features:
 
 - Migration from Prisma to Drizzle ORM
 - Upgraded to Next.js 16 with App Router

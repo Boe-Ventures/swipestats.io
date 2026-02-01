@@ -6,7 +6,6 @@ import { SubmitButton } from "../../_components/SubmitButton";
 import { useTRPC } from "@/trpc/react";
 import { useMutation } from "@tanstack/react-query";
 import type { SwipestatsHingeProfilePayload } from "@/lib/interfaces/HingeDataJSON";
-import type { Session } from "@/server/better-auth/client";
 import { authClient } from "@/server/better-auth/client";
 import type { HingeConsentState } from "@/lib/interfaces/HingeConsent";
 import { filterPayloadByConsent } from "@/lib/utils/filterHingePayload";
@@ -19,7 +18,6 @@ interface HingeSubmitButtonProps {
   payload: SwipestatsHingeProfilePayload;
   isUpdate: boolean;
   disabled?: boolean;
-  session: Session | null;
   consent: HingeConsentState;
 }
 
@@ -27,11 +25,13 @@ export function HingeSubmitButton({
   payload,
   isUpdate,
   disabled,
-  session,
   consent,
 }: HingeSubmitButtonProps) {
   const router = useRouter();
   const [isCreatingSession, setIsCreatingSession] = useState(false);
+
+  // Use Better Auth's built-in session hook
+  const { data: session } = authClient.useSession();
 
   // Detect timezone and country once on mount
   const browserTimezone = useMemo(() => getBrowserTimezone(), []);

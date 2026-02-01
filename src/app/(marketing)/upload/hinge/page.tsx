@@ -30,5 +30,5 @@ export default async function HingeUpload({
   // Session will be fetched client-side if needed (for ?update=true)
   const { update, debug } = await hingeUploadCache.parse(searchParams);
 
-  return <HingeUploadPage isUpdate={update} isDebug={debug} session={null} />;
+  return <HingeUploadPage isUpdate={update} isDebug={debug} />;
 }

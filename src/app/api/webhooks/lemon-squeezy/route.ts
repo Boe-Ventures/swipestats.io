@@ -274,6 +274,7 @@ export async function POST(request: Request) {
               billing: "lifetime",
               testMode,
             });
+
             action = "upgraded";
             details = { tier: variantInfo.tier, lifetime: true };
           } else {
@@ -355,6 +356,7 @@ export async function POST(request: Request) {
             periodEnd: periodEnd ?? undefined,
             testMode,
           });
+
           action =
             eventName === "subscription_created" ? "activated" : "updated";
           details = {
@@ -392,6 +394,7 @@ export async function POST(request: Request) {
             periodEnd: endsAt ?? undefined,
             testMode,
           });
+
           action = "cancelled";
           details = { access_until: endsAt };
         } else {

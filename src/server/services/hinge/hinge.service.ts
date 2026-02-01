@@ -3,7 +3,7 @@ import type {
   AnonymizedHingeDataJSON,
   HingeMedia,
 } from "@/lib/interfaces/HingeDataJSON";
-import { withTransaction } from "@/server/db";
+import { withTransaction, db } from "@/server/db";
 import {
   hingeProfileTable,
   matchTable,
@@ -26,7 +26,6 @@ import { transformHingePromptsForDb } from "../profile/profile.service";
  * Get a Hinge profile by hingeId
  */
 export async function getHingeProfile(hingeId: string) {
-  const { db } = await import("@/server/db");
   return db.query.hingeProfileTable.findFirst({
     where: eq(hingeProfileTable.hingeId, hingeId),
   });
