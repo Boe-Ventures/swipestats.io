@@ -17,6 +17,54 @@ import {
   getTinderProfileWithUser,
   transferProfileOwnership,
 } from "@/server/services/profile/profile.service";
+import { trackServerEvent } from "@/server/services/analytics.service";
+
+/**
+ * Helper function to handle existing profile upload scenarios
+ * (user owns profile, anonymous transfer, or forbidden)
+ */
+async function handleExistingProfileUpload(params: {
+  existing: NonNullable<Awaited<ReturnType<typeof getTinderProfileWithUser>>>;
+  tinderId: string;
+  anonymizedTinderJson: AnonymizedTinderDataJSON;
+  currentUserId: string;
+  timezone?: string;
+  country?: string;
+}) {
+  const { existing, currentUserId, ...uploadParams } = params;
+
+  // Case B: User owns this profile - update it
+  if (existing.userId === currentUserId) {
+    console.log(`🔄 Updating existing profile for tinderId: ${params.tinderId}`);
+    return updateTinderProfile({
+      ...uploadParams,
+      userId: currentUserId,
+    });
+  }
+
+  // Case C: Profile owned by anonymous user - transfer then update
+  if (existing.user?.isAnonymous && existing.userId) {
+    console.log(
+      `🔀 Transferring profile ${params.tinderId} from anonymous user ${existing.userId} to ${currentUserId}`,
+    );
+    await transferProfileOwnership(
+      params.tinderId,
+      existing.userId,
+      currentUserId,
+    );
+    return updateTinderProfile({
+      ...uploadParams,
+      userId: currentUserId,
+    });
+  }
+
+  // Case D: Owned by claimed user - block
+  throw new TRPCError({
+    code: "FORBIDDEN",
+    message:
+      "This profile belongs to another user. Please sign in with a different account or use a different email address.",
+  });
+}
 
 export const profileRouter = {
   // Get profile by tinderId (basic profile only)
@@ -108,58 +156,77 @@ export const profileRouter = {
       // Check if profile exists and get user info
       const existing = await getTinderProfileWithUser(input.tinderId);
 
-      // Case A: New profile - create it
-      if (!existing) {
-        console.log(`📝 Creating new profile for tinderId: ${input.tinderId}`);
-        return createTinderProfile({
+      try {
+        // FAST PATH: Case A - New profile (99% of cases)
+        if (!existing) {
+          console.log(
+            `📝 Creating new profile for tinderId: ${input.tinderId}`,
+          );
+          const result = await createTinderProfile({
+            tinderId: input.tinderId,
+            anonymizedTinderJson: input.anonymizedTinderJson,
+            userId: ctx.session.user.id,
+            timezone: input.timezone,
+            country: input.country,
+          });
+
+          // Track success with rich metrics
+          trackServerEvent(ctx.session.user.id, "tinder_profile_created", {
+            tinderId: input.tinderId,
+            matchCount: result.metrics.matchCount,
+            messageCount: result.metrics.messageCount,
+            photoCount: result.metrics.photoCount,
+            usageDays: result.metrics.usageDays,
+            hasPhotos: result.metrics.hasPhotos,
+            processingTimeMs: result.metrics.processingTimeMs,
+            jsonSizeMB: result.metrics.jsonSizeMB,
+          });
+
+          return result.profile;
+        }
+
+        // SLOW PATH: Existing profile (1% of cases - update, transfer, or forbidden)
+        const result = await handleExistingProfileUpload({
+          existing,
           tinderId: input.tinderId,
           anonymizedTinderJson: input.anonymizedTinderJson,
-          userId: ctx.session.user.id,
+          currentUserId: ctx.session.user.id,
           timezone: input.timezone,
           country: input.country,
         });
-      }
 
-      // Case B: User owns this profile - update it
-      if (existing.userId === ctx.session.user.id) {
-        console.log(
-          `🔄 Updating existing profile for tinderId: ${input.tinderId}`,
-        );
-        return updateTinderProfile({
+        // Track success with rich metrics
+        trackServerEvent(ctx.session.user.id, "tinder_profile_updated", {
           tinderId: input.tinderId,
-          anonymizedTinderJson: input.anonymizedTinderJson,
-          userId: ctx.session.user.id,
-          timezone: input.timezone,
-          country: input.country,
+          matchCount: result.metrics.matchCount,
+          messageCount: result.metrics.messageCount,
+          photoCount: result.metrics.photoCount,
+          usageDays: result.metrics.usageDays,
+          hasPhotos: result.metrics.hasPhotos,
+          processingTimeMs: result.metrics.processingTimeMs,
+          jsonSizeMB: result.metrics.jsonSizeMB,
         });
-      }
 
-      // Case C: Profile owned by someone else
-      if (existing.user?.isAnonymous && existing.userId) {
-        // Transfer ownership from anonymous user, then update
-        console.log(
-          `🔀 Transferring profile ${input.tinderId} from anonymous user ${existing.userId} to ${ctx.session.user.id}`,
-        );
-        await transferProfileOwnership(
-          input.tinderId,
-          existing.userId,
-          ctx.session.user.id,
-        );
-        return updateTinderProfile({
+        return result.profile;
+      } catch (error) {
+        // Track failure - PostHog captures stack trace automatically
+        trackServerEvent(ctx.session.user.id, "tinder_profile_upload_failed", {
           tinderId: input.tinderId,
-          anonymizedTinderJson: input.anonymizedTinderJson,
-          userId: ctx.session.user.id,
-          timezone: input.timezone,
-          country: input.country,
+          errorType:
+            error instanceof TRPCError
+              ? error.code === "FORBIDDEN"
+                ? "ownership"
+                : "unknown"
+              : "unknown",
+          errorMessage:
+            error instanceof Error
+              ? error.message.slice(0, 200)
+              : "Unknown error",
+          jsonSizeMB:
+            JSON.stringify(input.anonymizedTinderJson).length / 1024 / 1024,
         });
+        throw error;
       }
-
-      // Case D: Owned by claimed user - block
-      throw new TRPCError({
-        code: "FORBIDDEN",
-        message:
-          "This profile belongs to another user. Please sign in with a different account or use a different email address.",
-      });
     }),
 
   // Create a new Tinder profile

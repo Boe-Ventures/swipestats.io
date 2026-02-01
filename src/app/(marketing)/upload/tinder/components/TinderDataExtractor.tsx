@@ -7,6 +7,8 @@ import { InfoAlert, PrimaryAlert } from "@/components/ui/alert";
 import type { SwipestatsProfilePayload } from "@/lib/interfaces/TinderDataJSON";
 import { extractTinderData } from "@/lib/upload/extract-tinder-data";
 import { ShieldCheckIcon } from "@heroicons/react/24/outline";
+import { useAnalytics } from "@/contexts/AnalyticsProvider";
+import { isGenderDataUnknown } from "@/lib/utils/gender";
 
 interface TinderDataExtractorProps {
   onExtracted: (payload: SwipestatsProfilePayload) => void;
@@ -17,12 +19,20 @@ export function TinderDataExtractor({
   onExtracted,
   onError,
 }: TinderDataExtractorProps) {
+  const { trackEvent } = useAnalytics();
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const processFile = async (file: File) => {
     setIsProcessing(true);
     setError(null);
+
+    // Track file processing start
+    trackEvent("upload_file_processing_started", {
+      provider: "tinder",
+      fileSize: file.size,
+      fileType: file.name.toLowerCase().endsWith(".zip") ? ".zip" : ".json",
+    });
 
     try {
       let jsonContent: string;
@@ -34,27 +44,49 @@ export function TinderDataExtractor({
         file.name.toLowerCase().endsWith(".zip")
       ) {
         // Extract data.json from ZIP
-        const zip = new JSZip();
-        const zipContent = await zip.loadAsync(file);
+        try {
+          const zip = new JSZip();
+          const zipContent = await zip.loadAsync(file);
 
-        // Find data.json in the ZIP
-        let dataJsonFile = zipContent.file("data.json");
-        if (!dataJsonFile) {
-          // Try finding it in subdirectories
-          const files = Object.keys(zipContent.files);
-          const dataJsonPath = files.find((path) =>
-            path.toLowerCase().endsWith("data.json"),
-          );
-          if (dataJsonPath) {
-            dataJsonFile = zipContent.file(dataJsonPath);
+          // Find data.json in the ZIP
+          let dataJsonFile = zipContent.file("data.json");
+          if (!dataJsonFile) {
+            // Try finding it in subdirectories
+            const files = Object.keys(zipContent.files);
+            const dataJsonPath = files.find((path) =>
+              path.toLowerCase().endsWith("data.json"),
+            );
+            if (dataJsonPath) {
+              dataJsonFile = zipContent.file(dataJsonPath);
+            }
           }
-        }
 
-        if (!dataJsonFile) {
-          throw new Error("Could not find data.json in ZIP archive");
-        }
+          if (!dataJsonFile) {
+            trackEvent("upload_file_read_failed", {
+              provider: "tinder",
+              fileSize: file.size,
+              fileType: ".zip",
+              errorType: "zip_extraction",
+              errorMessage: "Could not find data.json in ZIP archive",
+              filesInZip: Object.keys(zipContent.files).length,
+            });
+            throw new Error("Could not find data.json in ZIP archive");
+          }
 
-        jsonContent = await dataJsonFile.async("text");
+          jsonContent = await dataJsonFile.async("text");
+        } catch (zipErr) {
+          trackEvent("upload_file_read_failed", {
+            provider: "tinder",
+            fileSize: file.size,
+            fileType: ".zip",
+            errorType: "zip_extraction",
+            errorMessage:
+              zipErr instanceof Error
+                ? zipErr.message.slice(0, 200)
+                : "ZIP extraction failed",
+          });
+          throw zipErr;
+        }
       } else {
         // Read as regular JSON file
         jsonContent = await file.text();
@@ -62,11 +94,65 @@ export function TinderDataExtractor({
 
       // Extract and anonymize
       const payload = await extractTinderData(jsonContent);
+
+      // Track successful extraction (fires after anonymization completes)
+      const photoCount = Array.isArray(payload.anonymizedTinderJson.Photos)
+        ? payload.anonymizedTinderJson.Photos.length
+        : 0;
+      const hasWork = !!payload.anonymizedTinderJson.User.jobs?.[0];
+      
+      trackEvent("upload_preview_loaded", {
+        provider: "tinder",
+        tinderId: payload.tinderId,
+        fileSizeMB: jsonContent.length / 1024 / 1024,
+        matchCount: payload.anonymizedTinderJson.Messages.length,
+        messageCount: payload.anonymizedTinderJson.Messages.reduce(
+          (sum, m) => sum + m.messages.length,
+          0,
+        ),
+        photoCount: photoCount,
+        hasPhotos: photoCount > 0,
+        hasPhotosConsent: true, // Default true at preview stage
+        usageDays: Object.keys(payload.anonymizedTinderJson.Usage.app_opens)
+          .length,
+        hasWork: hasWork,
+        hasWorkConsent: true, // Default true at preview stage
+        hasUnknownGender: isGenderDataUnknown(
+          payload.anonymizedTinderJson.User.gender,
+        ),
+      });
+
       onExtracted(payload);
     } catch (err) {
       console.error("Error processing Tinder file:", err);
       const errorMessage =
         err instanceof Error ? err.message : "Failed to process Tinder data";
+
+      // Track specific error type
+      if (errorMessage.includes("json is invalid")) {
+        // Validation failure
+        trackEvent("upload_validation_failed", {
+          provider: "tinder",
+          missingFields: [], // Would need to export from extraction function
+          errorMessage: errorMessage.slice(0, 200),
+        });
+      } else {
+        // File read/extraction/parse failure - consolidated
+        const errorType = errorMessage.includes("ZIP")
+          ? "zip_extraction"
+          : errorMessage.includes("JSON")
+            ? "json_parse"
+            : "file_read";
+        
+        trackEvent("upload_file_read_failed", {
+          provider: "tinder",
+          fileSize: file.size,
+          fileType: file.name.toLowerCase().endsWith(".zip") ? ".zip" : ".json",
+          errorType: errorType,
+          errorMessage: errorMessage.slice(0, 200),
+        });
+      }
+
       setError(errorMessage);
       onError(errorMessage);
     } finally {

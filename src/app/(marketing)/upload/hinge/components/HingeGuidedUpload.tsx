@@ -111,6 +111,7 @@ export function HingeGuidedUpload({
         onComplete(payload);
       } catch (extractError) {
         // If extraction fails, just show the file status
+        // Note: Full error tracking happens in HingeDataExtractor which wraps this
         console.warn("Could not extract Hinge data yet:", extractError);
       }
     } catch (err) {

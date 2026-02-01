@@ -33,10 +33,18 @@ export type ServerAnalyticsEventName =
   | "anonymous_user_converted" // Guest → Real account
 
   // ─────────────────────────────────────────────────
-  // Profile events (Core product value)
+  // Tinder Profile events (Core product - 99% of usage)
   // ─────────────────────────────────────────────────
-  | "profile_uploaded" // Tinder/Hinge data uploaded successfully
-  | "profile_upload_failed" // Upload failed (for debugging)
+  | "tinder_profile_created" // New Tinder profile uploaded successfully
+  | "tinder_profile_updated" // Existing Tinder profile updated successfully
+  | "tinder_profile_upload_failed" // Tinder upload failed (for debugging)
+
+  // ─────────────────────────────────────────────────
+  // Hinge Profile events (New feature)
+  // ─────────────────────────────────────────────────
+  | "hinge_profile_created" // New Hinge profile uploaded successfully
+  | "hinge_profile_updated" // Existing Hinge profile updated successfully
+  | "hinge_profile_upload_failed" // Hinge upload failed (for debugging)
 
   // ─────────────────────────────────────────────────
   // Comparison events (Unique feature)
@@ -94,17 +102,19 @@ export type ClientAnalyticsEventName =
   | "upload_started"
   | "upload_file_selected"
   | "upload_provider_selected" // User chose Tinder/Hinge/Bumble
+  | "upload_file_processing_started" // File selected (drag or click)
+  | "upload_file_read_failed" // Cannot read file (includes ZIP extraction, JSON parse)
+  | "upload_validation_failed" // Missing required fields
+  | "upload_preview_loaded" // Successfully reached preview (success milestone!)
+  | "upload_consent_photos_toggled" // User changed photo consent
+  | "upload_consent_work_toggled" // User changed work consent
+  | "upload_gender_corrected" // User manually fixed gender (Tinder only)
+  | "upload_submit_clicked" // User clicked submit button
 
   // ─────────────────────────────────────────────────
   // Insights interactions
   // ─────────────────────────────────────────────────
-  | "insights_chart_interacted"
   | "insights_tab_changed"
-
-  // ─────────────────────────────────────────────────
-  // Comparison interactions
-  // ─────────────────────────────────────────────────
-  | "comparison_filter_changed"
 
   // ─────────────────────────────────────────────────
   // Monetization funnel
@@ -177,20 +187,69 @@ export type ServerEventPropertiesDefinition = {
   };
 
   // ─────────────────────────────────────────────────
-  // Profile events
+  // Tinder Profile events
   // ─────────────────────────────────────────────────
-  profile_uploaded: {
-    provider: "tinder" | "hinge" | "bumble";
+  tinder_profile_created: {
+    tinderId: string;
     matchCount: number;
     messageCount: number;
+    photoCount: number;
+    usageDays: number;
     hasPhotos: boolean;
-    isUpdate: boolean; // Re-upload vs first upload
+    processingTimeMs: number;
+    jsonSizeMB: number;
   };
 
-  profile_upload_failed: {
-    provider: "tinder" | "hinge" | "bumble";
-    errorType: "validation" | "parsing" | "database" | "unknown";
-    errorMessage?: string;
+  tinder_profile_updated: {
+    tinderId: string;
+    matchCount: number;
+    messageCount: number;
+    photoCount: number;
+    usageDays: number;
+    hasPhotos: boolean;
+    processingTimeMs: number;
+    jsonSizeMB: number;
+  };
+
+  tinder_profile_upload_failed: {
+    tinderId?: string; // Optional - might fail before ID is known
+    errorType: "auth" | "ownership" | "database" | "unknown";
+    errorMessage: string;
+    jsonSizeMB?: number;
+  };
+
+  // ─────────────────────────────────────────────────
+  // Hinge Profile events
+  // ─────────────────────────────────────────────────
+  hinge_profile_created: {
+    hingeId: string;
+    matchCount: number;
+    messageCount: number;
+    photoCount: number;
+    promptCount: number;
+    interactionCount: number;
+    hasPhotos: boolean;
+    processingTimeMs: number;
+    jsonSizeMB: number;
+  };
+
+  hinge_profile_updated: {
+    hingeId: string;
+    matchCount: number;
+    messageCount: number;
+    photoCount: number;
+    promptCount: number;
+    interactionCount: number;
+    hasPhotos: boolean;
+    processingTimeMs: number;
+    jsonSizeMB: number;
+  };
+
+  hinge_profile_upload_failed: {
+    hingeId?: string; // Optional - might fail before ID is known
+    errorType: "auth" | "ownership" | "database" | "unknown";
+    errorMessage: string;
+    jsonSizeMB?: number;
   };
 
   // ─────────────────────────────────────────────────
@@ -364,25 +423,83 @@ export type ClientEventPropertiesDefinition = {
     source: "upload_modal" | "instructions_page";
   };
 
+  upload_file_processing_started: {
+    provider: "tinder" | "hinge";
+    fileSize: number;
+    fileType: string; // ".zip" or ".json"
+  };
+
+  upload_file_read_failed: {
+    provider: "tinder" | "hinge";
+    fileSize: number;
+    fileType: string; // ".zip" or ".json"
+    errorType: "file_read" | "zip_extraction" | "json_parse";
+    errorMessage: string;
+    filesInZip?: number; // Only for zip_extraction errors
+  };
+
+  upload_validation_failed: {
+    provider: "tinder" | "hinge";
+    missingFields: string[];
+    errorMessage: string;
+  };
+
+  upload_preview_loaded: {
+    provider: "tinder" | "hinge";
+    tinderId?: string; // Available from this point onwards (Tinder)
+    hingeId?: string; // Available from this point onwards (Hinge)
+    fileSizeMB: number;
+    matchCount: number;
+    messageCount: number;
+    photoCount: number; // Always present, 0 if no consent
+    hasPhotos: boolean; // Actual data presence
+    hasPhotosConsent: boolean; // User consent state
+    usageDays?: number; // Tinder only
+    hasWork?: boolean; // Tinder only - actual data presence
+    hasWorkConsent?: boolean; // Tinder only - user consent state
+    promptCount?: number; // Hinge only
+    hasUnknownGender?: boolean; // Tinder only
+  };
+
+  upload_consent_photos_toggled: {
+    provider: "tinder" | "hinge";
+    tinderId?: string;
+    hingeId?: string;
+    consentGiven: boolean;
+  };
+
+  upload_consent_work_toggled: {
+    provider: "tinder" | "hinge";
+    tinderId?: string;
+    hingeId?: string;
+    consentGiven: boolean;
+  };
+
+  upload_gender_corrected: {
+    tinderId?: string; // Tinder only
+    hadUnknownGender: boolean;
+    hadUnknownInterestedIn: boolean;
+    hadUnknownGenderFilter: boolean;
+  };
+
+  upload_submit_clicked: {
+    provider: "tinder" | "hinge";
+    tinderId?: string;
+    hingeId?: string;
+    photoCount: number; // Always present, 0 if no consent
+    hasPhotos: boolean; // Actual data presence
+    hasPhotosConsent: boolean; // User consent state
+    hasWork?: boolean; // Tinder only - actual data presence
+    hasWorkConsent?: boolean; // Tinder only - user consent state
+    matchCount: number;
+  };
+
   // ─────────────────────────────────────────────────
   // Insights interactions
   // ─────────────────────────────────────────────────
-  insights_chart_interacted: {
-    chartType: string;
-    action: "zoom" | "hover" | "filter" | "export";
-  };
-
   insights_tab_changed: {
     from: string;
     to: string;
-  };
-
-  // ─────────────────────────────────────────────────
-  // Comparison interactions
-  // ─────────────────────────────────────────────────
-  comparison_filter_changed: {
-    filterType: string;
-    value: string;
   };
 
   // ─────────────────────────────────────────────────

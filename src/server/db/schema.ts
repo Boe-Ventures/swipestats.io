@@ -651,6 +651,10 @@ export const mediaTable = pgTable(
 export type Media = typeof mediaTable.$inferSelect;
 export type MediaInsert = typeof mediaTable.$inferInsert;
 
+// ProfileMeta - Pre-computed aggregate statistics for profiles
+// Computed by createSimplifiedProfileMeta() in meta.service.ts
+// IMPORTANT: All metrics exclude synthetic days (dateIsMissingFromOriginalData = true)
+// to avoid skewing statistics with inferred zero values
 export const profileMetaTable = pgTable("profile_meta", (t) => ({
   id: t.text().primaryKey(),
   tinderProfileId: t
@@ -677,7 +681,7 @@ export const profileMetaTable = pgTable("profile_meta", (t) => ({
   // Core rates (pre-computed for faster queries)
   likeRate: t.doublePrecision().notNull(), // swipeLikes / totalSwipes
   matchRate: t.doublePrecision().notNull(), // matches / swipeLikes
-  swipesPerDay: t.doublePrecision().notNull(), // totalSwipes / daysInPeriod
+  swipesPerDay: t.doublePrecision().notNull(), // totalSwipes / daysActive (only days with appOpens > 0)
 
   // Conversation stats (essential for "Your Chats" section)
   conversationCount: t.integer().notNull(),

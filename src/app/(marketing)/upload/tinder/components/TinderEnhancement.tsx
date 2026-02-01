@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { InfoAlert } from "@/components/ui/alert";
 import { GenderForm } from "../../_components/ProfileEnhancement/GenderForm";
 import { isGenderDataUnknown } from "@/lib/utils/gender";
@@ -7,6 +8,7 @@ import type { SwipestatsProfilePayload } from "@/lib/interfaces/TinderDataJSON";
 import type { TinderJsonGender } from "@/server/db/constants";
 import type { TinderConsentState } from "@/lib/interfaces/TinderConsent";
 import { TinderConsentForm } from "./TinderConsentForm";
+import { useAnalytics } from "@/contexts/AnalyticsProvider";
 
 interface TinderEnhancementProps {
   payload: SwipestatsProfilePayload;
@@ -21,6 +23,8 @@ export function TinderEnhancement({
   consent,
   onConsentChange,
 }: TinderEnhancementProps) {
+  const { trackEvent } = useAnalytics();
+  const previousConsent = useRef(consent);
   const user = payload.anonymizedTinderJson.User;
   const needsGender =
     isGenderDataUnknown(user.gender) ||
@@ -32,6 +36,19 @@ export function TinderEnhancement({
     genderFilter: string;
     interestedIn: string;
   }) => {
+    const hadChanges =
+      data.gender !== user.gender ||
+      data.interestedIn !== user.interested_in ||
+      data.genderFilter !== user.gender_filter;
+
+    if (hadChanges) {
+      trackEvent("upload_gender_corrected", {
+        hadUnknownGender: isGenderDataUnknown(user.gender),
+        hadUnknownInterestedIn: isGenderDataUnknown(user.interested_in),
+        hadUnknownGenderFilter: isGenderDataUnknown(user.gender_filter),
+      });
+    }
+
     onUpdate({
       ...payload,
       anonymizedTinderJson: {
@@ -44,6 +61,27 @@ export function TinderEnhancement({
         },
       },
     });
+  };
+
+  const handleConsentChange = (newConsent: TinderConsentState) => {
+    // Track photo consent toggle
+    if (previousConsent.current.photos !== newConsent.photos) {
+      trackEvent("upload_consent_photos_toggled", {
+        provider: "tinder",
+        consentGiven: newConsent.photos,
+      });
+    }
+
+    // Track work consent toggle
+    if (previousConsent.current.work !== newConsent.work) {
+      trackEvent("upload_consent_work_toggled", {
+        provider: "tinder",
+        consentGiven: newConsent.work,
+      });
+    }
+
+    previousConsent.current = newConsent;
+    onConsentChange(newConsent);
   };
 
   return (
@@ -74,7 +112,7 @@ export function TinderEnhancement({
       {/* Data Sharing Consent Section */}
       {!needsGender && (
         <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-          <TinderConsentForm value={consent} onChange={onConsentChange} />
+          <TinderConsentForm value={consent} onChange={handleConsentChange} />
         </div>
       )}
     </div>

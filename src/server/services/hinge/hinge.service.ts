@@ -23,6 +23,24 @@ import { createHingeProfileMeta } from "./hinge-meta.service";
 import { transformHingePromptsForDb } from "../profile/profile.service";
 
 /**
+ * Result type returned from Hinge profile creation/update operations
+ * Contains the profile and metrics for analytics tracking
+ */
+export type HingeProfileResult = {
+  profile: HingeProfile;
+  metrics: {
+    processingTimeMs: number;
+    matchCount: number;
+    messageCount: number;
+    photoCount: number;
+    promptCount: number;
+    interactionCount: number;
+    hasPhotos: boolean;
+    jsonSizeMB: number;
+  };
+};
+
+/**
  * Get a Hinge profile by hingeId
  */
 export async function getHingeProfile(hingeId: string) {
@@ -64,7 +82,7 @@ export async function createHingeProfile(data: {
   userId: string;
   timezone?: string;
   country?: string;
-}): Promise<HingeProfile> {
+}): Promise<HingeProfileResult> {
   const startTime = Date.now();
 
   // Log JSON size
@@ -94,11 +112,13 @@ export async function createHingeProfile(data: {
   // 2. Create interactions, matches, and messages
   const messagesStart = Date.now();
   console.log(`\n💬 [2/5] Processing conversations...`);
-  const { interactionsInput, matchesInput, messagesInput } =
-    createHingeMessagesAndMatches(
-      data.anonymizedHingeJson.Matches,
-      data.hingeId,
-    );
+  const result = createHingeMessagesAndMatches(
+    data.anonymizedHingeJson.Matches,
+    data.hingeId,
+  );
+  const interactionsInput = result.interactionsInput;
+  const matchesInput = result.matchesInput;
+  const messagesInput = result.messagesInput;
   console.log(`✅ Processed in ${Date.now() - messagesStart}ms`);
 
   // 3. Transform prompts
@@ -121,7 +141,7 @@ export async function createHingeProfile(data: {
   // 5. Execute transaction to insert all data
   const txStart = Date.now();
   console.log(`\n💾 [5/5] Starting database transaction...`);
-  const result = await withTransaction(async (tx) => {
+  const profile = await withTransaction(async (tx) => {
     // Insert original file
     const fileStart = Date.now();
     const fileId = createId("oaf");
@@ -272,14 +292,32 @@ export async function createHingeProfile(data: {
 
   console.log(`\n✅ Transaction completed in ${Date.now() - txStart}ms`);
 
+  // Compute metrics for analytics
   const totalTime = Date.now() - startTime;
+  const mediaInput = transformHingeMediaToDb(
+    data.anonymizedHingeJson.Media ?? [],
+    data.hingeId,
+  );
+
   console.log(`\n🎉 Hinge profile creation complete for ${data.hingeId}`);
   console.log(
     `⏱️  Total time: ${totalTime}ms (${(totalTime / 1000).toFixed(2)}s)`,
   );
   console.log(`────────────────────────────────────────\n`);
 
-  return result;
+  return {
+    profile,
+    metrics: {
+      processingTimeMs: totalTime,
+      matchCount: matchesInput.length,
+      messageCount: messagesInput.length,
+      photoCount: mediaInput.length,
+      promptCount: promptsInput.length,
+      interactionCount: interactionsInput.length,
+      hasPhotos: mediaInput.length > 0,
+      jsonSizeMB: parseFloat(jsonSizeMB),
+    },
+  };
 }
 
 /**
@@ -292,11 +330,15 @@ export async function updateHingeProfile(data: {
   userId: string;
   timezone?: string;
   country?: string;
-}): Promise<HingeProfile> {
+}): Promise<HingeProfileResult> {
   const startTime = Date.now();
 
   console.log(`\n🔄 Starting Hinge profile update for ${data.hingeId}`);
   console.log(`   User ID: ${data.userId}`);
+
+  // Log JSON size
+  const jsonString = JSON.stringify(data.anonymizedHingeJson);
+  const jsonSizeMB = (jsonString.length / 1024 / 1024).toFixed(2);
 
   // 1. Transform JSON data to database format
   const transformStart = Date.now();
@@ -312,11 +354,13 @@ export async function updateHingeProfile(data: {
   // 2. Create interactions, matches, and messages
   const messagesStart = Date.now();
   console.log(`\n💬 [2/5] Processing conversations...`);
-  const { interactionsInput, matchesInput, messagesInput } =
-    createHingeMessagesAndMatches(
-      data.anonymizedHingeJson.Matches,
-      data.hingeId,
-    );
+  const result = createHingeMessagesAndMatches(
+    data.anonymizedHingeJson.Matches,
+    data.hingeId,
+  );
+  const interactionsInput = result.interactionsInput;
+  const matchesInput = result.matchesInput;
+  const messagesInput = result.messagesInput;
   console.log(`✅ Processed in ${Date.now() - messagesStart}ms`);
 
   // 3. Transform prompts
@@ -339,7 +383,7 @@ export async function updateHingeProfile(data: {
   // 5. Execute transaction to update all data
   const txStart = Date.now();
   console.log(`\n💾 [5/5] Starting database transaction...`);
-  const result = await withTransaction(async (tx) => {
+  const profile = await withTransaction(async (tx) => {
     // Delete old related data
     console.log(
       `   ✓ Deleting old matches, messages, prompts, interactions, photos, and metadata...`,
@@ -501,12 +545,30 @@ export async function updateHingeProfile(data: {
 
   console.log(`\n✅ Transaction completed in ${Date.now() - txStart}ms`);
 
+  // Compute metrics for analytics
   const totalTime = Date.now() - startTime;
+  const mediaInput = transformHingeMediaToDb(
+    data.anonymizedHingeJson.Media ?? [],
+    data.hingeId,
+  );
+
   console.log(`\n🎉 Hinge profile update complete for ${data.hingeId}`);
   console.log(
     `⏱️  Total time: ${totalTime}ms (${(totalTime / 1000).toFixed(2)}s)`,
   );
   console.log(`────────────────────────────────────────\n`);
 
-  return result;
+  return {
+    profile,
+    metrics: {
+      processingTimeMs: totalTime,
+      matchCount: matchesInput.length,
+      messageCount: messagesInput.length,
+      photoCount: mediaInput.length,
+      promptCount: promptsInput.length,
+      interactionCount: interactionsInput.length,
+      hasPhotos: mediaInput.length > 0,
+      jsonSizeMB: parseFloat(jsonSizeMB),
+    },
+  };
 }

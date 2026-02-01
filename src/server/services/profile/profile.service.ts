@@ -26,6 +26,23 @@ import { transformTinderJsonToProfile } from "./transform.service";
 import { createUsageRecords } from "./usage.service";
 
 /**
+ * Result type returned from Tinder profile creation/update operations
+ * Contains the profile and metrics for analytics tracking
+ */
+export type TinderProfileResult = {
+  profile: TinderProfile;
+  metrics: {
+    processingTimeMs: number;
+    matchCount: number;
+    messageCount: number;
+    photoCount: number;
+    usageDays: number;
+    hasPhotos: boolean;
+    jsonSizeMB: number;
+  };
+};
+
+/**
  * Get a Tinder profile by tinderId
  */
 export async function getTinderProfile(
@@ -178,7 +195,7 @@ export async function createTinderProfile(data: {
   userId: string;
   timezone?: string;
   country?: string;
-}): Promise<TinderProfile> {
+}): Promise<TinderProfileResult> {
   const startTime = Date.now();
 
   // Log JSON size
@@ -236,10 +253,12 @@ export async function createTinderProfile(data: {
   // 4. Create messages and matches
   const messagesStart = Date.now();
   console.log(`\n💬 [3/6] Processing messages and matches...`);
-  const { matchesInput, messagesInput } = createMessagesAndMatches(
+  const result = createMessagesAndMatches(
     data.anonymizedTinderJson.Messages,
     data.tinderId,
   );
+  const matchesInput = result.matchesInput;
+  const messagesInput = result.messagesInput;
   console.log(`✅ Processed in ${Date.now() - messagesStart}ms`);
   console.log(`   Matches: ${matchesInput.length}`);
   console.log(`   Messages: ${messagesInput.length}`);
@@ -253,7 +272,7 @@ export async function createTinderProfile(data: {
   // 6. Execute transaction to insert all data
   const txStart = Date.now();
   console.log(`\n💾 [5/6] Starting database transaction...`);
-  const result = await withTransaction(async (tx) => {
+  const profile = await withTransaction(async (tx) => {
     // Insert original file (DB only - blob upload disabled)
     const fileStart = Date.now();
     const fileId = createId("oaf");
@@ -397,14 +416,31 @@ export async function createTinderProfile(data: {
 
   console.log(`\n✅ Transaction completed in ${Date.now() - txStart}ms`);
 
+  // Compute metrics for analytics
   const totalTime = Date.now() - startTime;
+  const photosInput = transformTinderPhotosToMedia(
+    data.anonymizedTinderJson.Photos,
+    data.tinderId,
+  );
+
   console.log(`\n🎉 Profile creation complete for ${data.tinderId}`);
   console.log(
     `⏱️  Total time: ${totalTime}ms (${(totalTime / 1000).toFixed(2)}s)`,
   );
   console.log(`────────────────────────────────────────\n`);
 
-  return result;
+  return {
+    profile,
+    metrics: {
+      processingTimeMs: totalTime,
+      matchCount: matchesInput.length,
+      messageCount: messagesInput.length,
+      photoCount: photosInput.length,
+      usageDays: usageData.length,
+      hasPhotos: photosInput.length > 0,
+      jsonSizeMB: parseFloat(jsonSizeMB),
+    },
+  };
 }
 
 /**
@@ -417,11 +453,15 @@ export async function updateTinderProfile(data: {
   userId: string;
   timezone?: string;
   country?: string;
-}): Promise<TinderProfile> {
+}): Promise<TinderProfileResult> {
   const startTime = Date.now();
 
   console.log(`\n🔄 Starting profile update for ${data.tinderId}`);
   console.log(`   User ID: ${data.userId}`);
+
+  // Log JSON size
+  const jsonString = JSON.stringify(data.anonymizedTinderJson);
+  const jsonSizeMB = (jsonString.length / 1024 / 1024).toFixed(2);
 
   // Transform data (same as create)
   const transformStart = Date.now();
@@ -450,10 +490,12 @@ export async function updateTinderProfile(data: {
   // Create messages and matches
   const messagesStart = Date.now();
   console.log(`\n💬 [3/6] Processing messages and matches...`);
-  const { matchesInput, messagesInput } = createMessagesAndMatches(
+  const result = createMessagesAndMatches(
     data.anonymizedTinderJson.Messages,
     data.tinderId,
   );
+  const matchesInput = result.matchesInput;
+  const messagesInput = result.messagesInput;
   console.log(`✅ Processed in ${Date.now() - messagesStart}ms`);
   console.log(`   Matches: ${matchesInput.length}`);
   console.log(`   Messages: ${messagesInput.length}`);
@@ -467,7 +509,7 @@ export async function updateTinderProfile(data: {
   // Execute transaction to update all data
   const txStart = Date.now();
   console.log(`\n💾 [5/6] Starting database transaction...`);
-  const result = await withTransaction(async (tx) => {
+  const profile = await withTransaction(async (tx) => {
     // Delete old related data
     // IMPORTANT: Delete messages first because they have onDelete: "restrict" on matchId
     console.log(
@@ -641,14 +683,31 @@ export async function updateTinderProfile(data: {
 
   console.log(`\n✅ Transaction completed in ${Date.now() - txStart}ms`);
 
+  // Compute metrics for analytics
   const totalTime = Date.now() - startTime;
+  const photosInput = transformTinderPhotosToMedia(
+    data.anonymizedTinderJson.Photos,
+    data.tinderId,
+  );
+
   console.log(`\n🎉 Profile update complete for ${data.tinderId}`);
   console.log(
     `⏱️  Total time: ${totalTime}ms (${(totalTime / 1000).toFixed(2)}s)`,
   );
   console.log(`────────────────────────────────────────\n`);
 
-  return result;
+  return {
+    profile,
+    metrics: {
+      processingTimeMs: totalTime,
+      matchCount: matchesInput.length,
+      messageCount: messagesInput.length,
+      photoCount: photosInput.length,
+      usageDays: usageData.length,
+      hasPhotos: photosInput.length > 0,
+      jsonSizeMB: parseFloat(jsonSizeMB),
+    },
+  };
 }
 
 /**
