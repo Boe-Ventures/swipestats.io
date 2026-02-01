@@ -6,10 +6,10 @@ export type ServerAnalyticsEventName =
   // ─────────────────────────────────────────────────
   // User authentication events
   // ─────────────────────────────────────────────────
-  | "user_signed_up" // First account creation (anonymous or email)
-  | "user_account_created" // Added email/password or OAuth credentials
-  | "user_signed_in"
-  | "user_signed_out"
+  | "user_signed_up" //✅ First account creation (anonymous or email)
+  | "user_account_created" //✅ Added email/password or OAuth credentials
+  | "user_signed_in" // ✅
+  | "user_signed_out" // ✅
 
   // ─────────────────────────────────────────────────
   // Anonymous user events (Lead generation)

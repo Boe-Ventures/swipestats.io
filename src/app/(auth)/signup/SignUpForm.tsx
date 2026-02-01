@@ -70,7 +70,7 @@ export function SignUpForm() {
       }
     };
 
-    const timer = setTimeout(checkUsername, 500);
+    const timer = setTimeout(() => void checkUsername(), 500);
     return () => clearTimeout(timer);
   }, [username]);
 
@@ -111,7 +111,16 @@ export function SignUpForm() {
     setError(null);
 
     try {
-      const { data, error } = await authClient.signIn.anonymous();
+      const { data, error } = await authClient.signIn.anonymous(
+        {
+          fetchOptions: {
+            headers: {
+              "X-Anonymous-Source": "direct",
+            },
+          },
+        },
+        undefined, // query params
+      );
 
       if (error) {
         setError(error.message ?? "Failed to sign in anonymously");

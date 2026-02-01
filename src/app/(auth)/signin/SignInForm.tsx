@@ -51,7 +51,16 @@ export function SignInForm() {
     setError(null);
 
     try {
-      const { data, error } = await authClient.signIn.anonymous();
+      const { data, error } = await authClient.signIn.anonymous(
+        {
+          fetchOptions: {
+            headers: {
+              "X-Anonymous-Source": "direct",
+            },
+          },
+        },
+        undefined, // query params
+      );
 
       if (error) {
         setError(error.message ?? "Failed to sign in anonymously");
@@ -167,7 +176,7 @@ export function SignInForm() {
           </Button>
 
           <div className="text-center text-sm text-gray-600">
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <Link
               href="/signup"
               className="text-rose-600 hover:text-rose-500 hover:underline"

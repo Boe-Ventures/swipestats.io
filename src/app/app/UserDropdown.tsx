@@ -18,6 +18,7 @@ import {
 
 import { authClient } from "@/server/better-auth/client";
 import type { Session } from "@/server/better-auth/config";
+import { useAnalytics } from "@/contexts/AnalyticsProvider";
 
 interface UserDropdownProps {
   user: Session["user"];
@@ -25,8 +26,10 @@ interface UserDropdownProps {
 
 export function UserDropdown({ user }: UserDropdownProps) {
   const router = useRouter();
+  const { trackEvent } = useAnalytics();
 
   const handleSignOut = async () => {
+    trackEvent("sign_out_clicked", undefined);
     await authClient.signOut();
     router.push("/");
     router.refresh();

@@ -72,7 +72,13 @@ export function HingeSubmitButton({
     if (!session) {
       setIsCreatingSession(true);
       try {
-        const { error } = await authClient.signIn.anonymous();
+        const { error } = await authClient.signIn.anonymous({
+          fetchOptions: {
+            headers: {
+              "X-Anonymous-Source": "upload_flow",
+            },
+          },
+        });
         if (error) {
           alert("Failed to create session. Please try again.");
           setIsCreatingSession(false);

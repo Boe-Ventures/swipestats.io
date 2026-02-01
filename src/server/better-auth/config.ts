@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { admin, anonymous, username } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
+import { createAuthMiddleware } from "better-auth/api";
 
 import { env } from "@/env";
 import { db } from "@/server/db";
@@ -64,18 +65,47 @@ export const auth = betterAuth({
       // add more?
     },
   },
+  // ─────────────────────────────────────────────────
+  // Endpoint Hooks - Access to request context
+  // ─────────────────────────────────────────────────
+  // Use hooks.after when you need access to request context (headers, query params, etc.)
+  // that isn't available in databaseHooks. This runs as part of the auth flow,
+  // so there's no additional performance overhead.
+  hooks: {
+    after: createAuthMiddleware(async (ctx) => {
+      // Only handle anonymous sign-in endpoint (early return for all other endpoints)
+      if (ctx.path !== "/sign-in/anonymous") return;
+
+      const newSession = ctx.context.newSession;
+      if (!newSession?.user) return;
+
+      // Read source from custom header (passed from client via fetchOptions)
+      // This lets us track where anonymous users are coming from for analytics
+      const sourceHeader = ctx.headers?.get("x-anonymous-source");
+      const source =
+        sourceHeader === "upload_flow" || sourceHeader === "comparison_view"
+          ? sourceHeader
+          : "direct";
+
+      // Track anonymous user creation with specific source
+      if (newSession.user.isAnonymous) {
+        console.log(
+          `[Auth] Anonymous user created: ${newSession.user.id} (source: ${source})`,
+        );
+        trackServerEvent(newSession.user.id, "anonymous_user_created", {
+          source,
+        });
+      }
+    }),
+  },
   databaseHooks: {
     user: {
       create: {
         after: async (user) => {
           try {
-            // Skip external tracking for anonymous users (fake emails)
-            // Track with a separate event for analytics funnel
+            // Anonymous users are tracked in hooks.after (where we have request context)
             if (user.isAnonymous) {
               console.log("[Auth] Anonymous user created:", user.id);
-              trackServerEvent(user.id, "anonymous_user_created", {
-                source: "direct",
-              });
               return;
             }
 
@@ -123,6 +153,16 @@ export const auth = betterAuth({
             trackServerEvent(session.userId, "user_signed_in", {});
           } catch (error) {
             console.error("[Auth] Error in session.create.after hook:", error);
+          }
+        },
+      },
+      delete: {
+        after: async (session) => {
+          try {
+            console.log("[Auth] Session deleted:", session.userId);
+            trackServerEvent(session.userId, "user_signed_out", undefined);
+          } catch (error) {
+            console.error("[Auth] Error in session.delete.after hook:", error);
           }
         },
       },

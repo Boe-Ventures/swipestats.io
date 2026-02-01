@@ -86,7 +86,13 @@ export function PublishDialog({
 
     try {
       // Step 1: Create anonymous session
-      const sessionResult = await authClient.signIn.anonymous();
+      const sessionResult = await authClient.signIn.anonymous({
+        fetchOptions: {
+          headers: {
+            "X-Anonymous-Source": "comparison_view",
+          },
+        },
+      });
       if (sessionResult.error) {
         throw new Error(
           sessionResult.error.message || "Failed to create session",
@@ -139,9 +145,9 @@ export function PublishDialog({
               />
             </div>
             <p className="text-muted-foreground text-xs">
-              You're creating an anonymous account. Your name will only be
-              visible to the profile owner. Your version will be named "
-              {name.trim() || "Your"}'s Version".
+              You&apos;re creating an anonymous account. Your name will only be
+              visible to the profile owner. Your version will be named &quot;
+              {name.trim() || "Your"}&apos;s Version&quot;.
             </p>
           </div>
           <DialogFooter>

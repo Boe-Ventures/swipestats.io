@@ -8,7 +8,6 @@ import { useMutation } from "@tanstack/react-query";
 import type { SwipestatsProfilePayload } from "@/lib/interfaces/TinderDataJSON";
 import { authClient } from "@/server/better-auth/client";
 import { isGenderDataUnknown } from "@/lib/utils/gender";
-import type { TinderJsonGender } from "@/server/db/constants";
 import type { TinderConsentState } from "@/lib/interfaces/TinderConsent";
 import { filterPayloadByConsent } from "@/lib/utils/filterTinderPayload";
 
@@ -53,7 +52,13 @@ export function TinderSubmitButton({
     if (!session) {
       setIsCreatingSession(true);
       try {
-        const { error } = await authClient.signIn.anonymous();
+        const { error } = await authClient.signIn.anonymous({
+          fetchOptions: {
+            headers: {
+              "X-Anonymous-Source": "upload_flow",
+            },
+          },
+        });
         if (error) {
           alert("Failed to create session. Please try again.");
           setIsCreatingSession(false);

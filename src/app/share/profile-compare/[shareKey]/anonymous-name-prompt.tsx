@@ -62,7 +62,13 @@ export function AnonymousNamePrompt({
 
     try {
       // Step 1: Create anonymous session
-      const sessionResult = await authClient.signIn.anonymous();
+      const sessionResult = await authClient.signIn.anonymous({
+        fetchOptions: {
+          headers: {
+            "X-Anonymous-Source": "comparison_view",
+          },
+        },
+      });
       if (sessionResult.error) {
         throw new Error(
           sessionResult.error.message || "Failed to create session",
