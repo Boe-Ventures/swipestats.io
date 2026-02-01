@@ -86,22 +86,28 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
   // PostHog is already initialized in instrumentation-client.ts
   // No need to re-initialize here
 
-  // Auto-consent for logged-in non-anonymous users
+  // Auto-consent for ANY user who signs up (anonymous or full)
   useEffect(() => {
-    if (session.data?.user && !session.data.user.isAnonymous && !hasConsent) {
-      console.info("🔐 [Analytics] Auto-consent for logged-in user");
+    if (session.data?.user && !hasConsent) {
+      console.info("🔐 [Analytics] Auto-consent for user:", {
+        isAnonymous: session.data.user.isAnonymous,
+      });
       localStorage.setItem("cookieConsent", "true");
       localStorage.setItem("cookieConsentTimestamp", Date.now().toString());
       setHasConsent(true);
       setShowBanner(false);
 
-      // Enable PostHog tracking for logged-in users
+      // Enable PostHog tracking WITHOUT autocapture
       posthog.set_config({
-        autocapture: true,
+        autocapture: false, // KEEP OFF - manual events only
         capture_pageview: "history_change",
         capture_pageleave: true,
         disable_session_recording: false,
       });
+
+      // Start session replay for ALL users (anonymous and full)
+      posthog.startSessionRecording();
+
       // Capture initial pageview
       posthog.capture("$pageview");
     }
@@ -119,11 +125,13 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
 
         // Enable PostHog tracking if user previously consented
         posthog.set_config({
-          autocapture: true,
+          autocapture: false, // KEEP OFF - manual events only
           capture_pageview: "history_change",
           capture_pageleave: true,
           disable_session_recording: false,
         });
+        // Start session replay
+        posthog.startSessionRecording();
         // Capture initial pageview
         posthog.capture("$pageview");
       } else if (storedConsent === null) {
@@ -297,11 +305,14 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
 
     // Enable PostHog tracking features now that consent is given
     posthog.set_config({
-      autocapture: true,
+      autocapture: false, // KEEP OFF - manual events only
       capture_pageview: "history_change", // Track pageviews on navigation
       capture_pageleave: true,
       disable_session_recording: false,
     });
+
+    // Start session replay
+    posthog.startSessionRecording();
 
     // Manually capture the initial pageview that was missed before consent
     posthog.capture("$pageview");

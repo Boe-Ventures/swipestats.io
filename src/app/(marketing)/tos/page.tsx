@@ -822,6 +822,32 @@ export default function TosPage() {
           electronic communications from us.
         </p>
 
+        <h3>18.8 Analytics and Session Recording</h3>
+        <p>
+          By creating and using an account (including anonymous accounts), you
+          agree that we may:
+        </p>
+        <ul>
+          <li>Collect usage analytics to improve service quality</li>
+          <li>
+            Record your sessions to help debug issues and enhance user
+            experience
+          </li>
+          <li>
+            Use privacy-focused analytics tools (PostHog, Vercel Analytics)
+          </li>
+        </ul>
+        <p>We do not:</p>
+        <ul>
+          <li>Sell your analytics data</li>
+          <li>Track you across other websites</li>
+          <li>Use automatic data capture (only track specific user actions)</li>
+        </ul>
+        <p>
+          Session recordings are enabled for all users. You can request deletion
+          of your recordings at any time by contacting support.
+        </p>
+
         <h2>19. Contact Information</h2>
         <p>
           <strong>All Inquiries:</strong>{" "}

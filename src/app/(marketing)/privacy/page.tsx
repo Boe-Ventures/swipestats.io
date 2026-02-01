@@ -685,13 +685,29 @@ export default function PrivacyPage() {
 
         <h3>11.2 Cookie Consent</h3>
         <p>In accordance with Norwegian law and GDPR:</p>
+        <p>
+          <strong>For browsing users:</strong> We obtain explicit consent before
+          setting non-essential cookies for analytics.
+        </p>
+        <p>
+          <strong>For account users:</strong> When you create an account
+          (including anonymous accounts), analytics tracking is automatically
+          enabled under legitimate interest (GDPR Art. 6(1)(f)) to:
+        </p>
         <ul>
-          <li>
-            We obtain explicit consent before setting non-essential cookies
-          </li>
-          <li>You can withdraw consent at any time through cookie settings</li>
-          <li>Pre-selected checkboxes are not used</li>
+          <li>Improve service quality and user experience</li>
+          <li>Detect and prevent fraud</li>
+          <li>Analyze product usage for feature development</li>
         </ul>
+        <p>
+          <strong>Session replays:</strong> Enabled for all users to help debug
+          issues and improve the product experience.
+        </p>
+        <p>
+          You can withdraw consent at any time. Withdrawing consent will not
+          affect the lawfulness of processing based on consent before
+          withdrawal.
+        </p>
 
         <h3>11.3 Managing Cookies</h3>
         <ul>
