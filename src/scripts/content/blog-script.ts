@@ -147,8 +147,6 @@ const blogPostMetadataSchema = z.object({
     .describe("Estimated reading time in minutes"),
 });
 
-type BlogPostMetadata = z.infer<typeof blogPostMetadataSchema>;
-
 // ---- MAIN FUNCTION ----
 
 async function generateBlogPost(url: string) {

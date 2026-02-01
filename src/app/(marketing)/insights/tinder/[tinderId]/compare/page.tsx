@@ -6,7 +6,7 @@ export default async function CompareInsightsPage({
 }: {
   params: Promise<{ tinderId: string }>;
 }) {
-  const { tinderId } = await params;
+  const { tinderId: _tinderId } = await params;
 
   return (
     <ComparisonProvider>

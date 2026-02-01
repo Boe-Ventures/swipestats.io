@@ -102,7 +102,7 @@ export function ComparisonDialog() {
     );
   }, [data?.profiles]);
 
-  const availableProfiles = useMemo(() => {
+  const _availableProfiles = useMemo(() => {
     if (hasPremiumAccess) {
       // Premium users see all real profiles
       return data?.profiles.filter((p) => p.id !== tinderId) || [];
@@ -113,7 +113,7 @@ export function ComparisonDialog() {
   }, [data?.profiles, tinderId, hasPremiumAccess, demoProfiles]);
 
   // Premium profiles (locked for free users)
-  const premiumProfiles = useMemo(() => {
+  const _premiumProfiles = useMemo(() => {
     if (hasPremiumAccess) return [];
     return data?.profiles.filter((p) => p.id !== tinderId).slice(0, 4) || [];
   }, [data?.profiles, tinderId, hasPremiumAccess]);

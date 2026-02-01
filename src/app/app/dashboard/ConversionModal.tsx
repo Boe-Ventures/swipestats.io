@@ -39,7 +39,7 @@ export function ConversionModal({
   initialEmail,
 }: ConversionModalProps) {
   const router = useRouter();
-  const { data: session } = authClient.useSession();
+  const { data: _session } = authClient.useSession();
   const [activeTab, setActiveTab] = useState<"create" | "signin">("create");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

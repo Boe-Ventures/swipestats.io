@@ -221,7 +221,7 @@ export function DatingFunnel() {
         </CardHeader>
         <CardContent>
           <div className="space-y-6">
-            {displayStages.map((item, index) => {
+            {displayStages.map((item, _index) => {
               const Icon = item.icon;
               const widthPercent =
                 (item.value / displayStages[0]!.value) * 100 || 0;

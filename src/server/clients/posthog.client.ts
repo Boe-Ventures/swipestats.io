@@ -38,7 +38,7 @@ if (!isPostHogConfigured) {
  * @see https://posthog.com/docs/libraries/node#short-lived-processes-like-serverless-environments
  */
 export const posthog = isPostHogConfigured
-  ? new PostHog(env.NEXT_PUBLIC_POSTHOG_KEY!, {
+  ? new PostHog(env.NEXT_PUBLIC_POSTHOG_KEY, {
       host: "https://eu.i.posthog.com", // EU endpoint (matching reverse proxy)
       flushAt: 1,
       flushInterval: 0,

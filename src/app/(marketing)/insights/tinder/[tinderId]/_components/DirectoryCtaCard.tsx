@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Map, Users, ArrowRight } from "lucide-react";
+import { Map, Users } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 

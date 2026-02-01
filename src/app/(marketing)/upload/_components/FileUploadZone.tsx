@@ -33,7 +33,7 @@ export function FileUploadZone({
   isProcessing,
   disabled,
   instructions,
-  providerName = "your",
+  providerName: _providerName = "your",
 }: FileUploadZoneProps) {
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {

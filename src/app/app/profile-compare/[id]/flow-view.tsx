@@ -3,7 +3,6 @@
 import Link from "next/link";
 import Image from "next/image";
 import {
-  Info,
   Check,
   Plus,
   Image as ImageIcon,
@@ -42,8 +41,8 @@ export function FlowView({
   feedbackCounts,
 }: FlowViewProps) {
   const content = column.content;
-  const photos = content.filter((c) => c.type === "photo");
-  const prompts = content.filter((c) => c.type === "prompt");
+  const _photos = content.filter((c) => c.type === "photo");
+  const _prompts = content.filter((c) => c.type === "prompt");
   const displayBio = column.bio || defaultBio || "";
 
   const hasContent = content.length > 0;

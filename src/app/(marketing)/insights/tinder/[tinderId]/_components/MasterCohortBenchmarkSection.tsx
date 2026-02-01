@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Crown, Info, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { Info, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { useTRPC } from "@/trpc/react";
 import { useQuery } from "@tanstack/react-query";
 import { useTinderProfile } from "../TinderProfileProvider";

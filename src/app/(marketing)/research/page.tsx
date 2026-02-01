@@ -8,11 +8,11 @@ import {
   ClockIcon,
   DocumentTextIcon,
   ShieldCheckIcon,
-  SparklesIcon,
+
   UserGroupIcon,
   VideoCameraIcon,
 } from "@heroicons/react/20/solid";
-import { cn } from "@/components/ui/lib/utils";
+// import { cn } from "@/components/ui/lib/utils";
 import { ResearchPricingSection } from "./ResearchPricingSection";
 
 export const metadata: Metadata = {

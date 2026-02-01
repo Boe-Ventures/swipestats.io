@@ -1,8 +1,5 @@
 import { useState, useEffect } from "react";
-import type {
-  SwipestatsProfilePayload,
-  TinderPhoto,
-} from "@/lib/interfaces/TinderDataJSON";
+import type { SwipestatsProfilePayload } from "@/lib/interfaces/TinderDataJSON";
 import type { TinderConsentState } from "@/lib/interfaces/TinderConsent";
 import { Badge } from "@/components/ui/badge";
 import { differenceInYears, format } from "date-fns";

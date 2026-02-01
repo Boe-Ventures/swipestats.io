@@ -15,7 +15,7 @@ export function DownloadClient() {
     defaultValue: "",
   });
   const [inputValue, setInputValue] = useState(licenseKey);
-  const [isPolling, setIsPolling] = useState(false);
+  const [_isPolling, setIsPolling] = useState(false);
   const trpc = useTRPC();
 
   // Query to get export details

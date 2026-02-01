@@ -14,7 +14,6 @@ import type { SwipestatsProfilePayload } from "@/lib/interfaces/TinderDataJSON";
 import type { TinderConsentState } from "@/lib/interfaces/TinderConsent";
 import { DEFAULT_TINDER_CONSENT } from "@/lib/interfaces/TinderConsent";
 import { isGenderDataUnknown } from "@/lib/utils/gender";
-import type { TinderJsonGender } from "@/server/db/constants";
 import {
   getBrowserTimezone,
   getCountryFromTimezone,

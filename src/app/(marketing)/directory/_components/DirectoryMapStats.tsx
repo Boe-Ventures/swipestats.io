@@ -4,11 +4,9 @@ import React, { useMemo, useState } from "react";
 import {
   ChevronDown,
   ChevronUp,
-  Users,
   TrendingUp,
   Globe,
   Crown,
-  Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/components/ui/index";
@@ -103,7 +101,7 @@ export function DirectoryMapStats({
     };
   }, [profiles]);
 
-  const totalProfiles = totalCount ?? profiles.length;
+  const _totalProfiles = totalCount ?? profiles.length;
   const filteredCount = profiles.length;
 
   return (

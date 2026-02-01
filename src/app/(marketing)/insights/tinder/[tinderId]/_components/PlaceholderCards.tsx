@@ -1,6 +1,6 @@
 "use client";
 
-import { Plus, Sparkles, TrendingUp, Users } from "lucide-react";
+import { Plus, Sparkles, TrendingUp } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 

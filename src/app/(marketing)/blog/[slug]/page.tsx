@@ -2,15 +2,15 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { format, parseISO } from "date-fns";
-import { ArrowLeft, Calendar, Clock, Instagram, Mail } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, Instagram } from "lucide-react";
 
-import { AUTHORS, type AuthorKey, type Author } from "@/lib/blog-authors";
+import { AUTHORS, type Author } from "@/lib/blog-authors";
 import { env } from "@/env";
 
 import { CtaInjector } from "@/components/mdx/CtaInjector";
 import { MDXContent } from "@/components/mdx/MDXContent";
 import { Prose } from "@/components/mdx/Prose";
-import { RelatedPosts } from "@/components/mdx/RelatedPosts";
+import { RelatedPosts as _RelatedPosts } from "@/components/mdx/RelatedPosts";
 import { StickyCtaCard } from "@/components/mdx/StickyCtaCard";
 import { posts } from "@velite";
 import NewsletterCTA from "../../NewsletterCTA";

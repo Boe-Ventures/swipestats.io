@@ -87,7 +87,7 @@ export function TinderInsightsFunnelSVG({
     maxValue,
     maxWidth,
   );
-  const leftSwipesWidth = calculateStageWidth(
+  const _leftSwipesWidth = calculateStageWidth(
     globalMeta.swipePassesTotal ?? 0,
     maxValue,
     maxWidth,
@@ -102,7 +102,7 @@ export function TinderInsightsFunnelSVG({
     maxValue,
     maxWidth,
   );
-  const noMatchWidth = calculateStageWidth(noMatchesTotal, maxValue, maxWidth);
+  const _noMatchWidth = calculateStageWidth(noMatchesTotal, maxValue, maxWidth);
   const chatsWidth = calculateStageWidth(
     globalMeta.conversationsWithMessages ?? 0,
     maxValue,
@@ -111,7 +111,7 @@ export function TinderInsightsFunnelSVG({
   const noChats =
     (globalMeta.matchesTotal ?? 0) -
     (globalMeta.conversationsWithMessages ?? 0);
-  const noChatsWidth = calculateStageWidth(
+  const _noChatsWidth = calculateStageWidth(
     noChats > 0 ? noChats : 0,
     maxValue,
     maxWidth,

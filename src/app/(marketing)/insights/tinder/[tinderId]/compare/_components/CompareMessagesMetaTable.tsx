@@ -30,12 +30,12 @@ function formatNumber(num: number | null | undefined): string {
   return num.toLocaleString();
 }
 
-function formatDecimal(num: number | null | undefined, decimals = 1): string {
+function _formatDecimal(num: number | null | undefined, decimals = 1): string {
   if (num === null || num === undefined) return "-";
   return num.toFixed(decimals);
 }
 
-function formatPercentage(num: number | null | undefined): string {
+function _formatPercentage(num: number | null | undefined): string {
   if (num === null || num === undefined) return "-";
   return `${Math.round(num)}%`;
 }
@@ -309,7 +309,7 @@ export function CompareMessagesMetaTable() {
             }}
           >
             <div className="text-sm">Metric</div>
-            {visibleProfilesList.map((profile, index) => {
+            {visibleProfilesList.map((profile, _index) => {
               const actualIndex = allProfiles.findIndex(
                 (p) => p.tinderId === profile.tinderId,
               );

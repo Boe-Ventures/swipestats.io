@@ -476,7 +476,7 @@ export function SwipeComparisonChart() {
                 return (
                   <div className="bg-background rounded-lg border p-3 shadow-lg">
                     <p className="mb-2 font-medium">{label}</p>
-                    {payload.map((entry, i) => (
+                    {payload.map((entry: { color?: string; name?: string; value?: number | string }, i) => (
                       <div key={i} className="flex items-center gap-2 text-sm">
                         <div
                           className="h-2 w-2 rounded-full"
