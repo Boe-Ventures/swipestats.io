@@ -62,7 +62,7 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export function SwipeActivityComboChart() {
-  const { profile, usage, tinderId, events } = useTinderProfile();
+  const { usage, events } = useTinderProfile();
   const [timeRange, setTimeRange] = React.useState("all");
   const [granularity, setGranularity] =
     React.useState<TimeGranularity>("weekly");

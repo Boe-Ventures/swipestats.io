@@ -1,23 +1,10 @@
 import { z } from "zod";
-import {
-  desc,
-  and,
-  eq,
-  gte,
-  lte,
-  sql,
-  isNull,
-  isNotNull,
-  or,
-  ilike,
-  asc,
-} from "drizzle-orm";
+import { desc, and, eq, gte, lte, sql, isNotNull } from "drizzle-orm";
 import {
   tinderProfileTable,
   hingeProfileTable,
   profileMetaTable,
   userTable,
-  genderEnum,
 } from "@/server/db/schema";
 import { publicProcedure } from "../trpc";
 import type { TRPCRouterRecord } from "@trpc/server";

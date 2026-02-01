@@ -49,7 +49,7 @@ export function BlogSearch({ allPosts, resultCount }: BlogSearchProps) {
   });
   const [isPending, startTransition] = useTransition();
 
-  const allTags = getAllTags(allPosts);
+  const _allTags = getAllTags(allPosts);
   const allCategories = getAllCategories(allPosts);
   const hasActiveFilters = searchQuery || selectedTag || selectedCategory;
 
@@ -59,7 +59,7 @@ export function BlogSearch({ allPosts, resultCount }: BlogSearchProps) {
     });
   };
 
-  const handleTagClick = (tag: string) => {
+  const _handleTagClick = (tag: string) => {
     startTransition(() => {
       void setSelectedTag(selectedTag === tag ? null : tag);
     });

@@ -180,7 +180,12 @@ export function DirectoryFilters({
         <SimpleSelect
           value={gender ?? "all"}
           onValueChange={(value) =>
-            setFilters({ gender: value === "all" ? null : (value as any) })
+            setFilters({
+              gender:
+                value === "all"
+                  ? null
+                  : (value as "MALE" | "FEMALE" | "OTHER" | "MORE"),
+            })
           }
           placeholder="All Genders"
           options={[{ value: "all", label: "All Genders" }, ...genderOptions]}
@@ -276,7 +281,11 @@ export function DirectoryFilters({
         </label>
         <SimpleSelect
           value={sortBy ?? "newest"}
-          onValueChange={(value) => setFilters({ sortBy: value as any })}
+          onValueChange={(value) =>
+            setFilters({
+              sortBy: value as "newest" | "most_matches" | "highest_match_rate",
+            })
+          }
           options={sortOptions}
         />
       </div>
@@ -394,7 +403,10 @@ export function DirectoryFilters({
                 value={gender ?? "all"}
                 onValueChange={(value) =>
                   setFilters({
-                    gender: value === "all" ? null : (value as any),
+                    gender:
+                      value === "all"
+                        ? null
+                        : (value as "MALE" | "FEMALE" | "OTHER" | "MORE"),
                   })
                 }
                 placeholder="All"
@@ -492,7 +504,14 @@ export function DirectoryFilters({
               </label>
               <SimpleSelect
                 value={sortBy ?? "newest"}
-                onValueChange={(value) => setFilters({ sortBy: value as any })}
+                onValueChange={(value) =>
+                  setFilters({
+                    sortBy: value as
+                      | "newest"
+                      | "most_matches"
+                      | "highest_match_rate",
+                  })
+                }
                 options={sortOptions}
                 size="sm"
               />
@@ -559,7 +578,12 @@ export function DirectoryFilters({
             <SimpleSelect
               value={gender ?? "all"}
               onValueChange={(value) =>
-                setFilters({ gender: value === "all" ? null : (value as any) })
+                setFilters({
+                  gender:
+                    value === "all"
+                      ? null
+                      : (value as "MALE" | "FEMALE" | "OTHER" | "MORE"),
+                })
               }
               placeholder="All"
               options={[{ value: "all", label: "All" }, ...genderOptions]}
@@ -656,7 +680,14 @@ export function DirectoryFilters({
             </label>
             <SimpleSelect
               value={sortBy ?? "newest"}
-              onValueChange={(value) => setFilters({ sortBy: value as any })}
+              onValueChange={(value) =>
+                setFilters({
+                  sortBy: value as
+                    | "newest"
+                    | "most_matches"
+                    | "highest_match_rate",
+                })
+              }
               options={sortOptions}
               size="sm"
             />

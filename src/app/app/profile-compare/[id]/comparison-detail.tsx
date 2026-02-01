@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import {
   Copy,
   Eye,
-  EyeOff,
   Share2,
   Settings,
   Plus,

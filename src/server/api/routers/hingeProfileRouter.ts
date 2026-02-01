@@ -19,7 +19,7 @@ export const hingeProfileRouter = {
         hingeId: z.string().min(1),
       }),
     )
-    .query(async ({ ctx, input }) => {
+    .query(async ({ ctx: _ctx, input }) => {
       const profile = await getHingeProfile(input.hingeId);
       // Return null instead of throwing - better for optional queries
       return profile ?? null;

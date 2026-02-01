@@ -9,8 +9,8 @@ import type { HingeProfileInsert } from "@/server/db/schema";
 function parseJsonArray(value: string | undefined): string[] | null {
   if (!value) return null;
   try {
-    const parsed = JSON.parse(value);
-    return Array.isArray(parsed) ? parsed : null;
+    const parsed = JSON.parse(value) as unknown;
+    return Array.isArray(parsed) ? (parsed as string[]) : null;
   } catch {
     return null;
   }

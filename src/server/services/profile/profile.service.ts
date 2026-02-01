@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 import type {
   AnonymizedTinderDataJSON,
@@ -20,7 +20,6 @@ import {
   type MediaInsert,
 } from "@/server/db/schema";
 import { createId } from "@/server/db/utils";
-import { uploadTinderDataJson } from "../blob.service";
 import { createSimplifiedProfileMeta } from "./meta.service";
 import { createMessagesAndMatches } from "./messages.service";
 import { transformTinderJsonToProfile } from "./transform.service";

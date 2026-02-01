@@ -1,3 +1,4 @@
+/* eslint-disable react/prop-types */
 "use client";
 
 import type { DayButton } from "react-day-picker";

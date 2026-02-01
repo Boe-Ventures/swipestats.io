@@ -1,15 +1,7 @@
 "use client";
 
 import * as React from "react";
-import {
-  Area,
-  CartesianGrid,
-  ComposedChart,
-  XAxis,
-  YAxis,
-  Bar,
-} from "recharts";
-import { cn } from "@/components/ui";
+import { CartesianGrid, ComposedChart, XAxis, YAxis, Bar } from "recharts";
 import type { ChartConfig } from "@/components/ui/chart";
 import {
   Card,

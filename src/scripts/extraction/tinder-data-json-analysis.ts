@@ -31,7 +31,7 @@ interface TypeInfo {
 function analyzeValue(
   value: unknown,
   options: AnalysisOptions,
-  depth = 0,
+  _depth = 0,
 ): { type: string; details?: string } {
   if (value === null) {
     return { type: "null" };

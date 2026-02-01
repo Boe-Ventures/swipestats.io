@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, X } from "lucide-react";
 import { z } from "zod";
@@ -160,7 +159,7 @@ export function CreateComparisonDialog({
           <FormField
             control={form.control}
             name="columns"
-            render={({ field }) => (
+            render={({}) => (
               <FormItem>
                 <div className="mb-3 flex items-center justify-between">
                   <FormLabel>Comparison Columns</FormLabel>

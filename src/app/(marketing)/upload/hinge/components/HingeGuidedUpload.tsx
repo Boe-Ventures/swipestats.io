@@ -6,7 +6,6 @@ import JSZip from "jszip";
 import { CloudArrowUpIcon } from "@heroicons/react/24/outline";
 import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/20/solid";
 import { cn } from "@/components/ui";
-import { Button } from "@/components/ui/button";
 import { InfoAlert, PrimaryAlert } from "@/components/ui/alert";
 import type { SwipestatsHingeProfilePayload } from "@/lib/interfaces/HingeDataJSON";
 import { extractHingeData } from "@/lib/upload/extract-hinge-data";
@@ -143,12 +142,6 @@ export function HingeGuidedUpload({
     multiple: true,
   });
 
-  const handleContinue = () => {
-    if (extractedPayload) {
-      onComplete(extractedPayload);
-    }
-  };
-
   const allFilesLoaded =
     fileState.user === "loaded" &&
     fileState.matches === "loaded" &&
@@ -178,7 +171,7 @@ export function HingeGuidedUpload({
           </h3>
           <div className="space-y-2">
             {Object.entries(REQUIRED_FILES).map(([key, fileName]) => {
-              const status = fileState[key as keyof HingeFileState];
+              const _status = fileState[key as keyof HingeFileState];
               return (
                 <div key={key} className="flex items-center gap-2 text-sm">
                   <CheckCircleIcon className="h-5 w-5 text-green-500" />

@@ -1,7 +1,8 @@
 "use client";
 
 import type { ToasterProps } from "sonner";
-import { Toaster as Sonner, toast } from "sonner";
+import { Toaster as Sonner } from "sonner";
+import { toast } from "sonner";
 
 const Toaster = ({ ...props }: ToasterProps) => {
   // Default to "light" theme to avoid dependency on ThemeProvider

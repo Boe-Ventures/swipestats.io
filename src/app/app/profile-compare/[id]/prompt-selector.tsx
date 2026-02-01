@@ -3,7 +3,6 @@
 import { useState, useMemo } from "react";
 import { Search, Check } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import { SimpleDialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";

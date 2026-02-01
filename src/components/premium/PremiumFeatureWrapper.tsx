@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Crown, Lock } from "lucide-react";
+import { Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUpgrade } from "@/contexts/UpgradeContext";

@@ -5,12 +5,9 @@ import Link from "next/link";
 import {
   Dialog,
   DialogPanel,
-  Popover,
-  PopoverButton,
   PopoverGroup,
-  PopoverPanel,
 } from "@headlessui/react";
-import { ChevronDownIcon, PhoneIcon } from "@heroicons/react/20/solid";
+import { PhoneIcon } from "@heroicons/react/20/solid";
 import {
   Bars3Icon,
   ChartPieIcon,

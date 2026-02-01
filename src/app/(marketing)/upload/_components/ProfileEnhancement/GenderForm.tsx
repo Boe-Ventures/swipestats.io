@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/form";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import type { TinderJsonGender } from "@/server/db/constants";
 import { isGenderDataUnknown } from "@/lib/utils/gender";
 
 // Simplified gender options for the UI (merges "Other" and "More")
