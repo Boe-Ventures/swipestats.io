@@ -65,8 +65,7 @@ export function getMostActiveDay(usage: TinderUsage[]): string {
 export function getWeekendMultiplier(usage: TinderUsage[]): number {
   const dailyData = groupByDayOfWeek(usage);
 
-  const weekendActivity =
-    (dailyData.Saturday ?? 0) + (dailyData.Sunday ?? 0);
+  const weekendActivity = (dailyData.Saturday ?? 0) + (dailyData.Sunday ?? 0);
   const weekdayActivity =
     (dailyData.Monday ?? 0) +
     (dailyData.Tuesday ?? 0) +

@@ -1,10 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { format, parseISO } from "date-fns";
-import { AUTHORS, type AuthorKey } from "@/lib/blog-authors";
-import { Card, CardContent } from "@/components/ui/card";
+import { AUTHORS } from "@/lib/blog-authors";
 
-import type { Post } from ".velite";
+import type { Post } from "@velite";
 
 interface BlogGridProps {
   posts: readonly Post[];
@@ -327,9 +326,7 @@ export function BlogGrid({
 
                   <AuthorInfo
                     author={featuredPosts[0].author}
-                    authorImage={
-                      AUTHORS[featuredPosts[0].author].image
-                    }
+                    authorImage={AUTHORS[featuredPosts[0].author].image}
                     theme="dark"
                     className="mt-6"
                   />

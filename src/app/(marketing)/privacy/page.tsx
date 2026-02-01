@@ -30,20 +30,20 @@ export default function PrivacyPage() {
         </p>
         <p>
           SwipeStats is a dating app analytics platform that allows users to
-          upload and analyze their dating app data exports. We take your
-          privacy seriously, especially given the sensitive nature of
-          dating-related information.
+          upload and analyze their dating app data exports. We take your privacy
+          seriously, especially given the sensitive nature of dating-related
+          information.
         </p>
         <p>
           By accessing or using our Services, you acknowledge that you have
-          read, understood, and agree to be bound by this Privacy Policy. If
-          you do not agree, please do not access or use our Services.
+          read, understood, and agree to be bound by this Privacy Policy. If you
+          do not agree, please do not access or use our Services.
         </p>
 
         <h2>2. Who We Are</h2>
         <p>
-          SwipeStats.io is operated by Boe Ventures AS, a Norwegian company.
-          For the purposes of data protection laws, we are the &quot;data
+          SwipeStats.io is operated by Boe Ventures AS, a Norwegian company. For
+          the purposes of data protection laws, we are the &quot;data
           controller&quot; of your personal data.
         </p>
         <p>
@@ -101,8 +101,8 @@ export default function PrivacyPage() {
         </p>
         <ul>
           <li>
-            Payment card details (processed by LemonSqueezy—we do not store
-            full card numbers)
+            Payment card details (processed by LemonSqueezy—we do not store full
+            card numbers)
           </li>
           <li>Billing address</li>
           <li>Transaction history</li>
@@ -118,9 +118,7 @@ export default function PrivacyPage() {
         </ul>
 
         <h3>3.2 Information Collected Automatically</h3>
-        <p>
-          When you access our Services, we automatically collect:
-        </p>
+        <p>When you access our Services, we automatically collect:</p>
         <ul>
           <li>
             <strong>Device Information:</strong> Browser type and version,
@@ -784,8 +782,8 @@ export default function PrivacyPage() {
         </p>
         <ul>
           <li>
-            We will notify the Norwegian Data Protection Authority (Datatilsynet)
-            within 72 hours
+            We will notify the Norwegian Data Protection Authority
+            (Datatilsynet) within 72 hours
           </li>
           <li>
             If the breach is likely to result in high risk to you, we will

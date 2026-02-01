@@ -180,7 +180,8 @@ export function DatasetPricingSection() {
           <a
             href="https://github.com/Boe-Ventures/swipestats.io"
             target="_blank"
-            className="rounded-md px-3.5 py-2 text-sm leading-6 font-semibold text-rose-600 ring-1 ring-rose-200 ring-inset hover:ring-rose-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600" rel="noreferrer"
+            className="rounded-md px-3.5 py-2 text-sm leading-6 font-semibold text-rose-600 ring-1 ring-rose-200 ring-inset hover:ring-rose-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600"
+            rel="noreferrer"
           >
             Explore the code <span aria-hidden="true">&rarr;</span>
           </a>

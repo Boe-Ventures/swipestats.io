@@ -2,7 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { format, parseISO } from "date-fns";
 
-import type { Post } from ".velite";
+import type { Post } from "@velite";
 
 interface RelatedPostsProps {
   posts: readonly Post[];

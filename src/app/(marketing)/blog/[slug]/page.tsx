@@ -12,7 +12,7 @@ import { MDXContent } from "@/components/mdx/MDXContent";
 import { Prose } from "@/components/mdx/Prose";
 import { RelatedPosts } from "@/components/mdx/RelatedPosts";
 import { StickyCtaCard } from "@/components/mdx/StickyCtaCard";
-import { posts } from ".velite";
+import { posts } from "@velite";
 import NewsletterCTA from "../../NewsletterCTA";
 
 export const dynamic = "force-static";

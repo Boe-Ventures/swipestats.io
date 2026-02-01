@@ -81,7 +81,7 @@ export default function ErrorTestPage() {
               >
                 1. Trigger Render Error
               </Button>
-              <p className="mt-1 text-xs text-muted-foreground">
+              <p className="text-muted-foreground mt-1 text-xs">
                 Throws error during component render (error boundary catches
                 this)
               </p>
@@ -95,7 +95,7 @@ export default function ErrorTestPage() {
               >
                 2. Manual Error Capture
               </Button>
-              <p className="mt-1 text-xs text-muted-foreground">
+              <p className="text-muted-foreground mt-1 text-xs">
                 Uses posthog.captureException() directly
               </p>
             </div>
@@ -108,7 +108,7 @@ export default function ErrorTestPage() {
               >
                 3. Async Error
               </Button>
-              <p className="mt-1 text-xs text-muted-foreground">
+              <p className="text-muted-foreground mt-1 text-xs">
                 Unhandled promise rejection (autocapture catches this)
               </p>
             </div>
@@ -121,7 +121,7 @@ export default function ErrorTestPage() {
               >
                 4. Network Error
               </Button>
-              <p className="mt-1 text-xs text-muted-foreground">
+              <p className="text-muted-foreground mt-1 text-xs">
                 Failed fetch request
               </p>
             </div>
@@ -142,12 +142,12 @@ export default function ErrorTestPage() {
               >
                 5. Trigger API Error
               </Button>
-              <p className="mt-1 text-xs text-muted-foreground">
+              <p className="text-muted-foreground mt-1 text-xs">
                 Calls /api/test/error route (server-side error)
               </p>
             </div>
 
-            <div className="rounded-lg bg-muted p-4">
+            <div className="bg-muted rounded-lg p-4">
               <h3 className="mb-2 font-semibold">Instructions:</h3>
               <ol className="list-inside list-decimal space-y-1 text-sm">
                 <li>Open PostHog error tracking dashboard</li>

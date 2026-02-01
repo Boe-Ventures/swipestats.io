@@ -42,9 +42,7 @@ export async function getTinderProfile(
  * Get a Tinder profile with user information by tinderId
  * Used to check ownership and anonymous status
  */
-export async function getTinderProfileWithUser(
-  tinderId: string,
-): Promise<
+export async function getTinderProfileWithUser(tinderId: string): Promise<
   | (TinderProfile & {
       user: { id: string; isAnonymous: boolean | null } | null;
     })

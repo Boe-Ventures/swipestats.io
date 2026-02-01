@@ -4,7 +4,7 @@ import { useQueryState } from "nuqs";
 import { Search, X } from "lucide-react";
 import { useTransition } from "react";
 
-import type { Post } from ".velite";
+import type { Post } from "@velite";
 
 interface BlogSearchProps {
   allPosts: readonly Post[];

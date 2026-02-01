@@ -1,0 +1,11 @@
+# Exclude content folder (MDX files have specific formatting requirements)
+content/
+
+# Standard exclusions
+node_modules/
+.next/
+.velite/
+build/
+dist/
+*.min.js
+*.min.css
