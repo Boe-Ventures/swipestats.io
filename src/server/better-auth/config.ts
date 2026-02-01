@@ -6,6 +6,7 @@ import { nextCookies } from "better-auth/next-js";
 import { env } from "@/env";
 import { db } from "@/server/db";
 import * as schema from "@/server/db/schema";
+import { trackServerEvent } from "@/server/services/analytics.service";
 
 export const auth = betterAuth({
   // Enable experimental joins for 2-3x performance improvement on session lookups
@@ -63,6 +64,70 @@ export const auth = betterAuth({
       // add more?
     },
   },
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user) => {
+          try {
+            // Skip external tracking for anonymous users (fake emails)
+            // Track with a separate event for analytics funnel
+            if (user.isAnonymous) {
+              console.log("[Auth] Anonymous user created:", user.id);
+              trackServerEvent(user.id, "anonymous_user_created", {
+                source: "direct",
+              });
+              return;
+            }
+
+            // Track real user signup
+            console.log("[Auth] User created:", user.id);
+            trackServerEvent(user.id, "user_signed_up", {
+              method: "email",
+              email: user.email,
+            });
+          } catch (error) {
+            console.error("[Auth] Error in user.create.after hook:", error);
+            // Don't block user creation if tracking fails
+          }
+        },
+      },
+    },
+    account: {
+      create: {
+        after: async (account) => {
+          try {
+            console.log("[Auth] Account created:", account.userId);
+            trackServerEvent(
+              account.userId,
+              "user_account_created",
+              account.password
+                ? {
+                    method: "email",
+                  }
+                : {
+                    method: "oauth",
+                    provider: account.providerId as "google",
+                  },
+            );
+          } catch (error) {
+            console.error("[Auth] Error in account.create.after hook:", error);
+          }
+        },
+      },
+    },
+    session: {
+      create: {
+        after: async (session) => {
+          try {
+            console.log("[Auth] Session created:", session.userId);
+            trackServerEvent(session.userId, "user_signed_in", {});
+          } catch (error) {
+            console.error("[Auth] Error in session.create.after hook:", error);
+          }
+        },
+      },
+    },
+  },
   trustedOrigins: [
     "http://localhost:3000",
     "https://swipestats-42.beta.localcan.dev",
@@ -84,13 +149,40 @@ export const auth = betterAuth({
           `[Auth] Transferring data from anonymous user ${anonymousUser.user.id} to ${newUser.user.id}`,
         );
 
-        // Import and call the transfer service
-        const { transferAnonymousUserData } =
-          await import("@/server/services/anonymous.service");
+        try {
+          // Import and call the transfer service
+          const { transferAnonymousUserData } =
+            await import("@/server/services/anonymous.service");
 
-        await transferAnonymousUserData(anonymousUser.user.id, newUser.user.id);
+          const { hadProfile } = await transferAnonymousUserData(
+            anonymousUser.user.id,
+            newUser.user.id,
+          );
 
-        console.log(`[Auth] Data transfer completed successfully`);
+          console.log(`[Auth] Data transfer completed successfully`);
+
+          // Calculate days between anonymous user creation and conversion
+          const anonCreatedAt = new Date(anonymousUser.user.createdAt);
+          const conversionTime = new Date(newUser.user.createdAt);
+          const daysSinceCreation = Math.floor(
+            (conversionTime.getTime() - anonCreatedAt.getTime()) /
+              (1000 * 60 * 60 * 24),
+          );
+
+          // Track the conversion event
+          trackServerEvent(newUser.user.id, "anonymous_user_converted", {
+            previousUserId: anonymousUser.user.id,
+            hadProfile,
+            daysSinceCreation,
+          });
+
+          console.log(
+            `[Auth] Anonymous user ${anonymousUser.user.id} converted to ${newUser.user.id}`,
+          );
+        } catch (error) {
+          console.error("[Auth] Error in onLinkAccount:", error);
+          // Don't throw - Better Auth will still complete the conversion
+        }
       },
     }),
     // Next.js cookie helper - MUST be last plugin in array

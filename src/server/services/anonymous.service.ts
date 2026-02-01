@@ -13,6 +13,10 @@ import {
   tinderProfileTable,
 } from "@/server/db/schema";
 
+export interface TransferResult {
+  hadProfile: boolean;
+}
+
 /**
  * Transfer all resources from an anonymous user to a newly created real user.
  * This is called when an anonymous user converts their account by signing up or signing in.
@@ -32,10 +36,12 @@ import {
 export async function transferAnonymousUserData(
   fromUserId: string,
   toUserId: string,
-): Promise<void> {
+): Promise<TransferResult> {
   console.log(
     `[Anonymous] Transferring data from ${fromUserId} to ${toUserId}`,
   );
+
+  let hadProfile = false;
 
   await withTransaction(async (tx) => {
     // Transfer Tinder profiles
@@ -55,6 +61,11 @@ export async function transferAnonymousUserData(
     console.log(
       `[Anonymous] Transferred ${hingeProfilesUpdated.rowCount ?? 0} Hinge profiles`,
     );
+
+    // Check if user had any profiles
+    hadProfile =
+      (tinderProfilesUpdated.rowCount ?? 0) > 0 ||
+      (hingeProfilesUpdated.rowCount ?? 0) > 0;
 
     // Transfer events
     const eventsUpdated = await tx
@@ -130,6 +141,8 @@ export async function transferAnonymousUserData(
   console.log(
     `[Anonymous] Successfully transferred all data from ${fromUserId} to ${toUserId}`,
   );
+
+  return { hadProfile };
 }
 
 // Export as a service object for consistency with other services
