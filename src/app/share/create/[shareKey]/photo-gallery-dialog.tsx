@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { Check } from "lucide-react";
 
 import {
@@ -69,10 +70,11 @@ export function PhotoGalleryDialog({
                 onClick={() => canSelect && handlePhotoClick(photo.id)}
               >
                 <div className="relative aspect-square">
-                  <img
+                  <Image
                     src={photo.url}
                     alt={photo.originalFilename}
-                    className="h-full w-full object-cover"
+                    fill
+                    className="object-cover"
                   />
                   {isSelected && (
                     <div className="bg-primary/20 absolute inset-0 flex items-center justify-center">

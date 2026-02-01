@@ -50,6 +50,8 @@ export function ProfilePhotoGrid({
             key={idx}
             className="aspect-square overflow-hidden rounded-lg bg-white/10"
           >
+            {/* User-uploaded photos with error handling and data URI fallback - Next.js Image would break onError logic */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={photo.url}
               alt={photo.alt || `Photo ${idx + 1}`}

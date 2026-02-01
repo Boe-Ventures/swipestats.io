@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import {
   Info,
   Check,
@@ -90,9 +91,11 @@ export function FlowView({
                   return (
                     <div key={item.id} className="px-4 pb-3">
                       <div className="relative overflow-hidden rounded-2xl">
-                        <img
+                        <Image
                           src={item.attachment.url}
                           alt={item.caption || `Photo ${index + 1}`}
+                          width={400}
+                          height={500}
                           className="aspect-[4/5] w-full object-cover"
                         />
                         {/* Caption if present */}

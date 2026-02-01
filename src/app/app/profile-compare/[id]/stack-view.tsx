@@ -88,6 +88,8 @@ export function StackView({
               />
             </div>
 
+            {/* Full-screen carousel image with absolute positioned overlays - img preferred for complex layout */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={currentPhoto.attachment?.url}
               alt={currentPhoto.caption || `Photo ${currentContentIndex + 1}`}

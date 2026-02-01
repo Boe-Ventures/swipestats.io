@@ -19,7 +19,6 @@ import type {
   ClientEventPropertiesDefinition,
 } from "@/lib/analytics/analytics.types";
 import { sanitizeForVercel } from "@/lib/analytics/analytics.utils";
-import { env } from "@/env";
 import { authClient } from "@/server/better-auth/client";
 import { CookieBanner } from "@/components/analytics/CookieBanner";
 
@@ -89,7 +88,7 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
 
   // Auto-consent for logged-in non-anonymous users
   useEffect(() => {
-    if (session.data?.user && !session.data.user.isAnonymous) {
+    if (session.data?.user && !session.data.user.isAnonymous && !hasConsent) {
       console.info("🔐 [Analytics] Auto-consent for logged-in user");
       localStorage.setItem("cookieConsent", "true");
       localStorage.setItem("cookieConsentTimestamp", Date.now().toString());
@@ -97,18 +96,16 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
       setShowBanner(false);
 
       // Enable PostHog tracking for logged-in users
-      if (env.NEXT_PUBLIC_POSTHOG_KEY) {
-        posthog.set_config({
-          autocapture: true,
-          capture_pageview: "history_change",
-          capture_pageleave: true,
-          disable_session_recording: false,
-        });
-        // Capture initial pageview
-        posthog.capture("$pageview");
-      }
+      posthog.set_config({
+        autocapture: true,
+        capture_pageview: "history_change",
+        capture_pageleave: true,
+        disable_session_recording: false,
+      });
+      // Capture initial pageview
+      posthog.capture("$pageview");
     }
-  }, [session.data]);
+  }, [session.data, hasConsent]);
 
   // Check stored consent on mount
   useEffect(() => {
@@ -121,16 +118,14 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
         setShowBanner(false);
 
         // Enable PostHog tracking if user previously consented
-        if (env.NEXT_PUBLIC_POSTHOG_KEY) {
-          posthog.set_config({
-            autocapture: true,
-            capture_pageview: "history_change",
-            capture_pageleave: true,
-            disable_session_recording: false,
-          });
-          // Capture initial pageview
-          posthog.capture("$pageview");
-        }
+        posthog.set_config({
+          autocapture: true,
+          capture_pageview: "history_change",
+          capture_pageleave: true,
+          disable_session_recording: false,
+        });
+        // Capture initial pageview
+        posthog.capture("$pageview");
       } else if (storedConsent === null) {
         // No previous decision - show banner
         setShowBanner(true);
@@ -169,7 +164,6 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
           eventName: T,
           properties?: ClientEventPropertiesDefinition[T],
         ) => {
-          if (!env.NEXT_PUBLIC_POSTHOG_KEY) return;
           try {
             posthog.capture(eventName, properties as Record<string, unknown>);
           } catch (error) {
@@ -177,7 +171,6 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
           }
         },
         identify: (userId, traits) => {
-          if (!env.NEXT_PUBLIC_POSTHOG_KEY) return;
           try {
             posthog.identify(userId, traits);
           } catch (error) {
@@ -185,7 +178,6 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
           }
         },
         reset: () => {
-          if (!env.NEXT_PUBLIC_POSTHOG_KEY) return;
           try {
             posthog.reset();
           } catch (error) {
@@ -304,20 +296,18 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
     setShowBanner(false);
 
     // Enable PostHog tracking features now that consent is given
-    if (env.NEXT_PUBLIC_POSTHOG_KEY) {
-      posthog.set_config({
-        autocapture: true,
-        capture_pageview: "history_change", // Track pageviews on navigation
-        capture_pageleave: true,
-        disable_session_recording: false,
-      });
+    posthog.set_config({
+      autocapture: true,
+      capture_pageview: "history_change", // Track pageviews on navigation
+      capture_pageleave: true,
+      disable_session_recording: false,
+    });
 
-      // Manually capture the initial pageview that was missed before consent
-      posthog.capture("$pageview");
-      console.info(
-        "✅ [Analytics] PostHog tracking enabled, initial pageview captured",
-      );
-    }
+    // Manually capture the initial pageview that was missed before consent
+    posthog.capture("$pageview");
+    console.info(
+      "✅ [Analytics] PostHog tracking enabled, initial pageview captured",
+    );
   }, []);
 
   // Handle consent decline

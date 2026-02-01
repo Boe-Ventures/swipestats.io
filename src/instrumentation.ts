@@ -9,18 +9,12 @@ export function register() {
   // No-op for initialization
 }
 
-export const onRequestError = async (
-  err: Error,
-  request: Request,
-  context: { routerKind?: "Pages Router" | "App Router" },
-) => {
+export const onRequestError = async (err: Error, request: Request) => {
   // Only run in Node.js runtime (not Edge)
   if (process.env.NEXT_RUNTIME === "nodejs") {
-    const { getPostHogServer } =
-      await import("@/server/clients/posthog.client");
-
     try {
-      const posthog = getPostHogServer();
+      const { captureException } =
+        await import("@/server/clients/posthog.client");
 
       // Extract distinct_id from PostHog cookie
       let distinctId: string | undefined;
@@ -45,7 +39,7 @@ export const onRequestError = async (
       }
 
       // Capture the exception
-      posthog.captureException(err, distinctId);
+      await captureException(err, distinctId);
     } catch (captureError) {
       console.error("[PostHog] Error capturing exception:", captureError);
     }

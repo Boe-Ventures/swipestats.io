@@ -76,6 +76,8 @@ export function MessageThread({ messages }: MessageThreadProps) {
                 {/* Message Content */}
                 {message.messageType === "GIF" && message.gifUrl ? (
                   <div className="overflow-hidden rounded">
+                    {/* External GIFs from unknown domains (Giphy, Tenor, etc.) - Next.js Image would break animations */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={message.gifUrl}
                       alt="GIF"

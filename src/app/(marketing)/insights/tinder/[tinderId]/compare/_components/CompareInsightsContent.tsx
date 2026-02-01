@@ -11,7 +11,7 @@ import { ProfileCards } from "./ProfileCards";
 import { DataRequestCTAPlaceholder } from "./Placeholders";
 import { SwipestatsPlusCard } from "./SwipestatsPlusCard";
 import { UserFeedback } from "./UserFeedback";
-import { DataRequestCTA } from "../../_components/DataRequestCTA";
+import { DataRequestCTA } from "../../../../_shared/DataRequestCTA";
 import { DirectoryCTA } from "../../_components/DirectoryCTA";
 
 export function CompareInsightsContent() {

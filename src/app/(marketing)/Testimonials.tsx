@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { cn } from "@/components/ui/lib/utils";
 
 const featuredTestimonial = {
@@ -6,7 +7,7 @@ const featuredTestimonial = {
     name: "Female, 32",
     handle: "Berlin, Germany",
     imageUrl: "/images/marketing/testimonials/f37.jpeg",
-    logoUrl: "https://tailwindui.com/img/logos/savvycal-logo-gray-900.svg",
+    // logoUrl: "https://tailwindui.com/img/logos/savvycal-logo-gray-900.svg",
   },
 };
 const testimonials = [
@@ -159,10 +160,12 @@ export default function Testimonials() {
               <p>{`“${featuredTestimonial.body}”`}</p>
             </blockquote>
             <figcaption className="flex flex-wrap items-center gap-x-4 gap-y-4 border-t border-gray-900/10 px-6 py-4 sm:flex-nowrap">
-              <img
+              <Image
                 className="h-10 w-10 flex-none rounded-full bg-gray-50"
                 src={featuredTestimonial.author.imageUrl}
-                alt=""
+                alt={featuredTestimonial.author.name}
+                width={40}
+                height={40}
               />
               <div className="flex-auto">
                 <div className="font-semibold">
@@ -170,11 +173,14 @@ export default function Testimonials() {
                 </div>
                 <div className="text-gray-600">{`@${featuredTestimonial.author.handle}`}</div>
               </div>
-              <img
+              {/* <Image
                 className="h-10 w-auto flex-none"
                 src={featuredTestimonial.author.logoUrl}
                 alt=""
-              />
+                width={40}
+                height={40}
+                priority
+              /> */}
             </figcaption>
           </figure>
           {testimonials.map((columnGroup, columnGroupIdx) => (
@@ -200,13 +206,15 @@ export default function Testimonials() {
                       className="rounded-2xl bg-white p-6 shadow-lg ring-1 ring-gray-900/5"
                     >
                       <blockquote className="text-gray-900">
-                        <p>{`“${testimonial.body}”`}</p>
+                        <p>{`"${testimonial.body}"`}</p>
                       </blockquote>
                       <figcaption className="mt-6 flex items-center gap-x-4">
-                        <img
+                        <Image
                           className="h-10 w-10 rounded-full bg-gray-50"
                           src={testimonial.author.imageUrl}
-                          alt=""
+                          alt={testimonial.author.name}
+                          width={40}
+                          height={40}
                         />
                         <div>
                           <div className="font-semibold">

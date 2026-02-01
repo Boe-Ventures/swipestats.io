@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Image from "next/image";
 import { upload } from "@vercel/blob/client";
 import { formatDistanceToNow } from "date-fns";
 import { Upload, Trash2, Image as ImageIcon, Loader2 } from "lucide-react";
@@ -236,10 +237,11 @@ export default function PhotoGalleryPage() {
                 {/* Media Preview */}
                 <div className="bg-muted relative aspect-square overflow-hidden">
                   {isImage ? (
-                    <img
+                    <Image
                       src={photo.url}
                       alt={photo.originalFilename}
-                      className="h-full w-full object-cover"
+                      fill
+                      className="object-cover"
                     />
                   ) : isVideo ? (
                     <video

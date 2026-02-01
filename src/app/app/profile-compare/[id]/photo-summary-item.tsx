@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import {
   ChevronDown,
   ChevronUp,
@@ -61,10 +62,12 @@ export function PhotoSummaryItem({ photo }: PhotoSummaryItemProps) {
 
         {/* Photo Thumbnail */}
         <div className="relative h-32 w-32 shrink-0 overflow-hidden rounded-lg border shadow-sm">
-          <img
+          <Image
             src={attachment.url}
             alt={attachment.originalFilename}
-            className="h-full w-full object-cover"
+            width={128}
+            height={128}
+            className="h-32 w-32 rounded object-cover"
           />
         </div>
 
