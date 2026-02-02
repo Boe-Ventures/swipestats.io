@@ -1,7 +1,7 @@
 import { eq, sql } from "drizzle-orm";
 
 import type { AnonymizedTinderDataJSON } from "@/lib/interfaces/TinderDataJSON";
-import { withTransaction, db } from "@/server/db";
+import { withTransaction } from "@/server/db";
 import {
   matchTable,
   mediaTable,
@@ -11,8 +11,6 @@ import {
   tinderProfileTable,
   tinderUsageTable,
   customDataTable,
-  type TinderProfile,
-  type TinderUsageInsert,
   type MatchInsert,
   type MessageInsert,
 } from "@/server/db/schema";
@@ -163,13 +161,43 @@ export async function absorbProfileIntoNew(data: {
       data.newTinderId,
       userBirthDate,
     );
-    const upsertStats = await upsertUsageRecords(
-      tx,
-      data.newTinderId,
-      newUsage,
-    );
+
+    let usageInserted = 0;
+    if (newUsage.length > 0) {
+      const BATCH_SIZE = 500;
+      for (let i = 0; i < newUsage.length; i += BATCH_SIZE) {
+        const batch = newUsage.slice(i, i + BATCH_SIZE);
+        await tx
+          .insert(tinderUsageTable)
+          .values(batch)
+          .onConflictDoUpdate({
+            target: [
+              tinderUsageTable.dateStampRaw,
+              tinderUsageTable.tinderProfileId,
+            ],
+            set: {
+              // Newer export has most complete data - just overwrite
+              appOpens: sql`excluded.app_opens`,
+              swipeLikes: sql`excluded.swipe_likes`,
+              swipePasses: sql`excluded.swipe_passes`,
+              swipeSuperLikes: sql`excluded.swipe_super_likes`,
+              matches: sql`excluded.matches`,
+              messagesSent: sql`excluded.messages_sent`,
+              messagesReceived: sql`excluded.messages_received`,
+              swipesCombined: sql`excluded.swipes_combined`,
+              matchRate: sql`excluded.match_rate`,
+              likeRate: sql`excluded.like_rate`,
+              messagesSentRate: sql`excluded.messages_sent_rate`,
+              responseRate: sql`excluded.response_rate`,
+              engagementRate: sql`excluded.engagement_rate`,
+              userAgeThisDay: sql`excluded.user_age_this_day`,
+            },
+          });
+        usageInserted += batch.length;
+      }
+    }
     console.log(
-      `   ✓ Usage upserted: ${upsertStats.inserted} inserted, ${upsertStats.updated} updated (${Date.now() - usageStart}ms)`,
+      `   ✓ Usage upserted: ${usageInserted} records (${Date.now() - usageStart}ms)`,
     );
 
     // 11. Insert new matches + messages (NO dedup - different accounts have different match semantics)
@@ -351,7 +379,7 @@ export async function additiveUpdateProfile(data: {
       `   ✓ Profile metadata updated (${Date.now() - updateStart}ms)`,
     );
 
-    // 2. Upsert usage records
+    // 2. Upsert usage records (newer export always has most complete data)
     const usageStart = Date.now();
     const userBirthDate = new Date(data.anonymizedTinderJson.User.birth_date);
     const newUsage = createUsageRecords(
@@ -359,33 +387,94 @@ export async function additiveUpdateProfile(data: {
       data.tinderId,
       userBirthDate,
     );
-    const upsertStats = await upsertUsageRecords(tx, data.tinderId, newUsage);
+
+    let usageInserted = 0;
+    if (newUsage.length > 0) {
+      const BATCH_SIZE = 500;
+      for (let i = 0; i < newUsage.length; i += BATCH_SIZE) {
+        const batch = newUsage.slice(i, i + BATCH_SIZE);
+        await tx
+          .insert(tinderUsageTable)
+          .values(batch)
+          .onConflictDoUpdate({
+            target: [
+              tinderUsageTable.dateStampRaw,
+              tinderUsageTable.tinderProfileId,
+            ],
+            set: {
+              // Newer export has most complete data - just overwrite
+              appOpens: sql`excluded.app_opens`,
+              swipeLikes: sql`excluded.swipe_likes`,
+              swipePasses: sql`excluded.swipe_passes`,
+              swipeSuperLikes: sql`excluded.swipe_super_likes`,
+              matches: sql`excluded.matches`,
+              messagesSent: sql`excluded.messages_sent`,
+              messagesReceived: sql`excluded.messages_received`,
+              swipesCombined: sql`excluded.swipes_combined`,
+              matchRate: sql`excluded.match_rate`,
+              likeRate: sql`excluded.like_rate`,
+              messagesSentRate: sql`excluded.messages_sent_rate`,
+              responseRate: sql`excluded.response_rate`,
+              engagementRate: sql`excluded.engagement_rate`,
+              userAgeThisDay: sql`excluded.user_age_this_day`,
+            },
+          });
+        usageInserted += batch.length;
+      }
+    }
     console.log(
-      `   ✓ Usage upserted: ${upsertStats.inserted} inserted, ${upsertStats.updated} updated (${Date.now() - usageStart}ms)`,
+      `   ✓ Usage upserted: ${usageInserted} records (${Date.now() - usageStart}ms)`,
     );
 
-    // 3. Merge matches by tinderMatchId
+    // 3. Get existing matches and filter to only insert NEW matches
     const matchStart = Date.now();
     const { matchesInput, messagesInput } = createMessagesAndMatches(
       data.anonymizedTinderJson.Messages,
       data.tinderId,
     );
-    const mergeStats = await mergeMatchesByTinderMatchId(
-      tx,
-      data.tinderId,
+
+    // Fetch existing tinderMatchIds
+    const existingMatches = await tx.query.matchTable.findMany({
+      where: eq(matchTable.tinderProfileId, data.tinderId),
+      columns: { tinderMatchId: true },
+    });
+    const existingTinderMatchIds = new Set(
+      existingMatches
+        .map((m) => m.tinderMatchId)
+        .filter((id): id is string => id !== null),
+    );
+
+    // Filter to only new matches (matches are frozen in time - never updated)
+    const { matchesToInsert, messagesToInsert } = filterNewMatches(
+      existingTinderMatchIds,
       matchesInput,
       messagesInput,
     );
+
+    // Insert new matches in batches
+    if (matchesToInsert.length > 0) {
+      const BATCH_SIZE = 500;
+      for (let i = 0; i < matchesToInsert.length; i += BATCH_SIZE) {
+        const batch = matchesToInsert.slice(i, i + BATCH_SIZE);
+        await tx.insert(matchTable).values(batch);
+      }
+    }
+
+    // Insert new messages in batches
+    if (messagesToInsert.length > 0) {
+      const BATCH_SIZE = 1000;
+      for (let i = 0; i < messagesToInsert.length; i += BATCH_SIZE) {
+        const batch = messagesToInsert.slice(i, i + BATCH_SIZE);
+        await tx.insert(messageTable).values(batch);
+      }
+    }
+
     console.log(
-      `   ✓ Matches merged: ${mergeStats.matchesAdded} added, ${mergeStats.matchesUpdated} updated, ${mergeStats.messagesAdded} messages added (${Date.now() - matchStart}ms)`,
+      `   ✓ Matches merged: ${matchesToInsert.length} new matches, ${messagesToInsert.length} messages (${Date.now() - matchStart}ms)`,
     );
 
     // Check if this was an idempotent update (no new data)
-    if (
-      upsertStats.inserted === 0 &&
-      mergeStats.matchesAdded === 0 &&
-      mergeStats.messagesAdded === 0
-    ) {
+    if (matchesToInsert.length === 0 && messagesToInsert.length === 0) {
       console.log(
         `   ℹ️  No new data detected - upload was idempotent (same file re-uploaded)`,
       );
@@ -456,210 +545,43 @@ export async function additiveUpdateProfile(data: {
 }
 
 /**
- * Upsert usage records - takes max of each metric for overlapping dates
- * Returns count of inserted and updated records
+ * Pure utility: Filter out matches that already exist
+ * Matches are frozen in time - we only add NEW matches, never update existing ones
+ * Returns only the matches (and their messages) that don't exist yet
  */
-async function upsertUsageRecords(
-  tx: any,
-  tinderId: string,
-  newUsage: TinderUsageInsert[],
-): Promise<{ inserted: number; updated: number }> {
-  if (newUsage.length === 0) {
-    return { inserted: 0, updated: 0 };
-  }
-
-  // Batch upserts in chunks of 500
-  const BATCH_SIZE = 500;
-  let totalInserted = 0;
-  let totalUpdated = 0;
-
-  for (let i = 0; i < newUsage.length; i += BATCH_SIZE) {
-    const batch = newUsage.slice(i, i + BATCH_SIZE);
-
-    await tx
-      .insert(tinderUsageTable)
-      .values(batch)
-      .onConflictDoUpdate({
-        target: [
-          tinderUsageTable.dateStampRaw,
-          tinderUsageTable.tinderProfileId,
-        ],
-        set: {
-          appOpens: sql`GREATEST(${tinderUsageTable.appOpens}, excluded.app_opens)`,
-          swipeLikes: sql`GREATEST(${tinderUsageTable.swipeLikes}, excluded.swipe_likes)`,
-          swipePasses: sql`GREATEST(${tinderUsageTable.swipePasses}, excluded.swipe_passes)`,
-          swipeSuperLikes: sql`GREATEST(${tinderUsageTable.swipeSuperLikes}, excluded.swipe_super_likes)`,
-          matches: sql`GREATEST(${tinderUsageTable.matches}, excluded.matches)`,
-          messagesSent: sql`GREATEST(${tinderUsageTable.messagesSent}, excluded.messages_sent)`,
-          messagesReceived: sql`GREATEST(${tinderUsageTable.messagesReceived}, excluded.messages_received)`,
-          swipesCombined: sql`GREATEST(${tinderUsageTable.swipesCombined}, excluded.swipes_combined)`,
-          matchRate: sql`excluded.match_rate`,
-          likeRate: sql`excluded.like_rate`,
-          messagesSentRate: sql`excluded.messages_sent_rate`,
-          responseRate: sql`excluded.response_rate`,
-          engagementRate: sql`excluded.engagement_rate`,
-          userAgeThisDay: sql`excluded.user_age_this_day`,
-        },
-      });
-
-    // Approximate counts (we don't know which were inserts vs updates)
-    totalInserted += batch.length;
-  }
-
-  return { inserted: totalInserted, updated: 0 };
-}
-
-/**
- * Merge matches by tinderMatchId - add new matches and update existing ones with more messages
- * Returns count of matches added, updated, and messages added
- */
-async function mergeMatchesByTinderMatchId(
-  tx: any,
-  tinderId: string,
+function filterNewMatches(
+  existingTinderMatchIds: Set<string>,
   newMatches: MatchInsert[],
   newMessages: MessageInsert[],
-): Promise<{
-  matchesAdded: number;
-  matchesUpdated: number;
-  messagesAdded: number;
-}> {
-  if (newMatches.length === 0) {
-    return { matchesAdded: 0, matchesUpdated: 0, messagesAdded: 0 };
-  }
-
-  // Get existing matches
-  const existing = await tx.query.matchTable.findMany({
-    where: eq(matchTable.tinderProfileId, tinderId),
-    columns: {
-      id: true,
-      tinderMatchId: true,
-      totalMessageCount: true,
-    },
-  });
-
-  type ExistingMatch = {
-    id: string;
-    tinderMatchId: string | null;
-    totalMessageCount: number | null;
-  };
-
-  const existingMap = new Map<string | null, ExistingMatch>(
-    existing.map((m: ExistingMatch) => [
-      m.tinderMatchId,
-      {
-        id: m.id,
-        tinderMatchId: m.tinderMatchId,
-        totalMessageCount: m.totalMessageCount,
-      },
-    ]),
-  );
-
-  // Group messages by their match's tinderMatchId
-  const messagesByTinderMatchId = new Map<string, MessageInsert[]>();
+): {
+  matchesToInsert: MatchInsert[];
+  messagesToInsert: MessageInsert[];
+} {
+  // Group messages by their match's ID for quick lookup
+  const messagesByMatchId = new Map<string, MessageInsert[]>();
   for (const message of newMessages) {
-    const match = newMatches.find((m) => m.id === message.matchId);
-    if (match && match.tinderMatchId) {
-      const messages = messagesByTinderMatchId.get(match.tinderMatchId) || [];
-      messages.push(message);
-      messagesByTinderMatchId.set(match.tinderMatchId, messages);
-    }
+    const messages = messagesByMatchId.get(message.matchId) || [];
+    messages.push(message);
+    messagesByMatchId.set(message.matchId, messages);
   }
 
-  let matchesAdded = 0;
-  let matchesUpdated = 0;
-  let messagesAdded = 0;
+  const matchesToInsert: MatchInsert[] = [];
+  const messagesToInsert: MessageInsert[] = [];
 
-  for (const newMatch of newMatches) {
-    // Skip matches without tinderMatchId
-    if (!newMatch.tinderMatchId) {
+  for (const match of newMatches) {
+    // Skip if this match already exists (by tinderMatchId)
+    if (
+      match.tinderMatchId &&
+      existingTinderMatchIds.has(match.tinderMatchId)
+    ) {
       continue;
     }
 
-    const existingMatch = existingMap.get(newMatch.tinderMatchId);
-
-    if (!existingMatch) {
-      // New match - insert with all messages
-      const [inserted] = await tx
-        .insert(matchTable)
-        .values(newMatch)
-        .returning();
-
-      const matchMessages =
-        messagesByTinderMatchId.get(newMatch.tinderMatchId) || [];
-      if (matchMessages.length > 0) {
-        // Update message matchId to point to our new DB id
-        const messagesToInsert = matchMessages.map((m) => ({
-          ...m,
-          matchId: inserted.id,
-        }));
-
-        const BATCH_SIZE = 1000;
-        for (let i = 0; i < messagesToInsert.length; i += BATCH_SIZE) {
-          const batch = messagesToInsert.slice(i, i + BATCH_SIZE);
-          await tx.insert(messageTable).values(batch);
-        }
-
-        messagesAdded += matchMessages.length;
-      }
-
-      matchesAdded++;
-    } else if (
-      existingMatch &&
-      existingMatch.totalMessageCount !== null &&
-      newMatch.totalMessageCount > existingMatch.totalMessageCount
-    ) {
-      // More messages - add only the new ones
-      const matchMessages =
-        messagesByTinderMatchId.get(newMatch.tinderMatchId) || [];
-
-      // Fetch existing messages to find the max order
-      const existingMessages = await tx.query.messageTable.findMany({
-        where: eq(messageTable.matchId, existingMatch.id),
-        columns: { order: true },
-      });
-
-      const existingMaxOrder = Math.max(
-        ...existingMessages.map((m: any) => m.order),
-        -1,
-      );
-
-      // Filter to only truly new messages
-      const newMessagesOnly = matchMessages.filter(
-        (m) => m.order > existingMaxOrder,
-      );
-
-      if (newMessagesOnly.length > 0) {
-        const messagesToInsert = newMessagesOnly.map((m) => ({
-          ...m,
-          matchId: existingMatch.id,
-        }));
-
-        const BATCH_SIZE = 1000;
-        for (let i = 0; i < messagesToInsert.length; i += BATCH_SIZE) {
-          const batch = messagesToInsert.slice(i, i + BATCH_SIZE);
-          await tx.insert(messageTable).values(batch);
-        }
-
-        messagesAdded += newMessagesOnly.length;
-
-        // Update match metadata
-        await tx
-          .update(matchTable)
-          .set({
-            totalMessageCount: newMatch.totalMessageCount,
-            lastMessageAt: newMatch.lastMessageAt,
-            textCount: newMatch.textCount,
-            gifCount: newMatch.gifCount,
-            gestureCount: newMatch.gestureCount,
-            otherMessageTypeCount: newMatch.otherMessageTypeCount,
-          })
-          .where(eq(matchTable.id, existingMatch.id));
-
-        matchesUpdated++;
-      }
-    }
-    // else: existing has same or more messages - skip
+    // New match - include it and all its messages
+    matchesToInsert.push(match);
+    const matchMessages = messagesByMatchId.get(match.id) || [];
+    messagesToInsert.push(...matchMessages);
   }
 
-  return { matchesAdded, matchesUpdated, messagesAdded };
+  return { matchesToInsert, messagesToInsert };
 }

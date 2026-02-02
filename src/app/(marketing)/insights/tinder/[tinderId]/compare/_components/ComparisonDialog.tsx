@@ -10,7 +10,7 @@ import {
   BarChart3,
   Check,
 } from "lucide-react";
-import Link from "next/link";
+
 import { SimpleDialog } from "@/components/ui/dialog";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { useTinderProfile } from "../../TinderProfileProvider";
@@ -27,7 +27,6 @@ import {
 } from "@/lib/constants/demoProfiles";
 import { cn } from "@/components/ui";
 import { Separator } from "@/components/ui/separator";
-import { InfoAlert } from "@/components/ui/alert";
 
 export function ComparisonDialog() {
   const [open, setOpen] = useState(false);

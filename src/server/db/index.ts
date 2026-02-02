@@ -33,7 +33,7 @@ const sql = neon(env.DATABASE_URL);
 
 // Type definitions
 type DatabaseClient = NeonDatabase<typeof schema>;
-type TransactionClient = Parameters<
+export type TransactionClient = Parameters<
   Parameters<DatabaseClient["transaction"]>[0]
 >[0];
 

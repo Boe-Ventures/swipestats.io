@@ -133,11 +133,9 @@ export const researchRouter = {
 
         // Trigger background generation only if we created the record
         if (exportRecord) {
-          generateDatasetForExport(exportRecord.id).catch((error) => {
-            console.error(
-              `Failed to generate dataset ${exportRecord!.id}:`,
-              error,
-            );
+          const exportId = exportRecord.id;
+          generateDatasetForExport(exportId).catch((error) => {
+            console.error(`Failed to generate dataset ${exportId}:`, error);
           });
         }
       } catch (error) {

@@ -4,7 +4,6 @@ import { eq } from "drizzle-orm";
 import { tinderProfileTable, hingeProfileTable } from "@/server/db/schema";
 import { adminProcedure } from "../trpc";
 import type { TRPCRouterRecord } from "@trpc/server";
-import type { AnonymizedTinderDataJSON } from "@/lib/interfaces/TinderDataJSON";
 import { resetTinderProfile } from "@/server/services/profile/profile.service";
 
 export const adminRouter = {

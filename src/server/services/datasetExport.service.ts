@@ -1,4 +1,4 @@
-import { eq, sql, and, gte } from "drizzle-orm";
+import { eq, sql, gte } from "drizzle-orm";
 import { put } from "@vercel/blob";
 
 import { db } from "@/server/db";
