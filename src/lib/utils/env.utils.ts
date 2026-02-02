@@ -6,6 +6,7 @@ import { env } from "@/env";
  * Matches LemonSqueezy's test mode (dev/preview) vs production mode
  */
 export function envSelect<T>(values: { prod: T; test: T }): T {
+  return values.test; // TODO make prod
   return env.NEXT_PUBLIC_VERCEL_ENV === "production"
     ? values.prod
     : values.test;
