@@ -236,6 +236,7 @@ export const auth = betterAuth({
   trustedOrigins: [
     "http://localhost:3000",
     "https://swipestats-42.beta.localcan.dev",
+    "https://swipestats-4-beta.vercel.app",
 
     // Add production domains here when deploying
     "https://swipestats.io",
