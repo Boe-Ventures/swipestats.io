@@ -18,7 +18,7 @@ export type Author = {
 export const AUTHORS = {
   kristian: {
     name: "Kristian",
-    image: "/images/blog/authors/kristian.png",
+    image: "/images/blog/authors/kris.png",
     description: "Founder of SwipeStats.io",
     instagram: "https://www.instagram.com/swipestats.io",
     email: "kris@swipestats.io",
