@@ -7,14 +7,12 @@ interface Photo {
 
 interface ProfilePhotoGridProps {
   photos: Photo[];
-  gradientColors?: string; // Tailwind gradient classes
   initialPhotoCount?: number; // Number of photos to show initially
   onImageError?: (url: string, index: number) => void; // Callback when image fails to load
 }
 
 export function ProfilePhotoGrid({
   photos,
-  gradientColors = "from-purple-700 via-purple-500 to-pink-400",
   initialPhotoCount = 6,
   onImageError,
 }: ProfilePhotoGridProps) {
@@ -52,6 +50,8 @@ export function ProfilePhotoGrid({
             key={idx}
             className="aspect-square overflow-hidden rounded-lg bg-white/10"
           >
+            {/* User-uploaded photos with error handling and data URI fallback - Next.js Image would break onError logic */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={photo.url}
               alt={photo.alt || `Photo ${idx + 1}`}
@@ -74,7 +74,7 @@ export function ProfilePhotoGrid({
       {/* Show warning if some images failed to load */}
       {brokenCount > 0 && (
         <div className="text-center text-xs text-white/70">
-          ⚠️ {brokenCount} image{brokenCount !== 1 ? "s" : ""} couldn't be
+          ⚠️ {brokenCount} image{brokenCount !== 1 ? "s" : ""} couldn&apos;t be
           loaded
           {brokenCount === photos.length ? " - these won't be saved" : ""}
         </div>

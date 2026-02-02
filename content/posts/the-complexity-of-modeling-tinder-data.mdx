@@ -1,0 +1,249 @@
+---
+h1: "The Complexity of Modeling Tinder Data: Sparse Timelines, Synthetic Zeros, and Statistical Truth"
+h1Subtitle: "What happens when your data has gaps, and why the difference between storage and visualization matters more than you think"
+metaTitle: "Modeling Tinder Data: Gaps, Statistics & Visualization"
+metaDescription: "A deep dive into the engineering challenges of representing dating app data accurately—from sparse timelines to statistical integrity."
+publishedAt: "2025-02-01"
+author: "kristian"
+category: "Statistics"
+tags: ["engineering", "data", "tinder", "statistics"]
+language: "en-US"
+---
+
+## The Nature of Tinder's Data Export
+
+When you request your data from Tinder, you don't get a continuous log of every day since you joined. You get something sparser: records only for days where *something happened*.
+
+No swipes on Tuesday? Tuesday doesn't exist in your export.
+
+Took a three-month break for a relationship? Those months are simply... absent.
+
+This sparse representation is actually quite elegant from Tinder's perspective—why store zeros? But it creates interesting challenges when you're trying to visualize and analyze that data.
+
+## The Gap Problem
+
+I was looking at my own SwipeStats profile recently—eight years of Tinder history from 2015 to 2023. The activity chart showed a continuous timeline of swipes, matches, and app opens.
+
+But I knew that wasn't the whole story. I had a girlfriend for most of 2022. I wasn't swiping.
+
+Yet the chart showed no gap. The line just connected December 2021 to January 2023 seamlessly, as if I'd been active the whole time.
+
+This raised a fundamental question: **How should we represent periods of inactivity?**
+
+## Two Philosophies of Data Modeling
+
+There are two reasonable approaches to handling sparse timeline data:
+
+### Approach 1: Expand and Fill
+
+Store a record for every day between the user's first and last activity, filling gaps with zeros:
+
+```typescript
+function expandTimeline(usage) {
+  const expanded = {};
+  let currentDate = firstDayOnApp;
+
+  while (currentDate <= lastDayOnApp) {
+    if (usage[currentDate]) {
+      expanded[currentDate] = usage[currentDate];
+    } else {
+      expanded[currentDate] = {
+        appOpens: 0,
+        swipes: 0,
+        matches: 0,
+        isSynthetic: true,
+      };
+    }
+    currentDate = nextDay(currentDate);
+  }
+  return expanded;
+}
+```
+
+**Pros:**
+- Continuous data is easier to query
+- Aggregations (weekly, monthly) work without special handling
+- Charts render without gaps by default
+
+**Cons:**
+- Storage overhead (potentially 2-3x more records)
+- Every statistical calculation must filter out synthetic records
+- Risk of accidentally including fake zeros in real statistics
+
+### Approach 2: Store Sparse, Render Complete
+
+Store only what Tinder gives you. Fill gaps at visualization time:
+
+```typescript
+// Storage: only real records
+function storeUsage(tinderExport) {
+  return Object.keys(tinderExport.Usage.app_opens)
+    .map(date => createRecord(date, tinderExport));
+}
+
+// Visualization: fill gaps for display
+function aggregateForChart(usage, granularity) {
+  const grouped = groupByPeriod(usage, granularity);
+  const allPeriods = generatePeriodRange(first, last);
+
+  return allPeriods.map(period => {
+    const data = grouped.get(period);
+    return data ? aggregate(data) : emptyPeriod(period);
+  });
+}
+```
+
+**Pros:**
+- Storage reflects reality exactly
+- No risk of synthetic data contaminating statistics
+- Clear separation between truth (storage) and presentation (visualization)
+
+**Cons:**
+- Aggregation logic is slightly more complex
+- Must handle sparse data explicitly
+
+## Why We Moved to Approach 2
+
+After running SwipeStats for several years with the expansion approach, we encountered subtle issues:
+
+### The Filter Everyone Forgets
+
+With synthetic days in the database, every statistical query needed this filter:
+
+```typescript
+const realDays = usage.filter(day => !day.isSynthetic);
+```
+
+Miss it once, and your statistics include thousands of zeros that never happened. The effect is subtle—averages shift slightly, percentiles skew toward zero—but it compounds across millions of calculations.
+
+### The Definition Problem
+
+What does "swipes per day" mean?
+
+- Total swipes ÷ calendar days? (Includes days you weren't on Tinder at all)
+- Total swipes ÷ days with any activity? (Includes days you just opened the app)
+- Total swipes ÷ days you actually swiped? (The most precise definition)
+
+With synthetic days in the database, the first definition was easy to calculate but meaningless. The third definition was what users actually wanted but required careful filtering.
+
+By storing only real data, the question becomes clearer. We now define it as:
+
+```typescript
+const daysWithSwipes = usage.filter(d => d.swipeLikes > 0 || d.swipePasses > 0).length;
+const swipesPerDay = totalSwipes / daysWithSwipes;
+```
+
+This answers: "When you swipe, how much do you swipe?" A meaningful metric.
+
+### The Visualization Truth
+
+Here's the key insight: **gaps in your data are meaningful**.
+
+If you took six months off Tinder because you were in a relationship, that's part of your dating story. The chart should show that gap—not paper over it with fake activity.
+
+Now when you view your SwipeStats profile, inactive periods appear as flat lines at zero. That's not a bug; it's the truth.
+
+## Handling Edge Cases
+
+Real-world data is messy. Tinder's export has quirks we had to handle:
+
+### Matches on Inactive Days
+
+You can receive matches on days you didn't open the app—Tinder matches you in the background. So you might have:
+
+- Day 1: 50 swipes, 5 matches
+- Day 2: 0 app opens, 0 swipes, 3 matches (background)
+- Day 3: 30 swipes, 2 matches
+
+Those Day 2 matches are real. They count toward your totals. But Day 2 shouldn't count as a "swiping day" for your swipes-per-day calculation.
+
+### Inconsistent Activity Tracking
+
+We found cases where Tinder recorded swipes on days with zero app opens. Data quality issue? Different tracking systems? We don't know.
+
+The solution: define "active" based on actual activity, not metadata:
+
+```typescript
+const isActiveDay = day.swipeLikes > 0 || day.swipePasses > 0;
+```
+
+This makes our calculations robust regardless of how Tinder's internal tracking works.
+
+### Aggregation Across Gaps
+
+When you aggregate sparse data to weekly or monthly views, gaps naturally disappear into the grouping. A month with activity on days 1, 15, and 28 still produces a valid monthly total.
+
+But for accurate timeline visualization, we generate all periods in the range and fill missing ones with zeros *at render time*:
+
+```typescript
+function aggregateToMonthly(usage) {
+  const grouped = groupByMonth(usage);
+  const allMonths = generateMonthRange(firstMonth, lastMonth);
+
+  return allMonths.map(month => {
+    const days = grouped.get(month);
+    if (days?.length > 0) {
+      return { period: month, ...sum(days) };
+    } else {
+      return { period: month, ...zeros() }; // Visual only, not stored
+    }
+  });
+}
+```
+
+The zeros exist only in the chart data structure, never in the database.
+
+## The Statistics That Matter
+
+With clean data modeling, we can be precise about what each metric means:
+
+| Metric | Definition | What It Measures |
+|--------|------------|------------------|
+| **Match Rate** | matches ÷ right swipes | Your "hit rate" on likes |
+| **Like Rate** | right swipes ÷ total swipes | Your selectiveness |
+| **Swipes Per Day** | total swipes ÷ days with swipes | Your swiping intensity when active |
+
+All of these use sums of real data only. No synthetic zeros can contaminate them.
+
+For cohort comparisons ("How do you compare to other men aged 25-34?"), we compute percentiles across all users with the same clean methodology. When we say you're in the 75th percentile for match rate, that's based on real activity from real users.
+
+## Lessons in Data Modeling
+
+Building SwipeStats has taught us a few principles:
+
+**1. Store truth, compute presentation.**
+
+The database should reflect reality. Visualization is a separate concern that can transform that reality for human consumption.
+
+**2. Explicit is better than implicit.**
+
+If every query needs a filter, the schema is wrong. Design data so the default query gives the right answer.
+
+**3. Define your metrics precisely.**
+
+"Swipes per day" sounds obvious until you realize there are three reasonable definitions. Pick one, document it, and be consistent.
+
+**4. Gaps are data too.**
+
+A six-month gap in your Tinder usage tells a story. Don't hide it—display it.
+
+**5. Your own data is the best test.**
+
+I only noticed the gap problem because I knew my own dating history. Use real data from real users (including yourself) to validate your assumptions.
+
+## What This Means For Your Data
+
+When you upload your Tinder data to SwipeStats, here's what happens:
+
+1. We store exactly what Tinder gave us—no more, no less
+2. Statistics are computed from real activity only
+3. Charts show your complete timeline, with gaps visible as flat periods
+4. Comparisons use the same methodology across all users
+
+The numbers you see are the numbers that happened. If you took a break, you'll see it. If you had a busy month, you'll see that too.
+
+That's the goal: **accurate reflection of your actual dating app experience**, not a smoothed-over approximation.
+
+---
+
+*Curious about your own patterns? [Upload your Tinder data](/upload/tinder) and see your real statistics.*

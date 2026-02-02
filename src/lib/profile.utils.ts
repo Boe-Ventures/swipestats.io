@@ -17,6 +17,9 @@ export function getFirstAndLastDayOnApp(appOpens: DateValueMap): {
   return { firstDayOnApp, lastDayOnApp };
 }
 
+/**
+ * @deprecated This type is no longer used. Activity metadata fields were removed from the schema.
+ */
 export type ExpandedUsageValue = {
   dateIsMissingFromOriginalData: boolean;
   activeUser: boolean;
@@ -25,6 +28,18 @@ export type ExpandedUsageValue = {
   activeUserInLast14Days: boolean;
   activeUserInLast30Days: boolean;
 };
+
+/**
+ * @deprecated This function is no longer used for new uploads.
+ * We now store only real usage data from the original Tinder JSON.
+ * The frontend aggregation handles sparse data correctly through period grouping.
+ *
+ * Previously expanded the profile's date range to include all days between
+ * first and last day on app, filling gaps with synthetic zero records.
+ * This resulted in ~50% of stored data being fake zeros.
+ *
+ * Kept for reference and potential use in migration scripts for existing data.
+ */
 export function expandAndAugmentProfileWithMissingDays(dateValueMaps: {
   appOpens: DateValueMap;
   swipeLikes: DateValueMap;

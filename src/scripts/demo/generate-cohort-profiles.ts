@@ -190,12 +190,6 @@ async function generateSyntheticProfile(
         messagesSentRate: median(rows.map((r) => r.messagesSentRate)),
         responseRate: median(rows.map((r) => r.responseRate)),
         engagementRate: median(rows.map((r) => r.engagementRate)),
-        dateIsMissingFromOriginalData: false,
-        daysSinceLastActive: 0,
-        activeUser: true,
-        activeUserInLast7Days: true,
-        activeUserInLast14Days: true,
-        activeUserInLast30Days: true,
         userAgeThisDay:
           cohort.ageMin && cohort.ageMax
             ? Math.floor((cohort.ageMin + cohort.ageMax) / 2)

@@ -149,13 +149,14 @@ async function main() {
 
       console.log("Migrating:");
       console.log("  - Users (synthetic anonymous users)");
-      console.log("  - TinderProfiles");
+      console.log("  - TinderProfiles (real users only)");
       console.log("  - Matches, Messages, Media");
       console.log("  - Jobs, Schools");
       console.log("  - TinderUsage");
       console.log("");
       printWarning("Skipping:");
       console.log("  - OriginalAnonymizedFiles (HTTP size limit)");
+      console.log("  - Synthetic/computed profiles (regenerate if needed)");
       console.log("  - ProfileMeta (will be recomputed in step 2)");
       console.log("");
 

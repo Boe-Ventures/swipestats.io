@@ -3,13 +3,18 @@ import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { admin, anonymous, username } from "better-auth/plugins";
 import { nextCookies } from "better-auth/next-js";
 import { createAuthMiddleware } from "better-auth/api";
+import { render } from "@react-email/components";
 
 import { env } from "@/env";
 import { db } from "@/server/db";
 import * as schema from "@/server/db/schema";
 import { trackServerEvent } from "@/server/services/analytics.service";
+import { EmailVerificationInline } from "../../../emails/EmailVerificationInline";
+import { resend } from "@/server/clients/resend.client";
 
 export const auth = betterAuth({
+  // Base URL for generating verification links and OAuth redirects
+  baseURL: env.NEXT_PUBLIC_BASE_URL,
   // Enable experimental joins for 2-3x performance improvement on session lookups
   experimental: {
     joins: true,
@@ -28,8 +33,52 @@ export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
   emailAndPassword: {
     enabled: true,
+    // Don't require email verification - allows anonymous conversions to work
+    // and lets users with unverified emails still sign in
+    requireEmailVerification: false,
+  },
+  emailVerification: {
+    sendVerificationEmail: async ({ user, url }) => {
+      // Skip anonymous emails
+      if (user.email.includes("@anonymous.swipestats.io")) {
+        console.log(
+          `[Email] Skipping verification email for anonymous address: ${user.email}`,
+        );
+        return;
+      }
+
+      try {
+        // Render the email template
+        const emailHtml = await render(
+          EmailVerificationInline({ verificationUrl: url }),
+        );
+
+        // Send via Resend
+        await resend.emails.send({
+          from: "SwipeStats <noreply@mail.swipestats.io>",
+          to: user.email,
+          subject: "Verify your email address",
+          html: emailHtml,
+        });
+
+        console.log(`[Email] Verification email sent to ${user.email}`);
+      } catch (error) {
+        console.error(
+          `[Email] Failed to send verification email to ${user.email}:`,
+          error,
+        );
+      }
+    },
+    sendOnSignUp: true,
+    autoSignInAfterVerification: true,
   },
   user: {
+    changeEmail: {
+      enabled: true,
+    },
+    deleteUser: {
+      enabled: true,
+    },
     additionalFields: {
       // Subscription fields (from userTable schema)
       swipestatsTier: {
@@ -101,6 +150,20 @@ export const auth = betterAuth({
   databaseHooks: {
     user: {
       create: {
+        before: async (user) => {
+          // Auto-verify anonymous emails
+          // Anonymous emails can't receive verification emails, so we mark them as verified
+          // This allows converted anonymous users (with username + password) to sign in
+          if (user.email?.includes("@anonymous.swipestats.io")) {
+            return {
+              data: {
+                ...user,
+                emailVerified: true,
+              },
+            };
+          }
+          return { data: user };
+        },
         after: async (user) => {
           try {
             // Anonymous users are tracked in hooks.after (where we have request context)
@@ -160,7 +223,9 @@ export const auth = betterAuth({
         after: async (session) => {
           try {
             console.log("[Auth] Session deleted:", session.userId);
-            trackServerEvent(session.userId, "user_signed_out", undefined);
+            // Don't track sign-outs - they're often automatic cleanup (anonymous conversions, expiry)
+            // rather than explicit user actions. If needed, track sign-outs at the application level
+            // where you have more context about whether it's user-initiated.
           } catch (error) {
             console.error("[Auth] Error in session.delete.after hook:", error);
           }
@@ -176,7 +241,15 @@ export const auth = betterAuth({
     "https://swipestats.io",
   ],
   plugins: [
-    username(),
+    username({
+      usernameValidator: (username) => {
+        // Prevent @ symbols to avoid confusion with email sign-in
+        if (username.includes("@")) {
+          return false;
+        }
+        return true;
+      },
+    }),
     admin({
       adminUserIds: [], // Add admin user IDs here when needed
       impersonationSessionDuration: 60 * 60, // 1 hour

@@ -1,6 +1,7 @@
 "use client";
 
 import { CheckIcon } from "@heroicons/react/20/solid";
+import { Loader2 } from "lucide-react";
 import { cn } from "@/components/ui/lib/utils";
 import { useTRPC } from "@/trpc/react";
 import { useMutation } from "@tanstack/react-query";
@@ -49,16 +50,21 @@ const tiers = [
 
 export function DatasetPricingSection() {
   const [loadingTier, setLoadingTier] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const trpc = useTRPC();
 
-  const createCheckout = useMutation(
+  const createCheckoutMutation = useMutation(
     trpc.research.createCheckout.mutationOptions({
       onSuccess: (data) => {
-        window.location.href = data.checkoutUrl;
+        window.location.assign(data.checkoutUrl);
       },
       onError: (error) => {
         console.error("Failed to create checkout:", error);
-        alert("Failed to create checkout. Please try again.");
+        setError(
+          error instanceof Error
+            ? error.message
+            : "Failed to create checkout. Please try again.",
+        );
         setLoadingTier(null);
       },
     }),
@@ -66,15 +72,17 @@ export function DatasetPricingSection() {
 
   const handleCheckout = (tier: (typeof tiers)[number]) => {
     if (tier.id === "tier-enterprise") {
-      window.location.href =
-        "mailto:kris@swipestats.io?subject=Academic%20License%20Inquiry";
+      window.location.assign(
+        "mailto:kris@swipestats.io?subject=Academic%20License%20Inquiry",
+      );
       return;
     }
 
     if (!tier.apiTier) return;
 
+    setError(null);
     setLoadingTier(tier.id);
-    createCheckout.mutate({ tier: tier.apiTier });
+    createCheckoutMutation.mutate({ tier: tier.apiTier });
   };
 
   return (
@@ -92,6 +100,16 @@ export function DatasetPricingSection() {
           Whether it&apos;s for a blog, a research paper, or plain curiosity, a
           dataset from SwipeStats will get you on the right track.
         </p>
+
+        {/* Error message */}
+        {error && (
+          <div className="mx-auto mt-8 max-w-2xl rounded-lg bg-red-50 p-4">
+            <p className="text-center text-sm font-medium text-red-800">
+              {error}
+            </p>
+          </div>
+        )}
+
         <div className="isolate mx-auto mt-16 grid max-w-md grid-cols-1 gap-y-8 sm:mt-20 lg:mx-0 lg:max-w-none lg:grid-cols-3">
           {tiers.map((tier, tierIdx) => (
             <div
@@ -148,15 +166,21 @@ export function DatasetPricingSection() {
                   tier.mostPopular
                     ? "bg-rose-600 text-white shadow-sm hover:bg-rose-500"
                     : "text-rose-600 ring-1 ring-rose-200 ring-inset hover:ring-rose-300",
-                  "mt-8 block rounded-md px-3 py-2 text-center text-sm leading-6 font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600",
-                  loadingTier === tier.id && "cursor-wait opacity-50",
+                  "mt-8 flex items-center justify-center gap-2 rounded-md px-3 py-2 text-center text-sm leading-6 font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600",
+                  loadingTier === tier.id &&
+                    "cursor-not-allowed opacity-50 disabled:opacity-50",
                 )}
               >
-                {loadingTier === tier.id
-                  ? "Loading..."
-                  : tier.id === "tier-enterprise"
-                    ? "Contact Us"
-                    : "Buy dataset"}
+                {loadingTier === tier.id ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Processing...
+                  </>
+                ) : tier.id === "tier-enterprise" ? (
+                  "Contact Us"
+                ) : (
+                  "Buy dataset"
+                )}
               </button>
             </div>
           ))}
@@ -180,7 +204,8 @@ export function DatasetPricingSection() {
           <a
             href="https://github.com/Boe-Ventures/swipestats.io"
             target="_blank"
-            className="rounded-md px-3.5 py-2 text-sm leading-6 font-semibold text-rose-600 ring-1 ring-rose-200 ring-inset hover:ring-rose-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600" rel="noreferrer"
+            className="rounded-md px-3.5 py-2 text-sm leading-6 font-semibold text-rose-600 ring-1 ring-rose-200 ring-inset hover:ring-rose-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600"
+            rel="noreferrer"
           >
             Explore the code <span aria-hidden="true">&rarr;</span>
           </a>

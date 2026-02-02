@@ -2,16 +2,11 @@ import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 import { db } from "@/server/db";
-import { userTable, datasetExportTable } from "@/server/db/schema";
+import { userTable } from "@/server/db/schema";
 import {
   verifyWebhookSignature,
   getTierFromVariantId,
-  isDatasetVariant,
-  getDatasetTierFromVariant,
-  DATASET_PRODUCTS,
 } from "@/server/services/lemonSqueezy.service";
-import { generateDatasetForExport } from "@/server/services/datasetExport.service";
-import { createId } from "@/server/db/utils";
 
 // Enhanced logging helper
 function formatDate(dateString: string | null | undefined): string {
@@ -170,8 +165,13 @@ export async function POST(request: Request) {
     const userId = payload.meta.custom_data?.user_id;
     const testMode = payload.meta.test_mode ?? false;
 
+    // Track what action we took for response
+    let action = "processed";
+    let details: Record<string, unknown> = {};
+
+    // 4. All events require userId (dataset purchases handled on-demand via license key validation)
     if (!userId) {
-      console.warn("[Webhook] No user_id in custom_data", { eventName });
+      console.warn(`[Webhook] No user_id for ${eventName}`, { eventName });
       return NextResponse.json({
         received: true,
         event: eventName,
@@ -181,111 +181,40 @@ export async function POST(request: Request) {
       });
     }
 
-    // Track what action we took for response
-    let action = "processed";
-    let details: Record<string, unknown> = {};
-
-    // 4. Handle events
+    // 5. Handle user subscription events
     switch (eventName) {
       case "order_created": {
-        // One-time purchase - check if it's a dataset or lifetime variant
+        // Lifetime subscription purchase
         const variantId = payload.data.attributes.first_order_item?.variant_id;
+        const variantInfo = getTierFromVariantId(variantId);
 
-        // Check if this is a dataset purchase
-        if (isDatasetVariant(variantId)) {
-          const datasetTier = getDatasetTierFromVariant(variantId);
-          const licenseKey = payload.data.attributes.license_key?.key;
-          const licenseKeyId = payload.data.attributes.license_key?.id;
+        if (variantInfo?.billingPeriod === "lifetime") {
+          await db
+            .update(userTable)
+            .set({
+              swipestatsTier: variantInfo.tier,
+              isLifetime: true,
+              subscriptionCurrentPeriodEnd: null,
+            })
+            .where(eq(userTable.id, userId));
 
-          if (datasetTier && licenseKey) {
-            const product = DATASET_PRODUCTS[datasetTier];
+          logWebhookEvent(eventName, userId, {
+            action: "upgraded",
+            tierChange: { to: variantInfo.tier },
+            billing: "lifetime",
+            testMode,
+          });
 
-            // Create dataset export record
-            const exportRecord = await db
-              .insert(datasetExportTable)
-              .values({
-                id: createId("dex"),
-                licenseKey: licenseKey,
-                licenseKeyId: licenseKeyId,
-                orderId: payload.data.id,
-                tier: datasetTier,
-                profileCount: product.profileCount,
-                recency: product.recency,
-                customerEmail: payload.data.attributes.user_email,
-                maxDownloads: 3,
-                status: "PENDING",
-              })
-              .returning();
-
-            console.log(
-              `\n💾 [Webhook] Dataset Purchase ${testMode ? "🧪 TEST MODE" : ""}`,
-            );
-            console.log(`  └─ Tier: ${datasetTier}`);
-            console.log(`  └─ Profiles: ${product.profileCount}`);
-            console.log(`  └─ License Key: ${licenseKey.slice(0, 8)}...`);
-            console.log(`  └─ Email: ${payload.data.attributes.user_email}`);
-            console.log(`  └─ Action: dataset_export_created\n`);
-
-            // Trigger background generation with waitUntil (Next.js 15+)
-            // In production, this will be handled by the Vercel platform
-            // For local dev, it will run synchronously
-            if (exportRecord[0]) {
-              // Fire and forget - let it run in background
-              generateDatasetForExport(exportRecord[0].id).catch((error) => {
-                console.error(
-                  `Failed to generate dataset ${exportRecord[0]!.id}:`,
-                  error,
-                );
-              });
-            }
-
-            action = "dataset_export_created";
-            details = {
-              tier: datasetTier,
-              profileCount: product.profileCount,
-              exportId: exportRecord[0]?.id,
-            };
-          } else {
-            console.warn("[Webhook] Dataset order missing license key", {
-              variantId,
-              datasetTier,
-            });
-            action = "skipped";
-            details = { reason: "missing_license_key" };
-          }
-        }
-        // Check if it's a lifetime subscription variant
-        else {
-          const variantInfo = getTierFromVariantId(variantId);
-
-          if (variantInfo?.billingPeriod === "lifetime") {
-            await db
-              .update(userTable)
-              .set({
-                swipestatsTier: variantInfo.tier,
-                isLifetime: true,
-                subscriptionCurrentPeriodEnd: null,
-              })
-              .where(eq(userTable.id, userId));
-
-            logWebhookEvent(eventName, userId, {
-              action: "upgraded",
-              tierChange: { to: variantInfo.tier },
-              billing: "lifetime",
-              testMode,
-            });
-
-            action = "upgraded";
-            details = { tier: variantInfo.tier, lifetime: true };
-          } else {
-            logWebhookEvent(eventName, userId, {
-              action: "skipped",
-              reason: "subscription_order",
-              testMode,
-            });
-            action = "skipped";
-            details = { reason: "subscription_order" };
-          }
+          action = "upgraded";
+          details = { tier: variantInfo.tier, lifetime: true };
+        } else {
+          logWebhookEvent(eventName, userId, {
+            action: "skipped",
+            reason: "non_lifetime_order",
+            testMode,
+          });
+          action = "skipped";
+          details = { reason: "non_lifetime_order" };
         }
         break;
       }

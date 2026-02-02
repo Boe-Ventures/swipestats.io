@@ -6,6 +6,7 @@ import { eventTable, eventTypeEnum } from "@/server/db/schema";
 import { protectedProcedure, publicProcedure } from "../trpc";
 import type { TRPCRouterRecord } from "@trpc/server";
 import { createId } from "@/server/db/utils";
+import { trackServerEvent } from "@/server/services/analytics.service";
 
 export const eventRouter = {
   // List events for a user (public - anyone can see events when viewing a profile)
@@ -84,6 +85,13 @@ export const eventRouter = {
         });
       }
 
+      // Track analytics event
+      trackServerEvent(ctx.session.user.id, "life_event_created", {
+        eventType: input.type,
+        hasEndDate: !!input.endDate,
+        hasLocation: !!input.locationId,
+      });
+
       return newEvent;
     }),
 
@@ -142,6 +150,19 @@ export const eventRouter = {
         });
       }
 
+      // Track analytics event
+      trackServerEvent(ctx.session.user.id, "life_event_updated", {
+        eventType: updatedEvent.type,
+        previousEventType:
+          updates.type && existingEvent.type !== updatedEvent.type
+            ? existingEvent.type
+            : undefined,
+        changedEndDate:
+          updates.endDate !== undefined &&
+          existingEvent.endDate !== finalEndDate,
+        changedLocation: updates.locationId !== undefined,
+      });
+
       return updatedEvent;
     }),
 
@@ -167,6 +188,13 @@ export const eventRouter = {
           message: "Event not found",
         });
       }
+
+      // Track analytics event before deletion
+      trackServerEvent(ctx.session.user.id, "life_event_deleted", {
+        eventType: existingEvent.type,
+        hadEndDate: !!existingEvent.endDate,
+        hadLocation: !!existingEvent.locationId,
+      });
 
       await ctx.db.delete(eventTable).where(eq(eventTable.id, input.id));
 

@@ -1,6 +1,7 @@
 import { differenceInYears } from "date-fns";
 import type { AnonymizedHingeDataJSON } from "@/lib/interfaces/HingeDataJSON";
 import type { HingeProfileInsert } from "@/server/db/schema";
+import { mapHingeGender } from "@/lib/utils/gender";
 
 /**
  * Safely parse JSON-encoded string arrays from Hinge export
@@ -9,8 +10,8 @@ import type { HingeProfileInsert } from "@/server/db/schema";
 function parseJsonArray(value: string | undefined): string[] | null {
   if (!value) return null;
   try {
-    const parsed = JSON.parse(value);
-    return Array.isArray(parsed) ? parsed : null;
+    const parsed = JSON.parse(value) as unknown;
+    return Array.isArray(parsed) ? (parsed as string[]) : null;
   } catch {
     return null;
   }
@@ -85,7 +86,8 @@ export function transformHingeJsonToProfile(
     ageAtUpload,
     createDate,
     heightCentimeters: profile.height_centimeters ?? 0,
-    gender: profile.gender ?? "unknown",
+    gender: mapHingeGender(profile.gender ?? ""),
+    genderStr: profile.gender ?? "unknown",
     genderIdentity: profile.gender_identity ?? profile.gender ?? "unknown",
     genderIdentityDisplayed: profile.gender_identity_displayed ?? false,
     ethnicities: ethnicities ?? [],

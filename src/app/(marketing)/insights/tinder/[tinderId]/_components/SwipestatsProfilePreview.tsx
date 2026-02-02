@@ -63,13 +63,9 @@ export function SwipestatsProfilePreview() {
   return (
     <div className="relative w-full overflow-hidden rounded-lg bg-white shadow-lg dark:bg-gray-900">
       {/* Header with Photos */}
-      <div className="rounded-t-lg bg-gradient-to-r from-rose-700 via-rose-500 to-rose-300 p-4">
+      <div className="rounded-t-lg bg-linear-to-r from-rose-700 via-rose-500 to-rose-300 p-4">
         {hasPhotos ? (
-          <ProfilePhotoGrid
-            photos={photos}
-            gradientColors="from-rose-700 via-rose-500 to-rose-300"
-            initialPhotoCount={3}
-          />
+          <ProfilePhotoGrid photos={photos} initialPhotoCount={3} />
         ) : (
           <div className="flex justify-center py-2">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm sm:h-16 sm:w-16">

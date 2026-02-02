@@ -7,7 +7,6 @@ import {
   TrendingDown,
   MapPin,
   Calendar,
-  CalendarCheck,
 } from "lucide-react";
 import { formatDistanceToNow, format, subDays } from "date-fns";
 import type { DirectoryProfile } from "@/lib/types/directory";
@@ -42,7 +41,7 @@ export function ProfileCard({
   variant = "browse",
   isSelected = false,
   onSelect,
-  showProfileId = false,
+  showProfileId: _showProfileId = false,
   specialLabel,
   userMatchRate,
   userDateRange,
@@ -85,7 +84,7 @@ export function ProfileCard({
       : null;
 
   // Determine match rate color
-  const getMatchRateColor = () => {
+  const _getMatchRateColor = () => {
     if (!profile.matchRate) return "text-muted-foreground";
     const rate = profile.matchRate * 100;
     if (rate >= 20) return "text-green-600 dark:text-green-400";
@@ -169,7 +168,7 @@ export function ProfileCard({
       {/* Special Label in top-right (e.g., Creator of SwipeStats) */}
       {specialLabel && (
         <div className="absolute top-3 right-3 z-10">
-          <Badge className="border-0 bg-gradient-to-r from-pink-600 to-rose-600 text-white">
+          <Badge className="border-0 bg-linear-to-r from-pink-600 to-rose-600 text-white">
             <Sparkles className="mr-1 h-3 w-3" />
             {specialLabel}
           </Badge>
@@ -298,7 +297,7 @@ export function ProfileCard({
 
       {/* Selected overlay (select mode only) */}
       {variant === "select" && isSelected && (
-        <div className="from-primary/5 pointer-events-none absolute inset-0 rounded-xl bg-gradient-to-br to-transparent" />
+        <div className="from-primary/5 pointer-events-none absolute inset-0 rounded-xl bg-linear-to-br to-transparent" />
       )}
     </>
   );

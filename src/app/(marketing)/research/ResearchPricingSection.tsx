@@ -127,7 +127,7 @@ export function ResearchPricingSection() {
           </p>
         </div>
         <p className="mx-auto mt-6 max-w-2xl text-center text-lg/8 text-gray-600">
-          Whether it's for a blog, a research paper, or plain curiosity, a
+          Whether it&apos;s for a blog, a research paper, or plain curiosity, a
           dataset from SwipeStats will get you on the right track.
         </p>
         <div className="isolate mx-auto mt-16 grid max-w-md grid-cols-1 gap-8 lg:mx-0 lg:max-w-none lg:grid-cols-3">

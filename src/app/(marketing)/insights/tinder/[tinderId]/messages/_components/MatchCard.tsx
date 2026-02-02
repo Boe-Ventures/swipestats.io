@@ -7,7 +7,7 @@ import type { Match } from "@/server/db/schema";
 import {
   Card,
   CardContent,
-  CardDescription,
+  
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";

@@ -44,7 +44,8 @@ export function TagGroupFormField<
           <FormControl>
             <div className="flex flex-wrap gap-2">
               {options.map((option) => {
-                const isSelected = field.value?.includes(option.value) ?? false;
+                const currentValue = (field.value ?? []) as string[];
+                const isSelected = currentValue.includes(option.value);
 
                 return (
                   <Button
@@ -53,17 +54,16 @@ export function TagGroupFormField<
                     variant={isSelected ? "default" : "outline"}
                     size="sm"
                     onClick={() => {
-                      const currentValues = field.value ?? [];
                       if (isSelected) {
                         // Remove from selection
                         field.onChange(
-                          currentValues.filter(
-                            (v: string) => v !== option.value,
+                          currentValue.filter(
+                            (v) => v !== option.value,
                           ),
                         );
                       } else {
                         // Add to selection
-                        field.onChange([...currentValues, option.value]);
+                        field.onChange([...currentValue, option.value]);
                       }
                     }}
                   >

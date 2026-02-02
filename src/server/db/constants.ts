@@ -6,7 +6,7 @@
  */
 
 // Import types for compile-time validation
-import type { DataProvider, Gender, MessageType, EventType } from "./schema";
+import type { DataProvider, Gender, MessageType } from "./schema";
 
 // Data provider constants
 export const DATA_PROVIDERS: DataProvider[] = [

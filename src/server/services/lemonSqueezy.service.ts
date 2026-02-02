@@ -22,49 +22,49 @@ const LEMON_SQUEEZY_CONFIG = {
   variants: {
     PLUS: {
       monthly: envSelect({
-        test: "624661", // Test variant ID for PLUS monthly
-        prod: "TBD", // Prod variant ID for PLUS monthly
+        test: "624661",
+        prod: "1269532",
       }),
       yearly: envSelect({
-        test: "TBD", // Test variant ID for PLUS yearly
-        prod: "TBD", // Prod variant ID for PLUS yearly
+        test: "TBD",
+        prod: "TBD",
       }),
       lifetime: envSelect({
-        test: "433959", // Test variant ID for PLUS lifetime
-        prod: "TBD", // Prod variant ID for PLUS lifetime
+        test: "433959",
+        prod: "624630",
       }),
     },
     ELITE: {
       monthly: envSelect({
-        test: "TBD", // Test variant ID for ELITE monthly
-        prod: "TBD", // Prod variant ID for ELITE monthly
+        test: "TBD",
+        prod: "TBD",
       }),
       yearly: envSelect({
-        test: "TBD", // Test variant ID for ELITE yearly
-        prod: "TBD", // Prod variant ID for ELITE yearly
+        test: "TBD",
+        prod: "TBD",
       }),
       lifetime: envSelect({
-        test: "TBD", // Test variant ID for ELITE lifetime
-        prod: "TBD", // Prod variant ID for ELITE lifetime
+        test: "TBD",
+        prod: "TBD",
       }),
     },
   },
   datasetVariants: {
     STARTER: envSelect({
-      test: "TBD", // Test variant ID for STARTER dataset
-      prod: "TBD", // Prod variant ID for STARTER dataset
+      test: "537493",
+      prod: "470938",
     }),
     STANDARD: envSelect({
-      test: "TBD", // Test variant ID for STANDARD dataset
-      prod: "TBD", // Prod variant ID for STANDARD dataset
+      test: "1269608",
+      prod: "456562",
     }),
     FRESH: envSelect({
-      test: "TBD", // Test variant ID for FRESH dataset
-      prod: "TBD", // Prod variant ID for FRESH dataset
+      test: "TBD",
+      prod: "TBD",
     }),
     PREMIUM: envSelect({
-      test: "TBD", // Test variant ID for PREMIUM dataset
-      prod: "TBD", // Prod variant ID for PREMIUM dataset
+      test: "TBD",
+      prod: "TBD",
     }),
   },
 } as const;
@@ -229,6 +229,72 @@ export async function validateDatasetLicenseKey(licenseKey: string): Promise<{
     activationLimit: data.license_key?.activation_limit,
     activationUsage: data.license_key?.activation_usage,
     expiresAt: data.license_key?.expires_at,
+  };
+}
+
+// Get order details from license key
+export async function getOrderFromLicenseKey(licenseKey: string): Promise<{
+  orderId: string;
+  variantId: number;
+  customerEmail: string;
+} | null> {
+  // First validate the license to get license key ID
+  const { data: validationData } = await validateLicense(licenseKey);
+
+  if (!validationData?.license_key?.id) return null;
+
+  // Fetch the license key details which includes order_id
+  // Using LemonSqueezy API: GET /v1/license-keys/{id}
+  const response = await fetch(
+    `https://api.lemonsqueezy.com/v1/license-keys/${validationData.license_key.id}`,
+    {
+      headers: {
+        Authorization: `Bearer ${env.LEMON_SQUEEZY_API_KEY}`,
+        Accept: "application/vnd.api+json",
+      },
+    },
+  );
+
+  if (!response.ok) return null;
+
+  const licenseData = (await response.json()) as {
+    data?: { attributes?: { order_id?: number } };
+  };
+  const orderId = licenseData.data?.attributes?.order_id;
+
+  if (!orderId) return null;
+
+  // Fetch the order to get variant and email
+  const orderResponse = await fetch(
+    `https://api.lemonsqueezy.com/v1/orders/${orderId}`,
+    {
+      headers: {
+        Authorization: `Bearer ${env.LEMON_SQUEEZY_API_KEY}`,
+        Accept: "application/vnd.api+json",
+      },
+    },
+  );
+
+  if (!orderResponse.ok) return null;
+
+  const orderData = (await orderResponse.json()) as {
+    data?: {
+      attributes?: {
+        first_order_item?: { variant_id?: number };
+        user_email?: string;
+      };
+    };
+  };
+
+  const variantId = orderData.data?.attributes?.first_order_item?.variant_id;
+  const customerEmail = orderData.data?.attributes?.user_email;
+
+  if (!variantId || !customerEmail) return null;
+
+  return {
+    orderId: orderId.toString(),
+    variantId,
+    customerEmail,
   };
 }
 

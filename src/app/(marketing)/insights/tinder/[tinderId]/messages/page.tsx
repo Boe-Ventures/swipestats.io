@@ -7,7 +7,7 @@ export default async function MessagesPage({
 }: {
   params: Promise<{ tinderId: string }>;
 }) {
-  const { tinderId } = await params;
+  const { tinderId: _tinderId } = await params;
 
   return (
     <main className="bg-background min-h-screen">

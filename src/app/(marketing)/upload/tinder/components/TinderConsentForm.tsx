@@ -55,9 +55,9 @@ export function TinderConsentForm({ value, onChange }: TinderConsentFormProps) {
           layout="grid"
         />
         <InfoAlert>
-          You can add this information later. Note: If you don't share certain
-          data, you won't be able to see that information on other users'
-          profiles either.
+          You can add this information later. Note: If you don&apos;t share
+          certain data, you won&apos;t be able to see that information on other
+          users&apos; profiles either.
         </InfoAlert>
       </form>
     </Form>

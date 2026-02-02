@@ -43,7 +43,7 @@ export function ActionCard() {
 
           <Button
             variant="outline"
-            className="w-full justify-start gap-3 transition-colors hover:bg-gradient-to-r hover:from-pink-50 hover:to-orange-50 hover:text-pink-700 dark:hover:from-pink-950 dark:hover:to-orange-950 dark:hover:text-pink-300"
+            className="w-full justify-start gap-3 transition-colors hover:bg-linear-to-r hover:from-pink-50 hover:to-orange-50 hover:text-pink-700 dark:hover:from-pink-950 dark:hover:to-orange-950 dark:hover:text-pink-300"
             onClick={() => {
               // TODO: Navigate to upgrade page
               console.log("Navigate to upgrade page");

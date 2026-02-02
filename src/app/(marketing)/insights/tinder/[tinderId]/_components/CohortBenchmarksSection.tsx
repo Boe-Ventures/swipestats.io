@@ -77,6 +77,7 @@ export function CohortBenchmarksSection() {
       percentiles: {
         p10: maleStats.matchRateP10,
         p25: maleStats.matchRateP25,
+        p50: maleStats.matchRateP50,
         p75: maleStats.matchRateP75,
         p90: maleStats.matchRateP90,
       },
@@ -87,6 +88,7 @@ export function CohortBenchmarksSection() {
       percentiles: {
         p10: maleStats.likeRateP10,
         p25: maleStats.likeRateP25,
+        p50: maleStats.likeRateP50,
         p75: maleStats.likeRateP75,
         p90: maleStats.likeRateP90,
       },
@@ -97,6 +99,7 @@ export function CohortBenchmarksSection() {
       percentiles: {
         p10: maleStats.swipesPerDayP10,
         p25: maleStats.swipesPerDayP25,
+        p50: maleStats.swipesPerDayP50,
         p75: maleStats.swipesPerDayP75,
         p90: maleStats.swipesPerDayP90,
       },
@@ -110,6 +113,7 @@ export function CohortBenchmarksSection() {
       percentiles: {
         p10: femaleStats.matchRateP10,
         p25: femaleStats.matchRateP25,
+        p50: femaleStats.matchRateP50,
         p75: femaleStats.matchRateP75,
         p90: femaleStats.matchRateP90,
       },
@@ -120,6 +124,7 @@ export function CohortBenchmarksSection() {
       percentiles: {
         p10: femaleStats.likeRateP10,
         p25: femaleStats.likeRateP25,
+        p50: femaleStats.likeRateP50,
         p75: femaleStats.likeRateP75,
         p90: femaleStats.likeRateP90,
       },
@@ -130,6 +135,7 @@ export function CohortBenchmarksSection() {
       percentiles: {
         p10: femaleStats.swipesPerDayP10,
         p25: femaleStats.swipesPerDayP25,
+        p50: femaleStats.swipesPerDayP50,
         p75: femaleStats.swipesPerDayP75,
         p90: femaleStats.swipesPerDayP90,
       },
@@ -256,6 +262,17 @@ export function CohortBenchmarksSection() {
                               </span>
                             </div>
                           )}
+                        {data.percentiles.p50 !== undefined &&
+                          data.percentiles.p50 !== null && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">
+                                Median (P50)
+                              </span>
+                              <span className="font-mono font-semibold">
+                                {formatValue(data.percentiles.p50, data.format)}
+                              </span>
+                            </div>
+                          )}
                         {data.percentiles.p25 !== undefined &&
                           data.percentiles.p25 !== null && (
                             <div className="flex justify-between">
@@ -318,6 +335,17 @@ export function CohortBenchmarksSection() {
                               </span>
                             </div>
                           )}
+                        {data.percentiles.p50 !== undefined &&
+                          data.percentiles.p50 !== null && (
+                            <div className="flex justify-between">
+                              <span className="text-muted-foreground">
+                                Median (P50)
+                              </span>
+                              <span className="font-mono font-semibold">
+                                {formatValue(data.percentiles.p50, data.format)}
+                              </span>
+                            </div>
+                          )}
                         {data.percentiles.p25 !== undefined &&
                           data.percentiles.p25 !== null && (
                             <div className="flex justify-between">
@@ -347,7 +375,7 @@ export function CohortBenchmarksSection() {
               </div>
             </div>
           ) : (
-            <div className="rounded-lg border bg-gradient-to-r from-pink-50 to-rose-50 p-6 dark:from-pink-950/50 dark:to-rose-950/50">
+            <div className="rounded-lg border bg-linear-to-r from-pink-50 to-rose-50 p-6 dark:from-pink-950/50 dark:to-rose-950/50">
               <div className="space-y-4">
                 <div>
                   <h4 className="mb-2 font-semibold">

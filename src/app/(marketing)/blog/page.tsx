@@ -2,7 +2,7 @@ import { Suspense } from "react";
 
 import { env } from "@/env";
 
-import { posts as allPosts } from ".velite";
+import { posts as allPosts } from "@velite";
 import { BlogPageContent } from "./BlogPageContent";
 
 const ogImageUrl = `${env.NEXT_PUBLIC_BASE_URL}/api/og/blog?title=${encodeURIComponent("SwipeStats Blog")}&description=${encodeURIComponent("Data-driven dating insights")}`;

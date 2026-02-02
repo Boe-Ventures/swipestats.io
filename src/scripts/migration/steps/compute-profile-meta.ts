@@ -1,8 +1,10 @@
 /**
  * Compute Profile Meta Step
  *
- * Computes aggregated metadata for all Tinder profiles.
- * This script generates one ProfileMeta record per profile with all-time stats.
+ * Computes aggregated metadata for all Tinder profiles using the canonical
+ * computeProfileMeta() function from meta.service.ts.
+ *
+ * This ensures migration statistics match production calculations exactly.
  *
  * Usage (standalone):
  *   bun run src/scripts/migration/steps/compute-profile-meta.ts
@@ -16,25 +18,30 @@ import { db } from "@/server/db";
 import {
   tinderProfileTable,
   profileMetaTable,
-  matchTable,
 } from "@/server/db/schema";
 import type { ProfileMetaInsert } from "@/server/db/schema";
 import { eq } from "drizzle-orm";
 import { createId } from "@/server/db/utils";
+import { computeProfileMeta } from "@/server/services/profile/meta.service";
 import { printHeader, printSuccess } from "../utils/cli";
 
 export interface ComputeProfileMetaOptions {
   force?: boolean;
 }
 
-async function computeProfileMeta(
+async function computeProfileMetaForTinderId(
   tinderId: string,
 ): Promise<ProfileMetaInsert> {
-  // Fetch profile with usage data
+  // Fetch profile with usage data and matches with messages
   const profile = await db.query.tinderProfileTable.findFirst({
     where: eq(tinderProfileTable.tinderId, tinderId),
     with: {
       usage: true,
+      matches: {
+        with: {
+          messages: true,
+        },
+      },
     },
   });
 
@@ -42,81 +49,15 @@ async function computeProfileMeta(
     throw new Error(`Profile not found: ${tinderId}`);
   }
 
-  // Fetch matches for conversation stats
-  const matches = await db.query.matchTable.findMany({
-    where: eq(matchTable.tinderProfileId, tinderId),
-  });
-
-  // IMPORTANT: Filter out days where data is missing/inferred from original file
-  // These are synthetic zeros that would skew statistics
-  const realUsageDays = profile.usage.filter(
-    (day) => !day.dateIsMissingFromOriginalData,
-  );
-
-  // Further filter to only days where user was actually active (appOpens > 0)
-  // Useful for "per-active-day" metrics which are more meaningful for comparisons
-  const activeDays = realUsageDays.filter((day) => day.appOpens > 0);
-
-  // Aggregate totals from ALL real usage days (including real zeros)
-  // Real zeros are meaningful - they show user had the app but chose not to use it
-  const totals = realUsageDays.reduce(
-    (acc, day) => ({
-      swipeLikes: acc.swipeLikes + day.swipeLikes,
-      swipePasses: acc.swipePasses + day.swipePasses,
-      matches: acc.matches + day.matches,
-      messagesSent: acc.messagesSent + day.messagesSent,
-      messagesReceived: acc.messagesReceived + day.messagesReceived,
-      appOpens: acc.appOpens + day.appOpens,
-    }),
-    {
-      swipeLikes: 0,
-      swipePasses: 0,
-      matches: 0,
-      messagesSent: 0,
-      messagesReceived: 0,
-      appOpens: 0,
-    },
-  );
-
-  const totalSwipes = totals.swipeLikes + totals.swipePasses;
-
-  // Conversation stats
-  const conversationsWithMessages = matches.filter(
-    (m) => m.totalMessageCount > 0,
-  ).length;
-  const ghostedCount = matches.filter((m) => m.totalMessageCount === 0).length;
-
-  // Compute rates and per-day metrics
-  const likeRate = totalSwipes > 0 ? totals.swipeLikes / totalSwipes : 0;
-  const matchRate =
-    totals.swipeLikes > 0 ? totals.matches / totals.swipeLikes : 0;
-
-  // Per-active-day is more meaningful for comparisons
-  // (only counts days they actually opened the app)
-  const daysActive = activeDays.length;
-  const swipesPerDay = daysActive > 0 ? totalSwipes / daysActive : 0;
+  // Use the shared service function to compute metadata
+  // This ensures consistency between migration and production code
+  const meta = computeProfileMeta(profile);
 
   return {
     id: createId("pm"),
     tinderProfileId: tinderId,
     hingeProfileId: null,
-    from: profile.firstDayOnApp,
-    to: profile.lastDayOnApp,
-    daysInPeriod: profile.daysInProfilePeriod,
-    daysActive: daysActive,
-    swipeLikesTotal: totals.swipeLikes,
-    swipePassesTotal: totals.swipePasses,
-    matchesTotal: totals.matches,
-    messagesSentTotal: totals.messagesSent,
-    messagesReceivedTotal: totals.messagesReceived,
-    appOpensTotal: totals.appOpens,
-    likeRate,
-    matchRate,
-    swipesPerDay, // This is now per-active-day for more meaningful comparisons
-    conversationCount: matches.length,
-    conversationsWithMessages,
-    ghostedCount,
-    computedAt: new Date(),
+    ...meta,
   };
 }
 
@@ -128,15 +69,14 @@ export async function computeAllProfileMeta(
   const force = options?.force ?? process.env.FORCE === "true";
 
   try {
-    // Get profiles that don't have ProfileMeta yet (or all if force=true)
-    const profiles = force
-      ? await db.query.tinderProfileTable.findMany()
-      : await db.query.tinderProfileTable.findMany({
-          where: eq(tinderProfileTable.computed, false),
-        });
+    // Get all profiles (only real user profiles exist after migration)
+    // Synthetic profiles are generated separately via generate-cohort-profiles.ts
+    const profiles = await db.query.tinderProfileTable.findMany({
+      where: eq(tinderProfileTable.computed, false),
+    });
 
     console.log(
-      `Found ${profiles.length} profiles to process${force ? " (FORCE mode)" : ""}\n`,
+      `Found ${profiles.length} real user profiles to process${force ? " (FORCE recompute mode)" : ""}\n`,
     );
 
     if (profiles.length === 0) {
@@ -172,7 +112,7 @@ export async function computeAllProfileMeta(
           continue;
         }
 
-        const meta = await computeProfileMeta(profile.tinderId);
+        const meta = await computeProfileMetaForTinderId(profile.tinderId);
 
         if (existingMeta && force) {
           // Delete old and insert new
@@ -187,7 +127,7 @@ export async function computeAllProfileMeta(
         console.log(`   Computed metadata\n`);
       } catch (error) {
         errorCount++;
-        console.error(`   Error: ${error}\n`);
+        console.error(`   Error: ${String(error)}\n`);
       }
     }
 

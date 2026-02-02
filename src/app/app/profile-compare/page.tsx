@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { formatDistanceToNow } from "date-fns";
 import { Plus, ExternalLink, Trash2, Eye, EyeOff } from "lucide-react";
 
@@ -149,11 +150,12 @@ function ProfileCompareDashboardContent() {
               <Card key={comparison.id} className="overflow-hidden pt-0">
                 {/* Thumbnail */}
                 {thumbnail ? (
-                  <div className="bg-muted aspect-square overflow-hidden">
-                    <img
+                  <div className="bg-muted relative aspect-square overflow-hidden">
+                    <Image
                       src={thumbnail}
                       alt={comparison.name || "Profile comparison"}
-                      className="h-full w-full object-cover"
+                      fill
+                      className="object-cover"
                     />
                   </div>
                 ) : (

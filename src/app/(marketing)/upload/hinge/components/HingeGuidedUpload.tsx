@@ -6,7 +6,6 @@ import JSZip from "jszip";
 import { CloudArrowUpIcon } from "@heroicons/react/24/outline";
 import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/20/solid";
 import { cn } from "@/components/ui";
-import { Button } from "@/components/ui/button";
 import { InfoAlert, PrimaryAlert } from "@/components/ui/alert";
 import type { SwipestatsHingeProfilePayload } from "@/lib/interfaces/HingeDataJSON";
 import { extractHingeData } from "@/lib/upload/extract-hinge-data";
@@ -112,6 +111,7 @@ export function HingeGuidedUpload({
         onComplete(payload);
       } catch (extractError) {
         // If extraction fails, just show the file status
+        // Note: Full error tracking happens in HingeDataExtractor which wraps this
         console.warn("Could not extract Hinge data yet:", extractError);
       }
     } catch (err) {
@@ -143,12 +143,6 @@ export function HingeGuidedUpload({
     multiple: true,
   });
 
-  const handleContinue = () => {
-    if (extractedPayload) {
-      onComplete(extractedPayload);
-    }
-  };
-
   const allFilesLoaded =
     fileState.user === "loaded" &&
     fileState.matches === "loaded" &&
@@ -178,7 +172,7 @@ export function HingeGuidedUpload({
           </h3>
           <div className="space-y-2">
             {Object.entries(REQUIRED_FILES).map(([key, fileName]) => {
-              const status = fileState[key as keyof HingeFileState];
+              const _status = fileState[key as keyof HingeFileState];
               return (
                 <div key={key} className="flex items-center gap-2 text-sm">
                   <CheckCircleIcon className="h-5 w-5 text-green-500" />
@@ -199,10 +193,10 @@ export function HingeGuidedUpload({
         className={cn(
           "group relative cursor-pointer overflow-hidden rounded-xl border-2 border-dashed px-6 py-16 transition-all duration-200 sm:px-8 sm:py-20",
           isDragActive
-            ? "scale-[1.02] border-purple-500 bg-gradient-to-br from-purple-50 to-indigo-50 shadow-lg"
+            ? "scale-[1.02] border-purple-500 bg-linear-to-br from-purple-50 to-indigo-50 shadow-lg"
             : allFilesLoaded
-              ? "border-green-500 bg-gradient-to-br from-green-50 to-emerald-50"
-              : "border-gray-300 bg-gradient-to-br from-gray-50 to-white hover:border-purple-400 hover:shadow-md",
+              ? "border-green-500 bg-linear-to-br from-green-50 to-emerald-50"
+              : "border-gray-300 bg-linear-to-br from-gray-50 to-white hover:border-purple-400 hover:shadow-md",
           isProcessing && "cursor-not-allowed opacity-60",
         )}
       >

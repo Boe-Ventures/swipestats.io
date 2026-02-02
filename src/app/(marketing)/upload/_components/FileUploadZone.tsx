@@ -33,7 +33,7 @@ export function FileUploadZone({
   isProcessing,
   disabled,
   instructions,
-  providerName = "your",
+  providerName: _providerName = "your",
 }: FileUploadZoneProps) {
   const onDrop = useCallback(
     (acceptedFiles: File[]) => {
@@ -59,8 +59,8 @@ export function FileUploadZone({
         className={cn(
           "group relative cursor-pointer overflow-hidden rounded-xl border-2 border-dashed px-6 py-16 transition-all duration-200 sm:px-8 sm:py-20",
           isDragActive
-            ? "scale-[1.02] border-rose-500 bg-gradient-to-br from-rose-50 to-pink-50 shadow-lg"
-            : "border-gray-300 bg-gradient-to-br from-gray-50 to-white hover:border-rose-400 hover:shadow-md",
+            ? "scale-[1.02] border-rose-500 bg-linear-to-br from-rose-50 to-pink-50 shadow-lg"
+            : "border-gray-300 bg-linear-to-br from-gray-50 to-white hover:border-rose-400 hover:shadow-md",
           (isProcessing || disabled) && "cursor-not-allowed opacity-60",
         )}
       >

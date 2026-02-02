@@ -13,6 +13,7 @@ import {
   getBrowserTimezone,
   getCountryFromTimezone,
 } from "@/lib/utils/timezone";
+import { useAnalytics } from "@/contexts/AnalyticsProvider";
 
 interface HingeSubmitButtonProps {
   payload: SwipestatsHingeProfilePayload;
@@ -27,6 +28,7 @@ export function HingeSubmitButton({
   disabled,
   consent,
 }: HingeSubmitButtonProps) {
+  const { trackEvent } = useAnalytics();
   const router = useRouter();
   const [isCreatingSession, setIsCreatingSession] = useState(false);
 
@@ -67,6 +69,21 @@ export function HingeSubmitButton({
 
   const handleSubmit = async () => {
     if (!canSubmit) return;
+
+    // Track submit click
+    const photoCount = Array.isArray(payload.anonymizedHingeJson.Media)
+      ? payload.anonymizedHingeJson.Media.length
+      : 0;
+    const hasPhotosData = photoCount > 0;
+    
+    trackEvent("upload_submit_clicked", {
+      provider: "hinge",
+      hingeId: payload.hingeId,
+      photoCount: consent.sharePhotos ? photoCount : 0, // 0 if no consent
+      hasPhotos: hasPhotosData,
+      hasPhotosConsent: consent.sharePhotos,
+      matchCount: payload.anonymizedHingeJson.Matches.length,
+    });
 
     // Ensure session exists before submitting
     if (!session) {

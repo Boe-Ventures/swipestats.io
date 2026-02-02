@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Edit2, Share2 } from "lucide-react";
+import { Edit2 } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -83,7 +83,7 @@ export function TinderInsightsFunnel({
     }
   };
 
-  const handleShare = () => {
+  const _handleShare = () => {
     toast.info("Share functionality coming soon!");
   };
 

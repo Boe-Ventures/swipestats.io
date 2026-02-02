@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
+import Image from "next/image";
 import {
   Plus,
   Trash2,
@@ -19,6 +19,7 @@ import {
   PointerSensor,
   useSensor,
   useSensors,
+  type DragEndEvent,
 } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -102,10 +103,11 @@ function SortableContent({
         style={style}
         className="group relative aspect-square"
       >
-        <img
+        <Image
           src={content.attachment.url}
           alt={content.caption || `Photo ${index + 1}`}
-          className="h-full w-full rounded-md object-cover"
+          fill
+          className="rounded-md object-cover"
         />
         {content.caption && (
           <div className="absolute right-0 bottom-0 left-0 bg-black/70 p-2 text-xs text-white">
@@ -296,7 +298,7 @@ export function ComparisonColumn({
     }),
   );
 
-  const handleDragEnd = (event: any) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
     if (!over || active.id === over.id) {
@@ -304,8 +306,8 @@ export function ComparisonColumn({
     }
 
     setLocalContentOrder((items) => {
-      const oldIndex = items.indexOf(active.id as string);
-      const newIndex = items.indexOf(over.id as string);
+      const oldIndex = items.indexOf(String(active.id));
+      const newIndex = items.indexOf(String(over.id));
       return arrayMove(items, oldIndex, newIndex);
     });
   };
@@ -534,8 +536,8 @@ export function ComparisonColumn({
           </div>
           {!title && (
             <p className="text-muted-foreground mt-1 text-xs">
-              Add a title to identify this version (e.g., "2023", "Summer
-              Edition")
+              Add a title to identify this version (e.g., &quot;2023&quot;,
+              &quot;Summer Edition&quot;)
             </p>
           )}
         </div>

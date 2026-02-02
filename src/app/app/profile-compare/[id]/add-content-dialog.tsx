@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Image from "next/image";
 import { upload } from "@vercel/blob/client";
 import {
   Image as ImageIcon,
@@ -373,10 +374,11 @@ export function AddContentDialog({
                                   : "hover:border-muted-foreground/50 border-transparent"
                               }`}
                             >
-                              <img
+                              <Image
                                 src={photo.url}
                                 alt={photo.originalFilename}
-                                className="h-full w-full object-cover"
+                                fill
+                                className="object-cover"
                               />
                               {isSelected && (
                                 <div className="bg-primary absolute inset-0 flex items-center justify-center bg-black/50">

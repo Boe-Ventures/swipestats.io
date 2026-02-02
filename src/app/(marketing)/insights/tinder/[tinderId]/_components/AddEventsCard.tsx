@@ -7,12 +7,14 @@ import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/react";
 import { AddEventDialog } from "@/app/app/events/AddEventDialog";
+import { useAnalytics } from "@/contexts/AnalyticsProvider";
 
 /**
  * Simplified CTA card that opens the shared AddEventDialog
  */
 export function AddEventsCard() {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const { trackEvent } = useAnalytics();
   const trpc = useTRPC();
 
   // Fetch events count only
@@ -23,6 +25,17 @@ export function AddEventsCard() {
   );
 
   const eventCount = eventsQuery.data?.length ?? 0;
+
+  // Handler for opening life events dialog with tracking
+  const handleOpenEventDialog = () => {
+    trackEvent("life_event_dialog_opened", {
+      source: "insights_page",
+      trigger: "button_click",
+      hasExistingEvents: eventCount > 0,
+      eventCount,
+    });
+    setDialogOpen(true);
+  };
 
   return (
     <>
@@ -35,7 +48,7 @@ export function AddEventsCard() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => setDialogOpen(true)}
+              onClick={handleOpenEventDialog}
             >
               <Plus className="h-4 w-4" />
             </Button>

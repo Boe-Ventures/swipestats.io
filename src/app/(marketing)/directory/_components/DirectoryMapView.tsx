@@ -5,8 +5,9 @@ import MapboxMap, {
   Marker,
   Popup,
   NavigationControl,
+  type MapRef,
 } from "react-map-gl/mapbox";
-import { MapPin, Loader2, Calendar } from "lucide-react";
+import { MapPin, Calendar } from "lucide-react";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { env } from "@/env";
@@ -32,13 +33,13 @@ interface ProfileWithCoords extends DirectoryProfile {
 
 export function DirectoryMapView({
   profiles,
-  filterOptions,
+  filterOptions: _filterOptions,
   totalCount,
   focusProfileId,
 }: DirectoryMapViewProps) {
   const [hoveredProfile, setHoveredProfile] = useState<string | null>(null);
   const [selectedProfile, setSelectedProfile] = useState<string | null>(null);
-  const mapRef = useRef<any>(null); // eslint-disable-line @typescript-eslint/no-explicit-any
+  const mapRef = useRef<MapRef>(null);
 
   // Geocode profiles and add jitter
   const profilesWithCoords = useMemo(() => {

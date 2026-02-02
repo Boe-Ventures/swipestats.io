@@ -28,6 +28,7 @@ export function SignUpForm() {
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [showEmailField, setShowEmailField] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isAnonymousLoading, setIsAnonymousLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Username availability checking
@@ -54,6 +55,13 @@ export function SignUpForm() {
   useEffect(() => {
     const checkUsername = async () => {
       if (username.length >= 3) {
+        // Check for @ symbol (not allowed to avoid confusion with email)
+        if (username.includes("@")) {
+          setUsernameAvailable(false);
+          setCheckingUsername(false);
+          return;
+        }
+
         setCheckingUsername(true);
         try {
           const { data } = await authClient.isUsernameAvailable({ username });
@@ -107,7 +115,7 @@ export function SignUpForm() {
   };
 
   const handleAnonymousSignIn = async () => {
-    setIsLoading(true);
+    setIsAnonymousLoading(true);
     setError(null);
 
     try {
@@ -131,7 +139,7 @@ export function SignUpForm() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred");
     } finally {
-      setIsLoading(false);
+      setIsAnonymousLoading(false);
     }
   };
 
@@ -164,7 +172,9 @@ export function SignUpForm() {
               {!checkingUsername && usernameAvailable === false && (
                 <span className="flex items-center gap-1 text-xs text-red-600">
                   <XCircle className="h-3 w-3" />
-                  Not available
+                  {username.includes("@")
+                    ? "@ symbols not allowed"
+                    : "Not available"}
                 </span>
               )}
               {!checkingUsername && usernameAvailable === true && (
@@ -182,6 +192,8 @@ export function SignUpForm() {
               required
               minLength={3}
               maxLength={32}
+              pattern="[^@]+"
+              title="Username cannot contain @ symbols"
               placeholder="cooluser123"
               disabled={isLoading}
               className={
@@ -347,9 +359,9 @@ export function SignUpForm() {
           variant="outline"
           className="w-full"
           onClick={handleAnonymousSignIn}
-          disabled={isLoading}
+          disabled={isAnonymousLoading}
         >
-          {isLoading ? (
+          {isAnonymousLoading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               Loading...

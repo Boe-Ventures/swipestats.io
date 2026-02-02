@@ -10,6 +10,7 @@ import {
   updateHingeProfile,
   getHingeProfile,
 } from "@/server/services/hinge/hinge.service";
+import { trackServerEvent } from "@/server/services/analytics.service";
 
 export const hingeProfileRouter = {
   // Get profile by hingeId (basic profile only)
@@ -19,7 +20,7 @@ export const hingeProfileRouter = {
         hingeId: z.string().min(1),
       }),
     )
-    .query(async ({ ctx, input }) => {
+    .query(async ({ ctx: _ctx, input }) => {
       const profile = await getHingeProfile(input.hingeId);
       // Return null instead of throwing - better for optional queries
       return profile ?? null;
@@ -88,13 +89,43 @@ export const hingeProfileRouter = {
         });
       }
 
-      return createHingeProfile({
-        hingeId: input.hingeId,
-        anonymizedHingeJson: input.anonymizedHingeJson,
-        userId: ctx.session.user.id,
-        timezone: input.timezone,
-        country: input.country,
-      });
+      try {
+        const result = await createHingeProfile({
+          hingeId: input.hingeId,
+          anonymizedHingeJson: input.anonymizedHingeJson,
+          userId: ctx.session.user.id,
+          timezone: input.timezone,
+          country: input.country,
+        });
+
+        // Track success with rich metrics
+        trackServerEvent(ctx.session.user.id, "hinge_profile_created", {
+          hingeId: input.hingeId,
+          matchCount: result.metrics.matchCount,
+          messageCount: result.metrics.messageCount,
+          photoCount: result.metrics.photoCount,
+          promptCount: result.metrics.promptCount,
+          interactionCount: result.metrics.interactionCount,
+          hasPhotos: result.metrics.hasPhotos,
+          processingTimeMs: result.metrics.processingTimeMs,
+          jsonSizeMB: result.metrics.jsonSizeMB,
+        });
+
+        return result.profile;
+      } catch (error) {
+        // Track failure - PostHog captures stack trace automatically
+        trackServerEvent(ctx.session.user.id, "hinge_profile_upload_failed", {
+          hingeId: input.hingeId,
+          errorType: "unknown",
+          errorMessage:
+            error instanceof Error
+              ? error.message.slice(0, 200)
+              : "Unknown error",
+          jsonSizeMB:
+            JSON.stringify(input.anonymizedHingeJson).length / 1024 / 1024,
+        });
+        throw error;
+      }
     }),
 
   // Update an existing Hinge profile
@@ -136,12 +167,42 @@ export const hingeProfileRouter = {
         });
       }
 
-      return updateHingeProfile({
-        hingeId: input.hingeId,
-        anonymizedHingeJson: input.anonymizedHingeJson,
-        userId: ctx.session.user.id,
-        timezone: input.timezone,
-        country: input.country,
-      });
+      try {
+        const result = await updateHingeProfile({
+          hingeId: input.hingeId,
+          anonymizedHingeJson: input.anonymizedHingeJson,
+          userId: ctx.session.user.id,
+          timezone: input.timezone,
+          country: input.country,
+        });
+
+        // Track success with rich metrics
+        trackServerEvent(ctx.session.user.id, "hinge_profile_updated", {
+          hingeId: input.hingeId,
+          matchCount: result.metrics.matchCount,
+          messageCount: result.metrics.messageCount,
+          photoCount: result.metrics.photoCount,
+          promptCount: result.metrics.promptCount,
+          interactionCount: result.metrics.interactionCount,
+          hasPhotos: result.metrics.hasPhotos,
+          processingTimeMs: result.metrics.processingTimeMs,
+          jsonSizeMB: result.metrics.jsonSizeMB,
+        });
+
+        return result.profile;
+      } catch (error) {
+        // Track failure - PostHog captures stack trace automatically
+        trackServerEvent(ctx.session.user.id, "hinge_profile_upload_failed", {
+          hingeId: input.hingeId,
+          errorType: "unknown",
+          errorMessage:
+            error instanceof Error
+              ? error.message.slice(0, 200)
+              : "Unknown error",
+          jsonSizeMB:
+            JSON.stringify(input.anonymizedHingeJson).length / 1024 / 1024,
+        });
+        throw error;
+      }
     }),
 } satisfies TRPCRouterRecord;

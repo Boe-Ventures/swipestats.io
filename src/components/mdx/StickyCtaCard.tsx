@@ -31,7 +31,7 @@ export function StickyCtaCard({
   ],
 }: StickyCtaCardProps) {
   return (
-    <div className="rounded-xl border border-rose-200/60 bg-gradient-to-r from-white via-gray-50 to-white p-6 shadow-lg">
+    <div className="rounded-xl border border-rose-200/60 bg-linear-to-r from-white via-gray-50 to-white p-6 shadow-lg">
       {/* Title */}
       <h3 className="text-lg font-bold text-gray-900">{title}</h3>
 

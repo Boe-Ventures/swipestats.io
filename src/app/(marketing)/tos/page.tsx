@@ -69,15 +69,17 @@ export default function TosPage() {
           refers to SwipeStats.io, operated by Boe Ventures AS.
         </p>
         <p>
-          <strong>&quot;User,&quot;</strong> <strong>&quot;you,&quot;</strong> or{" "}
-          <strong>&quot;your&quot;</strong> refers to any person accessing or
+          <strong>&quot;User,&quot;</strong> <strong>&quot;you,&quot;</strong>{" "}
+          or <strong>&quot;your&quot;</strong> refers to any person accessing or
           using the Services.
         </p>
 
         <h2>3. Service Description</h2>
 
         <h3>3.1 What SwipeStats Provides</h3>
-        <p>SwipeStats is a dating app analytics platform that enables you to:</p>
+        <p>
+          SwipeStats is a dating app analytics platform that enables you to:
+        </p>
         <ul>
           <li>
             Upload and analyze data exports from dating apps including Tinder,
@@ -127,7 +129,9 @@ export default function TosPage() {
         <ul>
           <li>Be at least 18 years of age</li>
           <li>Have the legal capacity to enter into a binding agreement</li>
-          <li>Not be prohibited from using the Services under applicable law</li>
+          <li>
+            Not be prohibited from using the Services under applicable law
+          </li>
           <li>
             Have legitimate access to the dating app data you upload (i.e., it
             must be your own data)
@@ -162,7 +166,9 @@ export default function TosPage() {
           non-exclusive, non-transferable, revocable license to:
         </p>
         <ul>
-          <li>Access and use the Services for personal, non-commercial purposes</li>
+          <li>
+            Access and use the Services for personal, non-commercial purposes
+          </li>
           <li>
             Download and retain copies of your personal analytics and
             visualizations
@@ -176,7 +182,9 @@ export default function TosPage() {
         <h3>5.2 Restrictions</h3>
         <p>You may NOT:</p>
         <ul>
-          <li>Resell, redistribute, or commercialize any part of the Services</li>
+          <li>
+            Resell, redistribute, or commercialize any part of the Services
+          </li>
           <li>Use the Services to develop competing products</li>
           <li>
             Access the Services through automated means (bots, scrapers) except
@@ -204,7 +212,10 @@ export default function TosPage() {
           worldwide license to store, process, and analyze your Personal Data
           solely for the purpose of providing you with our analytics services.
         </p>
-        <p>This license terminates when you delete your data or close your Account.</p>
+        <p>
+          This license terminates when you delete your data or close your
+          Account.
+        </p>
 
         <h3>6.3 License for Anonymized Data (Perpetual and Irrevocable)</h3>
         <p>
@@ -261,13 +272,17 @@ export default function TosPage() {
         <h3>6.5 Representations and Warranties</h3>
         <p>By uploading data, you represent and warrant that:</p>
         <ul>
-          <li>The data is yours and accurately reflects your dating app activity</li>
+          <li>
+            The data is yours and accurately reflects your dating app activity
+          </li>
           <li>
             You obtained the data through legitimate means (official data export
             features)
           </li>
           <li>You are not uploading data belonging to any other person</li>
-          <li>You have the right to grant the licenses described in this Section</li>
+          <li>
+            You have the right to grant the licenses described in this Section
+          </li>
           <li>
             Your data does not contain content that violates any law or
             third-party rights
@@ -309,9 +324,12 @@ export default function TosPage() {
 
         <h3>7.4 Commercial Prohibitions</h3>
         <ul>
-          <li>Use the Services for commercial purposes without authorization</li>
           <li>
-            Resell or redistribute the Services or any data obtained through them
+            Use the Services for commercial purposes without authorization
+          </li>
+          <li>
+            Resell or redistribute the Services or any data obtained through
+            them
           </li>
           <li>Use our analytics or benchmarks in competing products</li>
         </ul>
@@ -326,15 +344,17 @@ export default function TosPage() {
         <h2>8. Fees and Payment</h2>
 
         <h3>8.1 Pricing Options</h3>
-        <p>
-          SwipeStats offers various pricing options, which may include:
-        </p>
+        <p>SwipeStats offers various pricing options, which may include:</p>
         <ul>
           <li>Free Tier: Basic analytics with limited features</li>
           <li>One-Time Purchase: Lifetime access to standard features</li>
           <li>Monthly Subscription: Recurring payment for premium features</li>
-          <li>Annual Subscription: Discounted yearly payment for premium features</li>
-          <li>Lifetime Premium: One-time payment for perpetual premium access</li>
+          <li>
+            Annual Subscription: Discounted yearly payment for premium features
+          </li>
+          <li>
+            Lifetime Premium: One-time payment for perpetual premium access
+          </li>
         </ul>
         <p>
           Current pricing is displayed on our website and may change at any
@@ -388,7 +408,9 @@ export default function TosPage() {
         <p>We reserve the right to change prices. For existing subscribers:</p>
         <ul>
           <li>Price changes take effect at the next renewal</li>
-          <li>We will provide at least 30 days&apos; notice of price increases</li>
+          <li>
+            We will provide at least 30 days&apos; notice of price increases
+          </li>
           <li>You may cancel before the new price takes effect</li>
         </ul>
 
@@ -406,7 +428,8 @@ export default function TosPage() {
         <ul>
           <li>Performance has begun; AND</li>
           <li>
-            You have provided prior express consent to immediate performance; AND
+            You have provided prior express consent to immediate performance;
+            AND
           </li>
           <li>You have acknowledged that you lose your right of withdrawal</li>
         </ul>
@@ -670,7 +693,8 @@ export default function TosPage() {
           <li>Your license to use the Services immediately ends</li>
           <li>You must cease all use of the Services</li>
           <li>
-            Your personal data will be deleted as described in our Privacy Policy
+            Your personal data will be deleted as described in our Privacy
+            Policy
           </li>
           <li>Anonymized data derived from your Account will be retained</li>
           <li>
@@ -691,7 +715,10 @@ export default function TosPage() {
           These Terms shall be governed by and construed in accordance with the
           laws of Norway, without regard to conflict of law principles.
         </p>
-        <p>SwipeStats.io is operated by Boe Ventures AS, a company registered in Norway.</p>
+        <p>
+          SwipeStats.io is operated by Boe Ventures AS, a company registered in
+          Norway.
+        </p>
 
         <h3>16.2 Jurisdiction</h3>
         <p>
@@ -793,6 +820,32 @@ export default function TosPage() {
         <p>
           By using the Services and providing your email, you consent to receive
           electronic communications from us.
+        </p>
+
+        <h3>18.8 Analytics and Session Recording</h3>
+        <p>
+          By creating and using an account (including anonymous accounts), you
+          agree that we may:
+        </p>
+        <ul>
+          <li>Collect usage analytics to improve service quality</li>
+          <li>
+            Record your sessions to help debug issues and enhance user
+            experience
+          </li>
+          <li>
+            Use privacy-focused analytics tools (PostHog, Vercel Analytics)
+          </li>
+        </ul>
+        <p>We do not:</p>
+        <ul>
+          <li>Sell your analytics data</li>
+          <li>Track you across other websites</li>
+          <li>Use automatic data capture (only track specific user actions)</li>
+        </ul>
+        <p>
+          Session recordings are enabled for all users. You can request deletion
+          of your recordings at any time by contacting support.
         </p>
 
         <h2>19. Contact Information</h2>

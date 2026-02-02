@@ -3,7 +3,7 @@
 import { Share2, Users } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { useTinderProfile } from "../TinderProfileProvider";
-import { DataRequestCTA } from "./DataRequestCTA";
+import { DataRequestCTA } from "../../../_shared/DataRequestCTA";
 import { DirectoryCtaCard } from "./DirectoryCtaCard";
 import { MasterActivityChart } from "./charts/MasterActivityChart";
 import { MessagesMetaCard } from "./MessagesMetaCard";

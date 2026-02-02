@@ -48,10 +48,6 @@ export function CohortBenchmarkCard({
     const diff = yourValue - cohortValue;
     const percentDiff = cohortValue !== 0 ? (diff / cohortValue) * 100 : 0;
 
-    // Determine if this metric should use colored indicators
-    const useNeutralColors =
-      metric === "Like Rate" || metric === "Swipes Per Day";
-
     if (Math.abs(percentDiff) < 5) {
       return {
         status: "similar",
@@ -66,9 +62,7 @@ export function CohortBenchmarkCard({
         status: "higher",
         icon: TrendingUp,
         text: `+${Math.abs(percentDiff).toFixed(0)}%`,
-        className: useNeutralColors
-          ? "text-muted-foreground"
-          : "text-green-600 dark:text-green-400",
+        className: "text-muted-foreground",
       };
     }
 
@@ -76,9 +70,7 @@ export function CohortBenchmarkCard({
       status: "lower",
       icon: TrendingDown,
       text: `-${Math.abs(percentDiff).toFixed(0)}%`,
-      className: useNeutralColors
-        ? "text-muted-foreground"
-        : "text-red-600 dark:text-red-400",
+      className: "text-muted-foreground",
     };
   };
 

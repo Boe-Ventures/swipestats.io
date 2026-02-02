@@ -55,7 +55,11 @@ export function InsightsProvider({
 
   // In readonly mode, use empty array instead of URL state
   const comparisonIds = readonly ? [] : urlComparisonIds;
-  const setComparisonIds = readonly ? () => {} : setUrlComparisonIds;
+  const setComparisonIds = readonly
+    ? () => {
+        // No-op in readonly mode
+      }
+    : setUrlComparisonIds;
 
   const trpc = useTRPC();
   // Fetch all profiles (main + comparisons) with usage data

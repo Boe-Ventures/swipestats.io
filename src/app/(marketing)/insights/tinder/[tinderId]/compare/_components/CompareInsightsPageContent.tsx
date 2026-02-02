@@ -55,7 +55,7 @@ export function CompareInsightsPageContent() {
               Side-by-side comparison of multiple Tinder profiles
             </p>
           </div>
-          mdm5ed3ety
+
           {/* Action Buttons */}
           <div className="flex gap-2">
             <Button

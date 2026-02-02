@@ -1,10 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
 import { format, parseISO } from "date-fns";
-import { AUTHORS, type AuthorKey } from "@/lib/blog-authors";
-import { Card, CardContent } from "@/components/ui/card";
+import { AUTHORS } from "@/lib/blog-authors";
 
-import type { Post } from ".velite";
+import type { Post } from "@velite";
 
 interface BlogGridProps {
   posts: readonly Post[];
@@ -65,7 +64,7 @@ function AuthorInfo({
           className={`flex size-10 flex-none items-center justify-center rounded-full ${
             isDark
               ? "bg-white/10"
-              : "bg-gradient-to-br from-blue-500 to-purple-600"
+              : "bg-linear-to-br from-blue-500 to-purple-600"
           }`}
         >
           <span className="text-sm font-semibold text-white">
@@ -85,78 +84,6 @@ function AuthorInfo({
   );
 }
 
-// Blog Card Component with Image
-function BlogCard({
-  post,
-  basePath = "/blog",
-}: {
-  post: Post;
-  basePath?: string;
-}) {
-  return (
-    <article className="group flex flex-col items-start justify-between">
-      <Link
-        href={`${basePath}/${post.slug}`}
-        className="relative w-full transition-transform group-hover:scale-[1.02]"
-      >
-        <Image
-          src={getDisplayImageUrl(post)}
-          alt={post.h1}
-          width={640}
-          height={360}
-          className="aspect-video w-full rounded-2xl object-cover sm:aspect-[2/1] lg:aspect-[3/2]"
-        />
-        <div className="absolute inset-0 rounded-2xl ring-1 ring-gray-900/10 ring-inset" />
-      </Link>
-
-      <div className="flex max-w-xl grow flex-col justify-between">
-        <div className="mt-8 flex flex-wrap items-center gap-2 text-xs">
-          <time dateTime={post.publishedAt} className="text-gray-500">
-            {format(parseISO(post.publishedAt), "MMM dd, yyyy")}
-          </time>
-          {post.category && (
-            <span className="relative z-10 rounded-full bg-rose-100 px-3 py-1.5 font-semibold text-rose-700">
-              {post.category}
-            </span>
-          )}
-          {(post.tags || []).map((tag: string) => (
-            <span
-              key={tag}
-              className="relative z-10 rounded-full bg-gray-50 px-3 py-1.5 font-medium text-gray-600 transition-colors hover:bg-gray-200 hover:text-gray-900"
-            >
-              #{tag}
-            </span>
-          ))}
-        </div>
-
-        <div className="relative grow">
-          <h3 className="mt-3 text-lg leading-6 font-semibold text-gray-900">
-            <Link
-              href={`${basePath}/${post.slug}`}
-              className="hover:text-gray-600"
-            >
-              {post.h1}
-            </Link>
-          </h3>
-          {(post.h1Subtitle || post.metaDescription) && (
-            <Link
-              href={`${basePath}/${post.slug}`}
-              className="mt-5 line-clamp-3 block text-sm leading-6 text-gray-600 hover:text-gray-900"
-            >
-              {post.h1Subtitle || post.metaDescription}
-            </Link>
-          )}
-        </div>
-
-        <AuthorInfo
-          author={post.author}
-          authorImage={AUTHORS[post.author].image}
-        />
-      </div>
-    </article>
-  );
-}
-
 // Blog Card Component without Image (Simple)
 function BlogCardSimple({
   post,
@@ -172,7 +99,7 @@ function BlogCardSimple({
           {format(parseISO(post.publishedAt), "MMM dd, yyyy")}
         </time>
         {post.category && (
-          <span className="relative z-10 rounded-md bg-gradient-to-r from-pink-600 to-rose-600 px-3 py-1.5 font-bold text-white shadow-sm">
+          <span className="relative z-10 rounded-md bg-linear-to-r from-pink-600 to-rose-600 px-3 py-1.5 font-bold text-white shadow-sm">
             {post.category}
           </span>
         )}
@@ -279,7 +206,7 @@ export function BlogGrid({
                   {/* Dark overlay */}
                   <div className="absolute inset-0 -z-10 bg-gray-900/60 mix-blend-multiply" />
                   {/* Gradient overlay */}
-                  <div className="absolute inset-0 -z-10 bg-gradient-to-t from-gray-900 via-gray-900/70" />
+                  <div className="absolute inset-0 -z-10 bg-linear-to-t from-gray-900 via-gray-900/70" />
                   <div className="absolute inset-0 -z-10 rounded-xl ring-1 ring-gray-900/10 ring-inset" />
                   <div className="flex flex-wrap items-center gap-2 overflow-hidden text-sm leading-6 text-gray-300">
                     <time
@@ -327,9 +254,7 @@ export function BlogGrid({
 
                   <AuthorInfo
                     author={featuredPosts[0].author}
-                    authorImage={
-                      AUTHORS[featuredPosts[0].author].image
-                    }
+                    authorImage={AUTHORS[featuredPosts[0].author].image}
                     theme="dark"
                     className="mt-6"
                   />
@@ -354,7 +279,7 @@ export function BlogGrid({
                   {/* Dark overlay */}
                   <div className="absolute inset-0 -z-10 bg-gray-900/60 mix-blend-multiply" />
                   {/* Gradient overlay */}
-                  <div className="absolute inset-0 -z-10 bg-gradient-to-t from-gray-900 via-gray-900/70" />
+                  <div className="absolute inset-0 -z-10 bg-linear-to-t from-gray-900 via-gray-900/70" />
                   <div className="absolute inset-0 -z-10 rounded-xl ring-1 ring-gray-900/10 ring-inset" />
                   <div className="flex flex-wrap items-center gap-2 overflow-hidden text-sm leading-6 text-gray-300">
                     <time dateTime={post.publishedAt} className="mr-2">

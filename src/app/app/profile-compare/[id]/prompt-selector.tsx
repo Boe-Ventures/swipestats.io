@@ -3,7 +3,6 @@
 import { useState, useMemo } from "react";
 import { Search, Check } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import { SimpleDialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -106,7 +105,7 @@ export function PromptSelector({
               {filteredPrompts.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <p className="text-muted-foreground text-sm">
-                    No prompts found matching "{searchQuery}"
+                    No prompts found matching &quot;{searchQuery}&quot;
                   </p>
                 </div>
               ) : (
@@ -155,8 +154,8 @@ export function PromptSelector({
         {/* Footer Help Text */}
         <div className="bg-muted/50 rounded-lg border p-3">
           <p className="text-muted-foreground text-xs">
-            💡 Tip: You can also type a custom prompt manually if you don't find
-            one here
+            💡 Tip: You can also type a custom prompt manually if you don&apos;t
+            find one here
           </p>
         </div>
       </div>

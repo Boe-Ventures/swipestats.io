@@ -88,14 +88,14 @@ export const cohortRouter = {
         }
 
         // Return Hinge cohorts
+        // Map MORE and UNKNOWN to OTHER for cohort matching
+        const gender = hingeProfile.gender;
+        const normalizedHingeGender =
+          gender === "MORE" || gender === "UNKNOWN" ? "OTHER" : gender;
+
         return getRelevantCohortsForProfile({
           dataProvider: "HINGE",
-          gender:
-            hingeProfile.gender === "Man"
-              ? "MALE"
-              : hingeProfile.gender === "Woman"
-                ? "FEMALE"
-                : "OTHER",
+          gender: normalizedHingeGender,
           age: hingeProfile.ageAtUpload,
           country: hingeProfile.user?.country,
         });

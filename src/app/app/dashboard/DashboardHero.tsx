@@ -20,6 +20,7 @@ import { AddEventDialog } from "../events/AddEventDialog";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useTRPC } from "@/trpc/react";
 import { useQuery } from "@tanstack/react-query";
+import { useAnalytics } from "@/contexts/AnalyticsProvider";
 
 interface DashboardHeroProps {
   tinderProfiles?: Array<{
@@ -52,6 +53,7 @@ export function DashboardHero({
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [eventDialogOpen, setEventDialogOpen] = useState(false);
   const { effectiveTier, isLifetime, periodEnd } = useSubscription();
+  const { trackEvent } = useAnalytics();
   const trpc = useTRPC();
   const latestTinder = tinderProfiles[0];
   const latestHinge = hingeProfiles[0];
@@ -66,6 +68,17 @@ export function DashboardHero({
   );
 
   const eventCount = eventsQuery.data?.length ?? 0;
+
+  // Handler for opening life events dialog with tracking
+  const handleOpenEventDialog = () => {
+    trackEvent("life_event_dialog_opened", {
+      source: "dashboard",
+      trigger: "card_click",
+      hasExistingEvents: eventCount > 0,
+      eventCount,
+    });
+    setEventDialogOpen(true);
+  };
 
   // Determine CTA content based on tier (MVP: Only FREE and PLUS)
   const getUpgradeCTA = () => {
@@ -124,7 +137,7 @@ export function DashboardHero({
 
           <div className="grid gap-4 md:grid-cols-2">
             {/* Tinder Card */}
-            <Card className="flex flex-col border-pink-100 bg-gradient-to-br from-pink-50 to-red-50 shadow-sm transition-shadow hover:shadow-md">
+            <Card className="flex flex-col border-pink-100 bg-linear-to-br from-pink-50 to-red-50 shadow-sm transition-shadow hover:shadow-md">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg">Tinder</CardTitle>
@@ -192,7 +205,7 @@ export function DashboardHero({
                         href={`/insights/tinder/${latestTinder.tinderId}`}
                         className="flex-1"
                       >
-                        <Button className="w-full bg-gradient-to-r from-pink-600 to-red-600 text-white hover:from-pink-500 hover:to-red-500">
+                        <Button className="w-full bg-linear-to-r from-pink-600 to-red-600 text-white hover:from-pink-500 hover:to-red-500">
                           <BarChart3 className="mr-2 h-4 w-4" />
                           View Stats
                         </Button>
@@ -223,7 +236,7 @@ export function DashboardHero({
                       href="/upload?provider=tinder"
                       className="mt-auto w-full"
                     >
-                      <Button className="w-full bg-gradient-to-r from-pink-600 to-red-600 text-white hover:from-pink-500 hover:to-red-500">
+                      <Button className="w-full bg-linear-to-r from-pink-600 to-red-600 text-white hover:from-pink-500 hover:to-red-500">
                         <Upload className="mr-2 h-4 w-4" />
                         Upload Tinder Data
                       </Button>
@@ -234,7 +247,7 @@ export function DashboardHero({
             </Card>
 
             {/* Hinge Card */}
-            <Card className="flex flex-col border-purple-100 bg-gradient-to-br from-purple-50 to-blue-50 shadow-sm transition-shadow hover:shadow-md">
+            <Card className="flex flex-col border-purple-100 bg-linear-to-br from-purple-50 to-blue-50 shadow-sm transition-shadow hover:shadow-md">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg">Hinge</CardTitle>
@@ -292,7 +305,7 @@ export function DashboardHero({
                         href={`/insights/hinge/${latestHinge.hingeId}`}
                         className="flex-1"
                       >
-                        <Button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-500 hover:to-blue-500">
+                        <Button className="w-full bg-linear-to-r from-purple-600 to-blue-600 text-white hover:from-purple-500 hover:to-blue-500">
                           <BarChart3 className="mr-2 h-4 w-4" />
                           View Stats
                         </Button>
@@ -323,7 +336,7 @@ export function DashboardHero({
                       href="/upload?provider=hinge"
                       className="mt-auto w-full"
                     >
-                      <Button className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white hover:from-purple-500 hover:to-blue-500">
+                      <Button className="w-full bg-linear-to-r from-purple-600 to-blue-600 text-white hover:from-purple-500 hover:to-blue-500">
                         <Upload className="mr-2 h-4 w-4" />
                         Upload Hinge Data
                       </Button>
@@ -372,7 +385,7 @@ export function DashboardHero({
             {/* Life Events Card */}
             <Card
               className="h-full cursor-pointer border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md"
-              onClick={() => setEventDialogOpen(true)}
+              onClick={handleOpenEventDialog}
             >
               <CardContent className="flex h-full flex-col items-start gap-2">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100">
@@ -409,7 +422,7 @@ export function DashboardHero({
             {/* Upgrade CTA - Spans both columns */}
             <div className="col-span-2">
               <Card
-                className={`border-2 bg-gradient-to-br shadow-md transition-all hover:shadow-lg ${
+                className={`border-2 bg-linear-to-br shadow-md transition-all hover:shadow-lg ${
                   effectiveTier === "FREE"
                     ? "animate-pulse-subtle border-pink-300 from-pink-50 via-rose-50 to-purple-50 dark:border-pink-700 dark:from-pink-950/30 dark:via-rose-950/30 dark:to-purple-950/30"
                     : "border-pink-200 from-pink-50 via-rose-50 to-purple-50 dark:border-pink-700 dark:from-pink-950/20 dark:via-rose-950/20 dark:to-purple-950/20"
@@ -419,7 +432,7 @@ export function DashboardHero({
                   <div className="flex flex-col gap-3">
                     <div className="flex items-center gap-3">
                       <div
-                        className={`flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br ${upgradeCTA.iconBg} shadow-sm`}
+                        className={`flex h-10 w-10 items-center justify-center rounded-full bg-linear-to-br ${upgradeCTA.iconBg} shadow-sm`}
                       >
                         <upgradeCTA.icon className="h-5 w-5 text-white" />
                       </div>
@@ -438,7 +451,7 @@ export function DashboardHero({
                       <Button
                         onClick={() => setUpgradeModalOpen(true)}
                         size="sm"
-                        className="w-full bg-gradient-to-r from-pink-600 to-rose-600 font-semibold shadow-sm hover:from-pink-700 hover:to-rose-700 hover:shadow-md"
+                        className="w-full bg-linear-to-r from-pink-600 to-rose-600 font-semibold shadow-sm hover:from-pink-700 hover:to-rose-700 hover:shadow-md"
                       >
                         {upgradeCTA.buttonText}
                         <ArrowRight className="ml-2 h-4 w-4" />

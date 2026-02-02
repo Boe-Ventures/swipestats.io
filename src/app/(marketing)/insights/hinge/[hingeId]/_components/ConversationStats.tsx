@@ -2,7 +2,6 @@
 
 import { Card } from "@/components/ui/card";
 import { useHingeInsights } from "../HingeInsightsProvider";
-import { getGlobalMeta } from "@/lib/types/hinge-profile";
 
 export function ConversationStats() {
   const { profile, meta } = useHingeInsights();

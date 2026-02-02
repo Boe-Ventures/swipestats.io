@@ -1,8 +1,8 @@
 "use client";
 
-import { Check, X } from "lucide-react";
+import Image from "next/image";
+import { Check } from "lucide-react";
 
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -18,7 +18,7 @@ interface Photo {
   originalFilename: string;
 }
 
-interface PhotoGalleryModalProps {
+interface PhotoGalleryDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   photos: Photo[];
@@ -27,17 +27,17 @@ interface PhotoGalleryModalProps {
   maxSelectable?: number;
 }
 
-export function PhotoGalleryModal({
+export function PhotoGalleryDialog({
   open,
   onOpenChange,
   photos,
   selectedPhotos,
   onSelect,
   maxSelectable = 6,
-}: PhotoGalleryModalProps) {
+}: PhotoGalleryDialogProps) {
   const handlePhotoClick = (photoId: string) => {
     onSelect(photoId);
-    // Close modal after selection
+    // Close dialog after selection
     onOpenChange(false);
   };
 
@@ -70,10 +70,11 @@ export function PhotoGalleryModal({
                 onClick={() => canSelect && handlePhotoClick(photo.id)}
               >
                 <div className="relative aspect-square">
-                  <img
+                  <Image
                     src={photo.url}
                     alt={photo.originalFilename}
-                    className="h-full w-full object-cover"
+                    fill
+                    className="object-cover"
                   />
                   {isSelected && (
                     <div className="bg-primary/20 absolute inset-0 flex items-center justify-center">

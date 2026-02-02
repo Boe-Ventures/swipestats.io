@@ -3,22 +3,18 @@
 import { useTinderProfile } from "../../TinderProfileProvider";
 import { useComparison } from "../../ComparisonProvider";
 import { CompareMetricChart } from "./CompareMetricChart";
-import { MatchRateCard } from "./MatchRateCard";
-import { CohortBenchmarksCard } from "./CohortBenchmarksCard";
 import { MatchRateComparisonChart } from "./MatchRateComparisonChart";
 import { CompareMessagesMetaTable } from "./CompareMessagesMetaTable";
 import { ProfileCards } from "./ProfileCards";
-import { DataRequestCTAPlaceholder } from "./Placeholders";
 import { SwipestatsPlusCard } from "./SwipestatsPlusCard";
-import { UserFeedback } from "./UserFeedback";
-import { DataRequestCTA } from "../../_components/DataRequestCTA";
+import { DataRequestCTA } from "../../../../_shared/DataRequestCTA";
 import { DirectoryCTA } from "../../_components/DirectoryCTA";
 
 export function CompareInsightsContent() {
   const { profile, usage, meta, tinderId } = useTinderProfile();
   const { comparisonProfiles } = useComparison();
   const profileWithUsage = { ...profile, usage };
-  const profiles = [profileWithUsage, ...comparisonProfiles];
+  const _profiles = [profileWithUsage, ...comparisonProfiles];
 
   if (!profile) {
     return <div>Loading...</div>;

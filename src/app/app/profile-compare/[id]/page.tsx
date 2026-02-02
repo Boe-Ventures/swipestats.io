@@ -36,7 +36,8 @@ export default function ComparisonPage() {
       <div className="py-12 text-center">
         <h2 className="text-2xl font-bold">Comparison not found</h2>
         <p className="text-muted-foreground mt-2">
-          This comparison may have been deleted or you don't have access to it.
+          This comparison may have been deleted or you don&apos;t have access to
+          it.
         </p>
       </div>
     );

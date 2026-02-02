@@ -2,14 +2,13 @@ import { z } from "zod";
 import {
   createTRPCRouter,
   publicProcedure,
-  protectedProcedure,
 } from "@/server/api/trpc";
 import {
   createContact,
   subscribeToTopics,
   getContactTopicSubscriptions,
 } from "@/server/clients/resend.client";
-import { topicKeySchema, emailSchema, type TopicKey } from "@/lib/validators";
+import { topicKeySchema, emailSchema } from "@/lib/validators";
 
 export const newsletterRouter = createTRPCRouter({
   subscribe: publicProcedure

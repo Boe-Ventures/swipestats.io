@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+// import { Button } from "@/components/ui/button";
 import { ChevronDown, ChevronRight } from "lucide-react";
 
 type SortOption = "messages" | "date" | "recent-activity";
@@ -216,7 +216,7 @@ export function MatchesList() {
 
       {/* Matches Grouped by Year */}
       <div className="space-y-4">
-        {matchesByYear.map((yearGroup, groupIndex) => {
+        {matchesByYear.map((yearGroup, _groupIndex) => {
           const isExpanded = expandedYears.has(yearGroup.year);
 
           return (

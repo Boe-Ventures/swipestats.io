@@ -3,7 +3,7 @@
 import { useQueryState } from "nuqs";
 import { useMemo } from "react";
 
-import type { Post } from ".velite";
+import type { Post } from "@velite";
 import { BlogGrid } from "./BlogGrid";
 import { BlogSearch } from "./BlogSearch";
 

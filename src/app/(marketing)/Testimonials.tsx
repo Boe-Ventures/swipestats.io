@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { cn } from "@/components/ui/lib/utils";
 
 const featuredTestimonial = {
@@ -6,7 +7,7 @@ const featuredTestimonial = {
     name: "Female, 32",
     handle: "Berlin, Germany",
     imageUrl: "/images/marketing/testimonials/f37.jpeg",
-    logoUrl: "https://tailwindui.com/img/logos/savvycal-logo-gray-900.svg",
+    // logoUrl: "https://tailwindui.com/img/logos/savvycal-logo-gray-900.svg",
   },
 };
 const testimonials = [
@@ -125,7 +126,7 @@ export default function Testimonials() {
         aria-hidden="true"
       >
         <div
-          className="ml-[max(50%,38rem)] aspect-[1313/771] w-[82.0625rem] bg-gradient-to-tr from-[#ff80b5] to-[#9089fc]"
+          className="ml-[max(50%,38rem)] aspect-[1313/771] w-[82.0625rem] bg-linear-to-tr from-[#ff80b5] to-[#9089fc]"
           style={{
             clipPath:
               "polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)",
@@ -137,7 +138,7 @@ export default function Testimonials() {
         aria-hidden="true"
       >
         <div
-          className="ml-[-22rem] aspect-[1313/771] w-[82.0625rem] flex-none origin-top-right rotate-[30deg] bg-gradient-to-tr from-[#ff80b5] to-[#9089fc] xl:mr-[calc(50%-12rem)] xl:ml-0"
+          className="ml-[-22rem] aspect-[1313/771] w-[82.0625rem] flex-none origin-top-right rotate-[30deg] bg-linear-to-tr from-[#ff80b5] to-[#9089fc] xl:mr-[calc(50%-12rem)] xl:ml-0"
           style={{
             clipPath:
               "polygon(74.1% 44.1%, 100% 61.6%, 97.5% 26.9%, 85.5% 0.1%, 80.7% 2%, 72.5% 32.5%, 60.2% 62.4%, 52.4% 68.1%, 47.5% 58.3%, 45.2% 34.5%, 27.5% 76.7%, 0.1% 64.9%, 17.9% 100%, 27.6% 76.8%, 76.1% 97.7%, 74.1% 44.1%)",
@@ -159,10 +160,12 @@ export default function Testimonials() {
               <p>{`“${featuredTestimonial.body}”`}</p>
             </blockquote>
             <figcaption className="flex flex-wrap items-center gap-x-4 gap-y-4 border-t border-gray-900/10 px-6 py-4 sm:flex-nowrap">
-              <img
+              <Image
                 className="h-10 w-10 flex-none rounded-full bg-gray-50"
                 src={featuredTestimonial.author.imageUrl}
-                alt=""
+                alt={featuredTestimonial.author.name}
+                width={40}
+                height={40}
               />
               <div className="flex-auto">
                 <div className="font-semibold">
@@ -170,11 +173,14 @@ export default function Testimonials() {
                 </div>
                 <div className="text-gray-600">{`@${featuredTestimonial.author.handle}`}</div>
               </div>
-              <img
+              {/* <Image
                 className="h-10 w-auto flex-none"
                 src={featuredTestimonial.author.logoUrl}
                 alt=""
-              />
+                width={40}
+                height={40}
+                priority
+              /> */}
             </figcaption>
           </figure>
           {testimonials.map((columnGroup, columnGroupIdx) => (
@@ -200,13 +206,15 @@ export default function Testimonials() {
                       className="rounded-2xl bg-white p-6 shadow-lg ring-1 ring-gray-900/5"
                     >
                       <blockquote className="text-gray-900">
-                        <p>{`“${testimonial.body}”`}</p>
+                        <p>{`"${testimonial.body}"`}</p>
                       </blockquote>
                       <figcaption className="mt-6 flex items-center gap-x-4">
-                        <img
+                        <Image
                           className="h-10 w-10 rounded-full bg-gray-50"
                           src={testimonial.author.imageUrl}
-                          alt=""
+                          alt={testimonial.author.name}
+                          width={40}
+                          height={40}
                         />
                         <div>
                           <div className="font-semibold">
@@ -226,110 +234,3 @@ export default function Testimonials() {
     </div>
   );
 }
-
-const avatar1 = () => (
-  <svg
-    baseProfile="full"
-    height="100"
-    version="1.1"
-    width="100"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <defs />
-    <circle cx="50" cy="50" fill="#FFA07A" r="45" />
-    <circle cx="35.0" cy="35.0" fill="white" r="5.625" />
-    <circle cx="65.0" cy="35.0" fill="white" r="5.625" />
-    <path
-      d="M35.0,50 q15.0,22.5 30.0,0"
-      fill="none"
-      stroke="white"
-      strokeWidth="4.5"
-    />
-  </svg>
-);
-
-const avatar2 = () => (
-  <svg
-    baseProfile="full"
-    height="100"
-    version="1.1"
-    width="100"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <defs />
-    <circle cx="50" cy="50" fill="#ADD8E6" r="45" />
-    <circle cx="35.0" cy="35.0" fill="white" r="5.625" />
-    <circle cx="65.0" cy="35.0" fill="white" r="5.625" />
-    <path
-      d="M35.0,50 q15.0,22.5 30.0,0"
-      fill="none"
-      stroke="white"
-      strokeWidth="4.5"
-    />
-  </svg>
-);
-
-const avatar3 = () => (
-  <svg
-    baseProfile="full"
-    height="100"
-    version="1.1"
-    width="100"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <defs />
-    <circle cx="50" cy="50" fill="#ADD8E6" r="45" />
-    <circle cx="35.0" cy="35.0" fill="white" r="5.625" />
-    <circle cx="65.0" cy="35.0" fill="white" r="5.625" />
-    <path
-      d="M35.0,50 q15.0,22.5 30.0,0"
-      fill="none"
-      stroke="white"
-      strokeWidth="4.5"
-    />
-  </svg>
-);
-
-const avatar4 = () => (
-  <svg
-    baseProfile="full"
-    height="100"
-    version="1.1"
-    width="100"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <defs />
-    <circle cx="50" cy="50" fill="#FFA07A" r="45" />
-    <circle cx="35.0" cy="35.0" fill="white" r="5.625" />
-    <circle cx="65.0" cy="35.0" fill="white" r="5.625" />
-    <path
-      d="M35.0,50 q15.0,22.5 30.0,0"
-      fill="none"
-      stroke="white"
-      strokeWidth="4.5"
-    />
-  </svg>
-);
-
-const avatar5 = () => (
-  <svg
-    baseProfile="full"
-    height="100"
-    version="1.1"
-    width="100"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <defs />
-    <circle cx="50" cy="50" fill="#FFA07A" r="45" />
-    <circle cx="35.0" cy="35.0" fill="white" r="5.625" />
-    <circle cx="65.0" cy="35.0" fill="white" r="5.625" />
-    <path
-      d="M35.0,50 q15.0,22.5 30.0,0"
-      fill="none"
-      stroke="white"
-      strokeWidth="4.5"
-    />
-  </svg>
-);
-
-const avatars = [avatar1, avatar2, avatar3, avatar4, avatar5];

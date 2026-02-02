@@ -145,7 +145,7 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export function MasterActivityChart() {
-  const { profile, usage, tinderId, events, readonly } = useTinderProfile();
+  const { profile: _profile, usage, tinderId: _tinderId, events, readonly } = useTinderProfile();
   const [visibleMetrics, setVisibleMetrics] = React.useState<Set<string>>(
     new Set(["matches", "swipeLikes"]),
   );
@@ -694,8 +694,8 @@ export function MasterActivityChart() {
                   No activity in this timeframe
                 </h3>
                 <p className="text-muted-foreground max-w-sm text-sm">
-                  There's no data to display for the selected time range. Try
-                  adjusting your filters or selecting a different period.
+                  There&apos;s no data to display for the selected time range.
+                  Try adjusting your filters or selecting a different period.
                 </p>
               </div>
               <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
@@ -732,7 +732,7 @@ export function MasterActivityChart() {
                   axisLine={false}
                   tickMargin={8}
                   minTickGap={32}
-                  tickFormatter={(value) => periodLabelMap.get(value) ?? value}
+                  tickFormatter={(value: string) => periodLabelMap.get(value) ?? value}
                 />
                 <YAxis tickLine={false} axisLine={false} tickMargin={8} />
                 <ChartTooltip

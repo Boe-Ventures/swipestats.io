@@ -11,12 +11,12 @@ import {
 } from "@/lib/types/profile";
 
 export function ProfileCards() {
-  const { profile, tinderId, usage, meta } = useTinderProfile();
+  const { profile, tinderId, usage, meta: _meta } = useTinderProfile();
   const {
     comparisonProfiles,
     removeComparisonId,
     pendingProfileIds,
-    comparisonIds,
+    comparisonIds: _comparisonIds,
   } = useComparison();
 
   // Combine profile with usage for meta calculation
@@ -24,10 +24,10 @@ export function ProfileCards() {
   const profiles = [profileWithUsage, ...comparisonProfiles];
 
   // Helper to get match rate from profile
-  const getMatchRate = (profile: any): string | null => {
+  const getMatchRate = (profile: unknown): string | null => {
     try {
       // Check if profile has the required data structure
-      if (!profile || !("usage" in profile) || !("profileMeta" in profile)) {
+      if (!profile || typeof profile !== "object" || !("usage" in profile) || !("profileMeta" in profile)) {
         return null;
       }
       const profileMeta = getGlobalMeta(profile as TinderProfileWithUsage);

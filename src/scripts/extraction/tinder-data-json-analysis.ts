@@ -31,7 +31,7 @@ interface TypeInfo {
 function analyzeValue(
   value: unknown,
   options: AnalysisOptions,
-  depth = 0,
+  _depth = 0,
 ): { type: string; details?: string } {
   if (value === null) {
     return { type: "null" };
@@ -300,7 +300,7 @@ function trimStructure(
 
     for (const key of keysToProcess) {
       const val = obj[key];
-      const analysis = analyzeValue(val, options, depth);
+      const _analysis = analyzeValue(val, options, depth);
       let trimmedValue = trimStructure(val, options, depth + 1, undefined, key);
 
       // Add metadata if we have schema info

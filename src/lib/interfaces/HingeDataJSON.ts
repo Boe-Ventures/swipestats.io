@@ -298,6 +298,20 @@ export type HingePromptsFileExport = PromptEntryList;
 export type HingeMediaFileExport = HingeMedia[];
 export type HingeSubscriptionsFileExport = unknown; // Not yet defined
 
+/**
+ * Union type representing any individual Hinge export file content.
+ * Used for documentation and type hints when processing uploaded files.
+ * 
+ * Note: After JSON.parse(), values should be treated as `unknown` and 
+ * validated with type guards before use.
+ */
+export type HingeDataFilePart =
+  | UserData                    // user.json
+  | Conversations               // matches.json
+  | PromptEntryList            // prompts.json
+  | HingeMedia[]               // media.json
+  | unknown[];                 // Other array-based files
+
 // ============================================================================
 // Combined Payload Interface (our current working interface)
 // This represents the merged structure after combining all individual files

@@ -1,15 +1,7 @@
 "use client";
 
 import * as React from "react";
-import {
-  Area,
-  CartesianGrid,
-  ComposedChart,
-  XAxis,
-  YAxis,
-  Bar,
-} from "recharts";
-import { cn } from "@/components/ui";
+import { CartesianGrid, ComposedChart, XAxis, YAxis, Bar } from "recharts";
 import type { ChartConfig } from "@/components/ui/chart";
 import {
   Card,
@@ -174,13 +166,15 @@ export function EnhancedMatchTimeline() {
               tickLine={false}
               axisLine={false}
               tickMargin={8}
-              tickFormatter={(value) => value.toString()}
+              tickFormatter={(value: number | string) => value.toString()}
             />
             <ChartTooltip
               content={({ active, payload }) => {
                 if (!active || !payload?.length) return null;
 
-                const data = payload[0]?.payload as MatchDataPoint;
+                const entry = payload[0] as { payload?: MatchDataPoint } | undefined;
+                const data = entry?.payload;
+                if (!data) return null;
                 return (
                   <div className="bg-background rounded-lg border p-2 shadow-sm">
                     <div className="grid gap-2">

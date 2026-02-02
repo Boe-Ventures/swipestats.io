@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { X, GripVertical, Plus } from "lucide-react";
 import {
   DndContext,
@@ -82,10 +83,12 @@ function SortablePhoto({ photo, onRemove, index }: SortablePhotoProps) {
 
       {/* Photo Thumbnail - Larger */}
       <div className="relative h-32 w-32 shrink-0 overflow-hidden rounded-lg border shadow-sm">
-        <img
+        <Image
           src={photo.url}
           alt={photo.originalFilename}
-          className="h-full w-full object-cover"
+          width={128}
+          height={128}
+          className="h-32 w-32 rounded-lg object-cover"
         />
       </div>
 

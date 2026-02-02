@@ -4,7 +4,7 @@ import { useQueryState } from "nuqs";
 import { Search, X } from "lucide-react";
 import { useTransition } from "react";
 
-import type { Post } from ".velite";
+import type { Post } from "@velite";
 
 interface BlogSearchProps {
   allPosts: readonly Post[];
@@ -49,7 +49,7 @@ export function BlogSearch({ allPosts, resultCount }: BlogSearchProps) {
   });
   const [isPending, startTransition] = useTransition();
 
-  const allTags = getAllTags(allPosts);
+  const _allTags = getAllTags(allPosts);
   const allCategories = getAllCategories(allPosts);
   const hasActiveFilters = searchQuery || selectedTag || selectedCategory;
 
@@ -59,7 +59,7 @@ export function BlogSearch({ allPosts, resultCount }: BlogSearchProps) {
     });
   };
 
-  const handleTagClick = (tag: string) => {
+  const _handleTagClick = (tag: string) => {
     startTransition(() => {
       void setSelectedTag(selectedTag === tag ? null : tag);
     });
@@ -117,7 +117,7 @@ export function BlogSearch({ allPosts, resultCount }: BlogSearchProps) {
                 onClick={() => handleCategoryClick(category)}
                 className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-all ${
                   isActive
-                    ? "bg-gradient-to-r from-pink-600 to-rose-600 text-white shadow-sm"
+                    ? "bg-linear-to-r from-pink-600 to-rose-600 text-white shadow-sm"
                     : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >

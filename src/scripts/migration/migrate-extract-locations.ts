@@ -299,7 +299,7 @@ async function migrateUserLocations() {
           processed++;
         } catch (error) {
           errors++;
-          console.error(`❌ ${user.id.substring(0, 12)}: ${error}`);
+          console.error(`❌ ${user.id.substring(0, 12)}: ${String(error)}`);
         }
       }),
     );

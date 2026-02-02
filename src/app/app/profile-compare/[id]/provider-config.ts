@@ -88,7 +88,7 @@ export const PROVIDER_CONFIGS: Record<DataProvider, ProviderConfig> = {
 };
 
 export function getProviderConfig(
-  provider: DataProvider | string,
+  provider: DataProvider | "FRIEND",
 ): ProviderConfig {
   // If it's a standard provider, return its config
   if (provider in PROVIDER_CONFIGS) {

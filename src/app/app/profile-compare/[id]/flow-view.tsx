@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import {
-  Info,
   Check,
   Plus,
   Image as ImageIcon,
@@ -41,8 +41,8 @@ export function FlowView({
   feedbackCounts,
 }: FlowViewProps) {
   const content = column.content;
-  const photos = content.filter((c) => c.type === "photo");
-  const prompts = content.filter((c) => c.type === "prompt");
+  const _photos = content.filter((c) => c.type === "photo");
+  const _prompts = content.filter((c) => c.type === "prompt");
   const displayBio = column.bio || defaultBio || "";
 
   const hasContent = content.length > 0;
@@ -90,14 +90,16 @@ export function FlowView({
                   return (
                     <div key={item.id} className="px-4 pb-3">
                       <div className="relative overflow-hidden rounded-2xl">
-                        <img
+                        <Image
                           src={item.attachment.url}
                           alt={item.caption || `Photo ${index + 1}`}
+                          width={400}
+                          height={500}
                           className="aspect-[4/5] w-full object-cover"
                         />
                         {/* Caption if present */}
                         {item.caption && (
-                          <div className="absolute right-0 bottom-0 left-0 bg-gradient-to-t from-black/80 to-transparent p-4">
+                          <div className="absolute right-0 bottom-0 left-0 bg-linear-to-t from-black/80 to-transparent p-4">
                             <p className="text-sm text-white">{item.caption}</p>
                           </div>
                         )}

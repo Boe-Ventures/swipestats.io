@@ -126,7 +126,7 @@ export function PercentileIndicator({
             )}
 
             {/* Progress bar */}
-            <div className="relative h-3 rounded-full bg-gradient-to-r from-red-200 via-blue-200 via-yellow-200 to-green-200 dark:from-red-900/30 dark:via-blue-900/30 dark:via-yellow-900/30 dark:to-green-900/30">
+            <div className="relative h-3 rounded-full bg-linear-to-r from-red-200 via-blue-200 via-yellow-200 to-green-200 dark:from-red-900/30 dark:via-blue-900/30 dark:via-yellow-900/30 dark:to-green-900/30">
               {/* Your position marker */}
               <div
                 className="absolute top-1/2 -translate-x-1/2 -translate-y-1/2 transition-all duration-300"
@@ -147,7 +147,7 @@ export function PercentileIndicator({
           {/* Additional context */}
           {showFullDistribution && (
             <div className="text-muted-foreground text-center text-xs">
-              You're performing better than approximately{" "}
+              You&apos;re performing better than approximately{" "}
               <span className="font-semibold">{Math.round(position)}%</span> of
               this cohort
             </div>

@@ -23,10 +23,7 @@ export async function GET(
   const token = searchParams.get("token");
 
   if (!token || token !== env.ADMIN_TOKEN) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 },
-    );
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {
@@ -42,7 +39,6 @@ export async function GET(
         schools: true,
         media: true,
         customData: true,
-        rawUsage: true,
       },
     });
 
@@ -59,7 +55,6 @@ export async function GET(
       schools,
       media,
       customData,
-      rawUsage,
       ...profileData
     } = profile;
 
@@ -72,7 +67,6 @@ export async function GET(
       schools: schools ?? [],
       media: media ?? [],
       customData: customData ?? null,
-      rawUsage: rawUsage ?? null,
     });
   } catch (error) {
     console.error("Error fetching profile data:", error);

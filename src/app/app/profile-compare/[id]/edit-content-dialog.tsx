@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Image from "next/image";
 import { Loader2, Pencil, List } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -137,10 +138,11 @@ export function EditContentDialog({
               {/* Show preview of the photo */}
               {content.attachment && (
                 <div className="relative aspect-video overflow-hidden rounded-lg">
-                  <img
+                  <Image
                     src={content.attachment.url}
                     alt="Photo preview"
-                    className="h-full w-full object-cover"
+                    fill
+                    className="object-cover"
                   />
                 </div>
               )}

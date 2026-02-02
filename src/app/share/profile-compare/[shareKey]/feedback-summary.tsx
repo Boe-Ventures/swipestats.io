@@ -31,7 +31,7 @@ export function FeedbackSummary({ comparison }: FeedbackSummaryProps) {
     const ratings = allFeedback
       .map((f) => f.rating)
       .filter((r): r is number => r !== null && r !== undefined);
-    const comments = allFeedback.filter((f) => f.body && f.body.trim());
+    const comments = allFeedback.filter((f) => f.body?.trim());
 
     const averageRating =
       ratings.length > 0

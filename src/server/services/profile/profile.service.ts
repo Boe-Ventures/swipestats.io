@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 import type {
   AnonymizedTinderDataJSON,
@@ -20,11 +20,27 @@ import {
   type MediaInsert,
 } from "@/server/db/schema";
 import { createId } from "@/server/db/utils";
-import { uploadTinderDataJson } from "../blob.service";
-import { createSimplifiedProfileMeta } from "./meta.service";
+import { computeProfileMeta } from "./meta.service";
 import { createMessagesAndMatches } from "./messages.service";
 import { transformTinderJsonToProfile } from "./transform.service";
 import { createUsageRecords } from "./usage.service";
+
+/**
+ * Result type returned from Tinder profile creation/update operations
+ * Contains the profile and metrics for analytics tracking
+ */
+export type TinderProfileResult = {
+  profile: TinderProfile;
+  metrics: {
+    processingTimeMs: number;
+    matchCount: number;
+    messageCount: number;
+    photoCount: number;
+    usageDays: number;
+    hasPhotos: boolean;
+    jsonSizeMB: number;
+  };
+};
 
 /**
  * Get a Tinder profile by tinderId
@@ -42,9 +58,7 @@ export async function getTinderProfile(
  * Get a Tinder profile with user information by tinderId
  * Used to check ownership and anonymous status
  */
-export async function getTinderProfileWithUser(
-  tinderId: string,
-): Promise<
+export async function getTinderProfileWithUser(tinderId: string): Promise<
   | (TinderProfile & {
       user: { id: string; isAnonymous: boolean | null } | null;
     })
@@ -134,7 +148,7 @@ export async function transferProfileOwnership(
  * Transform Tinder photos to database media insert format
  * Handles both old format (string URLs) and new format (TinderPhoto objects)
  */
-function transformTinderPhotosToMedia(
+export function transformTinderPhotosToMedia(
   photos: string[] | TinderPhoto[],
   tinderProfileId: string,
 ): MediaInsert[] {
@@ -181,7 +195,7 @@ export async function createTinderProfile(data: {
   userId: string;
   timezone?: string;
   country?: string;
-}): Promise<TinderProfile> {
+}): Promise<TinderProfileResult> {
   const startTime = Date.now();
 
   // Log JSON size
@@ -239,10 +253,12 @@ export async function createTinderProfile(data: {
   // 4. Create messages and matches
   const messagesStart = Date.now();
   console.log(`\n💬 [3/6] Processing messages and matches...`);
-  const { matchesInput, messagesInput } = createMessagesAndMatches(
+  const result = createMessagesAndMatches(
     data.anonymizedTinderJson.Messages,
     data.tinderId,
   );
+  const matchesInput = result.matchesInput;
+  const messagesInput = result.messagesInput;
   console.log(`✅ Processed in ${Date.now() - messagesStart}ms`);
   console.log(`   Matches: ${matchesInput.length}`);
   console.log(`   Messages: ${messagesInput.length}`);
@@ -256,7 +272,7 @@ export async function createTinderProfile(data: {
   // 6. Execute transaction to insert all data
   const txStart = Date.now();
   console.log(`\n💾 [5/6] Starting database transaction...`);
-  const result = await withTransaction(async (tx) => {
+  const profile = await withTransaction(async (tx) => {
     // Insert original file (DB only - blob upload disabled)
     const fileStart = Date.now();
     const fileId = createId("oaf");
@@ -381,7 +397,7 @@ export async function createTinderProfile(data: {
 
     // Compute and insert profile meta (simplified schema)
     const metaComputeStart = Date.now();
-    const profileMeta = createSimplifiedProfileMeta(fullProfile);
+    const profileMeta = computeProfileMeta(fullProfile);
     console.log(`   ✓ Metadata computed (${Date.now() - metaComputeStart}ms)`);
 
     const metaInsertStart = Date.now();
@@ -400,258 +416,63 @@ export async function createTinderProfile(data: {
 
   console.log(`\n✅ Transaction completed in ${Date.now() - txStart}ms`);
 
+  // Compute metrics for analytics
   const totalTime = Date.now() - startTime;
+  const photosInput = transformTinderPhotosToMedia(
+    data.anonymizedTinderJson.Photos,
+    data.tinderId,
+  );
+
   console.log(`\n🎉 Profile creation complete for ${data.tinderId}`);
   console.log(
     `⏱️  Total time: ${totalTime}ms (${(totalTime / 1000).toFixed(2)}s)`,
   );
   console.log(`────────────────────────────────────────\n`);
 
-  return result;
+  return {
+    profile,
+    metrics: {
+      processingTimeMs: totalTime,
+      matchCount: matchesInput.length,
+      messageCount: messagesInput.length,
+      photoCount: photosInput.length,
+      usageDays: usageData.length,
+      hasPhotos: photosInput.length > 0,
+      jsonSizeMB: parseFloat(jsonSizeMB),
+    },
+  };
 }
 
 /**
- * Update an existing Tinder profile from anonymized JSON data
- * Replaces all profile data including photos, usage, matches, and messages
+ * Admin function to completely reset/delete a Tinder profile
+ * Removes all profile data including usage, matches, messages, photos, and metadata
+ * Useful for testing or when user explicitly wants a clean slate
+ *
+ * @param tinderId - The Tinder profile ID to reset
  */
-export async function updateTinderProfile(data: {
-  tinderId: string;
-  anonymizedTinderJson: AnonymizedTinderDataJSON;
-  userId: string;
-  timezone?: string;
-  country?: string;
-}): Promise<TinderProfile> {
-  const startTime = Date.now();
+export async function resetTinderProfile(tinderId: string): Promise<void> {
+  console.log(`\n🗑️  Resetting profile: ${tinderId}`);
 
-  console.log(`\n🔄 Starting profile update for ${data.tinderId}`);
-  console.log(`   User ID: ${data.userId}`);
-
-  // Transform data (same as create)
-  const transformStart = Date.now();
-  console.log(`\n🔄 [1/6] Transforming profile data...`);
-  const profileData = transformTinderJsonToProfile(data.anonymizedTinderJson, {
-    tinderId: data.tinderId,
-    userId: data.userId,
-    timezone: data.timezone,
-    country: data.country,
-  });
-  console.log(`✅ Profile transformed in ${Date.now() - transformStart}ms`);
-
-  // Create usage records
-  const usageStart = Date.now();
-  console.log(`\n📊 [2/6] Creating usage records...`);
-  const userBirthDate = new Date(data.anonymizedTinderJson.User.birth_date);
-  const usageData = createUsageRecords(
-    data.anonymizedTinderJson,
-    data.tinderId,
-    userBirthDate,
-  );
-  console.log(
-    `✅ Created ${usageData.length} usage records in ${Date.now() - usageStart}ms`,
-  );
-
-  // Create messages and matches
-  const messagesStart = Date.now();
-  console.log(`\n💬 [3/6] Processing messages and matches...`);
-  const { matchesInput, messagesInput } = createMessagesAndMatches(
-    data.anonymizedTinderJson.Messages,
-    data.tinderId,
-  );
-  console.log(`✅ Processed in ${Date.now() - messagesStart}ms`);
-  console.log(`   Matches: ${matchesInput.length}`);
-  console.log(`   Messages: ${messagesInput.length}`);
-
-  // Log photo count
-  const photoCount = Array.isArray(data.anonymizedTinderJson.Photos)
-    ? data.anonymizedTinderJson.Photos.length
-    : 0;
-  console.log(`\n📷 [4/6] Photos ready for insert: ${photoCount}`);
-
-  // Execute transaction to update all data
-  const txStart = Date.now();
-  console.log(`\n💾 [5/6] Starting database transaction...`);
-  const result = await withTransaction(async (tx) => {
-    // Delete old related data
-    // IMPORTANT: Delete messages first because they have onDelete: "restrict" on matchId
-    console.log(
-      `   ✓ Deleting old usage, matches, messages, photos, and metadata...`,
-    );
-    const deleteStart = Date.now();
-
-    // Delete messages first (has restrict constraint on matchId)
+  await withTransaction(async (tx) => {
+    // Delete in order: messages → matches → usage → media → profileMeta → profile
+    // messages first because they have onDelete: "restrict" on matchId
     await tx
       .delete(messageTable)
-      .where(eq(messageTable.tinderProfileId, data.tinderId));
-    // Now we can delete matches
-    await tx
-      .delete(matchTable)
-      .where(eq(matchTable.tinderProfileId, data.tinderId));
-    // Delete other related data
+      .where(eq(messageTable.tinderProfileId, tinderId));
+    await tx.delete(matchTable).where(eq(matchTable.tinderProfileId, tinderId));
     await tx
       .delete(tinderUsageTable)
-      .where(eq(tinderUsageTable.tinderProfileId, data.tinderId));
-    await tx
-      .delete(mediaTable)
-      .where(eq(mediaTable.tinderProfileId, data.tinderId));
+      .where(eq(tinderUsageTable.tinderProfileId, tinderId));
+    await tx.delete(mediaTable).where(eq(mediaTable.tinderProfileId, tinderId));
     await tx
       .delete(profileMetaTable)
-      .where(eq(profileMetaTable.tinderProfileId, data.tinderId));
-
-    console.log(`   ✓ Old data deleted (${Date.now() - deleteStart}ms)`);
-
-    // Update profile
-    const profileStart = Date.now();
-    const [profile] = await tx
-      .update(tinderProfileTable)
-      .set({
-        ...profileData,
-        updatedAt: new Date(),
-      })
-      .where(eq(tinderProfileTable.tinderId, data.tinderId))
-      .returning();
-    console.log(`   ✓ Profile updated (${Date.now() - profileStart}ms)`);
-
-    // Insert new original file (keep old one for history)
-    const fileStart = Date.now();
-    const fileId = createId("oaf");
-    await tx.insert(originalAnonymizedFileTable).values({
-      id: fileId,
-      dataProvider: "TINDER",
-      swipestatsVersion: "SWIPESTATS_4",
-      file: data.anonymizedTinderJson as unknown as Record<string, unknown>,
-      blobUrl: null,
-      userId: data.userId,
-    });
-    console.log(
-      `   ✓ New original file stored in DB (${Date.now() - fileStart}ms, ID: ${fileId})`,
-    );
-
-    // Insert photos/media (respects consent - Photos will be empty array if filtered)
-    const photosInput = transformTinderPhotosToMedia(
-      data.anonymizedTinderJson.Photos,
-      data.tinderId,
-    );
-    if (photosInput.length > 0) {
-      const photosInsertStart = Date.now();
-      await tx.insert(mediaTable).values(photosInput);
-      console.log(
-        `   ✓ ${photosInput.length} photos inserted (${Date.now() - photosInsertStart}ms)`,
-      );
-    } else {
-      console.log(`   ✓ No photos to insert (user may not have consented)`);
-    }
-
-    // Bulk insert usage in batches
-    if (usageData.length > 0) {
-      const usageInsertStart = Date.now();
-      const BATCH_SIZE = 500;
-
-      for (let i = 0; i < usageData.length; i += BATCH_SIZE) {
-        const batch = usageData.slice(i, i + BATCH_SIZE);
-        await tx.insert(tinderUsageTable).values(batch);
-        const batchNum = Math.floor(i / BATCH_SIZE) + 1;
-        const totalBatches = Math.ceil(usageData.length / BATCH_SIZE);
-        console.log(
-          `   ✓ Batch ${batchNum}/${totalBatches}: ${batch.length} records inserted`,
-        );
-      }
-
-      console.log(
-        `   ✓ ${usageData.length} usage records inserted (${Date.now() - usageInsertStart}ms)`,
-      );
-    }
-
-    // Bulk insert matches in batches
-    if (matchesInput.length > 0) {
-      const matchesInsertStart = Date.now();
-      const BATCH_SIZE = 500;
-
-      for (let i = 0; i < matchesInput.length; i += BATCH_SIZE) {
-        const batch = matchesInput.slice(i, i + BATCH_SIZE);
-        await tx.insert(matchTable).values(batch);
-        const batchNum = Math.floor(i / BATCH_SIZE) + 1;
-        const totalBatches = Math.ceil(matchesInput.length / BATCH_SIZE);
-        console.log(
-          `   ✓ Batch ${batchNum}/${totalBatches}: ${batch.length} matches inserted`,
-        );
-      }
-
-      console.log(
-        `   ✓ ${matchesInput.length} matches inserted (${Date.now() - matchesInsertStart}ms)`,
-      );
-    }
-
-    // Bulk insert messages in batches
-    if (messagesInput.length > 0) {
-      const messagesInsertStart = Date.now();
-      const BATCH_SIZE = 1000;
-
-      for (let i = 0; i < messagesInput.length; i += BATCH_SIZE) {
-        const batch = messagesInput.slice(i, i + BATCH_SIZE);
-        await tx.insert(messageTable).values(batch);
-        const batchNum = Math.floor(i / BATCH_SIZE) + 1;
-        const totalBatches = Math.ceil(messagesInput.length / BATCH_SIZE);
-        console.log(
-          `   ✓ Batch ${batchNum}/${totalBatches}: ${batch.length} messages inserted`,
-        );
-      }
-
-      console.log(
-        `   ✓ ${messagesInput.length} messages inserted (${Date.now() - messagesInsertStart}ms)`,
-      );
-    }
-
-    // Fetch profile with all related data for meta computation
-    const fetchStart = Date.now();
-    console.log(`\n📊 [6/6] Computing profile metadata...`);
-    const fullProfile = await tx.query.tinderProfileTable.findFirst({
-      where: eq(tinderProfileTable.tinderId, data.tinderId),
-      with: {
-        usage: true,
-        matches: {
-          with: {
-            messages: true,
-          },
-        },
-      },
-    });
-    console.log(
-      `   ✓ Profile fetched with relations (${Date.now() - fetchStart}ms)`,
-    );
-
-    if (!fullProfile) {
-      throw new Error(`Failed to fetch profile after update: ${data.tinderId}`);
-    }
-
-    // Compute and insert profile meta (simplified schema)
-    const metaComputeStart = Date.now();
-    const profileMeta = createSimplifiedProfileMeta(fullProfile);
-    console.log(`   ✓ Metadata computed (${Date.now() - metaComputeStart}ms)`);
-
-    const metaInsertStart = Date.now();
-    await tx.insert(profileMetaTable).values({
-      ...profileMeta,
-      id: createId("pmeta"),
-      tinderProfileId: data.tinderId,
-      hingeProfileId: null,
-    });
-    console.log(
-      `   ✓ Profile meta inserted (${Date.now() - metaInsertStart}ms)`,
-    );
-
-    return profile!;
+      .where(eq(profileMetaTable.tinderProfileId, tinderId));
+    await tx
+      .delete(tinderProfileTable)
+      .where(eq(tinderProfileTable.tinderId, tinderId));
   });
 
-  console.log(`\n✅ Transaction completed in ${Date.now() - txStart}ms`);
-
-  const totalTime = Date.now() - startTime;
-  console.log(`\n🎉 Profile update complete for ${data.tinderId}`);
-  console.log(
-    `⏱️  Total time: ${totalTime}ms (${(totalTime / 1000).toFixed(2)}s)`,
-  );
-  console.log(`────────────────────────────────────────\n`);
-
-  return result;
+  console.log(`✅ Profile reset complete: ${tinderId}\n`);
 }
 
 /**

@@ -1,5 +1,3 @@
-import type { ProfileMeta } from "@/server/db/schema";
-
 export type DirectoryProfile = {
   id: string;
   platform: "tinder" | "hinge";

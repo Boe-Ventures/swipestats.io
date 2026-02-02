@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 
 export type BlogPost = {
@@ -32,7 +33,7 @@ export const posts: BlogPost[] = [
     description:
       "The data is embarrassingly intimate, but reveals the most boring parts of ourselves we already knew. I read Modern Romance by Aziz Ansari in 2016 and beyond a shadow of a doubt, it is one of the most influential books I’ve ever read...",
     readTime: "13 min read",
-    imageUrl: "https://miro.medium.com/max/1400/1*VqIdzn99v1VmeQVD34pO_w.jpeg",
+    imageUrl: "/images/marketing/news/SwipestatsArticle.png",
     date: "Aug 10, 2021",
     datetime: "2021-08-10",
     category: { title: "Article", href: "#" },
@@ -68,7 +69,7 @@ export const posts: BlogPost[] = [
     description:
       "Explaining the two worlds of the dating app. Over the last decade, Tinder has redefined the online dating industry. The app has proven especially popular among young people, with three-quarters of those ages 18 to 24 reporting using the app at one point...",
     readTime: "6 min read",
-    imageUrl: "https://miro.medium.com/max/1400/1*lrOlpLXLCam7Dgb-zK3rsA.jpeg",
+    imageUrl: "/images/marketing/news/the-two-worlds-of-tinder.jpg",
     date: "Mar 8, 2021",
     datetime: "2021-03-08",
     category: { title: "Article", href: "#" },
@@ -122,11 +123,13 @@ export function Blog() {
               key={post.id}
               className="flex flex-col items-start justify-between"
             >
-              <div className="relative w-full">
-                <img
+              <div className="relative aspect-[16/9] w-full sm:aspect-[2/1] lg:aspect-[3/2]">
+                <Image
                   src={post.imageUrl}
-                  alt=""
-                  className="aspect-[16/9] w-full rounded-2xl bg-gray-100 object-cover sm:aspect-[2/1] lg:aspect-[3/2]"
+                  alt={post.title}
+                  fill
+                  className="rounded-2xl bg-gray-100 object-cover"
+                  sizes="(max-width: 768px) 100vw, 33vw"
                 />
                 <div className="absolute inset-0 rounded-2xl ring-1 ring-gray-900/10 ring-inset" />
               </div>
@@ -154,9 +157,11 @@ export function Blog() {
                   </p>
                 </div>
                 <div className="relative mt-8 flex items-center gap-x-4">
-                  <img
+                  <Image
                     src={post.author.imageUrl}
-                    alt=""
+                    alt={post.author.name}
+                    width={40}
+                    height={40}
                     className="h-10 w-10 rounded-full bg-gray-100"
                   />
                   <div className="text-sm leading-6">
@@ -201,12 +206,14 @@ export default function Blog2() {
               key={post.id}
               className="relative isolate flex flex-col justify-end overflow-hidden rounded-2xl bg-gray-900 px-8 pt-80 pb-8 sm:pt-48 lg:pt-80"
             >
+              {/* Background image with absolute positioning and overlay - img tag preferred for layout */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={post.imageUrl}
                 alt=""
                 className="absolute inset-0 -z-10 h-full w-full object-cover"
               />
-              <div className="absolute inset-0 -z-10 bg-gradient-to-t from-gray-900 via-gray-900/40" />
+              <div className="absolute inset-0 -z-10 bg-linear-to-t from-gray-900 via-gray-900/40" />
               <div className="absolute inset-0 -z-10 rounded-2xl ring-1 ring-gray-900/10 ring-inset" />
 
               <div className="flex flex-wrap items-center gap-y-1 overflow-hidden text-sm leading-6 text-gray-300">
@@ -221,6 +228,8 @@ export default function Blog2() {
                     <circle cx={1} cy={1} r={1} />
                   </svg>
                   <div className="flex gap-x-2.5">
+                    {/* Small decorative avatar in background layer - optimization overhead not justified */}
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={post.author.imageUrl}
                       alt=""

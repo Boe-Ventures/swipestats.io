@@ -1,8 +1,5 @@
 import { useState, useEffect } from "react";
-import type {
-  SwipestatsProfilePayload,
-  TinderPhoto,
-} from "@/lib/interfaces/TinderDataJSON";
+import type { SwipestatsProfilePayload } from "@/lib/interfaces/TinderDataJSON";
 import type { TinderConsentState } from "@/lib/interfaces/TinderConsent";
 import { Badge } from "@/components/ui/badge";
 import { differenceInYears, format } from "date-fns";
@@ -77,11 +74,10 @@ export function TinderProfilePreview({
   return (
     <div className="relative w-full max-w-xl overflow-hidden rounded-lg bg-white shadow-lg">
       {/* Header with Photos */}
-      <div className="rounded-t-lg bg-gradient-to-r from-rose-700 via-rose-500 to-rose-300 p-4">
+      <div className="rounded-t-lg bg-linear-to-r from-rose-700 via-rose-500 to-rose-300 p-4">
         {hasPhotos ? (
           <ProfilePhotoGrid
             photos={photos}
-            gradientColors="from-rose-700 via-rose-500 to-rose-300"
             initialPhotoCount={3}
             onImageError={handleImageError}
           />

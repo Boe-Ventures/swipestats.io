@@ -20,10 +20,7 @@ export async function GET(
   const token = searchParams.get("token");
 
   if (!token || token !== env.ADMIN_TOKEN) {
-    return NextResponse.json(
-      { error: "Unauthorized" },
-      { status: 401 },
-    );
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   try {

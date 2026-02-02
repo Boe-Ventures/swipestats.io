@@ -43,7 +43,7 @@ type HingeInsightsProviderProps = {
 export function HingeInsightsProvider({
   children,
   hingeId,
-  initialProfile,
+  initialProfile: _initialProfile,
   readonly = false,
   isOwner = false,
   isAnonymous = false,

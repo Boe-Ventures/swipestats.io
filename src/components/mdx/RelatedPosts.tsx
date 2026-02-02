@@ -1,8 +1,7 @@
-import Image from "next/image";
 import Link from "next/link";
 import { format, parseISO } from "date-fns";
 
-import type { Post } from ".velite";
+import type { Post } from "@velite";
 
 interface RelatedPostsProps {
   posts: readonly Post[];
@@ -112,7 +111,7 @@ export function RelatedPosts({
                   />
                 ) : (
                   <div
-                    className={`absolute inset-0 -z-10 bg-gradient-to-br ${getGradientClasses(
+                    className={`absolute inset-0 -z-10 bg-linear-to-br ${getGradientClasses(
                       post.h1,
                       index,
                     )}`}
@@ -126,7 +125,7 @@ export function RelatedPosts({
                 )}
 
                 {/* Gradient overlay */}
-                <div className="absolute inset-0 -z-10 bg-gradient-to-t from-gray-900 via-gray-900/40" />
+                <div className="absolute inset-0 -z-10 bg-linear-to-t from-gray-900 via-gray-900/40" />
                 <div className="absolute inset-0 -z-10 rounded-2xl ring-1 ring-gray-900/10 ring-inset" />
 
                 <div className="flex flex-wrap items-center gap-y-1 overflow-hidden text-sm leading-6 text-gray-300">

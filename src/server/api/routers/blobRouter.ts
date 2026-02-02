@@ -4,7 +4,6 @@ import { and, eq, isNull } from "drizzle-orm";
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { attachmentTable, RESOURCE_TYPES } from "@/server/db/schema";
 import { AttachmentService } from "@/server/services/attachment.service";
-import { BlobService } from "@/server/services/blob.service";
 
 const resourceTypeSchema = z.enum(RESOURCE_TYPES);
 

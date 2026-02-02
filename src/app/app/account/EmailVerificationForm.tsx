@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useTRPC } from "@/trpc/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { authClient } from "@/server/better-auth/client";
+import { ConversionModal } from "@/app/app/dashboard/ConversionModal";
 
 export function EmailVerificationForm() {
   const trpc = useTRPC();
@@ -17,23 +19,42 @@ export function EmailVerificationForm() {
 
   const [newEmail, setNewEmail] = useState("");
   const [showUpdateForm, setShowUpdateForm] = useState(false);
+  const [conversionModalOpen, setConversionModalOpen] = useState(false);
 
+  // Check if user is truly anonymous (not just email format)
+  const isAnonymous = user?.isAnonymous ?? false;
   const isAnonymousEmail = user?.email?.includes("@anonymous.swipestats.io");
   const isVerified = user?.emailVerified;
 
-  const updateEmail = useMutation(
-    trpc.user.updateEmail.mutationOptions({
-      onSuccess: () => {
-        void queryClient.invalidateQueries(trpc.user.me.queryOptions());
-        setNewEmail("");
-        setShowUpdateForm(false);
-      },
-    }),
-  );
+  const updateEmail = useMutation({
+    mutationFn: async ({ email }: { email: string }) => {
+      const { error } = await authClient.changeEmail({
+        newEmail: email,
+        callbackURL: "/app/account",
+      });
+      if (error) throw new Error(error.message);
+      return { success: true };
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries(trpc.user.me.queryOptions());
+      setNewEmail("");
+      setShowUpdateForm(false);
+    },
+  });
 
-  const sendVerificationEmail = useMutation(
-    trpc.user.sendVerificationEmail.mutationOptions(),
-  );
+  const sendVerificationEmail = useMutation({
+    mutationFn: async () => {
+      if (!user?.email) {
+        throw new Error("No email address found");
+      }
+      const { error } = await authClient.sendVerificationEmail({
+        email: user.email,
+        callbackURL: "/app/account",
+      });
+      if (error) throw new Error(error.message);
+      return { message: "Verification email sent! Check your inbox." };
+    },
+  });
 
   const handleUpdateEmail = (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,36 +76,55 @@ export function EmailVerificationForm() {
           <code className="bg-muted rounded px-2 py-1 text-sm break-all">
             {user?.email}
           </code>
-          {isVerified ? (
-            <div className="flex shrink-0 items-center gap-1 text-xs text-green-600">
-              <CheckCircle2 className="h-4 w-4" />
-              Verified
-            </div>
-          ) : (
-            <div className="flex shrink-0 items-center gap-1 text-xs text-yellow-600">
-              <ShieldCheck className="h-4 w-4" />
-              Not Verified
-            </div>
+          {/* Only show verification badge for non-anonymous emails */}
+          {!isAnonymousEmail && (
+            <>
+              {isVerified ? (
+                <div className="flex shrink-0 items-center gap-1 text-xs text-green-600">
+                  <CheckCircle2 className="h-4 w-4" />
+                  Verified
+                </div>
+              ) : (
+                <div className="flex shrink-0 items-center gap-1 text-xs text-yellow-600">
+                  <ShieldCheck className="h-4 w-4" />
+                  Not Verified
+                </div>
+              )}
+            </>
           )}
         </div>
+        {isAnonymousEmail && (
+          <p className="text-muted-foreground text-xs">
+            Temporary email for reference. Add a real email to enable password
+            reset.
+          </p>
+        )}
       </div>
 
-      {/* Anonymous Email Warning */}
-      {isAnonymousEmail && (
+      {/* Anonymous Account - Show in Email Verification section only if truly anonymous */}
+      {isAnonymous && (
         <Alert variant="warning">
           <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
-            <strong>Temporary Email Detected</strong>
+            <strong>Anonymous Account</strong>
             <p className="mt-1 text-sm">
-              You're using a temporary email. Add a real email address to enable
-              password reset functionality.
+              You&apos;re using a temporary account. Create a real account with
+              a username to secure your data permanently.
             </p>
+            <Button
+              onClick={() => setConversionModalOpen(true)}
+              variant="default"
+              size="sm"
+              className="mt-3"
+            >
+              Create Account
+            </Button>
           </AlertDescription>
         </Alert>
       )}
 
       {/* Verification Status & Actions */}
-      {!isVerified && !isAnonymousEmail && (
+      {!isVerified && !isAnonymous && (
         <div className="space-y-3">
           <Alert variant="info">
             <Mail className="h-4 w-4" />
@@ -123,11 +163,21 @@ export function EmailVerificationForm() {
       <div className="space-y-3 border-t pt-2">
         {!showUpdateForm ? (
           <Button
-            onClick={() => setShowUpdateForm(true)}
+            onClick={() => {
+              if (isAnonymous) {
+                setConversionModalOpen(true);
+              } else {
+                setShowUpdateForm(true);
+              }
+            }}
             variant="outline"
             className="w-full"
           >
-            {isAnonymousEmail ? "Add Real Email" : "Update Email"}
+            {isAnonymous
+              ? "Create Account First"
+              : isAnonymousEmail
+                ? "Add Real Email"
+                : "Update Email"}
           </Button>
         ) : (
           <form onSubmit={handleUpdateEmail} className="space-y-3">
@@ -144,7 +194,7 @@ export function EmailVerificationForm() {
                 required
               />
               <p className="text-muted-foreground text-xs">
-                You'll need to verify the new email address.
+                You&apos;ll need to verify the new email address.
               </p>
             </div>
 
@@ -181,6 +231,11 @@ export function EmailVerificationForm() {
           </form>
         )}
       </div>
+
+      <ConversionModal
+        open={conversionModalOpen}
+        onOpenChange={setConversionModalOpen}
+      />
     </div>
   );
 }

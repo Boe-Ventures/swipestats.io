@@ -1,6 +1,21 @@
 // =====================================================
 // EVENT NAME DEFINITIONS
 // =====================================================
+//
+// NAMING CONVENTIONS:
+//
+// Server Events (past tense - completed actions):
+//   - {resource}_{past_tense_verb}: user_signed_up, profile_uploaded, subscription_activated
+//   - Describes what actually happened in the database/backend
+//
+// Client Events (present tense + action verb - user interactions):
+//   - {resource}_{action}_clicked: sign_up_clicked, upgrade_clicked
+//   - {resource}_dialog_opened: event_dialog_opened, upgrade_dialog_opened
+//   - {resource}_toggled: theme_toggled, settings_toggled
+//   - Describes user UI interactions, not outcomes
+//
+// Pattern: Track clicks (not useEffect/dialog state) to avoid duplicates
+// =====================================================
 
 export type ServerAnalyticsEventName =
   // ─────────────────────────────────────────────────
@@ -18,10 +33,18 @@ export type ServerAnalyticsEventName =
   | "anonymous_user_converted" // Guest → Real account
 
   // ─────────────────────────────────────────────────
-  // Profile events (Core product value)
+  // Tinder Profile events (Core product - 99% of usage)
   // ─────────────────────────────────────────────────
-  | "profile_uploaded" // Tinder/Hinge data uploaded successfully
-  | "profile_upload_failed" // Upload failed (for debugging)
+  | "tinder_profile_created" // New Tinder profile uploaded successfully
+  | "tinder_profile_updated" // Existing Tinder profile updated successfully
+  | "tinder_profile_upload_failed" // Tinder upload failed (for debugging)
+
+  // ─────────────────────────────────────────────────
+  // Hinge Profile events (New feature)
+  // ─────────────────────────────────────────────────
+  | "hinge_profile_created" // New Hinge profile uploaded successfully
+  | "hinge_profile_updated" // Existing Hinge profile updated successfully
+  | "hinge_profile_upload_failed" // Hinge upload failed (for debugging)
 
   // ─────────────────────────────────────────────────
   // Comparison events (Unique feature)
@@ -44,7 +67,14 @@ export type ServerAnalyticsEventName =
   | "billing_checkout_created" // LemonSqueezy checkout initiated
   | "billing_payment_successful" // Payment processed successfully
   | "billing_payment_failed" // Payment failed
-  | "billing_subscription_updated"; // Subscription modified
+  | "billing_subscription_updated" // Subscription modified
+
+  // ─────────────────────────────────────────────────
+  // Life Events (Feature engagement)
+  // ─────────────────────────────────────────────────
+  | "life_event_created" // User created a life event
+  | "life_event_updated" // User updated an existing event
+  | "life_event_deleted"; // User deleted an event
 
 export type ClientAnalyticsEventName =
   // ─────────────────────────────────────────────────
@@ -62,9 +92,9 @@ export type ClientAnalyticsEventName =
   // ─────────────────────────────────────────────────
   // Anonymous conversion funnel
   // ─────────────────────────────────────────────────
-  | "conversion_modal_opened" // Modal shown to anonymous user
-  | "conversion_modal_dismissed" // User dismissed without converting
-  | "conversion_modal_tab_changed" // Switched between signup/signin
+  | "conversion_dialog_opened" // Dialog shown to anonymous user
+  | "conversion_dialog_dismissed" // User dismissed without converting
+  | "conversion_dialog_tab_changed" // Switched between signup/signin
 
   // ─────────────────────────────────────────────────
   // Upload flow
@@ -72,17 +102,19 @@ export type ClientAnalyticsEventName =
   | "upload_started"
   | "upload_file_selected"
   | "upload_provider_selected" // User chose Tinder/Hinge/Bumble
+  | "upload_file_processing_started" // File selected (drag or click)
+  | "upload_file_read_failed" // Cannot read file (includes ZIP extraction, JSON parse)
+  | "upload_validation_failed" // Missing required fields
+  | "upload_preview_loaded" // Successfully reached preview (success milestone!)
+  | "upload_consent_photos_toggled" // User changed photo consent
+  | "upload_consent_work_toggled" // User changed work consent
+  | "upload_gender_corrected" // User manually fixed gender (Tinder only)
+  | "upload_submit_clicked" // User clicked submit button
 
   // ─────────────────────────────────────────────────
   // Insights interactions
   // ─────────────────────────────────────────────────
-  | "insights_chart_interacted"
   | "insights_tab_changed"
-
-  // ─────────────────────────────────────────────────
-  // Comparison interactions
-  // ─────────────────────────────────────────────────
-  | "comparison_filter_changed"
 
   // ─────────────────────────────────────────────────
   // Monetization funnel
@@ -96,7 +128,12 @@ export type ClientAnalyticsEventName =
   // Cookie consent
   // ─────────────────────────────────────────────────
   | "cookie_consent_accepted"
-  | "cookie_consent_declined";
+  | "cookie_consent_declined"
+
+  // ─────────────────────────────────────────────────
+  // Life Events (Feature engagement)
+  // ─────────────────────────────────────────────────
+  | "life_event_dialog_opened";
 
 // =====================================================
 // EVENT PROPERTIES DEFINITIONS - SERVER
@@ -150,20 +187,69 @@ export type ServerEventPropertiesDefinition = {
   };
 
   // ─────────────────────────────────────────────────
-  // Profile events
+  // Tinder Profile events
   // ─────────────────────────────────────────────────
-  profile_uploaded: {
-    provider: "tinder" | "hinge" | "bumble";
+  tinder_profile_created: {
+    tinderId: string;
     matchCount: number;
     messageCount: number;
+    photoCount: number;
+    usageDays: number;
     hasPhotos: boolean;
-    isUpdate: boolean; // Re-upload vs first upload
+    processingTimeMs: number;
+    jsonSizeMB: number;
   };
 
-  profile_upload_failed: {
-    provider: "tinder" | "hinge" | "bumble";
-    errorType: "validation" | "parsing" | "database" | "unknown";
-    errorMessage?: string;
+  tinder_profile_updated: {
+    tinderId: string;
+    matchCount: number;
+    messageCount: number;
+    photoCount: number;
+    usageDays: number;
+    hasPhotos: boolean;
+    processingTimeMs: number;
+    jsonSizeMB: number;
+  };
+
+  tinder_profile_upload_failed: {
+    tinderId?: string; // Optional - might fail before ID is known
+    errorType: "auth" | "ownership" | "database" | "unknown";
+    errorMessage: string;
+    jsonSizeMB?: number;
+  };
+
+  // ─────────────────────────────────────────────────
+  // Hinge Profile events
+  // ─────────────────────────────────────────────────
+  hinge_profile_created: {
+    hingeId: string;
+    matchCount: number;
+    messageCount: number;
+    photoCount: number;
+    promptCount: number;
+    interactionCount: number;
+    hasPhotos: boolean;
+    processingTimeMs: number;
+    jsonSizeMB: number;
+  };
+
+  hinge_profile_updated: {
+    hingeId: string;
+    matchCount: number;
+    messageCount: number;
+    photoCount: number;
+    promptCount: number;
+    interactionCount: number;
+    hasPhotos: boolean;
+    processingTimeMs: number;
+    jsonSizeMB: number;
+  };
+
+  hinge_profile_upload_failed: {
+    hingeId?: string; // Optional - might fail before ID is known
+    errorType: "auth" | "ownership" | "database" | "unknown";
+    errorMessage: string;
+    jsonSizeMB?: number;
   };
 
   // ─────────────────────────────────────────────────
@@ -237,6 +323,28 @@ export type ServerEventPropertiesDefinition = {
     previousTier?: "PLUS" | "ELITE";
     newTier?: "PLUS" | "ELITE";
   };
+
+  // ─────────────────────────────────────────────────
+  // Life Events
+  // ─────────────────────────────────────────────────
+  life_event_created: {
+    eventType: string; // EventType from schema
+    hasEndDate: boolean;
+    hasLocation: boolean;
+  };
+
+  life_event_updated: {
+    eventType: string;
+    previousEventType?: string; // If type changed
+    changedEndDate: boolean;
+    changedLocation: boolean;
+  };
+
+  life_event_deleted: {
+    eventType: string;
+    hadEndDate: boolean;
+    hadLocation: boolean;
+  };
 };
 
 // =====================================================
@@ -282,17 +390,17 @@ export type ClientEventPropertiesDefinition = {
   // ─────────────────────────────────────────────────
   // Anonymous conversion funnel
   // ─────────────────────────────────────────────────
-  conversion_modal_opened: {
+  conversion_dialog_opened: {
     reason: "upload_limit" | "feature_gate" | "share_prompt" | "manual";
     hasProfile: boolean;
   };
 
-  conversion_modal_dismissed: {
+  conversion_dialog_dismissed: {
     reason: "upload_limit" | "feature_gate" | "share_prompt" | "manual";
     timeSpentSeconds: number;
   };
 
-  conversion_modal_tab_changed: {
+  conversion_dialog_tab_changed: {
     from: "create" | "signin";
     to: "create" | "signin";
   };
@@ -315,25 +423,83 @@ export type ClientEventPropertiesDefinition = {
     source: "upload_modal" | "instructions_page";
   };
 
+  upload_file_processing_started: {
+    provider: "tinder" | "hinge";
+    fileSize: number;
+    fileType: string; // ".zip" or ".json"
+  };
+
+  upload_file_read_failed: {
+    provider: "tinder" | "hinge";
+    fileSize: number;
+    fileType: string; // ".zip" or ".json"
+    errorType: "file_read" | "zip_extraction" | "json_parse";
+    errorMessage: string;
+    filesInZip?: number; // Only for zip_extraction errors
+  };
+
+  upload_validation_failed: {
+    provider: "tinder" | "hinge";
+    missingFields: string[];
+    errorMessage: string;
+  };
+
+  upload_preview_loaded: {
+    provider: "tinder" | "hinge";
+    tinderId?: string; // Available from this point onwards (Tinder)
+    hingeId?: string; // Available from this point onwards (Hinge)
+    fileSizeMB: number;
+    matchCount: number;
+    messageCount: number;
+    photoCount: number; // Always present, 0 if no consent
+    hasPhotos: boolean; // Actual data presence
+    hasPhotosConsent: boolean; // User consent state
+    usageDays?: number; // Tinder only
+    hasWork?: boolean; // Tinder only - actual data presence
+    hasWorkConsent?: boolean; // Tinder only - user consent state
+    promptCount?: number; // Hinge only
+    hasUnknownGender?: boolean; // Tinder only
+  };
+
+  upload_consent_photos_toggled: {
+    provider: "tinder" | "hinge";
+    tinderId?: string;
+    hingeId?: string;
+    consentGiven: boolean;
+  };
+
+  upload_consent_work_toggled: {
+    provider: "tinder" | "hinge";
+    tinderId?: string;
+    hingeId?: string;
+    consentGiven: boolean;
+  };
+
+  upload_gender_corrected: {
+    tinderId?: string; // Tinder only
+    hadUnknownGender: boolean;
+    hadUnknownInterestedIn: boolean;
+    hadUnknownGenderFilter: boolean;
+  };
+
+  upload_submit_clicked: {
+    provider: "tinder" | "hinge";
+    tinderId?: string;
+    hingeId?: string;
+    photoCount: number; // Always present, 0 if no consent
+    hasPhotos: boolean; // Actual data presence
+    hasPhotosConsent: boolean; // User consent state
+    hasWork?: boolean; // Tinder only - actual data presence
+    hasWorkConsent?: boolean; // Tinder only - user consent state
+    matchCount: number;
+  };
+
   // ─────────────────────────────────────────────────
   // Insights interactions
   // ─────────────────────────────────────────────────
-  insights_chart_interacted: {
-    chartType: string;
-    action: "zoom" | "hover" | "filter" | "export";
-  };
-
   insights_tab_changed: {
     from: string;
     to: string;
-  };
-
-  // ─────────────────────────────────────────────────
-  // Comparison interactions
-  // ─────────────────────────────────────────────────
-  comparison_filter_changed: {
-    filterType: string;
-    value: string;
   };
 
   // ─────────────────────────────────────────────────
@@ -368,6 +534,16 @@ export type ClientEventPropertiesDefinition = {
   // ─────────────────────────────────────────────────
   cookie_consent_accepted: undefined;
   cookie_consent_declined: undefined;
+
+  // ─────────────────────────────────────────────────
+  // Life Events
+  // ─────────────────────────────────────────────────
+  life_event_dialog_opened: {
+    source: "dashboard" | "insights_page";
+    trigger: "card_click" | "button_click"; // What UI element was clicked
+    hasExistingEvents: boolean;
+    eventCount: number;
+  };
 };
 
 // =====================================================

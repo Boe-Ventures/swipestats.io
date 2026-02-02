@@ -8,11 +8,11 @@ import {
   ClockIcon,
   DocumentTextIcon,
   ShieldCheckIcon,
-  SparklesIcon,
+
   UserGroupIcon,
   VideoCameraIcon,
 } from "@heroicons/react/20/solid";
-import { cn } from "@/components/ui/lib/utils";
+// import { cn } from "@/components/ui/lib/utils";
 import { ResearchPricingSection } from "./ResearchPricingSection";
 
 export const metadata: Metadata = {
@@ -198,12 +198,12 @@ function ValuePropositionSection() {
             Unique Dataset
           </h2>
           <p className="mt-2 text-4xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-5xl">
-            The Data That's Almost Impossible to Get is Now Available to
+            The Data That&apos;s Almost Impossible to Get is Now Available to
             Researchers
           </p>
           <p className="mt-6 text-lg/8 text-gray-700">
             Getting real dating app data is nearly impossible. Dating apps
-            rarely share user behavior, and surveys can't capture actual
+            rarely share user behavior, and surveys can&apos;t capture actual
             patterns. Our datasets give you authentic, anonymized data from real
             dating app users—ethically sourced and ready to analyze.
           </p>
@@ -267,7 +267,7 @@ function UseCasesSection() {
                     rel="noopener noreferrer"
                     className="block text-sm text-rose-600 hover:text-rose-500"
                   >
-                    Watch: "The Truth About Dating Apps Statistics" →
+                    Watch: &quot;The Truth About Dating Apps Statistics&quot; →
                   </a>
                   <a
                     href="https://www.youtube.com/watch?v=3pvkgUc9Zbc"
@@ -275,7 +275,7 @@ function UseCasesSection() {
                     rel="noopener noreferrer"
                     className="block text-sm text-rose-600 hover:text-rose-500"
                   >
-                    Watch: "Dating App Data Analysis" →
+                    Watch: &quot;Dating App Data Analysis&quot; →
                   </a>
                 </div>
               </div>
@@ -313,7 +313,7 @@ function UseCasesSection() {
                     rel="noopener noreferrer"
                     className="block text-sm text-rose-600 hover:text-rose-500"
                   >
-                    Read: "Shortcuts to insincerity" research paper →
+                    Read: &quot;Shortcuts to insincerity&quot; research paper →
                   </a>
                 </div>
               </div>
@@ -351,7 +351,8 @@ function UseCasesSection() {
                     rel="noopener noreferrer"
                     className="block text-sm text-rose-600 hover:text-rose-500"
                   >
-                    Read: "I analyzed hundreds of users' Tinder data" →
+                    Read: &quot;I analyzed hundreds of users&apos; Tinder
+                    data&quot; →
                   </a>
                 </div>
               </div>
@@ -452,7 +453,7 @@ function DataDetailsSection() {
             </h3>
             <p className="mt-2 text-sm text-gray-300">
               Download a free sample profile to explore the data structure and
-              see what's included.
+              see what&apos;s included.
             </p>
             <Link
               href="/downloads/swipestats-demo-profile.json.zip"
@@ -948,8 +949,8 @@ function FinalCTASection() {
             Questions?
           </h3>
           <p className="mt-4 text-lg text-gray-600">
-            Have a specific research need or question about our datasets? We're
-            here to help.
+            Have a specific research need or question about our datasets?
+            We&apos;re here to help.
           </p>
           <div className="mt-6">
             <a

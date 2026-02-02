@@ -1,5 +1,6 @@
 import { relations } from "drizzle-orm";
 import {
+  foreignKey,
   index,
   pgEnum,
   pgTable,
@@ -273,57 +274,61 @@ export type LocationInsert = typeof locationTable.$inferInsert;
 
 // ---- TINDER TABLES ------------------------------------------------
 
-export const tinderProfileTable = pgTable("tinder_profile", (t) => ({
-  computed: t.boolean().default(false).notNull(),
-  tinderId: t.text().primaryKey(),
-  createdAt: t
-    .timestamp()
-    .$defaultFn(() => new Date())
-    .notNull(),
-  updatedAt: t
-    .timestamp()
-    .$defaultFn(() => new Date())
-    .notNull(),
-  birthDate: t.timestamp().notNull(),
-  ageAtUpload: t.integer().notNull(),
-  ageAtLastUsage: t.integer().notNull(),
-  createDate: t.timestamp().notNull(),
-  activeTime: t.timestamp(),
-  gender: genderEnum().notNull(),
-  genderStr: t.text().notNull(),
-  bio: t.text(),
-  bioOriginal: t.text(),
-  city: t.text(),
-  country: t.text(),
-  region: t.text(),
-  userInterests: t.jsonb(),
-  interests: t.jsonb(),
-  sexualOrientations: t.jsonb(),
-  descriptors: t.jsonb(),
-  instagramConnected: t.boolean().notNull(),
-  spotifyConnected: t.boolean().notNull(),
-  jobTitle: t.text(),
-  jobTitleDisplayed: t.boolean(),
-  company: t.text(),
-  companyDisplayed: t.boolean(),
-  school: t.text(),
-  schoolDisplayed: t.boolean(),
-  college: t.jsonb(),
-  jobsRaw: t.jsonb(),
-  schoolsRaw: t.jsonb(),
-  educationLevel: t.text(),
-  ageFilterMin: t.integer().notNull(),
-  ageFilterMax: t.integer().notNull(),
-  interestedIn: genderEnum().notNull(),
-  interestedInStr: t.text().notNull(),
-  genderFilter: genderEnum().notNull(),
-  genderFilterStr: t.text().notNull(),
-  swipestatsVersion: swipestatsVersionEnum().notNull(),
-  userId: t.text().references(() => userTable.id, { onDelete: "cascade" }),
-  firstDayOnApp: t.timestamp().notNull(),
-  lastDayOnApp: t.timestamp().notNull(),
-  daysInProfilePeriod: t.integer().notNull(),
-}));
+export const tinderProfileTable = pgTable(
+  "tinder_profile",
+  (t) => ({
+    computed: t.boolean().default(false).notNull(),
+    tinderId: t.text().primaryKey(),
+    createdAt: t
+      .timestamp()
+      .$defaultFn(() => new Date())
+      .notNull(),
+    updatedAt: t
+      .timestamp()
+      .$defaultFn(() => new Date())
+      .notNull(),
+    birthDate: t.timestamp().notNull(),
+    ageAtUpload: t.integer().notNull(),
+    ageAtLastUsage: t.integer().notNull(),
+    createDate: t.timestamp().notNull(),
+    activeTime: t.timestamp(),
+    gender: genderEnum().notNull(),
+    genderStr: t.text().notNull(),
+    bio: t.text(),
+    bioOriginal: t.text(),
+    city: t.text(),
+    country: t.text(),
+    region: t.text(),
+    userInterests: t.jsonb(),
+    interests: t.jsonb(),
+    sexualOrientations: t.jsonb(),
+    descriptors: t.jsonb(),
+    instagramConnected: t.boolean().notNull(),
+    spotifyConnected: t.boolean().notNull(),
+    jobTitle: t.text(),
+    jobTitleDisplayed: t.boolean(),
+    company: t.text(),
+    companyDisplayed: t.boolean(),
+    school: t.text(),
+    schoolDisplayed: t.boolean(),
+    college: t.jsonb(),
+    jobsRaw: t.jsonb(),
+    schoolsRaw: t.jsonb(),
+    educationLevel: t.text(),
+    ageFilterMin: t.integer().notNull(),
+    ageFilterMax: t.integer().notNull(),
+    interestedIn: genderEnum().notNull(),
+    interestedInStr: t.text().notNull(),
+    genderFilter: genderEnum().notNull(),
+    genderFilterStr: t.text().notNull(),
+    swipestatsVersion: swipestatsVersionEnum().notNull(),
+    userId: t.text().references(() => userTable.id, { onDelete: "cascade" }),
+    firstDayOnApp: t.timestamp().notNull(),
+    lastDayOnApp: t.timestamp().notNull(),
+    daysInProfilePeriod: t.integer().notNull(),
+  }),
+  (table) => [uniqueIndex("tinder_profile_user_id_unique").on(table.userId)],
+);
 
 export type TinderProfile = typeof tinderProfileTable.$inferSelect;
 export type TinderProfileInsert = typeof tinderProfileTable.$inferInsert;
@@ -350,12 +355,6 @@ export const tinderUsageTable = pgTable(
     messagesSentRate: t.doublePrecision().notNull(),
     responseRate: t.doublePrecision().notNull(),
     engagementRate: t.doublePrecision().notNull(),
-    dateIsMissingFromOriginalData: t.boolean().notNull(),
-    daysSinceLastActive: t.integer(),
-    activeUser: t.boolean().notNull(),
-    activeUserInLast7Days: t.boolean().notNull(),
-    activeUserInLast14Days: t.boolean().notNull(),
-    activeUserInLast30Days: t.boolean().notNull(),
     userAgeThisDay: t.integer().notNull(),
   }),
   (t) => ({
@@ -368,33 +367,6 @@ export const tinderUsageTable = pgTable(
 
 export type TinderUsage = typeof tinderUsageTable.$inferSelect;
 export type TinderUsageInsert = typeof tinderUsageTable.$inferInsert;
-
-export const rawUsageTable = pgTable("raw_usage", (t) => ({
-  tinderProfileId: t
-    .text()
-    .primaryKey()
-    .references(() => tinderProfileTable.tinderId, { onDelete: "cascade" }),
-  matchesRaw: t.jsonb().notNull(),
-  appOpensRaw: t.jsonb().notNull(),
-  swipeLikesRaw: t.jsonb().notNull(),
-  swipePassesRaw: t.jsonb().notNull(),
-  messagesSentRaw: t.jsonb().notNull(),
-  messagesReceivedRaw: t.jsonb().notNull(),
-}));
-
-export type RawUsage = typeof rawUsageTable.$inferSelect;
-export type RawUsageInsert = typeof rawUsageTable.$inferInsert;
-
-export const rawMessagesTable = pgTable("raw_messages", (t) => ({
-  tinderProfileId: t
-    .text()
-    .primaryKey()
-    .references(() => tinderProfileTable.tinderId, { onDelete: "cascade" }),
-  messages: t.jsonb().notNull(),
-}));
-
-export type RawMessages = typeof rawMessagesTable.$inferSelect;
-export type RawMessagesInsert = typeof rawMessagesTable.$inferInsert;
 
 export const jobTable = pgTable("job", (t) => ({
   jobId: t.text().primaryKey(),
@@ -430,77 +402,82 @@ export type SchoolInsert = typeof schoolTable.$inferInsert;
 
 // ---- HINGE TABLES -------------------------------------------------
 
-export const hingeProfileTable = pgTable("hinge_profile", (t) => ({
-  hingeId: t.text().primaryKey(),
-  createdAt: t
-    .timestamp()
-    .$defaultFn(() => new Date())
-    .notNull(),
-  updatedAt: t
-    .timestamp()
-    .$defaultFn(() => new Date())
-    .notNull(),
-  birthDate: t.timestamp().notNull(),
-  ageAtUpload: t.integer().notNull(),
-  createDate: t.timestamp().notNull(),
-  heightCentimeters: t.integer().notNull(),
-  gender: t.text().notNull(),
-  genderIdentity: t.text().notNull(),
-  genderIdentityDisplayed: t.boolean().notNull(),
-  ethnicities: t.text().array(),
-  ethnicitiesDisplayed: t.boolean().notNull(),
-  religions: t.text().array(),
-  religionsDisplayed: t.boolean().notNull(),
-  workplaces: t.text().array(),
-  workplacesDisplayed: t.boolean().notNull(),
-  jobTitle: t.text().notNull(),
-  jobTitleDisplayed: t.boolean().notNull(),
-  schools: t.text().array(),
-  schoolsDisplayed: t.boolean().notNull(),
-  hometowns: t.text().array(),
-  hometownsDisplayed: t.boolean().notNull(),
-  smoking: t.boolean().notNull(),
-  smokingDisplayed: t.boolean().notNull(),
-  drinking: t.boolean().notNull(),
-  drinkingDisplayed: t.boolean().notNull(),
-  marijuana: t.boolean().notNull(),
-  marijuanaDisplayed: t.boolean().notNull(),
-  drugs: t.boolean().notNull(),
-  drugsDisplayed: t.boolean().notNull(),
-  children: t.text().notNull(),
-  childrenDisplayed: t.boolean().notNull(),
-  familyPlans: t.text().notNull(),
-  familyPlansDisplayed: t.boolean().notNull(),
-  educationAttained: t.text().notNull(),
-  politics: t.text().notNull(),
-  politicsDisplayed: t.boolean().notNull(),
-  instagramDisplayed: t.boolean().notNull(),
-  datingIntention: t.text().notNull(),
-  datingIntentionDisplayed: t.boolean().notNull(),
-  languagesSpoken: t.text().notNull(),
-  languagesSpokenDisplayed: t.boolean().notNull(),
-  relationshipType: t.text().notNull(),
-  relationshipTypeDisplayed: t.boolean().notNull(),
-  selfieVerified: t.boolean().notNull(),
-  distanceMilesMax: t.integer().notNull(),
-  ageMin: t.integer().notNull(),
-  ageMax: t.integer().notNull(),
-  ageDealbreaker: t.boolean().notNull(),
-  heightMin: t.integer().notNull(),
-  heightMax: t.integer().notNull(),
-  heightDealbreaker: t.boolean().notNull(),
-  genderPreference: t.text().notNull(),
-  ethnicityPreference: t.text().array(),
-  ethnicityDealbreaker: t.boolean().notNull(),
-  religionPreference: t.text().array(),
-  religionDealbreaker: t.boolean().notNull(),
-  deviceCount: t.integer(),
-  devicePlatforms: t.text().array(),
-  deviceOsVersions: t.text().array(),
-  appVersions: t.text().array(),
-  country: t.text(),
-  userId: t.text().references(() => userTable.id, { onDelete: "cascade" }),
-}));
+export const hingeProfileTable = pgTable(
+  "hinge_profile",
+  (t) => ({
+    hingeId: t.text().primaryKey(),
+    createdAt: t
+      .timestamp()
+      .$defaultFn(() => new Date())
+      .notNull(),
+    updatedAt: t
+      .timestamp()
+      .$defaultFn(() => new Date())
+      .notNull(),
+    birthDate: t.timestamp().notNull(),
+    ageAtUpload: t.integer().notNull(),
+    createDate: t.timestamp().notNull(),
+    heightCentimeters: t.integer().notNull(),
+    gender: genderEnum().notNull(),
+    genderStr: t.text().notNull(),
+    genderIdentity: t.text().notNull(),
+    genderIdentityDisplayed: t.boolean().notNull(),
+    ethnicities: t.text().array(),
+    ethnicitiesDisplayed: t.boolean().notNull(),
+    religions: t.text().array(),
+    religionsDisplayed: t.boolean().notNull(),
+    workplaces: t.text().array(),
+    workplacesDisplayed: t.boolean().notNull(),
+    jobTitle: t.text().notNull(),
+    jobTitleDisplayed: t.boolean().notNull(),
+    schools: t.text().array(),
+    schoolsDisplayed: t.boolean().notNull(),
+    hometowns: t.text().array(),
+    hometownsDisplayed: t.boolean().notNull(),
+    smoking: t.boolean().notNull(),
+    smokingDisplayed: t.boolean().notNull(),
+    drinking: t.boolean().notNull(),
+    drinkingDisplayed: t.boolean().notNull(),
+    marijuana: t.boolean().notNull(),
+    marijuanaDisplayed: t.boolean().notNull(),
+    drugs: t.boolean().notNull(),
+    drugsDisplayed: t.boolean().notNull(),
+    children: t.text().notNull(),
+    childrenDisplayed: t.boolean().notNull(),
+    familyPlans: t.text().notNull(),
+    familyPlansDisplayed: t.boolean().notNull(),
+    educationAttained: t.text().notNull(),
+    politics: t.text().notNull(),
+    politicsDisplayed: t.boolean().notNull(),
+    instagramDisplayed: t.boolean().notNull(),
+    datingIntention: t.text().notNull(),
+    datingIntentionDisplayed: t.boolean().notNull(),
+    languagesSpoken: t.text().notNull(),
+    languagesSpokenDisplayed: t.boolean().notNull(),
+    relationshipType: t.text().notNull(),
+    relationshipTypeDisplayed: t.boolean().notNull(),
+    selfieVerified: t.boolean().notNull(),
+    distanceMilesMax: t.integer().notNull(),
+    ageMin: t.integer().notNull(),
+    ageMax: t.integer().notNull(),
+    ageDealbreaker: t.boolean().notNull(),
+    heightMin: t.integer().notNull(),
+    heightMax: t.integer().notNull(),
+    heightDealbreaker: t.boolean().notNull(),
+    genderPreference: t.text().notNull(),
+    ethnicityPreference: t.text().array(),
+    ethnicityDealbreaker: t.boolean().notNull(),
+    religionPreference: t.text().array(),
+    religionDealbreaker: t.boolean().notNull(),
+    deviceCount: t.integer(),
+    devicePlatforms: t.text().array(),
+    deviceOsVersions: t.text().array(),
+    appVersions: t.text().array(),
+    country: t.text(),
+    userId: t.text().references(() => userTable.id, { onDelete: "cascade" }),
+  }),
+  (table) => [uniqueIndex("hinge_profile_user_id_unique").on(table.userId)],
+);
 
 export type HingeProfile = typeof hingeProfileTable.$inferSelect;
 export type HingeProfileInsert = typeof hingeProfileTable.$inferInsert;
@@ -649,6 +626,10 @@ export const mediaTable = pgTable(
 export type Media = typeof mediaTable.$inferSelect;
 export type MediaInsert = typeof mediaTable.$inferInsert;
 
+// ProfileMeta - Pre-computed aggregate statistics for profiles
+// Computed by computeProfileMeta() in meta.service.ts
+// IMPORTANT: All metrics exclude synthetic days (dateIsMissingFromOriginalData = true)
+// to avoid skewing statistics with inferred zero values
 export const profileMetaTable = pgTable("profile_meta", (t) => ({
   id: t.text().primaryKey(),
   tinderProfileId: t
@@ -662,7 +643,7 @@ export const profileMetaTable = pgTable("profile_meta", (t) => ({
   from: t.timestamp().notNull(),
   to: t.timestamp().notNull(),
   daysInPeriod: t.integer().notNull(),
-  daysActive: t.integer().notNull(),
+  daysActive: t.integer().notNull(), // Days with swipes (swipeLikes > 0 OR swipePasses > 0)
 
   // Core totals
   swipeLikesTotal: t.integer().notNull(),
@@ -675,7 +656,7 @@ export const profileMetaTable = pgTable("profile_meta", (t) => ({
   // Core rates (pre-computed for faster queries)
   likeRate: t.doublePrecision().notNull(), // swipeLikes / totalSwipes
   matchRate: t.doublePrecision().notNull(), // matches / swipeLikes
-  swipesPerDay: t.doublePrecision().notNull(), // totalSwipes / daysInPeriod
+  swipesPerDay: t.doublePrecision().notNull(), // totalSwipes / daysActive (days with swipes)
 
   // Conversation stats (essential for "Your Chats" section)
   conversationCount: t.integer().notNull(),
@@ -1136,12 +1117,8 @@ export const profileComparisonFeedbackTable = pgTable(
       .primaryKey()
       .$defaultFn(() => createId("pcf")),
     // Polymorphic target - exactly one must be set
-    contentId: t.text().references(() => comparisonColumnContentTable.id, {
-      onDelete: "cascade",
-    }),
-    columnId: t
-      .text()
-      .references(() => comparisonColumnTable.id, { onDelete: "cascade" }),
+    contentId: t.text(),
+    columnId: t.text(),
     // Author - always required (anonymous users get userId via Better Auth)
     authorId: t
       .text()
@@ -1168,6 +1145,17 @@ export const profileComparisonFeedbackTable = pgTable(
     index("pcf_column_id_idx").on(table.columnId),
     index("pcf_author_id_idx").on(table.authorId),
     index("pcf_created_at_idx").on(table.createdAt),
+    // Custom FK names to avoid PostgreSQL 63-char identifier limit
+    foreignKey({
+      name: "pcf_content_fk",
+      columns: [table.contentId],
+      foreignColumns: [comparisonColumnContentTable.id],
+    }).onDelete("cascade"),
+    foreignKey({
+      name: "pcf_column_fk",
+      columns: [table.columnId],
+      foreignColumns: [comparisonColumnTable.id],
+    }).onDelete("cascade"),
   ],
 );
 
@@ -1310,14 +1298,6 @@ export const tinderProfileRelations = relations(
     usage: many(tinderUsageTable),
     jobs: many(jobTable),
     schools: many(schoolTable),
-    rawUsage: one(rawUsageTable, {
-      fields: [tinderProfileTable.tinderId],
-      references: [rawUsageTable.tinderProfileId],
-    }),
-    rawMessages: one(rawMessagesTable, {
-      fields: [tinderProfileTable.tinderId],
-      references: [rawMessagesTable.tinderProfileId],
-    }),
     customData: one(customDataTable, {
       fields: [tinderProfileTable.tinderId],
       references: [customDataTable.tinderProfileId],
@@ -1484,20 +1464,6 @@ export const purchaseRelations = relations(purchaseTable, ({ one }) => ({
   }),
   tinderProfile: one(tinderProfileTable, {
     fields: [purchaseTable.tinderProfileId],
-    references: [tinderProfileTable.tinderId],
-  }),
-}));
-
-export const rawUsageRelations = relations(rawUsageTable, ({ one }) => ({
-  tinderProfile: one(tinderProfileTable, {
-    fields: [rawUsageTable.tinderProfileId],
-    references: [tinderProfileTable.tinderId],
-  }),
-}));
-
-export const rawMessagesRelations = relations(rawMessagesTable, ({ one }) => ({
-  tinderProfile: one(tinderProfileTable, {
-    fields: [rawMessagesTable.tinderProfileId],
     references: [tinderProfileTable.tinderId],
   }),
 }));

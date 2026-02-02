@@ -67,7 +67,8 @@ export const EmailVerificationInline = ({
           margin: "0 0 16px 0",
         }}
       >
-        If you didn't request this verification email, you can safely ignore it.
+        If you didn&apos;t request this verification email, you can safely
+        ignore it.
       </p>
 
       <p

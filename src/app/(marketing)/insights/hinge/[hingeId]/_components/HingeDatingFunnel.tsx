@@ -8,7 +8,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useHingeInsights } from "../HingeInsightsProvider";
-import { getGlobalMeta } from "@/lib/types/hinge-profile";
 import { useMemo } from "react";
 
 interface FunnelStage {

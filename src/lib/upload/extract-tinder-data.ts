@@ -31,8 +31,12 @@ export function isValidTinderJson(
 
   // Validate Usage data
   if (!tinderJson.Usage || typeof tinderJson.Usage !== "object") {
+    const topLevelKeys = Object.keys(tinderJson).slice(0, 20).join(", ");
     errors.usage_missing = {
       message: "Usage object is missing or invalid",
+      availableFields: topLevelKeys,
+      hasUsageField: "Usage" in tinderJson,
+      usageType: typeof tinderJson.Usage,
     };
     return [false, errors];
   }
@@ -162,7 +166,10 @@ export async function extractTinderData(
 
     if (!jsonDataIsValid) {
       console.error("Tinder data is invalid", invalidKeysAndValues);
-      throw new Error("Tinder data json is invalid");
+      const errorDetails = Object.entries(invalidKeysAndValues)
+        .map(([key, value]) => `${key}: ${value.message}`)
+        .join(", ");
+      throw new Error(`Tinder data validation failed: ${errorDetails}`);
     }
 
     // Log format detection for debugging
@@ -243,6 +250,10 @@ export async function extractTinderData(
     return swipestatsProfilePayload;
   } catch (error) {
     console.error("Tinder data extraction failed", error);
+    // Re-throw the original error to preserve the validation details
+    if (error instanceof Error) {
+      throw error;
+    }
     throw new Error("Something went wrong with profile extraction");
   }
 }

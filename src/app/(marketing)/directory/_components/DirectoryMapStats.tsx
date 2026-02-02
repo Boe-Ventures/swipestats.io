@@ -4,11 +4,9 @@ import React, { useMemo, useState } from "react";
 import {
   ChevronDown,
   ChevronUp,
-  Users,
   TrendingUp,
   Globe,
   Crown,
-  Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/components/ui/index";
@@ -103,7 +101,7 @@ export function DirectoryMapStats({
     };
   }, [profiles]);
 
-  const totalProfiles = totalCount ?? profiles.length;
+  const _totalProfiles = totalCount ?? profiles.length;
   const filteredCount = profiles.length;
 
   return (
@@ -303,7 +301,7 @@ export function DirectoryMapStats({
               </div>
 
               {/* Upgrade CTA */}
-              <div className="mt-3 rounded-md border bg-gradient-to-r from-pink-50 to-rose-50 p-3 dark:from-pink-950/50 dark:to-rose-950/50">
+              <div className="mt-3 rounded-md border bg-linear-to-r from-pink-50 to-rose-50 p-3 dark:from-pink-950/50 dark:to-rose-950/50">
                 <div className="flex items-start gap-2">
                   <Crown className="mt-0.5 h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400" />
                   <div className="flex-1 space-y-1.5">
@@ -323,7 +321,7 @@ export function DirectoryMapStats({
                       }
                       className={cn(
                         "h-7 w-full text-xs font-semibold",
-                        "bg-gradient-to-r from-pink-600 to-rose-600",
+                        "bg-linear-to-r from-pink-600 to-rose-600",
                         "hover:from-pink-700 hover:to-rose-700",
                       )}
                     >

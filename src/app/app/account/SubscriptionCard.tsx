@@ -49,7 +49,7 @@ export function SubscriptionCard() {
         </p>
         <Button
           onClick={() => openUpgradeModal()}
-          className="bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700"
+          className="bg-linear-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700"
         >
           <Sparkles className="mr-2 h-4 w-4" />
           Upgrade Now
@@ -63,7 +63,7 @@ export function SubscriptionCard() {
     return (
       <div className="space-y-4">
         <div className="flex items-center gap-3">
-          <Badge className="bg-gradient-to-r from-pink-500 to-rose-500 text-white">
+          <Badge className="bg-linear-to-r from-pink-500 to-rose-500 text-white">
             <Crown className="mr-1 h-3 w-3" />
             {tier} - Lifetime
           </Badge>
@@ -97,7 +97,7 @@ export function SubscriptionCard() {
       <div className="space-y-4">
         {/* Status & Plan */}
         <div className="flex flex-wrap items-center gap-3">
-          <Badge className="bg-gradient-to-r from-pink-500 to-rose-500 text-white">
+          <Badge className="bg-linear-to-r from-pink-500 to-rose-500 text-white">
             <Crown className="mr-1 h-3 w-3" />
             {tier}
           </Badge>
@@ -192,7 +192,7 @@ export function SubscriptionCard() {
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-3">
-        <Badge className="bg-gradient-to-r from-pink-500 to-rose-500 text-white">
+        <Badge className="bg-linear-to-r from-pink-500 to-rose-500 text-white">
           <Crown className="mr-1 h-3 w-3" />
           {tier}
         </Badge>

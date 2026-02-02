@@ -121,7 +121,7 @@ export function ComingSoonWrapper({
           <p className="text-center">Loading...</p>
         </div>
       ) : isAlreadySubscribed || justSubscribed ? (
-        <div className="mx-auto max-w-lg rounded-lg bg-gradient-to-r from-rose-900 to-rose-500 p-8 text-white shadow-md">
+        <div className="mx-auto max-w-lg rounded-lg bg-linear-to-r from-rose-900 to-rose-500 p-8 text-white shadow-md">
           <h2 className="mb-4 text-2xl font-semibold">
             {isAlreadySubscribed && !justSubscribed
               ? "You're already subscribed! 🎉"

@@ -245,8 +245,8 @@ export function MatchRateComparisonChart() {
                 No data available
               </h3>
               <p className="text-muted-foreground max-w-sm text-sm">
-                This profile doesn't have any usage data yet. Try uploading your
-                Tinder data export to see insights here.
+                This profile doesn&apos;t have any usage data yet. Try uploading
+                your Tinder data export to see insights here.
               </p>
             </div>
           </div>
@@ -389,7 +389,7 @@ export function MatchRateComparisonChart() {
                 No activity in this timeframe
               </h3>
               <p className="text-muted-foreground max-w-sm text-sm">
-                There's no data to display for the selected time range. Try
+                There&apos;s no data to display for the selected time range. Try
                 adjusting your filters or selecting a different period.
               </p>
             </div>

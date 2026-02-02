@@ -180,6 +180,8 @@ export default function DataRequestSupport() {
       {/* Header */}
       <div className="relative pb-32">
         <div className="absolute inset-0 overflow-hidden sm:rounded-3xl">
+          {/* Decorative header background with CSS filters and absolute positioning */}
+          {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             // className="h-full w-full object-cover"
             className="absolute inset-0 h-full w-full object-cover brightness-150 saturate-0 sm:rounded-3xl"

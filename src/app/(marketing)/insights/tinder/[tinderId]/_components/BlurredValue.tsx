@@ -35,7 +35,7 @@ export function BlurredValue({
   const badgeColor =
     tier === "account"
       ? "bg-blue-500/90 text-white"
-      : "bg-gradient-to-r from-pink-500 to-orange-500 text-white";
+      : "bg-linear-to-r from-pink-500 to-orange-500 text-white";
 
   return (
     <span className={`relative inline-block ${className}`}>

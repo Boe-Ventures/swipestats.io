@@ -185,16 +185,16 @@ export {
 };
 
 // SimpleSelect - A less verbose way to create selects
-type SimpleSelectOption = {
-  value: string;
+type SimpleSelectOption<T extends string = string> = {
+  value: T;
   label: string;
   disabled?: boolean;
 };
 
-type SimpleSelectProps = {
-  options: SimpleSelectOption[];
-  value?: string;
-  onValueChange?: (value: string) => void;
+type SimpleSelectProps<T extends string = string> = {
+  options: SimpleSelectOption<T>[];
+  value?: T;
+  onValueChange?: (value: T) => void;
   placeholder?: string;
   className?: string;
   size?: "sm" | "default";
@@ -202,7 +202,7 @@ type SimpleSelectProps = {
   "aria-label"?: string;
 };
 
-export function SimpleSelect({
+export function SimpleSelect<T extends string = string>({
   options,
   value,
   onValueChange,
@@ -211,7 +211,7 @@ export function SimpleSelect({
   size = "default",
   disabled = false,
   "aria-label": ariaLabel,
-}: SimpleSelectProps) {
+}: SimpleSelectProps<T>) {
   return (
     <Select value={value} onValueChange={onValueChange} disabled={disabled}>
       <SelectTrigger className={className} size={size} aria-label={ariaLabel}>
