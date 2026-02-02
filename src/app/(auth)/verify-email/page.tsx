@@ -1,43 +1,57 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, AlertTriangle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useTRPC } from "@/trpc/react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { authClient } from "@/server/better-auth/client";
 
 function VerifyEmailContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
   const trpc = useTRPC();
+  const hasAttemptedRef = useRef(false);
 
   const [countdown, setCountdown] = useState(5);
 
-  const verifyEmail = useMutation(
-    trpc.user.verifyEmail.mutationOptions({
-      onSuccess: () => {
-        // Start countdown to redirect
-        const timer = setInterval(() => {
-          setCountdown((prev) => {
-            if (prev <= 1) {
-              clearInterval(timer);
-              router.push("/app/account");
-              return 0;
-            }
-            return prev - 1;
-          });
-        }, 1000);
-      },
-    }),
-  );
+  // Check if user is anonymous (Better Auth will also check server-side)
+  const { data: user } = useQuery(trpc.user.me.queryOptions());
+  const isAnonymous = user?.isAnonymous ?? false;
+
+  const verifyEmail = useMutation({
+    mutationFn: async (token: string) => {
+      const { error } = await authClient.verifyEmail({
+        query: { token },
+      });
+      if (error) throw new Error(error.message);
+      return { message: "Email verified successfully!" };
+    },
+    onSuccess: () => {
+      // Start countdown to redirect
+      const timer = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            clearInterval(timer);
+            router.push("/app/account");
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    },
+  });
 
   useEffect(() => {
-    if (token) {
-      verifyEmail.mutate({ token });
+    // Only attempt verification once
+    // Better Auth handles anonymous user checks server-side
+    if (token && !hasAttemptedRef.current) {
+      hasAttemptedRef.current = true;
+      verifyEmail.mutate(token);
     }
   }, [token, verifyEmail]);
 
@@ -66,6 +80,25 @@ function VerifyEmailContent() {
               className="bg-rose-600 text-white hover:bg-rose-500"
             >
               Go to Account Settings
+            </Button>
+          </div>
+        ) : isAnonymous ? (
+          <div className="space-y-4 text-center">
+            <AlertTriangle className="mx-auto h-16 w-16 text-yellow-600" />
+            <div className="space-y-2">
+              <h3 className="text-lg font-semibold text-gray-900">
+                Create an Account First
+              </h3>
+              <p className="text-gray-600">
+                You need to create a real account before verifying your email.
+                Anonymous accounts cannot verify email addresses.
+              </p>
+            </div>
+            <Button
+              onClick={() => router.push("/app/dashboard")}
+              className="bg-rose-600 text-white hover:bg-rose-500"
+            >
+              Go to Dashboard
             </Button>
           </div>
         ) : verifyEmail.isPending ? (

@@ -230,7 +230,7 @@ export function SwipestatsPlusCard({
               <button
                 onClick={() => setSelectedPeriod("monthly")}
                 className={cn(
-                  "rounded-md px-3 py-1 text-xs font-medium transition-colors",
+                  "cursor-pointer rounded-md px-3 py-1 text-xs font-medium transition-colors",
                   selectedPeriod === "monthly"
                     ? "bg-white shadow-sm"
                     : "text-gray-600 hover:text-gray-900",
@@ -241,7 +241,7 @@ export function SwipestatsPlusCard({
               <button
                 onClick={() => setSelectedPeriod("lifetime")}
                 className={cn(
-                  "relative rounded-md px-3 py-1 text-xs font-medium transition-colors",
+                  "relative cursor-pointer rounded-md px-3 py-1 text-xs font-medium transition-colors",
                   selectedPeriod === "lifetime"
                     ? "bg-white shadow-sm"
                     : "text-gray-600 hover:text-gray-900",
@@ -285,7 +285,7 @@ export function SwipestatsPlusCard({
             <button
               onClick={handleUpgrade}
               disabled={isProcessing}
-              className="mt-10 flex w-full items-center justify-center gap-2 rounded-md bg-rose-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-rose-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600 disabled:cursor-not-allowed disabled:opacity-50"
+              className="mt-10 flex w-full cursor-pointer items-center justify-center gap-2 rounded-md bg-rose-600 px-3 py-2 text-center text-sm font-semibold text-white shadow-sm hover:bg-rose-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isProcessing ? (
                 <>

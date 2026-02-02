@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { SimpleDialog } from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { useTinderProfile } from "../../TinderProfileProvider";
 import { useComparison } from "../../ComparisonProvider";
 import { useTRPC } from "@/trpc/react";
@@ -32,6 +32,7 @@ import { InfoAlert } from "@/components/ui/alert";
 export function ComparisonDialog() {
   const [open, setOpen] = useState(false);
   const [showAllCohorts, setShowAllCohorts] = useState(false);
+  const [showMoreProfiles, setShowMoreProfiles] = useState(false);
   const { tinderId, meta } = useTinderProfile();
   const { addComparisonId, comparisonIds } = useComparison();
   const { effectiveTier } = useSubscription();
@@ -49,8 +50,9 @@ export function ComparisonDialog() {
   const { data, isLoading } = useQuery(
     trpc.directory.list.queryOptions({
       page: 1,
-      limit: 50,
+      limit: 10, // Fetch 10 profiles: show 2 initially, then 8 more
       platform: "tinder", // Only show Tinder profiles
+      sortBy: "newest",
     }),
   );
 
@@ -102,21 +104,19 @@ export function ComparisonDialog() {
     );
   }, [data?.profiles]);
 
-  const _availableProfiles = useMemo(() => {
-    if (hasPremiumAccess) {
-      // Premium users see all real profiles
-      return data?.profiles.filter((p) => p.id !== tinderId) || [];
-    } else {
-      // Free users only see demo profiles
-      return demoProfiles;
-    }
-  }, [data?.profiles, tinderId, hasPremiumAccess, demoProfiles]);
+  // Directory profiles (non-demo, excluding current user's profile)
+  const directoryProfiles = useMemo(() => {
+    if (!data?.profiles?.length) return [];
+    const demoIdSet = new Set<string>(DEMO_PROFILE_IDS);
+    return data.profiles.filter(
+      (p) => !demoIdSet.has(p.id) && p.id !== tinderId,
+    );
+  }, [data?.profiles, tinderId]);
 
-  // Premium profiles (locked for free users)
-  const _premiumProfiles = useMemo(() => {
-    if (hasPremiumAccess) return [];
-    return data?.profiles.filter((p) => p.id !== tinderId).slice(0, 4) || [];
-  }, [data?.profiles, tinderId, hasPremiumAccess]);
+  // Show 2 initially, then 8 more (10 total)
+  const displayedDirectoryProfiles = showMoreProfiles
+    ? directoryProfiles
+    : directoryProfiles.slice(0, 2);
 
   const handleAddProfile = (tinderId: string) => {
     // Check if it's a premium profile and user doesn't have access
@@ -204,18 +204,100 @@ export function ComparisonDialog() {
             </>
           )}
 
-          {/* Info about directory comparisons coming soon */}
-          <InfoAlert>
-            <p>
-              Directory profile comparisons coming soon.{" "}
-              <Link
-                href="/directory"
-                className="font-medium underline underline-offset-2 hover:text-blue-700"
-              >
-                Browse profiles in the directory
-              </Link>
-            </p>
-          </InfoAlert>
+          {/* Directory Profiles Section */}
+          {hasPremiumAccess && directoryProfiles.length > 0 ? (
+            <>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm font-semibold">
+                      Recent Directory Profiles
+                    </h3>
+                    <p className="text-muted-foreground text-xs">
+                      Compare with real users from the community
+                    </p>
+                  </div>
+                  <Heart className="text-primary h-5 w-5" />
+                </div>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {displayedDirectoryProfiles.map((profile) => {
+                    const isSelected = comparisonIds.includes(profile.id);
+                    return (
+                      <ProfileCard
+                        key={profile.id}
+                        profile={profile}
+                        variant="select"
+                        isSelected={isSelected}
+                        onSelect={handleAddProfile}
+                        userMatchRate={userMatchRate}
+                        userDateRange={userDateRange}
+                      />
+                    );
+                  })}
+                </div>
+                {directoryProfiles.length > 2 && !showMoreProfiles && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowMoreProfiles(true)}
+                    className="w-full"
+                  >
+                    Load {directoryProfiles.length - 2} More Profiles
+                  </Button>
+                )}
+              </div>
+            </>
+          ) : !hasPremiumAccess ? (
+            <div className="rounded-lg border bg-linear-to-r from-pink-50 to-rose-50 p-6 dark:from-pink-950/50 dark:to-rose-950/50">
+              <div className="space-y-4">
+                <div>
+                  <h4 className="mb-2 font-semibold">
+                    Unlock Directory Profile Comparisons
+                  </h4>
+                  <ul className="text-muted-foreground space-y-2 text-sm">
+                    <li className="flex items-start gap-2">
+                      <Heart className="mt-0.5 h-4 w-4 shrink-0" />
+                      <span>
+                        <strong>7,000+ Real User Profiles:</strong> Compare with
+                        verified profiles from our directory
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <BarChart3 className="mt-0.5 h-4 w-4 shrink-0" />
+                      <span>
+                        <strong>Advanced Filters:</strong> Find profiles by
+                        demographics, location, and match rates
+                      </span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <Sparkles className="mt-0.5 h-4 w-4 shrink-0" />
+                      <span>
+                        <strong>Global Rankings:</strong> See how you stack up
+                        against users worldwide
+                      </span>
+                    </li>
+                  </ul>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <Button
+                    onClick={() =>
+                      openUpgradeModal({
+                        tier: "PLUS",
+                        feature: "Directory Profile Comparisons",
+                      })
+                    }
+                    className="w-full"
+                  >
+                    <Crown className="mr-2 h-4 w-4" />
+                    Upgrade to Plus
+                  </Button>
+                  <ButtonLink href="/directory" variant="ghost" size="sm">
+                    Browse profiles in the directory
+                  </ButtonLink>
+                </div>
+              </div>
+            </div>
+          ) : null}
 
           <Separator className="my-2" />
 

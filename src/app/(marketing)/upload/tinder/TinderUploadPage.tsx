@@ -18,6 +18,7 @@ import {
   getBrowserTimezone,
   getCountryFromTimezone,
 } from "@/lib/utils/timezone";
+import { getFirstAndLastDayOnApp } from "@/lib/profile.utils";
 
 interface TinderUploadPageProps {
   isUpdate: boolean;
@@ -43,12 +44,12 @@ export function TinderUploadPage({ isUpdate, isDebug }: TinderUploadPageProps) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const tinderId = payload?.tinderId;
+  const birthDate = payload?.anonymizedTinderJson.User.birth_date;
   const isDevelopment = process.env.NODE_ENV === "development";
 
-  // Preemptively fetch profile data (public endpoint, no auth required)
-  // This lets users see if they're updating an existing profile before submitting
-  const { data: existingProfile } = useQuery({
-    ...trpc.profile.get.queryOptions({ tinderId: tinderId ?? "" }),
+  // Fetch upload context to determine scenario (new/additive/merge)
+  const { data: uploadContext } = useQuery({
+    ...trpc.profile.getUploadContext.queryOptions({ tinderId, birthDate }),
     enabled: !!tinderId,
     retry: false,
     staleTime: 60000, // Cache for 1 minute to avoid repeated calls
@@ -69,6 +70,24 @@ export function TinderUploadPage({ isUpdate, isDebug }: TinderUploadPageProps) {
       },
     }),
   );
+
+  // Detect backward merge attempt (uploading older account after already having newer one)
+  // tinderMatchId is account-specific (just an integer), so merges must go old → new
+  // NOTE: Must be before early return to satisfy Rules of Hooks
+  const isBackwardMerge = useMemo(() => {
+    if (
+      !payload ||
+      uploadContext?.scenario !== "different_tinderId" ||
+      !uploadContext?.userProfile?.lastDayOnApp
+    ) {
+      return false;
+    }
+    const newFileDates = getFirstAndLastDayOnApp(
+      payload.anonymizedTinderJson.Usage.app_opens,
+    );
+    const existingLastDay = new Date(uploadContext.userProfile.lastDayOnApp);
+    return newFileDates.lastDayOnApp < existingLastDay;
+  }, [uploadContext, payload]);
 
   // When no payload, show centered upload area
   if (!payload) {
@@ -170,70 +189,244 @@ export function TinderUploadPage({ isUpdate, isDebug }: TinderUploadPageProps) {
           <div className="mt-6">
             <TinderSubmitButton
               payload={getFilteredPayload()}
-              disabled={!!error}
+              disabled={
+                !!error ||
+                isBackwardMerge ||
+                (uploadContext?.identityMismatch ?? false)
+              }
               timezone={browserTimezone}
               country={browserCountry}
               consent={consent}
+              uploadContext={uploadContext}
             />
           </div>
 
-          {/* User-facing notification - profile exists */}
-          {existingProfile && (
+          {/* User-facing notification - scenario-based */}
+          {uploadContext?.scenario === "same_tinderId" && (
+            <div className="mt-6 rounded-lg border-2 border-green-300 bg-green-50 p-4">
+              <h3 className="mb-1 text-sm font-semibold text-green-900">
+                📊 Adding to Existing Profile
+              </h3>
+              <p className="text-xs text-green-700">
+                Your data will be merged with your existing profile. New days
+                and matches will be added. Nothing will be lost.
+              </p>
+              {uploadContext.userProfile && (
+                <p className="mt-1 text-xs text-green-600">
+                  Existing data:{" "}
+                  {new Date(
+                    uploadContext.userProfile.firstDayOnApp,
+                  ).toLocaleDateString()}{" "}
+                  →{" "}
+                  {new Date(
+                    uploadContext.userProfile.lastDayOnApp,
+                  ).toLocaleDateString()}
+                </p>
+              )}
+            </div>
+          )}
+
+          {uploadContext?.scenario === "different_tinderId" &&
+            !isBackwardMerge && (
+              <div className="mt-6 rounded-lg border-2 border-amber-300 bg-amber-50 p-4">
+                <h3 className="mb-1 text-sm font-semibold text-amber-900">
+                  🔄 Merging Accounts
+                </h3>
+                <p className="text-xs text-amber-700">
+                  You have an existing profile with a different Tinder ID. This
+                  upload will merge your old account data into your new account.
+                </p>
+                {uploadContext.userProfile && (
+                  <p className="mt-1 text-xs text-amber-600">
+                    Old: {uploadContext.userProfile.tinderId.slice(0, 8)}... →
+                    New: {tinderId?.slice(0, 8)}...
+                  </p>
+                )}
+              </div>
+            )}
+
+          {uploadContext?.scenario === "different_tinderId" &&
+            isBackwardMerge && (
+              <div className="mt-6 rounded-lg border-2 border-red-300 bg-red-50 p-4">
+                <h3 className="mb-1 text-sm font-semibold text-red-900">
+                  ⚠️ Wrong Order - Older Account Detected
+                </h3>
+                <p className="text-xs text-red-700">
+                  This file is from an older Tinder account than your current
+                  profile. Account merges must go from older → newer to avoid
+                  data issues.
+                </p>
+                <p className="mt-2 text-xs text-red-600">
+                  <strong>To fix:</strong> Delete your current profile first,
+                  then upload this older file, then upload your newer account.
+                </p>
+                {uploadContext.userProfile && (
+                  <p className="mt-2 text-xs text-red-500">
+                    Your profile ends:{" "}
+                    {new Date(
+                      uploadContext.userProfile.lastDayOnApp,
+                    ).toLocaleDateString()}
+                    <br />
+                    This file ends:{" "}
+                    {getFirstAndLastDayOnApp(
+                      payload.anonymizedTinderJson.Usage.app_opens,
+                    ).lastDayOnApp.toLocaleDateString()}
+                  </p>
+                )}
+              </div>
+            )}
+
+          {uploadContext?.scenario === "different_tinderId" &&
+            uploadContext?.identityMismatch && (
+              <div className="mt-6 rounded-lg border-2 border-red-300 bg-red-50 p-4">
+                <h3 className="mb-1 text-sm font-semibold text-red-900">
+                  ⚠️ Identity Mismatch Detected
+                </h3>
+                <p className="text-xs text-red-700">
+                  These profiles appear to be from different people (birthdate
+                  mismatch). This usually happens when testing with different
+                  users&apos; data.
+                </p>
+                <p className="mt-2 text-xs text-red-600">
+                  <strong>To fix:</strong> Delete your current profile first
+                  before uploading test data.
+                </p>
+              </div>
+            )}
+
+          {uploadContext?.scenario === "owned_by_other" && (
+            <div className="mt-6 rounded-lg border-2 border-red-300 bg-red-50 p-4">
+              <h3 className="mb-1 text-sm font-semibold text-red-900">
+                ⚠️ Profile Already Exists
+              </h3>
+              <p className="text-xs text-red-700">
+                This Tinder ID is already associated with another account.
+              </p>
+            </div>
+          )}
+
+          {/* 
+          This is the default use case so we don't need to show anything
+          {uploadContext?.scenario === "new_profile" && !existingProfile && (
             <div className="mt-6 rounded-lg border-2 border-blue-300 bg-blue-50 p-4">
               <h3 className="mb-1 text-sm font-semibold text-blue-900">
-                ℹ️ Updating Existing Profile
+                ✨ Creating New Profile
               </h3>
               <p className="text-xs text-blue-700">
-                This profile already exists. Your data will be updated with the
-                latest information.
+                This will be your first Tinder profile on SwipeStats.
+              </p>
+            </div>
+          )} */}
+
+          {uploadContext?.scenario === "needs_signin" && (
+            <div className="mt-6 rounded-lg border-2 border-yellow-300 bg-yellow-50 p-4">
+              <h3 className="mb-1 text-sm font-semibold text-yellow-900">
+                🔐 Sign In Required
+              </h3>
+              <p className="text-xs text-yellow-700">
+                This profile is linked to an existing account. Please sign in to
+                update it, or contact support if you believe this is an error.
+              </p>
+              <Link
+                href="/signin"
+                className="mt-3 inline-block rounded bg-yellow-600 px-4 py-2 text-xs font-medium text-white hover:bg-yellow-700"
+              >
+                Sign In
+              </Link>
+            </div>
+          )}
+
+          {uploadContext?.scenario === "can_claim" && (
+            <div className="mt-6 rounded-lg border-2 border-blue-300 bg-blue-50 p-4">
+              <h3 className="mb-1 text-sm font-semibold text-blue-900">
+                👋 Welcome Back!
+              </h3>
+              <p className="text-xs text-blue-700">
+                This looks like your profile from a previous session. Click
+                upload to claim it and update your data.
               </p>
             </div>
           )}
 
           {/* Dev Admin Card - only visible in development */}
-          {isDevelopment && existingProfile && (
-            <div className="mt-6 rounded-lg border-2 border-red-300 bg-red-50 p-4">
-              <h3 className="mb-2 text-sm font-semibold text-red-900">
-                🛠️ Dev Admin Tools
-              </h3>
-              <p className="mb-3 text-xs text-red-700">
-                Profile exists: {existingProfile.tinderId}
-              </p>
-              <div className="mb-3 flex flex-col gap-2">
-                <Link
-                  href={`/insights/tinder/${existingProfile.tinderId}`}
-                  className="rounded bg-blue-600 px-3 py-1.5 text-center text-xs font-medium text-white hover:bg-blue-700"
-                >
-                  View New Insights Page
-                </Link>
-                <Link
-                  href={`/insights/tinder/${existingProfile.tinderId}/classic`}
-                  className="rounded bg-purple-600 px-3 py-1.5 text-center text-xs font-medium text-white hover:bg-purple-700"
-                >
-                  View Classic Insights Page
-                </Link>
+          {isDevelopment &&
+            uploadContext &&
+            uploadContext.scenario !== "new_user" &&
+            uploadContext.scenario !== "new_profile" && (
+              <div className="mt-6 rounded-lg border-2 border-red-300 bg-red-50 p-4">
+                <h3 className="mb-2 text-sm font-semibold text-red-900">
+                  🛠️ Dev Admin Tools
+                </h3>
+
+                {/* Scenario Information */}
+                <div className="mb-3 text-xs text-red-700">
+                  <p className="font-semibold">
+                    Scenario: {uploadContext.scenario}
+                  </p>
+                  {uploadContext.userProfile && (
+                    <p className="mt-1">
+                      Your profile:{" "}
+                      {uploadContext.userProfile.tinderId.slice(0, 12)}...
+                    </p>
+                  )}
+                  {uploadContext.targetProfile && (
+                    <p className="mt-1">
+                      Target profile:{" "}
+                      {uploadContext.targetProfile.tinderId.slice(0, 12)}...
+                    </p>
+                  )}
+                  {uploadContext.identityMismatch && (
+                    <p className="mt-1 font-semibold text-red-800">
+                      ⚠️ Identity Mismatch Detected
+                    </p>
+                  )}
+                </div>
+
+                {/* Quick Links */}
+                {uploadContext.userProfile && (
+                  <div className="mb-3 flex flex-col gap-2">
+                    <Link
+                      href={`/insights/tinder/${uploadContext.userProfile.tinderId}`}
+                      className="rounded bg-blue-600 px-3 py-1.5 text-center text-xs font-medium text-white hover:bg-blue-700"
+                    >
+                      View Your Profile Insights
+                    </Link>
+                    <Link
+                      href={`/insights/tinder/${uploadContext.userProfile.tinderId}/classic`}
+                      className="rounded bg-purple-600 px-3 py-1.5 text-center text-xs font-medium text-white hover:bg-purple-700"
+                    >
+                      View Classic Insights
+                    </Link>
+                  </div>
+                )}
+
+                {/* Delete Button */}
+                {uploadContext.userProfile && (
+                  <button
+                    onClick={() => {
+                      const profileId = uploadContext.userProfile?.tinderId;
+                      if (!profileId) return;
+
+                      if (
+                        confirm(
+                          `Delete profile ${profileId}? This will cascade delete all related data (matches, messages, usage, etc.).`,
+                        )
+                      ) {
+                        deleteProfileMutation.mutate({
+                          tinderId: profileId,
+                        });
+                      }
+                    }}
+                    disabled={deleteProfileMutation.isPending}
+                    className="w-full rounded bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                  >
+                    {deleteProfileMutation.isPending
+                      ? "Deleting..."
+                      : "Delete Your Profile"}
+                  </button>
+                )}
               </div>
-              <button
-                onClick={() => {
-                  if (
-                    confirm(
-                      `Delete profile ${existingProfile.tinderId}? This will cascade delete all related data (matches, messages, usage, etc.).`,
-                    )
-                  ) {
-                    deleteProfileMutation.mutate({
-                      tinderId: existingProfile.tinderId,
-                    });
-                  }
-                }}
-                disabled={deleteProfileMutation.isPending}
-                className="rounded bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50"
-              >
-                {deleteProfileMutation.isPending
-                  ? "Deleting..."
-                  : "Delete Profile"}
-              </button>
-            </div>
-          )}
+            )}
 
           {/* Debug Info */}
           {isDebug && (

@@ -3,16 +3,20 @@ import { differenceInDays } from "date-fns";
 import type {
   Match,
   Message,
-  ProfileMetaInsert,
   TinderProfile,
   TinderUsage,
 } from "@/server/db/schema";
-import { getMedian, getRatio } from "../meta-utils.service";
+import { getMedian } from "../meta-utils.service";
 
-type TinderProfileWithUsageAndMatches = TinderProfile & {
+export type TinderProfileWithUsageAndMatches = TinderProfile & {
   usage: TinderUsage[];
   matches: (Match & { messages: Message[] })[];
 };
+
+export interface ComputeProfileMetaOptions {
+  from?: Date;
+  to?: Date;
+}
 
 type UsageAndMessages = {
   usage: TinderUsage[];
@@ -185,251 +189,6 @@ export function getMessagesMetaFromMatches(
 }
 
 /**
- * Create profile meta for a specific time period
- */
-export function createProfileMeta(
-  profile: TinderProfileWithUsageAndMatches,
-  options: { from: Date; to: Date; period?: string },
-): Omit<ProfileMetaInsert, "id" | "tinderProfileId" | "hingeProfileId"> {
-  // Filter usage by period if specified
-  const filteredUsage = options.period
-    ? filterUsageByPeriod(profile.usage, options.period)
-    : profile.usage;
-
-  // Create a profile copy with filtered usage for calculation
-  const profileForCalc = { ...profile, usage: filteredUsage };
-
-  const daysInPeriod = differenceInDays(options.to, options.from) + 1;
-
-  const individualUsageArrays = {
-    appOpens: [] as number[],
-    swipeLikes: [] as number[],
-    swipeSuperLikes: [] as number[],
-    swipePasses: [] as number[],
-    combinedSwipes: [] as number[],
-    messagesSent: [] as number[],
-    messagesReceived: [] as number[],
-    matches: [] as number[],
-  };
-
-  let previousDate = new Date(options.from);
-  const usageReduced = profileForCalc.usage.reduce(
-    (acc, cur) => {
-      acc.appOpensTotal += cur.appOpens;
-      if (cur.appOpens > 0) {
-        acc.daysActiveOnApp++;
-      } else {
-        acc.daysNotActiveOnApp++;
-      }
-
-      acc.matchesTotal += cur.matches;
-      acc.swipeLikesTotal += cur.swipeLikes;
-      acc.swipeSuperLikesTotal += cur.swipeSuperLikes;
-      acc.swipePassesTotal += cur.swipePasses;
-      acc.messagesSentTotal += cur.messagesSent;
-      acc.messagesReceivedTotal += cur.messagesReceived;
-
-      if (cur.swipeLikes > 0) {
-        acc.daysYouSwiped++;
-      }
-      if (cur.messagesSent > 0) {
-        acc.daysYouMessaged++;
-      }
-
-      if (cur.appOpens > 0 && cur.swipeLikes === 0) {
-        acc.daysAppOpenedNoSwipe++;
-      }
-      if (cur.appOpens > 0 && cur.messagesSent === 0) {
-        acc.daysAppOpenedNoMessage++;
-      }
-      if (cur.appOpens > 0 && cur.swipeLikes === 0 && cur.messagesSent === 0) {
-        acc.daysAppOpenedNoSwipeOrMessage++;
-      }
-
-      individualUsageArrays.appOpens.push(cur.appOpens);
-      individualUsageArrays.swipeLikes.push(cur.swipeLikes);
-      individualUsageArrays.swipeSuperLikes.push(cur.swipeSuperLikes);
-      individualUsageArrays.swipePasses.push(cur.swipePasses);
-      individualUsageArrays.messagesSent.push(cur.messagesSent);
-      individualUsageArrays.messagesReceived.push(cur.messagesReceived);
-      individualUsageArrays.matches.push(cur.matches);
-      individualUsageArrays.combinedSwipes.push(cur.swipesCombined);
-
-      if (cur.matches > acc.peakMatches) {
-        acc.peakMatches = cur.matches;
-        acc.peakMatchesDate = cur.dateStamp;
-      }
-      if (cur.appOpens > acc.peakAppOpens) {
-        acc.peakAppOpens = cur.appOpens;
-        acc.peakAppOpensDate = cur.dateStamp;
-      }
-      if (cur.swipeLikes > acc.peakSwipeLikes) {
-        acc.peakSwipeLikes = cur.swipeLikes;
-        acc.peakSwipeLikesDate = cur.dateStamp;
-      }
-      if (cur.swipePasses > acc.peakSwipePasses) {
-        acc.peakSwipePasses = cur.swipePasses;
-        acc.peakSwipePassesDate = cur.dateStamp;
-      }
-      if (cur.swipesCombined > acc.peakCombinedSwipes) {
-        acc.peakCombinedSwipes = cur.swipesCombined;
-        acc.peakCombinedSwipesDate = cur.dateStamp;
-      }
-      if (cur.messagesSent > acc.peakMessagesSent) {
-        acc.peakMessagesSent = cur.messagesSent;
-        acc.peakMessagesSentDate = cur.dateStamp;
-      }
-      if (cur.messagesReceived > acc.peakMessagesReceived) {
-        acc.peakMessagesReceived = cur.messagesReceived;
-        acc.peakMessagesReceivedDate = cur.dateStamp;
-      }
-
-      if (cur.swipesCombined >= 100) {
-        acc.dailySwipeLimitsReached++;
-      }
-
-      const currentDate = new Date(cur.dateStamp);
-      const diffDays = Math.ceil(
-        (currentDate.getTime() - previousDate.getTime()) / (1000 * 3600 * 24),
-      );
-
-      if (diffDays === 1) {
-        acc.currentActiveOnAppStreak++;
-      } else {
-        acc.longestActiveOnAppStreak = Math.max(
-          acc.longestActiveOnAppStreak,
-          acc.currentActiveOnAppStreak,
-        );
-        acc.currentActiveOnAppStreak = 1;
-        acc.longestActiveOnAppGap = Math.max(
-          acc.longestActiveOnAppGap,
-          diffDays - 1,
-        );
-      }
-
-      previousDate = currentDate;
-
-      return acc;
-    },
-    {
-      daysActiveOnApp: 0,
-      daysNotActiveOnApp: 0,
-      appOpensTotal: 0,
-      matchesTotal: 0,
-      swipeLikesTotal: 0,
-      swipeSuperLikesTotal: 0,
-      swipePassesTotal: 0,
-      messagesSentTotal: 0,
-      messagesReceivedTotal: 0,
-      daysYouSwiped: 0,
-      daysYouMessaged: 0,
-      daysAppOpenedNoSwipe: 0,
-      daysAppOpenedNoMessage: 0,
-      daysAppOpenedNoSwipeOrMessage: 0,
-      peakMatches: 0,
-      peakMatchesDate: options.from,
-      peakAppOpens: 0,
-      peakAppOpensDate: options.from,
-      peakSwipeLikes: 0,
-      peakSwipeLikesDate: options.from,
-      peakSwipePasses: 0,
-      peakSwipePassesDate: options.from,
-      peakCombinedSwipes: 0,
-      peakCombinedSwipesDate: options.from,
-      peakMessagesSent: 0,
-      peakMessagesSentDate: options.from,
-      peakMessagesReceived: 0,
-      peakMessagesReceivedDate: options.from,
-      dailySwipeLimitsReached: 0,
-      currentActiveOnAppStreak: 1,
-      longestActiveOnAppStreak: 1,
-      longestActiveOnAppGap: 0,
-    },
-  );
-
-  const combinedSwipesTotal =
-    usageReduced.swipeLikesTotal + usageReduced.swipePassesTotal;
-
-  const matchRateForPeriod = getRatio(
-    usageReduced.matchesTotal,
-    usageReduced.swipeLikesTotal,
-  );
-  const likeRateForPeriod = getRatio(
-    usageReduced.swipeLikesTotal,
-    combinedSwipesTotal,
-  );
-  const _totalMessages =
-    usageReduced.messagesSentTotal + usageReduced.messagesReceivedTotal;
-
-  const messagesMeta = getMessagesMetaFromMatches(profile.matches);
-
-  // Compute aggregate message metrics from match-level data
-  const matchesWithMessages = profile.matches.filter(
-    (m) => m.totalMessageCount > 0,
-  );
-
-  const responseTimesValid = profile.matches
-    .map((m) => m.responseTimeMedianSeconds)
-    .filter((t): t is number => t !== null && t !== undefined);
-  const averageResponseTimeSeconds =
-    responseTimesValid.length > 0
-      ? Math.round(getMedian(responseTimesValid))
-      : null;
-  const meanResponseTimeSeconds =
-    responseTimesValid.length > 0
-      ? Math.round(
-          responseTimesValid.reduce((sum, t) => sum + t, 0) /
-            responseTimesValid.length,
-        )
-      : null;
-
-  const durationsValid = profile.matches
-    .map((m) => m.conversationDurationDays)
-    .filter((d): d is number => d !== null && d !== undefined && d > 0);
-  const medianConversationDurationDays =
-    durationsValid.length > 0 ? Math.round(getMedian(durationsValid)) : null;
-  const longestConversationDays =
-    durationsValid.length > 0 ? Math.max(...durationsValid) : null;
-
-  const messageCounts = matchesWithMessages.map((m) => m.totalMessageCount);
-  const averageMessagesPerConversation =
-    messageCounts.length > 0
-      ? messageCounts.reduce((sum, count) => sum + count, 0) /
-        messageCounts.length
-      : null;
-  const medianMessagesPerConversation =
-    messageCounts.length > 0 ? Math.round(getMedian(messageCounts)) : null;
-
-  // Return only fields that exist in the simplified ProfileMeta schema
-  return {
-    from: options.from,
-    to: options.to,
-    daysInPeriod,
-    daysActive: usageReduced.daysActiveOnApp,
-    swipeLikesTotal: usageReduced.swipeLikesTotal,
-    swipePassesTotal: usageReduced.swipePassesTotal,
-    matchesTotal: usageReduced.matchesTotal,
-    messagesSentTotal: usageReduced.messagesSentTotal,
-    messagesReceivedTotal: usageReduced.messagesReceivedTotal,
-    appOpensTotal: usageReduced.appOpensTotal,
-    likeRate: likeRateForPeriod,
-    matchRate: matchRateForPeriod,
-    swipesPerDay: combinedSwipesTotal / daysInPeriod,
-    conversationCount: messagesMeta.numberOfConversations,
-    conversationsWithMessages: messagesMeta.numberOfConversationsWithMessages,
-    ghostedCount: messagesMeta.nrOfGhostingsAfterInitialMatch,
-    // Aggregate message metrics
-    averageResponseTimeSeconds,
-    meanResponseTimeSeconds,
-    medianConversationDurationDays,
-    longestConversationDays,
-    averageMessagesPerConversation,
-    medianMessagesPerConversation,
-    computedAt: new Date(),
-  };
-}
-
-/**
  * Aggregate usage and messages by time period (month/year)
  */
 export function aggregateUsageAndMessages(params: {
@@ -514,11 +273,27 @@ function initializeYearlyAggregations(
 }
 
 /**
- * Create profile meta matching the simplified database schema
- * Only includes fields that exist in profileMetaTable
+ * Compute ProfileMeta for database storage.
+ *
+ * This is the canonical function for calculating Tinder profile statistics.
+ * Returns only fields that exist in the profileMetaTable schema.
+ *
+ * Data sources:
+ * - USAGE TABLE: Core totals (swipes, matches, messages, appOpens, daysActive)
+ * - MATCHES TABLE: Conversation metrics (response times, durations, ghosting)
+ *
+ * Key features:
+ * - All usage data is now real (no synthetic days since removal of expansion)
+ * - Supports optional date range filtering via `options.from` and `options.to`
+ * - Uses daysActive (appOpens > 0) for swipesPerDay calculation
+ * - Computes conversation stats from pre-computed match-level data
+ *
+ * @param profile - Tinder profile with usage and matches data
+ * @param options - Optional date range to filter data (defaults to all-time)
  */
-export function createSimplifiedProfileMeta(
-  tp: TinderProfileWithUsageAndMatches,
+export function computeProfileMeta(
+  profile: TinderProfileWithUsageAndMatches,
+  options?: ComputeProfileMetaOptions,
 ): {
   from: Date;
   to: Date;
@@ -544,12 +319,29 @@ export function createSimplifiedProfileMeta(
   meanResponseTimeSeconds: number | null;
   computedAt: Date;
 } {
-  console.log(`   📊 Creating metadata...`);
-  console.log(`      - ${tp.usage.length} usage records`);
-  console.log(`      - ${tp.matches.length} matches`);
+  // Determine date range (default = all-time from profile dates)
+  const from = options?.from ?? profile.firstDayOnApp;
+  const to = options?.to ?? profile.lastDayOnApp;
+
+  console.log(`   📊 Computing ProfileMeta...`);
+  console.log(
+    `      - Date range: ${from.toISOString().slice(0, 10)} to ${to.toISOString().slice(0, 10)}`,
+  );
+  console.log(`      - ${profile.usage.length} usage records`);
+  console.log(`      - ${profile.matches.length} matches`);
+
+  // ═══════════════════════════════════════════════════════════════════
+  // USAGE TABLE: Core totals
+  // ═══════════════════════════════════════════════════════════════════
+  // Apply date range filter (all usage data is now real - no synthetic days)
+  const usageInRange = profile.usage.filter(
+    (day) => day.dateStamp >= from && day.dateStamp <= to,
+  );
+
+  console.log(`      - ${usageInRange.length} usage days in range`);
 
   // Compute totals from usage data
-  const totals = tp.usage.reduce(
+  const totals = usageInRange.reduce(
     (acc, cur) => {
       acc.appOpensTotal += cur.appOpens;
       acc.matchesTotal += cur.matches;
@@ -557,13 +349,15 @@ export function createSimplifiedProfileMeta(
       acc.swipePassesTotal += cur.swipePasses;
       acc.messagesSentTotal += cur.messagesSent;
       acc.messagesReceivedTotal += cur.messagesReceived;
-      if (cur.appOpens > 0) {
-        acc.daysActive++;
+      // Count days with swipes for swipesPerDay calculation
+      const hasSwipes = cur.swipeLikes > 0 || cur.swipePasses > 0;
+      if (hasSwipes) {
+        acc.daysWithSwipes++;
       }
       return acc;
     },
     {
-      daysActive: 0,
+      daysWithSwipes: 0,
       appOpensTotal: 0,
       matchesTotal: 0,
       swipeLikesTotal: 0,
@@ -573,7 +367,7 @@ export function createSimplifiedProfileMeta(
     },
   );
 
-  const daysInPeriod = differenceInDays(tp.lastDayOnApp, tp.firstDayOnApp) + 1;
+  const daysInPeriod = differenceInDays(to, from) + 1;
   const combinedSwipes = totals.swipeLikesTotal + totals.swipePassesTotal;
 
   // Compute rates
@@ -583,20 +377,37 @@ export function createSimplifiedProfileMeta(
     totals.swipeLikesTotal > 0
       ? totals.matchesTotal / totals.swipeLikesTotal
       : 0;
-  const swipesPerDay = daysInPeriod > 0 ? combinedSwipes / daysInPeriod : 0;
+  // Use daysWithSwipes for accurate "swipes per swiping day" metric
+  const swipesPerDay =
+    totals.daysWithSwipes > 0 ? combinedSwipes / totals.daysWithSwipes : 0;
+
+  // ═══════════════════════════════════════════════════════════════════
+  // MATCHES TABLE: Conversation metrics
+  // ═══════════════════════════════════════════════════════════════════
+  // Apply date range filter to matches (filter by matchedAt or initialMessageAt)
+  const matchesInRange = options
+    ? profile.matches.filter((m) => {
+        // Use matchedAt if available, otherwise initialMessageAt
+        const matchDate = m.matchedAt ?? m.initialMessageAt;
+        if (!matchDate) return false; // Skip matches without any date
+        return matchDate >= from && matchDate <= to;
+      })
+    : profile.matches; // All-time: no filtering needed
 
   // Compute conversation stats from matches
-  const conversationCount = tp.matches.length;
-  const conversationsWithMessages = tp.matches.filter(
+  const conversationCount = matchesInRange.length;
+  const conversationsWithMessages = matchesInRange.filter(
     (m) => m.messages.length > 0,
   ).length;
   const ghostedCount = conversationCount - conversationsWithMessages;
 
   // Compute aggregate message metrics from match-level data
-  const matchesWithMessages = tp.matches.filter((m) => m.messages.length > 0);
+  const matchesWithMessages = matchesInRange.filter(
+    (m) => m.messages.length > 0,
+  );
 
   // Response time: both median and mean
-  const responseTimesValid = tp.matches
+  const responseTimesValid = matchesInRange
     .map((m) => m.responseTimeMedianSeconds)
     .filter((t): t is number => t !== null && t !== undefined);
   const averageResponseTimeSeconds =
@@ -612,7 +423,7 @@ export function createSimplifiedProfileMeta(
       : null;
 
   // Conversation duration stats
-  const durationsValid = tp.matches
+  const durationsValid = matchesInRange
     .map((m) => m.conversationDurationDays)
     .filter((d): d is number => d !== null && d !== undefined && d > 0);
   const medianConversationDurationDays =
@@ -630,13 +441,13 @@ export function createSimplifiedProfileMeta(
   const medianMessagesPerConversation =
     messageCounts.length > 0 ? Math.round(getMedian(messageCounts)) : null;
 
-  console.log(`      ✓ Meta computed`);
+  console.log(`      ✓ ProfileMeta computed`);
 
   return {
-    from: tp.firstDayOnApp,
-    to: tp.lastDayOnApp,
+    from,
+    to,
     daysInPeriod,
-    daysActive: totals.daysActive,
+    daysActive: totals.daysWithSwipes,
     swipeLikesTotal: totals.swipeLikesTotal,
     swipePassesTotal: totals.swipePassesTotal,
     matchesTotal: totals.matchesTotal,

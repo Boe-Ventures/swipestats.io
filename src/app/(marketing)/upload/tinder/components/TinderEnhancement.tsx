@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useCallback } from "react";
 import { InfoAlert } from "@/components/ui/alert";
 import { GenderForm } from "../../_components/ProfileEnhancement/GenderForm";
 import { isGenderDataUnknown } from "@/lib/utils/gender";
@@ -63,26 +63,29 @@ export function TinderEnhancement({
     });
   };
 
-  const handleConsentChange = (newConsent: TinderConsentState) => {
-    // Track photo consent toggle
-    if (previousConsent.current.photos !== newConsent.photos) {
-      trackEvent("upload_consent_photos_toggled", {
-        provider: "tinder",
-        consentGiven: newConsent.photos,
-      });
-    }
+  const handleConsentChange = useCallback(
+    (newConsent: TinderConsentState) => {
+      // Track photo consent toggle
+      if (previousConsent.current.photos !== newConsent.photos) {
+        trackEvent("upload_consent_photos_toggled", {
+          provider: "tinder",
+          consentGiven: newConsent.photos,
+        });
+      }
 
-    // Track work consent toggle
-    if (previousConsent.current.work !== newConsent.work) {
-      trackEvent("upload_consent_work_toggled", {
-        provider: "tinder",
-        consentGiven: newConsent.work,
-      });
-    }
+      // Track work consent toggle
+      if (previousConsent.current.work !== newConsent.work) {
+        trackEvent("upload_consent_work_toggled", {
+          provider: "tinder",
+          consentGiven: newConsent.work,
+        });
+      }
 
-    previousConsent.current = newConsent;
-    onConsentChange(newConsent);
-  };
+      previousConsent.current = newConsent;
+      onConsentChange(newConsent);
+    },
+    [trackEvent, onConsentChange],
+  );
 
   return (
     <div className="space-y-4">

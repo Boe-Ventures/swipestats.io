@@ -71,11 +71,6 @@ export async function captureEvent(params: {
   timestamp?: Date;
   groups?: Record<string, string | number>;
 }): Promise<void> {
-  console.log("🔵 [PostHog] Capturing event:", {
-    event: params.event,
-    distinctId: params.distinctId,
-  });
-
   posthog.capture({
     distinctId: params.distinctId,
     event: params.event,
@@ -85,10 +80,6 @@ export async function captureEvent(params: {
   });
 
   await posthog.shutdown(); // Required for serverless
-
-  console.log("✅ [PostHog] Event captured successfully:", {
-    event: params.event,
-  });
 }
 
 /**
@@ -117,8 +108,6 @@ export async function captureException(
   });
 
   await posthog.shutdown();
-
-  console.log("✅ [PostHog] Exception captured successfully");
 }
 
 // =====================================================
@@ -188,18 +177,12 @@ export async function identifyUser(params: {
   distinctId: string;
   properties: Record<string, unknown>;
 }): Promise<void> {
-  console.log("🔵 [PostHog] Identifying user:", {
-    distinctId: params.distinctId,
-  });
-
   posthog.identify({
     distinctId: params.distinctId,
     properties: params.properties,
   });
 
   await posthog.shutdown(); // Required for serverless
-
-  console.log("✅ [PostHog] User identified successfully");
 }
 
 /**
@@ -221,19 +204,12 @@ export async function aliasUser(params: {
   anonymousId: string;
   userId: string;
 }): Promise<void> {
-  console.log("🔵 [PostHog] Aliasing user:", {
-    anonymousId: params.anonymousId,
-    userId: params.userId,
-  });
-
   posthog.alias({
     distinctId: params.userId,
     alias: params.anonymousId,
   });
 
   await posthog.shutdown(); // Required for serverless
-
-  console.log("✅ [PostHog] User aliased successfully");
 }
 
 // =====================================================
@@ -263,11 +239,6 @@ export async function identifyGroup(params: {
   groupKey: string;
   properties: Record<string, unknown>;
 }): Promise<void> {
-  console.log("🔵 [PostHog] Identifying group:", {
-    groupType: params.groupType,
-    groupKey: params.groupKey,
-  });
-
   posthog.groupIdentify({
     groupType: params.groupType,
     groupKey: params.groupKey,
@@ -275,8 +246,6 @@ export async function identifyGroup(params: {
   });
 
   await posthog.shutdown(); // Required for serverless
-
-  console.log("✅ [PostHog] Group identified successfully");
 }
 
 // =====================================================
@@ -306,11 +275,6 @@ export async function isFeatureEnabled(params: {
   featureFlag: string;
   groups?: Record<string, string | number>;
 }): Promise<boolean> {
-  console.log("🔵 [PostHog] Checking feature flag:", {
-    featureFlag: params.featureFlag,
-    distinctId: params.distinctId,
-  });
-
   const isEnabled = await posthog.isFeatureEnabled(
     params.featureFlag,
     params.distinctId,
@@ -324,11 +288,6 @@ export async function isFeatureEnabled(params: {
   );
 
   await posthog.shutdown(); // Required for serverless
-
-  console.log("✅ [PostHog] Feature flag checked:", {
-    featureFlag: params.featureFlag,
-    isEnabled: isEnabled ?? false,
-  });
 
   return isEnabled ?? false;
 }
@@ -356,11 +315,6 @@ export async function getFeatureFlagValue(params: {
   featureFlag: string;
   groups?: Record<string, string | number>;
 }): Promise<string | boolean | undefined> {
-  console.log("🔵 [PostHog] Getting feature flag value:", {
-    featureFlag: params.featureFlag,
-    distinctId: params.distinctId,
-  });
-
   const value = await posthog.getFeatureFlag(
     params.featureFlag,
     params.distinctId,
@@ -374,11 +328,6 @@ export async function getFeatureFlagValue(params: {
   );
 
   await posthog.shutdown(); // Required for serverless
-
-  console.log("✅ [PostHog] Feature flag value retrieved:", {
-    featureFlag: params.featureFlag,
-    value,
-  });
 
   return value;
 }

@@ -4,6 +4,8 @@ import { eq } from "drizzle-orm";
 import { tinderProfileTable, hingeProfileTable } from "@/server/db/schema";
 import { adminProcedure } from "../trpc";
 import type { TRPCRouterRecord } from "@trpc/server";
+import type { AnonymizedTinderDataJSON } from "@/lib/interfaces/TinderDataJSON";
+import { resetTinderProfile } from "@/server/services/profile/profile.service";
 
 export const adminRouter = {
   // Delete a Tinder profile by tinderId (admin/dev only)
@@ -37,6 +39,15 @@ export const adminRouter = {
         success: true,
         deletedTinderId: input.tinderId,
       };
+    }),
+
+  // Completely reset a Tinder profile (admin/dev/testing)
+  // More thorough than deleteProfile - explicitly deletes all related data
+  resetProfile: adminProcedure
+    .input(z.object({ tinderId: z.string().min(1) }))
+    .mutation(async ({ input }) => {
+      await resetTinderProfile(input.tinderId);
+      return { success: true };
     }),
 
   // Get profile info (for checking if profile exists)

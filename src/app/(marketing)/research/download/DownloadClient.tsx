@@ -35,15 +35,19 @@ export function DownloadClient() {
   );
 
   // Mutation to record download
-  const recordDownload = useMutation(
+  const recordDownloadMutation = useMutation(
     trpc.research.recordDownload.mutationOptions({
       onSuccess: (data) => {
         // Trigger download
-        window.location.href = data.downloadUrl;
+        window.location.assign(data.downloadUrl);
         // Refetch to update download count
         setTimeout(() => {
           void refetch();
         }, 1000);
+      },
+      onError: (error) => {
+        console.error("Failed to record download:", error);
+        // Error will be shown in UI via mutation state
       },
     }),
   );
@@ -82,7 +86,7 @@ export function DownloadClient() {
 
   const handleDownload = () => {
     if (exportData?.found && exportData.export?.blobUrl) {
-      recordDownload.mutate({ licenseKey });
+      recordDownloadMutation.mutate({ licenseKey });
     }
   };
 
@@ -117,8 +121,8 @@ export function DownloadClient() {
             Download Your Dataset
           </h1>
           <p className="mt-6 text-lg leading-8 text-gray-600">
-            Enter your license key to access and download your purchased
-            dataset.
+            Enter your license key from the LemonSqueezy email to access and
+            download your purchased dataset.
           </p>
         </div>
 
@@ -146,7 +150,8 @@ export function DownloadClient() {
                     />
                   </div>
                   <p className="mt-2 text-sm text-gray-500">
-                    Check your email for the license key sent after purchase.
+                    Your license key was sent to your email from LemonSqueezy
+                    after purchase.
                   </p>
                 </div>
                 <button
@@ -155,7 +160,7 @@ export function DownloadClient() {
                   className={cn(
                     "w-full rounded-md px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600",
                     inputValue.trim()
-                      ? "bg-rose-600 hover:bg-rose-500"
+                      ? "cursor-pointer bg-rose-600 hover:bg-rose-500"
                       : "cursor-not-allowed bg-gray-300",
                   )}
                 >
@@ -188,7 +193,7 @@ export function DownloadClient() {
                   <div className="mt-4">
                     <button
                       onClick={() => void setLicenseKey("")}
-                      className="text-sm font-medium text-red-800 hover:text-red-700"
+                      className="cursor-pointer text-sm font-medium text-red-800 hover:text-red-700"
                     >
                       Try a different key →
                     </button>
@@ -238,15 +243,6 @@ export function DownloadClient() {
                       </div>
                       <div>
                         <dt className="text-sm font-medium text-gray-500">
-                          Downloads Remaining
-                        </dt>
-                        <dd className="mt-1 text-sm text-gray-900">
-                          {exportData.export.downloadsRemaining} of{" "}
-                          {exportData.export.maxDownloads}
-                        </dd>
-                      </div>
-                      <div>
-                        <dt className="text-sm font-medium text-gray-500">
                           Generated At
                         </dt>
                         <dd className="mt-1 text-sm text-gray-900">
@@ -271,27 +267,34 @@ export function DownloadClient() {
               </div>
 
               {exportData.export.status === "READY" ? (
-                <button
-                  onClick={handleDownload}
-                  disabled={
-                    exportData.export.downloadsRemaining === 0 ||
-                    recordDownload.isPending
-                  }
-                  className={cn(
-                    "flex w-full items-center justify-center gap-x-2 rounded-md px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600",
-                    exportData.export.downloadsRemaining > 0 &&
-                      !recordDownload.isPending
-                      ? "bg-rose-600 hover:bg-rose-500"
-                      : "cursor-not-allowed bg-gray-300",
-                  )}
-                >
-                  <ArrowDownTrayIcon className="h-5 w-5" />
-                  {recordDownload.isPending
-                    ? "Preparing download..."
-                    : exportData.export.downloadsRemaining === 0
-                      ? "Download limit reached"
+                <>
+                  <button
+                    onClick={handleDownload}
+                    disabled={recordDownloadMutation.isPending}
+                    className={cn(
+                      "flex w-full items-center justify-center gap-x-2 rounded-md px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600",
+                      !recordDownloadMutation.isPending
+                        ? "cursor-pointer bg-rose-600 hover:bg-rose-500"
+                        : "cursor-not-allowed bg-gray-300",
+                    )}
+                  >
+                    <ArrowDownTrayIcon className="h-5 w-5" />
+                    {recordDownloadMutation.isPending
+                      ? "Preparing download..."
                       : "Download Dataset"}
-                </button>
+                  </button>
+
+                  {/* Error message */}
+                  {recordDownloadMutation.isError && (
+                    <div className="rounded-lg bg-red-50 p-4">
+                      <p className="text-sm font-medium text-red-800">
+                        {recordDownloadMutation.error instanceof Error
+                          ? recordDownloadMutation.error.message
+                          : "Failed to prepare download. Please try again."}
+                      </p>
+                    </div>
+                  )}
+                </>
               ) : exportData.export.status === "GENERATING" ||
                 exportData.export.status === "PENDING" ? (
                 <div className="rounded-lg bg-blue-50 p-4 text-center">
@@ -319,7 +322,7 @@ export function DownloadClient() {
               <div className="text-center">
                 <button
                   onClick={() => void setLicenseKey("")}
-                  className="text-sm font-medium text-gray-600 hover:text-gray-900"
+                  className="cursor-pointer text-sm font-medium text-gray-600 hover:text-gray-900"
                 >
                   Use a different license key →
                 </button>
@@ -343,7 +346,7 @@ export function DownloadClient() {
                   <div className="mt-4">
                     <button
                       onClick={() => void refetch()}
-                      className="text-sm font-medium text-yellow-800 hover:text-yellow-700"
+                      className="cursor-pointer text-sm font-medium text-yellow-800 hover:text-yellow-700"
                     >
                       Refresh now →
                     </button>

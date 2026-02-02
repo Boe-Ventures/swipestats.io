@@ -7,10 +7,14 @@ import { datasetExportTable } from "@/server/db/schema";
 import {
   createDatasetCheckout,
   validateDatasetLicenseKey,
+  getOrderFromLicenseKey,
+  isDatasetVariant,
+  getDatasetTierFromVariant,
   DATASET_PRODUCTS,
   type DatasetTier,
 } from "@/server/services/lemonSqueezy.service";
 import { generateDatasetForExport } from "@/server/services/datasetExport.service";
+import { createId } from "@/server/db/utils";
 
 import { publicProcedure, protectedProcedure } from "../trpc";
 
@@ -41,7 +45,7 @@ export const researchRouter = {
       }
     }),
 
-  // Validate license key and get export status
+  // Validate license key and get export status (creates on-demand if needed)
   getExportByLicenseKey: publicProcedure
     .input(z.object({ licenseKey: z.string().min(1) }))
     .query(async ({ ctx, input }) => {
@@ -74,7 +78,7 @@ export const researchRouter = {
         };
       }
 
-      // 2. If not found locally, validate against LemonSqueezy API
+      // 2. Validate with LemonSqueezy API
       const validation = await validateDatasetLicenseKey(input.licenseKey);
 
       if (!validation.valid) {
@@ -84,13 +88,98 @@ export const researchRouter = {
         });
       }
 
-      // License key is valid but not in our DB yet
-      // This might happen if webhook hasn't processed yet
+      // 3. Fetch the order to determine tier
+      const orderDetails = await getOrderFromLicenseKey(input.licenseKey);
+
+      if (!orderDetails || !isDatasetVariant(orderDetails.variantId)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "License key is not for a dataset product.",
+        });
+      }
+
+      // 4. Create export record and trigger generation
+      const datasetTier = getDatasetTierFromVariant(orderDetails.variantId);
+
+      if (!datasetTier) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Unable to determine dataset tier from order.",
+        });
+      }
+
+      const product = DATASET_PRODUCTS[datasetTier];
+
+      // 5. Try to create export record (handle race condition)
+      let exportRecord;
+      try {
+        const records = await ctx.db
+          .insert(datasetExportTable)
+          .values({
+            id: createId("dex"),
+            licenseKey: input.licenseKey,
+            licenseKeyId: validation.licenseKeyId?.toString(),
+            orderId: orderDetails.orderId,
+            tier: datasetTier,
+            profileCount: product.profileCount,
+            recency: product.recency,
+            customerEmail: orderDetails.customerEmail,
+            maxDownloads: 3,
+            status: "PENDING",
+          })
+          .returning();
+
+        exportRecord = records[0];
+
+        // Trigger background generation only if we created the record
+        if (exportRecord) {
+          generateDatasetForExport(exportRecord.id).catch((error) => {
+            console.error(
+              `Failed to generate dataset ${exportRecord!.id}:`,
+              error,
+            );
+          });
+        }
+      } catch (error) {
+        // If insert fails (likely unique constraint on license_key), re-query the existing record
+        const existing = await ctx.db.query.datasetExportTable.findFirst({
+          where: eq(datasetExportTable.licenseKey, input.licenseKey),
+        });
+
+        if (existing) {
+          exportRecord = existing;
+        } else {
+          // Unexpected error
+          throw error;
+        }
+      }
+
+      if (!exportRecord) {
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "Failed to create or retrieve export record.",
+        });
+      }
+
       return {
-        found: false,
-        valid: true,
-        message:
-          "License key is valid but dataset generation is still being set up. Please try again in a few moments.",
+        found: true,
+        export: {
+          id: exportRecord.id,
+          tier: exportRecord.tier,
+          status: exportRecord.status,
+          profileCount: exportRecord.profileCount,
+          blobUrl: exportRecord.blobUrl,
+          blobSize: exportRecord.blobSize,
+          downloadCount: exportRecord.downloadCount,
+          maxDownloads: exportRecord.maxDownloads,
+          downloadsRemaining: Math.max(
+            0,
+            exportRecord.maxDownloads - exportRecord.downloadCount,
+          ),
+          expiresAt: exportRecord.expiresAt,
+          generatedAt: exportRecord.generatedAt,
+          price: product.price,
+        },
       };
     }),
 

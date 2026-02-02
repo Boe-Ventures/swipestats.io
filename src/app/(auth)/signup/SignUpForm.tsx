@@ -55,6 +55,13 @@ export function SignUpForm() {
   useEffect(() => {
     const checkUsername = async () => {
       if (username.length >= 3) {
+        // Check for @ symbol (not allowed to avoid confusion with email)
+        if (username.includes("@")) {
+          setUsernameAvailable(false);
+          setCheckingUsername(false);
+          return;
+        }
+
         setCheckingUsername(true);
         try {
           const { data } = await authClient.isUsernameAvailable({ username });
@@ -165,7 +172,9 @@ export function SignUpForm() {
               {!checkingUsername && usernameAvailable === false && (
                 <span className="flex items-center gap-1 text-xs text-red-600">
                   <XCircle className="h-3 w-3" />
-                  Not available
+                  {username.includes("@")
+                    ? "@ symbols not allowed"
+                    : "Not available"}
                 </span>
               )}
               {!checkingUsername && usernameAvailable === true && (
@@ -183,6 +192,8 @@ export function SignUpForm() {
               required
               minLength={3}
               maxLength={32}
+              pattern="[^@]+"
+              title="Username cannot contain @ symbols"
               placeholder="cooluser123"
               disabled={isLoading}
               className={

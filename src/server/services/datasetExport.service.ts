@@ -196,17 +196,14 @@ export async function generateDatasetForExport(
  * Get random profiles for dataset export
  */
 async function getRandomProfiles(count: number, recency: "MIXED" | "RECENT") {
-  // Build the where condition
+  // Build the where condition (only filter by recency if specified)
   const whereCondition =
     recency === "RECENT"
-      ? and(
-          eq(tinderProfileTable.computed, true),
-          gte(
-            tinderProfileTable.createdAt,
-            new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1000),
-          ),
+      ? gte(
+          tinderProfileTable.createdAt,
+          new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1000),
         )
-      : eq(tinderProfileTable.computed, true);
+      : undefined;
 
   // Use PostgreSQL RANDOM() for randomization
   const profiles = await db

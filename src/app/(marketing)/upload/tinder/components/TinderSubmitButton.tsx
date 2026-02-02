@@ -18,6 +18,17 @@ interface TinderSubmitButtonProps {
   timezone?: string;
   country?: string;
   consent: TinderConsentState;
+  uploadContext?: {
+    scenario:
+      | "new_profile"
+      | "new_user"
+      | "same_tinderId"
+      | "different_tinderId"
+      | "can_claim"
+      | "needs_signin"
+      | "owned_by_other";
+    identityMismatch?: boolean;
+  } | null;
 }
 
 export function TinderSubmitButton({
@@ -26,6 +37,7 @@ export function TinderSubmitButton({
   timezone,
   country,
   consent,
+  uploadContext,
 }: TinderSubmitButtonProps) {
   const { trackEvent } = useAnalytics();
   const router = useRouter();
@@ -35,16 +47,29 @@ export function TinderSubmitButton({
   const { data: session } = authClient.useSession();
 
   const trpc = useTRPC();
-  const uploadMutation = useMutation(
-    trpc.profile.upload.mutationOptions({
-      onSuccess: (data) => {
-        router.push(`/insights/tinder/${data.tinderId}`);
-      },
-      onError: (error) => {
-        console.error("Error uploading profile:", error);
-        alert("Failed to upload profile. Please try again.");
-      },
-    }),
+
+  // Mutation options shared across all endpoints
+  const mutationOptions = {
+    onSuccess: (data: { tinderId: string }) => {
+      router.push(`/insights/tinder/${data.tinderId}`);
+    },
+    onError: (error: { message?: string }) => {
+      console.error("Error uploading profile:", error);
+      const message =
+        error.message || "Failed to upload profile. Please try again.";
+      alert(message);
+    },
+  };
+
+  // Three separate mutations for each endpoint
+  const createMutation = useMutation(
+    trpc.profile.createProfile.mutationOptions(mutationOptions),
+  );
+  const updateMutation = useMutation(
+    trpc.profile.updateProfile.mutationOptions(mutationOptions),
+  );
+  const mergeMutation = useMutation(
+    trpc.profile.mergeAccounts.mutationOptions(mutationOptions),
   );
 
   const handleSubmit = async () => {
@@ -56,7 +81,7 @@ export function TinderSubmitButton({
       : 0;
     const hasPhotosData = photoCount > 0;
     const hasWorkData = !!payload.anonymizedTinderJson.User.jobs?.[0];
-    
+
     trackEvent("upload_submit_clicked", {
       provider: "tinder",
       tinderId: payload.tinderId,
@@ -99,13 +124,30 @@ export function TinderSubmitButton({
     // Filter payload based on consent before uploading
     const filteredPayload = filterPayloadByConsent(payload, consent);
 
-    // Proceed with unified upload mutation (handles create/update/transfer automatically)
-    uploadMutation.mutate({
+    const uploadData = {
       tinderId: filteredPayload.tinderId,
       anonymizedTinderJson: filteredPayload.anonymizedTinderJson,
       timezone,
       country,
-    });
+    };
+
+    // Route to appropriate endpoint based on scenario
+    const scenario = uploadContext?.scenario;
+
+    if (scenario === "new_profile" || scenario === "new_user") {
+      // First-time upload - use streamlined createProfile endpoint
+      createMutation.mutate(uploadData);
+    } else if (scenario === "same_tinderId" || scenario === "can_claim") {
+      // Re-uploading same account or claiming anonymous profile
+      updateMutation.mutate(uploadData);
+    } else if (scenario === "different_tinderId") {
+      // Merging old Tinder account into new one
+      mergeMutation.mutate(uploadData);
+    } else {
+      // This should never happen - uploadContext should always have a scenario
+      console.error("Unknown upload scenario:", scenario);
+      alert("Unable to determine upload type. Please refresh and try again.");
+    }
   };
 
   const user = payload.anonymizedTinderJson.User;
@@ -116,7 +158,11 @@ export function TinderSubmitButton({
 
   const termsAccepted = consent.terms;
   const canSubmit = !hasUnknownGender && !disabled && termsAccepted;
-  const isLoading = isCreatingSession || uploadMutation.isPending;
+  const isLoading =
+    isCreatingSession ||
+    createMutation.isPending ||
+    updateMutation.isPending ||
+    mergeMutation.isPending;
 
   return (
     <SubmitButton

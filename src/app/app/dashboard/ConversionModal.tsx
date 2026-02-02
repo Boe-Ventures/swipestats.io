@@ -76,6 +76,13 @@ export function ConversionModal({
   useEffect(() => {
     const checkUsername = async () => {
       if (username.length >= 3) {
+        // Check for @ symbol (not allowed to avoid confusion with email)
+        if (username.includes("@")) {
+          setUsernameAvailable(false);
+          setCheckingUsername(false);
+          return;
+        }
+
         setCheckingUsername(true);
         try {
           const { data } = await authClient.isUsernameAvailable({ username });
@@ -238,7 +245,9 @@ export function ConversionModal({
                   {!checkingUsername && usernameAvailable === false && (
                     <span className="text-destructive flex items-center gap-1 text-xs">
                       <XCircle className="h-3 w-3" />
-                      Not available
+                      {username.includes("@")
+                        ? "@ symbols not allowed"
+                        : "Not available"}
                     </span>
                   )}
                   {!checkingUsername && usernameAvailable === true && (
@@ -256,6 +265,8 @@ export function ConversionModal({
                   required
                   minLength={3}
                   maxLength={32}
+                  pattern="[^@]+"
+                  title="Username cannot contain @ symbols"
                   placeholder="cooluser123"
                   disabled={isLoading}
                   aria-invalid={usernameAvailable === false}

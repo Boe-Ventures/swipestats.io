@@ -8,6 +8,7 @@
  * Migrate Data Step
  *
  * Migrates Tinder profiles and related data from old database to new.
+ * Only migrates real user profiles (excludes synthetic/computed profiles).
  *
  * Usage (standalone):
  *   OLD_DATABASE_URL=<old-db-url> DATABASE_URL=<new-db-url> bun run src/scripts/migration/steps/migrate-data.ts
@@ -173,10 +174,15 @@ async function selectProfiles(
 }> {
   log("Selecting profiles to migrate...");
 
+  // Only migrate real user profiles (computed = false)
+  // Synthetic profiles should be regenerated using generate-cohort-profiles.ts
+  // IMPORTANT: With 1:1 user-to-profile constraint, we MUST deduplicate by userId
+  // Keep only the MOST RECENT profile per user (by lastDayOnApp)
   const profilesRaw = (await oldSql`
-    SELECT "tinderId", "userId", "createdAt", "lastDayOnApp"
+    SELECT DISTINCT ON ("userId") "tinderId", "userId", "createdAt", "lastDayOnApp"
     FROM "TinderProfile"
-    ORDER BY "createdAt" DESC
+    WHERE "computed" = false
+    ORDER BY "userId", "lastDayOnApp" DESC, "createdAt" DESC
     LIMIT ${profileLimit}
   `) as Array<{
     tinderId: string;
@@ -202,11 +208,11 @@ async function selectProfiles(
   if (profiles.length > 0) {
     const oldestDate = profiles[profiles.length - 1]?.createdAt;
     const newestDate = profiles[0]?.createdAt;
-    log(`   Selected ${profiles.length} profiles`);
+    log(`   Selected ${profiles.length} profiles (1 per user)`);
     log(
       `   Date range: ${oldestDate?.toISOString().split("T")[0]} to ${newestDate?.toISOString().split("T")[0]}`,
     );
-    log(`   Unique users: ${userIds.length}`);
+    log(`   Unique users: ${userIds.length} (should equal profile count)`);
   } else {
     log("   No profiles found!");
   }
@@ -305,7 +311,7 @@ async function migrateTinderProfiles(
   `) as OldTinderProfile[];
 
   const mappedProfiles = profiles.map((p) => ({
-    computed: p.computed,
+    computed: false, // Only real user profiles are migrated
     tinderId: p.tinderId,
     createdAt: toDate(p.createdAt)!,
     updatedAt: toDate(p.updatedAt)!,
@@ -631,9 +637,25 @@ async function migrateTinderUsage(
 
   log(`   Found ${allUsage.length} total usage records to migrate`);
 
-  const mapped = allUsage.map((u) => ({
-    ...u,
+  // Explicitly map only the fields we need (excluding removed activity metadata columns)
+  const mapped = allUsage.map((u: any) => ({
     dateStamp: toDate(u.dateStamp)!,
+    dateStampRaw: u.dateStampRaw,
+    tinderProfileId: u.tinderProfileId,
+    appOpens: u.appOpens,
+    matches: u.matches,
+    swipeLikes: u.swipeLikes,
+    swipeSuperLikes: u.swipeSuperLikes,
+    swipePasses: u.swipePasses,
+    swipesCombined: u.swipesCombined,
+    messagesReceived: u.messagesReceived,
+    messagesSent: u.messagesSent,
+    matchRate: u.matchRate,
+    likeRate: u.likeRate,
+    messagesSentRate: u.messagesSentRate,
+    responseRate: u.responseRate,
+    engagementRate: u.engagementRate,
+    userAgeThisDay: u.userAgeThisDay,
   }));
 
   await batchInsert(

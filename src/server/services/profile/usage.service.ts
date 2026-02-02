@@ -1,43 +1,38 @@
 import type { AnonymizedTinderDataJSON } from "@/lib/interfaces/TinderDataJSON";
-import { expandAndAugmentProfileWithMissingDays } from "@/lib/profile.utils";
 import type { TinderUsageInsert } from "@/server/db/schema";
 import { computeUsageInput } from "./transform.service";
 
 /**
- * Creates bulk usage records for all days in the profile period
- * Expands missing days and augments with activity metadata
+ * Creates bulk usage records for real days only from the Tinder JSON.
+ *
+ * Previously, this function expanded missing days with synthetic zero records.
+ * Now it only stores real usage data from the original JSON. The frontend
+ * aggregation (aggregateUsage.ts) already handles sparse data correctly
+ * through grouping by period (monthly, yearly).
  */
 export function createUsageRecords(
   json: AnonymizedTinderDataJSON,
   tinderId: string,
   userBirthDate: Date,
 ): TinderUsageInsert[] {
-  const originalDays = {
-    appOpens: Object.keys(json.Usage.app_opens).length,
-    swipeLikes: Object.keys(json.Usage.swipes_likes).length,
-    swipePasses: Object.keys(json.Usage.swipes_passes).length,
-  };
+  // Collect all unique dates from all usage categories
+  const allDatesSet = new Set<string>();
+  Object.keys(json.Usage.app_opens).forEach((d) => allDatesSet.add(d));
+  Object.keys(json.Usage.swipes_likes).forEach((d) => allDatesSet.add(d));
+  Object.keys(json.Usage.swipes_passes).forEach((d) => allDatesSet.add(d));
+  Object.keys(json.Usage.matches).forEach((d) => allDatesSet.add(d));
+  Object.keys(json.Usage.messages_sent).forEach((d) => allDatesSet.add(d));
+  Object.keys(json.Usage.messages_received).forEach((d) => allDatesSet.add(d));
+  if (json.Usage.superlikes) {
+    Object.keys(json.Usage.superlikes).forEach((d) => allDatesSet.add(d));
+  }
 
-  console.log(
-    `   📅 Original data: ${originalDays.appOpens} days with app opens, ${originalDays.swipeLikes} with likes, ${originalDays.swipePasses} with passes`,
-  );
+  // Sort dates chronologically
+  const realDates = Array.from(allDatesSet).sort();
 
-  const expandedUsageTimeFrame = expandAndAugmentProfileWithMissingDays({
-    appOpens: json.Usage.app_opens,
-    swipeLikes: json.Usage.swipes_likes,
-    swipePasses: json.Usage.swipes_passes,
-  });
+  console.log(`   📅 Creating usage records for ${realDates.length} real days`);
 
-  const expandedUsageTimeFrameEntries = Object.entries(expandedUsageTimeFrame);
-  const missingDays = expandedUsageTimeFrameEntries.filter(
-    ([_, meta]) => meta.dateIsMissingFromOriginalData,
-  ).length;
-
-  console.log(
-    `   📅 Expanded to ${expandedUsageTimeFrameEntries.length} total days (added ${missingDays} missing days)`,
-  );
-
-  const usageInput = expandedUsageTimeFrameEntries.map(([date, meta]) => {
+  const usageInput = realDates.map((date) => {
     return computeUsageInput(
       {
         appOpensCount: json.Usage.app_opens[date] ?? 0,
@@ -51,7 +46,6 @@ export function createUsageRecords(
       date,
       tinderId,
       userBirthDate,
-      meta,
     );
   });
 

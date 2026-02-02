@@ -39,7 +39,6 @@ export async function GET(
         schools: true,
         media: true,
         customData: true,
-        rawUsage: true,
       },
     });
 
@@ -56,7 +55,6 @@ export async function GET(
       schools,
       media,
       customData,
-      rawUsage,
       ...profileData
     } = profile;
 
@@ -69,7 +67,6 @@ export async function GET(
       schools: schools ?? [],
       media: media ?? [],
       customData: customData ?? null,
-      rawUsage: rawUsage ?? null,
     });
   } catch (error) {
     console.error("Error fetching profile data:", error);

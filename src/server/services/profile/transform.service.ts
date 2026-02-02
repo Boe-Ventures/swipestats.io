@@ -7,7 +7,6 @@ import type {
   TinderProfileInsert,
   TinderUsageInsert,
 } from "@/server/db/schema";
-import type { ExpandedUsageValue } from "@/lib/profile.utils";
 import { mapTinderGender } from "@/lib/utils/gender";
 
 /**
@@ -102,7 +101,6 @@ export function computeUsageInput(
   dateStampRaw: string,
   tinderProfileId: string,
   userBirthDate: Date,
-  meta: ExpandedUsageValue,
 ): TinderUsageInsert {
   const matchRate = params.swipeLikesCount
     ? params.matchesCount / params.swipeLikesCount
@@ -155,12 +153,6 @@ export function computeUsageInput(
     responseRate,
     tinderProfileId: tinderProfileId,
 
-    dateIsMissingFromOriginalData: meta.dateIsMissingFromOriginalData,
-    activeUser: meta.activeUser,
-    daysSinceLastActive: meta.daysSinceLastActive,
-    activeUserInLast7Days: meta.activeUserInLast7Days,
-    activeUserInLast14Days: meta.activeUserInLast14Days,
-    activeUserInLast30Days: meta.activeUserInLast30Days,
     userAgeThisDay,
   };
 }
