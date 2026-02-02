@@ -1,7 +1,7 @@
 import { eq, sql } from "drizzle-orm";
 
 import type { AnonymizedTinderDataJSON } from "@/lib/interfaces/TinderDataJSON";
-import { withTransaction } from "@/server/db";
+import { withTransaction, type TransactionClient } from "@/server/db";
 import {
   matchTable,
   mediaTable,
@@ -13,13 +13,110 @@ import {
   customDataTable,
   type MatchInsert,
   type MessageInsert,
+  type TinderUsageInsert,
 } from "@/server/db/schema";
 import { createId } from "@/server/db/utils";
 import { computeProfileMeta } from "./meta.service";
 import { createMessagesAndMatches } from "./messages.service";
 import { transformTinderJsonToProfile } from "./transform.service";
 import { createUsageRecords } from "./usage.service";
-import type { TinderProfileResult } from "./profile.service";
+import {
+  type TinderProfileResult,
+  transformTinderPhotosToMedia,
+} from "./profile.service";
+
+/**
+ * Helper: Upsert usage records in transaction
+ * Newer exports always have the most complete data - just overwrite on conflict
+ * Returns the count of records processed
+ */
+async function upsertUsageRecordsInTx(
+  tx: TransactionClient,
+  tinderId: string,
+  newUsage: TinderUsageInsert[],
+): Promise<number> {
+  if (newUsage.length === 0) {
+    return 0;
+  }
+
+  let usageInserted = 0;
+  const BATCH_SIZE = 500;
+
+  for (let i = 0; i < newUsage.length; i += BATCH_SIZE) {
+    const batch = newUsage.slice(i, i + BATCH_SIZE);
+    await tx
+      .insert(tinderUsageTable)
+      .values(batch)
+      .onConflictDoUpdate({
+        target: [
+          tinderUsageTable.dateStampRaw,
+          tinderUsageTable.tinderProfileId,
+        ],
+        set: {
+          // Newer export has most complete data - just overwrite
+          appOpens: sql`excluded.app_opens`,
+          swipeLikes: sql`excluded.swipe_likes`,
+          swipePasses: sql`excluded.swipe_passes`,
+          swipeSuperLikes: sql`excluded.swipe_super_likes`,
+          matches: sql`excluded.matches`,
+          messagesSent: sql`excluded.messages_sent`,
+          messagesReceived: sql`excluded.messages_received`,
+          swipesCombined: sql`excluded.swipes_combined`,
+          matchRate: sql`excluded.match_rate`,
+          likeRate: sql`excluded.like_rate`,
+          messagesSentRate: sql`excluded.messages_sent_rate`,
+          responseRate: sql`excluded.response_rate`,
+          engagementRate: sql`excluded.engagement_rate`,
+          userAgeThisDay: sql`excluded.user_age_this_day`,
+        },
+      });
+    usageInserted += batch.length;
+  }
+
+  return usageInserted;
+}
+
+/**
+ * Helper: Recompute profile meta in transaction
+ * Fetches profile with relations, computes meta, and inserts/updates
+ */
+async function recomputeProfileMetaInTx(
+  tx: TransactionClient,
+  tinderId: string,
+): Promise<void> {
+  // Delete old profile meta
+  await tx
+    .delete(profileMetaTable)
+    .where(eq(profileMetaTable.tinderProfileId, tinderId));
+
+  // Fetch profile with all relations
+  const fullProfile = await tx.query.tinderProfileTable.findFirst({
+    where: eq(tinderProfileTable.tinderId, tinderId),
+    with: {
+      usage: true,
+      matches: {
+        with: {
+          messages: true,
+        },
+      },
+    },
+  });
+
+  if (!fullProfile) {
+    throw new Error(
+      `Failed to fetch profile for meta computation: ${tinderId}`,
+    );
+  }
+
+  // Compute and insert new meta
+  const profileMeta = computeProfileMeta(fullProfile);
+  await tx.insert(profileMetaTable).values({
+    ...profileMeta,
+    id: createId("pmeta"),
+    tinderProfileId: tinderId,
+    hingeProfileId: null,
+  });
+}
 
 /**
  * Cross-account merge: Absorb old profile's data into new profile
@@ -161,41 +258,11 @@ export async function absorbProfileIntoNew(data: {
       data.newTinderId,
       userBirthDate,
     );
-
-    let usageInserted = 0;
-    if (newUsage.length > 0) {
-      const BATCH_SIZE = 500;
-      for (let i = 0; i < newUsage.length; i += BATCH_SIZE) {
-        const batch = newUsage.slice(i, i + BATCH_SIZE);
-        await tx
-          .insert(tinderUsageTable)
-          .values(batch)
-          .onConflictDoUpdate({
-            target: [
-              tinderUsageTable.dateStampRaw,
-              tinderUsageTable.tinderProfileId,
-            ],
-            set: {
-              // Newer export has most complete data - just overwrite
-              appOpens: sql`excluded.app_opens`,
-              swipeLikes: sql`excluded.swipe_likes`,
-              swipePasses: sql`excluded.swipe_passes`,
-              swipeSuperLikes: sql`excluded.swipe_super_likes`,
-              matches: sql`excluded.matches`,
-              messagesSent: sql`excluded.messages_sent`,
-              messagesReceived: sql`excluded.messages_received`,
-              swipesCombined: sql`excluded.swipes_combined`,
-              matchRate: sql`excluded.match_rate`,
-              likeRate: sql`excluded.like_rate`,
-              messagesSentRate: sql`excluded.messages_sent_rate`,
-              responseRate: sql`excluded.response_rate`,
-              engagementRate: sql`excluded.engagement_rate`,
-              userAgeThisDay: sql`excluded.user_age_this_day`,
-            },
-          });
-        usageInserted += batch.length;
-      }
-    }
+    const usageInserted = await upsertUsageRecordsInTx(
+      tx,
+      data.newTinderId,
+      newUsage,
+    );
     console.log(
       `   ✓ Usage upserted: ${usageInserted} records (${Date.now() - usageStart}ms)`,
     );
@@ -230,33 +297,11 @@ export async function absorbProfileIntoNew(data: {
 
     // 12. Insert photos
     const photosStart = Date.now();
-    const photosArray = data.anonymizedTinderJson.Photos;
-    if (Array.isArray(photosArray) && photosArray.length > 0) {
-      const photosInput = photosArray.map((photo) => {
-        if (typeof photo === "string") {
-          return {
-            id: createId("media"),
-            type: "photo",
-            url: photo,
-            prompt: null,
-            caption: null,
-            fromSoMe: null,
-            tinderProfileId: data.newTinderId,
-            hingeProfileId: null,
-          };
-        } else {
-          return {
-            id: createId("media"),
-            type: photo.type || "photo",
-            url: photo.url,
-            prompt: photo.prompt_text || null,
-            caption: null,
-            fromSoMe: null,
-            tinderProfileId: data.newTinderId,
-            hingeProfileId: null,
-          };
-        }
-      });
+    const photosInput = transformTinderPhotosToMedia(
+      data.anonymizedTinderJson.Photos,
+      data.newTinderId,
+    );
+    if (photosInput.length > 0) {
       await tx.insert(mediaTable).values(photosInput);
       console.log(
         `   ✓ ${photosInput.length} photos inserted (${Date.now() - photosStart}ms)`,
@@ -265,29 +310,7 @@ export async function absorbProfileIntoNew(data: {
 
     // 13. Recompute profile meta with all combined data
     const metaStart = Date.now();
-    const fullProfile = await tx.query.tinderProfileTable.findFirst({
-      where: eq(tinderProfileTable.tinderId, data.newTinderId),
-      with: {
-        usage: true,
-        matches: {
-          with: {
-            messages: true,
-          },
-        },
-      },
-    });
-
-    if (!fullProfile) {
-      throw new Error(`Failed to fetch merged profile: ${data.newTinderId}`);
-    }
-
-    const profileMeta = computeProfileMeta(fullProfile);
-    await tx.insert(profileMetaTable).values({
-      ...profileMeta,
-      id: createId("pmeta"),
-      tinderProfileId: data.newTinderId,
-      hingeProfileId: null,
-    });
+    await recomputeProfileMetaInTx(tx, data.newTinderId);
     console.log(`   ✓ Profile meta computed (${Date.now() - metaStart}ms)`);
 
     // 14. Store original file
@@ -300,7 +323,17 @@ export async function absorbProfileIntoNew(data: {
       userId: data.userId,
     });
 
-    return insertedProfile!;
+    if (!insertedProfile) {
+      throw new Error(`Failed to insert profile: ${data.newTinderId}`);
+    }
+
+    return {
+      profile: insertedProfile,
+      matchCount: matchesInput.length,
+      messageCount: messagesInput.length,
+      photoCount: photosInput.length,
+      usageDays: newUsage.length,
+    };
   });
 
   const totalTime = Date.now() - startTime;
@@ -312,14 +345,14 @@ export async function absorbProfileIntoNew(data: {
   );
 
   return {
-    profile,
+    profile: profile.profile,
     metrics: {
       processingTimeMs: totalTime,
-      matchCount: 0, // TODO: Could compute actual counts
-      messageCount: 0,
-      photoCount: 0,
-      usageDays: 0,
-      hasPhotos: false,
+      matchCount: profile.matchCount,
+      messageCount: profile.messageCount,
+      photoCount: profile.photoCount,
+      usageDays: profile.usageDays,
+      hasPhotos: profile.photoCount > 0,
       jsonSizeMB: parseFloat(jsonSizeMB),
     },
   };
@@ -331,8 +364,8 @@ export async function absorbProfileIntoNew(data: {
  *
  * Flow:
  * 1. Update profile metadata
- * 2. Upsert usage records (take max for overlapping dates)
- * 3. Merge matches by tinderMatchId (add new messages to existing matches)
+ * 2. Upsert usage records (newer export always has most complete data)
+ * 3. Insert only NEW matches (matches are frozen in time)
  * 4. Recompute profile meta
  */
 export async function additiveUpdateProfile(data: {
@@ -387,41 +420,11 @@ export async function additiveUpdateProfile(data: {
       data.tinderId,
       userBirthDate,
     );
-
-    let usageInserted = 0;
-    if (newUsage.length > 0) {
-      const BATCH_SIZE = 500;
-      for (let i = 0; i < newUsage.length; i += BATCH_SIZE) {
-        const batch = newUsage.slice(i, i + BATCH_SIZE);
-        await tx
-          .insert(tinderUsageTable)
-          .values(batch)
-          .onConflictDoUpdate({
-            target: [
-              tinderUsageTable.dateStampRaw,
-              tinderUsageTable.tinderProfileId,
-            ],
-            set: {
-              // Newer export has most complete data - just overwrite
-              appOpens: sql`excluded.app_opens`,
-              swipeLikes: sql`excluded.swipe_likes`,
-              swipePasses: sql`excluded.swipe_passes`,
-              swipeSuperLikes: sql`excluded.swipe_super_likes`,
-              matches: sql`excluded.matches`,
-              messagesSent: sql`excluded.messages_sent`,
-              messagesReceived: sql`excluded.messages_received`,
-              swipesCombined: sql`excluded.swipes_combined`,
-              matchRate: sql`excluded.match_rate`,
-              likeRate: sql`excluded.like_rate`,
-              messagesSentRate: sql`excluded.messages_sent_rate`,
-              responseRate: sql`excluded.response_rate`,
-              engagementRate: sql`excluded.engagement_rate`,
-              userAgeThisDay: sql`excluded.user_age_this_day`,
-            },
-          });
-        usageInserted += batch.length;
-      }
-    }
+    const usageInserted = await upsertUsageRecordsInTx(
+      tx,
+      data.tinderId,
+      newUsage,
+    );
     console.log(
       `   ✓ Usage upserted: ${usageInserted} records (${Date.now() - usageStart}ms)`,
     );
@@ -480,35 +483,9 @@ export async function additiveUpdateProfile(data: {
       );
     }
 
-    // 4. Delete old profile meta and recompute
+    // 4. Recompute profile meta
     const metaStart = Date.now();
-    await tx
-      .delete(profileMetaTable)
-      .where(eq(profileMetaTable.tinderProfileId, data.tinderId));
-
-    const fullProfile = await tx.query.tinderProfileTable.findFirst({
-      where: eq(tinderProfileTable.tinderId, data.tinderId),
-      with: {
-        usage: true,
-        matches: {
-          with: {
-            messages: true,
-          },
-        },
-      },
-    });
-
-    if (!fullProfile) {
-      throw new Error(`Failed to fetch profile after update: ${data.tinderId}`);
-    }
-
-    const profileMeta = computeProfileMeta(fullProfile);
-    await tx.insert(profileMetaTable).values({
-      ...profileMeta,
-      id: createId("pmeta"),
-      tinderProfileId: data.tinderId,
-      hingeProfileId: null,
-    });
+    await recomputeProfileMetaInTx(tx, data.tinderId);
     console.log(`   ✓ Profile meta recomputed (${Date.now() - metaStart}ms)`);
 
     // 5. Store original file
@@ -521,7 +498,16 @@ export async function additiveUpdateProfile(data: {
       userId: data.userId,
     });
 
-    return updatedProfile!;
+    if (!updatedProfile) {
+      throw new Error(`Failed to update profile: ${data.tinderId}`);
+    }
+
+    return {
+      profile: updatedProfile,
+      matchCount: matchesToInsert.length,
+      messageCount: messagesToInsert.length,
+      usageDays: newUsage.length,
+    };
   });
 
   const totalTime = Date.now() - startTime;
@@ -531,14 +517,14 @@ export async function additiveUpdateProfile(data: {
   );
 
   return {
-    profile,
+    profile: profile.profile,
     metrics: {
       processingTimeMs: totalTime,
-      matchCount: 0,
-      messageCount: 0,
-      photoCount: 0,
-      usageDays: 0,
-      hasPhotos: false,
+      matchCount: profile.matchCount,
+      messageCount: profile.messageCount,
+      photoCount: 0, // Additive updates don't add photos
+      usageDays: profile.usageDays,
+      hasPhotos: false, // Not tracked in additive updates
       jsonSizeMB: parseFloat(jsonSizeMB),
     },
   };

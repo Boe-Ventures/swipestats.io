@@ -148,7 +148,7 @@ export async function transferProfileOwnership(
  * Transform Tinder photos to database media insert format
  * Handles both old format (string URLs) and new format (TinderPhoto objects)
  */
-function transformTinderPhotosToMedia(
+export function transformTinderPhotosToMedia(
   photos: string[] | TinderPhoto[],
   tinderProfileId: string,
 ): MediaInsert[] {
