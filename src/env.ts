@@ -28,6 +28,7 @@ export const env = createEnv({
     NEXT_PUBLIC_VERCEL_ENV: z
       .enum(["development", "preview", "production"])
       .optional(),
+    NEXT_PUBLIC_IS_PRODUCTION: z.boolean().default(false), // True production: VERCEL_ENV=production AND domain=swipestats.io
   },
 
   /**
@@ -53,13 +54,23 @@ export const env = createEnv({
     LEMON_SQUEEZY_API_KEY: process.env.LEMON_SQUEEZY_API_KEY,
     LEMON_SQUEEZY_WEBHOOK_SECRET: process.env.LEMON_SQUEEZY_WEBHOOK_SECRET,
     ADMIN_TOKEN: process.env.ADMIN_TOKEN,
-    NEXT_PUBLIC_BASE_URL: process.env.NEXT_PUBLIC_VERCEL_URL
-      ? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
-      : process.env.NEXT_PUBLIC_BASE_URL,
+    // Priority: explicit override > true production > branch URL > localhost default
+    NEXT_PUBLIC_BASE_URL:
+      process.env.NEXT_PUBLIC_BASE_URL ??
+      (process.env.VERCEL_ENV === "production" &&
+      process.env.VERCEL_PROJECT_PRODUCTION_URL === "swipestats.io"
+        ? "https://swipestats.io"
+        : process.env.VERCEL_BRANCH_URL
+          ? `https://${process.env.VERCEL_BRANCH_URL}`
+          : undefined),
     NEXT_PUBLIC_MAPBOX_PUBLIC_API_KEY:
       process.env.NEXT_PUBLIC_MAPBOX_PUBLIC_API_KEY,
     NEXT_PUBLIC_VERCEL_ENV: process.env.NEXT_PUBLIC_VERCEL_ENV,
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
+    // True production = VERCEL_ENV is production AND domain is swipestats.io
+    NEXT_PUBLIC_IS_PRODUCTION:
+      process.env.VERCEL_ENV === "production" &&
+      process.env.VERCEL_PROJECT_PRODUCTION_URL === "swipestats.io",
   },
   /**
    * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially
@@ -79,7 +90,5 @@ export const env = createEnv({
  * Matches LemonSqueezy's test mode (dev/preview) vs production mode
  */
 export function envSelect<T>(values: { prod: T; test: T }): T {
-  return env.NEXT_PUBLIC_VERCEL_ENV === "production"
-    ? values.prod
-    : values.test;
+  return env.NEXT_PUBLIC_IS_PRODUCTION ? values.prod : values.test;
 }

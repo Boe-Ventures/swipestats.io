@@ -7,8 +7,7 @@ import {
 } from "@lemonsqueezy/lemonsqueezy.js";
 import crypto from "crypto";
 
-import { env } from "@/env";
-import { envSelect } from "@/lib/utils/env.utils";
+import { env, envSelect } from "@/env";
 
 // Initialize SDK on module load
 lemonSqueezySetup({ apiKey: env.LEMON_SQUEEZY_API_KEY });

@@ -267,21 +267,18 @@ export const researchRouter = {
       return { exports };
     }),
 
-  // Admin: retry failed generation
-  retryGeneration: protectedProcedure
-    .input(z.object({ exportId: z.string() }))
+  // Retry failed generation (public - license key is the auth)
+  retryGeneration: publicProcedure
+    .input(z.object({ licenseKey: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
-      // Check if user is admin
-      // For now, just proceed
-
       const exportRecord = await ctx.db.query.datasetExportTable.findFirst({
-        where: eq(datasetExportTable.id, input.exportId),
+        where: eq(datasetExportTable.licenseKey, input.licenseKey),
       });
 
       if (!exportRecord) {
         throw new TRPCError({
           code: "NOT_FOUND",
-          message: "Export not found",
+          message: "Export not found for this license key",
         });
       }
 
@@ -295,12 +292,11 @@ export const researchRouter = {
       // Reset to PENDING and trigger generation
       await ctx.db
         .update(datasetExportTable)
-        .set({ status: "PENDING" })
-        .where(eq(datasetExportTable.id, input.exportId));
+        .set({ status: "PENDING", errorMessage: null })
+        .where(eq(datasetExportTable.id, exportRecord.id));
 
-      // Trigger generation (in production, use waitUntil or queue)
-      // For now, fire and forget
-      generateDatasetForExport(input.exportId).catch((error) => {
+      // Trigger generation (fire and forget)
+      generateDatasetForExport(exportRecord.id).catch((error) => {
         console.error("Failed to retry generation:", error);
       });
 

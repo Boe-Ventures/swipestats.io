@@ -163,14 +163,19 @@ async function updateContactTopics(params: {
 }
 
 /**
- * Subscribe a contact to specific topics (preserves other subscriptions)
+ * Subscribe a contact to specific topics
  *
- * This is the main public API for subscribing users to topics.
- * It automatically:
+ * This function uses Resend's MERGE behavior - it only updates the topics
+ * specified without affecting other topic subscriptions. No need to fetch
+ * existing topics first.
+ *
+ * Automatically:
  * 1. Creates the contact if needed
- * 2. Fetches current topic subscriptions
- * 3. Merges with new subscriptions
- * 4. Updates Resend with the complete list
+ * 2. Waits to respect rate limits (2 req/sec)
+ * 3. Updates the specified topics to opt_in
+ *
+ * Note: Rate limiting waits 700ms between API calls.
+ * For high-volume operations, consider implementing a queue system.
  *
  * @example
  * await subscribeToTopics({
@@ -184,41 +189,21 @@ export async function subscribeToTopics(params: {
 }) {
   try {
     // Ensure contact exists
-    const contactResult = await createContact({ email: params.email });
+    const _contactResult = await createContact({ email: params.email });
 
-    // If contact was just created, wait for Resend to populate default topics
-    if (!contactResult.alreadyExists) {
-      console.log(
-        "⏳ New contact, waiting 500ms for Resend to populate topics...",
-      );
-      await new Promise((resolve) => setTimeout(resolve, 500));
-    }
+    // Wait to respect 2 req/sec rate limit
+    // 700ms ensures we stay under the limit with buffer for API response time
+    console.log("⏳ Waiting 700ms to respect rate limits...");
+    await new Promise((resolve) => setTimeout(resolve, 700));
 
-    // Get current topics to preserve other subscriptions
-    const currentTopicsResult = await getContactTopics({ email: params.email });
-
-    // Build map of all topics
-    const topicsMap = new Map<string, "opt_in" | "opt_out">();
-
-    // Start with current subscriptions
-    if (currentTopicsResult.success && currentTopicsResult.data?.data) {
-      currentTopicsResult.data.data.forEach((topic) => {
-        topicsMap.set(topic.id, topic.subscription);
-      });
-    }
-
-    // Add new subscriptions (opt_in) - convert keys to IDs
+    // Convert topic keys to IDs and create opt_in subscriptions
     const topicIds = getTopicIds(params.topics);
-    topicIds.forEach((topicId) => {
-      topicsMap.set(topicId, "opt_in");
-    });
+    const topics = topicIds.map((id) => ({
+      id,
+      subscription: "opt_in" as const,
+    }));
 
-    // Convert to array for API
-    const topics = Array.from(topicsMap.entries()).map(
-      ([id, subscription]) => ({ id, subscription }),
-    );
-
-    // Update all topics
+    // Update topics - Resend merges these with existing subscriptions
     return await updateContactTopics({ email: params.email, topics });
   } catch (error) {
     console.error("❌ Failed to subscribe to topics:", error);

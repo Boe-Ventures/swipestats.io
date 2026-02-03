@@ -52,6 +52,23 @@ export function DownloadClient() {
     }),
   );
 
+  // Mutation to retry failed generation
+  const retryGenerationMutation = useMutation(
+    trpc.research.retryGeneration.mutationOptions({
+      onSuccess: () => {
+        // Refetch to see the new PENDING status and start polling
+        void refetch();
+      },
+      onError: (error) => {
+        console.error("Failed to retry generation:", error);
+      },
+    }),
+  );
+
+  const handleRetry = () => {
+    retryGenerationMutation.mutate({ licenseKey });
+  };
+
   // Poll if status is PENDING or GENERATING
   useEffect(() => {
     if (
@@ -308,14 +325,39 @@ export function DownloadClient() {
                   </p>
                 </div>
               ) : exportData.export.status === "FAILED" ? (
-                <div className="rounded-lg bg-red-50 p-4 text-center">
-                  <p className="text-sm font-medium text-red-800">
-                    Dataset generation failed
-                  </p>
-                  <p className="mt-1 text-sm text-red-600">
-                    Please contact support at kris@swipestats.io with your
-                    license key.
-                  </p>
+                <div className="space-y-4">
+                  <div className="rounded-lg bg-red-50 p-4 text-center">
+                    <p className="text-sm font-medium text-red-800">
+                      Dataset generation failed
+                    </p>
+                    <p className="mt-1 text-sm text-red-600">
+                      This can happen due to temporary server issues. You can
+                      try again or contact support at kris@swipestats.io.
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleRetry}
+                    disabled={retryGenerationMutation.isPending}
+                    className={cn(
+                      "flex w-full items-center justify-center gap-x-2 rounded-md px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600",
+                      !retryGenerationMutation.isPending
+                        ? "cursor-pointer bg-rose-600 hover:bg-rose-500"
+                        : "cursor-not-allowed bg-gray-300",
+                    )}
+                  >
+                    {retryGenerationMutation.isPending
+                      ? "Retrying..."
+                      : "Retry Generation"}
+                  </button>
+                  {retryGenerationMutation.isError && (
+                    <div className="rounded-lg bg-red-50 p-4">
+                      <p className="text-sm font-medium text-red-800">
+                        {retryGenerationMutation.error instanceof Error
+                          ? retryGenerationMutation.error.message
+                          : "Failed to retry. Please try again."}
+                      </p>
+                    </div>
+                  )}
                 </div>
               ) : null}
 

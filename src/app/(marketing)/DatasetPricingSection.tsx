@@ -166,7 +166,7 @@ export function DatasetPricingSection() {
                   tier.mostPopular
                     ? "bg-rose-600 text-white shadow-sm hover:bg-rose-500"
                     : "text-rose-600 ring-1 ring-rose-200 ring-inset hover:ring-rose-300",
-                  "mt-8 flex items-center justify-center gap-2 rounded-md px-3 py-2 text-center text-sm leading-6 font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600",
+                  "mt-8 flex cursor-pointer items-center justify-center gap-2 rounded-md px-3 py-2 text-center text-sm leading-6 font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600",
                   loadingTier === tier.id &&
                     "cursor-not-allowed opacity-50 disabled:opacity-50",
                 )}

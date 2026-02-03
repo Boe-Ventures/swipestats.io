@@ -25,7 +25,7 @@ export const AUTHORS = {
   },
   paw: {
     name: "Paw",
-    image: "/images/blog/authors/paw.png",
+    image: "/images/blog/authors/paw.avif",
     description: "Dating Expert at SwipeStats.io",
     instagram: "https://www.instagram.com/pawvej",
     email: "paw@swipestats.io",
