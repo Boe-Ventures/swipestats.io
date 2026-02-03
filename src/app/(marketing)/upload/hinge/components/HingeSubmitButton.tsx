@@ -20,6 +20,17 @@ interface HingeSubmitButtonProps {
   isUpdate: boolean;
   disabled?: boolean;
   consent: HingeConsentState;
+  uploadContext?: {
+    scenario:
+      | "new_profile"
+      | "new_user"
+      | "same_hingeId"
+      | "different_hingeId"
+      | "can_claim"
+      | "needs_signin"
+      | "owned_by_other";
+    identityMismatch?: boolean;
+  } | null;
 }
 
 export function HingeSubmitButton({
@@ -27,6 +38,7 @@ export function HingeSubmitButton({
   isUpdate,
   disabled,
   consent,
+  uploadContext,
 }: HingeSubmitButtonProps) {
   const { trackEvent } = useAnalytics();
   const router = useRouter();
@@ -43,28 +55,29 @@ export function HingeSubmitButton({
   );
 
   const trpc = useTRPC();
-  const createMutation = useMutation(
-    trpc.hingeProfile.create.mutationOptions({
-      onSuccess: (data) => {
-        router.push(`/insights/hinge/${data.hingeId}`);
-      },
-      onError: (error) => {
-        console.error("Error creating Hinge profile:", error);
-        alert("Failed to upload profile. Please try again.");
-      },
-    }),
-  );
 
+  // Mutation options shared across all endpoints
+  const mutationOptions = {
+    onSuccess: (data: { hingeId: string }) => {
+      router.push(`/insights/hinge/${data.hingeId}`);
+    },
+    onError: (error: { message?: string }) => {
+      console.error("Error uploading profile:", error);
+      const message =
+        error.message || "Failed to upload profile. Please try again.";
+      alert(message);
+    },
+  };
+
+  // Three separate mutations for each endpoint
+  const createMutation = useMutation(
+    trpc.hingeProfile.createProfile.mutationOptions(mutationOptions),
+  );
   const updateMutation = useMutation(
-    trpc.hingeProfile.update.mutationOptions({
-      onSuccess: (data) => {
-        router.push(`/insights/hinge/${data.hingeId}`);
-      },
-      onError: (error) => {
-        console.error("Error updating Hinge profile:", error);
-        alert("Failed to update profile. Please try again.");
-      },
-    }),
+    trpc.hingeProfile.updateProfile.mutationOptions(mutationOptions),
+  );
+  const mergeMutation = useMutation(
+    trpc.hingeProfile.mergeAccounts.mutationOptions(mutationOptions),
   );
 
   const handleSubmit = async () => {
@@ -75,7 +88,7 @@ export function HingeSubmitButton({
       ? payload.anonymizedHingeJson.Media.length
       : 0;
     const hasPhotosData = photoCount > 0;
-    
+
     trackEvent("upload_submit_clicked", {
       provider: "hinge",
       hingeId: payload.hingeId,
@@ -83,6 +96,7 @@ export function HingeSubmitButton({
       hasPhotos: hasPhotosData,
       hasPhotosConsent: consent.sharePhotos,
       matchCount: payload.anonymizedHingeJson.Matches.length,
+      scenario: uploadContext?.scenario || "unknown",
     });
 
     // Ensure session exists before submitting
@@ -115,28 +129,43 @@ export function HingeSubmitButton({
     // Filter payload based on consent before uploading
     const filteredPayload = filterPayloadByConsent(payload, consent);
 
-    // Proceed with mutation (session cookie is set, server will authenticate)
-    if (isUpdate && session) {
-      updateMutation.mutate({
-        hingeId: filteredPayload.hingeId,
-        anonymizedHingeJson: filteredPayload.anonymizedHingeJson,
-        timezone: browserTimezone,
-        country: browserCountry,
-      });
+    const uploadData = {
+      hingeId: filteredPayload.hingeId,
+      anonymizedHingeJson: filteredPayload.anonymizedHingeJson,
+      timezone: browserTimezone,
+      country: browserCountry,
+    };
+
+    // Route to appropriate endpoint based on scenario
+    const scenario = uploadContext?.scenario;
+
+    if (scenario === "new_profile" || scenario === "new_user") {
+      // First-time upload - use streamlined createProfile endpoint
+      createMutation.mutate(uploadData);
+    } else if (scenario === "same_hingeId" || scenario === "can_claim") {
+      // Re-uploading same account or claiming anonymous profile
+      updateMutation.mutate(uploadData);
+    } else if (scenario === "different_hingeId") {
+      // Merging old Hinge account into new one
+      mergeMutation.mutate(uploadData);
     } else {
-      createMutation.mutate({
-        hingeId: filteredPayload.hingeId,
-        anonymizedHingeJson: filteredPayload.anonymizedHingeJson,
-        timezone: browserTimezone,
-        country: browserCountry,
-      });
+      // Fallback for legacy flow without uploadContext
+      // Determine based on isUpdate prop
+      if (isUpdate && session) {
+        updateMutation.mutate(uploadData);
+      } else {
+        createMutation.mutate(uploadData);
+      }
     }
   };
 
   const termsAccepted = consent.terms;
   const canSubmit = !disabled && termsAccepted;
   const isLoading =
-    isCreatingSession || createMutation.isPending || updateMutation.isPending;
+    isCreatingSession ||
+    createMutation.isPending ||
+    updateMutation.isPending ||
+    mergeMutation.isPending;
 
   return (
     <SubmitButton

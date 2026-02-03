@@ -44,6 +44,7 @@ export type ServerAnalyticsEventName =
   // ─────────────────────────────────────────────────
   | "hinge_profile_created" // New Hinge profile uploaded successfully
   | "hinge_profile_updated" // Existing Hinge profile updated successfully
+  | "hinge_profile_merged" // Hinge profiles merged (cross-account)
   | "hinge_profile_upload_failed" // Hinge upload failed (for debugging)
 
   // ─────────────────────────────────────────────────
@@ -235,6 +236,19 @@ export type ServerEventPropertiesDefinition = {
 
   hinge_profile_updated: {
     hingeId: string;
+    matchCount: number;
+    messageCount: number;
+    photoCount: number;
+    promptCount: number;
+    interactionCount: number;
+    hasPhotos: boolean;
+    processingTimeMs: number;
+    jsonSizeMB: number;
+  };
+
+  hinge_profile_merged: {
+    hingeId: string;
+    oldHingeId: string;
     matchCount: number;
     messageCount: number;
     photoCount: number;
@@ -492,6 +506,7 @@ export type ClientEventPropertiesDefinition = {
     hasWork?: boolean; // Tinder only - actual data presence
     hasWorkConsent?: boolean; // Tinder only - user consent state
     matchCount: number;
+    scenario?: string; // Upload scenario context
   };
 
   // ─────────────────────────────────────────────────

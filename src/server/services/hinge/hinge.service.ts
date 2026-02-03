@@ -50,6 +50,43 @@ export async function getHingeProfile(hingeId: string) {
 }
 
 /**
+ * Get a Hinge profile with user information for ownership checks
+ */
+export async function getHingeProfileWithUser(hingeId: string) {
+  return db.query.hingeProfileTable.findFirst({
+    where: eq(hingeProfileTable.hingeId, hingeId),
+    with: {
+      user: {
+        columns: {
+          isAnonymous: true,
+        },
+      },
+    },
+  });
+}
+
+/**
+ * Transfer profile ownership from one user to another
+ * Used when claiming an anonymous user's profile
+ */
+export async function transferHingeProfileOwnership(
+  hingeId: string,
+  fromUserId: string,
+  toUserId: string,
+): Promise<void> {
+  console.log(
+    `🔀 Transferring Hinge profile ${hingeId} from ${fromUserId} to ${toUserId}`,
+  );
+
+  await db
+    .update(hingeProfileTable)
+    .set({ userId: toUserId })
+    .where(eq(hingeProfileTable.hingeId, hingeId));
+
+  console.log(`✅ Profile ownership transferred successfully`);
+}
+
+/**
  * Transform Hinge media to database media insert format
  */
 function transformHingeMediaToDb(
