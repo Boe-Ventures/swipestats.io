@@ -19,6 +19,7 @@ export const env = createEnv({
     LEMON_SQUEEZY_API_KEY: z.string(),
     LEMON_SQUEEZY_WEBHOOK_SECRET: z.string(),
     ADMIN_TOKEN: z.string().min(32), // Require strong token (32+ chars)
+    BLOB_READ_WRITE_TOKEN: z.string().optional(), // Optional for dev without Vercel Blob
   },
 
   /**
@@ -54,6 +55,7 @@ export const env = createEnv({
     LEMON_SQUEEZY_API_KEY: process.env.LEMON_SQUEEZY_API_KEY,
     LEMON_SQUEEZY_WEBHOOK_SECRET: process.env.LEMON_SQUEEZY_WEBHOOK_SECRET,
     ADMIN_TOKEN: process.env.ADMIN_TOKEN,
+    BLOB_READ_WRITE_TOKEN: process.env.BLOB_READ_WRITE_TOKEN,
     // Priority: explicit override > true production > branch URL > localhost default
     NEXT_PUBLIC_BASE_URL:
       process.env.NEXT_PUBLIC_BASE_URL ??

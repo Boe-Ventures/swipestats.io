@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { upload } from "@vercel/blob/client";
 import { SubmitButton } from "../../_components/SubmitButton";
 import { useTRPC } from "@/trpc/react";
 import { useMutation } from "@tanstack/react-query";
@@ -42,6 +43,10 @@ export function TinderSubmitButton({
   const { trackEvent } = useAnalytics();
   const router = useRouter();
   const [isCreatingSession, setIsCreatingSession] = useState(false);
+  const [uploadState, setUploadState] = useState<
+    "idle" | "uploading" | "processing"
+  >("idle");
+  const [uploadedBlobUrl, setUploadedBlobUrl] = useState<string | null>(null);
 
   // Use Better Auth's built-in session hook
   const { data: session } = authClient.useSession();
@@ -93,10 +98,10 @@ export function TinderSubmitButton({
       matchCount: payload.anonymizedTinderJson.Messages.length,
     });
 
-    // Ensure session exists before submitting
-    if (!session) {
-      setIsCreatingSession(true);
-      try {
+    try {
+      // Step 1: Ensure session exists
+      if (!session) {
+        setIsCreatingSession(true);
         const { error } = await authClient.signIn.anonymous({
           fetchOptions: {
             headers: {
@@ -106,47 +111,86 @@ export function TinderSubmitButton({
         });
         if (error) {
           alert("Failed to create session. Please try again.");
-          setIsCreatingSession(false);
           return;
         }
-        // Session cookie is now set, server will pick it up
-        // We can proceed with mutation - the session will be available server-side
-      } catch (err) {
-        console.error("Session creation error:", err);
-        alert("Failed to create session. Please try again.");
-        setIsCreatingSession(false);
-        return;
-      } finally {
         setIsCreatingSession(false);
       }
-    }
 
-    // Filter payload based on consent before uploading
-    const filteredPayload = filterPayloadByConsent(payload, consent);
+      // Step 2: Upload to blob (skip if already uploaded)
+      let blobUrl = uploadedBlobUrl;
+      if (!blobUrl) {
+        setUploadState("uploading");
+        console.log("📤 Uploading to blob storage...");
 
-    const uploadData = {
-      tinderId: filteredPayload.tinderId,
-      anonymizedTinderJson: filteredPayload.anonymizedTinderJson,
-      timezone,
-      country,
-    };
+        // Filter payload based on consent before uploading
+        const filteredPayload = filterPayloadByConsent(payload, consent);
 
-    // Route to appropriate endpoint based on scenario
-    const scenario = uploadContext?.scenario;
+        // Create JSON blob
+        const jsonBlob = new Blob(
+          [JSON.stringify(filteredPayload.anonymizedTinderJson)],
+          { type: "application/json" },
+        );
 
-    if (scenario === "new_profile" || scenario === "new_user") {
-      // First-time upload - use streamlined createProfile endpoint
-      createMutation.mutate(uploadData);
-    } else if (scenario === "same_tinderId" || scenario === "can_claim") {
-      // Re-uploading same account or claiming anonymous profile
-      updateMutation.mutate(uploadData);
-    } else if (scenario === "different_tinderId") {
-      // Merging old Tinder account into new one
-      mergeMutation.mutate(uploadData);
-    } else {
-      // This should never happen - uploadContext should always have a scenario
-      console.error("Unknown upload scenario:", scenario);
-      alert("Unable to determine upload type. Please refresh and try again.");
+        // Upload to Vercel Blob with structured path
+        const date = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+        const result = await upload(
+          `tinder-data/${filteredPayload.tinderId}/${date}/data.json`,
+          jsonBlob,
+          {
+            access: "public",
+            handleUploadUrl: "/api/blob/client-upload",
+            clientPayload: JSON.stringify({
+              resourceType: "tinder_data",
+              tinderId: filteredPayload.tinderId,
+            }),
+          },
+        );
+
+        blobUrl = result.url;
+        setUploadedBlobUrl(blobUrl);
+        console.log("✅ Blob uploaded:", blobUrl);
+      } else {
+        console.log("♻️ Using cached blob URL:", blobUrl);
+      }
+
+      // Step 3: Process profile
+      setUploadState("processing");
+      const uploadData = {
+        tinderId: payload.tinderId,
+        blobUrl,
+        timezone,
+        country,
+      };
+
+      // Route to appropriate endpoint based on scenario
+      const scenario = uploadContext?.scenario;
+
+      if (scenario === "new_profile" || scenario === "new_user") {
+        createMutation.mutate(uploadData);
+      } else if (scenario === "same_tinderId" || scenario === "can_claim") {
+        updateMutation.mutate(uploadData);
+      } else if (scenario === "different_tinderId") {
+        mergeMutation.mutate(uploadData);
+      } else {
+        console.error("Unknown upload scenario:", scenario);
+        alert("Unable to determine upload type. Please refresh and try again.");
+        setUploadState("idle");
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Upload failed";
+
+      if (errorMessage.toLowerCase().includes("upload")) {
+        // Blob upload failed - clear cache and show error
+        setUploadedBlobUrl(null);
+        alert("Upload failed. Please check your connection and try again.");
+      } else {
+        // Processing failed - keep blob URL cached for retry
+        alert("Processing failed. Please try again.");
+      }
+      setUploadState("idle");
+      setIsCreatingSession(false);
     }
   };
 
@@ -160,9 +204,18 @@ export function TinderSubmitButton({
   const canSubmit = !hasUnknownGender && !disabled && termsAccepted;
   const isLoading =
     isCreatingSession ||
+    uploadState !== "idle" ||
     createMutation.isPending ||
     updateMutation.isPending ||
     mergeMutation.isPending;
+
+  // Determine loading text
+  let loadingText = "Upload & View Insights";
+  if (uploadState === "uploading") {
+    loadingText = "Uploading...";
+  } else if (uploadState === "processing") {
+    loadingText = "Processing...";
+  }
 
   return (
     <SubmitButton
@@ -170,7 +223,7 @@ export function TinderSubmitButton({
       disabled={!canSubmit || isLoading}
       isLoading={isLoading}
     >
-      Upload & View Insights
+      {loadingText}
     </SubmitButton>
   );
 }

@@ -23,6 +23,17 @@ function getGenderDisplay(gender: string) {
   }
 }
 
+function getInterestedInText(gender: string): string {
+  switch (gender) {
+    case "M":
+      return "men";
+    case "F":
+      return "women";
+    default:
+      return "people";
+  }
+}
+
 export function TinderProfilePreview({
   payload,
   consent,
@@ -35,6 +46,7 @@ export function TinderProfilePreview({
   );
 
   const createDate = new Date(user.create_date);
+  const activeDate = new Date(user.active_time);
   const birthDate = new Date(user.birth_date);
   const age = differenceInYears(new Date(), birthDate);
   const genderDisplay = getGenderDisplay(user.gender);
@@ -111,6 +123,7 @@ export function TinderProfilePreview({
           </div>
           <div className="text-left text-xs text-gray-500 sm:text-right">
             <div>Joined {format(createDate, "MMM d, yyyy")}</div>
+            <div>Last active {format(activeDate, "MMM d, yyyy")}</div>
           </div>
         </div>
 
@@ -121,6 +134,15 @@ export function TinderProfilePreview({
             <p className="mt-1 text-sm text-gray-600">{he.decode(user.bio)}</p>
           </div>
         )}
+
+        {/* Looking for */}
+        <div className="mt-4">
+          <h3 className="text-sm font-semibold text-gray-700">Looking for</h3>
+          <p className="mt-1 text-sm text-gray-600">
+            {user.interested_in && `${getInterestedInText(user.interested_in)} `}
+            ages {user.age_filter_min}-{user.age_filter_max}
+          </p>
+        </div>
 
         {/* Jobs/Work */}
         {consent?.work !== false && user.jobs && user.jobs.length > 0 && (
@@ -209,26 +231,10 @@ export function TinderProfilePreview({
           </div>
         )}
 
-        {/* Looking for */}
-        <div className="mt-4">
-          <h3 className="text-sm font-semibold text-gray-700">Preferences</h3>
-          <div className="mt-1 text-xs text-gray-600">
-            {user.interested_in && (
-              <div>
-                Interested in:{" "}
-                <span className="text-gray-800">{user.interested_in}</span>
-              </div>
-            )}
-            <div>
-              Age range: {user.age_filter_min}-{user.age_filter_max}
-            </div>
-          </div>
-        </div>
-
         {/* Profile ID */}
         <div className="mt-4 rounded-lg bg-gray-50 p-3">
           <p className="text-xs text-gray-500">Your anonymous SwipeStats ID:</p>
-          <p className="mt-1 font-mono text-xs break-all text-gray-700">
+          <p className="mt-1 font-mono text-xs text-gray-700 overflow-x-auto whitespace-nowrap">
             {payload.tinderId}
           </p>
         </div>

@@ -186,44 +186,42 @@ export function transformTinderPhotosToMedia(
 }
 
 /**
- * Create a new Tinder profile from anonymized JSON data
+ * Create a new Tinder profile from blob storage
  * This is the main orchestrator that coordinates all profile creation steps
  */
 export async function createTinderProfile(data: {
   tinderId: string;
-  anonymizedTinderJson: AnonymizedTinderDataJSON;
+  blobUrl: string;
   userId: string;
   timezone?: string;
   country?: string;
 }): Promise<TinderProfileResult> {
   const startTime = Date.now();
 
-  // Log JSON size
-  const jsonString = JSON.stringify(data.anonymizedTinderJson);
-  const jsonSizeMB = (jsonString.length / 1024 / 1024).toFixed(2);
-
   console.log(`\n🚀 Starting profile creation for ${data.tinderId}`);
   console.log(`   User ID: ${data.userId}`);
+  console.log(`   Blob URL: ${data.blobUrl}`);
   console.log(`   Timezone: ${data.timezone ?? "not provided"}`);
   console.log(`   Country: ${data.country ?? "not provided"}`);
-  console.log(`   JSON size: ${jsonSizeMB} MB`);
 
-  // 1. Upload to Vercel Blob for external storage
-  // TEMPORARILY DISABLED - blob upload takes too long for large files
-  // const blobStart = Date.now();
-  // console.log(`\n📤 [1/6] Uploading Tinder data to blob storage...`);
-  // const blobResult = await uploadTinderDataJson(
-  //   data.tinderId,
-  //   data.anonymizedTinderJson,
-  // );
-  // console.log(`✅ Blob uploaded in ${Date.now() - blobStart}ms`);
-  // console.log(`   URL: ${blobResult.url}`);
-  const blobResult = { url: null }; // Placeholder for now
+  // 1. Fetch JSON from blob storage
+  const fetchStart = Date.now();
+  console.log(`\n📥 [1/6] Fetching Tinder data from blob storage...`);
+  const { fetchBlobJson } = await import("../blob.service");
+  const anonymizedTinderJson = await fetchBlobJson<AnonymizedTinderDataJSON>(
+    data.blobUrl,
+  );
+  console.log(`✅ Blob fetched in ${Date.now() - fetchStart}ms`);
+
+  // Log JSON size
+  const jsonString = JSON.stringify(anonymizedTinderJson);
+  const jsonSizeMB = (jsonString.length / 1024 / 1024).toFixed(2);
+  console.log(`   JSON size: ${jsonSizeMB} MB`);
 
   // 2. Transform JSON data to database format
   const transformStart = Date.now();
-  console.log(`\n🔄 [1/6] Transforming profile data...`);
-  const profileData = transformTinderJsonToProfile(data.anonymizedTinderJson, {
+  console.log(`\n🔄 [2/6] Transforming profile data...`);
+  const profileData = transformTinderJsonToProfile(anonymizedTinderJson, {
     tinderId: data.tinderId,
     userId: data.userId,
     timezone: data.timezone,
@@ -239,10 +237,10 @@ export async function createTinderProfile(data: {
 
   // 3. Create usage records
   const usageStart = Date.now();
-  console.log(`\n📊 [2/6] Creating usage records...`);
-  const userBirthDate = new Date(data.anonymizedTinderJson.User.birth_date);
+  console.log(`\n📊 [3/6] Creating usage records...`);
+  const userBirthDate = new Date(anonymizedTinderJson.User.birth_date);
   const usageData = createUsageRecords(
-    data.anonymizedTinderJson,
+    anonymizedTinderJson,
     data.tinderId,
     userBirthDate,
   );
@@ -252,9 +250,9 @@ export async function createTinderProfile(data: {
 
   // 4. Create messages and matches
   const messagesStart = Date.now();
-  console.log(`\n💬 [3/6] Processing messages and matches...`);
+  console.log(`\n💬 [4/6] Processing messages and matches...`);
   const result = createMessagesAndMatches(
-    data.anonymizedTinderJson.Messages,
+    anonymizedTinderJson.Messages,
     data.tinderId,
   );
   const matchesInput = result.matchesInput;
@@ -264,28 +262,28 @@ export async function createTinderProfile(data: {
   console.log(`   Messages: ${messagesInput.length}`);
 
   // 5. Log photo count
-  const photoCount = Array.isArray(data.anonymizedTinderJson.Photos)
-    ? data.anonymizedTinderJson.Photos.length
+  const photoCount = Array.isArray(anonymizedTinderJson.Photos)
+    ? anonymizedTinderJson.Photos.length
     : 0;
-  console.log(`\n📷 [4/6] Photos ready for insert: ${photoCount}`);
+  console.log(`\n📷 [5/6] Photos ready for insert: ${photoCount}`);
 
   // 6. Execute transaction to insert all data
   const txStart = Date.now();
-  console.log(`\n💾 [5/6] Starting database transaction...`);
+  console.log(`\n💾 [6/6] Starting database transaction...`);
   const profile = await withTransaction(async (tx) => {
-    // Insert original file (DB only - blob upload disabled)
+    // Insert original file reference (blob URL only - no raw JSON)
     const fileStart = Date.now();
     const fileId = createId("oaf");
     await tx.insert(originalAnonymizedFileTable).values({
       id: fileId,
       dataProvider: "TINDER",
       swipestatsVersion: "SWIPESTATS_4",
-      file: data.anonymizedTinderJson as unknown as Record<string, unknown>,
-      blobUrl: blobResult.url ?? null,
+      file: null, // No longer storing raw JSON
+      blobUrl: data.blobUrl,
       userId: data.userId,
     });
     console.log(
-      `   ✓ Original file stored in DB (${Date.now() - fileStart}ms, ID: ${fileId})`,
+      `   ✓ Original file reference stored (${Date.now() - fileStart}ms, ID: ${fileId})`,
     );
 
     // Insert profile
@@ -298,7 +296,7 @@ export async function createTinderProfile(data: {
 
     // Insert photos/media (respects consent - Photos will be empty array if filtered)
     const photosInput = transformTinderPhotosToMedia(
-      data.anonymizedTinderJson.Photos,
+      anonymizedTinderJson.Photos,
       data.tinderId,
     );
     if (photosInput.length > 0) {
@@ -373,7 +371,7 @@ export async function createTinderProfile(data: {
 
     // Fetch profile with all related data for meta computation
     const fetchStart = Date.now();
-    console.log(`\n📊 [6/6] Computing profile metadata...`);
+    console.log(`\n📊 Computing profile metadata...`);
     const fullProfile = await tx.query.tinderProfileTable.findFirst({
       where: eq(tinderProfileTable.tinderId, data.tinderId),
       with: {
@@ -419,7 +417,7 @@ export async function createTinderProfile(data: {
   // Compute metrics for analytics
   const totalTime = Date.now() - startTime;
   const photosInput = transformTinderPhotosToMedia(
-    data.anonymizedTinderJson.Photos,
+    anonymizedTinderJson.Photos,
     data.tinderId,
   );
 

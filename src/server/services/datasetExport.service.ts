@@ -153,9 +153,10 @@ export async function generateDatasetForExport(
     const jsonContent = JSON.stringify(dataset, null, 2);
     const blob = Buffer.from(jsonContent);
 
-    // Upload to Vercel Blob
-    const filename = `swipestats-dataset-${exportRecord.tier.toLowerCase()}-${exportId}.json`;
-    const blobResult = await put(filename, blob, {
+    // Upload to Vercel Blob with structured path
+    const date = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+    const pathname = `datasets/${exportRecord.tier.toLowerCase()}/${date}/${exportId}.json`;
+    const blobResult = await put(pathname, blob, {
       access: "public",
       contentType: "application/json",
       addRandomSuffix: false,

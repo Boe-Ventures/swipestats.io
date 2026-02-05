@@ -11,7 +11,7 @@ export function UpgradeAccountCTA() {
     <>
       <div
         id="upgrade-account"
-        className="relative isolate flex flex-col gap-10 overflow-hidden rounded-3xl bg-gray-900 px-6 py-24 shadow-2xl sm:px-24 md:h-96 xl:flex-row xl:items-center xl:py-32"
+        className="relative isolate flex flex-col gap-10 overflow-hidden rounded-3xl bg-gray-900 px-6 py-24 shadow-2xl sm:px-24 xl:h-96 xl:flex-row xl:items-center xl:py-32"
       >
         <div className="max-w-2xl text-white xl:max-w-none xl:flex-auto">
           <div className="mb-4 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1.5">
@@ -55,7 +55,7 @@ export function UpgradeAccountCTA() {
         <div className="flex w-full max-w-md flex-col gap-4">
           <button
             onClick={() => setModalOpen(true)}
-            className="flex items-center justify-center gap-2 rounded-md bg-white px-8 py-4 text-lg font-semibold text-gray-900 shadow-sm transition-all hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
+            className="flex cursor-pointer items-center justify-center gap-2 rounded-md bg-white px-8 py-4 text-lg font-semibold text-gray-900 shadow-sm transition-all hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
           >
             <Shield className="h-5 w-5" />
             Create Free Account

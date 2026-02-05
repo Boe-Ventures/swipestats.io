@@ -123,6 +123,8 @@ export const RESOURCE_TYPES = [
   "profile_comparison",
   "comparison_column",
   "user_photo",
+  "tinder_data",
+  "hinge_data",
 ] as const;
 
 export type ResourceType = (typeof RESOURCE_TYPES)[number];
@@ -835,7 +837,7 @@ export const originalAnonymizedFileTable = pgTable(
     id: t.text().primaryKey(),
     dataProvider: dataProviderEnum().notNull(),
     swipestatsVersion: swipestatsVersionEnum().notNull(),
-    file: t.jsonb().notNull(),
+    file: t.jsonb(), // Nullable - deprecated for new uploads (use blobUrl instead)
     blobUrl: t.text(), // Vercel Blob URL for external storage
     userId: t
       .text()
@@ -1255,12 +1257,19 @@ export type CohortStatsInsert = typeof cohortStatsTable.$inferInsert;
 
 // ---- RELATIONS ----------------------------------------------------
 
-export const userRelations = relations(userTable, ({ many }) => ({
+export const userRelations = relations(userTable, ({ one, many }) => ({
   accounts: many(accountTable),
   sessions: many(sessionTable),
   posts: many(postTable),
-  tinderProfiles: many(tinderProfileTable),
-  hingeProfiles: many(hingeProfileTable),
+  // 1:1 relationships (enforced by unique constraint on userId)
+  tinderProfile: one(tinderProfileTable, {
+    fields: [userTable.id],
+    references: [tinderProfileTable.userId],
+  }),
+  hingeProfile: one(hingeProfileTable, {
+    fields: [userTable.id],
+    references: [hingeProfileTable.userId],
+  }),
   events: many(eventTable),
   customData: many(customDataTable),
   originalAnonymizedFiles: many(originalAnonymizedFileTable),

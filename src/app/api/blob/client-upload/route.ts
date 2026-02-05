@@ -73,6 +73,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
                 ...ALLOWED_FILE_TYPES.AUDIO,
               ];
               break;
+            case "tinder_data":
+            case "hinge_data":
+              // For data exports, allow JSON files
+              allowedContentTypes = ["application/json"];
+              break;
             default:
               // Keep default broad allowlist
               break;

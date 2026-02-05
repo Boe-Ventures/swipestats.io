@@ -7,15 +7,17 @@ export const dynamic = "force-dynamic"; // Required because of searchParams
 export const revalidate = 3600; // Revalidate every hour for SEO freshness
 
 export const metadata: Metadata = {
-  title: "Upload Your Tinder Data | SwipeStats",
+  title: "Upload Your Tinder Data",
   description:
     "Upload your Tinder data anonymously and get insights into your dating profile and activity.",
+  alternates: {
+    canonical: "/upload/tinder",
+  },
   openGraph: {
-    title: "SwipeStats | Visualize your Tinder data",
+    title: "Upload Your Tinder Data | SwipeStats",
     description:
-      "Upload your dating data anonymously and compare it to demographics from around the world!",
-    url: "https://swipestats.io/upload/tinder",
-    images: ["/ss2.png"],
+      "Upload your Tinder data anonymously and compare it to demographics from around the world!",
+    url: "/upload/tinder",
   },
 };
 

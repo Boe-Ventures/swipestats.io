@@ -15,6 +15,7 @@ import { auth } from "@/server/better-auth";
 import { db } from "@/server/db";
 import { eq } from "drizzle-orm";
 import { tinderProfileTable } from "@/server/db/schema";
+import { env } from "@/env";
 
 /**
  * 1. CONTEXT
@@ -138,23 +139,24 @@ export const protectedProcedure = t.procedure
 /**
  * Admin procedure
  *
- * Accessible in development mode (no auth required) OR to admin emails in production.
+ * Accessible on localhost and preview deployments (no auth required).
+ * Requires admin email authentication on production (swipestats.io).
  * Used for admin operations like profile deletion during development.
  */
 export const adminProcedure = t.procedure
   .use(timingMiddleware)
   .use(({ ctx, next }) => {
-    // Check if in development mode first
-    const isDevelopment = process.env.NODE_ENV === "development";
+    // Check if this is true production (swipestats.io)
+    const isProduction = env.NEXT_PUBLIC_IS_PRODUCTION;
 
-    // In development, skip auth checks entirely
-    if (isDevelopment) {
+    // On localhost and preview deployments, skip auth checks entirely
+    if (!isProduction) {
       return next({
         ctx,
       });
     }
 
-    // In production, require authentication
+    // On production, require authentication
     if (!ctx.session?.user) {
       throw new TRPCError({ code: "UNAUTHORIZED" });
     }

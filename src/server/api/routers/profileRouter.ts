@@ -31,7 +31,7 @@ import { getFirstAndLastDayOnApp } from "@/lib/profile.utils";
 async function handleExistingProfileUpload(params: {
   existing: NonNullable<Awaited<ReturnType<typeof getTinderProfileWithUser>>>;
   tinderId: string;
-  anonymizedTinderJson: AnonymizedTinderDataJSON;
+  blobUrl: string;
   currentUserId: string;
   timezone?: string;
   country?: string;
@@ -245,7 +245,7 @@ export const profileRouter = {
     .input(
       z.object({
         tinderId: z.string().min(1),
-        anonymizedTinderJson: z.any() as z.ZodType<AnonymizedTinderDataJSON>,
+        blobUrl: z.string().url(),
         timezone: z.string().optional(),
         country: z.string().optional(),
       }),
@@ -275,7 +275,7 @@ export const profileRouter = {
         console.log(`📝 Creating new profile: ${input.tinderId}`);
         const result = await createTinderProfile({
           tinderId: input.tinderId,
-          anonymizedTinderJson: input.anonymizedTinderJson,
+          blobUrl: input.blobUrl,
           userId: ctx.session.user.id,
           timezone: input.timezone,
           country: input.country,
@@ -302,8 +302,6 @@ export const profileRouter = {
             error instanceof Error
               ? error.message.slice(0, 200)
               : "Unknown error",
-          jsonSizeMB:
-            JSON.stringify(input.anonymizedTinderJson).length / 1024 / 1024,
         });
         throw error;
       }
@@ -315,7 +313,7 @@ export const profileRouter = {
     .input(
       z.object({
         tinderId: z.string().min(1),
-        anonymizedTinderJson: z.any() as z.ZodType<AnonymizedTinderDataJSON>,
+        blobUrl: z.string().url(),
         timezone: z.string().optional(),
         country: z.string().optional(),
       }),
@@ -344,7 +342,7 @@ export const profileRouter = {
         const result = await handleExistingProfileUpload({
           existing: existingProfile,
           tinderId: input.tinderId,
-          anonymizedTinderJson: input.anonymizedTinderJson,
+          blobUrl: input.blobUrl,
           currentUserId: ctx.session.user.id,
           timezone: input.timezone,
           country: input.country,
@@ -376,8 +374,6 @@ export const profileRouter = {
             error instanceof Error
               ? error.message.slice(0, 200)
               : "Unknown error",
-          jsonSizeMB:
-            JSON.stringify(input.anonymizedTinderJson).length / 1024 / 1024,
         });
         throw error;
       }
@@ -389,7 +385,7 @@ export const profileRouter = {
     .input(
       z.object({
         tinderId: z.string().min(1),
-        anonymizedTinderJson: z.any() as z.ZodType<AnonymizedTinderDataJSON>,
+        blobUrl: z.string().url(),
         timezone: z.string().optional(),
         country: z.string().optional(),
       }),
@@ -426,9 +422,15 @@ export const profileRouter = {
           });
         }
 
+        // Fetch JSON from blob to validate chronological order
+        const { fetchBlobJson } =
+          await import("@/server/services/blob.service");
+        const anonymizedTinderJson =
+          await fetchBlobJson<AnonymizedTinderDataJSON>(input.blobUrl);
+
         // Safety check: Prevent backward merges (uploading older account after newer one)
         const newProfileDates = getFirstAndLastDayOnApp(
-          input.anonymizedTinderJson.Usage.app_opens,
+          anonymizedTinderJson.Usage.app_opens,
         );
 
         if (
@@ -453,7 +455,7 @@ export const profileRouter = {
         const result = await absorbProfileIntoNew({
           oldTinderId: existingUserProfile.tinderId,
           newTinderId: input.tinderId,
-          anonymizedTinderJson: input.anonymizedTinderJson,
+          blobUrl: input.blobUrl,
           userId: ctx.session.user.id,
           timezone: input.timezone,
           country: input.country,
@@ -480,19 +482,17 @@ export const profileRouter = {
             error instanceof Error
               ? error.message.slice(0, 200)
               : "Unknown error",
-          jsonSizeMB:
-            JSON.stringify(input.anonymizedTinderJson).length / 1024 / 1024,
         });
         throw error;
       }
     }),
 
-  // Create a new Tinder profile
+  // Legacy create endpoint (deprecated - use createProfile instead)
   create: publicProcedure
     .input(
       z.object({
         tinderId: z.string().min(1),
-        anonymizedTinderJson: z.any() as z.ZodType<AnonymizedTinderDataJSON>,
+        blobUrl: z.string().url(),
         timezone: z.string().optional(),
         country: z.string().optional(),
       }),
@@ -520,7 +520,7 @@ export const profileRouter = {
 
       return createTinderProfile({
         tinderId: input.tinderId,
-        anonymizedTinderJson: input.anonymizedTinderJson,
+        blobUrl: input.blobUrl,
         userId: ctx.session.user.id,
         timezone: input.timezone,
         country: input.country,

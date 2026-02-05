@@ -46,7 +46,7 @@ export function createMessagesAndMatches(
   messagesInput: MessageInsert[];
 } {
   console.log(`   💬 Processing ${tjms.length} raw matches from JSON...`);
-  const sortedMatches = tjms.reverse(); // Chronological order
+  const sortedMatches = [...tjms].reverse(); // Chronological order (copy to avoid mutating input)
 
   const matchesInput: MatchInsert[] = sortedMatches.map((tjm, i) => {
     const totalMessageCount = tjm.messages.length;

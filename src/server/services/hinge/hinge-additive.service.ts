@@ -72,9 +72,7 @@ async function recomputeHingeProfileMetaInTx(
   });
 
   if (!fullProfile) {
-    throw new Error(
-      `Failed to fetch profile for meta computation: ${hingeId}`,
-    );
+    throw new Error(`Failed to fetch profile for meta computation: ${hingeId}`);
   }
 
   // Compute and insert new meta
@@ -113,7 +111,10 @@ function filterNewHingeMatches(
 
   for (const match of newMatches) {
     // Skip if this match already exists (by matchedAt timestamp)
-    if (match.matchedAt && existingMatchTimestamps.has(match.matchedAt.getTime())) {
+    if (
+      match.matchedAt &&
+      existingMatchTimestamps.has(match.matchedAt.getTime())
+    ) {
       continue;
     }
 
@@ -370,14 +371,18 @@ export async function additiveUpdateHingeProfile(data: {
  * Used when user uploads JSON with different hingeId than existing profile
  *
  * Flow:
- * 1. Transfer all matches/messages/interactions from old profile to new hingeId
- * 2. Transfer media and custom data
- * 3. Delete old profile (cascade handles profileMeta, prompts)
- * 4. Create new profile with combined date range
- * 5. Insert new matches/messages (no dedup - different accounts)
- * 6. Insert new prompts + media
- * 7. Recompute ProfileMeta
- * 8. Store original file
+ * 1. Fetch old profile
+ * 2. Temporarily set old profile's userId to NULL (frees unique constraint)
+ * 3. Transform and prepare new profile data
+ * 4. Insert new profile with combined date range (userId is now free!)
+ * 5. Transfer all matches/messages/interactions from old → new profile ID
+ * 6. Delete old profile (cascade handles profileMeta, prompts)
+ * 7. Insert new matches/messages (no dedup - different accounts)
+ * 8. Insert new interactions
+ * 9. Insert new prompts
+ * 10. Insert new media
+ * 11. Recompute ProfileMeta
+ * 12. Store original file
  */
 export async function absorbHingeProfileIntoNew(data: {
   oldHingeId: string;
@@ -410,51 +415,17 @@ export async function absorbHingeProfileIntoNew(data: {
     }
     console.log(`   ✓ Fetched old profile (${Date.now() - fetchOldStart}ms)`);
 
-    // 2. Transfer all data from old → new profile ID
-    const transferStart = Date.now();
-
-    // Transfer matches (messages cascade automatically via foreign key)
+    // 2. Temporarily clear userId on old profile to free unique constraint
+    const unlinkStart = Date.now();
     await tx
-      .update(matchTable)
-      .set({ hingeProfileId: data.newHingeId })
-      .where(eq(matchTable.hingeProfileId, data.oldHingeId));
-
-    // Transfer messages explicitly (in case they reference old profile directly)
-    await tx
-      .update(messageTable)
-      .set({ hingeProfileId: data.newHingeId })
-      .where(eq(messageTable.hingeProfileId, data.oldHingeId));
-
-    // Transfer interactions
-    await tx
-      .update(hingeInteractionTable)
-      .set({ hingeProfileId: data.newHingeId })
-      .where(eq(hingeInteractionTable.hingeProfileId, data.oldHingeId));
-
-    // Transfer media
-    await tx
-      .update(mediaTable)
-      .set({ hingeProfileId: data.newHingeId })
-      .where(eq(mediaTable.hingeProfileId, data.oldHingeId));
-
-    // Transfer custom data (if exists)
-    await tx
-      .update(customDataTable)
-      .set({ hingeProfileId: data.newHingeId })
-      .where(eq(customDataTable.hingeProfileId, data.oldHingeId));
-
+      .update(hingeProfileTable)
+      .set({ userId: null })
+      .where(eq(hingeProfileTable.hingeId, data.oldHingeId));
     console.log(
-      `   ✓ Transferred all data to new profile (${Date.now() - transferStart}ms)`,
+      `   ✓ Unlinked old profile from user (${Date.now() - unlinkStart}ms)`,
     );
 
-    // 3. Delete old profile (cascade will handle profileMeta, prompts)
-    const deleteStart = Date.now();
-    await tx
-      .delete(hingeProfileTable)
-      .where(eq(hingeProfileTable.hingeId, data.oldHingeId));
-    console.log(`   ✓ Deleted old profile (${Date.now() - deleteStart}ms)`);
-
-    // 4. Transform and prepare new profile data
+    // 3. Transform and prepare new profile data
     const transformStart = Date.now();
     const newProfileData = transformHingeJsonToProfile(
       data.anonymizedHingeJson,
@@ -474,7 +445,7 @@ export async function absorbHingeProfileIntoNew(data: {
 
     console.log(`   ✓ Profile transformed (${Date.now() - transformStart}ms)`);
 
-    // 5. Insert new profile
+    // 4. Insert new profile (userId is now free!)
     const profileStart = Date.now();
     const [insertedProfile] = await tx
       .insert(hingeProfileTable)
@@ -485,7 +456,46 @@ export async function absorbHingeProfileIntoNew(data: {
       .returning();
     console.log(`   ✓ New profile inserted (${Date.now() - profileStart}ms)`);
 
-    // 6. Insert new matches + messages (NO dedup - different accounts have different match semantics)
+    // 5. Transfer all data from old → new profile ID
+    const transferStart = Date.now();
+
+    await tx
+      .update(matchTable)
+      .set({ hingeProfileId: data.newHingeId })
+      .where(eq(matchTable.hingeProfileId, data.oldHingeId));
+
+    await tx
+      .update(messageTable)
+      .set({ hingeProfileId: data.newHingeId })
+      .where(eq(messageTable.hingeProfileId, data.oldHingeId));
+
+    await tx
+      .update(hingeInteractionTable)
+      .set({ hingeProfileId: data.newHingeId })
+      .where(eq(hingeInteractionTable.hingeProfileId, data.oldHingeId));
+
+    await tx
+      .update(mediaTable)
+      .set({ hingeProfileId: data.newHingeId })
+      .where(eq(mediaTable.hingeProfileId, data.oldHingeId));
+
+    await tx
+      .update(customDataTable)
+      .set({ hingeProfileId: data.newHingeId })
+      .where(eq(customDataTable.hingeProfileId, data.oldHingeId));
+
+    console.log(
+      `   ✓ Transferred all data to new profile (${Date.now() - transferStart}ms)`,
+    );
+
+    // 6. Delete old profile (cascade will handle profileMeta, prompts)
+    const deleteStart = Date.now();
+    await tx
+      .delete(hingeProfileTable)
+      .where(eq(hingeProfileTable.hingeId, data.oldHingeId));
+    console.log(`   ✓ Deleted old profile (${Date.now() - deleteStart}ms)`);
+
+    // 7. Insert new matches + messages (NO dedup - different accounts have different match semantics)
     const matchStart = Date.now();
     const { interactionsInput, matchesInput, messagesInput } =
       createHingeMessagesAndMatches(
@@ -513,7 +523,7 @@ export async function absorbHingeProfileIntoNew(data: {
       console.log(`   ✓ ${messagesInput.length} new messages inserted`);
     }
 
-    // 7. Insert new interactions
+    // 8. Insert new interactions
     if (interactionsInput.length > 0) {
       const BATCH_SIZE = 1000;
       for (let i = 0; i < interactionsInput.length; i += BATCH_SIZE) {
@@ -523,7 +533,7 @@ export async function absorbHingeProfileIntoNew(data: {
       console.log(`   ✓ ${interactionsInput.length} new interactions inserted`);
     }
 
-    // 8. Insert prompts
+    // 9. Insert prompts
     const promptsStart = Date.now();
     const promptsInput = transformHingePromptsForDb(
       data.anonymizedHingeJson.Prompts,
@@ -536,7 +546,7 @@ export async function absorbHingeProfileIntoNew(data: {
       );
     }
 
-    // 9. Insert new photos
+    // 10. Insert new photos
     const photosStart = Date.now();
     const photosInput = transformHingeMediaToDb(
       data.anonymizedHingeJson.Media ?? [],
@@ -549,12 +559,12 @@ export async function absorbHingeProfileIntoNew(data: {
       );
     }
 
-    // 10. Recompute profile meta with all combined data
+    // 11. Recompute profile meta with all combined data
     const metaStart = Date.now();
     await recomputeHingeProfileMetaInTx(tx, data.newHingeId);
     console.log(`   ✓ Profile meta computed (${Date.now() - metaStart}ms)`);
 
-    // 11. Store original file
+    // 12. Store original file
     await tx.insert(originalAnonymizedFileTable).values({
       id: createId("oaf"),
       dataProvider: "HINGE",

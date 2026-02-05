@@ -19,6 +19,7 @@ import {
   getCountryFromTimezone,
 } from "@/lib/utils/timezone";
 import { getFirstAndLastDayOnApp } from "@/lib/profile.utils";
+import { env } from "@/env";
 
 interface TinderUploadPageProps {
   isUpdate: boolean;
@@ -45,7 +46,7 @@ export function TinderUploadPage({ isUpdate, isDebug }: TinderUploadPageProps) {
   const queryClient = useQueryClient();
   const tinderId = payload?.tinderId;
   const birthDate = payload?.anonymizedTinderJson.User.birth_date;
-  const isDevelopment = process.env.NODE_ENV === "development";
+  const showDevTools = !env.NEXT_PUBLIC_IS_PRODUCTION;
 
   // Fetch upload context to determine scenario (new/additive/merge)
   const { data: uploadContext } = useQuery({
@@ -348,8 +349,8 @@ export function TinderUploadPage({ isUpdate, isDebug }: TinderUploadPageProps) {
             </div>
           )}
 
-          {/* Dev Admin Card - only visible in development */}
-          {isDevelopment &&
+          {/* Dev Admin Card - visible on localhost and preview deployments, hidden on production */}
+          {showDevTools &&
             uploadContext &&
             uploadContext.scenario !== "new_user" &&
             uploadContext.scenario !== "new_profile" && (
@@ -400,7 +401,7 @@ export function TinderUploadPage({ isUpdate, isDebug }: TinderUploadPageProps) {
                   </div>
                 )}
 
-                {/* Delete Button */}
+                {/* Delete Button - Your Profile */}
                 {uploadContext.userProfile && (
                   <button
                     onClick={() => {
@@ -423,6 +424,60 @@ export function TinderUploadPage({ isUpdate, isDebug }: TinderUploadPageProps) {
                     {deleteProfileMutation.isPending
                       ? "Deleting..."
                       : "Delete Your Profile"}
+                  </button>
+                )}
+
+              {/* Delete Button - Target Profile (for can_claim scenario) */}
+              {uploadContext.targetProfile &&
+                uploadContext.scenario === "can_claim" && (
+                  <button
+                    onClick={() => {
+                      const profileId = uploadContext.targetProfile?.tinderId;
+                      if (!profileId) return;
+
+                      if (
+                        confirm(
+                          `Delete claimable profile ${profileId.slice(0, 12)}...? This will cascade delete all related data.`,
+                        )
+                      ) {
+                        deleteProfileMutation.mutate({
+                          tinderId: profileId,
+                        });
+                      }
+                    }}
+                    disabled={deleteProfileMutation.isPending}
+                    className="w-full rounded bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                  >
+                    {deleteProfileMutation.isPending
+                      ? "Deleting..."
+                      : "Delete Claimable Profile"}
+                  </button>
+                )}
+
+              {/* Delete Button - Target Profile (for owned_by_other scenario) */}
+              {uploadContext.targetProfile &&
+                uploadContext.scenario === "owned_by_other" && (
+                  <button
+                    onClick={() => {
+                      const profileId = uploadContext.targetProfile?.tinderId;
+                      if (!profileId) return;
+
+                      if (
+                        confirm(
+                          `Delete target profile ${profileId.slice(0, 12)}...? This belongs to another user. This will cascade delete all related data.`,
+                        )
+                      ) {
+                        deleteProfileMutation.mutate({
+                          tinderId: profileId,
+                        });
+                      }
+                    }}
+                    disabled={deleteProfileMutation.isPending}
+                    className="mt-2 w-full rounded bg-orange-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-orange-700 disabled:opacity-50"
+                  >
+                    {deleteProfileMutation.isPending
+                      ? "Deleting..."
+                      : "Delete Target Profile (Other User)"}
                   </button>
                 )}
               </div>

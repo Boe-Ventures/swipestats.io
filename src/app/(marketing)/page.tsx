@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import {
   ArrowPathIcon,
   CloudArrowUpIcon,
@@ -8,6 +9,21 @@ import {
 import Link from "next/link";
 
 import { HeroHeading } from "./HeroHeading";
+
+export const metadata: Metadata = {
+  title: "SwipeStats - Analyze Your Dating App Data",
+  description:
+    "Upload your Tinder or Hinge data anonymously and get insights into your dating patterns. Compare your swipes, matches, and messages with others worldwide.",
+  alternates: {
+    canonical: "/",
+  },
+  openGraph: {
+    title: "SwipeStats - Analyze Your Dating App Data",
+    description:
+      "Upload your Tinder or Hinge data anonymously and get insights into your dating patterns. Compare your swipes, matches, and messages with others worldwide.",
+    url: "/",
+  },
+};
 
 import { Text } from "@/app/_components/ui/text";
 import DataRequestSupport from "./DataRequestSupport";

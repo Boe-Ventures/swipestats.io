@@ -21,6 +21,16 @@ const config: NextConfig = {
         hostname: "*.vercel-storage.com",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "*.gotinder.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "*.hingecdn.com",
+        pathname: "/**",
+      },
     ],
     localPatterns: [
       {

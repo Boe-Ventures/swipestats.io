@@ -9,15 +9,17 @@ export const dynamic = "force-dynamic"; // Required because of searchParams
 export const revalidate = 3600; // Revalidate every hour for SEO freshness
 
 export const metadata: Metadata = {
-  title: "Upload Your Hinge Data | SwipeStats",
+  title: "Upload Your Hinge Data",
   description:
     "Upload your Hinge data anonymously and get insights into your dating profile and activity.",
+  alternates: {
+    canonical: "/upload/hinge",
+  },
   openGraph: {
-    title: "SwipeStats | Visualize your Hinge data",
+    title: "Upload Your Hinge Data | SwipeStats",
     description:
-      "Upload your dating data anonymously and compare it to demographics from around the world!",
-    url: "https://swipestats.io/upload/hinge",
-    images: ["/ss2.png"],
+      "Upload your Hinge data anonymously and compare it to demographics from around the world!",
+    url: "/upload/hinge",
   },
 };
 

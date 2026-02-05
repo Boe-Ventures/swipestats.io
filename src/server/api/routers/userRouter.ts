@@ -6,9 +6,11 @@ import {
   userTable,
   tinderProfileTable,
   hingeProfileTable,
+  originalAnonymizedFileTable,
 } from "@/server/db/schema";
 import { protectedProcedure } from "../trpc";
 import type { TRPCRouterRecord } from "@trpc/server";
+import { BlobService } from "@/server/services/blob.service";
 
 export const userRouter = {
   // Get current user profile
@@ -138,7 +140,25 @@ export const userRouter = {
       });
     }
 
-    // Delete user (cascade will handle related records)
+    // Fetch all original files for blob cleanup
+    const allFiles = await ctx.db.query.originalAnonymizedFileTable.findMany({
+      where: eq(originalAnonymizedFileTable.userId, userId),
+      columns: { blobUrl: true },
+    });
+
+    // Delete all user's blobs from Vercel storage
+    const blobUrls = allFiles
+      .map((f) => f.blobUrl)
+      .filter((url): url is string => url !== null);
+    if (blobUrls.length > 0) {
+      console.log(`🗑️ Deleting ${blobUrls.length} blob(s) for user ${userId}`);
+      await BlobService.deleteBulk(blobUrls).catch((error) => {
+        console.error("⚠️ Failed to delete some blobs:", error);
+        // Don't fail account deletion if blob cleanup fails
+      });
+    }
+
+    // Delete user (cascade will handle related records including originalAnonymizedFileTable)
     await ctx.db.delete(userTable).where(eq(userTable.id, userId));
 
     return { success: true, deletedUserId: userId };

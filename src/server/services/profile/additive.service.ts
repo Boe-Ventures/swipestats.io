@@ -123,29 +123,40 @@ async function recomputeProfileMetaInTx(
  * Used when user uploads JSON with different tinderId than existing profile
  *
  * Flow:
- * 1. Transfer all usage/matches/messages from old profile to new tinderId
- * 2. Delete old profile
- * 3. Create new profile with combined date range
- * 4. Upsert new usage data
- * 5. Insert new matches/messages
- * 6. Recompute profile meta
+ * 1. Fetch old profile
+ * 2. Temporarily set old profile's userId to NULL (frees unique constraint)
+ * 3. Transform and prepare new profile data
+ * 4. Insert new profile with combined date range (userId is now free!)
+ * 5. Transfer all usage/matches/messages from old → new profile ID
+ * 6. Delete old profile
+ * 7. Upsert new usage data
+ * 8. Insert new matches/messages
+ * 9. Insert photos
+ * 10. Recompute profile meta
+ * 11. Store original file reference
  */
 export async function absorbProfileIntoNew(data: {
   oldTinderId: string;
   newTinderId: string;
-  anonymizedTinderJson: AnonymizedTinderDataJSON;
+  blobUrl: string;
   userId: string;
   timezone?: string;
   country?: string;
 }): Promise<TinderProfileResult> {
   const startTime = Date.now();
 
+  // Fetch JSON from blob storage
+  const { fetchBlobJson } = await import("../blob.service");
+  const anonymizedTinderJson = await fetchBlobJson<AnonymizedTinderDataJSON>(
+    data.blobUrl,
+  );
+
   console.log(
     `\n🔄 Cross-account merge: ${data.oldTinderId} → ${data.newTinderId}`,
   );
   console.log(`   User ID: ${data.userId}`);
 
-  const jsonString = JSON.stringify(data.anonymizedTinderJson);
+  const jsonString = JSON.stringify(anonymizedTinderJson);
   const jsonSizeMB = (jsonString.length / 1024 / 1024).toFixed(2);
   console.log(`   JSON size: ${jsonSizeMB} MB`);
 
@@ -161,60 +172,25 @@ export async function absorbProfileIntoNew(data: {
     }
     console.log(`   ✓ Fetched old profile (${Date.now() - fetchOldStart}ms)`);
 
-    // 2. Transfer all usage records from old → new profile ID
-    const transferStart = Date.now();
+    // 2. Temporarily clear userId on old profile to free unique constraint
+    const unlinkStart = Date.now();
     await tx
-      .update(tinderUsageTable)
-      .set({ tinderProfileId: data.newTinderId })
-      .where(eq(tinderUsageTable.tinderProfileId, data.oldTinderId));
-
-    // 3. Transfer all matches from old → new profile ID
-    await tx
-      .update(matchTable)
-      .set({ tinderProfileId: data.newTinderId })
-      .where(eq(matchTable.tinderProfileId, data.oldTinderId));
-
-    // 4. Transfer all messages from old → new profile ID
-    await tx
-      .update(messageTable)
-      .set({ tinderProfileId: data.newTinderId })
-      .where(eq(messageTable.tinderProfileId, data.oldTinderId));
-
-    // 5. Transfer media
-    await tx
-      .update(mediaTable)
-      .set({ tinderProfileId: data.newTinderId })
-      .where(eq(mediaTable.tinderProfileId, data.oldTinderId));
-
-    // 6. Transfer custom data (if exists)
-    await tx
-      .update(customDataTable)
-      .set({ tinderProfileId: data.newTinderId })
-      .where(eq(customDataTable.tinderProfileId, data.oldTinderId));
-
-    console.log(
-      `   ✓ Transferred all data to new profile (${Date.now() - transferStart}ms)`,
-    );
-
-    // 7. Delete old profile (cascade will handle profileMeta, jobs, schools)
-    const deleteStart = Date.now();
-    await tx
-      .delete(tinderProfileTable)
+      .update(tinderProfileTable)
+      .set({ userId: null })
       .where(eq(tinderProfileTable.tinderId, data.oldTinderId));
-    console.log(`   ✓ Deleted old profile (${Date.now() - deleteStart}ms)`);
-
-    // 8. Transform and prepare new profile data
-    const transformStart = Date.now();
-    const userBirthDate = new Date(data.anonymizedTinderJson.User.birth_date);
-    const newProfileData = transformTinderJsonToProfile(
-      data.anonymizedTinderJson,
-      {
-        tinderId: data.newTinderId,
-        userId: data.userId,
-        timezone: data.timezone,
-        country: data.country,
-      },
+    console.log(
+      `   ✓ Unlinked old profile from user (${Date.now() - unlinkStart}ms)`,
     );
+
+    // 3. Transform and prepare new profile data
+    const transformStart = Date.now();
+    const userBirthDate = new Date(anonymizedTinderJson.User.birth_date);
+    const newProfileData = transformTinderJsonToProfile(anonymizedTinderJson, {
+      tinderId: data.newTinderId,
+      userId: data.userId,
+      timezone: data.timezone,
+      country: data.country,
+    });
 
     // Compute combined date range
     const combinedFirstDay =
@@ -238,7 +214,7 @@ export async function absorbProfileIntoNew(data: {
       `   Combined date range: ${combinedFirstDay.toISOString().split("T")[0]} → ${combinedLastDay.toISOString().split("T")[0]} (${combinedDaysInPeriod} days)`,
     );
 
-    // 9. Insert new profile with combined date range
+    // 4. Insert new profile with combined date range (userId is now free!)
     const profileStart = Date.now();
     const [insertedProfile] = await tx
       .insert(tinderProfileTable)
@@ -251,10 +227,48 @@ export async function absorbProfileIntoNew(data: {
       .returning();
     console.log(`   ✓ New profile inserted (${Date.now() - profileStart}ms)`);
 
-    // 10. Upsert new usage records (may overlap with transferred data)
+    // 5. Transfer all data from old → new profile ID
+    const transferStart = Date.now();
+    await tx
+      .update(tinderUsageTable)
+      .set({ tinderProfileId: data.newTinderId })
+      .where(eq(tinderUsageTable.tinderProfileId, data.oldTinderId));
+
+    await tx
+      .update(matchTable)
+      .set({ tinderProfileId: data.newTinderId })
+      .where(eq(matchTable.tinderProfileId, data.oldTinderId));
+
+    await tx
+      .update(messageTable)
+      .set({ tinderProfileId: data.newTinderId })
+      .where(eq(messageTable.tinderProfileId, data.oldTinderId));
+
+    await tx
+      .update(mediaTable)
+      .set({ tinderProfileId: data.newTinderId })
+      .where(eq(mediaTable.tinderProfileId, data.oldTinderId));
+
+    await tx
+      .update(customDataTable)
+      .set({ tinderProfileId: data.newTinderId })
+      .where(eq(customDataTable.tinderProfileId, data.oldTinderId));
+
+    console.log(
+      `   ✓ Transferred all data to new profile (${Date.now() - transferStart}ms)`,
+    );
+
+    // 6. Delete old profile (cascade will handle profileMeta, jobs, schools)
+    const deleteStart = Date.now();
+    await tx
+      .delete(tinderProfileTable)
+      .where(eq(tinderProfileTable.tinderId, data.oldTinderId));
+    console.log(`   ✓ Deleted old profile (${Date.now() - deleteStart}ms)`);
+
+    // 7. Upsert new usage records (may overlap with transferred data)
     const usageStart = Date.now();
     const newUsage = createUsageRecords(
-      data.anonymizedTinderJson,
+      anonymizedTinderJson,
       data.newTinderId,
       userBirthDate,
     );
@@ -267,11 +281,11 @@ export async function absorbProfileIntoNew(data: {
       `   ✓ Usage upserted: ${usageInserted} records (${Date.now() - usageStart}ms)`,
     );
 
-    // 11. Insert new matches + messages (NO dedup - different accounts have different match semantics)
+    // 8. Insert new matches + messages (NO dedup - different accounts have different match semantics)
     // tinderMatchId "1" in account A is a different person than tinderMatchId "1" in account B
     const matchStart = Date.now();
     const { matchesInput, messagesInput } = createMessagesAndMatches(
-      data.anonymizedTinderJson.Messages,
+      anonymizedTinderJson.Messages,
       data.newTinderId,
     );
 
@@ -295,10 +309,10 @@ export async function absorbProfileIntoNew(data: {
       console.log(`   ✓ ${messagesInput.length} new messages inserted`);
     }
 
-    // 12. Insert photos
+    // 9. Insert photos
     const photosStart = Date.now();
     const photosInput = transformTinderPhotosToMedia(
-      data.anonymizedTinderJson.Photos,
+      anonymizedTinderJson.Photos,
       data.newTinderId,
     );
     if (photosInput.length > 0) {
@@ -308,18 +322,18 @@ export async function absorbProfileIntoNew(data: {
       );
     }
 
-    // 13. Recompute profile meta with all combined data
+    // 10. Recompute profile meta with all combined data
     const metaStart = Date.now();
     await recomputeProfileMetaInTx(tx, data.newTinderId);
     console.log(`   ✓ Profile meta computed (${Date.now() - metaStart}ms)`);
 
-    // 14. Store original file
+    // 11. Store original file reference
     await tx.insert(originalAnonymizedFileTable).values({
       id: createId("oaf"),
       dataProvider: "TINDER",
       swipestatsVersion: "SWIPESTATS_4",
-      file: data.anonymizedTinderJson as unknown as Record<string, unknown>,
-      blobUrl: null,
+      file: null, // No longer storing raw JSON
+      blobUrl: data.blobUrl,
       userId: data.userId,
     });
 
@@ -370,31 +384,34 @@ export async function absorbProfileIntoNew(data: {
  */
 export async function additiveUpdateProfile(data: {
   tinderId: string;
-  anonymizedTinderJson: AnonymizedTinderDataJSON;
+  blobUrl: string;
   userId: string;
   timezone?: string;
   country?: string;
 }): Promise<TinderProfileResult> {
   const startTime = Date.now();
 
+  // Fetch JSON from blob storage
+  const { fetchBlobJson } = await import("../blob.service");
+  const anonymizedTinderJson = await fetchBlobJson<AnonymizedTinderDataJSON>(
+    data.blobUrl,
+  );
+
   console.log(`\n📊 Additive update for profile: ${data.tinderId}`);
   console.log(`   User ID: ${data.userId}`);
 
-  const jsonString = JSON.stringify(data.anonymizedTinderJson);
+  const jsonString = JSON.stringify(anonymizedTinderJson);
   const jsonSizeMB = (jsonString.length / 1024 / 1024).toFixed(2);
 
   const profile = await withTransaction(async (tx) => {
     // 1. Update profile metadata (bio, settings, etc.)
     const transformStart = Date.now();
-    const profileData = transformTinderJsonToProfile(
-      data.anonymizedTinderJson,
-      {
-        tinderId: data.tinderId,
-        userId: data.userId,
-        timezone: data.timezone,
-        country: data.country,
-      },
-    );
+    const profileData = transformTinderJsonToProfile(anonymizedTinderJson, {
+      tinderId: data.tinderId,
+      userId: data.userId,
+      timezone: data.timezone,
+      country: data.country,
+    });
     console.log(
       `   ✓ Profile data transformed (${Date.now() - transformStart}ms)`,
     );
@@ -414,9 +431,9 @@ export async function additiveUpdateProfile(data: {
 
     // 2. Upsert usage records (newer export always has most complete data)
     const usageStart = Date.now();
-    const userBirthDate = new Date(data.anonymizedTinderJson.User.birth_date);
+    const userBirthDate = new Date(anonymizedTinderJson.User.birth_date);
     const newUsage = createUsageRecords(
-      data.anonymizedTinderJson,
+      anonymizedTinderJson,
       data.tinderId,
       userBirthDate,
     );
@@ -432,7 +449,7 @@ export async function additiveUpdateProfile(data: {
     // 3. Get existing matches and filter to only insert NEW matches
     const matchStart = Date.now();
     const { matchesInput, messagesInput } = createMessagesAndMatches(
-      data.anonymizedTinderJson.Messages,
+      anonymizedTinderJson.Messages,
       data.tinderId,
     );
 
@@ -488,13 +505,13 @@ export async function additiveUpdateProfile(data: {
     await recomputeProfileMetaInTx(tx, data.tinderId);
     console.log(`   ✓ Profile meta recomputed (${Date.now() - metaStart}ms)`);
 
-    // 5. Store original file
+    // 5. Store original file reference
     await tx.insert(originalAnonymizedFileTable).values({
       id: createId("oaf"),
       dataProvider: "TINDER",
       swipestatsVersion: "SWIPESTATS_4",
-      file: data.anonymizedTinderJson as unknown as Record<string, unknown>,
-      blobUrl: null,
+      file: null, // No longer storing raw JSON
+      blobUrl: data.blobUrl,
       userId: data.userId,
     });
 

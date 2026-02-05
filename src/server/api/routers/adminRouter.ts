@@ -1,10 +1,15 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { eq } from "drizzle-orm";
-import { tinderProfileTable, hingeProfileTable } from "@/server/db/schema";
+import { and, eq } from "drizzle-orm";
+import {
+  tinderProfileTable,
+  hingeProfileTable,
+  originalAnonymizedFileTable,
+} from "@/server/db/schema";
 import { adminProcedure } from "../trpc";
 import type { TRPCRouterRecord } from "@trpc/server";
 import { resetTinderProfile } from "@/server/services/profile/profile.service";
+import { BlobService } from "@/server/services/blob.service";
 
 export const adminRouter = {
   // Delete a Tinder profile by tinderId (admin/dev only)
@@ -27,6 +32,42 @@ export const adminRouter = {
           code: "NOT_FOUND",
           message: "Profile not found",
         });
+      }
+
+      // Fetch and delete user's Tinder data files + blobs (if user exists)
+      if (profile.userId) {
+        const tinderFiles =
+          await ctx.db.query.originalAnonymizedFileTable.findMany({
+            where: and(
+              eq(originalAnonymizedFileTable.userId, profile.userId),
+              eq(originalAnonymizedFileTable.dataProvider, "TINDER"),
+            ),
+            columns: { blobUrl: true },
+          });
+
+        // Delete blobs from Vercel storage
+        const blobUrls = tinderFiles
+          .map((f) => f.blobUrl)
+          .filter((url): url is string => url !== null);
+        if (blobUrls.length > 0) {
+          console.log(
+            `🗑️ Deleting ${blobUrls.length} Tinder blob(s) for profile ${input.tinderId}`,
+          );
+          await BlobService.deleteBulk(blobUrls).catch((error) => {
+            console.error("⚠️ Failed to delete some blobs:", error);
+            // Don't fail profile deletion if blob cleanup fails
+          });
+        }
+
+        // Delete original file records
+        await ctx.db
+          .delete(originalAnonymizedFileTable)
+          .where(
+            and(
+              eq(originalAnonymizedFileTable.userId, profile.userId),
+              eq(originalAnonymizedFileTable.dataProvider, "TINDER"),
+            ),
+          );
       }
 
       // Delete profile - cascades will handle related tables
@@ -87,6 +128,42 @@ export const adminRouter = {
           code: "NOT_FOUND",
           message: "Profile not found",
         });
+      }
+
+      // Fetch and delete user's Hinge data files + blobs (if user exists)
+      if (profile.userId) {
+        const hingeFiles =
+          await ctx.db.query.originalAnonymizedFileTable.findMany({
+            where: and(
+              eq(originalAnonymizedFileTable.userId, profile.userId),
+              eq(originalAnonymizedFileTable.dataProvider, "HINGE"),
+            ),
+            columns: { blobUrl: true },
+          });
+
+        // Delete blobs from Vercel storage
+        const blobUrls = hingeFiles
+          .map((f) => f.blobUrl)
+          .filter((url): url is string => url !== null);
+        if (blobUrls.length > 0) {
+          console.log(
+            `🗑️ Deleting ${blobUrls.length} Hinge blob(s) for profile ${input.hingeId}`,
+          );
+          await BlobService.deleteBulk(blobUrls).catch((error) => {
+            console.error("⚠️ Failed to delete some blobs:", error);
+            // Don't fail profile deletion if blob cleanup fails
+          });
+        }
+
+        // Delete original file records
+        await ctx.db
+          .delete(originalAnonymizedFileTable)
+          .where(
+            and(
+              eq(originalAnonymizedFileTable.userId, profile.userId),
+              eq(originalAnonymizedFileTable.dataProvider, "HINGE"),
+            ),
+          );
       }
 
       // Delete profile - cascades will handle related tables

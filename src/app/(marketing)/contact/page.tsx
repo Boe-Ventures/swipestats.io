@@ -6,26 +6,14 @@ export const metadata: Metadata = {
   title: "Contact Us",
   description:
     "Schedule a call with our team to learn how SwipeStats can help you understand your dating data better.",
+  alternates: {
+    canonical: "/contact",
+  },
   openGraph: {
     title: "Contact Us | SwipeStats",
     description:
       "Schedule a call with our team to learn how SwipeStats can help you understand your dating data better.",
-    images: [
-      {
-        url: "/images/og/swipestats_og.png",
-        width: 1200,
-        height: 630,
-        alt: "SwipeStats - Analyze your Tinder data",
-      },
-    ],
-    siteName: "SwipeStats",
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Contact Us | SwipeStats",
-    description:
-      "Schedule a call with our team to learn how SwipeStats can help you understand your dating data better.",
-    images: ["/images/og/swipestats_og.png"],
+    url: "/contact",
   },
 };
 

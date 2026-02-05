@@ -7,20 +7,21 @@ import posthog from "posthog-js";
 /**
  * Global error boundary for unhandled errors in root layout
  *
- * This catches errors that occur in the root layout that aren't caught
- * by route-level error boundaries.
+ * In development, re-throws so Next.js's dev error overlay handles it.
+ * In production, captures to PostHog and shows a fallback UI.
  */
 export default function GlobalError({
   error,
-  reset: _reset,
 }: {
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  if (process.env.NODE_ENV === "development") {
+    throw error;
+  }
+
   useEffect(() => {
-    // Capture the error in PostHog
     posthog.captureException(error);
-    console.error("[GlobalError] Unhandled error:", error);
   }, [error]);
 
   return (

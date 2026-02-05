@@ -16,9 +16,18 @@ import {
 import { ResearchPricingSection } from "./ResearchPricingSection";
 
 export const metadata: Metadata = {
-  title: "Research Datasets | SwipeStats",
+  title: "Research Datasets",
   description:
     "Access anonymized datasets from thousands of dating app users. Real behavior data for research, journalism, and content creation.",
+  alternates: {
+    canonical: "/research",
+  },
+  openGraph: {
+    title: "Research Datasets | SwipeStats",
+    description:
+      "Access anonymized datasets from thousands of dating app users. Real behavior data for research, journalism, and content creation.",
+    url: "/research",
+  },
 };
 
 function HeroSection() {

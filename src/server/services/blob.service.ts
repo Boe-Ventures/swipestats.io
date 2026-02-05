@@ -104,15 +104,6 @@ export function sanitizeFilename(filename: string): string {
     .replace(/^-|-$/g, "");
 }
 
-// Private helper function
-function validateToken(): void {
-  if (!process.env.BLOB_READ_WRITE_TOKEN) {
-    throw new Error(
-      "Blob storage not configured - BLOB_READ_WRITE_TOKEN missing",
-    );
-  }
-}
-
 /**
  * Upload a file to Vercel Blob
  */
@@ -121,8 +112,6 @@ export async function uploadBlob(
   data: Buffer | File | ReadableStream | string,
   options: BlobUploadOptions = { access: "public" },
 ): Promise<BlobUploadResult> {
-  validateToken();
-
   try {
     console.log(`📤 Uploading blob to: ${pathname}`);
 
@@ -187,8 +176,6 @@ export async function uploadImage(
 export async function listBlobs(
   options: BlobListOptions = {},
 ): Promise<ListBlobResult> {
-  validateToken();
-
   try {
     console.log(`📋 Listing blobs with options:`, options);
 
@@ -213,8 +200,6 @@ export async function listBlobs(
  * Get blob metadata
  */
 export async function getBlobMetadata(url: string) {
-  validateToken();
-
   try {
     console.log(`📊 Getting metadata for: ${url}`);
 
@@ -234,8 +219,6 @@ export async function getBlobMetadata(url: string) {
  * Delete a blob
  */
 export async function deleteBlob(url: string): Promise<BlobDeleteResult> {
-  validateToken();
-
   try {
     console.log(`🗑️ Deleting blob: ${url}`);
 
@@ -263,8 +246,6 @@ export async function copyBlob(
   toPathname: string,
   options: Partial<BlobUploadOptions> = {},
 ): Promise<BlobCopyResult> {
-  validateToken();
-
   try {
     console.log(`📋 Copying blob from ${fromUrl} to ${toPathname}`);
 
@@ -340,8 +321,50 @@ export async function uploadTinderDataJson(
   tinderId: string,
   json: unknown,
 ): Promise<BlobUploadResult> {
-  const pathname = `tinder-data/${tinderId}/${Date.now()}.json`;
+  const date = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+  const pathname = `tinder-data/${tinderId}/${date}/data.json`;
   return uploadJsonBlob(pathname, json);
+}
+
+/**
+ * Fetch blob content from a URL
+ */
+export async function fetchBlob(url: string): Promise<Response> {
+  try {
+    console.log(`📥 Fetching blob from: ${url}`);
+
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(
+        `Failed to fetch blob: ${response.status} ${response.statusText}`,
+      );
+    }
+
+    console.log(`✅ Blob fetched successfully`);
+    return response;
+  } catch (error) {
+    console.error("❌ Blob fetch failed:", error);
+    throw new Error(
+      `Failed to fetch blob: ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
+  }
+}
+
+/**
+ * Fetch and parse JSON blob content
+ */
+export async function fetchBlobJson<T = unknown>(url: string): Promise<T> {
+  const response = await fetchBlob(url);
+  try {
+    const json = (await response.json()) as T;
+    return json;
+  } catch (error) {
+    console.error("❌ Failed to parse blob JSON:", error);
+    throw new Error(
+      `Failed to parse blob JSON: ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
+  }
 }
 
 // Service object export with clean API
@@ -350,6 +373,8 @@ export const BlobService = {
   uploadImage: uploadImage,
   uploadJson: uploadJsonBlob,
   uploadTinderData: uploadTinderDataJson,
+  fetch: fetchBlob,
+  fetchJson: fetchBlobJson,
   list: listBlobs,
   getMetadata: getBlobMetadata,
   delete: deleteBlob,

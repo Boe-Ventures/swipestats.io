@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 /**
  * Route-level error boundary
  *
- * This catches errors that occur during rendering of route components.
+ * In development, re-throws so Next.js's dev error overlay handles it.
+ * In production, captures to PostHog and shows a friendly UI.
  */
 export default function Error({
   error,
@@ -16,10 +17,12 @@ export default function Error({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  if (process.env.NODE_ENV === "development") {
+    throw error;
+  }
+
   useEffect(() => {
-    // Capture the error in PostHog
     posthog.captureException(error);
-    console.error("[Error] Route error:", error);
   }, [error]);
 
   return (

@@ -10,7 +10,14 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useTinderProfile } from "../TinderProfileProvider";
-import { MessagesSquare, MessageCircle, Send, TrendingUp } from "lucide-react";
+import {
+  MessagesSquare,
+  MessageCircle,
+  Send,
+  Clock,
+  CalendarRange,
+  Trophy,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface MetricRowProps {
@@ -114,7 +121,7 @@ export function MessagesMetaCard() {
             icon={MessageCircle}
             label="Conversations with messages"
             value={globalMeta.conversationsWithMessages}
-            description="From matches in your data export"
+            description="That had actual messages"
           />
           <MetricRow
             icon={Send}
@@ -124,7 +131,7 @@ export function MessagesMetaCard() {
           />
           {medianResponseTime && (
             <MetricRow
-              icon={TrendingUp}
+              icon={Clock}
               label="Response time"
               value={medianResponseTime}
               description={
@@ -137,7 +144,7 @@ export function MessagesMetaCard() {
           {medianConvoDuration !== null &&
             medianConvoDuration !== undefined && (
               <MetricRow
-                icon={TrendingUp}
+                icon={CalendarRange}
                 label="Median conversation"
                 value={`${medianConvoDuration} days`}
                 description="Typical conversation length"
@@ -145,7 +152,7 @@ export function MessagesMetaCard() {
             )}
           {longestConvo !== null && longestConvo !== undefined && (
             <MetricRow
-              icon={TrendingUp}
+              icon={Trophy}
               label="Longest conversation"
               value={`${longestConvo} days`}
               description="Your record conversation"
