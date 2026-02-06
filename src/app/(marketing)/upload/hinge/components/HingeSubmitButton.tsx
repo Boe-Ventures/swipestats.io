@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { upload } from "@vercel/blob/client";
 import { SubmitButton } from "../../_components/SubmitButton";
 import { useTRPC } from "@/trpc/react";
 import { useMutation } from "@tanstack/react-query";
@@ -35,7 +36,7 @@ interface HingeSubmitButtonProps {
 
 export function HingeSubmitButton({
   payload,
-  isUpdate,
+  isUpdate: _isUpdate,
   disabled,
   consent,
   uploadContext,
@@ -43,6 +44,10 @@ export function HingeSubmitButton({
   const { trackEvent } = useAnalytics();
   const router = useRouter();
   const [isCreatingSession, setIsCreatingSession] = useState(false);
+  const [uploadState, setUploadState] = useState<
+    "idle" | "uploading" | "processing"
+  >("idle");
+  const [uploadedBlobUrl, setUploadedBlobUrl] = useState<string | null>(null);
 
   // Use Better Auth's built-in session hook
   const { data: session } = authClient.useSession();
@@ -99,10 +104,10 @@ export function HingeSubmitButton({
       scenario: uploadContext?.scenario || "unknown",
     });
 
-    // Ensure session exists before submitting
-    if (!session) {
-      setIsCreatingSession(true);
-      try {
+    try {
+      // Step 1: Ensure session exists
+      if (!session) {
+        setIsCreatingSession(true);
         const { error } = await authClient.signIn.anonymous({
           fetchOptions: {
             headers: {
@@ -112,50 +117,86 @@ export function HingeSubmitButton({
         });
         if (error) {
           alert("Failed to create session. Please try again.");
-          setIsCreatingSession(false);
           return;
         }
-        // Session cookie is now set, server will pick it up
-      } catch (err) {
-        console.error("Session creation error:", err);
-        alert("Failed to create session. Please try again.");
-        setIsCreatingSession(false);
-        return;
-      } finally {
         setIsCreatingSession(false);
       }
-    }
 
-    // Filter payload based on consent before uploading
-    const filteredPayload = filterPayloadByConsent(payload, consent);
+      // Step 2: Upload to blob (skip if already uploaded)
+      let blobUrl = uploadedBlobUrl;
+      if (!blobUrl) {
+        setUploadState("uploading");
+        console.log("📤 Uploading to blob storage...");
 
-    const uploadData = {
-      hingeId: filteredPayload.hingeId,
-      anonymizedHingeJson: filteredPayload.anonymizedHingeJson,
-      timezone: browserTimezone,
-      country: browserCountry,
-    };
+        // Filter payload based on consent before uploading
+        const filteredPayload = filterPayloadByConsent(payload, consent);
 
-    // Route to appropriate endpoint based on scenario
-    const scenario = uploadContext?.scenario;
+        // Create JSON blob
+        const jsonBlob = new Blob(
+          [JSON.stringify(filteredPayload.anonymizedHingeJson)],
+          { type: "application/json" },
+        );
 
-    if (scenario === "new_profile" || scenario === "new_user") {
-      // First-time upload - use streamlined createProfile endpoint
-      createMutation.mutate(uploadData);
-    } else if (scenario === "same_hingeId" || scenario === "can_claim") {
-      // Re-uploading same account or claiming anonymous profile
-      updateMutation.mutate(uploadData);
-    } else if (scenario === "different_hingeId") {
-      // Merging old Hinge account into new one
-      mergeMutation.mutate(uploadData);
-    } else {
-      // Fallback for legacy flow without uploadContext
-      // Determine based on isUpdate prop
-      if (isUpdate && session) {
-        updateMutation.mutate(uploadData);
+        // Upload to Vercel Blob with structured path
+        const date = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+        const result = await upload(
+          `hinge-data/${filteredPayload.hingeId}/${date}/data.json`,
+          jsonBlob,
+          {
+            access: "public",
+            handleUploadUrl: "/api/blob/client-upload",
+            clientPayload: JSON.stringify({
+              resourceType: "hinge_data",
+              hingeId: filteredPayload.hingeId,
+            }),
+          },
+        );
+
+        blobUrl = result.url;
+        setUploadedBlobUrl(blobUrl);
+        console.log("✅ Blob uploaded:", blobUrl);
       } else {
-        createMutation.mutate(uploadData);
+        console.log("♻️ Using cached blob URL:", blobUrl);
       }
+
+      // Step 3: Process profile
+      setUploadState("processing");
+      const uploadData = {
+        hingeId: payload.hingeId,
+        blobUrl,
+        timezone: browserTimezone,
+        country: browserCountry,
+      };
+
+      // Route to appropriate endpoint based on scenario
+      const scenario = uploadContext?.scenario;
+
+      if (scenario === "new_profile" || scenario === "new_user") {
+        createMutation.mutate(uploadData);
+      } else if (scenario === "same_hingeId" || scenario === "can_claim") {
+        updateMutation.mutate(uploadData);
+      } else if (scenario === "different_hingeId") {
+        mergeMutation.mutate(uploadData);
+      } else {
+        console.error("Unknown upload scenario:", scenario);
+        alert("Unable to determine upload type. Please refresh and try again.");
+        setUploadState("idle");
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Upload failed";
+
+      if (errorMessage.toLowerCase().includes("upload")) {
+        // Blob upload failed - clear cache and show error
+        setUploadedBlobUrl(null);
+        alert("Upload failed. Please check your connection and try again.");
+      } else {
+        // Processing failed - keep blob URL cached for retry
+        alert("Processing failed. Please try again.");
+      }
+      setUploadState("idle");
+      setIsCreatingSession(false);
     }
   };
 
@@ -163,9 +204,18 @@ export function HingeSubmitButton({
   const canSubmit = !disabled && termsAccepted;
   const isLoading =
     isCreatingSession ||
+    uploadState !== "idle" ||
     createMutation.isPending ||
     updateMutation.isPending ||
     mergeMutation.isPending;
+
+  // Determine loading text
+  let loadingText = "Upload & View Insights";
+  if (uploadState === "uploading") {
+    loadingText = "Uploading...";
+  } else if (uploadState === "processing") {
+    loadingText = "Processing...";
+  }
 
   return (
     <SubmitButton
@@ -173,7 +223,7 @@ export function HingeSubmitButton({
       disabled={!canSubmit || isLoading}
       isLoading={isLoading}
     >
-      {isUpdate ? "Update Profile" : "Upload & View Insights"}
+      {loadingText}
     </SubmitButton>
   );
 }

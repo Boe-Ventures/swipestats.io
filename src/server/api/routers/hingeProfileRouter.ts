@@ -17,6 +17,7 @@ import {
   absorbHingeProfileIntoNew,
 } from "@/server/services/hinge/hinge-additive.service";
 import { trackServerEvent } from "@/server/services/analytics.service";
+import { fetchBlobJson } from "@/server/services/blob.service";
 
 /**
  * Helper function to handle existing profile upload scenarios
@@ -25,7 +26,7 @@ import { trackServerEvent } from "@/server/services/analytics.service";
 async function handleExistingHingeProfileUpload(params: {
   existing: NonNullable<Awaited<ReturnType<typeof getHingeProfileWithUser>>>;
   hingeId: string;
-  anonymizedHingeJson: AnonymizedHingeDataJSON;
+  blobUrl: string;
   currentUserId: string;
   timezone?: string;
   country?: string;
@@ -218,7 +219,7 @@ export const hingeProfileRouter = {
     .input(
       z.object({
         hingeId: z.string().min(1),
-        anonymizedHingeJson: z.any() as z.ZodType<AnonymizedHingeDataJSON>,
+        blobUrl: z.string().url(),
         timezone: z.string().optional(),
         country: z.string().optional(),
       }),
@@ -248,7 +249,7 @@ export const hingeProfileRouter = {
         console.log(`📝 Creating new Hinge profile: ${input.hingeId}`);
         const result = await createHingeProfile({
           hingeId: input.hingeId,
-          anonymizedHingeJson: input.anonymizedHingeJson,
+          blobUrl: input.blobUrl,
           userId: ctx.session.user.id,
           timezone: input.timezone,
           country: input.country,
@@ -276,8 +277,6 @@ export const hingeProfileRouter = {
             error instanceof Error
               ? error.message.slice(0, 200)
               : "Unknown error",
-          jsonSizeMB:
-            JSON.stringify(input.anonymizedHingeJson).length / 1024 / 1024,
         });
         throw error;
       }
@@ -289,7 +288,7 @@ export const hingeProfileRouter = {
     .input(
       z.object({
         hingeId: z.string().min(1),
-        anonymizedHingeJson: z.any() as z.ZodType<AnonymizedHingeDataJSON>,
+        blobUrl: z.string().url(),
         timezone: z.string().optional(),
         country: z.string().optional(),
       }),
@@ -318,7 +317,7 @@ export const hingeProfileRouter = {
         const result = await handleExistingHingeProfileUpload({
           existing: existingProfile,
           hingeId: input.hingeId,
-          anonymizedHingeJson: input.anonymizedHingeJson,
+          blobUrl: input.blobUrl,
           currentUserId: ctx.session.user.id,
           timezone: input.timezone,
           country: input.country,
@@ -351,8 +350,6 @@ export const hingeProfileRouter = {
             error instanceof Error
               ? error.message.slice(0, 200)
               : "Unknown error",
-          jsonSizeMB:
-            JSON.stringify(input.anonymizedHingeJson).length / 1024 / 1024,
         });
         throw error;
       }
@@ -364,7 +361,7 @@ export const hingeProfileRouter = {
     .input(
       z.object({
         hingeId: z.string().min(1),
-        anonymizedHingeJson: z.any() as z.ZodType<AnonymizedHingeDataJSON>,
+        blobUrl: z.string().url(),
         timezone: z.string().optional(),
         country: z.string().optional(),
       }),
@@ -379,6 +376,11 @@ export const hingeProfileRouter = {
       }
 
       try {
+        // Fetch JSON from blob storage
+        const anonymizedHingeJson = await fetchBlobJson<AnonymizedHingeDataJSON>(
+          input.blobUrl,
+        );
+
         // Get user's existing profile
         const existingUserProfile =
           await ctx.db.query.hingeProfileTable.findFirst({
@@ -404,7 +406,7 @@ export const hingeProfileRouter = {
         // Safety check: Prevent backward merges (uploading older account after newer one)
         // For Hinge, we use createDate (signup time) instead of daily usage
         const newSignupTime = new Date(
-          input.anonymizedHingeJson.User.account.signup_time,
+          anonymizedHingeJson.User.account.signup_time,
         );
 
         if (newSignupTime < existingUserProfile.createDate) {
@@ -426,7 +428,7 @@ export const hingeProfileRouter = {
         const result = await absorbHingeProfileIntoNew({
           oldHingeId: existingUserProfile.hingeId,
           newHingeId: input.hingeId,
-          anonymizedHingeJson: input.anonymizedHingeJson,
+          blobUrl: input.blobUrl,
           userId: ctx.session.user.id,
           timezone: input.timezone,
           country: input.country,
@@ -455,8 +457,6 @@ export const hingeProfileRouter = {
             error instanceof Error
               ? error.message.slice(0, 200)
               : "Unknown error",
-          jsonSizeMB:
-            JSON.stringify(input.anonymizedHingeJson).length / 1024 / 1024,
         });
         throw error;
       }
@@ -468,7 +468,7 @@ export const hingeProfileRouter = {
     .input(
       z.object({
         hingeId: z.string().min(1),
-        anonymizedHingeJson: z.any() as z.ZodType<AnonymizedHingeDataJSON>,
+        blobUrl: z.string().url(),
         timezone: z.string().optional(),
         country: z.string().optional(),
       }),
@@ -497,7 +497,7 @@ export const hingeProfileRouter = {
       try {
         const result = await createHingeProfile({
           hingeId: input.hingeId,
-          anonymizedHingeJson: input.anonymizedHingeJson,
+          blobUrl: input.blobUrl,
           userId: ctx.session.user.id,
           timezone: input.timezone,
           country: input.country,
@@ -526,8 +526,6 @@ export const hingeProfileRouter = {
             error instanceof Error
               ? error.message.slice(0, 200)
               : "Unknown error",
-          jsonSizeMB:
-            JSON.stringify(input.anonymizedHingeJson).length / 1024 / 1024,
         });
         throw error;
       }
@@ -539,7 +537,7 @@ export const hingeProfileRouter = {
     .input(
       z.object({
         hingeId: z.string().min(1),
-        anonymizedHingeJson: z.any() as z.ZodType<AnonymizedHingeDataJSON>,
+        blobUrl: z.string().url(),
         timezone: z.string().optional(),
         country: z.string().optional(),
       }),
@@ -577,7 +575,7 @@ export const hingeProfileRouter = {
         // Use additive update instead of full replacement
         const result = await additiveUpdateHingeProfile({
           hingeId: input.hingeId,
-          anonymizedHingeJson: input.anonymizedHingeJson,
+          blobUrl: input.blobUrl,
           userId: ctx.session.user.id,
           timezone: input.timezone,
           country: input.country,
@@ -606,8 +604,6 @@ export const hingeProfileRouter = {
             error instanceof Error
               ? error.message.slice(0, 200)
               : "Unknown error",
-          jsonSizeMB:
-            JSON.stringify(input.anonymizedHingeJson).length / 1024 / 1024,
         });
         throw error;
       }

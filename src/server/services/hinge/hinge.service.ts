@@ -110,32 +110,42 @@ function transformHingeMediaToDb(
 }
 
 /**
- * Create a new Hinge profile from anonymized JSON data
+ * Create a new Hinge profile from blob storage
  * This is the main orchestrator that coordinates all profile creation steps
  */
 export async function createHingeProfile(data: {
   hingeId: string;
-  anonymizedHingeJson: AnonymizedHingeDataJSON;
+  blobUrl: string;
   userId: string;
   timezone?: string;
   country?: string;
 }): Promise<HingeProfileResult> {
   const startTime = Date.now();
 
-  // Log JSON size
-  const jsonString = JSON.stringify(data.anonymizedHingeJson);
-  const jsonSizeMB = (jsonString.length / 1024 / 1024).toFixed(2);
-
   console.log(`\n🚀 Starting Hinge profile creation for ${data.hingeId}`);
   console.log(`   User ID: ${data.userId}`);
+  console.log(`   Blob URL: ${data.blobUrl}`);
   console.log(`   Timezone: ${data.timezone ?? "not provided"}`);
   console.log(`   Country: ${data.country ?? "not provided"}`);
+
+  // 1. Fetch JSON from blob storage
+  const fetchStart = Date.now();
+  console.log(`\n📥 [1/6] Fetching Hinge data from blob storage...`);
+  const { fetchBlobJson } = await import("../blob.service");
+  const anonymizedHingeJson = await fetchBlobJson<AnonymizedHingeDataJSON>(
+    data.blobUrl,
+  );
+  console.log(`✅ Blob fetched in ${Date.now() - fetchStart}ms`);
+
+  // Log JSON size
+  const jsonString = JSON.stringify(anonymizedHingeJson);
+  const jsonSizeMB = (jsonString.length / 1024 / 1024).toFixed(2);
   console.log(`   JSON size: ${jsonSizeMB} MB`);
 
-  // 1. Transform JSON data to database format
+  // 2. Transform JSON data to database format
   const transformStart = Date.now();
-  console.log(`\n🔄 [1/5] Transforming profile data...`);
-  const profileData = transformHingeJsonToProfile(data.anonymizedHingeJson, {
+  console.log(`\n🔄 [2/6] Transforming profile data...`);
+  const profileData = transformHingeJsonToProfile(anonymizedHingeJson, {
     hingeId: data.hingeId,
     userId: data.userId,
     timezone: data.timezone,
@@ -146,11 +156,11 @@ export async function createHingeProfile(data: {
   console.log(`   Age: ${profileData.ageAtUpload}`);
   console.log(`   Location: ${profileData.country}`);
 
-  // 2. Create interactions, matches, and messages
+  // 3. Create interactions, matches, and messages
   const messagesStart = Date.now();
-  console.log(`\n💬 [2/5] Processing conversations...`);
+  console.log(`\n💬 [3/6] Processing conversations...`);
   const result = createHingeMessagesAndMatches(
-    data.anonymizedHingeJson.Matches,
+    anonymizedHingeJson.Matches,
     data.hingeId,
   );
   const interactionsInput = result.interactionsInput;
@@ -158,40 +168,40 @@ export async function createHingeProfile(data: {
   const messagesInput = result.messagesInput;
   console.log(`✅ Processed in ${Date.now() - messagesStart}ms`);
 
-  // 3. Transform prompts
+  // 4. Transform prompts
   const promptsStart = Date.now();
-  console.log(`\n📝 [3/5] Processing prompts...`);
+  console.log(`\n📝 [4/6] Processing prompts...`);
   const promptsInput = transformHingePromptsForDb(
-    data.anonymizedHingeJson.Prompts,
+    anonymizedHingeJson.Prompts,
     data.hingeId,
   );
   console.log(
     `✅ Processed ${promptsInput.length} prompts in ${Date.now() - promptsStart}ms`,
   );
 
-  // 4. Log photo count
-  const photoCount = Array.isArray(data.anonymizedHingeJson.Media)
-    ? data.anonymizedHingeJson.Media.length
+  // 5. Log photo count
+  const photoCount = Array.isArray(anonymizedHingeJson.Media)
+    ? anonymizedHingeJson.Media.length
     : 0;
-  console.log(`\n📷 [4/5] Photos ready for insert: ${photoCount}`);
+  console.log(`\n📷 [5/6] Photos ready for insert: ${photoCount}`);
 
-  // 5. Execute transaction to insert all data
+  // 6. Execute transaction to insert all data
   const txStart = Date.now();
-  console.log(`\n💾 [5/5] Starting database transaction...`);
+  console.log(`\n💾 [6/6] Starting database transaction...`);
   const profile = await withTransaction(async (tx) => {
-    // Insert original file
+    // Insert original file reference (blob URL only - no raw JSON)
     const fileStart = Date.now();
     const fileId = createId("oaf");
     await tx.insert(originalAnonymizedFileTable).values({
       id: fileId,
       dataProvider: "HINGE",
       swipestatsVersion: "SWIPESTATS_4",
-      file: data.anonymizedHingeJson as unknown as Record<string, unknown>,
-      blobUrl: null, // Blob upload disabled for now
+      file: null, // No longer storing raw JSON
+      blobUrl: data.blobUrl,
       userId: data.userId,
     });
     console.log(
-      `   ✓ Original file stored in DB (${Date.now() - fileStart}ms, ID: ${fileId})`,
+      `   ✓ Original file reference stored (${Date.now() - fileStart}ms, ID: ${fileId})`,
     );
 
     // Insert profile
@@ -204,7 +214,7 @@ export async function createHingeProfile(data: {
 
     // Insert photos/media (respects consent - Media will be empty array if filtered)
     const mediaInput = transformHingeMediaToDb(
-      data.anonymizedHingeJson.Media ?? [],
+      anonymizedHingeJson.Media ?? [],
       data.hingeId,
     );
     if (mediaInput.length > 0) {
@@ -332,7 +342,7 @@ export async function createHingeProfile(data: {
   // Compute metrics for analytics
   const totalTime = Date.now() - startTime;
   const mediaInput = transformHingeMediaToDb(
-    data.anonymizedHingeJson.Media ?? [],
+    anonymizedHingeJson.Media ?? [],
     data.hingeId,
   );
 
@@ -358,12 +368,12 @@ export async function createHingeProfile(data: {
 }
 
 /**
- * Update an existing Hinge profile from anonymized JSON data
+ * Update an existing Hinge profile from blob storage
  * Replaces all profile data including photos, matches, messages, prompts, and interactions
  */
 export async function updateHingeProfile(data: {
   hingeId: string;
-  anonymizedHingeJson: AnonymizedHingeDataJSON;
+  blobUrl: string;
   userId: string;
   timezone?: string;
   country?: string;
@@ -372,15 +382,25 @@ export async function updateHingeProfile(data: {
 
   console.log(`\n🔄 Starting Hinge profile update for ${data.hingeId}`);
   console.log(`   User ID: ${data.userId}`);
+  console.log(`   Blob URL: ${data.blobUrl}`);
+
+  // Fetch JSON from blob storage
+  const fetchStart = Date.now();
+  console.log(`\n📥 Fetching Hinge data from blob storage...`);
+  const { fetchBlobJson } = await import("../blob.service");
+  const anonymizedHingeJson = await fetchBlobJson<AnonymizedHingeDataJSON>(
+    data.blobUrl,
+  );
+  console.log(`✅ Blob fetched in ${Date.now() - fetchStart}ms`);
 
   // Log JSON size
-  const jsonString = JSON.stringify(data.anonymizedHingeJson);
+  const jsonString = JSON.stringify(anonymizedHingeJson);
   const jsonSizeMB = (jsonString.length / 1024 / 1024).toFixed(2);
 
   // 1. Transform JSON data to database format
   const transformStart = Date.now();
   console.log(`\n🔄 [1/5] Transforming profile data...`);
-  const profileData = transformHingeJsonToProfile(data.anonymizedHingeJson, {
+  const profileData = transformHingeJsonToProfile(anonymizedHingeJson, {
     hingeId: data.hingeId,
     userId: data.userId,
     timezone: data.timezone,
@@ -392,7 +412,7 @@ export async function updateHingeProfile(data: {
   const messagesStart = Date.now();
   console.log(`\n💬 [2/5] Processing conversations...`);
   const result = createHingeMessagesAndMatches(
-    data.anonymizedHingeJson.Matches,
+    anonymizedHingeJson.Matches,
     data.hingeId,
   );
   const interactionsInput = result.interactionsInput;
@@ -404,7 +424,7 @@ export async function updateHingeProfile(data: {
   const promptsStart = Date.now();
   console.log(`\n📝 [3/5] Processing prompts...`);
   const promptsInput = transformHingePromptsForDb(
-    data.anonymizedHingeJson.Prompts,
+    anonymizedHingeJson.Prompts,
     data.hingeId,
   );
   console.log(
@@ -412,8 +432,8 @@ export async function updateHingeProfile(data: {
   );
 
   // 4. Log photo count
-  const photoCount = Array.isArray(data.anonymizedHingeJson.Media)
-    ? data.anonymizedHingeJson.Media.length
+  const photoCount = Array.isArray(anonymizedHingeJson.Media)
+    ? anonymizedHingeJson.Media.length
     : 0;
   console.log(`\n📷 [4/5] Photos ready for insert: ${photoCount}`);
 
@@ -459,7 +479,7 @@ export async function updateHingeProfile(data: {
 
     // Insert photos/media (respects consent - Media will be empty array if filtered)
     const mediaInput = transformHingeMediaToDb(
-      data.anonymizedHingeJson.Media ?? [],
+      anonymizedHingeJson.Media ?? [],
       data.hingeId,
     );
     if (mediaInput.length > 0) {
@@ -585,7 +605,7 @@ export async function updateHingeProfile(data: {
   // Compute metrics for analytics
   const totalTime = Date.now() - startTime;
   const mediaInput = transformHingeMediaToDb(
-    data.anonymizedHingeJson.Media ?? [],
+    anonymizedHingeJson.Media ?? [],
     data.hingeId,
   );
 

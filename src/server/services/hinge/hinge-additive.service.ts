@@ -155,7 +155,7 @@ function filterNewHingeInteractions(
  */
 export async function additiveUpdateHingeProfile(data: {
   hingeId: string;
-  anonymizedHingeJson: AnonymizedHingeDataJSON;
+  blobUrl: string;
   userId: string;
   timezone?: string;
   country?: string;
@@ -164,14 +164,23 @@ export async function additiveUpdateHingeProfile(data: {
 
   console.log(`\n📊 Additive update for Hinge profile: ${data.hingeId}`);
   console.log(`   User ID: ${data.userId}`);
+  console.log(`   Blob URL: ${data.blobUrl}`);
 
-  const jsonString = JSON.stringify(data.anonymizedHingeJson);
+  // Fetch JSON from blob storage
+  const fetchStart = Date.now();
+  const { fetchBlobJson } = await import("../blob.service");
+  const anonymizedHingeJson = await fetchBlobJson<AnonymizedHingeDataJSON>(
+    data.blobUrl,
+  );
+  console.log(`   ✓ Blob fetched (${Date.now() - fetchStart}ms)`);
+
+  const jsonString = JSON.stringify(anonymizedHingeJson);
   const jsonSizeMB = (jsonString.length / 1024 / 1024).toFixed(2);
 
   const result = await withTransaction(async (tx) => {
     // 1. Update profile metadata
     const transformStart = Date.now();
-    const profileData = transformHingeJsonToProfile(data.anonymizedHingeJson, {
+    const profileData = transformHingeJsonToProfile(anonymizedHingeJson, {
       hingeId: data.hingeId,
       userId: data.userId,
       timezone: data.timezone,
@@ -198,7 +207,7 @@ export async function additiveUpdateHingeProfile(data: {
     const matchStart = Date.now();
     const { interactionsInput, matchesInput, messagesInput } =
       createHingeMessagesAndMatches(
-        data.anonymizedHingeJson.Matches,
+        anonymizedHingeJson.Matches,
         data.hingeId,
       );
 
@@ -275,7 +284,7 @@ export async function additiveUpdateHingeProfile(data: {
       .where(eq(hingePromptTable.hingeProfileId, data.hingeId));
 
     const promptsInput = transformHingePromptsForDb(
-      data.anonymizedHingeJson.Prompts,
+      anonymizedHingeJson.Prompts,
       data.hingeId,
     );
     if (promptsInput.length > 0) {
@@ -294,7 +303,7 @@ export async function additiveUpdateHingeProfile(data: {
     const existingMediaUrls = new Set(existingMedia.map((m) => m.url));
 
     const newMediaInput = transformHingeMediaToDb(
-      data.anonymizedHingeJson.Media ?? [],
+      anonymizedHingeJson.Media ?? [],
       data.hingeId,
     ).filter((m) => !existingMediaUrls.has(m.url));
 
@@ -310,13 +319,13 @@ export async function additiveUpdateHingeProfile(data: {
     await recomputeHingeProfileMetaInTx(tx, data.hingeId);
     console.log(`   ✓ Profile meta recomputed (${Date.now() - metaStart}ms)`);
 
-    // 7. Store original file
+    // 7. Store original file reference (blob URL only)
     await tx.insert(originalAnonymizedFileTable).values({
       id: createId("oaf"),
       dataProvider: "HINGE",
       swipestatsVersion: "SWIPESTATS_4",
-      file: data.anonymizedHingeJson as unknown as Record<string, unknown>,
-      blobUrl: null,
+      file: null, // No longer storing raw JSON
+      blobUrl: data.blobUrl,
       userId: data.userId,
     });
 
@@ -387,7 +396,7 @@ export async function additiveUpdateHingeProfile(data: {
 export async function absorbHingeProfileIntoNew(data: {
   oldHingeId: string;
   newHingeId: string;
-  anonymizedHingeJson: AnonymizedHingeDataJSON;
+  blobUrl: string;
   userId: string;
   timezone?: string;
   country?: string;
@@ -398,8 +407,17 @@ export async function absorbHingeProfileIntoNew(data: {
     `\n🔄 Cross-account merge: ${data.oldHingeId} → ${data.newHingeId}`,
   );
   console.log(`   User ID: ${data.userId}`);
+  console.log(`   Blob URL: ${data.blobUrl}`);
 
-  const jsonString = JSON.stringify(data.anonymizedHingeJson);
+  // Fetch JSON from blob storage
+  const fetchStart = Date.now();
+  const { fetchBlobJson } = await import("../blob.service");
+  const anonymizedHingeJson = await fetchBlobJson<AnonymizedHingeDataJSON>(
+    data.blobUrl,
+  );
+  console.log(`   ✓ Blob fetched (${Date.now() - fetchStart}ms)`);
+
+  const jsonString = JSON.stringify(anonymizedHingeJson);
   const jsonSizeMB = (jsonString.length / 1024 / 1024).toFixed(2);
   console.log(`   JSON size: ${jsonSizeMB} MB`);
 
@@ -428,7 +446,7 @@ export async function absorbHingeProfileIntoNew(data: {
     // 3. Transform and prepare new profile data
     const transformStart = Date.now();
     const newProfileData = transformHingeJsonToProfile(
-      data.anonymizedHingeJson,
+      anonymizedHingeJson,
       {
         hingeId: data.newHingeId,
         userId: data.userId,
@@ -499,7 +517,7 @@ export async function absorbHingeProfileIntoNew(data: {
     const matchStart = Date.now();
     const { interactionsInput, matchesInput, messagesInput } =
       createHingeMessagesAndMatches(
-        data.anonymizedHingeJson.Matches,
+        anonymizedHingeJson.Matches,
         data.newHingeId,
       );
 
@@ -536,7 +554,7 @@ export async function absorbHingeProfileIntoNew(data: {
     // 9. Insert prompts
     const promptsStart = Date.now();
     const promptsInput = transformHingePromptsForDb(
-      data.anonymizedHingeJson.Prompts,
+      anonymizedHingeJson.Prompts,
       data.newHingeId,
     );
     if (promptsInput.length > 0) {
@@ -549,7 +567,7 @@ export async function absorbHingeProfileIntoNew(data: {
     // 10. Insert new photos
     const photosStart = Date.now();
     const photosInput = transformHingeMediaToDb(
-      data.anonymizedHingeJson.Media ?? [],
+      anonymizedHingeJson.Media ?? [],
       data.newHingeId,
     );
     if (photosInput.length > 0) {
@@ -564,13 +582,13 @@ export async function absorbHingeProfileIntoNew(data: {
     await recomputeHingeProfileMetaInTx(tx, data.newHingeId);
     console.log(`   ✓ Profile meta computed (${Date.now() - metaStart}ms)`);
 
-    // 12. Store original file
+    // 12. Store original file reference (blob URL only)
     await tx.insert(originalAnonymizedFileTable).values({
       id: createId("oaf"),
       dataProvider: "HINGE",
       swipestatsVersion: "SWIPESTATS_4",
-      file: data.anonymizedHingeJson as unknown as Record<string, unknown>,
-      blobUrl: null,
+      file: null, // No longer storing raw JSON
+      blobUrl: data.blobUrl,
       userId: data.userId,
     });
 
