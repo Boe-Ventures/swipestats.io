@@ -1,5 +1,5 @@
 import { eq } from "drizzle-orm";
-import { withTransaction } from "@/server/db";
+import { db, withTransaction } from "@/server/db";
 import {
   attachmentTable,
   customDataTable,
@@ -11,6 +11,7 @@ import {
   profileComparisonTable,
   purchaseTable,
   tinderProfileTable,
+  userTable,
 } from "@/server/db/schema";
 
 export interface TransferResult {
@@ -32,6 +33,7 @@ export interface TransferResult {
  * - Attachments (uploadedBy)
  * - Profile comparisons (userId)
  * - Profile comparison feedback (authorId)
+ * - User preferences and data (dating app activity, location, self-assessment, history, subscription/tier)
  */
 export async function transferAnonymousUserData(
   fromUserId: string,
@@ -40,6 +42,29 @@ export async function transferAnonymousUserData(
   console.log(
     `[Anonymous] Transferring data from ${fromUserId} to ${toUserId}`,
   );
+
+  // Fetch all anonymous user fields before transaction
+  const anonymousUserData = await db.query.userTable.findFirst({
+    where: eq(userTable.id, fromUserId),
+  });
+
+  if (!anonymousUserData) {
+    throw new Error(`Anonymous user ${fromUserId} not found`);
+  }
+
+  // Exclude fields that Better Auth manages or are system fields
+  const {
+    id: _id,
+    email: _email,
+    name: _name,
+    emailVerified: _emailVerified,
+    username: _username,
+    displayUsername: _displayUsername,
+    isAnonymous: _isAnonymous,
+    createdAt: _createdAt,
+    updatedAt: _updatedAt,
+    ...fieldsToTransfer
+  } = anonymousUserData;
 
   let hadProfile = false;
 
@@ -135,6 +160,15 @@ export async function transferAnonymousUserData(
       .where(eq(profileComparisonFeedbackTable.authorId, fromUserId));
     console.log(
       `[Anonymous] Transferred ${feedbackUpdated.rowCount ?? 0} profile comparison feedback records`,
+    );
+
+    // Transfer user preferences and data
+    await tx
+      .update(userTable)
+      .set(fieldsToTransfer)
+      .where(eq(userTable.id, toUserId));
+    console.log(
+      `[Anonymous] Transferred user data (${Object.keys(fieldsToTransfer).length} fields): ${fieldsToTransfer.swipestatsTier}`,
     );
   });
 
