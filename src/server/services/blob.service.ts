@@ -327,6 +327,18 @@ export async function uploadTinderDataJson(
 }
 
 /**
+ * Upload Hinge data JSON to Vercel Blob
+ */
+export async function uploadHingeDataJson(
+  hingeId: string,
+  json: unknown,
+): Promise<BlobUploadResult> {
+  const date = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
+  const pathname = `hinge-data/${hingeId}/${date}/data.json`;
+  return uploadJsonBlob(pathname, json);
+}
+
+/**
  * Fetch blob content from a URL
  */
 export async function fetchBlob(url: string): Promise<Response> {
@@ -373,6 +385,7 @@ export const BlobService = {
   uploadImage: uploadImage,
   uploadJson: uploadJsonBlob,
   uploadTinderData: uploadTinderDataJson,
+  uploadHingeData: uploadHingeDataJson,
   fetch: fetchBlob,
   fetchJson: fetchBlobJson,
   list: listBlobs,

@@ -2,6 +2,11 @@
 
 Scripts for managing Resend topics, contacts, and email preferences.
 
+## 📚 Documentation
+
+- **[TOPICS_AND_BROADCASTS.md](./TOPICS_AND_BROADCASTS.md)** - Complete guide for implementing Resend Broadcasts with Topics (for when you're ready to send marketing emails)
+- **[NEWSLETTER_STRATEGY.md](./NEWSLETTER_STRATEGY.md)** - Current subscription strategy and touchpoints
+
 ## Prerequisites
 
 Make sure you have `RESEND_API_KEY` set in your `.env` file:

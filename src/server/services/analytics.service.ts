@@ -8,6 +8,7 @@ import type {
 } from "@/lib/analytics/analytics.types";
 import { sanitizeForVercel } from "@/lib/analytics/analytics.utils";
 import { trackPosthogServerEvent } from "@/server/clients/posthog.client";
+import { trackSlackEvent } from "@/server/clients/slack.client";
 import { headers } from "next/headers";
 
 // =====================================================
@@ -52,6 +53,10 @@ const serverAnalyticsProviders: ServerAnalyticsProvider[] = [
         console.error("❌ [Vercel] Server track error:", error);
       }
     },
+  },
+  {
+    id: "slack",
+    trackServerEvent: trackSlackEvent,
   },
 ];
 
