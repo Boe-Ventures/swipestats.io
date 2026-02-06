@@ -2,9 +2,9 @@ import Link from "next/link";
 // import { BarChart3 } from "lucide-react";
 
 import { cn } from "@/components/ui";
-import { OldSwipestatsLogo } from "@/components/ui/OldSwipestatsLogo";
+// import { OldSwipestatsLogo } from "@/components/ui/OldSwipestatsLogo";
 import { NewOldLogo } from "@/components/ui/NewOldLogo";
-import { TinderInsights } from "@/components/ui/TinderInsights";
+// import { TinderInsights } from "@/components/ui/TinderInsights";
 
 import HeaderClient from "./HeaderClient";
 

@@ -205,7 +205,7 @@ function ActionCard({
   icon: Icon,
   title,
   description,
-  href,
+  href: _href,
   disabled = false,
 }: {
   icon: React.ElementType;
