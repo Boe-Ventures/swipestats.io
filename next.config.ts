@@ -76,6 +76,17 @@ const config: NextConfig = {
     ];
   },
 
+  async redirects() {
+    return [
+      // Legacy insights URL redirect
+      {
+        source: "/insights/:tinderId",
+        destination: "/insights/tinder/:tinderId",
+        permanent: true, // 308 redirect for SEO
+      },
+    ];
+  },
+
   // PostHog reverse proxy (improves tracking reliability, bypasses ad blockers)
   async rewrites() {
     return [
