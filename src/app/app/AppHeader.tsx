@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { BarChart3 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { NewOldLogo } from "@/components/ui/NewOldLogo";
 
 import { UserDropdown } from "./UserDropdown";
 import type { Session } from "@/server/better-auth/config";
@@ -19,8 +19,8 @@ export function AppHeader({ session }: AppHeaderProps) {
         {/* Left side - Logo and Navigation */}
         <div className="flex items-center space-x-6">
           <Link href="/app/dashboard" className="flex items-center space-x-2">
-            <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
-              <BarChart3 className="size-4" />
+            <div className="bg-primary text-primary-foreground flex size-7 items-center justify-center rounded-md sm:size-8">
+              <NewOldLogo className="size-5 sm:size-6" />
             </div>
             <span className="text-xl font-bold">SwipeStats</span>
           </Link>

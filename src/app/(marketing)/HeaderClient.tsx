@@ -13,9 +13,9 @@ import {
 } from "@heroicons/react/24/outline";
 
 import { ButtonLink } from "@/components/ui/button";
-import { OldSwipestatsLogo } from "@/components/ui/OldSwipestatsLogo";
+// import { OldSwipestatsLogo } from "@/components/ui/OldSwipestatsLogo";
 import { NewOldLogo } from "@/components/ui/NewOldLogo";
-import { TinderInsights } from "@/components/ui/TinderInsights";
+// import { TinderInsights } from "@/components/ui/TinderInsights";
 
 import { authClient } from "@/server/better-auth/client";
 
