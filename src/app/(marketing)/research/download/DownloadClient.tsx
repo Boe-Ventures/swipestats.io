@@ -34,23 +34,9 @@ export function DownloadClient() {
     ),
   );
 
-  // Mutation to record download
-  const recordDownloadMutation = useMutation(
-    trpc.research.recordDownload.mutationOptions({
-      onSuccess: (data) => {
-        // Trigger download
-        window.location.assign(data.downloadUrl);
-        // Refetch to update download count
-        setTimeout(() => {
-          void refetch();
-        }, 1000);
-      },
-      onError: (error) => {
-        console.error("Failed to record download:", error);
-        // Error will be shown in UI via mutation state
-      },
-    }),
-  );
+  // Download state management
+  const [downloadError, setDownloadError] = useState<string | null>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   // Mutation to retry failed generation
   const retryGenerationMutation = useMutation(
@@ -101,9 +87,35 @@ export function DownloadClient() {
     void setLicenseKey(inputValue.trim());
   };
 
-  const handleDownload = () => {
-    if (exportData?.found && exportData.export?.blobUrl) {
-      recordDownloadMutation.mutate({ licenseKey });
+  const handleDownload = async () => {
+    if (!exportData?.found || !exportData.export?.blobUrl) return;
+
+    try {
+      setIsDownloading(true);
+      setDownloadError(null);
+
+      // Create iframe to trigger download without navigation
+      const downloadUrl = `/api/download?licenseKey=${encodeURIComponent(licenseKey)}`;
+      const iframe = document.createElement("iframe");
+      iframe.style.display = "none";
+      iframe.src = downloadUrl;
+      document.body.appendChild(iframe);
+
+      // Wait a bit before refetching to allow download to start
+      setTimeout(() => {
+        void refetch();
+        setIsDownloading(false);
+        // Clean up iframe after download starts
+        setTimeout(() => {
+          document.body.removeChild(iframe);
+        }, 1000);
+      }, 2000);
+    } catch (error) {
+      console.error("Download failed:", error);
+      setDownloadError(
+        error instanceof Error ? error.message : "Failed to download file",
+      );
+      setIsDownloading(false);
     }
   };
 
@@ -278,6 +290,15 @@ export function DownloadClient() {
                           ${(exportData.export.price / 100).toFixed(2)}
                         </dd>
                       </div>
+                      <div>
+                        <dt className="text-sm font-medium text-gray-500">
+                          Downloads Remaining
+                        </dt>
+                        <dd className="mt-1 text-sm text-gray-900">
+                          {exportData.export.downloadsRemaining} of{" "}
+                          {exportData.export.maxDownloads}
+                        </dd>
+                      </div>
                     </dl>
                   </div>
                 </div>
@@ -287,27 +308,45 @@ export function DownloadClient() {
                 <>
                   <button
                     onClick={handleDownload}
-                    disabled={recordDownloadMutation.isPending}
+                    disabled={
+                      isDownloading ||
+                      exportData.export.downloadsRemaining === 0
+                    }
                     className={cn(
                       "flex w-full items-center justify-center gap-x-2 rounded-md px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600",
-                      !recordDownloadMutation.isPending
+                      !isDownloading &&
+                        exportData.export.downloadsRemaining > 0
                         ? "cursor-pointer bg-rose-600 hover:bg-rose-500"
                         : "cursor-not-allowed bg-gray-300",
                     )}
                   >
                     <ArrowDownTrayIcon className="h-5 w-5" />
-                    {recordDownloadMutation.isPending
+                    {isDownloading
                       ? "Preparing download..."
-                      : "Download Dataset"}
+                      : exportData.export.downloadsRemaining === 0
+                        ? "Download Limit Reached"
+                        : "Download Dataset"}
                   </button>
 
                   {/* Error message */}
-                  {recordDownloadMutation.isError && (
+                  {downloadError && (
                     <div className="rounded-lg bg-red-50 p-4">
                       <p className="text-sm font-medium text-red-800">
-                        {recordDownloadMutation.error instanceof Error
-                          ? recordDownloadMutation.error.message
-                          : "Failed to prepare download. Please try again."}
+                        {downloadError}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Download limit info */}
+                  {exportData.export.downloadsRemaining === 0 && (
+                    <div className="rounded-lg bg-yellow-50 p-4">
+                      <p className="text-sm font-medium text-yellow-800">
+                        Download limit reached for this license key
+                      </p>
+                      <p className="mt-1 text-sm text-yellow-700">
+                        You have used all {exportData.export.maxDownloads}{" "}
+                        allowed downloads. Please contact support if you need
+                        additional downloads.
                       </p>
                     </div>
                   )}
