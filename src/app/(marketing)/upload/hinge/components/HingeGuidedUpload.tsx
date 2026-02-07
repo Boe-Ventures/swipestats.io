@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import JSZip from "jszip";
 import { CloudArrowUpIcon } from "@heroicons/react/24/outline";
@@ -43,8 +43,11 @@ export function HingeGuidedUpload({
   const [jsonContents, setJsonContents] = useState<string[]>([]);
   const [extractedPayload, setExtractedPayload] =
     useState<SwipestatsHingeProfilePayload | null>(null);
+  const isProcessingRef = useRef(false);
 
   const processFiles = async (files: File[]) => {
+    if (isProcessingRef.current) return;
+    isProcessingRef.current = true;
     setIsProcessing(true);
     setError(null);
     onUploadStart?.(); // Notify parent that upload has started
@@ -120,6 +123,7 @@ export function HingeGuidedUpload({
         err instanceof Error ? err.message : "Failed to process Hinge files",
       );
     } finally {
+      isProcessingRef.current = false;
       setIsProcessing(false);
     }
   };

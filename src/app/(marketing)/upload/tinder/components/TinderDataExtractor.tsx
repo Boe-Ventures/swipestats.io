@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import JSZip from "jszip";
 import { FileUploadZone } from "../../_components/FileUploadZone";
 import { InfoAlert, PrimaryAlert } from "@/components/ui/alert";
@@ -22,8 +22,11 @@ export function TinderDataExtractor({
   const { trackEvent } = useAnalytics();
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isProcessingRef = useRef(false);
 
   const processFile = async (file: File) => {
+    if (isProcessingRef.current) return;
+    isProcessingRef.current = true;
     setIsProcessing(true);
     setError(null);
 
@@ -156,6 +159,7 @@ export function TinderDataExtractor({
       setError(errorMessage);
       onError(errorMessage);
     } finally {
+      isProcessingRef.current = false;
       setIsProcessing(false);
     }
   };
