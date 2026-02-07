@@ -54,14 +54,25 @@ export const auth = betterAuth({
         );
 
         // Send via Resend
-        await resend.emails.send({
+        const result = await resend.emails.send({
           from: "SwipeStats <noreply@mail.swipestats.io>",
           to: user.email,
           subject: "Verify your email address",
           html: emailHtml,
         });
 
-        console.log(`[Email] Verification email sent to ${user.email}`);
+        // Check if there was an error
+        if (result.error) {
+          console.error(
+            `[Email] Failed to send verification email to ${user.email}:`,
+            result.error,
+          );
+          return;
+        }
+
+        console.log(
+          `[Email] Verification email sent to ${user.email} (ID: ${result.data?.id})`,
+        );
       } catch (error) {
         console.error(
           `[Email] Failed to send verification email to ${user.email}:`,
