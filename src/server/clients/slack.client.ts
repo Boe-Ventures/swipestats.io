@@ -215,7 +215,10 @@ async function sendSlackMessageAsync(params: {
         void captureException(slackError, "system");
       } catch (posthogError) {
         // Ignore PostHog errors - don't want to break Slack error handling
-        console.warn("⚠️ [PostHog] Failed to capture Slack error:", posthogError);
+        console.warn(
+          "⚠️ [PostHog] Failed to capture Slack error:",
+          posthogError,
+        );
       }
 
       return {
@@ -398,7 +401,6 @@ export function sendEvent(params: {
     photos,
     usageDays,
     processingTimeMs,
-    profileUrl,
     tinderId,
     ...otherFields
   } = fields;
@@ -460,7 +462,7 @@ export function sendEvent(params: {
     const baseUrl = env.NEXT_PUBLIC_BASE_URL;
     const profileUrl = `${baseUrl}/insights/tinder/${tinderId}`;
     const adminUrl = `${baseUrl}/admin/insights/tinder/${tinderId}`;
-    
+
     blocks.push(
       createActionsBlock([
         createButtonElement("View Profile", "view_profile", profileUrl),
@@ -577,7 +579,7 @@ function createSectionBlock(text: string): SectionBlock {
 }
 
 /** INTERNAL: Create a section block with field blocks */
-function createSectionBlockWithFields(fields: TextObject[]): SectionBlock {
+function _createSectionBlockWithFields(fields: TextObject[]): SectionBlock {
   return {
     type: "section",
     fields,
@@ -645,13 +647,15 @@ function formatFieldName(key: string): string {
  */
 function sanitizeSlackText(text: string | undefined | null): string {
   if (!text) return "";
-  
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    // Limit length to avoid block size limits
-    .slice(0, 500);
+
+  return (
+    text
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      // Limit length to avoid block size limits
+      .slice(0, 500)
+  );
 }
 
 // =====================================================
@@ -878,7 +882,8 @@ export async function trackSlackEvent<T extends ServerAnalyticsEventName>(
           userName: sanitizeSlackText(user?.name) || "Unknown",
           userEmail: sanitizeSlackText(user?.email) || "No email",
           gender: profile?.gender ?? undefined,
-          hometowns: sanitizeSlackText(profile?.hometowns?.join(", ")) || undefined,
+          hometowns:
+            sanitizeSlackText(profile?.hometowns?.join(", ")) || undefined,
           matches: props.matchCount,
           messages: props.messageCount,
           photos: props.photoCount,
@@ -1083,7 +1088,8 @@ export async function trackSlackEvent<T extends ServerAnalyticsEventName>(
       sendError({
         channel,
         title: "Payment Failed",
-        error: sanitizeSlackText(props.errorMessage) || "Payment processing failed",
+        error:
+          sanitizeSlackText(props.errorMessage) || "Payment processing failed",
         context: {
           userId,
           userName: sanitizeSlackText(user?.name) || "Unknown",
