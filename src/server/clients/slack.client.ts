@@ -13,6 +13,7 @@ import {
   tinderProfileTable,
   userTable,
 } from "@/server/db/schema";
+import { captureException } from "@/server/clients/posthog.client";
 
 // =====================================================
 // TYPE DEFINITIONS
@@ -204,6 +205,19 @@ async function sendSlackMessageAsync(params: {
         status: response.status,
         error: errorText,
       });
+
+      // Track Slack failure to PostHog (non-blocking, defensive)
+      try {
+        const slackError = new Error(
+          `Slack send failed: ${params.channel} - ${errorText}`,
+        );
+        slackError.name = "SlackWebhookError";
+        void captureException(slackError, "system");
+      } catch (posthogError) {
+        // Ignore PostHog errors - don't want to break Slack error handling
+        console.warn("⚠️ [PostHog] Failed to capture Slack error:", posthogError);
+      }
+
       return {
         success: false,
         error: `HTTP ${response.status}: ${errorText}`,
@@ -215,6 +229,18 @@ async function sendSlackMessageAsync(params: {
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : "Unknown error";
     console.error("❌ [Slack] Error:", errorMsg);
+
+    // Track Slack failure to PostHog (non-blocking, defensive)
+    try {
+      if (error instanceof Error) {
+        error.name = "SlackClientError";
+        void captureException(error, "system");
+      }
+    } catch (posthogError) {
+      // Ignore PostHog errors - don't want to break Slack error handling
+      console.warn("⚠️ [PostHog] Failed to capture Slack error:", posthogError);
+    }
+
     return { success: false, error: errorMsg };
   }
 }
@@ -224,13 +250,13 @@ async function sendSlackMessageAsync(params: {
 // =====================================================
 
 /**
- * INTERNAL: Send a follow-up message with images as thumbnails in context footer
+ * INTERNAL: Send images as thumbnails in context block
  *
  * This is a defensive function that never throws - if images fail to send,
  * it just logs and continues. The main message is always prioritized.
  *
  * @param channel - Slack channel to send to
- * @param imageUrls - Array of public image URLs to display as thumbnails
+ * @param imageUrls - Array of public image URLs to display
  */
 function sendImagesFollowUp(params: {
   channel: SlackChannel;
@@ -245,15 +271,15 @@ function sendImagesFollowUp(params: {
     return;
   }
 
-  // Limit to 10 images to avoid message size limits
+  // Limit to 10 images (Slack allows max 10 elements in context block)
   const limitedUrls = validUrls.slice(0, 10);
 
   try {
-    // Create image elements for context block
+    // Create image elements for context block (thumbnails, clickable)
     const imageElements: ImageElement[] = limitedUrls.map((url, index) => ({
       type: "image",
       image_url: url,
-      alt_text: `Image ${index + 1}`,
+      alt_text: `Photo ${index + 1}`,
     }));
 
     const blocks: Block[] = [
@@ -266,12 +292,12 @@ function sendImagesFollowUp(params: {
     // Send as follow-up message (non-blocking, defensive)
     sendSlackMessage({
       channel: params.channel,
-      text: `Images (${limitedUrls.length})`,
+      text: `📸 Profile Photos (${limitedUrls.length})`,
       blocks,
     });
 
     console.log(
-      `📸 [Slack] Sent ${limitedUrls.length} image(s) to ${params.channel}`,
+      `📸 [Slack] Sent ${limitedUrls.length} thumbnail(s) to ${params.channel}`,
     );
   } catch (error) {
     // Never throw - just log and continue
@@ -359,32 +385,101 @@ export function sendEvent(params: {
 }): void {
   const { emoji, title, fields, eventName } = params;
 
-  const fieldBlocks: TextObject[] = Object.entries(fields)
+  // Extract and format specific fields for condensed layout
+  const {
+    userName,
+    userEmail,
+    gender,
+    age,
+    city,
+    country,
+    matches,
+    messages,
+    photos,
+    usageDays,
+    processingTimeMs,
+    profileUrl,
+    tinderId,
+    ...otherFields
+  } = fields;
+
+  // Build condensed text format
+  const lines: string[] = [];
+
+  // Profile line: Gender • Age • Location (FIRST)
+  const profileParts = [];
+  if (gender) profileParts.push(`*Gender:* ${gender}`);
+  if (age) profileParts.push(`*Age:* ${age}`);
+  if (city || country) {
+    const location = [city, country].filter(Boolean).join(", ");
+    profileParts.push(`*Location:* ${location}`);
+  }
+  if (profileParts.length > 0) lines.push(profileParts.join(" • "));
+
+  // User line: Name • Email (SECOND)
+  if (userName || userEmail) {
+    const parts = [];
+    if (userName) parts.push(`*User:* ${userName}`);
+    if (userEmail) parts.push(`<mailto:${userEmail}|${userEmail}>`);
+    lines.push(parts.join(" • "));
+  }
+
+  // Stats line: Matches • Messages • Photos • Days
+  const statsParts = [];
+  if (matches !== undefined) statsParts.push(`${matches} matches`);
+  if (messages !== undefined) statsParts.push(`${messages} messages`);
+  if (photos !== undefined) statsParts.push(`${photos} photos`);
+  if (usageDays !== undefined) statsParts.push(`${usageDays} days`);
+  if (statsParts.length > 0) lines.push(`*Stats:* ${statsParts.join(" • ")}`);
+
+  // Processing time
+  if (processingTimeMs !== undefined) {
+    lines.push(`*Processing:* ${processingTimeMs}ms`);
+  }
+
+  // Any other fields (excluding tinderId since we'll use it for buttons)
+  Object.entries(otherFields)
     .filter(([_, value]) => value !== undefined)
-    .map(([key, value]) => ({
-      type: "mrkdwn" as const,
-      text: `*${formatFieldName(key)}:*\n${String(value)}`,
-    }));
+    .forEach(([key, value]) => {
+      lines.push(`*${formatFieldName(key)}:* ${value}`);
+    });
+
+  const formattedText = lines.join("\n");
 
   const contextText = eventName
     ? `${ENV_LABEL} | \`${eventName}\` | ${new Date().toISOString()}`
     : `${ENV_LABEL} | ${new Date().toISOString()}`;
 
+  // Build blocks array
   const blocks: Block[] = [
-    createSectionBlock(`${emoji} *${title}*`),
-    ...(fieldBlocks.length > 0
-      ? [createSectionBlockWithFields(fieldBlocks)]
-      : []),
-    createContextBlock(contextText),
+    createSectionBlock(`${emoji} *${title}*\n\n${formattedText}`),
   ];
 
+  // Add buttons using base URL and tinderId
+  if (tinderId) {
+    const baseUrl = env.NEXT_PUBLIC_BASE_URL;
+    const profileUrl = `${baseUrl}/insights/tinder/${tinderId}`;
+    const adminUrl = `${baseUrl}/admin/insights/tinder/${tinderId}`;
+    
+    blocks.push(
+      createActionsBlock([
+        createButtonElement("View Profile", "view_profile", profileUrl),
+        createButtonElement("View Admin", "view_admin", adminUrl, "primary"),
+      ]),
+    );
+  }
+
+  // Add context block at the end
+  blocks.push(createContextBlock(contextText));
+
+  // Send main message
   sendSlackMessage({
     channel: params.channel,
     text: `${emoji} ${title}`,
     blocks,
   });
 
-  // Send images in follow-up message if provided
+  // Send images in separate follow-up message if provided
   if (params.imageUrls && params.imageUrls.length > 0) {
     sendImagesFollowUp({
       channel: params.channel,
@@ -544,6 +639,21 @@ function formatFieldName(key: string): string {
     .trim();
 }
 
+/**
+ * INTERNAL: Sanitize text for Slack mrkdwn format
+ * Escapes special characters that can break Slack blocks
+ */
+function sanitizeSlackText(text: string | undefined | null): string {
+  if (!text) return "";
+  
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    // Limit length to avoid block size limits
+    .slice(0, 500);
+}
+
 // =====================================================
 // ANALYTICS INTEGRATION
 // =====================================================
@@ -609,8 +719,7 @@ export async function trackSlackEvent<T extends ServerAnalyticsEventName>(
           where: eq(tinderProfileTable.tinderId, props.tinderId),
           columns: {
             gender: true,
-            ageFilterMin: true,
-            ageFilterMax: true,
+            birthDate: true,
             city: true,
             country: true,
             bio: true,
@@ -623,26 +732,41 @@ export async function trackSlackEvent<T extends ServerAnalyticsEventName>(
         }),
       ]);
 
+      // Calculate actual age from birthDate
+      const calculateAge = (birthDate: Date): number => {
+        const today = new Date();
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        if (
+          monthDiff < 0 ||
+          (monthDiff === 0 && today.getDate() < birthDate.getDate())
+        ) {
+          age--;
+        }
+        return age;
+      };
+
+      const userAge = profile?.birthDate
+        ? calculateAge(profile.birthDate)
+        : undefined;
+
       sendEvent({
         channel,
         emoji: "📊",
         title: "Tinder Profile Created",
         fields: {
           tinderId: props.tinderId,
-          userName: user?.name ?? "Unknown",
-          userEmail: user?.email ?? "No email",
+          userName: sanitizeSlackText(user?.name) || "Unknown",
+          userEmail: sanitizeSlackText(user?.email) || "No email",
           gender: profile?.gender ?? undefined,
-          age: profile?.ageFilterMin
-            ? `${profile.ageFilterMin}-${profile.ageFilterMax}`
-            : undefined,
-          city: profile?.city ?? undefined,
-          country: profile?.country ?? undefined,
+          age: userAge,
+          city: sanitizeSlackText(profile?.city) || undefined,
+          country: sanitizeSlackText(profile?.country) || undefined,
           matches: props.matchCount,
           messages: props.messageCount,
           photos: props.photoCount,
           usageDays: props.usageDays,
           processingTimeMs: props.processingTimeMs,
-          profileUrl: `https://swipestats.io/insights/${props.tinderId}`,
         },
         eventName: event,
         imageUrls: media
@@ -677,7 +801,7 @@ export async function trackSlackEvent<T extends ServerAnalyticsEventName>(
         title: "Tinder Profile Updated",
         fields: {
           tinderId: props.tinderId,
-          userName: user?.name ?? "Unknown",
+          userName: sanitizeSlackText(user?.name) || "Unknown",
           matches: props.matchCount,
           messages: props.messageCount,
           photos: props.photoCount,
@@ -707,10 +831,10 @@ export async function trackSlackEvent<T extends ServerAnalyticsEventName>(
       sendError({
         channel,
         title: "Tinder Upload Failed",
-        error: props.errorMessage,
+        error: sanitizeSlackText(props.errorMessage),
         context: {
           userId,
-          userName: user?.name ?? "Unknown",
+          userName: sanitizeSlackText(user?.name) || "Unknown",
           tinderId: props.tinderId ?? "unknown",
           errorType: props.errorType,
           jsonSizeMB: props.jsonSizeMB ?? 0,
@@ -751,10 +875,10 @@ export async function trackSlackEvent<T extends ServerAnalyticsEventName>(
         title: "Hinge Profile Created",
         fields: {
           hingeId: props.hingeId,
-          userName: user?.name ?? "Unknown",
-          userEmail: user?.email ?? "No email",
+          userName: sanitizeSlackText(user?.name) || "Unknown",
+          userEmail: sanitizeSlackText(user?.email) || "No email",
           gender: profile?.gender ?? undefined,
-          hometowns: profile?.hometowns?.join(", ") ?? undefined,
+          hometowns: sanitizeSlackText(profile?.hometowns?.join(", ")) || undefined,
           matches: props.matchCount,
           messages: props.messageCount,
           photos: props.photoCount,
@@ -796,7 +920,7 @@ export async function trackSlackEvent<T extends ServerAnalyticsEventName>(
         title: "Hinge Profile Updated",
         fields: {
           hingeId: props.hingeId,
-          userName: user?.name ?? "Unknown",
+          userName: sanitizeSlackText(user?.name) || "Unknown",
           matches: props.matchCount,
           messages: props.messageCount,
           photos: props.photoCount,
@@ -827,10 +951,10 @@ export async function trackSlackEvent<T extends ServerAnalyticsEventName>(
       sendError({
         channel,
         title: "Hinge Upload Failed",
-        error: props.errorMessage,
+        error: sanitizeSlackText(props.errorMessage),
         context: {
           userId,
-          userName: user?.name ?? "Unknown",
+          userName: sanitizeSlackText(user?.name) || "Unknown",
           hingeId: props.hingeId ?? "unknown",
           errorType: props.errorType,
           jsonSizeMB: props.jsonSizeMB ?? 0,
@@ -862,8 +986,8 @@ export async function trackSlackEvent<T extends ServerAnalyticsEventName>(
           tier: props.tier,
           source: props.source,
           billingPeriod: props.billingPeriod ?? "unknown",
-          userName: user?.name ?? "Unknown",
-          userEmail: user?.email ?? "No email",
+          userName: sanitizeSlackText(user?.name) || "Unknown",
+          userEmail: sanitizeSlackText(user?.email) || "No email",
           userId,
         },
         eventName: event,
@@ -892,10 +1016,10 @@ export async function trackSlackEvent<T extends ServerAnalyticsEventName>(
         title: "Subscription Cancelled",
         fields: {
           tier: props.tier,
-          reason: props.reason,
+          reason: sanitizeSlackText(props.reason),
           hadActiveSubscription: props.hadActiveSubscription,
-          userName: user?.name ?? "Unknown",
-          userEmail: user?.email ?? "No email",
+          userName: sanitizeSlackText(user?.name) || "Unknown",
+          userEmail: sanitizeSlackText(user?.email) || "No email",
           userId,
         },
         eventName: event,
@@ -935,8 +1059,8 @@ export async function trackSlackEvent<T extends ServerAnalyticsEventName>(
           amount: `${props.currency.toUpperCase()} ${props.amount}`,
           orderId: props.orderId,
           subscriptionId: props.subscriptionId ?? "N/A (lifetime)",
-          userName: user?.name ?? "Unknown",
-          userEmail: user?.email ?? "No email",
+          userName: sanitizeSlackText(user?.name) || "Unknown",
+          userEmail: sanitizeSlackText(user?.email) || "No email",
           userId,
         },
         eventName: event,
@@ -959,11 +1083,11 @@ export async function trackSlackEvent<T extends ServerAnalyticsEventName>(
       sendError({
         channel,
         title: "Payment Failed",
-        error: props.errorMessage ?? "Payment processing failed",
+        error: sanitizeSlackText(props.errorMessage) || "Payment processing failed",
         context: {
           userId,
-          userName: user?.name ?? "Unknown",
-          userEmail: user?.email ?? "No email",
+          userName: sanitizeSlackText(user?.name) || "Unknown",
+          userEmail: sanitizeSlackText(user?.email) || "No email",
           subscriptionId: props.subscriptionId ?? "none",
           amount: props.amount,
           currency: props.currency,
@@ -993,7 +1117,7 @@ export async function trackSlackEvent<T extends ServerAnalyticsEventName>(
           comparisonId: props.comparisonId,
           columnCount: props.columnCount,
           hasCustomPhotos: props.hasCustomPhotos,
-          userName: user?.name ?? "Unknown",
+          userName: sanitizeSlackText(user?.name) || "Unknown",
           comparisonUrl: `https://swipestats.io/compare/${props.comparisonId}`,
         },
         eventName: event,
