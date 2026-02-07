@@ -16,77 +16,53 @@
     "city": "San Francisco",
     "country": "NO",
     "region": "United States",
-    "userInterests": [
-      "Travel",
-      "Entrepreneurship",
-      "Sci-Fi"
-    ],
+    "userInterests": ["Travel", "Entrepreneurship", "Sci-Fi"],
     "interests": null,
     "sexualOrientations": "Straight",
     "descriptors": [
       {
         "name": "Looking for",
-        "choices": [
-          "Short-term fun"
-        ],
+        "choices": ["Short-term fun"],
         "visibility": "public"
       },
       {
         "name": "Smoking",
-        "choices": [
-          "Non-smoker"
-        ],
+        "choices": ["Non-smoker"],
         "visibility": "public"
       },
       {
         "name": "Workout",
-        "choices": [
-          "Often"
-        ],
+        "choices": ["Often"],
         "visibility": "public"
       },
       {
         "name": "Drinking",
-        "choices": [
-          "Socially on weekends"
-        ],
+        "choices": ["Socially on weekends"],
         "visibility": "public"
       },
       {
         "name": "Zodiac",
-        "choices": [
-          "Scorpio"
-        ],
+        "choices": ["Scorpio"],
         "visibility": "public"
       },
       {
         "name": "Education",
-        "choices": [
-          "Masters"
-        ],
+        "choices": ["Masters"],
         "visibility": "public"
       },
       {
         "name": "Love Style",
-        "choices": [
-          "Compliments"
-        ],
+        "choices": ["Compliments"],
         "visibility": "public"
       },
       {
         "name": "Languages I Know",
-        "choices": [
-          "English",
-          "Norwegian",
-          "Spanish"
-        ],
+        "choices": ["English", "Norwegian", "Spanish"],
         "visibility": "public"
       },
       {
         "name": "Height",
-        "choices": [
-          "193 cm"
-        ],
+        "choices": ["193 cm"],
         "visibility": "public"
       }
     ],

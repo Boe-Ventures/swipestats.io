@@ -476,18 +476,30 @@ export function SwipeComparisonChart() {
                 return (
                   <div className="bg-background rounded-lg border p-3 shadow-lg">
                     <p className="mb-2 font-medium">{label}</p>
-                    {payload.map((entry: { color?: string; name?: string; value?: number | string }, i) => (
-                      <div key={i} className="flex items-center gap-2 text-sm">
+                    {payload.map(
+                      (
+                        entry: {
+                          color?: string;
+                          name?: string;
+                          value?: number | string;
+                        },
+                        i,
+                      ) => (
                         <div
-                          className="h-2 w-2 rounded-full"
-                          style={{ backgroundColor: entry.color }}
-                        />
-                        <span className="text-muted-foreground">
-                          {entry.name}:
-                        </span>
-                        <span className="font-medium">{entry.value}</span>
-                      </div>
-                    ))}
+                          key={i}
+                          className="flex items-center gap-2 text-sm"
+                        >
+                          <div
+                            className="h-2 w-2 rounded-full"
+                            style={{ backgroundColor: entry.color }}
+                          />
+                          <span className="text-muted-foreground">
+                            {entry.name}:
+                          </span>
+                          <span className="font-medium">{entry.value}</span>
+                        </div>
+                      ),
+                    )}
                   </div>
                 );
               }}

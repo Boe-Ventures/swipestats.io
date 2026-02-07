@@ -67,7 +67,8 @@ export const env = createEnv({
     SLACK_WEBHOOK_AI_PHOTOS: process.env.SLACK_WEBHOOK_AI_PHOTOS,
     SLACK_WEBHOOK_BOT_DEVELOPER: process.env.SLACK_WEBHOOK_BOT_DEVELOPER,
     SLACK_WEBHOOK_SALES: process.env.SLACK_WEBHOOK_SALES,
-    SLACK_WEBHOOK_RICH_MESSAGE_TEST: process.env.SLACK_WEBHOOK_RICH_MESSAGE_TEST,
+    SLACK_WEBHOOK_RICH_MESSAGE_TEST:
+      process.env.SLACK_WEBHOOK_RICH_MESSAGE_TEST,
     // Priority: explicit override > true production > branch URL > localhost default
     NEXT_PUBLIC_BASE_URL:
       process.env.NEXT_PUBLIC_BASE_URL ??

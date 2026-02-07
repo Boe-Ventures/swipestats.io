@@ -1,14 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import {
-  Copy,
-  Eye,
-  Share2,
-  Settings,
-  Plus,
-  BarChart3,
-} from "lucide-react";
+import { Copy, Eye, Share2, Settings, Plus, BarChart3 } from "lucide-react";
 import { z } from "zod";
 import Link from "next/link";
 

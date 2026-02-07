@@ -172,7 +172,9 @@ export function EnhancedMatchTimeline() {
               content={({ active, payload }) => {
                 if (!active || !payload?.length) return null;
 
-                const entry = payload[0] as { payload?: MatchDataPoint } | undefined;
+                const entry = payload[0] as
+                  | { payload?: MatchDataPoint }
+                  | undefined;
                 const data = entry?.payload;
                 if (!data) return null;
                 return (

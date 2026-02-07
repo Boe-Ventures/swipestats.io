@@ -33,8 +33,14 @@ export default function TosPage() {
         </p>
         <ul>
           <li>You upload your own data — never someone else&apos;s</li>
-          <li>You own your raw data; we can use anonymized versions of it for research</li>
-          <li>We sell anonymized research datasets — you can opt out of future ones</li>
+          <li>
+            You own your raw data; we can use anonymized versions of it for
+            research
+          </li>
+          <li>
+            We sell anonymized research datasets — you can opt out of future
+            ones
+          </li>
           <li>Payments are handled by LemonSqueezy (a Stripe company)</li>
           <li>Norwegian law applies; disputes go to Oslo courts</li>
         </ul>
@@ -124,7 +130,9 @@ export default function TosPage() {
             means
           </li>
           <li>Reverse engineer or decompile the software</li>
-          <li>Interfere with security features or overload our infrastructure</li>
+          <li>
+            Interfere with security features or overload our infrastructure
+          </li>
           <li>Use the service for anything illegal</li>
           <li>Impersonate others or collect other users&apos; information</li>
         </ul>
@@ -207,9 +215,7 @@ export default function TosPage() {
             export)
           </li>
           <li>It doesn&apos;t belong to anyone else</li>
-          <li>
-            You have the right to grant us the licenses described above
-          </li>
+          <li>You have the right to grant us the licenses described above</li>
         </ul>
 
         <h2>6. Social sharing</h2>
@@ -319,7 +325,8 @@ export default function TosPage() {
         </p>
         <p>
           <strong>This is not relationship advice.</strong> SwipeStats provides
-          informational analytics only — not professional counseling or guidance.
+          informational analytics only — not professional counseling or
+          guidance.
         </p>
         <p>
           You&apos;re responsible for verifying your own data, any decisions you
@@ -329,9 +336,9 @@ export default function TosPage() {
         <h2>11. Limitation of liability</h2>
         <p>
           TO THE MAXIMUM EXTENT PERMITTED BY LAW, SWIPESTATS IS NOT LIABLE FOR
-          ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE
-          DAMAGES — INCLUDING LOSS OF PROFITS, DATA, GOODWILL, OR COST OF
-          SUBSTITUTE SERVICES.
+          ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES
+          — INCLUDING LOSS OF PROFITS, DATA, GOODWILL, OR COST OF SUBSTITUTE
+          SERVICES.
         </p>
         <p>
           OUR TOTAL LIABILITY FOR ALL CLAIMS IS LIMITED TO THE GREATER OF: (A)
@@ -420,8 +427,8 @@ export default function TosPage() {
           <SmartLink href="/privacy">Privacy Policy</SmartLink> are the entire
           agreement between us. If any part is found unenforceable, the rest
           still applies. Our failure to enforce a right doesn&apos;t waive it.
-          You can&apos;t transfer your rights under these terms; we can. We&apos;re
-          not liable for delays caused by events beyond our control.
+          You can&apos;t transfer your rights under these terms; we can.
+          We&apos;re not liable for delays caused by events beyond our control.
         </p>
 
         <h2>17. Contact</h2>

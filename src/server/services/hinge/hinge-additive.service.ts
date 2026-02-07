@@ -206,10 +206,7 @@ export async function additiveUpdateHingeProfile(data: {
     // 2. Process new matches and messages
     const matchStart = Date.now();
     const { interactionsInput, matchesInput, messagesInput } =
-      createHingeMessagesAndMatches(
-        anonymizedHingeJson.Matches,
-        data.hingeId,
-      );
+      createHingeMessagesAndMatches(anonymizedHingeJson.Matches, data.hingeId);
 
     // Fetch existing match timestamps for deduplication
     const existingMatches = await tx.query.matchTable.findMany({
@@ -445,15 +442,12 @@ export async function absorbHingeProfileIntoNew(data: {
 
     // 3. Transform and prepare new profile data
     const transformStart = Date.now();
-    const newProfileData = transformHingeJsonToProfile(
-      anonymizedHingeJson,
-      {
-        hingeId: data.newHingeId,
-        userId: data.userId,
-        timezone: data.timezone,
-        country: data.country,
-      },
-    );
+    const newProfileData = transformHingeJsonToProfile(anonymizedHingeJson, {
+      hingeId: data.newHingeId,
+      userId: data.userId,
+      timezone: data.timezone,
+      country: data.country,
+    });
 
     // Use the earlier createDate between old and new profiles
     const combinedCreateDate =

@@ -2,12 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import {
-  Check,
-  Plus,
-  Image as ImageIcon,
-  MessageCircle,
-} from "lucide-react";
+import { Check, Plus, Image as ImageIcon, MessageCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";

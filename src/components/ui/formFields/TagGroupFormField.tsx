@@ -57,9 +57,7 @@ export function TagGroupFormField<
                       if (isSelected) {
                         // Remove from selection
                         field.onChange(
-                          currentValue.filter(
-                            (v) => v !== option.value,
-                          ),
+                          currentValue.filter((v) => v !== option.value),
                         );
                       } else {
                         // Add to selection

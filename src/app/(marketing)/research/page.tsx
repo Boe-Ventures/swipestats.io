@@ -8,7 +8,6 @@ import {
   ClockIcon,
   DocumentTextIcon,
   ShieldCheckIcon,
-
   UserGroupIcon,
   VideoCameraIcon,
 } from "@heroicons/react/20/solid";

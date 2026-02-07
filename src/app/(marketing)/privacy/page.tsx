@@ -33,12 +33,15 @@ export default function PrivacyPage() {
         </p>
         <ul>
           <li>
-            <strong>We strip your name, email, phone number, and username</strong>{" "}
+            <strong>
+              We strip your name, email, phone number, and username
+            </strong>{" "}
             from your dating app data before storing it
           </li>
           <li>
             <strong>We do store your photos</strong> anonymously (not linked to
-            your name or contact info) to power features like profile comparisons
+            your name or contact info) to power features like profile
+            comparisons
           </li>
           <li>
             We never sell your personal data — only anonymized, aggregated
@@ -89,9 +92,9 @@ export default function PrivacyPage() {
         </p>
         <p>
           When you upload a data export from Tinder or Hinge, we process the
-          full file but <strong>immediately strip personally identifiable
-          information</strong> before storing anything. Here&apos;s exactly what
-          happens:
+          full file but{" "}
+          <strong>immediately strip personally identifiable information</strong>{" "}
+          before storing anything. Here&apos;s exactly what happens:
         </p>
 
         <p>
@@ -114,7 +117,8 @@ export default function PrivacyPage() {
           <li>Age filter settings</li>
           <li>Account creation date</li>
           <li>
-            Daily usage stats (app opens, swipes, matches, messages sent/received)
+            Daily usage stats (app opens, swipes, matches, messages
+            sent/received)
           </li>
           <li>Match and conversation metadata</li>
           <li>Photos</li>
@@ -221,8 +225,8 @@ export default function PrivacyPage() {
           .
         </p>
         <p>
-          Withdrawing consent doesn&apos;t affect anything we did before
-          you withdrew it. And data that&apos;s already been anonymized into
+          Withdrawing consent doesn&apos;t affect anything we did before you
+          withdrew it. And data that&apos;s already been anonymized into
           aggregate research can&apos;t be deleted — because it&apos;s no longer
           linked to you in any way.
         </p>
@@ -321,9 +325,7 @@ export default function PrivacyPage() {
         <h3>What this means for you</h3>
         <p>Once data is anonymized:</p>
         <ul>
-          <li>
-            It&apos;s no longer &quot;personal data&quot; under the law
-          </li>
+          <li>It&apos;s no longer &quot;personal data&quot; under the law</li>
           <li>It can be kept indefinitely</li>
           <li>
             It can&apos;t be deleted on request (because we genuinely can&apos;t
@@ -427,19 +429,11 @@ export default function PrivacyPage() {
           </li>
         </ul>
 
-        <p>
-          For transfers outside the EEA, we use:
-        </p>
+        <p>For transfers outside the EEA, we use:</p>
         <ul>
-          <li>
-            EU-US Data Privacy Framework (our US providers are certified)
-          </li>
-          <li>
-            Standard Contractual Clauses where the DPF doesn&apos;t apply
-          </li>
-          <li>
-            Additional technical measures where necessary
-          </li>
+          <li>EU-US Data Privacy Framework (our US providers are certified)</li>
+          <li>Standard Contractual Clauses where the DPF doesn&apos;t apply</li>
+          <li>Additional technical measures where necessary</li>
         </ul>
         <p>
           Want details? Email{" "}
@@ -676,9 +670,7 @@ export default function PrivacyPage() {
 
         <h3>How can I manage cookies?</h3>
         <ul>
-          <li>
-            Through our website cookie settings (if available)
-          </li>
+          <li>Through our website cookie settings (if available)</li>
           <li>
             Through your browser settings — most browsers let you block or
             delete cookies
@@ -744,17 +736,15 @@ export default function PrivacyPage() {
         </p>
 
         <h2>14. What happens if there&apos;s a data breach?</h2>
-        <p>
-          If we experience a breach that puts your rights at risk:
-        </p>
+        <p>If we experience a breach that puts your rights at risk:</p>
         <ul>
           <li>
             We&apos;ll notify the Norwegian Data Protection Authority
             (Datatilsynet) within 72 hours
           </li>
           <li>
-            If the breach is high-risk for you personally, we&apos;ll notify
-            you directly without undue delay
+            If the breach is high-risk for you personally, we&apos;ll notify you
+            directly without undue delay
           </li>
           <li>
             We&apos;ll tell you what happened, the likely consequences, and what
@@ -788,7 +778,9 @@ export default function PrivacyPage() {
           <strong>For faster routing, use these subject lines:</strong>
         </p>
         <ul>
-          <li>&quot;Privacy Rights Request&quot; for data access or deletion</li>
+          <li>
+            &quot;Privacy Rights Request&quot; for data access or deletion
+          </li>
           <li>&quot;Security Concern&quot; for security issues</li>
           <li>&quot;Support&quot; for general questions</li>
         </ul>
@@ -799,9 +791,7 @@ export default function PrivacyPage() {
           <br />
           Norway
         </p>
-        <p>
-          We aim to respond to all inquiries within 5 business days.
-        </p>
+        <p>We aim to respond to all inquiries within 5 business days.</p>
 
         <p className="mt-8 text-sm text-gray-600">
           This Privacy Policy was last updated in February 2026.

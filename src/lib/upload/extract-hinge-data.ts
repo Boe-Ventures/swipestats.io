@@ -9,7 +9,7 @@ import type {
   HingeValidationData,
 } from "@/lib/interfaces/HingeDataJSON";
 
-// HingeDataFilePart is documented in HingeDataJSON.ts but we use `unknown[]` 
+// HingeDataFilePart is documented in HingeDataJSON.ts but we use `unknown[]`
 // at runtime since JSON.parse() doesn't provide type guarantees
 import { createSHA256Hash } from "@/lib/utils/hash";
 import { omit } from "@/lib/utils/object";
@@ -71,13 +71,13 @@ function isSubscriptionsFile(data: unknown): boolean {
 
 /**
  * Combine multiple Hinge data file parts into a single structure
- * 
+ *
  * @param dataParts - Array of parsed Hinge file contents. Expected types:
  *   - UserData (user.json)
  *   - Conversations (matches.json)
  *   - PromptEntryList (prompts.json)
  *   - HingeMedia[] (media.json)
- * 
+ *
  * Each part is validated with type guards before being merged.
  */
 function combineHingeDataParts(dataParts: unknown[]): FullHingeDataJSON {
@@ -182,7 +182,7 @@ async function createSwipestatsProfileId(
 
 /**
  * Extract and anonymize Hinge data from multiple JSON strings
- * 
+ *
  * @param jsonStrings - Array of JSON file contents from Hinge export.
  * Expected files: user.json, matches.json, prompts.json, media.json
  * See HingeDataFilePart type in HingeDataJSON.ts for file type details.
@@ -192,8 +192,8 @@ export async function extractHingeData(
 ): Promise<SwipestatsHingeProfilePayload> {
   try {
     // Parse each file - treat as unknown until validated by type guards
-    const hingeDataParts = jsonStrings.map((jsonString) =>
-      JSON.parse(jsonString) as unknown,
+    const hingeDataParts = jsonStrings.map(
+      (jsonString) => JSON.parse(jsonString) as unknown,
     );
 
     const hingeJson = combineHingeDataParts(hingeDataParts);

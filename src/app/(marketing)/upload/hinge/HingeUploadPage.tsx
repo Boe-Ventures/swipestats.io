@@ -51,7 +51,8 @@ export function HingeUploadPage({ isUpdate, isDebug }: HingeUploadPageProps) {
   // Derive birthDate for identity mismatch detection
   const birthDate = useMemo(() => {
     if (!payload?.anonymizedHingeJson.User.profile.age) return undefined;
-    if (!payload?.anonymizedHingeJson.User.account.signup_time) return undefined;
+    if (!payload?.anonymizedHingeJson.User.account.signup_time)
+      return undefined;
     return deriveBirthDateFromJson(
       payload.anonymizedHingeJson.User.profile.age,
       payload.anonymizedHingeJson.User.account.signup_time,
@@ -74,7 +75,10 @@ export function HingeUploadPage({ isUpdate, isDebug }: HingeUploadPageProps) {
           trpc.hingeProfile.get.queryOptions({ hingeId: hingeId ?? "" }),
         );
         void queryClient.invalidateQueries(
-          trpc.hingeProfile.getUploadContext.queryOptions({ hingeId, birthDate }),
+          trpc.hingeProfile.getUploadContext.queryOptions({
+            hingeId,
+            birthDate,
+          }),
         );
         alert("Profile deleted successfully!");
         setPayload(null); // Reset to upload state
@@ -243,35 +247,36 @@ export function HingeUploadPage({ isUpdate, isDebug }: HingeUploadPageProps) {
               </div>
             )}
 
-          {uploadContext?.scenario === "different_hingeId" && isBackwardMerge && (
-            <div className="mt-6 rounded-lg border-2 border-red-300 bg-red-50 p-4">
-              <h3 className="mb-1 text-sm font-semibold text-red-900">
-                Wrong Order - Older Account Detected
-              </h3>
-              <p className="text-xs text-red-700">
-                This file is from an older Hinge account than your current
-                profile. Account merges must go from older to newer to avoid
-                data issues.
-              </p>
-              <p className="mt-2 text-xs text-red-600">
-                <strong>To fix:</strong> Delete your current profile first, then
-                upload this older file, then upload your newer account.
-              </p>
-              {uploadContext.userProfile && (
-                <p className="mt-2 text-xs text-red-500">
-                  Your profile created:{" "}
-                  {new Date(
-                    uploadContext.userProfile.createDate,
-                  ).toLocaleDateString()}
-                  <br />
-                  This file created:{" "}
-                  {new Date(
-                    payload.anonymizedHingeJson.User.account.signup_time,
-                  ).toLocaleDateString()}
+          {uploadContext?.scenario === "different_hingeId" &&
+            isBackwardMerge && (
+              <div className="mt-6 rounded-lg border-2 border-red-300 bg-red-50 p-4">
+                <h3 className="mb-1 text-sm font-semibold text-red-900">
+                  Wrong Order - Older Account Detected
+                </h3>
+                <p className="text-xs text-red-700">
+                  This file is from an older Hinge account than your current
+                  profile. Account merges must go from older to newer to avoid
+                  data issues.
                 </p>
-              )}
-            </div>
-          )}
+                <p className="mt-2 text-xs text-red-600">
+                  <strong>To fix:</strong> Delete your current profile first,
+                  then upload this older file, then upload your newer account.
+                </p>
+                {uploadContext.userProfile && (
+                  <p className="mt-2 text-xs text-red-500">
+                    Your profile created:{" "}
+                    {new Date(
+                      uploadContext.userProfile.createDate,
+                    ).toLocaleDateString()}
+                    <br />
+                    This file created:{" "}
+                    {new Date(
+                      payload.anonymizedHingeJson.User.account.signup_time,
+                    ).toLocaleDateString()}
+                  </p>
+                )}
+              </div>
+            )}
 
           {uploadContext?.scenario === "different_hingeId" &&
             uploadContext?.identityMismatch && (
@@ -280,9 +285,9 @@ export function HingeUploadPage({ isUpdate, isDebug }: HingeUploadPageProps) {
                   Identity Mismatch Detected
                 </h3>
                 <p className="text-xs text-red-700">
-                  These profiles appear to be from different people (age/birthdate
-                  mismatch). This usually happens when testing with different
-                  users&apos; data.
+                  These profiles appear to be from different people
+                  (age/birthdate mismatch). This usually happens when testing
+                  with different users&apos; data.
                 </p>
                 <p className="mt-2 text-xs text-red-600">
                   <strong>To fix:</strong> Delete your current profile first

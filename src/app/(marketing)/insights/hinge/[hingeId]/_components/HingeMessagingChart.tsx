@@ -202,7 +202,9 @@ export function HingeMessagingChart() {
               content={({ active, payload }) => {
                 if (!active || !payload?.length) return null;
 
-                const entry = payload[0] as { payload?: MessageDataPoint } | undefined;
+                const entry = payload[0] as
+                  | { payload?: MessageDataPoint }
+                  | undefined;
                 const data = entry?.payload;
                 if (!data) return null;
                 return (

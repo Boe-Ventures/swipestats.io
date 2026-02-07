@@ -460,7 +460,10 @@ function generateWeekRange(startWeek: string, endWeek: string): string[] {
 /**
  * Helper: Return an empty aggregation object (for gap periods)
  */
-function emptyAggregation(): Omit<AggregatedUsageData, "period" | "periodDisplay"> {
+function emptyAggregation(): Omit<
+  AggregatedUsageData,
+  "period" | "periodDisplay"
+> {
   return {
     matches: 0,
     swipeLikes: 0,

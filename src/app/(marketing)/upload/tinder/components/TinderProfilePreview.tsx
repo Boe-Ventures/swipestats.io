@@ -139,7 +139,8 @@ export function TinderProfilePreview({
         <div className="mt-4">
           <h3 className="text-sm font-semibold text-gray-700">Looking for</h3>
           <p className="mt-1 text-sm text-gray-600">
-            {user.interested_in && `${getInterestedInText(user.interested_in)} `}
+            {user.interested_in &&
+              `${getInterestedInText(user.interested_in)} `}
             ages {user.age_filter_min}-{user.age_filter_max}
           </p>
         </div>
@@ -234,7 +235,7 @@ export function TinderProfilePreview({
         {/* Profile ID */}
         <div className="mt-4 rounded-lg bg-gray-50 p-3">
           <p className="text-xs text-gray-500">Your anonymous SwipeStats ID:</p>
-          <p className="mt-1 font-mono text-xs text-gray-700 overflow-x-auto whitespace-nowrap">
+          <p className="mt-1 overflow-x-auto font-mono text-xs whitespace-nowrap text-gray-700">
             {payload.tinderId}
           </p>
         </div>

@@ -27,7 +27,12 @@ export function ProfileCards() {
   const getMatchRate = (profile: unknown): string | null => {
     try {
       // Check if profile has the required data structure
-      if (!profile || typeof profile !== "object" || !("usage" in profile) || !("profileMeta" in profile)) {
+      if (
+        !profile ||
+        typeof profile !== "object" ||
+        !("usage" in profile) ||
+        !("profileMeta" in profile)
+      ) {
         return null;
       }
       const profileMeta = getGlobalMeta(profile as TinderProfileWithUsage);

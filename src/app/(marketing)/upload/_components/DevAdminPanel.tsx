@@ -16,12 +16,22 @@ type DevAdminPanelProps =
   | {
       provider: "tinder";
       uploadContext: UploadContext;
-      deleteProfileMutation: UseMutationResult<unknown, unknown, unknown, unknown>;
+      deleteProfileMutation: UseMutationResult<
+        unknown,
+        unknown,
+        unknown,
+        unknown
+      >;
     }
   | {
       provider: "hinge";
       uploadContext: UploadContext;
-      deleteProfileMutation: UseMutationResult<unknown, unknown, unknown, unknown>;
+      deleteProfileMutation: UseMutationResult<
+        unknown,
+        unknown,
+        unknown,
+        unknown
+      >;
     };
 
 export function DevAdminPanel(props: DevAdminPanelProps) {
@@ -63,12 +73,17 @@ export function DevAdminPanel(props: DevAdminPanelProps) {
           🐛 DEBUG ENV INFO (Remove after checking):
         </p>
         <div className="space-y-1 font-mono text-[10px] text-yellow-800">
-          <p>NEXT_PUBLIC_IS_PRODUCTION: {String(env.NEXT_PUBLIC_IS_PRODUCTION)}</p>
-          <p>NEXT_PUBLIC_VERCEL_ENV: {env.NEXT_PUBLIC_VERCEL_ENV ?? "undefined"}</p>
+          <p>
+            NEXT_PUBLIC_IS_PRODUCTION: {String(env.NEXT_PUBLIC_IS_PRODUCTION)}
+          </p>
+          <p>
+            NEXT_PUBLIC_VERCEL_ENV: {env.NEXT_PUBLIC_VERCEL_ENV ?? "undefined"}
+          </p>
           <p>NEXT_PUBLIC_BASE_URL: {env.NEXT_PUBLIC_BASE_URL}</p>
           <p>showDevTools would be: {String(!env.NEXT_PUBLIC_IS_PRODUCTION)}</p>
           <p className="mt-2 text-yellow-900">
-            If showDevTools is &quot;true&quot; above, this panel should be hidden!
+            If showDevTools is &quot;true&quot; above, this panel should be
+            hidden!
           </p>
         </div>
       </div>

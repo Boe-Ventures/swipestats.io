@@ -314,8 +314,7 @@ export function DownloadClient() {
                     }
                     className={cn(
                       "flex w-full items-center justify-center gap-x-2 rounded-md px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600",
-                      !isDownloading &&
-                        exportData.export.downloadsRemaining > 0
+                      !isDownloading && exportData.export.downloadsRemaining > 0
                         ? "cursor-pointer bg-rose-600 hover:bg-rose-500"
                         : "cursor-not-allowed bg-gray-300",
                     )}

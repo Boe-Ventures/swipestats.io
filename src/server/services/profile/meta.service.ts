@@ -163,7 +163,9 @@ export function getMessagesMetaFromMatches(
 
   // Calculate medians and averages
   if (conversationLengths.length) {
-    const sortedByDays = [...conversationLengths].sort((a, b) => a.days - b.days);
+    const sortedByDays = [...conversationLengths].sort(
+      (a, b) => a.days - b.days,
+    );
     const sortedByMessages = [...conversationLengths].sort(
       (a, b) => a.messages - b.messages,
     );

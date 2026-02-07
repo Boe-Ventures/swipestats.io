@@ -145,7 +145,13 @@ const chartConfig = {
 } satisfies ChartConfig;
 
 export function MasterActivityChart() {
-  const { profile: _profile, usage, tinderId: _tinderId, events, readonly } = useTinderProfile();
+  const {
+    profile: _profile,
+    usage,
+    tinderId: _tinderId,
+    events,
+    readonly,
+  } = useTinderProfile();
   const [visibleMetrics, setVisibleMetrics] = React.useState<Set<string>>(
     new Set(["matches", "swipeLikes"]),
   );
@@ -732,7 +738,9 @@ export function MasterActivityChart() {
                   axisLine={false}
                   tickMargin={8}
                   minTickGap={32}
-                  tickFormatter={(value: string) => periodLabelMap.get(value) ?? value}
+                  tickFormatter={(value: string) =>
+                    periodLabelMap.get(value) ?? value
+                  }
                 />
                 <YAxis tickLine={false} axisLine={false} tickMargin={8} />
                 <ChartTooltip

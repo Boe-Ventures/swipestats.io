@@ -65,10 +65,9 @@ export const photosSchema = z.union([
 
 export const usageSchema = z
   .object({
-    app_opens: dateValueMapSchema.refine(
-      (obj) => Object.keys(obj).length > 0,
-      { message: "app_opens must not be empty" },
-    ),
+    app_opens: dateValueMapSchema.refine((obj) => Object.keys(obj).length > 0, {
+      message: "app_opens must not be empty",
+    }),
     swipes_likes: dateValueMapSchema.optional().default({}),
     swipes_passes: dateValueMapSchema.optional().default({}),
     superlikes: dateValueMapSchema.optional(),
@@ -178,9 +177,7 @@ const tinderUserBaseSchema = z
       .default({ lat: 0, lon: 0 }),
     college: z.array(z.unknown()).optional().default([]),
     user_interests: z.array(z.string()).optional(),
-    sexual_orientations: z
-      .union([z.array(z.string()), z.string()])
-      .optional(),
+    sexual_orientations: z.union([z.array(z.string()), z.string()]).optional(),
     descriptors: z.array(descriptorSchema).optional(),
 
     // New fields in 2025+ exports

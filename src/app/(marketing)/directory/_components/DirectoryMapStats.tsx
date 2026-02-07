@@ -1,13 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import {
-  ChevronDown,
-  ChevronUp,
-  TrendingUp,
-  Globe,
-  Crown,
-} from "lucide-react";
+import { ChevronDown, ChevronUp, TrendingUp, Globe, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/components/ui/index";
 import { useSubscription } from "@/hooks/useSubscription";

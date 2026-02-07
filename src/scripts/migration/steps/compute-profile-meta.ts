@@ -15,10 +15,7 @@
  */
 
 import { db } from "@/server/db";
-import {
-  tinderProfileTable,
-  profileMetaTable,
-} from "@/server/db/schema";
+import { tinderProfileTable, profileMetaTable } from "@/server/db/schema";
 import type { ProfileMetaInsert } from "@/server/db/schema";
 import { eq } from "drizzle-orm";
 import { createId } from "@/server/db/utils";

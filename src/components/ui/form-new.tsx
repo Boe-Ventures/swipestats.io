@@ -2,16 +2,16 @@
 
 /**
  * Modern React Hook Form Components
- * 
+ *
  * This module provides a modern, explicit approach to building forms with React Hook Form.
  * It follows the latest best practices for accessibility, validation, and developer experience.
- * 
+ *
  * Key differences from legacy form.tsx:
  * - Uses direct Controller instead of wrapped FormField
  * - Explicit fieldState handling for validation states
  * - Proper aria-invalid and data-invalid attributes
  * - More flexible and composable
- * 
+ *
  * @example Basic Input Field
  * ```tsx
  * <Controller
@@ -32,7 +32,7 @@
  *   )}
  * />
  * ```
- * 
+ *
  * @example Select Field
  * ```tsx
  * <Controller
@@ -54,7 +54,7 @@
  *   )}
  * />
  * ```
- * 
+ *
  * @example Checkbox Array
  * ```tsx
  * <Controller
@@ -93,7 +93,12 @@ import type { FieldError as RHFFieldError } from "react-hook-form";
 import { cn } from "./lib/utils";
 
 // Re-export for convenience
-export { Controller, FormProvider, useForm, useFormContext } from "react-hook-form";
+export {
+  Controller,
+  FormProvider,
+  useForm,
+  useFormContext,
+} from "react-hook-form";
 export { zodResolver } from "@hookform/resolvers/zod";
 
 /* -----------------------------------------------------------------------------
@@ -118,11 +123,7 @@ interface FieldProps extends React.ComponentProps<"div"> {
   "data-invalid"?: boolean;
 }
 
-function Field({
-  className,
-  orientation = "vertical",
-  ...props
-}: FieldProps) {
+function Field({ className, orientation = "vertical", ...props }: FieldProps) {
   return (
     <div
       data-slot="field"
@@ -130,8 +131,9 @@ function Field({
       className={cn(
         "grid gap-2",
         orientation === "horizontal" && "grid-cols-[1fr_auto] items-center",
-        orientation === "responsive" && "grid-cols-1 md:grid-cols-[1fr_auto] md:items-center",
-        className
+        orientation === "responsive" &&
+          "grid-cols-1 md:grid-cols-[1fr_auto] md:items-center",
+        className,
       )}
       {...props}
     />
@@ -142,10 +144,7 @@ function Field({
  * FieldContent - Groups label and description (for responsive layouts)
  * -------------------------------------------------------------------------- */
 
-function FieldContent({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
+function FieldContent({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="field-content"
@@ -175,9 +174,9 @@ function FieldLabel({
     <label
       data-slot="field-label"
       className={cn(
-        "text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
+        "text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
         variant === "label" && "text-base",
-        className
+        className,
       )}
       {...props}
     />
@@ -188,10 +187,7 @@ function FieldLabel({
  * FieldDescription - Helper text for form fields
  * -------------------------------------------------------------------------- */
 
-function FieldDescription({
-  className,
-  ...props
-}: React.ComponentProps<"p">) {
+function FieldDescription({ className, ...props }: React.ComponentProps<"p">) {
   return (
     <p
       data-slot="field-description"
@@ -238,10 +234,7 @@ function FieldError({ className, errors, ...props }: FieldErrorProps) {
  * FieldSet - Semantic grouping for related fields (radio groups, checkboxes)
  * -------------------------------------------------------------------------- */
 
-function FieldSet({
-  className,
-  ...props
-}: React.ComponentProps<"fieldset">) {
+function FieldSet({ className, ...props }: React.ComponentProps<"fieldset">) {
   return (
     <fieldset
       data-slot="fieldset"
@@ -270,7 +263,7 @@ function FieldLegend({
       className={cn(
         "text-sm font-medium",
         variant === "label" && "text-base",
-        className
+        className,
       )}
       {...props}
     />
@@ -281,10 +274,7 @@ function FieldLegend({
  * FieldGroup - Container for multiple related fields
  * -------------------------------------------------------------------------- */
 
-function FieldGroup({
-  className,
-  ...props
-}: React.ComponentProps<"div">) {
+function FieldGroup({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="field-group"
@@ -292,7 +282,7 @@ function FieldGroup({
         "grid gap-3",
         // Special spacing for checkbox groups
         "data-[slot=checkbox-group]:gap-2",
-        className
+        className,
       )}
       {...props}
     />
@@ -303,10 +293,7 @@ function FieldGroup({
  * FieldTitle - Title within a field (for complex layouts)
  * -------------------------------------------------------------------------- */
 
-function FieldTitle({
-  className,
-  ...props
-}: React.ComponentProps<"p">) {
+function FieldTitle({ className, ...props }: React.ComponentProps<"p">) {
   return (
     <p
       data-slot="field-title"

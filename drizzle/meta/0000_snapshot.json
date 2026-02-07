@@ -109,12 +109,8 @@
           "name": "account_user_id_user_id_fk",
           "tableFrom": "account",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -261,12 +257,8 @@
           "name": "attachment_uploaded_by_user_id_fk",
           "tableFrom": "attachment",
           "tableTo": "user",
-          "columnsFrom": [
-            "uploaded_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["uploaded_by"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -376,12 +368,8 @@
           "name": "cohort_definition_created_by_user_id_user_id_fk",
           "tableFrom": "cohort_definition",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by_user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -576,12 +564,8 @@
           "name": "cohort_stats_cohort_id_cohort_definition_id_fk",
           "tableFrom": "cohort_stats",
           "tableTo": "cohort_definition",
-          "columnsFrom": [
-            "cohort_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["cohort_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -703,12 +687,8 @@
           "name": "comparison_column_content_column_id_comparison_column_id_fk",
           "tableFrom": "comparison_column_content",
           "tableTo": "comparison_column",
-          "columnsFrom": [
-            "column_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["column_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -716,12 +696,8 @@
           "name": "comparison_column_content_attachment_id_attachment_id_fk",
           "tableFrom": "comparison_column_content",
           "tableTo": "attachment",
-          "columnsFrom": [
-            "attachment_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["attachment_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -808,12 +784,8 @@
           "name": "comparison_column_comparison_id_profile_comparison_id_fk",
           "tableFrom": "comparison_column",
           "tableTo": "profile_comparison",
-          "columnsFrom": [
-            "comparison_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["comparison_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -991,12 +963,8 @@
           "name": "custom_data_tinder_profile_id_tinder_profile_tinder_id_fk",
           "tableFrom": "custom_data",
           "tableTo": "tinder_profile",
-          "columnsFrom": [
-            "tinder_profile_id"
-          ],
-          "columnsTo": [
-            "tinder_id"
-          ],
+          "columnsFrom": ["tinder_profile_id"],
+          "columnsTo": ["tinder_id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1004,12 +972,8 @@
           "name": "custom_data_hinge_profile_id_hinge_profile_hinge_id_fk",
           "tableFrom": "custom_data",
           "tableTo": "hinge_profile",
-          "columnsFrom": [
-            "hinge_profile_id"
-          ],
-          "columnsTo": [
-            "hinge_id"
-          ],
+          "columnsFrom": ["hinge_profile_id"],
+          "columnsTo": ["hinge_id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -1017,12 +981,8 @@
           "name": "custom_data_user_id_user_id_fk",
           "tableFrom": "custom_data",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1177,9 +1137,7 @@
         "dataset_export_licenseKey_unique": {
           "name": "dataset_export_licenseKey_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "license_key"
-          ]
+          "columns": ["license_key"]
         }
       },
       "policies": {},
@@ -1309,12 +1267,8 @@
           "name": "event_location_id_location_id_fk",
           "tableFrom": "event",
           "tableTo": "location",
-          "columnsFrom": [
-            "location_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["location_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -1322,12 +1276,8 @@
           "name": "event_user_id_user_id_fk",
           "tableFrom": "event",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1398,12 +1348,8 @@
           "name": "hinge_interaction_match_id_match_id_fk",
           "tableFrom": "hinge_interaction",
           "tableTo": "match",
-          "columnsFrom": [
-            "match_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["match_id"],
+          "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
         },
@@ -1411,12 +1357,8 @@
           "name": "hinge_interaction_hinge_profile_id_hinge_profile_hinge_id_fk",
           "tableFrom": "hinge_interaction",
           "tableTo": "hinge_profile",
-          "columnsFrom": [
-            "hinge_profile_id"
-          ],
-          "columnsTo": [
-            "hinge_id"
-          ],
+          "columnsFrom": ["hinge_profile_id"],
+          "columnsTo": ["hinge_id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1839,12 +1781,8 @@
           "name": "hinge_profile_user_id_user_id_fk",
           "tableFrom": "hinge_profile",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1914,12 +1852,8 @@
           "name": "hinge_prompt_hinge_profile_id_hinge_profile_hinge_id_fk",
           "tableFrom": "hinge_prompt",
           "tableTo": "hinge_profile",
-          "columnsFrom": [
-            "hinge_profile_id"
-          ],
-          "columnsTo": [
-            "hinge_id"
-          ],
+          "columnsFrom": ["hinge_profile_id"],
+          "columnsTo": ["hinge_id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1977,12 +1911,8 @@
           "name": "job_tinder_profile_id_tinder_profile_tinder_id_fk",
           "tableFrom": "job",
           "tableTo": "tinder_profile",
-          "columnsFrom": [
-            "tinder_profile_id"
-          ],
-          "columnsTo": [
-            "tinder_id"
-          ],
+          "columnsFrom": ["tinder_profile_id"],
+          "columnsTo": ["tinder_id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2295,12 +2225,8 @@
           "name": "match_tinder_profile_id_tinder_profile_tinder_id_fk",
           "tableFrom": "match",
           "tableTo": "tinder_profile",
-          "columnsFrom": [
-            "tinder_profile_id"
-          ],
-          "columnsTo": [
-            "tinder_id"
-          ],
+          "columnsFrom": ["tinder_profile_id"],
+          "columnsTo": ["tinder_id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2308,12 +2234,8 @@
           "name": "match_hinge_profile_id_hinge_profile_hinge_id_fk",
           "tableFrom": "match",
           "tableTo": "hinge_profile",
-          "columnsFrom": [
-            "hinge_profile_id"
-          ],
-          "columnsTo": [
-            "hinge_id"
-          ],
+          "columnsFrom": ["hinge_profile_id"],
+          "columnsTo": ["hinge_id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2414,12 +2336,8 @@
           "name": "media_hinge_profile_id_hinge_profile_hinge_id_fk",
           "tableFrom": "media",
           "tableTo": "hinge_profile",
-          "columnsFrom": [
-            "hinge_profile_id"
-          ],
-          "columnsTo": [
-            "hinge_id"
-          ],
+          "columnsFrom": ["hinge_profile_id"],
+          "columnsTo": ["hinge_id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2427,12 +2345,8 @@
           "name": "media_tinder_profile_id_tinder_profile_tinder_id_fk",
           "tableFrom": "media",
           "tableTo": "tinder_profile",
-          "columnsFrom": [
-            "tinder_profile_id"
-          ],
-          "columnsTo": [
-            "tinder_id"
-          ],
+          "columnsFrom": ["tinder_profile_id"],
+          "columnsTo": ["tinder_id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2615,12 +2529,8 @@
           "name": "message_match_id_match_id_fk",
           "tableFrom": "message",
           "tableTo": "match",
-          "columnsFrom": [
-            "match_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["match_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         },
@@ -2628,12 +2538,8 @@
           "name": "message_tinder_profile_id_tinder_profile_tinder_id_fk",
           "tableFrom": "message",
           "tableTo": "tinder_profile",
-          "columnsFrom": [
-            "tinder_profile_id"
-          ],
-          "columnsTo": [
-            "tinder_id"
-          ],
+          "columnsFrom": ["tinder_profile_id"],
+          "columnsTo": ["tinder_id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -2641,12 +2547,8 @@
           "name": "message_hinge_profile_id_hinge_profile_hinge_id_fk",
           "tableFrom": "message",
           "tableTo": "hinge_profile",
-          "columnsFrom": [
-            "hinge_profile_id"
-          ],
-          "columnsTo": [
-            "hinge_id"
-          ],
+          "columnsFrom": ["hinge_profile_id"],
+          "columnsTo": ["hinge_id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2809,12 +2711,8 @@
           "name": "original_anonymized_file_user_id_user_id_fk",
           "tableFrom": "original_anonymized_file",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -2897,12 +2795,8 @@
           "name": "post_created_by_id_user_id_fk",
           "tableFrom": "post",
           "tableTo": "user",
-          "columnsFrom": [
-            "created_by_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -3046,12 +2940,8 @@
           "name": "profile_comparison_feedback_author_id_user_id_fk",
           "tableFrom": "profile_comparison_feedback",
           "tableTo": "user",
-          "columnsFrom": [
-            "author_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["author_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3059,12 +2949,8 @@
           "name": "pcf_content_fk",
           "tableFrom": "profile_comparison_feedback",
           "tableTo": "comparison_column_content",
-          "columnsFrom": [
-            "content_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["content_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3072,12 +2958,8 @@
           "name": "pcf_column_fk",
           "tableFrom": "profile_comparison_feedback",
           "tableTo": "comparison_column",
-          "columnsFrom": [
-            "column_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["column_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3234,12 +3116,8 @@
           "name": "profile_comparison_user_id_user_id_fk",
           "tableFrom": "profile_comparison",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3249,9 +3127,7 @@
         "profile_comparison_shareKey_unique": {
           "name": "profile_comparison_shareKey_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "share_key"
-          ]
+          "columns": ["share_key"]
         }
       },
       "policies": {},
@@ -3425,12 +3301,8 @@
           "name": "profile_meta_tinder_profile_id_tinder_profile_tinder_id_fk",
           "tableFrom": "profile_meta",
           "tableTo": "tinder_profile",
-          "columnsFrom": [
-            "tinder_profile_id"
-          ],
-          "columnsTo": [
-            "tinder_id"
-          ],
+          "columnsFrom": ["tinder_profile_id"],
+          "columnsTo": ["tinder_id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3438,12 +3310,8 @@
           "name": "profile_meta_hinge_profile_id_hinge_profile_hinge_id_fk",
           "tableFrom": "profile_meta",
           "tableTo": "hinge_profile",
-          "columnsFrom": [
-            "hinge_profile_id"
-          ],
-          "columnsTo": [
-            "hinge_id"
-          ],
+          "columnsFrom": ["hinge_profile_id"],
+          "columnsTo": ["hinge_id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3495,12 +3363,8 @@
           "name": "purchase_user_id_user_id_fk",
           "tableFrom": "purchase",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -3508,12 +3372,8 @@
           "name": "purchase_tinder_profile_id_tinder_profile_tinder_id_fk",
           "tableFrom": "purchase",
           "tableTo": "tinder_profile",
-          "columnsFrom": [
-            "tinder_profile_id"
-          ],
-          "columnsTo": [
-            "tinder_id"
-          ],
+          "columnsFrom": ["tinder_profile_id"],
+          "columnsTo": ["tinder_id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3583,12 +3443,8 @@
           "name": "school_tinder_profile_id_tinder_profile_tinder_id_fk",
           "tableFrom": "school",
           "tableTo": "tinder_profile",
-          "columnsFrom": [
-            "tinder_profile_id"
-          ],
-          "columnsTo": [
-            "tinder_id"
-          ],
+          "columnsFrom": ["tinder_profile_id"],
+          "columnsTo": ["tinder_id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3646,12 +3502,8 @@
           "name": "sequence_newsletter_id_newsletter_id_fk",
           "tableFrom": "sequence",
           "tableTo": "newsletter",
-          "columnsFrom": [
-            "newsletter_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["newsletter_id"],
+          "columnsTo": ["id"],
           "onDelete": "restrict",
           "onUpdate": "no action"
         }
@@ -3743,12 +3595,8 @@
           "name": "session_user_id_user_id_fk",
           "tableFrom": "session",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -3758,9 +3606,7 @@
         "session_token_unique": {
           "name": "session_token_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "token"
-          ]
+          "columns": ["token"]
         }
       },
       "policies": {},
@@ -4057,12 +3903,8 @@
           "name": "tinder_profile_user_id_user_id_fk",
           "tableFrom": "tinder_profile",
           "tableTo": "user",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -4202,12 +4044,8 @@
           "name": "tinder_usage_tinder_profile_id_tinder_profile_tinder_id_fk",
           "tableFrom": "tinder_usage",
           "tableTo": "tinder_profile",
-          "columnsFrom": [
-            "tinder_profile_id"
-          ],
-          "columnsTo": [
-            "tinder_id"
-          ],
+          "columnsFrom": ["tinder_profile_id"],
+          "columnsTo": ["tinder_id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -4215,10 +4053,7 @@
       "compositePrimaryKeys": {
         "tinder_usage_date_stamp_raw_tinder_profile_id_pk": {
           "name": "tinder_usage_date_stamp_raw_tinder_profile_id_pk",
-          "columns": [
-            "date_stamp_raw",
-            "tinder_profile_id"
-          ]
+          "columns": ["date_stamp_raw", "tinder_profile_id"]
         }
       },
       "uniqueConstraints": {},
@@ -4477,9 +4312,7 @@
         "user_username_unique": {
           "name": "user_username_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "username"
-          ]
+          "columns": ["username"]
         }
       },
       "policies": {},
@@ -4614,23 +4447,12 @@
     "public.DatasetExportStatus": {
       "name": "DatasetExportStatus",
       "schema": "public",
-      "values": [
-        "PENDING",
-        "GENERATING",
-        "READY",
-        "FAILED"
-      ]
+      "values": ["PENDING", "GENERATING", "READY", "FAILED"]
     },
     "public.DatasetTier": {
       "name": "DatasetTier",
       "schema": "public",
-      "values": [
-        "STARTER",
-        "STANDARD",
-        "FRESH",
-        "PREMIUM",
-        "ACADEMIC"
-      ]
+      "values": ["STARTER", "STANDARD", "FRESH", "PREMIUM", "ACADEMIC"]
     },
     "public.EducationLevel": {
       "name": "EducationLevel",
@@ -4668,22 +4490,12 @@
     "public.Gender": {
       "name": "Gender",
       "schema": "public",
-      "values": [
-        "MALE",
-        "FEMALE",
-        "OTHER",
-        "MORE",
-        "UNKNOWN"
-      ]
+      "values": ["MALE", "FEMALE", "OTHER", "MORE", "UNKNOWN"]
     },
     "public.HingeInteractionType": {
       "name": "HingeInteractionType",
       "schema": "public",
-      "values": [
-        "LIKE_SENT",
-        "REJECT",
-        "UNMATCH"
-      ]
+      "values": ["LIKE_SENT", "REJECT", "UNMATCH"]
     },
     "public.MessageType": {
       "name": "MessageType",
@@ -4701,21 +4513,12 @@
     "public.SwipestatsTier": {
       "name": "SwipestatsTier",
       "schema": "public",
-      "values": [
-        "FREE",
-        "PLUS",
-        "ELITE"
-      ]
+      "values": ["FREE", "PLUS", "ELITE"]
     },
     "public.SwipestatsVersion": {
       "name": "SwipestatsVersion",
       "schema": "public",
-      "values": [
-        "SWIPESTATS_1",
-        "SWIPESTATS_2",
-        "SWIPESTATS_3",
-        "SWIPESTATS_4"
-      ]
+      "values": ["SWIPESTATS_1", "SWIPESTATS_2", "SWIPESTATS_3", "SWIPESTATS_4"]
     }
   },
   "schemas": {},

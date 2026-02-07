@@ -103,7 +103,7 @@ export function TinderDataExtractor({
         ? payload.anonymizedTinderJson.Photos.length
         : 0;
       const hasWork = !!payload.anonymizedTinderJson.User.jobs?.[0];
-      
+
       trackEvent("upload_preview_loaded", {
         provider: "tinder",
         tinderId: payload.tinderId,
@@ -146,7 +146,7 @@ export function TinderDataExtractor({
           : errorMessage.includes("JSON")
             ? "json_parse"
             : "file_read";
-        
+
         trackEvent("upload_file_read_failed", {
           provider: "tinder",
           fileSize: file.size,

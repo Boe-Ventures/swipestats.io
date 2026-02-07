@@ -2,13 +2,13 @@
 
 /**
  * @deprecated This is the legacy form component pattern.
- * 
+ *
  * For NEW components, please use form-new.tsx which follows modern React Hook Form best practices:
  * - Direct Controller with explicit fieldState
  * - Better accessibility (aria-invalid, data-invalid)
  * - More flexible and composable
  * - Self-documenting with examples
- * 
+ *
  * This file is kept for backwards compatibility with existing forms.
  * Migration guide: See form-new.tsx for examples.
  */

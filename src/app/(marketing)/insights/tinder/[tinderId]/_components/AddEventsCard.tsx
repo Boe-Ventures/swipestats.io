@@ -45,11 +45,7 @@ export function AddEventsCard() {
             <div className="flex-1">
               <h2 className="text-xl font-bold">Life Events</h2>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleOpenEventDialog}
-            >
+            <Button variant="outline" size="sm" onClick={handleOpenEventDialog}>
               <Plus className="h-4 w-4" />
             </Button>
           </div>
