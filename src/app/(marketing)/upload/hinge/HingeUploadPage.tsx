@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useTRPC } from "@/trpc/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { UploadLayout } from "../_components/UploadLayout";
+import { DevAdminPanel } from "../_components/DevAdminPanel";
 import { HingeGuidedUpload } from "./components/HingeGuidedUpload";
 import { HingeProfilePreview } from "./components/HingeProfilePreview";
 import { HingeSubmitButton } from "./components/HingeSubmitButton";
@@ -13,6 +14,7 @@ import { HingeTermsCheckbox } from "./components/HingeTermsCheckbox";
 import type { SwipestatsHingeProfilePayload } from "@/lib/interfaces/HingeDataJSON";
 import type { HingeConsentState } from "@/lib/interfaces/HingeConsent";
 import { DEFAULT_HINGE_CONSENT } from "@/lib/interfaces/HingeConsent";
+import { env } from "@/env";
 
 interface HingeUploadPageProps {
   isUpdate: boolean;
@@ -44,7 +46,7 @@ export function HingeUploadPage({ isUpdate, isDebug }: HingeUploadPageProps) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const hingeId = payload?.hingeId;
-  const isDevelopment = process.env.NODE_ENV === "development";
+  const showDevTools = !env.NEXT_PUBLIC_IS_PRODUCTION;
 
   // Derive birthDate for identity mismatch detection
   const birthDate = useMemo(() => {
@@ -67,9 +69,12 @@ export function HingeUploadPage({ isUpdate, isDebug }: HingeUploadPageProps) {
   const deleteProfileMutation = useMutation(
     trpc.admin.deleteHingeProfile.mutationOptions({
       onSuccess: () => {
-        // Invalidate the public profile query so it refetches and returns null
+        // Invalidate queries so they refetch with updated data
         void queryClient.invalidateQueries(
           trpc.hingeProfile.get.queryOptions({ hingeId: hingeId ?? "" }),
+        );
+        void queryClient.invalidateQueries(
+          trpc.hingeProfile.getUploadContext.queryOptions({ hingeId, birthDate }),
         );
         alert("Profile deleted successfully!");
         setPayload(null); // Reset to upload state
@@ -327,78 +332,20 @@ export function HingeUploadPage({ isUpdate, isDebug }: HingeUploadPageProps) {
             </div>
           )}
 
-          {/* Dev Admin Card - only visible in development */}
-          {isDevelopment &&
+          {/* Dev Admin Card - visible on localhost and preview deployments, hidden on production */}
+          {showDevTools &&
             uploadContext &&
             uploadContext.scenario !== "new_user" &&
             uploadContext.scenario !== "new_profile" && (
-              <div className="mt-6 rounded-lg border-2 border-red-300 bg-red-50 p-4">
-                <h3 className="mb-2 text-sm font-semibold text-red-900">
-                  Dev Admin Tools
-                </h3>
-
-                {/* Scenario Information */}
-                <div className="mb-3 text-xs text-red-700">
-                  <p className="font-semibold">
-                    Scenario: {uploadContext.scenario}
-                  </p>
-                  {uploadContext.userProfile && (
-                    <p className="mt-1">
-                      Your profile:{" "}
-                      {uploadContext.userProfile.hingeId.slice(0, 12)}...
-                    </p>
-                  )}
-                  {uploadContext.targetProfile && (
-                    <p className="mt-1">
-                      Target profile:{" "}
-                      {uploadContext.targetProfile.hingeId.slice(0, 12)}...
-                    </p>
-                  )}
-                  {uploadContext.identityMismatch && (
-                    <p className="mt-1 font-semibold text-red-800">
-                      Identity Mismatch Detected
-                    </p>
-                  )}
-                </div>
-
-                {/* Quick Links */}
-                {uploadContext.userProfile && (
-                  <div className="mb-3 flex flex-col gap-2">
-                    <Link
-                      href={`/insights/hinge/${uploadContext.userProfile.hingeId}`}
-                      className="rounded bg-blue-600 px-3 py-1.5 text-center text-xs font-medium text-white hover:bg-blue-700"
-                    >
-                      View Your Profile Insights
-                    </Link>
-                  </div>
-                )}
-
-                {/* Delete Button */}
-                {uploadContext.userProfile && (
-                  <button
-                    onClick={() => {
-                      const profileId = uploadContext.userProfile?.hingeId;
-                      if (!profileId) return;
-
-                      if (
-                        confirm(
-                          `Delete profile ${profileId}? This will cascade delete all related data (matches, messages, prompts, interactions, etc.).`,
-                        )
-                      ) {
-                        deleteProfileMutation.mutate({
-                          hingeId: profileId,
-                        });
-                      }
-                    }}
-                    disabled={deleteProfileMutation.isPending}
-                    className="w-full rounded bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50"
-                  >
-                    {deleteProfileMutation.isPending
-                      ? "Deleting..."
-                      : "Delete Your Profile"}
-                  </button>
-                )}
-              </div>
+              <DevAdminPanel
+                provider="hinge"
+                uploadContext={uploadContext}
+                deleteProfileMutation={
+                  deleteProfileMutation as unknown as Parameters<
+                    typeof DevAdminPanel
+                  >[0]["deleteProfileMutation"]
+                }
+              />
             )}
 
           {/* Debug Info */}

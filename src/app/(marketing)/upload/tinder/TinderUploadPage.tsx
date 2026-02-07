@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useTRPC } from "@/trpc/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { UploadLayout } from "../_components/UploadLayout";
+import { DevAdminPanel } from "../_components/DevAdminPanel";
 import { TinderDataExtractor } from "./components/TinderDataExtractor";
 import { TinderProfilePreview } from "./components/TinderProfilePreview";
 import { TinderEnhancement } from "./components/TinderEnhancement";
@@ -59,9 +60,12 @@ export function TinderUploadPage({ isUpdate, isDebug }: TinderUploadPageProps) {
   const deleteProfileMutation = useMutation(
     trpc.admin.deleteProfile.mutationOptions({
       onSuccess: () => {
-        // Invalidate the public profile query so it refetches and returns null
+        // Invalidate queries so they refetch with updated data
         void queryClient.invalidateQueries(
           trpc.profile.get.queryOptions({ tinderId: tinderId ?? "" }),
+        );
+        void queryClient.invalidateQueries(
+          trpc.profile.getUploadContext.queryOptions({ tinderId, birthDate }),
         );
         alert("Profile deleted successfully!");
         setPayload(null); // Reset to upload state
@@ -354,133 +358,15 @@ export function TinderUploadPage({ isUpdate, isDebug }: TinderUploadPageProps) {
             uploadContext &&
             uploadContext.scenario !== "new_user" &&
             uploadContext.scenario !== "new_profile" && (
-              <div className="mt-6 rounded-lg border-2 border-red-300 bg-red-50 p-4">
-                <h3 className="mb-2 text-sm font-semibold text-red-900">
-                  🛠️ Dev Admin Tools
-                </h3>
-
-                {/* Scenario Information */}
-                <div className="mb-3 text-xs text-red-700">
-                  <p className="font-semibold">
-                    Scenario: {uploadContext.scenario}
-                  </p>
-                  {uploadContext.userProfile && (
-                    <p className="mt-1">
-                      Your profile:{" "}
-                      {uploadContext.userProfile.tinderId.slice(0, 12)}...
-                    </p>
-                  )}
-                  {uploadContext.targetProfile && (
-                    <p className="mt-1">
-                      Target profile:{" "}
-                      {uploadContext.targetProfile.tinderId.slice(0, 12)}...
-                    </p>
-                  )}
-                  {uploadContext.identityMismatch && (
-                    <p className="mt-1 font-semibold text-red-800">
-                      ⚠️ Identity Mismatch Detected
-                    </p>
-                  )}
-                </div>
-
-                {/* Quick Links */}
-                {uploadContext.userProfile && (
-                  <div className="mb-3 flex flex-col gap-2">
-                    <Link
-                      href={`/insights/tinder/${uploadContext.userProfile.tinderId}`}
-                      className="rounded bg-blue-600 px-3 py-1.5 text-center text-xs font-medium text-white hover:bg-blue-700"
-                    >
-                      View Your Profile Insights
-                    </Link>
-                    <Link
-                      href={`/insights/tinder/${uploadContext.userProfile.tinderId}/classic`}
-                      className="rounded bg-purple-600 px-3 py-1.5 text-center text-xs font-medium text-white hover:bg-purple-700"
-                    >
-                      View Classic Insights
-                    </Link>
-                  </div>
-                )}
-
-                {/* Delete Button - Your Profile */}
-                {uploadContext.userProfile && (
-                  <button
-                    onClick={() => {
-                      const profileId = uploadContext.userProfile?.tinderId;
-                      if (!profileId) return;
-
-                      if (
-                        confirm(
-                          `Delete profile ${profileId}? This will cascade delete all related data (matches, messages, usage, etc.).`,
-                        )
-                      ) {
-                        deleteProfileMutation.mutate({
-                          tinderId: profileId,
-                        });
-                      }
-                    }}
-                    disabled={deleteProfileMutation.isPending}
-                    className="w-full rounded bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50"
-                  >
-                    {deleteProfileMutation.isPending
-                      ? "Deleting..."
-                      : "Delete Your Profile"}
-                  </button>
-                )}
-
-              {/* Delete Button - Target Profile (for can_claim scenario) */}
-              {uploadContext.targetProfile &&
-                uploadContext.scenario === "can_claim" && (
-                  <button
-                    onClick={() => {
-                      const profileId = uploadContext.targetProfile?.tinderId;
-                      if (!profileId) return;
-
-                      if (
-                        confirm(
-                          `Delete claimable profile ${profileId.slice(0, 12)}...? This will cascade delete all related data.`,
-                        )
-                      ) {
-                        deleteProfileMutation.mutate({
-                          tinderId: profileId,
-                        });
-                      }
-                    }}
-                    disabled={deleteProfileMutation.isPending}
-                    className="w-full rounded bg-red-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-red-700 disabled:opacity-50"
-                  >
-                    {deleteProfileMutation.isPending
-                      ? "Deleting..."
-                      : "Delete Claimable Profile"}
-                  </button>
-                )}
-
-              {/* Delete Button - Target Profile (for owned_by_other scenario) */}
-              {uploadContext.targetProfile &&
-                uploadContext.scenario === "owned_by_other" && (
-                  <button
-                    onClick={() => {
-                      const profileId = uploadContext.targetProfile?.tinderId;
-                      if (!profileId) return;
-
-                      if (
-                        confirm(
-                          `Delete target profile ${profileId.slice(0, 12)}...? This belongs to another user. This will cascade delete all related data.`,
-                        )
-                      ) {
-                        deleteProfileMutation.mutate({
-                          tinderId: profileId,
-                        });
-                      }
-                    }}
-                    disabled={deleteProfileMutation.isPending}
-                    className="mt-2 w-full rounded bg-orange-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-orange-700 disabled:opacity-50"
-                  >
-                    {deleteProfileMutation.isPending
-                      ? "Deleting..."
-                      : "Delete Target Profile (Other User)"}
-                  </button>
-                )}
-              </div>
+              <DevAdminPanel
+                provider="tinder"
+                uploadContext={uploadContext}
+                deleteProfileMutation={
+                  deleteProfileMutation as unknown as Parameters<
+                    typeof DevAdminPanel
+                  >[0]["deleteProfileMutation"]
+                }
+              />
             )}
 
           {/* Debug Info */}
