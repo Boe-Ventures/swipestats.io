@@ -55,6 +55,7 @@
         "@vercel/analytics": "^1.6.1",
         "@vercel/blob": "^0.27.0",
         "@vercel/functions": "^3.3.6",
+        "@vercel/speed-insights": "^1.3.1",
         "ai": "^6.0.0-beta.127",
         "better-auth": "^1.4.16",
         "chrono-node": "^2.9.0",
@@ -875,6 +876,8 @@
     "@vercel/functions": ["@vercel/functions@3.4.0", "", { "dependencies": { "@vercel/oidc": "3.1.0" }, "peerDependencies": { "@aws-sdk/credential-provider-web-identity": "*" }, "optionalPeers": ["@aws-sdk/credential-provider-web-identity"] }, "sha512-lKWDWEhFcpt/zL3ueWqII8W5BY73MC5WUuZyudditbbya6mP8jCLQEuXBxJetpEKgnEn+5xCyK962rw4v1RSVA=="],
 
     "@vercel/oidc": ["@vercel/oidc@3.1.0", "", {}, "sha512-Fw28YZpRnA3cAHHDlkt7xQHiJ0fcL+NRcIqsocZQUSmbzeIKRpwttJjik5ZGanXP+vlA4SbTg+AbA3bP363l+w=="],
+
+    "@vercel/speed-insights": ["@vercel/speed-insights@1.3.1", "", { "peerDependencies": { "@sveltejs/kit": "^1 || ^2", "next": ">= 13", "react": "^18 || ^19 || ^19.0.0-rc", "svelte": ">= 4", "vue": "^3", "vue-router": "^4" }, "optionalPeers": ["@sveltejs/kit", "next", "react", "svelte", "vue", "vue-router"] }, "sha512-PbEr7FrMkUrGYvlcLHGkXdCkxnylCWePx7lPxxq36DNdfo9mcUjLOmqOyPDHAOgnfqgGGdmE3XI9L/4+5fr+vQ=="],
 
     "@vis.gl/react-mapbox": ["@vis.gl/react-mapbox@8.1.0", "", { "peerDependencies": { "mapbox-gl": ">=3.5.0", "react": ">=16.3.0", "react-dom": ">=16.3.0" }, "optionalPeers": ["mapbox-gl"] }, "sha512-FwvH822oxEjWYOr+pP2L8hpv+7cZB2UsQbHHHT0ryrkvvqzmTgt7qHDhamv0EobKw86e1I+B4ojENdJ5G5BkyQ=="],
 

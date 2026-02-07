@@ -12,6 +12,7 @@ import { TRPCReactProvider } from "@/trpc/react";
 import { UpgradeProvider } from "@/contexts/UpgradeContext";
 import { AnalyticsProvider } from "@/contexts/AnalyticsProvider";
 import { Analytics as VercelAnalytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://swipestats.io"),
@@ -80,6 +81,7 @@ export default function RootLayout({
         </TRPCReactProvider>
         <Toaster />
         <VercelAnalytics />
+        <SpeedInsights />
       </body>
     </html>
   );
