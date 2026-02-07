@@ -1,25 +1,32 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertCircle,
   Check,
-  CheckCircle2,
-  Loader2,
   Mail,
   Sparkles,
   Users,
-  XCircle,
 } from "lucide-react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SimpleDialog } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { authClient } from "@/server/better-auth/client";
+import { useTRPC } from "@/trpc/react";
+import { useMutation } from "@tanstack/react-query";
+import {
+  generateUniqueAnonymousEmail,
+  isAnonymousEmail,
+} from "@/lib/utils/auth";
+import { useUsernameAvailability } from "@/hooks/useUsernameAvailability";
+import { UsernameField } from "@/components/auth/UsernameField";
+import { CollapsibleEmailField } from "@/components/auth/CollapsibleEmailField";
 
 interface ConversionModalProps {
   open: boolean;
@@ -44,15 +51,6 @@ export function ConversionModal({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Generate a unique anonymous email for signup (different from current session email)
-  // This prevents "email already exists" errors when upgrading anonymous accounts
-  const generateUniqueAnonymousEmail = () => {
-    // Use timestamp + random UUID for uniqueness
-    const timestamp = Date.now();
-    const randomId = crypto.randomUUID().slice(0, 8);
-    return `guest-${timestamp}-${randomId}@anonymous.swipestats.io`;
-  };
-
   // Create account form fields
   const [name, setName] = useState("");
   const [email, setEmail] = useState(
@@ -61,49 +59,20 @@ export function ConversionModal({
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showEmailField, setShowEmailField] = useState(!!initialEmail);
+  const [subscribeNewsletter, setSubscribeNewsletter] = useState(true);
 
-  // Username availability checking
-  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(
-    null,
-  );
-  const [checkingUsername, setCheckingUsername] = useState(false);
+  const { isAvailable: usernameAvailable, isChecking: checkingUsername } =
+    useUsernameAvailability(username);
 
   // Sign in form fields
   const [signinUsername, setSigninUsername] = useState("");
   const [signinPassword, setSigninPassword] = useState("");
 
-  // Debounced username availability check
-  useEffect(() => {
-    const checkUsername = async () => {
-      if (username.length >= 3) {
-        // Check for @ symbol (not allowed to avoid confusion with email)
-        if (username.includes("@")) {
-          setUsernameAvailable(false);
-          setCheckingUsername(false);
-          return;
-        }
-
-        setCheckingUsername(true);
-        try {
-          const { data } = await authClient.isUsernameAvailable({ username });
-          setUsernameAvailable(data?.available ?? false);
-        } catch (err) {
-          console.error("Username check error:", err);
-          setUsernameAvailable(null);
-        } finally {
-          setCheckingUsername(false);
-        }
-      } else {
-        setUsernameAvailable(null);
-        setCheckingUsername(false);
-      }
-    };
-
-    const timer = setTimeout(() => {
-      void checkUsername();
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [username]);
+  // Newsletter subscribe mutation
+  const trpc = useTRPC();
+  const newsletterSubscribeMutation = useMutation(
+    trpc.newsletter.subscribe.mutationOptions(),
+  );
 
   const handleCreateAccount = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -125,6 +94,18 @@ export function ConversionModal({
       }
 
       if (data) {
+        // Subscribe to newsletter if opted in with a real email
+        if (subscribeNewsletter && !isAnonymousEmail(email)) {
+          newsletterSubscribeMutation.mutate({
+            email,
+            topic: "newsletter-general",
+            path:
+              typeof window !== "undefined"
+                ? window.location.pathname
+                : undefined,
+          });
+        }
+
         // Better Auth automatically triggers onLinkAccount for anonymous users
         // Data transfer happens in the backend hook
         router.push("/app/dashboard");
@@ -182,9 +163,8 @@ export function ConversionModal({
     setSigninUsername("");
     setSigninPassword("");
     setActiveTab("create");
-    setUsernameAvailable(null);
-    setCheckingUsername(false);
     setShowEmailField(!!initialEmail);
+    setSubscribeNewsletter(true);
     onOpenChange(false);
   };
 
@@ -232,53 +212,13 @@ export function ConversionModal({
           {/* Create Account Tab */}
           <TabsContent value="create" className="mt-4 space-y-4">
             <form onSubmit={handleCreateAccount} className="space-y-4">
-              {/* Username field with availability indicator */}
-              <div className="space-y-2">
-                <Label htmlFor="username" className="flex items-center gap-2">
-                  Username
-                  {checkingUsername && (
-                    <span className="text-muted-foreground flex items-center gap-1 text-xs">
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      Checking...
-                    </span>
-                  )}
-                  {!checkingUsername && usernameAvailable === false && (
-                    <span className="text-destructive flex items-center gap-1 text-xs">
-                      <XCircle className="h-3 w-3" />
-                      {username.includes("@")
-                        ? "@ symbols not allowed"
-                        : "Not available"}
-                    </span>
-                  )}
-                  {!checkingUsername && usernameAvailable === true && (
-                    <span className="flex items-center gap-1 text-xs text-green-600">
-                      <CheckCircle2 className="h-3 w-3" />
-                      Available!
-                    </span>
-                  )}
-                </Label>
-                <Input
-                  id="username"
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  required
-                  minLength={3}
-                  maxLength={32}
-                  pattern="[^@]+"
-                  title="Username cannot contain @ symbols"
-                  placeholder="cooluser123"
-                  disabled={isLoading}
-                  aria-invalid={usernameAvailable === false}
-                  className={
-                    usernameAvailable === false
-                      ? "border-destructive focus-visible:ring-destructive"
-                      : usernameAvailable === true
-                        ? "border-green-600 focus-visible:ring-green-600"
-                        : ""
-                  }
-                />
-              </div>
+              <UsernameField
+                username={username}
+                onUsernameChange={setUsername}
+                disabled={isLoading}
+                isChecking={checkingUsername}
+                isAvailable={usernameAvailable}
+              />
 
               {/* Password field */}
               <div className="space-y-2">
@@ -310,50 +250,25 @@ export function ConversionModal({
                 />
               </div>
 
-              {/* Email field (collapsible) */}
-              {!showEmailField ? (
-                <div className="text-muted-foreground text-sm">
-                  <button
-                    type="button"
-                    onClick={() => setShowEmailField(true)}
-                    className="text-primary hover:underline"
-                  >
-                    Need password reset? Add a real email
-                  </button>
-                  <p className="mt-1 text-xs">
-                    Using temporary email for now. You can add a real one later
-                    in settings.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-sm">
-                    Email{" "}
-                    <span className="text-muted-foreground text-xs">
-                      (for password reset)
-                    </span>
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="your.email@example.com"
-                    disabled={isLoading}
-                    className="text-sm"
+              <CollapsibleEmailField
+                email={email}
+                onEmailChange={setEmail}
+                showEmailField={showEmailField}
+                onShowEmailFieldChange={setShowEmailField}
+                disabled={isLoading}
+              >
+                <label className="flex items-center gap-2">
+                  <Checkbox
+                    checked={subscribeNewsletter}
+                    onCheckedChange={(checked) =>
+                      setSubscribeNewsletter(checked === true)
+                    }
                   />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowEmailField(false);
-                      setEmail(generateUniqueAnonymousEmail());
-                    }}
-                    className="text-muted-foreground text-xs hover:underline"
-                  >
-                    Use temporary email instead
-                  </button>
-                </div>
-              )}
+                  <span className="text-muted-foreground text-xs">
+                    Subscribe to SwipeStats newsletter
+                  </span>
+                </label>
+              </CollapsibleEmailField>
 
               <Button
                 type="submit"

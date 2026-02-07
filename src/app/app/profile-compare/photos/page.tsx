@@ -43,20 +43,6 @@ export default function PhotoGalleryPage() {
     }),
   );
 
-  const createAttachmentMutation = useMutation(
-    trpc.blob.createAttachmentFromBlob.mutationOptions({
-      onSuccess: () => {
-        toast.success("Photo uploaded!");
-        void queryClient.invalidateQueries(
-          trpc.blob.getUserUploads.queryOptions({ limit: 100 }),
-        );
-      },
-      onError: (error) => {
-        toast.error(error.message || "Failed to create attachment record");
-      },
-    }),
-  );
-
   const deleteAttachmentMutation = useMutation(
     trpc.blob.deleteAttachment.mutationOptions({
       onSuccess: () => {
@@ -105,16 +91,10 @@ export default function PhotoGalleryPage() {
 
       console.log("📎 File uploaded:", result.url);
 
-      // Create attachment record
-      await createAttachmentMutation.mutateAsync({
-        url: result.url,
-        pathname: result.pathname,
-        contentType: result.contentType || file.type,
-        size: file.size,
-        filename: file.name,
-        resourceType: "user_photo",
-        resourceId: "gallery",
-      });
+      toast.success("Photo uploaded!");
+      void queryClient.invalidateQueries(
+        trpc.blob.getUserUploads.queryOptions({ limit: 100 }),
+      );
     } catch (error) {
       console.error("Upload failed:", error);
       toast.error(

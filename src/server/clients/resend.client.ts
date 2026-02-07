@@ -215,6 +215,68 @@ export async function subscribeToTopics(params: {
 }
 
 /**
+ * Set exact topic subscription state for a contact.
+ *
+ * Unlike subscribeToTopics (which only opts in), this function also opts out
+ * topics that were previously subscribed but are no longer in the list.
+ * Use this when replacing the full set of user preferences (e.g., account settings page).
+ */
+export async function setTopicSubscriptions(params: {
+  email: string;
+  topics: TopicKey[];
+}) {
+  try {
+    // Ensure contact exists
+    await createContact({ email: params.email });
+
+    // Rate limit
+    await new Promise((resolve) => setTimeout(resolve, 700));
+
+    // Get current topic state to diff
+    const currentResult = await getContactTopics({ email: params.email });
+
+    // Rate limit
+    await new Promise((resolve) => setTimeout(resolve, 700));
+
+    // Build update: opt_in for selected, opt_out for previously-subscribed-but-now-removed
+    const selectedIds = new Set(getTopicIds(params.topics));
+    const topicUpdates: Array<{
+      id: string;
+      subscription: "opt_in" | "opt_out";
+    }> = [];
+
+    // Opt in all selected topics
+    for (const id of selectedIds) {
+      topicUpdates.push({ id, subscription: "opt_in" });
+    }
+
+    // Opt out topics that were opt_in but are no longer selected
+    if (currentResult.success && currentResult.data?.data) {
+      for (const topic of currentResult.data.data) {
+        if (topic.subscription === "opt_in" && !selectedIds.has(topic.id)) {
+          topicUpdates.push({ id: topic.id, subscription: "opt_out" });
+        }
+      }
+    }
+
+    if (topicUpdates.length === 0) {
+      return { success: true as const };
+    }
+
+    return await updateContactTopics({
+      email: params.email,
+      topics: topicUpdates,
+    });
+  } catch (error) {
+    console.error("❌ Failed to set topic subscriptions:", error);
+    return {
+      success: false as const,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+/**
  * Unsubscribe a contact from specific topics (preserves other subscriptions)
  *
  * @example

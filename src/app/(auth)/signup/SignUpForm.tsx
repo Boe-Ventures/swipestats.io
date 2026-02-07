@@ -3,13 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import {
-  Loader2,
-  CheckCircle2,
-  XCircle,
-  Mail,
-  UserCircle2,
-} from "lucide-react";
+import { Loader2, Mail, UserCircle2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,6 +12,10 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import { authClient } from "@/server/better-auth/client";
+import { generateUniqueAnonymousEmail } from "@/lib/utils/auth";
+import { useUsernameAvailability } from "@/hooks/useUsernameAvailability";
+import { UsernameField } from "@/components/auth/UsernameField";
+import { CollapsibleEmailField } from "@/components/auth/CollapsibleEmailField";
 
 export function SignUpForm() {
   const router = useRouter();
@@ -31,18 +29,8 @@ export function SignUpForm() {
   const [isAnonymousLoading, setIsAnonymousLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Username availability checking
-  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(
-    null,
-  );
-  const [checkingUsername, setCheckingUsername] = useState(false);
-
-  // Generate a unique anonymous email
-  const generateUniqueAnonymousEmail = () => {
-    const timestamp = Date.now();
-    const randomId = crypto.randomUUID().slice(0, 8);
-    return `guest-${timestamp}-${randomId}@anonymous.swipestats.io`;
-  };
+  const { isAvailable: usernameAvailable, isChecking: checkingUsername } =
+    useUsernameAvailability(username);
 
   // Initialize with anonymous email
   useEffect(() => {
@@ -50,37 +38,6 @@ export function SignUpForm() {
       setEmail(generateUniqueAnonymousEmail());
     }
   }, [showEmailField]);
-
-  // Debounced username availability check
-  useEffect(() => {
-    const checkUsername = async () => {
-      if (username.length >= 3) {
-        // Check for @ symbol (not allowed to avoid confusion with email)
-        if (username.includes("@")) {
-          setUsernameAvailable(false);
-          setCheckingUsername(false);
-          return;
-        }
-
-        setCheckingUsername(true);
-        try {
-          const { data } = await authClient.isUsernameAvailable({ username });
-          setUsernameAvailable(data?.available ?? false);
-        } catch (err) {
-          console.error("Username check error:", err);
-          setUsernameAvailable(null);
-        } finally {
-          setCheckingUsername(false);
-        }
-      } else {
-        setUsernameAvailable(null);
-        setCheckingUsername(false);
-      }
-    };
-
-    const timer = setTimeout(() => void checkUsername(), 500);
-    return () => clearTimeout(timer);
-  }, [username]);
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -159,52 +116,13 @@ export function SignUpForm() {
         )}
 
         <form onSubmit={handleSignUp} className="space-y-4">
-          {/* Username field with availability indicator */}
-          <div className="space-y-2">
-            <Label htmlFor="username" className="flex items-center gap-2">
-              Username
-              {checkingUsername && (
-                <span className="flex items-center gap-1 text-xs text-gray-500">
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  Checking...
-                </span>
-              )}
-              {!checkingUsername && usernameAvailable === false && (
-                <span className="flex items-center gap-1 text-xs text-red-600">
-                  <XCircle className="h-3 w-3" />
-                  {username.includes("@")
-                    ? "@ symbols not allowed"
-                    : "Not available"}
-                </span>
-              )}
-              {!checkingUsername && usernameAvailable === true && (
-                <span className="flex items-center gap-1 text-xs text-green-600">
-                  <CheckCircle2 className="h-3 w-3" />
-                  Available!
-                </span>
-              )}
-            </Label>
-            <Input
-              id="username"
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-              minLength={3}
-              maxLength={32}
-              pattern="[^@]+"
-              title="Username cannot contain @ symbols"
-              placeholder="cooluser123"
-              disabled={isLoading}
-              className={
-                usernameAvailable === false
-                  ? "border-red-600 focus-visible:ring-red-600"
-                  : usernameAvailable === true
-                    ? "border-green-600 focus-visible:ring-green-600"
-                    : ""
-              }
-            />
-          </div>
+          <UsernameField
+            username={username}
+            onUsernameChange={setUsername}
+            disabled={isLoading}
+            isChecking={checkingUsername}
+            isAvailable={usernameAvailable}
+          />
 
           {/* Password field */}
           <div className="space-y-2">
@@ -237,50 +155,13 @@ export function SignUpForm() {
             />
           </div>
 
-          {/* Email field (collapsible) */}
-          {!showEmailField ? (
-            <div className="text-sm text-gray-600">
-              <button
-                type="button"
-                onClick={() => setShowEmailField(true)}
-                className="text-rose-600 hover:text-rose-500 hover:underline"
-              >
-                Need password reset? Add a real email
-              </button>
-              <p className="mt-1 text-xs text-gray-500">
-                Using temporary email for now. You can add a real one later in
-                settings.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm">
-                Email{" "}
-                <span className="text-xs text-gray-500">
-                  (for password reset)
-                </span>
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="your.email@example.com"
-                disabled={isLoading}
-                className="text-sm"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  setShowEmailField(false);
-                  setEmail(generateUniqueAnonymousEmail());
-                }}
-                className="text-xs text-gray-500 hover:underline"
-              >
-                Use temporary email instead
-              </button>
-            </div>
-          )}
+          <CollapsibleEmailField
+            email={email}
+            onEmailChange={setEmail}
+            showEmailField={showEmailField}
+            onShowEmailFieldChange={setShowEmailField}
+            disabled={isLoading}
+          />
 
           {/* Terms acceptance */}
           <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 p-4 transition-all hover:border-gray-300 has-[:checked]:border-rose-600 has-[:checked]:bg-rose-50/50">

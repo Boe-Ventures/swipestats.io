@@ -12,8 +12,10 @@ Newsletter flow
 */
 
 import Link from "next/link";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 
 import { useNewsletter } from "@/hooks/useNewsletter";
 
@@ -45,7 +47,19 @@ export default function NewsletterCTA() {
     }
   }, [isLoading, wasAlreadySubscribed, justSubscribed]);
 
+  const schema = useMemo(
+    () =>
+      z.object({
+        email:
+          userState === "real"
+            ? z.string()
+            : z.string().email("Please enter a valid email address"),
+      }),
+    [userState],
+  );
+
   const form = useForm({
+    resolver: zodResolver(schema),
     defaultValues: {
       email: subscribedEmail || "", // Pre-fill with email from localStorage/API
     },
@@ -134,16 +148,9 @@ export default function NewsletterCTA() {
                 id="newsletter-email"
                 type="email"
                 autoComplete="email"
-                required={userState === "logged-out"}
                 className="min-w-0 flex-auto rounded-md border-0 bg-white/5 px-3.5 py-2.5 text-white shadow-sm ring-1 ring-white/10 ring-inset placeholder:text-gray-400 focus:ring-2 focus:ring-white focus:ring-inset sm:text-sm sm:leading-6"
-                placeholder={
-                  userState === "anonymous"
-                    ? "Enter your email (optional)"
-                    : "Enter your email"
-                }
-                {...form.register("email", {
-                  required: userState === "logged-out",
-                })}
+                placeholder="Enter your email"
+                {...form.register("email")}
                 disabled={isSubscribing}
               />
               <button
@@ -156,7 +163,11 @@ export default function NewsletterCTA() {
             </div>
           )}
 
-          {error && <p className="mt-3 text-sm text-rose-300">{error}</p>}
+          {(error || form.formState.errors.email) && (
+            <p className="mt-3 text-sm text-rose-300">
+              {error || form.formState.errors.email?.message}
+            </p>
+          )}
 
           <p className="mt-4 text-sm leading-6 text-gray-400">
             We care about your data. Read our{" "}

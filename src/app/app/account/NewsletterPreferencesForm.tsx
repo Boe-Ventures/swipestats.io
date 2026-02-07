@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Mail, Loader2, Info } from "lucide-react";
 import { useNewsletter } from "@/hooks/useNewsletter";
 import { authClient } from "@/server/better-auth/client";
+import { isAnonymousEmail } from "@/lib/utils/auth";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { TopicKey } from "@/server/clients/resend.client";
 
@@ -68,9 +69,9 @@ export function NewsletterPreferencesForm() {
 
   // Get localStorage email for anonymous users
   const { email: localStorageEmail } = useNewsletter({ autoFetch: false });
-  const isAnonymous = session?.user?.email?.includes(
-    "@anonymous.swipestats.io",
-  );
+  const isAnonymous = session?.user?.email
+    ? isAnonymousEmail(session.user.email)
+    : false;
 
   // For anonymous users with localStorage email, pass it to the query
   const queryInput =
@@ -206,8 +207,8 @@ export function NewsletterPreferencesForm() {
           <Alert variant="info" className="mt-2">
             <Info className="h-4 w-4" />
             <AlertDescription>
-              This email is saved locally on this device. Upgrade your account
-              to manage preferences across all devices.
+              This email is saved locally on this device. Add a real email to
+              your account to manage preferences across all devices.
             </AlertDescription>
           </Alert>
         </div>

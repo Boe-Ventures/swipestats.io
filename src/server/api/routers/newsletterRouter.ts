@@ -6,6 +6,7 @@ import {
 import {
   createContact,
   subscribeToTopics,
+  setTopicSubscriptions,
   getContactTopicSubscriptions,
 } from "@/server/clients/resend.client";
 import { topicKeySchema, emailSchema } from "@/lib/validators";
@@ -162,7 +163,7 @@ export const newsletterRouter = createTRPCRouter({
       }
 
       try {
-        const result = await subscribeToTopics({
+        const result = await setTopicSubscriptions({
           email,
           topics: input.topics,
         });

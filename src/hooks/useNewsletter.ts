@@ -7,6 +7,7 @@ import { authClient } from "@/server/better-auth/client";
 import { useTRPC } from "@/trpc/react";
 import { useLocalStorage } from "@/components/ui/hooks/use-local-storage";
 import type { TopicKey } from "@/lib/validators";
+import { isAnonymousEmail } from "@/lib/utils/auth";
 
 // =====================================================
 // TYPES
@@ -43,7 +44,6 @@ export type UseNewsletterReturn = {
 // =====================================================
 
 const STORAGE_KEY = "swipestats_newsletter_subscriptions";
-const ANONYMOUS_EMAIL_DOMAIN = "@anonymous.swipestats.io";
 
 // =====================================================
 // HOOK
@@ -61,7 +61,7 @@ export function useNewsletter(
   // Determine user state
   const userState = useMemo<UserState>(() => {
     if (!session?.user) return "logged-out";
-    if (session.user.email?.includes(ANONYMOUS_EMAIL_DOMAIN))
+    if (session.user.email && isAnonymousEmail(session.user.email))
       return "anonymous";
     return "real";
   }, [session]);
@@ -82,7 +82,7 @@ export function useNewsletter(
   // Get email for API query
   const emailForQuery = isRealUser
     ? undefined // Real users use session email
-    : localData?.email && !localData.email.includes(ANONYMOUS_EMAIL_DOMAIN)
+    : localData?.email && !isAnonymousEmail(localData.email)
       ? localData.email // Anonymous users with real email in localStorage
       : undefined;
 
