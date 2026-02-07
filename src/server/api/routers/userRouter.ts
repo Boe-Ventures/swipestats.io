@@ -1,5 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { geolocation } from "@vercel/functions";
+import { headers } from "next/headers";
 
 import { eq, desc } from "drizzle-orm";
 import {
@@ -11,6 +13,7 @@ import {
 import { protectedProcedure } from "../trpc";
 import type { TRPCRouterRecord } from "@trpc/server";
 import { BlobService } from "@/server/services/blob.service";
+import { getContinentFromCountry } from "@/lib/utils/continent";
 
 export const userRouter = {
   // Get current user profile
@@ -18,6 +21,41 @@ export const userRouter = {
     return ctx.db.query.userTable.findFirst({
       where: eq(userTable.id, ctx.session.user.id),
     });
+  }),
+
+  // Detect location from Vercel IP headers and save to user profile
+  detectLocation: protectedProcedure.mutation(async ({ ctx }) => {
+    const headersList = await headers();
+    const request = new Request("http://localhost", { headers: headersList });
+    const geo = geolocation(request);
+
+    const city = geo?.city ?? null;
+    const country = geo?.country ?? null;
+    const region = geo?.countryRegion ?? null;
+    const timeZone = headersList.get("x-vercel-ip-timezone") ?? null;
+    const continent = country ? getContinentFromCountry(country) : null;
+
+    // Update user location in database
+    const [updatedUser] = await ctx.db
+      .update(userTable)
+      .set({
+        city,
+        country,
+        region,
+        timeZone,
+        continent,
+      })
+      .where(eq(userTable.id, ctx.session.user.id))
+      .returning();
+
+    if (!updatedUser) {
+      throw new TRPCError({
+        code: "NOT_FOUND",
+        message: "User not found",
+      });
+    }
+
+    return updatedUser;
   }),
 
   // Update profile (name, displayUsername)
@@ -99,18 +137,28 @@ export const userRouter = {
       return updatedUser;
     }),
 
-  // Update location (timezone, country)
+  // Update location (timezone, city, country, region)
   updateLocation: protectedProcedure
     .input(
       z.object({
         timeZone: z.string().min(1).max(100).optional(),
-        country: z.string().min(1).max(100).optional(),
+        city: z.string().min(1).max(100).optional(),
+        country: z.string().length(2).optional(), // ISO-2 only
+        region: z.string().min(1).max(100).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Auto-derive continent from country
+      const continent = input.country
+        ? getContinentFromCountry(input.country)
+        : undefined;
+
       const [updatedUser] = await ctx.db
         .update(userTable)
-        .set(input)
+        .set({
+          ...input,
+          continent,
+        })
         .where(eq(userTable.id, ctx.session.user.id))
         .returning();
 

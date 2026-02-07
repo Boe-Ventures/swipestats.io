@@ -377,9 +377,8 @@ export const hingeProfileRouter = {
 
       try {
         // Fetch JSON from blob storage
-        const anonymizedHingeJson = await fetchBlobJson<AnonymizedHingeDataJSON>(
-          input.blobUrl,
-        );
+        const anonymizedHingeJson =
+          await fetchBlobJson<AnonymizedHingeDataJSON>(input.blobUrl);
 
         // Get user's existing profile
         const existingUserProfile =

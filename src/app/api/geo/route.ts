@@ -17,11 +17,14 @@ export async function GET(request: NextRequest) {
   const geo = {
     city: request.headers.get("x-vercel-ip-city") ?? undefined,
     country: request.headers.get("x-vercel-ip-country") ?? undefined,
-    countryRegion: request.headers.get("x-vercel-ip-country-region") ?? undefined,
+    countryRegion:
+      request.headers.get("x-vercel-ip-country-region") ?? undefined,
     latitude: request.headers.get("x-vercel-ip-latitude") ?? undefined,
     longitude: request.headers.get("x-vercel-ip-longitude") ?? undefined,
     timezone: request.headers.get("x-vercel-ip-timezone") ?? undefined,
-    ip: request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ?? undefined,
+    ip:
+      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+      undefined,
   };
 
   return NextResponse.json(geo, {

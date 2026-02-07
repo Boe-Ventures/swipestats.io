@@ -1,13 +1,17 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { differenceInYears } from "date-fns";
+import { geolocation } from "@vercel/functions";
+import { headers } from "next/headers";
 
 import { eq } from "drizzle-orm";
 import {
   tinderProfileTable,
   mediaTable,
   tinderUsageTable,
+  userTable,
 } from "@/server/db/schema";
+import { getContinentFromCountry } from "@/lib/utils/continent";
 import { publicProcedure } from "../trpc";
 import type { TRPCRouterRecord } from "@trpc/server";
 import type { AnonymizedTinderDataJSON } from "@/lib/interfaces/TinderDataJSON";
@@ -271,6 +275,32 @@ export const profileRouter = {
           });
         }
 
+        // Extract Vercel geolocation (undefined on localhost)
+        const headersList = await headers();
+        const request = new Request("http://localhost", {
+          headers: headersList,
+        });
+        const geo = geolocation(request);
+
+        // Update user location with Vercel geo data if available
+        if (geo?.city || geo?.country) {
+          const city = geo.city || null;
+          const country = geo.country || null;
+          const region = geo.countryRegion || null;
+          const continent = getContinentFromCountry(country);
+
+          await ctx.db
+            .update(userTable)
+            .set({
+              city,
+              country,
+              region,
+              continent,
+              timeZone: input.timezone || undefined,
+            })
+            .where(eq(userTable.id, ctx.session.user.id));
+        }
+
         // Create brand new profile
         console.log(`📝 Creating new profile: ${input.tinderId}`);
         const result = await createTinderProfile({
@@ -336,6 +366,32 @@ export const profileRouter = {
             code: "NOT_FOUND",
             message: "Profile not found. Use createProfile instead.",
           });
+        }
+
+        // Extract Vercel geolocation (undefined on localhost)
+        const headersList = await headers();
+        const request = new Request("http://localhost", {
+          headers: headersList,
+        });
+        const geo = geolocation(request);
+
+        // Update user location with Vercel geo data if available
+        if (geo?.city || geo?.country) {
+          const city = geo.city || null;
+          const country = geo.country || null;
+          const region = geo.countryRegion || null;
+          const continent = getContinentFromCountry(country);
+
+          await ctx.db
+            .update(userTable)
+            .set({
+              city,
+              country,
+              region,
+              continent,
+              timeZone: input.timezone || undefined,
+            })
+            .where(eq(userTable.id, ctx.session.user.id));
         }
 
         // Handle ownership scenarios

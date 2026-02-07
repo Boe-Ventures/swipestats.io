@@ -171,6 +171,9 @@ export async function absorbProfileIntoNew(data: {
       throw new Error(`Old profile not found: ${data.oldTinderId}`);
     }
     console.log(`   ✓ Fetched old profile (${Date.now() - fetchOldStart}ms)`);
+    console.log(
+      `   Old profile range: ${oldProfile.firstDayOnApp.toISOString().split("T")[0]} → ${oldProfile.lastDayOnApp.toISOString().split("T")[0]}`,
+    );
 
     // 2. Temporarily clear userId on old profile to free unique constraint
     const unlinkStart = Date.now();
@@ -191,6 +194,25 @@ export async function absorbProfileIntoNew(data: {
       timezone: data.timezone,
       country: data.country,
     });
+    console.log(`   ✓ Profile transformed (${Date.now() - transformStart}ms)`);
+    console.log(
+      `   New profile range: ${newProfileData.firstDayOnApp.toISOString().split("T")[0]} → ${newProfileData.lastDayOnApp.toISOString().split("T")[0]}`,
+    );
+
+    // Validate no overlap in date ranges
+    // Old account should end before new account starts
+    if (oldProfile.lastDayOnApp >= newProfileData.firstDayOnApp) {
+      const overlapDays = Math.floor(
+        (oldProfile.lastDayOnApp.getTime() -
+          newProfileData.firstDayOnApp.getTime()) /
+          (1000 * 60 * 60 * 24),
+      );
+      throw new Error(
+        `Date range overlap detected: Old account ends ${oldProfile.lastDayOnApp.toISOString().split("T")[0]}, ` +
+          `new account starts ${newProfileData.firstDayOnApp.toISOString().split("T")[0]} ` +
+          `(${overlapDays + 1} days overlap). Cross-account merges require sequential, non-overlapping date ranges.`,
+      );
+    }
 
     // Compute combined date range
     const combinedFirstDay =
@@ -209,7 +231,7 @@ export async function absorbProfileIntoNew(data: {
           (1000 * 60 * 60 * 24),
       ) + 1;
 
-    console.log(`   ✓ Profile transformed (${Date.now() - transformStart}ms)`);
+    console.log(`   ✓ Date ranges validated (no overlap)`);
     console.log(
       `   Combined date range: ${combinedFirstDay.toISOString().split("T")[0]} → ${combinedLastDay.toISOString().split("T")[0]} (${combinedDaysInPeriod} days)`,
     );

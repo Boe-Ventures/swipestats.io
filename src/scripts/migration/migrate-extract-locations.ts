@@ -22,7 +22,8 @@ import {
   originalAnonymizedFileTable,
   messageTable,
 } from "@/server/db/schema";
-import { eq, desc, isNull, or } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
+import { getContinentFromCountry } from "@/lib/utils/continent";
 
 // ---- CONFIG -------------------------------------------------------
 
@@ -32,12 +33,27 @@ const BATCH_SIZE = 10; // Process in batches for rate limiting
 // ---- AI EXTRACTION SCHEMA -----------------------------------------
 
 const locationSchema = z.object({
-  city: z.string().optional().describe("Primary city name"),
+  city: z.string().optional().describe("Primary city name in English"),
   country: z
     .string()
     .length(2)
     .optional()
     .describe("ISO alpha-2 code (US, NO, DE)"),
+  region: z
+    .string()
+    .optional()
+    .describe("State/province (California, Bavaria)"),
+  continent: z
+    .enum([
+      "Africa",
+      "Asia",
+      "Europe",
+      "North America",
+      "South America",
+      "Oceania",
+      "Antarctica",
+    ])
+    .optional(),
   confidence: z.enum(["high", "medium", "low"]),
 });
 
@@ -84,6 +100,8 @@ RULES:
 - City: MUST be in English (e.g., "Zurich" not "Zürich", "Hanoi" not "Hà Nội", "Copenhagen" not "København", "Milan" not "Milano", "Wroclaw" not "Wrocław", "Malaga" not "Málaga")
 - City: Clean name only ("Oslo", not "Oslo, Norway")
 - Country: ISO alpha-2 code ONLY (2 letters: US, NO, DE, BR, etc.)
+- Region: State/province if applicable (e.g., "California", "Bayern", "Oslo")
+- Continent: One of: Africa, Asia, Europe, North America, South America, Oceania, Antarctica
 - If multiple locations, prioritize most consistent/recent
 - High confidence: Clear consistent data
 - Medium: Some ambiguity but likely correct
@@ -101,17 +119,19 @@ RULES:
 
   // Log structured output
   console.log(
-    `  📤 AI Output: ${result.output.city || "?"}, ${result.output.country || "?"} (${result.output.confidence})`,
+    `  📤 AI Output: ${result.output.city || "?"}, ${result.output.region || "?"}, ${result.output.country || "?"} (${result.output.confidence})`,
   );
 
   // Skip low confidence
   if (result.output.confidence === "low") {
-    return { city: null, country: null };
+    return { city: null, country: null, region: null, continent: null };
   }
 
   return {
     city: result.output.city || null,
     country: result.output.country || null,
+    region: result.output.region || null,
+    continent: result.output.continent || null,
   };
 }
 
@@ -245,14 +265,15 @@ async function migrateUserLocations() {
     "╚═══════════════════════════════════════════════════════════════╝\n",
   );
 
-  // Get users without location data
+  // Get ALL users for standardization
   const users = await db
     .select()
     .from(userTable)
-    .where(or(isNull(userTable.city), isNull(userTable.country)))
     .orderBy(desc(userTable.createdAt));
 
-  console.log(`Found ${users.length} users without location data`);
+  console.log(
+    `Found ${users.length} users to process for location standardization`,
+  );
   console.log(`DRY RUN: ${DRY_RUN}\n`);
 
   let processed = 0;
@@ -278,18 +299,26 @@ async function migrateUserLocations() {
             return;
           }
 
-          const { city, country } = await extractLocation(signals, user.id);
+          const { city, country, region, continent } = await extractLocation(
+            signals,
+            user.id,
+          );
 
           if (city || country) {
             extracted++;
             console.log(
-              `✓ ${user.id.substring(0, 12)}: ${city || "?"}, ${country || "?"}`,
+              `✓ ${user.id.substring(0, 12)}: ${city || "?"}, ${region || "?"}, ${country || "?"}`,
             );
 
             if (!DRY_RUN) {
               await db
                 .update(userTable)
-                .set({ city, country })
+                .set({
+                  city,
+                  country,
+                  region: region || null,
+                  continent: continent || getContinentFromCountry(country),
+                })
                 .where(eq(userTable.id, user.id));
             }
           } else {

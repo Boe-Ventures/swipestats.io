@@ -34,9 +34,13 @@ export function CalloutBox({ type, children }: CalloutBoxProps) {
   const Icon = config.icon;
 
   return (
-    <div className={`not-prose my-6 rounded-lg border p-4 ${config.className}`}>
+    <div
+      className={`not-prose isolate my-6 rounded-lg border p-4 ${config.className}`}
+    >
       <div className="flex gap-3">
-        <Icon className={`h-5 w-5 flex-shrink-0 ${config.iconClassName}`} />
+        <Icon
+          className={`mt-1.5 h-5 w-5 flex-shrink-0 ${config.iconClassName}`}
+        />
         <div className="flex-1">
           <div className="prose prose-sm lg:prose-lg max-w-none [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
             {children}

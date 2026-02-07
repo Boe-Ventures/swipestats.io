@@ -50,20 +50,9 @@ export default async function AccountPage() {
 
           <div className="space-y-6">
             {/* Location */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Location</CardTitle>
-                <p className="text-muted-foreground text-sm">
-                  Your location affects cohort comparisons and analytics. Update
-                  to compare with users in your region.
-                </p>
-              </CardHeader>
-              <CardContent>
-                <Suspense fallback={<div>Loading...</div>}>
-                  <LocationForm />
-                </Suspense>
-              </CardContent>
-            </Card>
+            <Suspense fallback={<div>Loading...</div>}>
+              <LocationForm />
+            </Suspense>
 
             {/* Dating Apps Activity */}
             <Card>
