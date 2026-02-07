@@ -239,7 +239,7 @@ export const auth = betterAuth({
     "https://swipestats-4-beta.vercel.app",
 
     // Add production domains here when deploying
-    "https://swipestats.io",
+    "https://www.swipestats.io",
   ],
   plugins: [
     username({
