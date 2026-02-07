@@ -15,7 +15,7 @@ import { writeFileSync } from "fs";
 import { join } from "path";
 
 const DEMO_PROFILE_ID =
-  "96d5e7ba8f42af5f40b1ea25a3deafc035ebd5350521b925a5e6478e2aebfee5";
+  "862b4f91e365c43dc5d7cf5483c710bcd235f4913472cfa8e3cb147075988553";
 
 async function exportDemoProfile() {
   console.log("Fetching demo profile...");
