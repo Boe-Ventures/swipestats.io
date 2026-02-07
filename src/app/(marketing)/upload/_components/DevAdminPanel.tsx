@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { UseMutationResult } from "@tanstack/react-query";
 import { DevDeleteButton } from "./DevDeleteButton";
+import { env } from "@/env";
 
 // Simplified types to avoid complex tRPC type gymnastics
 interface UploadContext {
@@ -26,6 +27,15 @@ type DevAdminPanelProps =
 export function DevAdminPanel(props: DevAdminPanelProps) {
   const { provider, uploadContext, deleteProfileMutation } = props;
 
+  // TEMPORARY DEBUG LOGGING
+  console.log("🐛 DevAdminPanel Debug:", {
+    NEXT_PUBLIC_IS_PRODUCTION: env.NEXT_PUBLIC_IS_PRODUCTION,
+    NEXT_PUBLIC_VERCEL_ENV: env.NEXT_PUBLIC_VERCEL_ENV,
+    NEXT_PUBLIC_BASE_URL: env.NEXT_PUBLIC_BASE_URL,
+    showDevTools: !env.NEXT_PUBLIC_IS_PRODUCTION,
+    shouldBeHidden: env.NEXT_PUBLIC_IS_PRODUCTION,
+  });
+
   // Extract provider-specific values using type narrowing
   const profileIdField = provider === "tinder" ? "tinderId" : "hingeId";
   const userProfileId = uploadContext.userProfile?.[profileIdField];
@@ -46,6 +56,22 @@ export function DevAdminPanel(props: DevAdminPanelProps) {
       <h3 className="mb-2 text-sm font-semibold text-red-900">
         🛠️ Dev Admin Tools
       </h3>
+
+      {/* DEBUG INFO - TEMPORARY */}
+      <div className="mb-3 rounded border-2 border-yellow-500 bg-yellow-100 p-3">
+        <p className="mb-2 text-xs font-bold text-yellow-900">
+          🐛 DEBUG ENV INFO (Remove after checking):
+        </p>
+        <div className="space-y-1 font-mono text-[10px] text-yellow-800">
+          <p>NEXT_PUBLIC_IS_PRODUCTION: {String(env.NEXT_PUBLIC_IS_PRODUCTION)}</p>
+          <p>NEXT_PUBLIC_VERCEL_ENV: {env.NEXT_PUBLIC_VERCEL_ENV ?? "undefined"}</p>
+          <p>NEXT_PUBLIC_BASE_URL: {env.NEXT_PUBLIC_BASE_URL}</p>
+          <p>showDevTools would be: {String(!env.NEXT_PUBLIC_IS_PRODUCTION)}</p>
+          <p className="mt-2 text-yellow-900">
+            If showDevTools is &quot;true&quot; above, this panel should be hidden!
+          </p>
+        </div>
+      </div>
 
       {/* Scenario Information */}
       <div className="mb-3 text-xs text-red-700">
