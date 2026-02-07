@@ -24,16 +24,13 @@ export async function GET() {
     // Raw process.env values (to see if Vercel is setting them)
     raw: {
       VERCEL_ENV: process.env.VERCEL_ENV,
-      VERCEL_PROJECT_PRODUCTION_URL: process.env.VERCEL_PROJECT_PRODUCTION_URL,
       VERCEL_URL: process.env.VERCEL_URL,
       VERCEL_BRANCH_URL: process.env.VERCEL_BRANCH_URL,
     },
     // Computed values
     computed: {
       showDevTools: !env.NEXT_PUBLIC_IS_PRODUCTION,
-      isProductionCheck:
-        process.env.VERCEL_ENV === "production" &&
-        process.env.VERCEL_PROJECT_PRODUCTION_URL === "www.swipestats.io",
+      isProductionCheck: process.env.VERCEL_ENV === "production",
     },
   };
 
