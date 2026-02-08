@@ -343,7 +343,7 @@ export async function uploadHingeDataJson(
  */
 export async function fetchBlob(url: string): Promise<Response> {
   try {
-    console.log(`📥 Fetching blob from: ${url}`);
+    // console.log(`📥 Fetching blob from: ${url}`);
 
     const response = await fetch(url);
 
@@ -353,7 +353,7 @@ export async function fetchBlob(url: string): Promise<Response> {
       );
     }
 
-    console.log(`✅ Blob fetched successfully`);
+    // console.log(`✅ Blob fetched successfully`);
     return response;
   } catch (error) {
     console.error("❌ Blob fetch failed:", error);

@@ -24,11 +24,13 @@ import {
 } from "@/server/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { getContinentFromCountry } from "@/lib/utils/continent";
+import { BlobService } from "@/server/services/blob.service";
 
 // ---- CONFIG -------------------------------------------------------
 
 const DRY_RUN = false; // Set to true for dry run (no database writes)
 const BATCH_SIZE = 10; // Process in batches for rate limiting
+const USER_LIMIT: number | null = null; // Set to number (e.g., 50) to test on subset, null for all users
 
 // ---- AI EXTRACTION SCHEMA -----------------------------------------
 
@@ -90,10 +92,10 @@ ${signals.profileLocations.join("\n") || "None"}
 IP ADDRESSES:
 ${signals.ipAddresses.join("\n") || "None"}
 
-FILE DATA (first 10):
-${signals.fileLocationRefs.slice(0, 10).join("\n") || "None"}
+FILE DATA (first 15):
+${signals.fileLocationRefs.slice(0, 15).join("\n") || "None"}
 
-${signals.messageSamples?.length ? `MESSAGES:\n${signals.messageSamples.slice(0, 5).join("\n")}\n` : ""}
+${signals.messageSamples?.length ? `MESSAGES (${signals.messageSamples.length} samples):\n${signals.messageSamples.join("\n")}\n` : ""}
 
 RULES:
 - Extract MOST LIKELY primary/current location
@@ -164,9 +166,33 @@ async function gatherSignals(userId: string): Promise<LocationSignals> {
     .from(originalAnonymizedFileTable)
     .where(eq(originalAnonymizedFileTable.userId, userId));
 
-  const fileLocationRefs = files.flatMap((f) =>
-    extractLocationsFromJSON(f.file),
-  );
+  // Extract locations from files (handle both inline JSON and blob URLs)
+  const fileLocationRefs: string[] = [];
+  for (const f of files) {
+    try {
+      let fileData: unknown;
+
+      // Check if file data is stored inline or in blob storage
+      if (f.file !== null && f.file !== undefined) {
+        // Old format: data stored directly in database
+        fileData = f.file;
+      } else if (f.blobUrl) {
+        // New format: data stored in Vercel Blob
+        fileData = await BlobService.fetchJson(f.blobUrl);
+      } else {
+        // No data available
+        continue;
+      }
+
+      const locations = extractLocationsFromJSON(fileData);
+      fileLocationRefs.push(...locations);
+    } catch (error) {
+      // Log but don't fail - just skip this file
+      console.warn(
+        `  ⚠️  Failed to fetch file ${f.id}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  }
 
   // Extract IPs
   const ipAddresses = fileLocationRefs
@@ -185,7 +211,7 @@ async function gatherSignals(userId: string): Promise<LocationSignals> {
         .select()
         .from(messageTable)
         .where(eq(messageTable.tinderProfileId, firstProfileId))
-        .limit(10);
+        .limit(100);
 
       messageSamples = messages
         .filter(
@@ -195,7 +221,7 @@ async function gatherSignals(userId: string): Promise<LocationSignals> {
             m.content.length > 20 &&
             m.content.length < 200,
         )
-        .slice(0, 5)
+        .slice(0, 20)
         .map((m) => m.content);
     }
   }
@@ -265,15 +291,16 @@ async function migrateUserLocations() {
     "╚═══════════════════════════════════════════════════════════════╝\n",
   );
 
-  // Get ALL users for standardization
-  const users = await db
-    .select()
-    .from(userTable)
-    .orderBy(desc(userTable.createdAt));
+  // Get ALL users for standardization (or limited subset for testing)
+  const query = db.select().from(userTable).orderBy(desc(userTable.createdAt));
+
+  const users =
+    USER_LIMIT !== null ? await query.limit(USER_LIMIT) : await query;
 
   console.log(
     `Found ${users.length} users to process for location standardization`,
   );
+  console.log(`USER LIMIT: ${USER_LIMIT ?? "None (all users)"}`);
   console.log(`DRY RUN: ${DRY_RUN}\n`);
 
   let processed = 0;
