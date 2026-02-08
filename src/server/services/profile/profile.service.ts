@@ -4,7 +4,6 @@ import type {
   AnonymizedTinderDataJSON,
   TinderPhoto,
 } from "@/lib/interfaces/TinderDataJSON";
-import type { PromptEntry } from "@/lib/interfaces/HingeDataJSON";
 import { withTransaction, db } from "@/server/db";
 import {
   matchTable,
@@ -16,7 +15,6 @@ import {
   tinderUsageTable,
   userTable,
   type TinderProfile,
-  type HingePromptInsert,
   type MediaInsert,
 } from "@/server/db/schema";
 import { createId } from "@/server/db/utils";
@@ -473,30 +471,3 @@ export async function resetTinderProfile(tinderId: string): Promise<void> {
   console.log(`✅ Profile reset complete: ${tinderId}\n`);
 }
 
-/**
- * Transform Hinge prompt entries to database insert format
- * Converts poll-type prompts with options arrays to comma-separated strings
- *
- * @param prompts - Array of prompt entries from Hinge data export
- * @param hingeProfileId - The Hinge profile ID to associate prompts with
- * @returns Array of prompt inserts ready for database insertion
- *
- * @example
- * const promptInserts = transformHingePromptsForDb(hingeData.Prompts, hingeProfileId);
- * await tx.insert(hingePromptTable).values(promptInserts);
- */
-export function transformHingePromptsForDb(
-  prompts: PromptEntry[],
-  hingeProfileId: string,
-): HingePromptInsert[] {
-  return prompts.map((prompt) => ({
-    id: createId("hpr"),
-    type: prompt.type,
-    prompt: prompt.prompt,
-    answerText: prompt.text ?? null,
-    answerOptions: prompt.options ? prompt.options.join(", ") : null,
-    createdPromptAt: new Date(prompt.created),
-    updatedPromptAt: new Date(prompt.user_updated),
-    hingeProfileId: hingeProfileId,
-  }));
-}

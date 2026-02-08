@@ -201,7 +201,8 @@ export function HingeSubmitButton({
   };
 
   const termsAccepted = consent.terms;
-  const canSubmit = !disabled && termsAccepted;
+  const hasUploadContext = !!uploadContext?.scenario;
+  const canSubmit = !disabled && termsAccepted && hasUploadContext;
   const isLoading =
     isCreatingSession ||
     uploadState !== "idle" ||

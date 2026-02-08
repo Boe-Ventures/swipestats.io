@@ -26,6 +26,7 @@ import {
   absorbProfileIntoNew,
 } from "@/server/services/profile/additive.service";
 import { trackServerEvent } from "@/server/services/analytics.service";
+import { captureException } from "@/server/clients/posthog.client";
 import { getFirstAndLastDayOnApp } from "@/lib/profile.utils";
 
 /**
@@ -324,14 +325,13 @@ export const profileRouter = {
 
         return result.profile;
       } catch (error) {
-        // Track failure
+        if (error instanceof Error) {
+          await captureException(error, ctx.session.user.id);
+        }
         trackServerEvent(ctx.session.user.id, "tinder_profile_upload_failed", {
           tinderId: input.tinderId,
           errorType: "unknown",
-          errorMessage:
-            error instanceof Error
-              ? error.message.slice(0, 200)
-              : "Unknown error",
+          errorMessage: error instanceof Error ? error.message.slice(0, 500) : "Unknown error",
         });
         throw error;
       }
@@ -417,19 +417,13 @@ export const profileRouter = {
 
         return result.profile;
       } catch (error) {
-        // Track failure
+        if (error instanceof Error) {
+          await captureException(error, ctx.session.user.id);
+        }
         trackServerEvent(ctx.session.user.id, "tinder_profile_upload_failed", {
           tinderId: input.tinderId,
-          errorType:
-            error instanceof TRPCError
-              ? error.code === "FORBIDDEN"
-                ? "ownership"
-                : "unknown"
-              : "unknown",
-          errorMessage:
-            error instanceof Error
-              ? error.message.slice(0, 200)
-              : "Unknown error",
+          errorType: "unknown",
+          errorMessage: error instanceof Error ? error.message.slice(0, 500) : "Unknown error",
         });
         throw error;
       }
@@ -530,14 +524,13 @@ export const profileRouter = {
 
         return result.profile;
       } catch (error) {
-        // Track failure
+        if (error instanceof Error) {
+          await captureException(error, ctx.session.user.id);
+        }
         trackServerEvent(ctx.session.user.id, "tinder_profile_upload_failed", {
           tinderId: input.tinderId,
           errorType: "unknown",
-          errorMessage:
-            error instanceof Error
-              ? error.message.slice(0, 200)
-              : "Unknown error",
+          errorMessage: error instanceof Error ? error.message.slice(0, 500) : "Unknown error",
         });
         throw error;
       }

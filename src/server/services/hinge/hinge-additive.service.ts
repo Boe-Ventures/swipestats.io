@@ -20,8 +20,10 @@ import { createId } from "@/server/db/utils";
 import { transformHingeJsonToProfile } from "./hinge-transform.service";
 import { createHingeMessagesAndMatches } from "./hinge-messages.service";
 import { createHingeProfileMeta } from "./hinge-meta.service";
-import { transformHingePromptsForDb } from "../profile/profile.service";
-import type { HingeProfileResult } from "./hinge.service";
+import {
+  transformHingePromptsForDb,
+  type HingeProfileResult,
+} from "./hinge.service";
 
 /**
  * Transform Hinge media to database media insert format

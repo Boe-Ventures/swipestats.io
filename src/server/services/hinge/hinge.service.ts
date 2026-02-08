@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import type {
   AnonymizedHingeDataJSON,
   HingeMedia,
+  PromptEntry,
 } from "@/lib/interfaces/HingeDataJSON";
 import { withTransaction, db } from "@/server/db";
 import {
@@ -14,13 +15,13 @@ import {
   originalAnonymizedFileTable,
   profileMetaTable,
   type HingeProfile,
+  type HingePromptInsert,
   type MediaInsert,
 } from "@/server/db/schema";
 import { createId } from "@/server/db/utils";
 import { transformHingeJsonToProfile } from "./hinge-transform.service";
 import { createHingeMessagesAndMatches } from "./hinge-messages.service";
 import { createHingeProfileMeta } from "./hinge-meta.service";
-import { transformHingePromptsForDb } from "../profile/profile.service";
 
 /**
  * Result type returned from Hinge profile creation/update operations
@@ -628,4 +629,36 @@ export async function updateHingeProfile(data: {
       jsonSizeMB: parseFloat(jsonSizeMB),
     },
   };
+}
+
+/**
+ * Transform Hinge prompt entries to database insert format.
+ * Skips entries with missing required fields (prompt text, type, dates).
+ */
+export function transformHingePromptsForDb(
+  prompts: PromptEntry[],
+  hingeProfileId: string,
+): HingePromptInsert[] {
+  return prompts
+    .filter((prompt) => {
+      // Skip prompts missing required fields that would violate NOT NULL constraints
+      if (!prompt.type || !prompt.prompt) return false;
+      const created = prompt.created ? new Date(prompt.created) : null;
+      const updated = prompt.user_updated
+        ? new Date(prompt.user_updated)
+        : null;
+      if (!created || isNaN(created.getTime())) return false;
+      if (!updated || isNaN(updated.getTime())) return false;
+      return true;
+    })
+    .map((prompt) => ({
+      id: createId("hpr"),
+      type: prompt.type,
+      prompt: prompt.prompt!, // guaranteed by .filter() above
+      answerText: prompt.text ?? null,
+      answerOptions: prompt.options ? prompt.options.join(", ") : null,
+      createdPromptAt: new Date(prompt.created),
+      updatedPromptAt: new Date(prompt.user_updated),
+      hingeProfileId: hingeProfileId,
+    }));
 }

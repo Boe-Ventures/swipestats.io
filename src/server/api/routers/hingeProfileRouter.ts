@@ -17,6 +17,7 @@ import {
   absorbHingeProfileIntoNew,
 } from "@/server/services/hinge/hinge-additive.service";
 import { trackServerEvent } from "@/server/services/analytics.service";
+import { captureException } from "@/server/clients/posthog.client";
 import { fetchBlobJson } from "@/server/services/blob.service";
 
 /**
@@ -269,13 +270,15 @@ export const hingeProfileRouter = {
 
         return result.profile;
       } catch (error) {
-        // Track failure
+        if (error instanceof Error) {
+          await captureException(error, ctx.session.user.id);
+        }
         trackServerEvent(ctx.session.user.id, "hinge_profile_upload_failed", {
           hingeId: input.hingeId,
           errorType: "unknown",
           errorMessage:
             error instanceof Error
-              ? error.message.slice(0, 200)
+              ? error.message.slice(0, 500)
               : "Unknown error",
         });
         throw error;
@@ -337,18 +340,15 @@ export const hingeProfileRouter = {
 
         return result.profile;
       } catch (error) {
-        // Track failure
+        if (error instanceof Error) {
+          await captureException(error, ctx.session.user.id);
+        }
         trackServerEvent(ctx.session.user.id, "hinge_profile_upload_failed", {
           hingeId: input.hingeId,
-          errorType:
-            error instanceof TRPCError
-              ? error.code === "FORBIDDEN"
-                ? "ownership"
-                : "unknown"
-              : "unknown",
+          errorType: "unknown",
           errorMessage:
             error instanceof Error
-              ? error.message.slice(0, 200)
+              ? error.message.slice(0, 500)
               : "Unknown error",
         });
         throw error;
@@ -448,13 +448,15 @@ export const hingeProfileRouter = {
 
         return result.profile;
       } catch (error) {
-        // Track failure
+        if (error instanceof Error) {
+          await captureException(error, ctx.session.user.id);
+        }
         trackServerEvent(ctx.session.user.id, "hinge_profile_upload_failed", {
           hingeId: input.hingeId,
           errorType: "unknown",
           errorMessage:
             error instanceof Error
-              ? error.message.slice(0, 200)
+              ? error.message.slice(0, 500)
               : "Unknown error",
         });
         throw error;
@@ -517,13 +519,15 @@ export const hingeProfileRouter = {
 
         return result.profile;
       } catch (error) {
-        // Track failure - PostHog captures stack trace automatically
+        if (error instanceof Error) {
+          await captureException(error, ctx.session.user.id);
+        }
         trackServerEvent(ctx.session.user.id, "hinge_profile_upload_failed", {
           hingeId: input.hingeId,
           errorType: "unknown",
           errorMessage:
             error instanceof Error
-              ? error.message.slice(0, 200)
+              ? error.message.slice(0, 500)
               : "Unknown error",
         });
         throw error;
@@ -595,13 +599,15 @@ export const hingeProfileRouter = {
 
         return result.profile;
       } catch (error) {
-        // Track failure - PostHog captures stack trace automatically
+        if (error instanceof Error) {
+          await captureException(error, ctx.session.user.id);
+        }
         trackServerEvent(ctx.session.user.id, "hinge_profile_upload_failed", {
           hingeId: input.hingeId,
           errorType: "unknown",
           errorMessage:
             error instanceof Error
-              ? error.message.slice(0, 200)
+              ? error.message.slice(0, 500)
               : "Unknown error",
         });
         throw error;

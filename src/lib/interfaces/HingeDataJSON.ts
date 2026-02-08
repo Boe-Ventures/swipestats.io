@@ -203,8 +203,8 @@ export interface PromptEntry {
   /** Autoincrementing primary key */
   id: number;
 
-  /** The question or prompt shown to the user */
-  prompt: string;
+  /** The question or prompt shown to the user. Sometimes missing in Hinge exports. */
+  prompt?: string;
 
   /**
    * The format of the response.
