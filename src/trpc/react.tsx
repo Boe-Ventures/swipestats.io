@@ -51,6 +51,11 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
             process.env.NODE_ENV === "development" ||
             (op.direction === "down" && op.result instanceof Error),
         }),
+        // TODO: Consider using splitLink to route mutations through httpBatchLink.
+        // httpBatchStreamLink always returns HTTP 200 (headers sent before procedure runs),
+        // so errors appear as 200s in Vercel dashboard. Mutations don't benefit from streaming
+        // and are where errors matter most. create-t3-app defaults to httpBatchLink.
+        // See: https://trpc.io/docs/client/links/splitLink
         httpBatchStreamLink({
           transformer: SuperJSON,
           url: getBaseUrl() + "/api/trpc",
