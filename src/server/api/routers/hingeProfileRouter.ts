@@ -100,6 +100,9 @@ export const hingeProfileRouter = {
             },
             orderBy: (matches, { desc }) => [desc(matches.matchedAt)],
           },
+          interactions: {
+            orderBy: (interactions, { desc }) => [desc(interactions.timestamp)],
+          },
           profileMeta: true,
           prompts: true,
         },

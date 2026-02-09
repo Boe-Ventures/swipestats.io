@@ -85,6 +85,8 @@ export const hingeInteractionTypeEnum = pgEnum("HingeInteractionType", [
   "LIKE_SENT",
   "REJECT",
   "UNMATCH",
+  "MATCH",
+  "MESSAGE_SENT",
 ]);
 
 export const datasetTierEnum = pgEnum("DatasetTier", [

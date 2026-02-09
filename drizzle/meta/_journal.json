@@ -8,6 +8,13 @@
       "when": 1770465936889,
       "tag": "0000_strange_logan",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1770631980276,
+      "tag": "0001_eager_harrier",
+      "breakpoints": true
     }
   ]
 }

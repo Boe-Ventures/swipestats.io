@@ -1,4 +1,4 @@
-import type { Match, Message } from "@/server/db/schema";
+import type { Match, Message, HingeInteraction } from "@/server/db/schema";
 
 export type TimeGranularity =
   | "daily"
@@ -12,53 +12,61 @@ export type AggregatedHingeData = {
   periodDisplay: string; // "Jan 15" | "Week of Jan 15" | "January" | "Q1 2024" | "2024"
   matches: number;
   likes: number;
+  rejects: number;
   messagesSent: number;
-  messagesReceived: number;
-  totalMessages: number;
+  // messagesReceived removed - not available in Hinge GDPR data
+  totalMessages: number; // Same as messagesSent
   conversationsStarted: number; // Matches with at least one message
 };
 
 type DateEvent = {
   date: Date;
-  type: "match" | "like" | "messageSent" | "messageReceived";
+  type: "match" | "like" | "reject" | "messageSent";
   matchId?: string;
 };
 
 /**
  * Main aggregation function for Hinge data
+ * Uses hingeInteractionTable as the single source of truth for all events
  */
 export function aggregateHingeData(
-  matches: (Match & { messages: Message[] })[],
+  matches: (Match & { messages: Message[] })[], // Keep for backwards compat
+  interactions: HingeInteraction[],
   granularity: TimeGranularity,
 ): AggregatedHingeData[] {
-  // Extract all date events from matches and messages
+  // Extract all date events from interactions - this is now the single source of truth
   const events: DateEvent[] = [];
 
-  matches.forEach((match) => {
-    // Add match event
-    if (match.matchedAt) {
-      events.push({
-        date: new Date(match.matchedAt),
-        type: "match",
-        matchId: match.id,
-      });
+  // Process ALL interactions
+  interactions.forEach((interaction) => {
+    switch (interaction.type) {
+      case "LIKE_SENT":
+        events.push({
+          date: new Date(interaction.timestamp),
+          type: "like",
+        });
+        break;
+      case "REJECT":
+        events.push({
+          date: new Date(interaction.timestamp),
+          type: "reject",
+        });
+        break;
+      case "MATCH":
+        events.push({
+          date: new Date(interaction.timestamp),
+          type: "match",
+          matchId: interaction.matchId ?? undefined,
+        });
+        break;
+      case "MESSAGE_SENT":
+        events.push({
+          date: new Date(interaction.timestamp),
+          type: "messageSent",
+        });
+        break;
+      // UNMATCH not currently visualized
     }
-
-    // Add like event
-    if (match.likedAt) {
-      events.push({
-        date: new Date(match.likedAt),
-        type: "like",
-      });
-    }
-
-    // Add message events
-    match.messages?.forEach((message) => {
-      events.push({
-        date: new Date(message.sentDate),
-        type: message.to === 0 ? "messageSent" : "messageReceived",
-      });
-    });
   });
 
   // Aggregate by granularity
@@ -261,19 +269,25 @@ function aggregateEvents(
         case "like":
           acc.likes++;
           break;
+        case "reject":
+          acc.rejects++;
+          break;
         case "messageSent":
           acc.messagesSent++;
-          break;
-        case "messageReceived":
-          acc.messagesReceived++;
           break;
       }
       return acc;
     },
-    { matches: 0, likes: 0, messagesSent: 0, messagesReceived: 0 },
+    {
+      matches: 0,
+      likes: 0,
+      rejects: 0,
+      messagesSent: 0,
+    },
   );
 
-  const totalMessages = counts.messagesSent + counts.messagesReceived;
+  // totalMessages is the same as messagesSent (Hinge GDPR data only contains sent messages)
+  const totalMessages = counts.messagesSent;
 
   // Count conversations that started (had at least one message) in this period
   const conversationsStarted = matchIds.size;
@@ -281,8 +295,8 @@ function aggregateEvents(
   return {
     matches: counts.matches,
     likes: counts.likes,
+    rejects: counts.rejects,
     messagesSent: counts.messagesSent,
-    messagesReceived: counts.messagesReceived,
     totalMessages,
     conversationsStarted,
   };
@@ -299,4 +313,46 @@ function getISOWeekKey(date: Date): string {
   );
   const weekNum = Math.ceil((dayOfYear + startOfYear.getDay() + 1) / 7);
   return `${year}-W${String(weekNum).padStart(2, "0")}`;
+}
+
+/**
+ * Filter matches by date range
+ * Filters based on matchedAt timestamp
+ */
+export function filterMatchesByDateRange(
+  matches: (Match & { messages: Message[] })[],
+  from: Date,
+  to: Date,
+): (Match & { messages: Message[] })[] {
+  // Normalize dates to start/end of day for comparison
+  const fromTime = new Date(from);
+  fromTime.setHours(0, 0, 0, 0);
+
+  const toTime = new Date(to);
+  toTime.setHours(23, 59, 59, 999);
+
+  return matches.filter((match) => {
+    if (!match.matchedAt) return false;
+    const matchDate = new Date(match.matchedAt);
+    return matchDate >= fromTime && matchDate <= toTime;
+  });
+}
+
+/**
+ * Calculate the previous period dates given a current period
+ * Returns a period with the same duration, ending just before the current period starts
+ */
+export function calculatePreviousPeriod(
+  from: Date,
+  to: Date,
+): { from: Date; to: Date } {
+  const durationMs = to.getTime() - from.getTime();
+
+  const previousTo = new Date(from.getTime() - 1); // End 1ms before current period starts
+  const previousFrom = new Date(previousTo.getTime() - durationMs);
+
+  return {
+    from: previousFrom,
+    to: previousTo,
+  };
 }

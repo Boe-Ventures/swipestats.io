@@ -365,7 +365,6 @@ export async function absorbProfileIntoNew(data: {
 
     return {
       profile: insertedProfile,
-      matchCount: matchesInput.length,
       messageCount: messagesInput.length,
       photoCount: photosInput.length,
       usageDays: newUsage.length,
@@ -380,11 +379,15 @@ export async function absorbProfileIntoNew(data: {
     `⏱️  Total time: ${totalTime}ms (${(totalTime / 1000).toFixed(2)}s)\n`,
   );
 
+  const usageMatchTotal = Object.values(
+    anonymizedTinderJson.Usage.matches,
+  ).reduce((sum, v) => sum + v, 0);
+
   return {
     profile: profile.profile,
     metrics: {
       processingTimeMs: totalTime,
-      matchCount: profile.matchCount,
+      matchCount: usageMatchTotal,
       messageCount: profile.messageCount,
       photoCount: profile.photoCount,
       usageDays: profile.usageDays,
@@ -543,7 +546,6 @@ export async function additiveUpdateProfile(data: {
 
     return {
       profile: updatedProfile,
-      matchCount: matchesToInsert.length,
       messageCount: messagesToInsert.length,
       usageDays: newUsage.length,
     };
@@ -555,11 +557,15 @@ export async function additiveUpdateProfile(data: {
     `⏱️  Total time: ${totalTime}ms (${(totalTime / 1000).toFixed(2)}s)\n`,
   );
 
+  const usageMatchTotal = Object.values(
+    anonymizedTinderJson.Usage.matches,
+  ).reduce((sum, v) => sum + v, 0);
+
   return {
     profile: profile.profile,
     metrics: {
       processingTimeMs: totalTime,
-      matchCount: profile.matchCount,
+      matchCount: usageMatchTotal,
       messageCount: profile.messageCount,
       photoCount: 0, // Additive updates don't add photos
       usageDays: profile.usageDays,

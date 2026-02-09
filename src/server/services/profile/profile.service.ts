@@ -425,11 +425,18 @@ export async function createTinderProfile(data: {
   );
   console.log(`────────────────────────────────────────\n`);
 
+  // Use Usage.matches (daily aggregates) for match count — this is the
+  // authoritative source. Messages.length only counts conversation records,
+  // which can be 0 even when the user has matches (e.g. unmatched before messaging).
+  const usageMatchTotal = Object.values(
+    anonymizedTinderJson.Usage.matches,
+  ).reduce((sum, v) => sum + v, 0);
+
   return {
     profile,
     metrics: {
       processingTimeMs: totalTime,
-      matchCount: matchesInput.length,
+      matchCount: usageMatchTotal,
       messageCount: messagesInput.length,
       photoCount: photosInput.length,
       usageDays: usageData.length,

@@ -6,9 +6,7 @@ import { toast } from "sonner";
 import { useHingeInsights } from "../HingeInsightsProvider";
 import { ProfileOverview } from "./ProfileOverview";
 import { ConversationStats } from "./ConversationStats";
-import { EnhancedMatchTimeline } from "./EnhancedMatchTimeline";
-import { HingeActivityChart } from "./HingeActivityChart";
-import { HingeDatingFunnel } from "./HingeDatingFunnel";
+import { MasterHingeActivityChart } from "./charts/MasterHingeActivityChart";
 import { HingeInsightsSkeleton } from "./LoadingSkeletons";
 import { HingeMessagesMetaCard } from "./HingeMessagesMetaCard";
 import { DataRequestCTA } from "../../../_shared/DataRequestCTA";
@@ -76,20 +74,14 @@ export function MainHingeInsightsContent() {
           </div>
         </div>
 
-        {/* Stats Overview */}
-        <ProfileOverview />
+        {/* Activity Chart - Full Width */}
+        <MasterHingeActivityChart />
 
-        {/* Match Timeline - Full Width */}
-        <EnhancedMatchTimeline />
-
-        {/* Dating Funnel and Conversation Stats */}
+        {/* Profile Overview and Conversation Stats */}
         <div className="grid gap-8 lg:grid-cols-2">
-          <HingeDatingFunnel />
+          <ProfileOverview />
           <ConversationStats />
         </div>
-
-        {/* Activity Chart - Full Width */}
-        <HingeActivityChart />
 
         {/* Messages Meta Card */}
         <HingeMessagesMetaCard />

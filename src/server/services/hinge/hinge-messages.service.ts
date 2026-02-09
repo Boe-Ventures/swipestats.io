@@ -149,6 +149,18 @@ export function createHingeMessagesAndMatches(
           likedAt: null,
           matchedAt: new Date(matchEntry.timestamp),
         });
+
+        // Create MATCH interaction
+        interactionsInput.push({
+          id: createId("hint"),
+          type: "MATCH",
+          timestamp: new Date(matchEntry.timestamp),
+          timestampRaw: matchEntry.timestamp,
+          comment: null,
+          hasComment: false,
+          matchId,
+          hingeProfileId,
+        });
       }
 
       // 3. Process MESSAGES (only for matched conversations)
@@ -225,6 +237,18 @@ export function createHingeMessagesAndMatches(
             emotionScore: null,
             contentSanitized: null,
           });
+
+          // Create MESSAGE_SENT interaction
+          interactionsInput.push({
+            id: createId("hint"),
+            type: "MESSAGE_SENT",
+            timestamp: new Date(chat.timestamp),
+            timestampRaw: chat.timestamp,
+            comment: null,
+            hasComment: false,
+            matchId: matchId!,
+            hingeProfileId,
+          });
         });
       }
 
@@ -263,6 +287,12 @@ export function createHingeMessagesAndMatches(
   const unmatchesCount = interactionsInput.filter(
     (i) => i.type === "UNMATCH",
   ).length;
+  const matchInteractionsCount = interactionsInput.filter(
+    (i) => i.type === "MATCH",
+  ).length;
+  const messageSentInteractionsCount = interactionsInput.filter(
+    (i) => i.type === "MESSAGE_SENT",
+  ).length;
   const matchesWithMessages = matchesInput.filter(
     (m) => m.totalMessageCount > 0,
   ).length;
@@ -274,15 +304,17 @@ export function createHingeMessagesAndMatches(
       : "0";
 
   console.log(`   💬 Processing summary:`);
-  console.log(`      - ${likesCount} likes sent`);
-  console.log(`      - ${matchesInput.length} mutual matches`);
+  console.log(`      - ${likesCount} LIKE_SENT interactions`);
+  console.log(`      - ${matchInteractionsCount} MATCH interactions`);
+  console.log(`      - ${matchesInput.length} match records`);
   console.log(
     `      - ${matchesWithMessages} matches with messages (avg ${avgMessagesPerMatch} msgs/match)`,
   );
   console.log(`      - ${matchesWithoutMessages} matches with no messages`);
-  console.log(`      - ${rejectsCount} rejected incoming likes`);
-  console.log(`      - ${unmatchesCount} unmatches`);
-  console.log(`      - ${totalMessages} messages sent`);
+  console.log(`      - ${messageSentInteractionsCount} MESSAGE_SENT interactions`);
+  console.log(`      - ${totalMessages} message records`);
+  console.log(`      - ${rejectsCount} REJECT interactions`);
+  console.log(`      - ${unmatchesCount} UNMATCH interactions`);
 
   return {
     interactionsInput,
