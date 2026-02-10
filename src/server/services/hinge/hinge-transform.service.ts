@@ -86,7 +86,7 @@ export function transformHingeJsonToProfile(
     ageAtUpload,
     createDate,
     heightCentimeters: profile.height_centimeters ?? 0,
-    gender: mapHingeGender(profile.gender ?? ""),
+    gender: mapHingeGender(profile.gender_identity ?? profile.gender ?? ""),
     genderStr: profile.gender ?? "unknown",
     genderIdentity: profile.gender_identity ?? profile.gender ?? "unknown",
     genderIdentityDisplayed: profile.gender_identity_displayed ?? false,
