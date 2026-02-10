@@ -15,7 +15,11 @@ export async function checkAdminAuth() {
     return { isAuthorized: false, session: null };
   }
 
-  const adminEmails = ["kristian.e.boe@gmail.com"];
+  const adminEmails = [
+    "kristian.e.boe@gmail.com",
+    "pawel@swipestats.io",
+    "kris@swipestats.io",
+  ];
   const isAdmin = adminEmails.includes(session.user.email?.toLowerCase() ?? "");
 
   return { isAuthorized: isAdmin, session };

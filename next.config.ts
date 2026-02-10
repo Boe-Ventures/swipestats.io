@@ -31,6 +31,16 @@ const config: NextConfig = {
         hostname: "*.hingecdn.com",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "hinge-res.cloudinary.com",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "media.hingenexus.com",
+        pathname: "/**",
+      },
     ],
     localPatterns: [
       {

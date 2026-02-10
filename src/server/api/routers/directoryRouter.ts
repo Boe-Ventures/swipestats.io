@@ -5,6 +5,7 @@ import {
   hingeProfileTable,
   profileMetaTable,
   userTable,
+  originalAnonymizedFileTable,
   type Gender,
 } from "@/server/db/schema";
 import { GENDERS } from "@/server/db/constants";
@@ -113,6 +114,19 @@ export const directoryRouter = {
         }
       };
 
+      // Subquery to get the most recent blob URL for each Tinder user
+      const latestTinderFileSubquery = ctx.db
+        .select({
+          userId: originalAnonymizedFileTable.userId,
+          blobUrl: originalAnonymizedFileTable.blobUrl,
+          rowNum: sql<number>`ROW_NUMBER() OVER (PARTITION BY ${originalAnonymizedFileTable.userId} ORDER BY ${originalAnonymizedFileTable.createdAt} DESC)`.as(
+            "row_num",
+          ),
+        })
+        .from(originalAnonymizedFileTable)
+        .where(eq(originalAnonymizedFileTable.dataProvider, "TINDER"))
+        .as("latest_tinder_file");
+
       // Build base query for Tinder
       const tinderBaseQuery = ctx.db
         .select({
@@ -130,13 +144,34 @@ export const directoryRouter = {
           daysInPeriod: profileMetaTable.daysInPeriod,
           userCity: userTable.city,
           userCountry: userTable.country,
+          blobUrl: latestTinderFileSubquery.blobUrl,
         })
         .from(tinderProfileTable)
         .innerJoin(userTable, eq(tinderProfileTable.userId, userTable.id))
         .leftJoin(
           profileMetaTable,
           sql`${profileMetaTable.tinderProfileId} = ${tinderProfileTable.tinderId} AND ${profileMetaTable.hingeProfileId} IS NULL`,
+        )
+        .leftJoin(
+          latestTinderFileSubquery,
+          and(
+            eq(latestTinderFileSubquery.userId, tinderProfileTable.userId),
+            eq(latestTinderFileSubquery.rowNum, 1),
+          ),
         );
+
+      // Subquery to get the most recent blob URL for each Hinge user
+      const latestHingeFileSubquery = ctx.db
+        .select({
+          userId: originalAnonymizedFileTable.userId,
+          blobUrl: originalAnonymizedFileTable.blobUrl,
+          rowNum: sql<number>`ROW_NUMBER() OVER (PARTITION BY ${originalAnonymizedFileTable.userId} ORDER BY ${originalAnonymizedFileTable.createdAt} DESC)`.as(
+            "row_num",
+          ),
+        })
+        .from(originalAnonymizedFileTable)
+        .where(eq(originalAnonymizedFileTable.dataProvider, "HINGE"))
+        .as("latest_hinge_file");
 
       // Build base query for Hinge
       const hingeBaseQuery = ctx.db
@@ -155,12 +190,20 @@ export const directoryRouter = {
           daysInPeriod: profileMetaTable.daysInPeriod,
           userCity: userTable.city,
           userCountry: userTable.country,
+          blobUrl: latestHingeFileSubquery.blobUrl,
         })
         .from(hingeProfileTable)
         .innerJoin(userTable, eq(hingeProfileTable.userId, userTable.id))
         .leftJoin(
           profileMetaTable,
           sql`${profileMetaTable.hingeProfileId} = ${hingeProfileTable.hingeId} AND ${profileMetaTable.tinderProfileId} IS NULL`,
+        )
+        .leftJoin(
+          latestHingeFileSubquery,
+          and(
+            eq(latestHingeFileSubquery.userId, hingeProfileTable.userId),
+            eq(latestHingeFileSubquery.rowNum, 1),
+          ),
         );
 
       // Apply filters

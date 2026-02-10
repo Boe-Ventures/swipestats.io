@@ -1,9 +1,10 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { and, eq } from "drizzle-orm";
+import { and, eq, isNotNull, desc, count } from "drizzle-orm";
 import {
   tinderProfileTable,
   hingeProfileTable,
+  mediaTable,
   originalAnonymizedFileTable,
 } from "@/server/db/schema";
 import { adminProcedure } from "../trpc";
@@ -193,5 +194,137 @@ export const adminRouter = {
 
       // Return null instead of undefined for React Query compatibility
       return profile ?? null;
+    }),
+
+  // List profiles with their media inline (for admin media review - flat list)
+  listProfilesWithMedia: adminProcedure
+    .input(
+      z.object({
+        page: z.number().int().min(1).default(1),
+        limit: z.number().int().min(1).max(50).default(10),
+        platform: z
+          .enum(["all", "tinder", "hinge"])
+          .optional()
+          .default("all"),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const offset = (input.page - 1) * input.limit;
+
+      // Get Tinder profiles with media count
+      const tinderProfiles =
+        input.platform === "hinge"
+          ? []
+          : await ctx.db
+              .select({
+                profileId: mediaTable.tinderProfileId,
+                mediaCount: count(mediaTable.id),
+              })
+              .from(mediaTable)
+              .where(isNotNull(mediaTable.tinderProfileId))
+              .groupBy(mediaTable.tinderProfileId)
+              .orderBy(desc(count(mediaTable.id)));
+
+      // Get Hinge profiles with media count
+      const hingeProfiles =
+        input.platform === "tinder"
+          ? []
+          : await ctx.db
+              .select({
+                profileId: mediaTable.hingeProfileId,
+                mediaCount: count(mediaTable.id),
+              })
+              .from(mediaTable)
+              .where(isNotNull(mediaTable.hingeProfileId))
+              .groupBy(mediaTable.hingeProfileId)
+              .orderBy(desc(count(mediaTable.id)));
+
+      // Combine and sort by media count
+      const allProfiles = [
+        ...tinderProfiles.map((p) => ({
+          profileId: p.profileId!,
+          platform: "tinder" as const,
+          mediaCount: p.mediaCount,
+        })),
+        ...hingeProfiles.map((p) => ({
+          profileId: p.profileId!,
+          platform: "hinge" as const,
+          mediaCount: p.mediaCount,
+        })),
+      ].sort((a, b) => b.mediaCount - a.mediaCount);
+
+      const totalCount = allProfiles.length;
+      const paginatedProfiles = allProfiles.slice(offset, offset + input.limit);
+
+      // Fetch profile details + media for each
+      const profileDetails = await Promise.all(
+        paginatedProfiles.map(async (p) => {
+          // Fetch all media for this profile
+          const media = await ctx.db.query.mediaTable.findMany({
+            where:
+              p.platform === "tinder"
+                ? eq(mediaTable.tinderProfileId, p.profileId)
+                : eq(mediaTable.hingeProfileId, p.profileId),
+          });
+
+          if (p.platform === "tinder") {
+            const profile =
+              await ctx.db.query.tinderProfileTable.findFirst({
+                where: eq(tinderProfileTable.tinderId, p.profileId),
+                columns: {
+                  tinderId: true,
+                  gender: true,
+                  genderStr: true,
+                  ageAtUpload: true,
+                  city: true,
+                  country: true,
+                  bio: true,
+                  createdAt: true,
+                },
+              });
+            return {
+              ...p,
+              gender: profile?.gender ?? null,
+              genderStr: profile?.genderStr ?? null,
+              ageAtUpload: profile?.ageAtUpload ?? null,
+              city: profile?.city ?? null,
+              country: profile?.country ?? null,
+              bio: profile?.bio ?? null,
+              createdAt: profile?.createdAt ?? null,
+              media,
+            };
+          } else {
+            const profile =
+              await ctx.db.query.hingeProfileTable.findFirst({
+                where: eq(hingeProfileTable.hingeId, p.profileId),
+                columns: {
+                  hingeId: true,
+                  gender: true,
+                  genderStr: true,
+                  ageAtUpload: true,
+                  createdAt: true,
+                },
+              });
+            return {
+              ...p,
+              gender: profile?.gender ?? null,
+              genderStr: profile?.genderStr ?? null,
+              ageAtUpload: profile?.ageAtUpload ?? null,
+              city: null,
+              country: null,
+              bio: null,
+              createdAt: profile?.createdAt ?? null,
+              media,
+            };
+          }
+        }),
+      );
+
+      return {
+        profiles: profileDetails,
+        totalCount,
+        page: input.page,
+        totalPages: Math.ceil(totalCount / input.limit),
+      };
     }),
 } satisfies TRPCRouterRecord;
