@@ -164,6 +164,8 @@ export const adminProcedure = t.procedure
     // Admin email list for production
     const adminEmails = [
       "kristian.e.boe@gmail.com",
+      "paw@swipestats.io",
+      "kris@swipestats.io",
       // Add more admin emails here as needed
     ];
     const isAdmin = adminEmails.includes(

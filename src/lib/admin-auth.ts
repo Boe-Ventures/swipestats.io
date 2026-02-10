@@ -17,7 +17,7 @@ export async function checkAdminAuth() {
 
   const adminEmails = [
     "kristian.e.boe@gmail.com",
-    "pawel@swipestats.io",
+    "paw@swipestats.io",
     "kris@swipestats.io",
   ];
   const isAdmin = adminEmails.includes(session.user.email?.toLowerCase() ?? "");
