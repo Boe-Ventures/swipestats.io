@@ -199,6 +199,8 @@ export type ServerEventPropertiesDefinition = {
     hasPhotos: boolean;
     processingTimeMs: number;
     jsonSizeMB: number;
+    consentPhotos: boolean;
+    consentWork: boolean;
   };
 
   tinder_profile_updated: {
@@ -210,6 +212,8 @@ export type ServerEventPropertiesDefinition = {
     hasPhotos: boolean;
     processingTimeMs: number;
     jsonSizeMB: number;
+    consentPhotos: boolean;
+    consentWork: boolean;
   };
 
   tinder_profile_upload_failed: {
@@ -232,6 +236,8 @@ export type ServerEventPropertiesDefinition = {
     hasPhotos: boolean;
     processingTimeMs: number;
     jsonSizeMB: number;
+    consentPhotos: boolean;
+    consentWork: boolean;
   };
 
   hinge_profile_updated: {
@@ -244,6 +250,8 @@ export type ServerEventPropertiesDefinition = {
     hasPhotos: boolean;
     processingTimeMs: number;
     jsonSizeMB: number;
+    consentPhotos: boolean;
+    consentWork: boolean;
   };
 
   hinge_profile_merged: {
@@ -257,6 +265,8 @@ export type ServerEventPropertiesDefinition = {
     hasPhotos: boolean;
     processingTimeMs: number;
     jsonSizeMB: number;
+    consentPhotos: boolean;
+    consentWork: boolean;
   };
 
   hinge_profile_upload_failed: {

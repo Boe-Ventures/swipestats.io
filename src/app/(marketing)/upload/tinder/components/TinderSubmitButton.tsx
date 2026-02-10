@@ -160,6 +160,8 @@ export function TinderSubmitButton({
         blobUrl,
         timezone,
         country,
+        consentPhotos: consent.photos,
+        consentWork: consent.work,
       };
 
       // Route to appropriate endpoint based on scenario

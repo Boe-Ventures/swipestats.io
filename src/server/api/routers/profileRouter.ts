@@ -253,6 +253,8 @@ export const profileRouter = {
         blobUrl: z.string().url(),
         timezone: z.string().optional(),
         country: z.string().optional(),
+        consentPhotos: z.boolean().optional(),
+        consentWork: z.boolean().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -321,6 +323,8 @@ export const profileRouter = {
           hasPhotos: result.metrics.hasPhotos,
           processingTimeMs: result.metrics.processingTimeMs,
           jsonSizeMB: result.metrics.jsonSizeMB,
+          consentPhotos: input.consentPhotos ?? true,
+          consentWork: input.consentWork ?? true,
         });
 
         return result.profile;
@@ -346,6 +350,8 @@ export const profileRouter = {
         blobUrl: z.string().url(),
         timezone: z.string().optional(),
         country: z.string().optional(),
+        consentPhotos: z.boolean().optional(),
+        consentWork: z.boolean().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -413,6 +419,8 @@ export const profileRouter = {
           hasPhotos: result.metrics.hasPhotos,
           processingTimeMs: result.metrics.processingTimeMs,
           jsonSizeMB: result.metrics.jsonSizeMB,
+          consentPhotos: input.consentPhotos ?? true,
+          consentWork: input.consentWork ?? true,
         });
 
         return result.profile;
@@ -438,6 +446,8 @@ export const profileRouter = {
         blobUrl: z.string().url(),
         timezone: z.string().optional(),
         country: z.string().optional(),
+        consentPhotos: z.boolean().optional(),
+        consentWork: z.boolean().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -520,6 +530,8 @@ export const profileRouter = {
           hasPhotos: result.metrics.hasPhotos,
           processingTimeMs: result.metrics.processingTimeMs,
           jsonSizeMB: result.metrics.jsonSizeMB,
+          consentPhotos: input.consentPhotos ?? true,
+          consentWork: input.consentWork ?? true,
         });
 
         return result.profile;

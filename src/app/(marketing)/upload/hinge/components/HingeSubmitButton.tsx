@@ -166,6 +166,8 @@ export function HingeSubmitButton({
         blobUrl,
         timezone: browserTimezone,
         country: browserCountry,
+        consentPhotos: consent.sharePhotos,
+        consentWork: consent.shareWorkInfo,
       };
 
       // Route to appropriate endpoint based on scenario
