@@ -48,12 +48,13 @@ const posts = defineCollection({
         .enum([
           "Texting", // e.g. rizz lines, opening lines, how to text etc.
           "Prompts", // e.g. together we could hinge prompt answers
-          "Guides", // e.g. tinder review, is tinder worth it
+          "Guides", // e.g. how to get more matches, how to write a bio, photo tips
+          "Reviews", // e.g. app-specific reviews and roundup reviews
           "Statistics", // e.g. tinder statistics, bumble statistics
         ])
         .optional()
         .describe(
-          "Optional primary category for the post. Texting (e.g. rizz lines, opening lines, how to text etc.), Prompts (e.g. together we could hinge prompt answers), Guides (e.g. tinder review, is tinder worth it), Statistics (e.g. tinder statistics, bumble statistics)",
+          "Optional primary category for the post. Texting (e.g. rizz lines, opening lines, how to text etc.), Prompts (e.g. together we could hinge prompt answers), Guides (e.g. how-to and strategic guides), Reviews (e.g. app reviews and roundups), Statistics (e.g. tinder statistics, bumble statistics)",
         ),
       tags: s
         .array(s.string())

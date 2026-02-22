@@ -79,6 +79,36 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "monthly",
       priority: 0.4,
     },
+    {
+      url: `${baseUrl}/swipeguide`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.5,
+    },
+    {
+      url: `${baseUrl}/plus`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.5,
+    },
+    {
+      url: `${baseUrl}/pricing`,
+      lastModified: new Date(),
+      changeFrequency: "yearly",
+      priority: 0.4,
+    },
+    {
+      url: `${baseUrl}/dating-profile-photographers`,
+      lastModified: new Date(),
+      changeFrequency: "yearly",
+      priority: 0.4,
+    },
+    {
+      url: `${baseUrl}/dating-profile-review`,
+      lastModified: new Date(),
+      changeFrequency: "yearly",
+      priority: 0.4,
+    },
 
     // Legal pages
     {

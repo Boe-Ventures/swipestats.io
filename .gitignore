@@ -64,3 +64,6 @@ content/posts/showcase.mdx
 workflows/
 
 generated-videos/
+
+# MCP server config (contains credentials)
+.mcp.json
