@@ -64,3 +64,9 @@ content/posts/showcase.mdx
 workflows/
 
 generated-videos/
+
+# LLM analysis output (research datasets with PII)
+src/scripts/llm-analysis/output/*.jsonl
+src/scripts/llm-analysis/summaries/
+
+docs/plans/
