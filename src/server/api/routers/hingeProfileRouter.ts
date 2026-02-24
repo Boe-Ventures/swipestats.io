@@ -284,9 +284,7 @@ export const hingeProfileRouter = {
           hingeId: input.hingeId,
           errorType: "unknown",
           errorMessage:
-            error instanceof Error
-              ? error.message.slice(0, 500)
-              : "Unknown error",
+            error instanceof Error ? error.message : "Unknown error",
         });
         throw error;
       }
@@ -359,7 +357,7 @@ export const hingeProfileRouter = {
           errorType: "unknown",
           errorMessage:
             error instanceof Error
-              ? error.message.slice(0, 500)
+              ? error.message
               : "Unknown error",
         });
         throw error;
@@ -471,7 +469,7 @@ export const hingeProfileRouter = {
           errorType: "unknown",
           errorMessage:
             error instanceof Error
-              ? error.message.slice(0, 500)
+              ? error.message
               : "Unknown error",
         });
         throw error;
@@ -544,7 +542,7 @@ export const hingeProfileRouter = {
           errorType: "unknown",
           errorMessage:
             error instanceof Error
-              ? error.message.slice(0, 500)
+              ? error.message
               : "Unknown error",
         });
         throw error;
@@ -626,7 +624,7 @@ export const hingeProfileRouter = {
           errorType: "unknown",
           errorMessage:
             error instanceof Error
-              ? error.message.slice(0, 500)
+              ? error.message
               : "Unknown error",
         });
         throw error;
