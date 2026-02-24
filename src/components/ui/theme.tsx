@@ -79,17 +79,22 @@ export const themeDetectorScript = (function () {
       return validThemes.includes(theme as ThemeMode);
     };
 
-    const storedTheme = localStorage.getItem("theme-mode") ?? "light";
-    const validTheme = isValidTheme(storedTheme) ? storedTheme : "light";
+    try {
+      const storedTheme = localStorage?.getItem("theme-mode") ?? "light";
+      const validTheme = isValidTheme(storedTheme) ? storedTheme : "light";
 
-    if (validTheme === "auto") {
-      const autoTheme = window.matchMedia("(prefers-color-scheme: dark)")
-        .matches
-        ? "dark"
-        : "light";
-      document.documentElement.classList.add(autoTheme, "auto");
-    } else {
-      document.documentElement.classList.add(validTheme);
+      if (validTheme === "auto") {
+        const autoTheme = window.matchMedia("(prefers-color-scheme: dark)")
+          .matches
+          ? "dark"
+          : "light";
+        document.documentElement.classList.add(autoTheme, "auto");
+      } else {
+        document.documentElement.classList.add(validTheme);
+      }
+    } catch {
+      // localStorage unavailable (privacy mode, browser restrictions)
+      document.documentElement.classList.add("light");
     }
   }
   return `(${themeFn.toString()})();`;
