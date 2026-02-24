@@ -273,6 +273,7 @@ export const hingeProfileRouter = {
           jsonSizeMB: result.metrics.jsonSizeMB,
           consentPhotos: input.consentPhotos ?? true,
           consentWork: input.consentWork ?? true,
+          blobUrl: input.blobUrl,
         });
 
         return result.profile;

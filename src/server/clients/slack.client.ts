@@ -402,6 +402,8 @@ export function sendEvent(params: {
     usageDays,
     processingTimeMs,
     tinderId,
+    hingeId,
+    blobUrl,
     ...otherFields
   } = fields;
 
@@ -457,18 +459,50 @@ export function sendEvent(params: {
     createSectionBlock(`${emoji} *${title}*\n\n${formattedText}`),
   ];
 
-  // Add buttons using base URL and tinderId
-  if (tinderId) {
-    const baseUrl = env.NEXT_PUBLIC_BASE_URL;
-    const profileUrl = `${baseUrl}/insights/tinder/${tinderId}`;
-    const adminUrl = `${baseUrl}/admin/insights/tinder/${tinderId}`;
+  // Add buttons using base URL and profile ID
+  const actionButtons: ButtonElement[] = [];
+  const baseUrl = env.NEXT_PUBLIC_BASE_URL;
 
-    blocks.push(
-      createActionsBlock([
-        createButtonElement("View Profile", "view_profile", profileUrl),
-        createButtonElement("View Admin", "view_admin", adminUrl, "primary"),
-      ]),
+  if (tinderId) {
+    actionButtons.push(
+      createButtonElement(
+        "View Profile",
+        "view_profile",
+        `${baseUrl}/insights/tinder/${tinderId}`,
+      ),
+      createButtonElement(
+        "View Admin",
+        "view_admin",
+        `${baseUrl}/admin/insights/tinder/${tinderId}`,
+        "primary",
+      ),
     );
+  }
+
+  if (hingeId) {
+    actionButtons.push(
+      createButtonElement(
+        "View Profile",
+        "view_profile",
+        `${baseUrl}/insights/hinge/${hingeId}`,
+      ),
+      createButtonElement(
+        "View Admin",
+        "view_admin",
+        `${baseUrl}/admin/insights/hinge/${hingeId}`,
+        "primary",
+      ),
+    );
+  }
+
+  if (blobUrl) {
+    actionButtons.push(
+      createButtonElement("View Raw Data", "view_blob", String(blobUrl)),
+    );
+  }
+
+  if (actionButtons.length > 0) {
+    blocks.push(createActionsBlock(actionButtons));
   }
 
   // Add context block at the end
@@ -771,6 +805,7 @@ export async function trackSlackEvent<T extends ServerAnalyticsEventName>(
           photos: props.photoCount,
           usageDays: props.usageDays,
           processingTimeMs: props.processingTimeMs,
+          blobUrl: props.blobUrl,
         },
         eventName: event,
         imageUrls: media
@@ -890,7 +925,7 @@ export async function trackSlackEvent<T extends ServerAnalyticsEventName>(
           prompts: props.promptCount,
           interactions: props.interactionCount,
           processingTimeMs: props.processingTimeMs,
-          profileUrl: `https://swipestats.io/insights/hinge/${props.hingeId}`,
+          blobUrl: props.blobUrl,
         },
         eventName: event,
         imageUrls: media
