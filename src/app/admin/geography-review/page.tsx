@@ -257,7 +257,7 @@ export default function GeographyReviewPage() {
       )}
 
       {/* Empty State */}
-      {!isLoading && data && data.locations.length === 0 && (
+      {!isLoading && data?.locations.length === 0 && (
         <Card>
           <CardContent className="py-12 text-center">
             <Icon className="mx-auto h-12 w-12 text-gray-400" />

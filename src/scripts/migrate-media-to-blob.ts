@@ -129,7 +129,7 @@ async function main() {
     } catch (err) {
       failed++;
       console.error(
-        `❌ [${success + failed}/${rows.length}] ${row.id}: ${err instanceof Error ? err.message : err}`,
+        `❌ [${success + failed}/${rows.length}] ${row.id}: ${err instanceof Error ? err.message : String(err)}`,
       );
     }
 

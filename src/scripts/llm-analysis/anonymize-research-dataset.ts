@@ -375,7 +375,7 @@ async function anonymizeProfile(
       stats.errors++;
       console.log(
         red(
-          `    Bio error ${result.profile.tinderId.slice(0, 12)}...: ${err}`,
+          `    Bio error ${result.profile.tinderId.slice(0, 12)}...: ${String(err)}`,
         ),
       );
     }
@@ -386,8 +386,7 @@ async function anonymizeProfile(
     (m) => m.messages.length > 0,
   );
 
-  for (let ci = 0; ci < matchesWithMessages.length; ci++) {
-    const matchEntry = matchesWithMessages[ci]!;
+  for (const matchEntry of matchesWithMessages) {
     const textMessages = matchEntry.messages.filter(
       (m) => m.messageType === "TEXT" && m.content,
     );
@@ -431,7 +430,7 @@ async function anonymizeProfile(
       stats.errors++;
       console.log(
         red(
-          `    Conv error match=${matchEntry.match.id.slice(0, 12)}...: ${err}`,
+          `    Conv error match=${matchEntry.match.id.slice(0, 12)}...: ${String(err)}`,
         ),
       );
     }
@@ -611,7 +610,7 @@ async function main() {
 
     // Estimate tokens for all profiles in this batch
     for (const line of batchLines) {
-      const p: ExportedProfile = JSON.parse(line);
+      const p = JSON.parse(line) as ExportedProfile;
       const matchesWithMsgs = p.matches.filter(
         (m) => m.messages.length > 0,
       ).length;
@@ -634,7 +633,7 @@ async function main() {
     // Process all profiles in this batch concurrently
     const results = await Promise.allSettled(
       batchLines.map(async (line) => {
-        const profile: ExportedProfile = JSON.parse(line);
+        const profile = JSON.parse(line) as ExportedProfile;
         return anonymizeProfile(profile, stats);
       }),
     );

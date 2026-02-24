@@ -38,7 +38,6 @@ async function checkMediaForUnknownGender() {
           .groupBy(mediaTable.tinderProfileId)
       : [];
 
-    const mediaMap = new Map(mediaCounts.map((r) => [r.tinderProfileId, r.count]));
     const profilesWithMedia = mediaCounts.length;
     const totalMedia = mediaCounts.reduce((sum, r) => sum + r.count, 0);
 

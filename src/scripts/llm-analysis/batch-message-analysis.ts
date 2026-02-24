@@ -441,14 +441,14 @@ async function submitBatch(jsonlPath: string): Promise<string> {
   // Read and parse the JSONL file into individual requests
   const fileContent = readFileSync(jsonlPath, "utf-8");
   const lines = fileContent.trim().split("\n");
-  const requests = lines.map((line) => JSON.parse(line));
+  const requests = lines.map((line) => JSON.parse(line) as Parameters<typeof client.messages.batches.create>[0]["requests"][number]);
 
   console.log(
     `  Submitting ${cyan(fmtNum(requests.length))} requests from ${path.basename(jsonlPath)}...`,
   );
 
   const batch = await client.messages.batches.create({
-    requests: requests,
+    requests,
   });
 
   console.log(`  ${green("Batch created!")} ID: ${batch.id}`);
@@ -533,7 +533,7 @@ async function pollAndDownloadResults(
     const toolUse = result.result.message.content.find(
       (c: { type: string }) => c.type === "tool_use",
     );
-    if (!toolUse || toolUse.type !== "tool_use") {
+    if (toolUse?.type !== "tool_use") {
       failed++;
       console.log(
         yellow(
@@ -551,7 +551,7 @@ async function pollAndDownloadResults(
       failed++;
       console.log(
         yellow(
-          `  Warning: ${matchId} — failed to parse: ${parseErr}`,
+          `  Warning: ${matchId} — failed to parse: ${String(parseErr)}`,
         ),
       );
     }
@@ -733,7 +733,7 @@ async function aggregateUserLanguages(): Promise<void> {
     // Aggregate + deduplicate
     const allLangs = new Set<string>();
     for (const m of matchLanguages) {
-      const langs = m.languages as string[];
+      const langs = m.languages;
       if (Array.isArray(langs)) {
         for (const lang of langs) {
           allLangs.add(lang);
@@ -794,7 +794,7 @@ async function main() {
     let messageIdMap: Map<string, string[]>;
 
     if (existsSync(mapPath)) {
-      const mapData = JSON.parse(readFileSync(mapPath, "utf-8"));
+      const mapData = JSON.parse(readFileSync(mapPath, "utf-8")) as Record<string, string[]>;
       messageIdMap = new Map(Object.entries(mapData));
     } else {
       console.log(

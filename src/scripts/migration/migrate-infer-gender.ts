@@ -201,7 +201,7 @@ async function gatherTinderSignals(profile: {
         m.content.length >= 20 &&
         m.content.length <= 500,
     )
-    .map((m) => m.content as string)
+    .map((m) => m.content)
     .slice(0, 30); // Take first 30 text messages
 
   // Get raw file data if available
@@ -287,7 +287,7 @@ async function gatherHingeSignals(profile: {
         m.content.length >= 20 &&
         m.content.length <= 500,
     )
-    .map((m) => m.content as string)
+    .map((m) => m.content)
     .slice(0, 30);
 
   // Get raw file data if available

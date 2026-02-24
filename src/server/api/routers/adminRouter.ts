@@ -260,7 +260,7 @@ export const adminRouter = {
 
       // Process Tinder profiles
       for (const row of tinderQuery) {
-        const location = row.location as string;
+        const location = row.location!;
         if (!location) continue;
 
         const existing = locationMap.get(location) ?? {
@@ -285,7 +285,7 @@ export const adminRouter = {
 
       // Process Hinge profiles
       for (const row of hingeQuery) {
-        const location = row.location as string;
+        const location = row.location!;
         if (!location) continue;
 
         const existing = locationMap.get(location) ?? {
@@ -405,7 +405,7 @@ export const adminRouter = {
 
       // Process Tinder profiles
       for (const row of tinderQuery) {
-        const location = row.location as string;
+        const location = row.location!;
         if (!location) continue;
 
         const existing = locationMap.get(location) ?? {
@@ -430,7 +430,7 @@ export const adminRouter = {
 
       // Process Hinge profiles
       for (const row of hingeQuery) {
-        const location = row.location as string;
+        const location = row.location!;
         if (!location) continue;
 
         const existing = locationMap.get(location) ?? {

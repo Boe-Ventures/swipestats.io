@@ -19,7 +19,7 @@ import {
   messageTable,
   userTable,
 } from "@/server/db/schema";
-import { desc, eq, sql, isNotNull, and, gt, lte, isNull } from "drizzle-orm";
+import { desc, eq, sql, isNotNull, and, lte } from "drizzle-orm";
 
 // ---- HELPERS ------------------------------------------------------
 
@@ -31,11 +31,6 @@ const green = (s: string) => `\x1b[32m${s}\x1b[0m`;
 const red = (s: string) => `\x1b[31m${s}\x1b[0m`;
 const magenta = (s: string) => `\x1b[35m${s}\x1b[0m`;
 
-function truncate(s: string | null, max: number): string {
-  if (!s) return dim("(null)");
-  if (s.length <= max) return s;
-  return s.slice(0, max) + dim("…");
-}
 
 function fmtNum(n: number): string {
   return Number(n).toLocaleString();
@@ -266,7 +261,7 @@ async function main() {
     const cnt = Number(b.count);
     const chars = Number(b.totalChars);
     console.log(
-      `  ${(b.bucket as string).padEnd(22)} ${bar(cnt, textTotal, 20)} ${fmtNum(cnt).padStart(10)} msgs (${fmtPct(cnt, textTotal).padStart(6)}) │ ${fmtNum(chars).padStart(12)} chars (${fmtPct(chars, charTotal).padStart(6)})`,
+      `  ${(b.bucket).padEnd(22)} ${bar(cnt, textTotal, 20)} ${fmtNum(cnt).padStart(10)} msgs (${fmtPct(cnt, textTotal).padStart(6)}) │ ${fmtNum(chars).padStart(12)} chars (${fmtPct(chars, charTotal).padStart(6)})`,
     );
   }
 
@@ -491,7 +486,7 @@ async function main() {
     const matches = Number(b.matchCount);
     const msgs = Number(b.msgCount);
     console.log(
-      `  ${(b.bucket as string).padEnd(24)} ${bar(matches, totalMatches, 15)} ${fmtNum(matches).padStart(8)} matches (${fmtPct(matches, totalMatches).padStart(6)}) │ ${fmtNum(msgs).padStart(10)} msgs (${fmtPct(msgs, totalMessages).padStart(6)})`,
+      `  ${(b.bucket).padEnd(24)} ${bar(matches, totalMatches, 15)} ${fmtNum(matches).padStart(8)} matches (${fmtPct(matches, totalMatches).padStart(6)}) │ ${fmtNum(msgs).padStart(10)} msgs (${fmtPct(msgs, totalMessages).padStart(6)})`,
     );
   }
 
