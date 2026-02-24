@@ -119,6 +119,9 @@ export type DatasetTier = (typeof datasetTierEnum.enumValues)[number];
 export type DatasetExportStatus =
   (typeof datasetExportStatusEnum.enumValues)[number];
 
+/** ISO 639-1 two-letter language code, e.g. "en", "no", "es" */
+export type LanguageCode = string;
+
 // ---- RESOURCE TYPES (for attachments) ----------------------------
 
 export const RESOURCE_TYPES = [
@@ -163,6 +166,7 @@ export const userTable = pgTable("user", (t) => ({
   country: t.text(),
   region: t.text(), // state/province (e.g., "California", "Bavaria")
   continent: t.text(), // "North America", "Europe", "Asia", etc.
+  languages: t.jsonb().$type<LanguageCode[]>().default([]).notNull(), // aggregated from match-level analysis
   firstStartedWithDatingApps: t.timestamp(),
   happinessHistory: t.jsonb().default([]).notNull(),
   hotnessHistory: t.jsonb().default([]).notNull(),
@@ -300,6 +304,7 @@ export const tinderProfileTable = pgTable(
     genderStr: t.text().notNull(),
     bio: t.text(),
     bioOriginal: t.text(),
+    llmAnalyzedAt: t.timestamp(),
     city: t.text(),
     country: t.text(),
     region: t.text(),
@@ -531,8 +536,9 @@ export const matchTable = pgTable(
     gifCount: t.integer().notNull(),
     gestureCount: t.integer().notNull(),
     otherMessageTypeCount: t.integer().notNull(),
-    primaryLanguage: t.text(),
-    languages: t.jsonb().default([]).notNull(),
+    primaryLanguage: t.text().$type<LanguageCode>(),
+    languages: t.jsonb().$type<LanguageCode[]>().default([]).notNull(),
+    llmAnalyzedAt: t.timestamp(),
     initialMessageAt: t.timestamp(),
     lastMessageAt: t.timestamp(),
     engagementScore: t.integer(),
@@ -579,7 +585,7 @@ export const messageTable = pgTable(
     type: t.text(),
     gifUrl: t.text(),
     order: t.integer().notNull(),
-    language: t.text(),
+    language: t.text().$type<LanguageCode>(),
     timeSinceLastMessageRelative: t.text(),
     emotionScore: t.integer(),
     matchId: t
@@ -613,6 +619,7 @@ export const mediaTable = pgTable(
     prompt: t.text(),
     caption: t.text(),
     url: t.text().notNull(),
+    originalUrl: t.text(),
     fromSoMe: t.boolean(),
     hingeProfileId: t
       .text()
