@@ -29,53 +29,35 @@ const CTA_INJECTION_RULES: CtaPosition[] = [
     headingIndex: 1, // 2nd h2
     position: "before",
     ctaType: "card",
-    props: {
-      title: "Unlock Your Complete Dating Profile Analysis",
-      description:
-        "Upload your Tinder, Hinge, or Bumble data to get personalized insights, compare yourself to demographics worldwide, and discover what's working (or not working) in your dating life.",
-      buttonText: "Get Started - It's Free",
-      buttonHref: "/upload?provider=tinder",
-    },
+    props: {}, // Uses CtaCard defaults
   },
   {
     headingIndex: 3, // 4th h2
     position: "before",
     ctaType: "newsletter",
-    props: {
-      // NewsletterCard uses default props
-    },
+    props: {},
   },
   {
     headingIndex: 5, // 6th h2
     position: "before",
     ctaType: "card",
     props: {
-      title: "Unlock Your Complete Dating Profile Analysis",
-      description:
-        "Upload your Tinder, Hinge, or Bumble data to get personalized insights, compare yourself to demographics worldwide, and discover what's working (or not working) in your dating life.",
-      buttonText: "Get Started - It's Free",
-      buttonHref: "/upload?provider=tinder",
+      title: "How Does Your Match Rate Compare?",
+      description: "Find out in under 60 seconds.",
+      buttonText: "Check My Stats — Free",
     },
   },
   {
     headingIndex: 7, // 8th h2
     position: "before",
     ctaType: "newsletter",
-    props: {
-      // NewsletterCard uses default props
-    },
+    props: {},
   },
   {
     headingIndex: 9, // 10th h2
     position: "before",
     ctaType: "card",
-    props: {
-      title: "Unlock Your Complete Dating Profile Analysis",
-      description:
-        "Upload your Tinder, Hinge, or Bumble data to get personalized insights, compare yourself to demographics worldwide, and discover what's working (or not working) in your dating life.",
-      buttonText: "Get Started - It's Free",
-      buttonHref: "/upload?provider=tinder",
-    },
+    props: {}, // Back to CtaCard defaults
   },
 ];
 
