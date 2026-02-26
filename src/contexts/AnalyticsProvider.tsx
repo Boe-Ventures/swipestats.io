@@ -116,8 +116,8 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
   // Check stored consent on mount
   useEffect(() => {
     if (!hasConsent && !session.isPending) {
-      const storedConsent = localStorage.getItem("cookieConsent");
-      const consentTimestamp = localStorage.getItem("cookieConsentTimestamp");
+      const storedConsent = localStorage?.getItem("cookieConsent");
+      const consentTimestamp = localStorage?.getItem("cookieConsentTimestamp");
 
       if (storedConsent === "true") {
         setHasConsent(true);

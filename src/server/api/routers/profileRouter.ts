@@ -325,6 +325,7 @@ export const profileRouter = {
           jsonSizeMB: result.metrics.jsonSizeMB,
           consentPhotos: input.consentPhotos ?? true,
           consentWork: input.consentWork ?? true,
+          blobUrl: input.blobUrl,
         });
 
         return result.profile;
@@ -335,7 +336,7 @@ export const profileRouter = {
         trackServerEvent(ctx.session.user.id, "tinder_profile_upload_failed", {
           tinderId: input.tinderId,
           errorType: "unknown",
-          errorMessage: error instanceof Error ? error.message.slice(0, 500) : "Unknown error",
+          errorMessage: error instanceof Error ? error.message : "Unknown error",
         });
         throw error;
       }
@@ -431,7 +432,7 @@ export const profileRouter = {
         trackServerEvent(ctx.session.user.id, "tinder_profile_upload_failed", {
           tinderId: input.tinderId,
           errorType: "unknown",
-          errorMessage: error instanceof Error ? error.message.slice(0, 500) : "Unknown error",
+          errorMessage: error instanceof Error ? error.message : "Unknown error",
         });
         throw error;
       }
@@ -542,7 +543,7 @@ export const profileRouter = {
         trackServerEvent(ctx.session.user.id, "tinder_profile_upload_failed", {
           tinderId: input.tinderId,
           errorType: "unknown",
-          errorMessage: error instanceof Error ? error.message.slice(0, 500) : "Unknown error",
+          errorMessage: error instanceof Error ? error.message : "Unknown error",
         });
         throw error;
       }

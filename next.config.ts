@@ -2,8 +2,9 @@
  * Run `build` or `dev` with `SKIP_ENV_VALIDATION` to skip env validation. This is especially useful
  * for Docker builds.
  */
-import "./src/env.ts";
+import { envSelect } from "./src/env";
 import type { NextConfig } from "next";
+import { withPostHogConfig } from "@posthog/nextjs-config";
 
 const config: NextConfig = {
   /** Enable MDX pages */
@@ -114,4 +115,12 @@ const config: NextConfig = {
   },
 };
 
-export default config;
+export default withPostHogConfig(config, {
+  personalApiKey: process.env.POSTHOG_PERSONAL_API_KEY ?? "",
+  projectId: envSelect({ prod: "26095", test: "132105" }),
+  host: "https://eu.posthog.com",
+  sourcemaps: {
+    enabled: true,
+    deleteAfterUpload: true,
+  },
+});

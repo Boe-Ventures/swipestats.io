@@ -6,6 +6,7 @@ import {
   hingeProfileTable,
   mediaTable,
   originalAnonymizedFileTable,
+  userTable,
 } from "@/server/db/schema";
 import { adminProcedure } from "../trpc";
 import type { TRPCRouterRecord } from "@trpc/server";
@@ -194,6 +195,286 @@ export const adminRouter = {
 
       // Return null instead of undefined for React Query compatibility
       return profile ?? null;
+    }),
+
+  // List profiles aggregated by location (for geography review)
+  listProfilesByLocation: adminProcedure
+    .input(
+      z.object({
+        page: z.number().int().min(1).default(1),
+        limit: z.number().int().min(1).max(100).default(20),
+        platform: z.enum(["all", "tinder", "hinge"]).default("all"),
+        groupBy: z.enum(["country", "region", "continent"]).default("country"),
+        sortBy: z.enum(["count", "name"]).default("count"),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const { platform, groupBy } = input;
+
+      // Get the location field based on groupBy
+      const locationField = userTable[groupBy];
+
+      // Query Tinder profiles with gender breakdown
+      const tinderQuery =
+        platform === "hinge"
+          ? []
+          : await ctx.db
+              .select({
+                location: locationField,
+                gender: tinderProfileTable.gender,
+                count: count(),
+              })
+              .from(tinderProfileTable)
+              .innerJoin(userTable, eq(tinderProfileTable.userId, userTable.id))
+              .where(isNotNull(locationField))
+              .groupBy(locationField, tinderProfileTable.gender);
+
+      // Query Hinge profiles with gender breakdown
+      const hingeQuery =
+        platform === "tinder"
+          ? []
+          : await ctx.db
+              .select({
+                location: locationField,
+                gender: hingeProfileTable.gender,
+                count: count(),
+              })
+              .from(hingeProfileTable)
+              .innerJoin(userTable, eq(hingeProfileTable.userId, userTable.id))
+              .where(isNotNull(locationField))
+              .groupBy(locationField, hingeProfileTable.gender);
+
+      // Merge results by location
+      const locationMap = new Map<
+        string,
+        {
+          location: string;
+          tinderCount: number;
+          hingeCount: number;
+          totalCount: number;
+          maleCount: number;
+          femaleCount: number;
+          otherCount: number;
+        }
+      >();
+
+      // Process Tinder profiles
+      for (const row of tinderQuery) {
+        const location = row.location!;
+        if (!location) continue;
+
+        const existing = locationMap.get(location) ?? {
+          location,
+          tinderCount: 0,
+          hingeCount: 0,
+          totalCount: 0,
+          maleCount: 0,
+          femaleCount: 0,
+          otherCount: 0,
+        };
+
+        existing.tinderCount += row.count;
+        existing.totalCount += row.count;
+
+        if (row.gender === "MALE") existing.maleCount += row.count;
+        else if (row.gender === "FEMALE") existing.femaleCount += row.count;
+        else existing.otherCount += row.count;
+
+        locationMap.set(location, existing);
+      }
+
+      // Process Hinge profiles
+      for (const row of hingeQuery) {
+        const location = row.location!;
+        if (!location) continue;
+
+        const existing = locationMap.get(location) ?? {
+          location,
+          tinderCount: 0,
+          hingeCount: 0,
+          totalCount: 0,
+          maleCount: 0,
+          femaleCount: 0,
+          otherCount: 0,
+        };
+
+        existing.hingeCount += row.count;
+        existing.totalCount += row.count;
+
+        if (row.gender === "MALE") existing.maleCount += row.count;
+        else if (row.gender === "FEMALE") existing.femaleCount += row.count;
+        else existing.otherCount += row.count;
+
+        locationMap.set(location, existing);
+      }
+
+      // Convert to array and sort
+      let locations = Array.from(locationMap.values());
+
+      if (input.sortBy === "count") {
+        locations.sort((a, b) => b.totalCount - a.totalCount);
+      } else {
+        locations.sort((a, b) => a.location.localeCompare(b.location));
+      }
+
+      // Paginate
+      const totalCount = locations.length;
+      const offset = (input.page - 1) * input.limit;
+      locations = locations.slice(offset, offset + input.limit);
+
+      return {
+        locations,
+        totalCount,
+        page: input.page,
+        totalPages: Math.ceil(totalCount / input.limit),
+        groupBy: input.groupBy,
+      };
+    }),
+
+  // List profiles by region/state within a specific country (for country drill-down)
+  listProfilesByRegion: adminProcedure
+    .input(
+      z.object({
+        country: z.string().min(1),
+        page: z.number().int().min(1).default(1),
+        limit: z.number().int().min(1).max(100).default(20),
+        platform: z.enum(["all", "tinder", "hinge"]).default("all"),
+        groupBy: z.enum(["region", "city"]).default("region"),
+        sortBy: z.enum(["count", "name"]).default("count"),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const { platform, groupBy, country } = input;
+
+      // Get the location field based on groupBy (region or city)
+      const locationField = userTable[groupBy];
+
+      // Query Tinder profiles with gender breakdown filtered by country
+      const tinderQuery =
+        platform === "hinge"
+          ? []
+          : await ctx.db
+              .select({
+                location: locationField,
+                gender: tinderProfileTable.gender,
+                count: count(),
+              })
+              .from(tinderProfileTable)
+              .innerJoin(userTable, eq(tinderProfileTable.userId, userTable.id))
+              .where(
+                and(
+                  eq(userTable.country, country),
+                  isNotNull(locationField),
+                ),
+              )
+              .groupBy(locationField, tinderProfileTable.gender);
+
+      // Query Hinge profiles with gender breakdown filtered by country
+      const hingeQuery =
+        platform === "tinder"
+          ? []
+          : await ctx.db
+              .select({
+                location: locationField,
+                gender: hingeProfileTable.gender,
+                count: count(),
+              })
+              .from(hingeProfileTable)
+              .innerJoin(userTable, eq(hingeProfileTable.userId, userTable.id))
+              .where(
+                and(
+                  eq(userTable.country, country),
+                  isNotNull(locationField),
+                ),
+              )
+              .groupBy(locationField, hingeProfileTable.gender);
+
+      // Merge results by location
+      const locationMap = new Map<
+        string,
+        {
+          location: string;
+          tinderCount: number;
+          hingeCount: number;
+          totalCount: number;
+          maleCount: number;
+          femaleCount: number;
+          otherCount: number;
+        }
+      >();
+
+      // Process Tinder profiles
+      for (const row of tinderQuery) {
+        const location = row.location!;
+        if (!location) continue;
+
+        const existing = locationMap.get(location) ?? {
+          location,
+          tinderCount: 0,
+          hingeCount: 0,
+          totalCount: 0,
+          maleCount: 0,
+          femaleCount: 0,
+          otherCount: 0,
+        };
+
+        existing.tinderCount += row.count;
+        existing.totalCount += row.count;
+
+        if (row.gender === "MALE") existing.maleCount += row.count;
+        else if (row.gender === "FEMALE") existing.femaleCount += row.count;
+        else existing.otherCount += row.count;
+
+        locationMap.set(location, existing);
+      }
+
+      // Process Hinge profiles
+      for (const row of hingeQuery) {
+        const location = row.location!;
+        if (!location) continue;
+
+        const existing = locationMap.get(location) ?? {
+          location,
+          tinderCount: 0,
+          hingeCount: 0,
+          totalCount: 0,
+          maleCount: 0,
+          femaleCount: 0,
+          otherCount: 0,
+        };
+
+        existing.hingeCount += row.count;
+        existing.totalCount += row.count;
+
+        if (row.gender === "MALE") existing.maleCount += row.count;
+        else if (row.gender === "FEMALE") existing.femaleCount += row.count;
+        else existing.otherCount += row.count;
+
+        locationMap.set(location, existing);
+      }
+
+      // Convert to array and sort
+      let locations = Array.from(locationMap.values());
+
+      if (input.sortBy === "count") {
+        locations.sort((a, b) => b.totalCount - a.totalCount);
+      } else {
+        locations.sort((a, b) => a.location.localeCompare(b.location));
+      }
+
+      // Paginate
+      const totalCount = locations.length;
+      const offset = (input.page - 1) * input.limit;
+      locations = locations.slice(offset, offset + input.limit);
+
+      return {
+        country,
+        locations,
+        totalCount,
+        page: input.page,
+        totalPages: Math.ceil(totalCount / input.limit),
+        groupBy: input.groupBy,
+      };
     }),
 
   // List profiles with their media inline (for admin media review - flat list)

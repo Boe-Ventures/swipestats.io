@@ -201,6 +201,7 @@ export type ServerEventPropertiesDefinition = {
     jsonSizeMB: number;
     consentPhotos: boolean;
     consentWork: boolean;
+    blobUrl?: string;
   };
 
   tinder_profile_updated: {
@@ -238,6 +239,7 @@ export type ServerEventPropertiesDefinition = {
     jsonSizeMB: number;
     consentPhotos: boolean;
     consentWork: boolean;
+    blobUrl?: string;
   };
 
   hinge_profile_updated: {
