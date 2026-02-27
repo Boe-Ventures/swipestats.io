@@ -82,13 +82,17 @@ export async function GET(request: NextRequest) {
     // Get the blob content
     const blob = await blobResponse.blob();
 
-    // Generate filename
-    const filename = `swipestats-dataset-${exportRecord.tier.toLowerCase()}.json`;
+    // Generate filename — detect gzipped exports by blob URL extension
+    const isGzipped = exportRecord.blobUrl.endsWith(".gz");
+    const filename = isGzipped
+      ? `swipestats-dataset-${exportRecord.tier.toLowerCase()}.jsonl.gz`
+      : `swipestats-dataset-${exportRecord.tier.toLowerCase()}.json`;
+    const contentType = isGzipped ? "application/gzip" : "application/json";
 
     // Return with Content-Disposition header to force download
     return new NextResponse(blob, {
       headers: {
-        "Content-Type": "application/json",
+        "Content-Type": contentType,
         "Content-Disposition": `attachment; filename="${filename}"`,
         "Content-Length": blob.size.toString(),
       },
