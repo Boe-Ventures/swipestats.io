@@ -1,37 +1,35 @@
 # SwipeStats Demo Dataset
 
 ## Overview
-This is a FREE sample dataset containing 2 anonymized dating app profiles.
+This is a FREE sample dataset containing 1 anonymized dating app profiles.
 
-## What's Included
-- **Profile Data**: Age, gender, location, bio, interests, education
+## Format
+JSONL (JSON Lines) — one JSON object per line.
+
+- Line 1: metadata object (export info)
+- Lines 2–N: profile objects (one per profile)
+- Last line: citation object
+
+## What's Included Per Profile
+- **Profile Data**: Age, gender, location, bio, interests, education, preferences
 - **Aggregated Stats**: Total swipes, matches, messages, conversion rates
-- **Daily Activity**: Up to 30 days of app usage data per profile
-- **Match Counts**: Total matches for each profile
+- **Full Daily Activity**: Complete app usage history (swipes, matches, messages per day)
+- **Match Count**: Total number of matches
 
-## Data Format
-The data is provided in JSON format with the following structure:
+## Data Structure
 
 ```json
-{
-  "metadata": { /* Export information */ },
-  "profiles": [
-    {
-      "profile": { /* Basic profile info */ },
-      "meta": { /* Aggregated statistics */ },
-      "usageSample": [ /* Daily activity data */ ],
-      "matchCount": 123
-    }
-  ]
-}
+{"type": "metadata", "exportId": "...", "tier": "FREE_SAMPLE", ...}
+{"type": "profile", "profile": {...}, "meta": {...}, "usage": [...], "matchCount": 123}
+{"type": "citation", "text": "..."}
 ```
 
 ## Privacy & Ethics
-✅ All data is fully anonymized
-✅ No personal identifiers included
-✅ Message content excluded for privacy
-✅ Collected with explicit user consent
-✅ GDPR compliant
+- All data is fully anonymized
+- No personal identifiers included
+- Message content excluded for privacy
+- Collected with explicit user consent
+- GDPR compliant
 
 ## Usage Rights
 This sample dataset is provided for:
@@ -40,48 +38,24 @@ This sample dataset is provided for:
 - Understanding the data structure
 
 For commercial use, publication, or larger datasets, please visit:
-👉 https://swipestats.io/research
-
-## TypeScript Types
-Full TypeScript interfaces are available in our open-source repository:
-- Tinder types: https://github.com/Boe-Ventures/swipestats.io/blob/main/src/lib/interfaces/TinderDataJSON.ts
-- Hinge types: https://github.com/Boe-Ventures/swipestats.io/blob/main/src/lib/interfaces/HingeDataJSON.ts
+https://swipestats.io/research
 
 ## Need More Data?
 
-### Starter Pack - $15
-- 10 profiles
-- Perfect for testing and learning
-
-### Standard Dataset - $50
-- 1,000 profiles
-- Commercial use ✓
-- Publication rights ✓
-- Best price per profile ($0.05)
-
-### Fresh Dataset - $150
-- 1,000 most recent profiles
-- Latest dating trends
-- Priority support
-
-### Premium Dataset - $300
-- 3,000 recent profiles
-- Statistical significance
-- Deep market analysis
-
-### Academic License - From $1,500
-- 5,000+ profiles
-- Custom data requests
-- Student distribution rights
-- Monthly support
+| Tier | Profiles | Price |
+|------|----------|-------|
+| Starter | 10 | $15 |
+| Standard | 1,000 | $50 |
+| Fresh | 1,000 recent | $150 |
+| Premium | 3,000 recent | $300 |
+| Academic | 5,000+ custom | From $1,500 |
 
 Visit https://swipestats.io/research to purchase
 
 ## Citation
 If you use this data in research or publications, please cite as:
-"SwipeStats.io Dating App Dataset, 2026, 2 Profiles"
+"SwipeStats.io Dating App Dataset, 2026, 1 Profiles"
 
 ## Questions?
 Contact: kris@swipestats.io
 Website: https://swipestats.io
-GitHub: https://github.com/Boe-Ventures/swipestats.io

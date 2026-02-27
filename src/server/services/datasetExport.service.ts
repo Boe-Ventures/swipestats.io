@@ -1,7 +1,7 @@
-import { eq, sql, gte, inArray } from "drizzle-orm";
+import { eq, sql, gte } from "drizzle-orm";
 import { put } from "@vercel/blob";
 
-import { db, withWsDb } from "@/server/db";
+import { db } from "@/server/db";
 import {
   datasetExportTable,
   tinderProfileTable,
@@ -11,8 +11,11 @@ import {
 } from "@/server/db/schema";
 
 /**
- * Generate a dataset export for a given export record
- * This function should be called in a background job (e.g., with waitUntil)
+ * Generate a dataset export for a given export record.
+ *
+ * Processes one profile at a time to avoid Neon's 64MB HTTP response limit.
+ * Outputs JSONL (one JSON object per line) so researchers can stream-parse
+ * large datasets without loading the entire file into memory.
  */
 export async function generateDatasetForExport(
   exportId: string,
@@ -45,126 +48,80 @@ export async function generateDatasetForExport(
 
     const profileIds = profiles.map((p) => p.tinderId);
 
-    // tinder_usage can exceed Neon's 64MB HTTP response limit for large exports.
-    // Use WebSocket connection (no size cap) for that query; HTTP is fine for the others.
-    const [metas, usageRows, matchCounts] = await Promise.all([
-      db
-        .select()
-        .from(profileMetaTable)
-        .where(inArray(profileMetaTable.tinderProfileId, profileIds)),
+    // Build JSONL: one line per object
+    const lines: string[] = [];
 
-      withWsDb((wsDb) =>
-        wsDb
-          .select()
-          .from(tinderUsageTable)
-          .where(inArray(tinderUsageTable.tinderProfileId, profileIds))
-          .orderBy(tinderUsageTable.tinderProfileId, tinderUsageTable.dateStamp),
-      ),
-
-      db
-        .select({
-          tinderProfileId: matchTable.tinderProfileId,
-          count: sql<number>`count(*)`,
-        })
-        .from(matchTable)
-        .where(inArray(matchTable.tinderProfileId, profileIds))
-        .groupBy(matchTable.tinderProfileId),
-    ]);
-
-    // Index by profile ID for O(1) lookup
-    const metaMap = new Map(metas.map((m) => [m.tinderProfileId, m]));
-    const matchCountMap = new Map(
-      matchCounts.map((r) => [r.tinderProfileId, r.count]),
-    );
-
-    // Group usage rows by profile, keeping only the 30 most recent
-    const usageByProfile = new Map<string, typeof usageRows>();
-    for (const u of usageRows) {
-      const existing = usageByProfile.get(u.tinderProfileId) ?? [];
-      existing.push(u);
-      usageByProfile.set(u.tinderProfileId, existing);
-    }
-
-    // Assemble enriched profiles
-    const enrichedProfiles = profiles.map((profile) => {
-      const profileMeta = metaMap.get(profile.tinderId);
-      const usageData = (usageByProfile.get(profile.tinderId) ?? []).slice(-30);
-      const matchCount = matchCountMap.get(profile.tinderId) ?? 0;
-
-      return {
-        profile: {
-          tinderId: profile.tinderId,
-          birthDate: profile.birthDate,
-          ageAtUpload: profile.ageAtUpload,
-          ageAtLastUsage: profile.ageAtLastUsage,
-          createDate: profile.createDate,
-          activeTime: profile.activeTime,
-          gender: profile.gender,
-          bio: profile.bio,
-          city: profile.city,
-          country: profile.country,
-          region: profile.region,
-          interests: profile.interests,
-          sexualOrientations: profile.sexualOrientations,
-          instagramConnected: profile.instagramConnected,
-          spotifyConnected: profile.spotifyConnected,
-          jobTitle: profile.jobTitle,
-          company: profile.company,
-          school: profile.school,
-          educationLevel: profile.educationLevel,
-          ageFilterMin: profile.ageFilterMin,
-          ageFilterMax: profile.ageFilterMax,
-          interestedIn: profile.interestedIn,
-          genderFilter: profile.genderFilter,
-          firstDayOnApp: profile.firstDayOnApp,
-          lastDayOnApp: profile.lastDayOnApp,
-          daysInProfilePeriod: profile.daysInProfilePeriod,
-        },
-        meta: profileMeta ?? null,
-        usageSample: usageData.map((u) => ({
-          dateStamp: u.dateStamp,
-          appOpens: u.appOpens,
-          matches: u.matches,
-          swipeLikes: u.swipeLikes,
-          swipePasses: u.swipePasses,
-          messagesReceived: u.messagesReceived,
-          messagesSent: u.messagesSent,
-          matchRate: u.matchRate,
-          likeRate: u.likeRate,
-        })),
-        matchCount,
-      };
-    });
-
-    // Create the dataset JSON
-    const dataset = {
-      metadata: {
+    // First line: metadata
+    lines.push(
+      JSON.stringify({
+        type: "metadata",
         exportId,
         tier: exportRecord.tier,
         profileCount: profiles.length,
         generatedAt: new Date().toISOString(),
         version: "1.0",
+        format: "jsonl",
         recency: exportRecord.recency,
-      },
-      profiles: enrichedProfiles,
-      citation:
-        'SwipeStats.io Dating App Dataset. Please cite as: "SwipeStats.io Dating App Dataset, ' +
-        new Date().getFullYear() +
-        ", " +
-        profiles.length +
-        ' Profiles"',
-    };
+      }),
+    );
 
-    // Convert to JSON string
-    const jsonContent = JSON.stringify(dataset, null, 2);
-    const blob = Buffer.from(jsonContent);
+    // Process each profile individually — small indexed queries, never hits size limits
+    for (const profile of profiles) {
+      const [meta, usage, matchCount] = await Promise.all([
+        db.query.profileMetaTable.findFirst({
+          where: eq(profileMetaTable.tinderProfileId, profile.tinderId),
+        }),
 
-    // Upload to Vercel Blob with structured path
+        db
+          .select()
+          .from(tinderUsageTable)
+          .where(eq(tinderUsageTable.tinderProfileId, profile.tinderId))
+          .orderBy(tinderUsageTable.dateStamp),
+
+        db
+          .select({ count: sql<number>`count(*)` })
+          .from(matchTable)
+          .where(eq(matchTable.tinderProfileId, profile.tinderId))
+          .then((rows) => rows[0]?.count ?? 0),
+      ]);
+
+      // Strip internal fields, keep everything researchers need
+      const { userId, computed, createdAt, updatedAt, llmAnalyzedAt, bioOriginal, swipestatsVersion, ...profileData } =
+        profile;
+
+      lines.push(
+        JSON.stringify({
+          type: "profile",
+          profile: profileData,
+          meta: meta ?? null,
+          usage, // Full usage history, not truncated
+          matchCount,
+        }),
+      );
+    }
+
+    // Last line: citation
+    lines.push(
+      JSON.stringify({
+        type: "citation",
+        text:
+          'SwipeStats.io Dating App Dataset. Please cite as: "SwipeStats.io Dating App Dataset, ' +
+          new Date().getFullYear() +
+          ", " +
+          profiles.length +
+          ' Profiles"',
+      }),
+    );
+
+    const jsonlContent = lines.join("\n") + "\n";
+    const blob = Buffer.from(jsonlContent);
+
+    // Upload to Vercel Blob
     const date = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
-    const pathname = `datasets/${exportRecord.tier.toLowerCase()}/${date}/${exportId}.json`;
+    const pathname = `datasets/${exportRecord.tier.toLowerCase()}/${date}/${exportId}.jsonl`;
     const blobResult = await put(pathname, blob, {
       access: "public",
-      contentType: "application/json",
+      contentType: "application/x-ndjson",
       addRandomSuffix: false,
     });
 

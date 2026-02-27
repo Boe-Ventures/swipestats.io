@@ -7,10 +7,10 @@ import ws from "ws";
 import { env } from "@/env";
 import * as schema from "./schema";
 
-// Configure for serverless environments (Vercel Edge, Cloudflare Workers, etc.)
+// Configure WebSocket for Node.js serverless environments
 neonConfig.webSocketConstructor = ws;
-// Enable querying over fetch for edge environments
-neonConfig.poolQueryViaFetch = true;
+// Note: poolQueryViaFetch is NOT set. Setting it to true forces Pool connections
+// through HTTP fetch, which defeats withWsDb (bypassing the 64MB HTTP limit).
 
 // Augmented schema with Better Auth model name aliases
 // Better Auth's experimental.joins feature expects db.query.session, db.query.user, etc.

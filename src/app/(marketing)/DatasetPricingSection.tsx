@@ -196,7 +196,7 @@ export function DatasetPricingSection() {
           </div>
           <Link
             prefetch={false}
-            href="/downloads/swipestats-demo-profile.json.zip"
+            href="/downloads/swipestats-demo-dataset.jsonl.zip"
             target="_blank"
           >
             <Button variant={"ghost"}>Donwnload demo profile</Button>

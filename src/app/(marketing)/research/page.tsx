@@ -76,7 +76,7 @@ function HeroSection() {
           </p>
           <div className="mt-10 flex items-center gap-x-6">
             <Link
-              href="/downloads/swipestats-demo-profile.json.zip"
+              href="/downloads/swipestats-demo-dataset.jsonl.zip"
               target="_blank"
               className="rounded-md bg-rose-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-rose-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600"
             >
@@ -464,7 +464,7 @@ function DataDetailsSection() {
               see what&apos;s included.
             </p>
             <Link
-              href="/downloads/swipestats-demo-profile.json.zip"
+              href="/downloads/swipestats-demo-dataset.jsonl.zip"
               target="_blank"
               className="mt-4 inline-block rounded-md bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-900 shadow-xs hover:bg-gray-100"
             >
@@ -925,7 +925,7 @@ function FinalCTASection() {
             </p>
             <div className="mt-10 flex items-center justify-center gap-x-6 lg:justify-start">
               <Link
-                href="/downloads/swipestats-demo-profile.json.zip"
+                href="/downloads/swipestats-demo-dataset.jsonl.zip"
                 target="_blank"
                 className="rounded-md bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-900 shadow-xs hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
               >
