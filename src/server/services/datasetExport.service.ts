@@ -1,5 +1,6 @@
 import { eq, sql, gte } from "drizzle-orm";
 import { put } from "@vercel/blob";
+import { gzipSync } from "zlib";
 
 import { db } from "@/server/db";
 import {
@@ -123,21 +124,23 @@ export async function generateDatasetForExport(
     );
 
     const jsonlContent = lines.join("\n") + "\n";
-    const blob = Buffer.from(jsonlContent);
+    const raw = Buffer.from(jsonlContent);
+    const compressed = gzipSync(raw);
 
-    // Upload to Vercel Blob
-    const sizeMB = (blob.length / 1024 / 1024).toFixed(1);
-    console.log(`[dataset-export] ${exportId} — uploading ${sizeMB}MB to blob...`);
+    // Upload gzipped to Vercel Blob
+    const rawMB = (raw.length / 1024 / 1024).toFixed(1);
+    const gzMB = (compressed.length / 1024 / 1024).toFixed(1);
+    console.log(`[dataset-export] ${exportId} — uploading ${gzMB}MB gzipped (${rawMB}MB raw) to blob...`);
     const date = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
-    const pathname = `datasets/${exportRecord.tier.toLowerCase()}/${date}/${exportId}.jsonl`;
-    const blobResult = await put(pathname, blob, {
+    const pathname = `datasets/${exportRecord.tier.toLowerCase()}/${date}/${exportId}.jsonl.gz`;
+    const blobResult = await put(pathname, compressed, {
       access: "public",
-      contentType: "application/x-ndjson",
+      contentType: "application/gzip",
       addRandomSuffix: false,
     });
 
     const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
-    console.log(`[dataset-export] ${exportId} — done! ${profiles.length} profiles, ${sizeMB}MB, ${totalTime}s total`);
+    console.log(`[dataset-export] ${exportId} — done! ${profiles.length} profiles, ${rawMB}MB raw, ${gzMB}MB gzipped, ${totalTime}s total`);
 
     // Update export record with success
     await db
@@ -145,7 +148,7 @@ export async function generateDatasetForExport(
       .set({
         status: "READY",
         blobUrl: blobResult.url,
-        blobSize: blob.length,
+        blobSize: raw.length,
         profileIds: profileIds,
         generatedAt: new Date(),
       })
