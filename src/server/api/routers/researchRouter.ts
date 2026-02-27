@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import type { TRPCRouterRecord } from "@trpc/server";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { waitUntil } from "@vercel/functions";
 
 import { datasetExportTable } from "@/server/db/schema";
 import {
@@ -134,9 +135,11 @@ export const researchRouter = {
         // Trigger background generation only if we created the record
         if (exportRecord) {
           const exportId = exportRecord.id;
-          generateDatasetForExport(exportId).catch((error) => {
-            console.error(`Failed to generate dataset ${exportId}:`, error);
-          });
+          waitUntil(
+            generateDatasetForExport(exportId).catch((error) => {
+              console.error(`Failed to generate dataset ${exportId}:`, error);
+            }),
+          );
         }
       } catch (error) {
         // If insert fails (likely unique constraint on license_key), re-query the existing record
@@ -295,10 +298,12 @@ export const researchRouter = {
         .set({ status: "PENDING", errorMessage: null })
         .where(eq(datasetExportTable.id, exportRecord.id));
 
-      // Trigger generation (fire and forget)
-      generateDatasetForExport(exportRecord.id).catch((error) => {
-        console.error("Failed to retry generation:", error);
-      });
+      // Trigger generation — waitUntil keeps the function alive after response
+      waitUntil(
+        generateDatasetForExport(exportRecord.id).catch((error) => {
+          console.error("Failed to retry generation:", error);
+        }),
+      );
 
       return { success: true };
     }),

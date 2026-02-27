@@ -66,6 +66,7 @@ export async function generateDatasetForExport(
     );
 
     // Process profiles in parallel batches (10 at a time)
+    const startTime = Date.now();
     for (let i = 0; i < profiles.length; i += 10) {
       const batch = profiles.slice(i, i + 10);
       const batchLines = await Promise.all(
@@ -102,6 +103,10 @@ export async function generateDatasetForExport(
         }),
       );
       lines.push(...batchLines);
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+      console.log(
+        `[dataset-export] ${exportId} — batch ${Math.floor(i / 10) + 1}/${Math.ceil(profiles.length / 10)} done (${i + batch.length}/${profiles.length} profiles, ${elapsed}s)`,
+      );
     }
 
     // Last line: citation
@@ -121,6 +126,8 @@ export async function generateDatasetForExport(
     const blob = Buffer.from(jsonlContent);
 
     // Upload to Vercel Blob
+    const sizeMB = (blob.length / 1024 / 1024).toFixed(1);
+    console.log(`[dataset-export] ${exportId} — uploading ${sizeMB}MB to blob...`);
     const date = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
     const pathname = `datasets/${exportRecord.tier.toLowerCase()}/${date}/${exportId}.jsonl`;
     const blobResult = await put(pathname, blob, {
@@ -128,6 +135,9 @@ export async function generateDatasetForExport(
       contentType: "application/x-ndjson",
       addRandomSuffix: false,
     });
+
+    const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
+    console.log(`[dataset-export] ${exportId} — done! ${profiles.length} profiles, ${sizeMB}MB, ${totalTime}s total`);
 
     // Update export record with success
     await db
