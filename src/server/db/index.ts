@@ -76,5 +76,19 @@ export async function withTransaction<T>(
   }
 }
 
+// Helper for queries that exceed Neon's HTTP 64MB response limit.
+// Uses a WebSocket connection (no size limit) instead of the default HTTP client.
+export async function withWsDb<T>(
+  callback: (db: NeonDatabase<typeof schema>) => Promise<T>,
+): Promise<T> {
+  const { db: wsDb, cleanup } = createTransactionClient();
+
+  try {
+    return await callback(wsDb);
+  } finally {
+    await cleanup();
+  }
+}
+
 // Export the SQL client for HTTP-based operations if needed
 export { sql };

@@ -1,7 +1,7 @@
 import { eq, sql, gte, inArray } from "drizzle-orm";
 import { put } from "@vercel/blob";
 
-import { db } from "@/server/db";
+import { db, withWsDb } from "@/server/db";
 import {
   datasetExportTable,
   tinderProfileTable,
@@ -45,18 +45,21 @@ export async function generateDatasetForExport(
 
     const profileIds = profiles.map((p) => p.tinderId);
 
-    // Batch fetch all related data in 3 parallel queries (not N×3)
+    // tinder_usage can exceed Neon's 64MB HTTP response limit for large exports.
+    // Use WebSocket connection (no size cap) for that query; HTTP is fine for the others.
     const [metas, usageRows, matchCounts] = await Promise.all([
       db
         .select()
         .from(profileMetaTable)
         .where(inArray(profileMetaTable.tinderProfileId, profileIds)),
 
-      db
-        .select()
-        .from(tinderUsageTable)
-        .where(inArray(tinderUsageTable.tinderProfileId, profileIds))
-        .orderBy(tinderUsageTable.tinderProfileId, tinderUsageTable.dateStamp),
+      withWsDb((wsDb) =>
+        wsDb
+          .select()
+          .from(tinderUsageTable)
+          .where(inArray(tinderUsageTable.tinderProfileId, profileIds))
+          .orderBy(tinderUsageTable.tinderProfileId, tinderUsageTable.dateStamp),
+      ),
 
       db
         .select({
