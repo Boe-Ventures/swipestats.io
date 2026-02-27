@@ -65,39 +65,43 @@ export async function generateDatasetForExport(
       }),
     );
 
-    // Process each profile individually — small indexed queries, never hits size limits
-    for (const profile of profiles) {
-      const [meta, usage, matchCount] = await Promise.all([
-        db.query.profileMetaTable.findFirst({
-          where: eq(profileMetaTable.tinderProfileId, profile.tinderId),
-        }),
+    // Process profiles in parallel batches (10 at a time)
+    for (let i = 0; i < profiles.length; i += 10) {
+      const batch = profiles.slice(i, i + 10);
+      const batchLines = await Promise.all(
+        batch.map(async (profile) => {
+          const [meta, usage, matchCount] = await Promise.all([
+            db.query.profileMetaTable.findFirst({
+              where: eq(profileMetaTable.tinderProfileId, profile.tinderId),
+            }),
 
-        db
-          .select()
-          .from(tinderUsageTable)
-          .where(eq(tinderUsageTable.tinderProfileId, profile.tinderId))
-          .orderBy(tinderUsageTable.dateStamp),
+            db
+              .select()
+              .from(tinderUsageTable)
+              .where(eq(tinderUsageTable.tinderProfileId, profile.tinderId))
+              .orderBy(tinderUsageTable.dateStamp),
 
-        db
-          .select({ count: sql<number>`count(*)` })
-          .from(matchTable)
-          .where(eq(matchTable.tinderProfileId, profile.tinderId))
-          .then((rows) => rows[0]?.count ?? 0),
-      ]);
+            db
+              .select({ count: sql<number>`count(*)` })
+              .from(matchTable)
+              .where(eq(matchTable.tinderProfileId, profile.tinderId))
+              .then((rows) => rows[0]?.count ?? 0),
+          ]);
 
-      // Strip internal fields, keep everything researchers need
-      const { userId, computed, createdAt, updatedAt, llmAnalyzedAt, bioOriginal, swipestatsVersion, ...profileData } =
-        profile;
+          // Strip internal fields, keep everything researchers need
+          const { userId, computed, createdAt, updatedAt, llmAnalyzedAt, bioOriginal, swipestatsVersion, ...profileData } =
+            profile;
 
-      lines.push(
-        JSON.stringify({
-          type: "profile",
-          profile: profileData,
-          meta: meta ?? null,
-          usage, // Full usage history, not truncated
-          matchCount,
+          return JSON.stringify({
+            type: "profile",
+            profile: profileData,
+            meta: meta ?? null,
+            usage,
+            matchCount,
+          });
         }),
       );
+      lines.push(...batchLines);
     }
 
     // Last line: citation
