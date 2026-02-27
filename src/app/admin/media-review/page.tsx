@@ -45,7 +45,7 @@ function isValidImageUrl(url: string): boolean {
 export default function AdminMediaReviewPage() {
   const trpc = useTRPC();
   const [page, setPage] = useState(1);
-  const [platform, setPlatform] = useState<"all" | "tinder" | "hinge">("all");
+  const [platform, setPlatform] = useState<"tinder" | "hinge">("tinder");
   const [lightbox, setLightbox] = useState<{
     media: Media[];
     index: number;
@@ -94,7 +94,7 @@ export default function AdminMediaReviewPage() {
           <Select
             value={platform}
             onValueChange={(v) => {
-              setPlatform(v as "all" | "tinder" | "hinge");
+              setPlatform(v as "tinder" | "hinge");
               setPage(1);
             }}
           >
@@ -102,7 +102,6 @@ export default function AdminMediaReviewPage() {
               <SelectValue placeholder="Platform" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Platforms</SelectItem>
               <SelectItem value="tinder">Tinder</SelectItem>
               <SelectItem value="hinge">Hinge</SelectItem>
             </SelectContent>
@@ -126,8 +125,7 @@ export default function AdminMediaReviewPage() {
               const validMedia = profile.media.filter((m) =>
                 isValidImageUrl(m.url),
               );
-              const invalidCount =
-                profile.media.length - validMedia.length;
+              const invalidCount = profile.media.length - validMedia.length;
 
               return (
                 <Card
@@ -166,7 +164,7 @@ export default function AdminMediaReviewPage() {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-gray-500">
-                          {profile.mediaCount} media
+                          {profile.media.length} media
                           {invalidCount > 0 && (
                             <span className="text-yellow-600">
                               {" "}

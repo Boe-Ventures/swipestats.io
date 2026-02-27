@@ -4,7 +4,7 @@
  * Profile filtering for cohort membership
  */
 
-import { and, eq, gte, lte, type SQL } from "drizzle-orm";
+import { and, eq, gte, inArray, lte, type SQL } from "drizzle-orm";
 import { db } from "@/server/db";
 import {
   tinderProfileTable,
@@ -100,16 +100,12 @@ async function queryTinderProfilesForCohort(cohort: CohortDefinition): Promise<
     return [];
   }
 
-  const metaMap = new Map<string, typeof profileMetaTable.$inferSelect>();
+  const metas = await db
+    .select()
+    .from(profileMetaTable)
+    .where(inArray(profileMetaTable.tinderProfileId, tinderIds));
 
-  for (const tinderId of tinderIds) {
-    const meta = await db.query.profileMetaTable.findFirst({
-      where: eq(profileMetaTable.tinderProfileId, tinderId),
-    });
-    if (meta) {
-      metaMap.set(tinderId, meta);
-    }
-  }
+  const metaMap = new Map(metas.map((m) => [m.tinderProfileId, m]));
 
   // Combine results
   return filteredProfiles
@@ -189,16 +185,12 @@ async function queryHingeProfilesForCohort(cohort: CohortDefinition): Promise<
     return [];
   }
 
-  const metaMap = new Map<string, typeof profileMetaTable.$inferSelect>();
+  const metas = await db
+    .select()
+    .from(profileMetaTable)
+    .where(inArray(profileMetaTable.hingeProfileId, hingeIds));
 
-  for (const hingeId of hingeIds) {
-    const meta = await db.query.profileMetaTable.findFirst({
-      where: eq(profileMetaTable.hingeProfileId, hingeId),
-    });
-    if (meta) {
-      metaMap.set(hingeId, meta);
-    }
-  }
+  const metaMap = new Map(metas.map((m) => [m.hingeProfileId, m]));
 
   // Combine results
   return filteredProfiles

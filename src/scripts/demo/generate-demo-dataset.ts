@@ -6,7 +6,7 @@
  */
 
 import { db } from "@/server/db";
-import { eq, inArray, sql } from "drizzle-orm";
+import { inArray, sql } from "drizzle-orm";
 import {
   tinderProfileTable,
   profileMetaTable,
@@ -36,90 +36,94 @@ async function generateDemoDataset() {
 
   console.log(`✅ Found ${profiles.length} profiles`);
 
-  // Collect profile IDs for audit
   const profileIds = profiles.map((p) => p.tinderId);
 
-  // For each profile, get related data
-  const enrichedProfiles = await Promise.all(
-    profiles.map(async (profile) => {
-      // Get profile meta
-      const profileMeta = await db.query.profileMetaTable.findFirst({
-        where: eq(profileMetaTable.tinderProfileId, profile.tinderId),
-      });
+  // Batch fetch all related data in 3 parallel queries (not N×3)
+  const [metas, usageRows, matchCounts] = await Promise.all([
+    db
+      .select()
+      .from(profileMetaTable)
+      .where(inArray(profileMetaTable.tinderProfileId, profileIds)),
 
-      // Get usage data (last 30 days or all if less)
-      const usageData = await db.query.tinderUsageTable.findMany({
-        where: eq(tinderUsageTable.tinderProfileId, profile.tinderId),
-        limit: 30,
-      });
+    db
+      .select()
+      .from(tinderUsageTable)
+      .where(inArray(tinderUsageTable.tinderProfileId, profileIds))
+      .orderBy(tinderUsageTable.tinderProfileId, tinderUsageTable.dateStamp),
 
-      // Get match count (without full message data for privacy)
-      const matchCount = await db
-        .select({ count: sql<number>`count(*)` })
-        .from(matchTable)
-        .where(eq(matchTable.tinderProfileId, profile.tinderId))
-        .then((r) => r[0]?.count ?? 0);
+    db
+      .select({
+        tinderProfileId: matchTable.tinderProfileId,
+        count: sql<number>`count(*)`,
+      })
+      .from(matchTable)
+      .where(inArray(matchTable.tinderProfileId, profileIds))
+      .groupBy(matchTable.tinderProfileId),
+  ]);
 
-      return {
-        profile: {
-          tinderId: profile.tinderId,
-          birthDate: profile.birthDate,
-          ageAtUpload: profile.ageAtUpload,
-          ageAtLastUsage: profile.ageAtLastUsage,
-          createDate: profile.createDate,
-          activeTime: profile.activeTime,
-          gender: profile.gender,
-          bio: profile.bio,
-          city: profile.city,
-          country: profile.country,
-          region: profile.region,
-          interests: profile.interests,
-          sexualOrientations: profile.sexualOrientations,
-          instagramConnected: profile.instagramConnected,
-          spotifyConnected: profile.spotifyConnected,
-          jobTitle: profile.jobTitle,
-          company: profile.company,
-          school: profile.school,
-          educationLevel: profile.educationLevel,
-          ageFilterMin: profile.ageFilterMin,
-          ageFilterMax: profile.ageFilterMax,
-          interestedIn: profile.interestedIn,
-          genderFilter: profile.genderFilter,
-          firstDayOnApp: profile.firstDayOnApp,
-          lastDayOnApp: profile.lastDayOnApp,
-          daysInProfilePeriod: profile.daysInProfilePeriod,
-        },
-        meta: profileMeta
-          ? {
-              daysInPeriod: profileMeta.daysInPeriod,
-              daysActive: profileMeta.daysActive,
-              appOpensTotal: profileMeta.appOpensTotal,
-              swipeLikesTotal: profileMeta.swipeLikesTotal,
-              swipePassesTotal: profileMeta.swipePassesTotal,
-              messagesSentTotal: profileMeta.messagesSentTotal,
-              messagesReceivedTotal: profileMeta.messagesReceivedTotal,
-              matchesTotal: profileMeta.matchesTotal,
-              matchRate: profileMeta.matchRate,
-              likeRate: profileMeta.likeRate,
-              swipesPerDay: profileMeta.swipesPerDay,
-              conversationCount: profileMeta.conversationCount,
-            }
-          : null,
-        usageSample: usageData.map((u) => ({
-          dateStamp: u.dateStamp,
-          appOpens: u.appOpens,
-          matches: u.matches,
-          swipeLikes: u.swipeLikes,
-          swipePasses: u.swipePasses,
-          messagesReceived: u.messagesReceived,
-          messagesSent: u.messagesSent,
-          matchRate: u.matchRate,
-          likeRate: u.likeRate,
-        })),
-        matchCount,
-      };
-    }),
+  // Index by profile ID for O(1) lookup
+  const metaMap = new Map(metas.map((m) => [m.tinderProfileId, m]));
+  const matchCountMap = new Map(
+    matchCounts.map((r) => [r.tinderProfileId, r.count]),
   );
+
+  const usageByProfile = new Map<string, typeof usageRows>();
+  for (const u of usageRows) {
+    const existing = usageByProfile.get(u.tinderProfileId) ?? [];
+    existing.push(u);
+    usageByProfile.set(u.tinderProfileId, existing);
+  }
+
+  // Assemble enriched profiles
+  const enrichedProfiles = profiles.map((profile) => {
+    const profileMeta = metaMap.get(profile.tinderId);
+    const usageData = (usageByProfile.get(profile.tinderId) ?? []).slice(-30);
+    const matchCount = matchCountMap.get(profile.tinderId) ?? 0;
+
+    return {
+      profile: {
+        tinderId: profile.tinderId,
+        birthDate: profile.birthDate,
+        ageAtUpload: profile.ageAtUpload,
+        ageAtLastUsage: profile.ageAtLastUsage,
+        createDate: profile.createDate,
+        activeTime: profile.activeTime,
+        gender: profile.gender,
+        bio: profile.bio,
+        city: profile.city,
+        country: profile.country,
+        region: profile.region,
+        interests: profile.interests,
+        sexualOrientations: profile.sexualOrientations,
+        instagramConnected: profile.instagramConnected,
+        spotifyConnected: profile.spotifyConnected,
+        jobTitle: profile.jobTitle,
+        company: profile.company,
+        school: profile.school,
+        educationLevel: profile.educationLevel,
+        ageFilterMin: profile.ageFilterMin,
+        ageFilterMax: profile.ageFilterMax,
+        interestedIn: profile.interestedIn,
+        genderFilter: profile.genderFilter,
+        firstDayOnApp: profile.firstDayOnApp,
+        lastDayOnApp: profile.lastDayOnApp,
+        daysInProfilePeriod: profile.daysInProfilePeriod,
+      },
+      meta: profileMeta ?? null,
+      usageSample: usageData.map((u) => ({
+        dateStamp: u.dateStamp,
+        appOpens: u.appOpens,
+        matches: u.matches,
+        swipeLikes: u.swipeLikes,
+        swipePasses: u.swipePasses,
+        messagesReceived: u.messagesReceived,
+        messagesSent: u.messagesSent,
+        matchRate: u.matchRate,
+        likeRate: u.likeRate,
+      })),
+      matchCount,
+    };
+  });
 
   // Create the dataset JSON (matching production format)
   const dataset = {

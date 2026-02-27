@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { and, eq, isNotNull, desc, count } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, desc, count } from "drizzle-orm";
 import {
   tinderProfileTable,
   hingeProfileTable,
@@ -477,132 +477,76 @@ export const adminRouter = {
       };
     }),
 
-  // List profiles with their media inline (for admin media review - flat list)
+  // List profiles with their media inline (for admin media review)
   listProfilesWithMedia: adminProcedure
     .input(
       z.object({
         page: z.number().int().min(1).default(1),
         limit: z.number().int().min(1).max(50).default(10),
-        platform: z
-          .enum(["all", "tinder", "hinge"])
-          .optional()
-          .default("all"),
+        platform: z.enum(["tinder", "hinge"]).default("tinder"),
       }),
     )
     .query(async ({ ctx, input }) => {
       const offset = (input.page - 1) * input.limit;
+      const isTinder = input.platform === "tinder";
+      const profileIdCol = isTinder
+        ? mediaTable.tinderProfileId
+        : mediaTable.hingeProfileId;
 
-      // Get Tinder profiles with media count
-      const tinderProfiles =
-        input.platform === "hinge"
-          ? []
-          : await ctx.db
-              .select({
-                profileId: mediaTable.tinderProfileId,
-                mediaCount: count(mediaTable.id),
-              })
-              .from(mediaTable)
-              .where(isNotNull(mediaTable.tinderProfileId))
-              .groupBy(mediaTable.tinderProfileId)
-              .orderBy(desc(count(mediaTable.id)));
+      // Rank all profiles by media count (for ordering only)
+      const ranked = await ctx.db
+        .select({ profileId: profileIdCol })
+        .from(mediaTable)
+        .where(isNotNull(profileIdCol))
+        .groupBy(profileIdCol)
+        .orderBy(desc(count(mediaTable.id)));
 
-      // Get Hinge profiles with media count
-      const hingeProfiles =
-        input.platform === "tinder"
-          ? []
-          : await ctx.db
-              .select({
-                profileId: mediaTable.hingeProfileId,
-                mediaCount: count(mediaTable.id),
-              })
-              .from(mediaTable)
-              .where(isNotNull(mediaTable.hingeProfileId))
-              .groupBy(mediaTable.hingeProfileId)
-              .orderBy(desc(count(mediaTable.id)));
+      const totalCount = ranked.length;
+      const page = ranked.slice(offset, offset + input.limit);
+      const profileIds = page.map((r) => r.profileId!);
 
-      // Combine and sort by media count
-      const allProfiles = [
-        ...tinderProfiles.map((p) => ({
-          profileId: p.profileId!,
-          platform: "tinder" as const,
-          mediaCount: p.mediaCount,
-        })),
-        ...hingeProfiles.map((p) => ({
-          profileId: p.profileId!,
-          platform: "hinge" as const,
-          mediaCount: p.mediaCount,
-        })),
-      ].sort((a, b) => b.mediaCount - a.mediaCount);
+      if (profileIds.length === 0) {
+        return { profiles: [], totalCount, page: input.page, totalPages: 0 };
+      }
 
-      const totalCount = allProfiles.length;
-      const paginatedProfiles = allProfiles.slice(offset, offset + input.limit);
-
-      // Fetch profile details + media for each
-      const profileDetails = await Promise.all(
-        paginatedProfiles.map(async (p) => {
-          // Fetch all media for this profile
-          const media = await ctx.db.query.mediaTable.findMany({
-            where:
-              p.platform === "tinder"
-                ? eq(mediaTable.tinderProfileId, p.profileId)
-                : eq(mediaTable.hingeProfileId, p.profileId),
+      // Fetch profile details with their media in one relational query
+      const profilesWithMedia = isTinder
+        ? await ctx.db.query.tinderProfileTable.findMany({
+            where: inArray(tinderProfileTable.tinderId, profileIds),
+            with: { media: true },
+          })
+        : await ctx.db.query.hingeProfileTable.findMany({
+            where: inArray(hingeProfileTable.hingeId, profileIds),
+            with: { media: true },
           });
 
-          if (p.platform === "tinder") {
-            const profile =
-              await ctx.db.query.tinderProfileTable.findFirst({
-                where: eq(tinderProfileTable.tinderId, p.profileId),
-                columns: {
-                  tinderId: true,
-                  gender: true,
-                  genderStr: true,
-                  ageAtUpload: true,
-                  city: true,
-                  country: true,
-                  bio: true,
-                  createdAt: true,
-                },
-              });
-            return {
-              ...p,
-              gender: profile?.gender ?? null,
-              genderStr: profile?.genderStr ?? null,
-              ageAtUpload: profile?.ageAtUpload ?? null,
-              city: profile?.city ?? null,
-              country: profile?.country ?? null,
-              bio: profile?.bio ?? null,
-              createdAt: profile?.createdAt ?? null,
-              media,
-            };
-          } else {
-            const profile =
-              await ctx.db.query.hingeProfileTable.findFirst({
-                where: eq(hingeProfileTable.hingeId, p.profileId),
-                columns: {
-                  hingeId: true,
-                  gender: true,
-                  genderStr: true,
-                  ageAtUpload: true,
-                  createdAt: true,
-                },
-              });
-            return {
-              ...p,
-              gender: profile?.gender ?? null,
-              genderStr: profile?.genderStr ?? null,
-              ageAtUpload: profile?.ageAtUpload ?? null,
-              city: null,
-              country: null,
-              bio: null,
-              createdAt: profile?.createdAt ?? null,
-              media,
-            };
-          }
-        }),
+      const profileMap = new Map(
+        profilesWithMedia.map((p) => [
+          "tinderId" in p ? p.tinderId : p.hingeId,
+          p,
+        ]),
       );
 
+      // Restore ranking order with normalized shape
+      const profiles = page
+        .map((r) => {
+          const p = profileMap.get(r.profileId!);
+          if (!p) return null;
+          return {
+            profileId: r.profileId!,
+            platform: input.platform,
+            genderStr: p.genderStr,
+            ageAtUpload: p.ageAtUpload,
+            country: p.country ?? null,
+            city: "city" in p ? (p.city ?? null) : null,
+            bio: "bio" in p ? (p.bio ?? null) : null,
+            media: p.media,
+          };
+        })
+        .filter((p): p is NonNullable<typeof p> => p !== null);
+
       return {
-        profiles: profileDetails,
+        profiles,
         totalCount,
         page: input.page,
         totalPages: Math.ceil(totalCount / input.limit),
