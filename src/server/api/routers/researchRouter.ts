@@ -19,6 +19,8 @@ import { createId } from "@/server/db/utils";
 
 import { publicProcedure, protectedProcedure } from "../trpc";
 
+// NOTE: If you change the export format (filename, content-type, compression),
+// also update the download route at src/app/api/download/route.ts
 export const researchRouter = {
   // Generate checkout URL for dataset purchase
   createCheckout: publicProcedure
