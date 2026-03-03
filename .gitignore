@@ -70,3 +70,12 @@ src/scripts/llm-analysis/output/*.jsonl
 src/scripts/llm-analysis/summaries/
 
 docs/plans/
+
+# MCP server config (contains credentials)
+.mcp.json
+
+# Private content planning (local only)
+temp/
+
+# Growth automation scripts (local only)
+growth/

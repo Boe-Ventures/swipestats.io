@@ -133,22 +133,22 @@ function BlogCardSimple({
                 ? AUTHORS[post.author].image
                 : `/images/people/${AUTHORS[post.author].image}`
             }
-            alt={post.author}
+            alt={AUTHORS[post.author].name}
             width={40}
             height={40}
-            className="size-10 rounded-full bg-gray-50"
+            className="size-10 rounded-full bg-gray-50 object-cover"
           />
         ) : (
           <div className="flex size-10 items-center justify-center rounded-full bg-gray-50">
             <span className="text-sm font-semibold text-gray-600">
-              {post.author.charAt(0)}
+              {AUTHORS[post.author].name.charAt(0)}
             </span>
           </div>
         )}
         <div className="text-sm leading-6">
           <p className="font-semibold text-gray-900">
             <span className="absolute inset-0" />
-            {post.author}
+            {AUTHORS[post.author].name}
           </p>
           <p className="text-gray-600">Author</p>
         </div>
@@ -253,7 +253,7 @@ export function BlogGrid({
                   )}
 
                   <AuthorInfo
-                    author={featuredPosts[0].author}
+                    author={AUTHORS[featuredPosts[0].author].name}
                     authorImage={AUTHORS[featuredPosts[0].author].image}
                     theme="dark"
                     className="mt-6"
@@ -318,7 +318,7 @@ export function BlogGrid({
                   )}
 
                   <AuthorInfo
-                    author={post.author}
+                    author={AUTHORS[post.author].name}
                     authorImage={AUTHORS[post.author].image}
                     theme="dark"
                     className="mt-4"

@@ -10,7 +10,7 @@ import { env } from "@/env";
 import { CtaInjector } from "@/components/mdx/CtaInjector";
 import { MDXContent } from "@/components/mdx/MDXContent";
 import { Prose } from "@/components/mdx/Prose";
-import { RelatedPosts as _RelatedPosts } from "@/components/mdx/RelatedPosts";
+import { RelatedPosts } from "@/components/mdx/RelatedPosts";
 import { StickyCtaCard } from "@/components/mdx/StickyCtaCard";
 import { posts } from "@velite";
 import NewsletterCTA from "../../NewsletterCTA";
@@ -114,6 +114,15 @@ export default async function BlogPostPage({
           <div className="mt-16 max-w-none">
             <Prose>
               <MDXContent code={content} />
+              <RelatedPosts
+                posts={posts
+                  .filter((p) => p.slug !== meta.slug && p.isPublished)
+                  .filter(
+                    (p) =>
+                      (p.category && meta.category && p.category === meta.category) ||
+                      p.tags.some((tag) => meta.tags.includes(tag)),
+                  )}
+              />
             </Prose>
             {meta.enableAutoCtAs && (
               <CtaInjector category={meta.category} tags={meta.tags} />
@@ -230,19 +239,6 @@ export default async function BlogPostPage({
           <NewsletterCTA />
         </div>
 
-        {/* Related posts */}
-        {/* <RelatedPosts too be re-introduced soon
-          posts={posts
-            .filter((p) => p.slug !== meta.slug && p.isPublished)
-            .filter(
-              (p) =>
-                // Match by category (primary)
-                (p.category && meta.category && p.category === meta.category) ||
-                // Or match by tags (secondary)
-                p.tags.some((tag) => meta.tags.includes(tag)),
-            )}
-          basePath="/blog"
-        /> */}
       </div>
     );
   }
@@ -302,6 +298,15 @@ export default async function BlogPostPage({
             <div className="max-w-none">
               <Prose>
                 <MDXContent code={content} />
+                <RelatedPosts
+                  posts={posts
+                    .filter((p) => p.slug !== meta.slug && p.isPublished)
+                    .filter(
+                      (p) =>
+                        (p.category && meta.category && p.category === meta.category) ||
+                        p.tags.some((tag) => meta.tags.includes(tag)),
+                    )}
+                />
               </Prose>
               {meta.enableAutoCtAs && (
                 <CtaInjector category={meta.category} tags={meta.tags} />
@@ -428,18 +433,6 @@ export default async function BlogPostPage({
       </div>
 
       {/* Related posts */}
-      {/* <RelatedPosts too be re-introduced soon
-        posts={posts
-          .filter((p) => p.slug !== meta.slug && p.isPublished)
-          .filter(
-            (p) =>
-              // Match by category (primary)
-              (p.category && meta.category && p.category === meta.category) ||
-              // Or match by tags (secondary)
-              p.tags.some((tag) => meta.tags.includes(tag)),
-          )}
-        basePath="/blog"
-      /> */}
     </div>
   );
 }

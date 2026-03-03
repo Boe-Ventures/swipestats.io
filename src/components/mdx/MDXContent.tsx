@@ -12,8 +12,10 @@ import { Quote } from "./Quote";
 import { Stats } from "./Stats";
 import { TLDR } from "./TLDR";
 import { Video } from "./Video";
+import { AffiliateDisclosure } from "./AffiliateDisclosure";
 
 const sharedComponents = {
+  AffiliateDisclosure,
   CalloutBox,
   CTA,
   CtaCard,
