@@ -79,3 +79,9 @@ temp/
 
 # Growth automation scripts (local only)
 growth/
+
+# Content plan (local only)
+CONTENT-PLAN.md
+
+# Claude (local only)
+.claude/
