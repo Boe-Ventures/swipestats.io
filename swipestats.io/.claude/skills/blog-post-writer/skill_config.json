@@ -1,0 +1,44 @@
+{
+  "setup_complete": true,
+  "brand_name": "SwipeStats",
+  "base_directory": "temp/posts",
+  "final_output_directory": "content/posts",
+  "output_format": "mdx",
+  "research_tools": {
+    "youtube": {
+      "provider": "dataforseo",
+      "search_tool": "mcp__swipestats-dataforseo__serp_youtube_organic_live_advanced",
+      "subtitles_tool": "mcp__swipestats-dataforseo__serp_youtube_video_subtitles_live_advanced",
+      "default_params": {
+        "location_name": "United States",
+        "language_code": "en"
+      }
+    },
+    "x_twitter": {
+      "provider": "websearch_fallback",
+      "note": "No Apify. Use WebSearch with site:x.com or site:twitter.com queries."
+    },
+    "web": {
+      "provider": "websearch"
+    },
+    "keyword_research": {
+      "provider": "dataforseo",
+      "tools": [
+        "mcp__swipestats-dataforseo__kw_data_google_ads_search_volume",
+        "mcp__swipestats-dataforseo__dataforseo_labs_google_keyword_suggestions",
+        "mcp__swipestats-dataforseo__dataforseo_labs_google_related_keywords",
+        "mcp__swipestats-dataforseo__dataforseo_labs_google_serp_competitors"
+      ]
+    }
+  },
+  "article_formats": [
+    "list",
+    "how-to",
+    "comparison",
+    "review",
+    "explainer",
+    "prompt-answers",
+    "quick-answer",
+    "statistics"
+  ]
+}
