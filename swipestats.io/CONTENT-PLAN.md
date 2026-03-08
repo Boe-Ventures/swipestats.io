@@ -31,14 +31,14 @@
 ## Phase 2 — Medium Volume
 
 - [x] when do hinge likes reset — 2026-03-13
-- [ ] best dating apps for women — 2026-03-14
-- [ ] best dating apps for men — 2026-03-15
-- [ ] best hinge openers — 2026-03-16
-- [ ] how to start a conversation on hinge — 2026-03-17
-- [ ] tinder prompt answers — 2026-03-18
-- [ ] tinder match disappeared — 2026-03-19
-- [ ] hinge match disappeared — 2026-03-20
-- [ ] hinge shadowban — 2026-03-21
+- [x] best dating apps for women — 2026-03-14
+- [x] best dating apps for men — 2026-03-15
+- [x] best hinge openers — 2026-03-16
+- [x] how to start a conversation on hinge — 2026-03-17
+- [x] tinder prompt answers — 2026-03-18
+- [x] tinder match disappeared — 2026-03-19
+- [x] hinge match disappeared — 2026-03-20
+- [x] hinge shadowban — 2026-03-21
 - [ ] is hinge plus worth it — 2026-03-22
 - [ ] hinge x vs hinge plus — 2026-03-23
 - [ ] best hinge profiles for guys — 2026-03-24
