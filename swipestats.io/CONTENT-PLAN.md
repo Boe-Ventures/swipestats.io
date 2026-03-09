@@ -39,14 +39,14 @@
 - [x] tinder match disappeared — 2026-03-19
 - [x] hinge match disappeared — 2026-03-20
 - [x] hinge shadowban — 2026-03-21
-- [ ] is hinge plus worth it — 2026-03-22
-- [ ] hinge x vs hinge plus — 2026-03-23
-- [ ] best hinge profiles for guys — 2026-03-24
-- [ ] match.com review — 2026-03-25
-- [ ] eharmony vs match — 2026-03-26
-- [ ] eharmony vs hinge — 2026-03-27
-- [ ] eharmony vs tinder — 2026-03-28
-- [ ] eharmony vs bumble — 2026-03-29
+- [x] is hinge plus worth it — 2026-03-22
+- [x] hinge x vs hinge plus — 2026-03-23
+- [x] best hinge profiles for guys — 2026-03-24
+- [x] match.com review — 2026-03-25
+- [x] eharmony vs match — 2026-03-26
+- [x] eharmony vs hinge — 2026-03-27
+- [x] eharmony vs tinder — 2026-03-28
+- [x] eharmony vs bumble — 2026-03-29
 - [ ] hinge prompt list — 2026-03-30
 - [ ] funny bumble bios — 2026-03-31
 - [ ] browse tinder without account — 2026-04-01
