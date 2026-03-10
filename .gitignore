@@ -79,3 +79,6 @@ temp/
 
 # Growth automation scripts (local only)
 growth/
+
+# Local AI assistant workspace files
+.claude/
