@@ -564,3 +564,40 @@ Mon Mar  9 06:00:01 AM CET 2026: Next topic: eharmony vs bumble (publish: 2026-0
 - CONTENT-PLAN.md updated: `[x]` marked for eharmony vs bumble
 
 Mon Mar  9 06:13:41 AM CET 2026: Blog generation complete for: eharmony vs bumble
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-09 09:00
+════════════════════════════════════════════════════
+Mon Mar  9 09:00:01 AM CET 2026: Next topic: hinge prompt list (publish: 2026-03-30)
+YouTube research confirmed our approach. Key additional insights (self-deprecation warning, "engagement trap" strategy) align with what we've already written. The post is complete.
+
+All pipeline steps are done. Here's the final summary:
+
+---
+
+## Created: Every Hinge Prompt in 2026 (And the Ones That Actually Work)
+
+**File:** `content/posts/hinge-prompt-list.mdx`
+**Category:** Prompts | **Author:** paw | **Publish date:** 2026-03-30
+
+### SEO
+- **Primary keyword:** hinge prompts (6,600 vol)
+- **Meta title:** All Hinge Prompts List [Complete 2026 Guide] (44 chars)
+- **Meta description:** The full list of 100+ Hinge prompts by category. Plus which prompts actually lead to dates, backed by data. (107 chars)
+- **H1:** Every Hinge Prompt in 2026 (And the Ones That Actually Work) (60 chars)
+
+### Content
+- **Word count:** ~3,170 words
+- **H2 sections:** 9 (Why Prompts Matter, How They Work, Complete List by Category, Top 10 Data-Backed, Worst Prompts, How to Pick, Good Answers, FAQ, Sources)
+- **Prompt categories covered:** All 10 (About Me, My Type, Let's Chat About, Date Vibes, Storytime, Self-Care, Your World, LGBTQIA+, Getting Personal, Voice-First)
+- **Internal links:** 6 links across 4 sections
+- **Data points:** 5 from Hinge's own research
+- **Sources:** 4 citations (3 Hinge Newsroom, 1 Mashable)
+
+### Needs Attention
+- **Thumbnail:** create image at `public/images/blog/thumbnails/hinge-prompt-list.png`
+
+### Done
+- CONTENT-PLAN.md updated: `[x]` marked for hinge prompt list
+
+Mon Mar  9 09:12:03 AM CET 2026: Blog generation complete for: hinge prompt list

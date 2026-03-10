@@ -47,7 +47,7 @@
 - [x] eharmony vs hinge — 2026-03-27
 - [x] eharmony vs tinder — 2026-03-28
 - [x] eharmony vs bumble — 2026-03-29
-- [ ] hinge prompt list — 2026-03-30
+- [x] hinge prompt list — 2026-03-30
 - [ ] funny bumble bios — 2026-03-31
 - [ ] browse tinder without account — 2026-04-01
 - [ ] no likes on tinder — 2026-04-02
