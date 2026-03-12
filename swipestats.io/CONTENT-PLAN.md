@@ -48,24 +48,24 @@
 - [x] eharmony vs tinder — 2026-03-28
 - [x] eharmony vs bumble — 2026-03-29
 - [x] hinge prompt list — 2026-03-30
-- [ ] funny bumble bios — 2026-03-31
-- [ ] browse tinder without account — 2026-04-01
-- [ ] no likes on tinder — 2026-04-02
-- [ ] tinder personality types meaning — 2026-04-03
-- [ ] what does the blue star mean on tinder — 2026-04-04
-- [ ] bumble likes per day — 2026-04-05
-- [ ] tinder primetime boost — 2026-04-06
-- [ ] what does the gold heart mean on tinder — 2026-04-07
-- [ ] does hinge notify screenshots — 2026-04-08
+- [x] funny bumble bios — 2026-03-31
+- [x] browse tinder without account — 2026-04-01
+- [x] no likes on tinder — 2026-04-02
+- [x] tinder personality types meaning — 2026-04-03
+- [x] what does the blue star mean on tinder — 2026-04-04
+- [x] bumble likes per day — 2026-04-05
+- [x] tinder primetime boost — 2026-04-06
+- [x] what does the gold heart mean on tinder — 2026-04-07
+- [x] does hinge notify screenshots — 2026-04-08
 - [✓] does tinder notify screenshots
-- [ ] how to change name on tinder — 2026-04-09
+- [x] how to change name on tinder — 2026-04-09
 
 ## Phase 3 — Long-tail / Nice-to-have
 
-- [ ] best bumble prompts for guys — 2026-04-10
-- [ ] how do compliments work on bumble — 2026-04-11
-- [ ] roast dating review — 2026-04-12
-- [ ] what's something i wouldn't know from your profile bumble answer — 2026-04-13
+- [x] best bumble prompts for guys — 2026-04-10
+- [x] how do compliments work on bumble — 2026-04-11
+- [x] roast dating review — 2026-04-12
+- [x] what's something i wouldn't know from your profile bumble answer — 2026-04-13
 - [ ] instead of drinks let's bumble answer — 2026-04-14
 - [ ] what's your ideal first date bumble answer — 2026-04-15
 - [ ] what to talk about with a girl over text — 2026-04-16
