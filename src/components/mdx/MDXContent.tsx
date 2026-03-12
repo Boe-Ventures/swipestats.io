@@ -13,9 +13,13 @@ import { Stats } from "./Stats";
 import { TLDR } from "./TLDR";
 import { Video } from "./Video";
 import { AffiliateDisclosure } from "./AffiliateDisclosure";
+import { FAQ } from "./FAQ";
+import { ImageGrid } from "./ImageGrid";
 
 const sharedComponents = {
   AffiliateDisclosure,
+  FAQ,
+  ImageGrid,
   CalloutBox,
   CTA,
   CtaCard,
