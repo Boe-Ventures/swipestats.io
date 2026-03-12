@@ -63,9 +63,28 @@ const features = [
   },
 ];
 
+const organizationJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "SwipeStats",
+  url: "https://www.swipestats.io",
+  logo: "https://www.swipestats.io/icon.png",
+  description:
+    "Dating app analytics platform. Upload your Tinder or Hinge data and get insights on match rates, swipe patterns, and percentile rankings from 7,000+ real profiles.",
+  foundingDate: "2019",
+  sameAs: [
+    "https://www.instagram.com/swipestats.io",
+    "https://x.com/SwipeStats",
+  ],
+};
+
 export default function HomePage() {
   return (
     <div className="isolate">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+      />
       {/* Hero section */}
       <div className="relative pt-14">
         <div

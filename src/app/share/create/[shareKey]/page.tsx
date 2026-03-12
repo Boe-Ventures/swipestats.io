@@ -98,7 +98,7 @@ export default function FriendCreationPage() {
           <p className="text-muted-foreground mt-2">
             This comparison may have been deleted or is no longer available.
           </p>
-          <Link href="https://swipestats.io" className="mt-4 inline-block">
+          <Link href="https://www.swipestats.io" className="mt-4 inline-block">
             <Button>Go to SwipeStats</Button>
           </Link>
         </div>
@@ -154,7 +154,7 @@ export default function FriendCreationPage() {
                     ? "Select Photos to Publish"
                     : `Publish (${selectedPhotos.length})`}
                 </Button>
-                <Link href="https://swipestats.io" target="_blank">
+                <Link href="https://www.swipestats.io" target="_blank">
                   <Button
                     variant="outline"
                     size="sm"
@@ -243,7 +243,7 @@ export default function FriendCreationPage() {
             <p className="text-muted-foreground text-sm">
               Created with{" "}
               <Link
-                href="https://swipestats.io"
+                href="https://www.swipestats.io"
                 className="font-semibold hover:underline"
               >
                 SwipeStats

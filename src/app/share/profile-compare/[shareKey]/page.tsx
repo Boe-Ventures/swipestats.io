@@ -85,7 +85,7 @@ export default function SharedComparisonPage() {
           <p className="text-muted-foreground mt-2">
             This comparison may have been deleted or is no longer public.
           </p>
-          <Link href="https://swipestats.io" className="mt-4 inline-block">
+          <Link href="https://www.swipestats.io" className="mt-4 inline-block">
             <Button>Go to SwipeStats</Button>
           </Link>
         </div>
@@ -145,7 +145,7 @@ export default function SharedComparisonPage() {
                   )}
                 </div>
               </div>
-              <Link href="https://swipestats.io" target="_blank">
+              <Link href="https://www.swipestats.io" target="_blank">
                 <Button
                   variant="default"
                   size="sm"
@@ -236,7 +236,7 @@ export default function SharedComparisonPage() {
             <p className="text-muted-foreground text-sm">
               Created with{" "}
               <Link
-                href="https://swipestats.io"
+                href="https://www.swipestats.io"
                 className="font-semibold hover:underline"
               >
                 SwipeStats

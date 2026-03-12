@@ -93,10 +93,79 @@ export default async function BlogPostPage({
   const authorInfo: Author = AUTHORS[meta.author] ?? AUTHORS.paw;
   const showStickyCTA = meta.showStickyCTA;
 
+  const baseUrl = env.NEXT_PUBLIC_BASE_URL;
+
+  const articleJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: meta.h1,
+    description: meta.metaDescription,
+    image: meta.thumbnail
+      ? `${baseUrl}${meta.thumbnail}`
+      : `${baseUrl}/SwipeStats-og.png`,
+    datePublished: meta.publishedAt,
+    dateModified: meta.updatedAt || meta.publishedAt,
+    author: {
+      "@type": "Person",
+      name: authorInfo.name,
+      url: authorInfo.instagram,
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "SwipeStats",
+      logo: {
+        "@type": "ImageObject",
+        url: `${baseUrl}/icon.png`,
+      },
+    },
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": `${baseUrl}/blog/${meta.slug}`,
+    },
+  };
+
+  const breadcrumbJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Home",
+        item: baseUrl,
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: "Blog",
+        item: `${baseUrl}/blog`,
+      },
+      {
+        "@type": "ListItem",
+        position: 3,
+        name: meta.h1,
+      },
+    ],
+  };
+
+  const schemaScripts = (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(articleJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+    </>
+  );
+
   // Simple layout without sticky CTA
   if (!showStickyCTA) {
     return (
       <div className="bg-white" lang={meta.language}>
+        {schemaScripts}
         <div className="mx-auto max-w-4xl px-6 py-24 lg:px-8">
           <div className="mt-8">
             <h1 className="text-4xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-5xl">
@@ -246,6 +315,7 @@ export default async function BlogPostPage({
   // Sticky CTA layout (default)
   return (
     <div className="mt-12 bg-white" lang={meta.language}>
+      {schemaScripts}
       {/* Hero Section */}
       <div className="relative isolate px-6 pt-14 lg:px-8">
         {/* Background decoration */}
