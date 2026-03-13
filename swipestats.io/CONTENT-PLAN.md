@@ -66,10 +66,10 @@
 - [x] how do compliments work on bumble — 2026-04-11
 - [x] roast dating review — 2026-04-12
 - [x] what's something i wouldn't know from your profile bumble answer — 2026-04-13
-- [ ] instead of drinks let's bumble answer — 2026-04-14
-- [ ] what's your ideal first date bumble answer — 2026-04-15
-- [ ] what to talk about with a girl over text — 2026-04-16
-- [ ] how to text a girl for the first time — 2026-04-17
+- [x] instead of drinks let's bumble answer — 2026-04-14
+- [x] what's your ideal first date bumble answer — 2026-04-15
+- [x] what to talk about with a girl over text — 2026-04-16
+- [x] how to text a girl for the first time — 2026-04-17
 
 ---
 
@@ -79,29 +79,29 @@ Our moat. Proprietary data, researcher revenue, link magnets.
 
 ### Dating app statistics
 
-- [ ] grindr statistics — 240 vol (grindr stats, grindr statistics 2026, grindr user statistics)
-- [ ] okcupid statistics — 150 vol (okcupid stats, okcupid user statistics)
-- [ ] dating app statistics by race — 110 vol (least desired race on dating apps)
-- [ ] dating app statistics gender — 90 vol
-- [ ] badoo statistics — 40 vol (badoo stats)
-- [ ] match.com statistics — 40 vol (match.com stats)
-- [ ] online dating statistics worldwide — 50 vol
-- [ ] dating app user statistics — 40 vol
-- [ ] coffee meets bagel statistics — 20 vol (coffee meets bagel stats)
-- [ ] facebook dating statistics — 20 vol (facebook dating stats)
-- [ ] christian mingle statistics — 20 vol (christian mingle stats)
-- [ ] dating statistics by age — 20 vol
-- [ ] plenty of fish statistics — 10 vol
-- [ ] happn statistics — 10 vol
-- [ ] zoosk statistics — 10 vol
-- [ ] jdate statistics — 10 vol
+- [x] grindr statistics — 240 vol (grindr stats, grindr statistics 2026, grindr user statistics) — 2026-04-18
+- [x] okcupid statistics — 150 vol (okcupid stats, okcupid user statistics) — 2026-04-19
+- [x] dating app statistics by race — 110 vol (least desired race on dating apps) — 2026-04-20
+- [x] dating app statistics gender — 90 vol — 2026-04-21
+- [x] badoo statistics — 40 vol (badoo stats) — 2026-04-22
+- [x] match.com statistics — 40 vol (match.com stats) — 2026-04-23
+- [x] online dating statistics worldwide — 50 vol — 2026-04-24
+- [x] dating app user statistics — 40 vol — 2026-04-25
+- [x] coffee meets bagel statistics — 20 vol (coffee meets bagel stats) — 2026-03-13
+- [x] facebook dating statistics — 20 vol (facebook dating stats) — 2026-03-13
+- [x] christian mingle statistics — 20 vol (christian mingle stats) — 2026-03-13
+- [x] dating statistics by age — 20 vol — 2026-04-26
+- [x] plenty of fish statistics — 10 vol — 2026-04-27
+- [x] happn statistics — 10 vol — 2026-04-28
+- [x] zoosk statistics — 10 vol — 2026-04-29
+- [x] jdate statistics — 10 vol — 2026-04-30
 
 ### Dating data and research
 
-- [ ] dating profile examples — 2,180 vol (sample dating profiles for women, tinder profile sample)
-- [ ] tinder data download — 110 vol (tinder data analysis, tinder data request)
-- [ ] dating app dataset — 60 vol (online dating research paper, dating app research paper)
-- [ ] tinder study 80/20 — 40 vol
+- [x] dating profile examples — 2,180 vol (sample dating profiles for women, tinder profile sample)
+- [x] tinder data download — 110 vol (tinder data analysis, tinder data request)
+- [x] dating app dataset — 60 vol (online dating research paper, dating app research paper)
+- [x] tinder study 80/20 — 40 vol — 2026-03-13
 
 ## Phase 5 — App Reviews
 

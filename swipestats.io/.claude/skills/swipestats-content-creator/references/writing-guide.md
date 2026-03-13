@@ -213,9 +213,11 @@ SwipeStats has proprietary data from 7,000+ real Tinder profiles:
 
 ## Internal Linking
 
-- Link to `/upload` when mentioning getting your own stats
-- Link to `/insights` when referencing aggregate data
-- Link to relevant blog posts for deeper dives
+- Only link to `/upload`, `/` (homepage), or actual blog post slugs from `content/posts/`
+- To find relevant posts to link to, glob `content/posts/*.mdx` and pick the highest-relevance slugs
+- `/upload` = user action CTA ("upload your data", "see your stats") — use this for those CTAs only
+- Never link to app routes (`/app`, `/insights`, `/app/dashboard`, etc.) — those are authenticated pages
+- When referencing our aggregate data ("7,000+ profiles", "294M swipes"), link to the most relevant stats post slug, not `/upload`
 - Anchor text: 2-5 words max. Describe what the linked page is about (match the linked page's topic).
 - Never use "click here" or generic anchors
 - No more than 1 link per 200 words
@@ -228,4 +230,4 @@ SwipeStats has proprietary data from 7,000+ real Tinder profiles:
 - End each post with a sources section (if using external data)
 - Prioritize: academic studies, official reports, reputable publications
 - Never link to direct competitors
-- SwipeStats own data doesn't need external sourcing
+- If citing SwipeStats data in Sources, link to the most relevant stats post slug (e.g. `/blog/tinder-statistics`), not to `/upload` or the homepage

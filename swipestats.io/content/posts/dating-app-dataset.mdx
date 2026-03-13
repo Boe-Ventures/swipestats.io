@@ -1,0 +1,214 @@
+---
+h1: "Dating App Dataset: Every Real Dataset That Exists (And Why Most Are Garbage)"
+h1Subtitle: "You want real dating app data? Good luck. Most of what's out there is synthetic trash, ethically questionable scrapes, or both."
+metaTitle: "Dating App Dataset: Real Data for Research (2026)"
+metaDescription: "Every major dating app dataset for research. OKCupid, Tinder, Kaggle, and 7,000+ real SwipeStats profiles analyzed."
+publishedAt: "2026-03-13"
+updatedAt: "2026-03-13"
+author: "paw"
+category: "Statistics"
+tags: ["statistics", "tinder", "hinge", "data"]
+language: "en-US"
+showStickyCTA: true
+enableAutoCtAs: true
+readingTime: 11
+---
+
+<TLDR>
+
+### TL;DR for the Data-Hungry
+
+You googled "dating app dataset" and now you're here. Let me save you a few hours of disappointment.
+
+- Most public dating app datasets are synthetic garbage or ethically questionable scrapes. The data science equivalent of a catfish profile.
+- The OKCupid dataset (68K profiles) is the most cited in research but was scraped without user consent. The ethics debate around it is still going strong.
+- Tinder, Hinge, and Bumble don't release public datasets. You can download your own data via GDPR, but that's one person's data (yours, specifically your sad little profile).
+- SwipeStats has **7,000+ real anonymized user profiles** with **294 million swipes** and **3.14 million matches**. Real data, voluntarily uploaded, no scraping involved.
+- Key findings from real data: men match at roughly **2-3%**, women at about **30%**, and the top 10% of men collect the majority of female likes. The math is brutal and the math doesn't care about your feelings.
+
+</TLDR>
+
+## Most Public Dating App Datasets Are Garbage (And Here's Why)
+
+So you're looking for a dating app dataset. Maybe you're writing a research paper. Maybe you're building a data science project for your portfolio. Maybe you're just weirdly curious about how badly the average guy does on Tinder (spoiler: badly).
+
+I'm Paw Markus, and I've been staring at [dating app data](/blog/dating-app-statistics) for longer than most people spend on the apps themselves. Here's what I can tell you from personal experience: finding real, usable online dating data is like finding a genuine connection on Tinder. Theoretically possible, but you're going to wade through a lot of nonsense first.
+
+The state of publicly available dating app datasets is embarrassing. You've got three categories:
+
+1. **Synthetic simulations** dressed up to look like real data (the catfish of datasets).
+2. **Ethically dubious scrapes** where researchers just hoovered up tens of thousands of profiles without asking.
+3. **Tiny survey datasets** from 200 undergrads at one university in the Midwest.
+
+If you're building a model on any of these and presenting the results as meaningful, congratulations. Your model is fan fiction with a confidence interval.
+
+## Every Major Dating App Dataset That Actually Exists
+
+Let's go through what's actually out there. I'll save you the googling and the disappointment.
+
+### The OKCupid Dataset: 68,371 Profiles, Zero Consent
+
+This is the big one. The one that gets cited in every online dating research paper by someone who couldn't find anything better.
+
+In 2016, researchers Kirkegaard and Bjerrekaer scraped **68,371 OKCupid profiles** and published the data openly. We're talking 2,626 variables per user. Profile text, demographics, sexual preferences, drug use. Intimate stuff that people answered honestly because they thought they were talking to potential dates, not feeding some dude's research database.
+
+The dataset was published in the OpenPsych journal and dumped on Figshare and the Internet Archive for anyone to download. The researchers' defense when asked about consent? Essentially "the data was public." Which is technically true and morally the equivalent of recording someone's private conversation in a restaurant because they didn't whisper.
+
+This one sparked a legitimate ethics firestorm in the research community. If you use it, at least acknowledge what you're using.
+
+The better OKCupid option: Kim and Escobedo-Land (2015) built a dataset of **59,946 San Francisco OKCupid users** WITH OKCupid's actual permission. It was designed for educational use and is available on GitHub and Kaggle. This is the one that actually gets used in data science courses, because professors tend to prefer datasets that don't come with an ethics violation attached.
+
+### Kaggle's "Dating App" Datasets: Synthetic Dreams, Real Disappointment
+
+Go search "dating app" on Kaggle right now. I'll wait.
+
+Notice how many results come up? Notice how excited you got? Now read the fine print.
+
+The "Dating App Behavior Dataset 2025" that looks so juicy? It's literally simulated data. Some guy generated fake profiles with fake swipe patterns and fake match rates, gave it an official-sounding name, and uploaded it. You're building your thesis on someone's random number generator.
+
+There's a Lovoo dataset floating around if you want data from one small European app that approximately seven people have heard of. A Libidon dataset with a few hundred users. Some "Speed Dating" CSV that's been re-uploaded seventeen times with different names.
+
+Most Kaggle dating datasets are data scientists generating the data they wish existed. If you're training a model on synthetic dating data, your model has the same relationship to reality that a dating profile photo has to what the person actually looks like in the morning. Which is to say: none.
+
+### The Speed Dating Dataset: When Data Scientists Touched Grass
+
+Here's one that's actually real. In 2006, Columbia University ran a study where **552 actual humans** attended 21 speed dating events and rated each other face-to-face.
+
+Revolutionary concept, I know. Real people. In a room together. Making real decisions about attractiveness. The study found that physical attractiveness had a correlation of **0.801** with positive responses. In other words, looks matter. Groundbreaking stuff (she said sarcastically).
+
+The dataset is on Kaggle, gets used in ML courses constantly, and is legitimately useful for understanding human mate selection. The catch is that it's 552 people from one university in one city, so the scope is roughly as wide as your dating radius when you've set Tinder to 1 mile.
+
+### The Algorithm Awareness Dataset: 716 Users, One Black Box
+
+Erasmus University Rotterdam published this one in 2024. They surveyed **216 Tinder users** and **500 Breeze users** from the Netherlands and Belgium about how they perceive [dating app algorithms](/blog/tinder-algorithm).
+
+It's tiny. But if you're researching how people feel about the mysterious black box deciding their romantic fate, it's one of the few datasets that actually asks that question. Think of it as a niche boutique dataset in a world of Costco-brand synthetic garbage.
+
+## What Your Own Tinder Data Actually Contains
+
+Here's something most researchers miss entirely: you can download your own data from basically any dating app. GDPR turned out to be useful for something other than those annoying cookie banners.
+
+### How to Download Your Tinder Data (GDPR Is Your Friend)
+
+Under GDPR, any app that collects your data has to hand it over when you ask. It's the law. Even Tinder has to comply (though they'll do it with the enthusiasm of a teenager cleaning their room).
+
+Here's what you get when you [download your Tinder data](/blog/download-tinder-data):
+
+- **Swipe history**: Every right-swipe, left-swipe, and Super Like you've ever thrown into the void.
+- **Messages**: Every opening line that went unanswered. Every "hey" that deserved to go unanswered.
+- **Matches**: When they happened, how many you got (brace yourself).
+- **Usage dates**: How much time you've burned on this app. The number will hurt.
+- **Profile info**: Your bio, your settings, your preferences.
+
+Hinge gives similar data via Settings > Download My Data. Bumble offers a data request too.
+
+The gap nobody tells you about: these apps collect WAY more data than they share back. Internal rankings, ELO-style scores, the algorithm's opinion of your attractiveness, ad targeting data. You get the minimum they're legally required to give you. The really interesting stuff stays behind their firewall, because sharing "we ranked you a 4 out of 10" would be bad for business.
+
+## What Serious Dating App Research Has Actually Found
+
+Enough about where to find data. Let's talk about what dating app research has actually uncovered, because the findings are the kind of brutal that makes you want to delete all your apps and join a monastery.
+
+### The Gender Gap Nobody Talks About (Just Kidding, Every Reddit Thread Talks About It)
+
+Pew Research dropped a study in 2023 that confirmed what every guy on Tinder already suspected: **30% of U.S. adults** have used dating apps, jumping to **53% for under-30s**. That's **360 million global users** as of 2024 in a $6.18 billion industry built on your loneliness.
+
+But here's where it gets fun. **54% of women** report feeling overwhelmed by the volume of messages they receive. Meanwhile, **64% of men** feel insecure about the lack of messages they receive. Same app. Completely different realities. It's like two people describing their experience at the same restaurant where one got a five-course meal and the other got bread and water.
+
+From our SwipeStats data (that's [7,000+ real profiles](/blog/tinder-statistics), not some simulated spreadsheet): men right-swipe on about **53%** of profiles. Women are significantly more selective. The result? Average male match rate on Tinder sits around **2-3%**. Average female match rate? Around **30%**.
+
+Let me translate that for you. For every 100 swipes a guy makes, he gets 2-3 matches. A woman making the same 100 swipes gets 30. If you're a dude wondering why this app feels like screaming into a void, it's because mathematically, it basically is.
+
+### The 80/20 Rule: Real Data, Not Just Reddit Whining
+
+You've probably seen some version of this on Reddit, usually posted by a guy who's very angry about it. The thing is, the angry Reddit guy isn't wrong. He's just annoying about it.
+
+Hinge's own engineers published data showing that **50% of all female likes go to the top 10% of men**. Read that again. Half of all the attention from women on Hinge goes to one-tenth of the guys. Meanwhile, **50% of all male likes go to the top 25% of women**. Men are slightly less concentrated in their preferences, but not by much.
+
+Our SwipeStats analysis of [Hinge and Tinder data](/blog/hinge-statistics) confirms this distribution. This isn't a conspiracy. It isn't an algorithm punishing you personally. It's basic supply and demand with a user base that's roughly **76-78% male** on Tinder. When there are two to three guys competing for every woman's attention, the attention concentrates at the top. That's just math, and math doesn't read your bio.
+
+### 27% of New Marriages Now Start on Dating Apps
+
+Before you throw your phone in a river, here's the counterpoint: **as of 2025, 27% of newly married U.S. couples met on a dating app**. Dating apps are now the number one way couples meet. Ahead of through friends. Ahead of work. Ahead of school. Ahead of that mythical "we just bumped into each other at a coffee shop" fantasy.
+
+**10% of all currently partnered adults** met their partner online, according to Pew's 2023 data. The apps work. They just work the way a casino works. The house always wins, most people lose, but enough people hit the jackpot to keep everyone else pulling the lever.
+
+## The SwipeStats Dataset: 7,000+ Real Profiles, Zero Synthetic Nonsense
+
+Alright, I've spent this whole post telling you why most datasets suck. Time to tell you about the one that doesn't (yes, it's ours, and yes, I'm biased, but the numbers speak for themselves).
+
+### What Makes It Different From Every Other Dating App Dataset
+
+SwipeStats collects real user-uploaded Tinder and Hinge data. Not scraped. Not simulated. Not generated by a Python script at 2 AM. Real humans [upload their actual data](/upload) voluntarily, and we anonymize and aggregate it.
+
+The numbers:
+
+- **7,000+ anonymized profiles** and counting
+- **294 million total swipes** analyzed
+- **3.14 million matches** tracked
+- Detailed daily usage patterns, message rates, match rates, and swipe behavior
+- Both Tinder and Hinge data represented
+
+Compare that to the OKCupid dataset's 68K profiles (which are just static profile snapshots with no behavioral data) and you start to see why our dataset is more useful for understanding what actually happens on these apps. Profile text tells you what people say about themselves. Swipe data tells you what people actually do. And those are very different things (like how everyone's bio says they love hiking but nobody's actually been on a hike since 2019).
+
+### Key Numbers From Our Data
+
+Here's a taste of what **294 million swipes** across **7,000+ profiles** actually reveals:
+
+- **Average male right-swipe rate: 53%**. Guys swipe right on more than half of all profiles they see. Basically the "spray and pray" approach to romance.
+- **Male match rates sit around 1-3 per 100 swipes**. That 53% right-swipe rate produces a 2-3% match rate. The conversion rate would make a marketing team weep.
+- **Massive variance between users**: top performers get **10x+ the matches** of the median user. The dating app economy makes income inequality look quaint.
+- **Message-to-match ratios** reveal who's actually trying to have conversations versus who's collecting matches like Pokemon cards. About **52% of users** have encountered suspected scammers along the way, which tells you something about the neighborhood.
+- **65% of users** report being satisfied with their [dating app experience](/blog/best-dating-apps), which proves that humans have an extraordinary capacity for self-delusion. Or maybe some people are actually succeeding out there (probably the top 10%).
+
+If you want to run your own numbers, you can [see where you rank](/upload) in the distribution. Fair warning: the truth might sting more than that time you got unmatched mid-conversation.
+
+## Frequently Asked Questions
+
+### Is there a public Tinder dataset I can download?
+
+No official public Tinder dataset exists. Tinder guards its data like Smaug sitting on a pile of gold, except the gold is your swipe patterns and the dragon is a legal team. You can download your own data via a GDPR request, but that gives you one profile (yours). For aggregate tinder data, SwipeStats offers the largest collection of real user-uploaded Tinder behavioral data available anywhere.
+
+### Where can I download a dating app dataset for free?
+
+Your free options, ranked by usefulness:
+
+- **OKCupid dataset** on Kaggle/Figshare: 68K profiles, real data, ethics concerns, no behavioral data
+- **Speed Dating dataset** on Kaggle: 552 participants, real in-person data, very limited scope
+- **Various synthetic datasets** on Kaggle: free, abundant, and about as useful as monopoly money at the grocery store
+
+### What is the largest online dating dataset?
+
+Depends how you measure it. For public research datasets, the OKCupid scrape has the most profiles at **68K**. For real behavioral data with actual swipe and match patterns, SwipeStats has **7,000+ profiles** with **294 million swipes**. The OKCupid data is wider but shallow (static profiles). The SwipeStats data is narrower but deep (complete behavioral histories). One tells you what people wrote in their bios. The other tells you what they actually did with their thumbs.
+
+### Can I use dating app data for my research paper?
+
+Yes, but do it right. A few things to keep in mind:
+
+- Cite your sources properly (including acknowledging the limitations of whatever dataset you use)
+- If using the OKCupid scrape, address the consent issue in your ethics section. Your IRB will thank you.
+- SwipeStats data has been used in academic research. Reach out if you need access for a legitimate project.
+- Always note the self-selection bias: people who upload their dating data to SwipeStats or answer OKCupid questions are not a random sample of the population. They're a self-selected group of people curious enough about their dating life to seek data about it. That's a specific kind of person (probably the kind reading this article right now).
+
+### How do I get my own dating app data?
+
+File a GDPR request (or equivalent data subject access request). Every major app supports this:
+
+- **Tinder**: Settings > Download My Data. Takes about 48 hours.
+- **Hinge**: Settings > Download My Data. Similar timeframe.
+- **Bumble**: Settings > Contact & FAQ > Request My Data.
+
+Then upload it to SwipeStats and see how your swipe patterns compare to everyone else's. Or don't. Sometimes ignorance is bliss. But you're still reading this article, so bliss clearly isn't your thing.
+
+## Sources
+
+- [Pew Research Center: Key Findings About Online Dating in the U.S.](https://www.pewresearch.org/short-reads/2023/02/02/key-findings-about-online-dating-in-the-u-s/)
+- [Kirkegaard & Bjerrekaer (2016): The OKCupid Dataset](https://openpsych.net/paper/46/)
+- [Kim & Escobedo-Land (2015): OKCupid Data for Educational Use](https://github.com/rudeboybert/JSE_OkCupid)
+- [Columbia Speed Dating Study (Fisman et al., 2006)](https://doi.org/10.1093/qje/121.2.673)
+- [Erasmus University Rotterdam Algorithm Awareness Dataset (2024)](https://datarepository.eur.nl/articles/dataset/Finding_Love_in_the_Black_Box_Algorithm_Awareness_on_Dating_Apps_-_Data_Files/28010144)
+- [Global Dating Insights: Dating Apps Account for Over a Quarter of U.S. Marriages](https://www.globaldatinginsights.com/featured/dating-apps-account-for-over-a-quarter-of-u-s-marriages-in-2025/)
+- [SwipeStats.io: Tinder Statistics](/blog/tinder-statistics)
+- [SwipeStats.io: Dating App Statistics](/blog/dating-app-statistics)
+- [FTC: Romance Scam Losses 2023](https://www.ftc.gov/news-events/data-visualizations/data-spotlight/2024/02/romance-scammers-favorite-lies-exposed)
+- [Statista: Dating App Revenue 2024](https://www.statista.com/outlook/dmo/eservices/dating-services/worldwide)
+- [South Denver Therapy: Dating App Statistics 2025](https://www.southdenvertherapy.com/blog/dating-app-statistics-2025)
