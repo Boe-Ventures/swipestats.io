@@ -845,7 +845,7 @@ export async function trackSlackEvent<T extends ServerAnalyticsEventName>(
           messages: props.messageCount,
           photos: props.photoCount,
           processingTimeMs: props.processingTimeMs,
-          profileUrl: `https://swipestats.io/insights/${props.tinderId}`,
+          profileUrl: `https://www.swipestats.io/insights/${props.tinderId}`,
         },
         eventName: event,
         imageUrls: media
@@ -966,7 +966,7 @@ export async function trackSlackEvent<T extends ServerAnalyticsEventName>(
           photos: props.photoCount,
           prompts: props.promptCount,
           processingTimeMs: props.processingTimeMs,
-          profileUrl: `https://swipestats.io/insights/hinge/${props.hingeId}`,
+          profileUrl: `https://www.swipestats.io/insights/hinge/${props.hingeId}`,
         },
         eventName: event,
         imageUrls: media
@@ -1159,7 +1159,7 @@ export async function trackSlackEvent<T extends ServerAnalyticsEventName>(
           columnCount: props.columnCount,
           hasCustomPhotos: props.hasCustomPhotos,
           userName: sanitizeSlackText(user?.name) || "Unknown",
-          comparisonUrl: `https://swipestats.io/compare/${props.comparisonId}`,
+          comparisonUrl: `https://www.swipestats.io/compare/${props.comparisonId}`,
         },
         eventName: event,
       });

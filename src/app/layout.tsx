@@ -15,7 +15,7 @@ import { Analytics as VercelAnalytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://swipestats.io"),
+  metadataBase: new URL("https://www.swipestats.io"),
   title: {
     template: "%s | SwipeStats",
     default: "SwipeStats - Analyze Your Dating App Data",

@@ -95,6 +95,12 @@ const config: NextConfig = {
         destination: "/insights/tinder/:tinderId",
         permanent: true, // 308 redirect for SEO
       },
+      // /app has no index page — redirect to dashboard
+      {
+        source: "/app",
+        destination: "/app/dashboard",
+        permanent: false,
+      },
     ];
   },
 
