@@ -109,20 +109,20 @@ Affiliate revenue, high intent, strong internal linking to stats pages.
 
 ### Dating app reviews
 
-- [ ] okcupid review — 332,230 vol (ok cupid dating app, dating sites okcupid, online dating okcupid)
-- [ ] free dating apps without payment — 54,080 vol (free online dating sites without payment)
-- [ ] free online dating for 50 and over — 27,000 vol (free online dating 50 and over)
-- [ ] dating app comparisons — 22,170 vol (hinge vs bumble, bumble vs hinge)
-- [ ] dil mil review — 20,170 vol (dilmil, dil mil reddit)
-- [ ] ai dating apps — 15,600 vol (ai dating app, dating ai apps)
-- [ ] hily review — 15,280 vol (hily application, hily reviews, is hily legit)
-- [ ] how to get unbanned from tinder — 14,630 vol (how to get unbanned from hinge, how to get unbanned from grindr)
-- [ ] best over 40 dating sites — 10,720 vol
-- [ ] headline for plenty of fish — 9,850 vol (plenty of fish headlines, good headline for plenty of fish)
-- [ ] happn review — 9,600 vol (dating apps happn, happn app dating)
-- [ ] elitesingles review — 6,780 vol (elitesingles dating sites, elitesingles dating apps)
-- [ ] tinder selfie under review — 4,900 vol (selfie under review tinder, how long does tinder selfie review take)
-- [ ] her dating app review — 4,800 vol (her dating site, dating site her)
+- [x] okcupid review — 332,230 vol (ok cupid dating app, dating sites okcupid, online dating okcupid)
+- [x] free dating apps without payment — 54,080 vol (free online dating sites without payment) — 2026-03-18
+- [x] free online dating for 50 and over — 27,000 vol (free online dating 50 and over) — 2026-03-18
+- [x] dating app comparisons — 22,170 vol (hinge vs bumble, bumble vs hinge) — 2026-03-18
+- [x] dil mil review — 20,170 vol (dilmil, dil mil reddit) — 2026-03-18
+- [x] ai dating apps — 15,600 vol (ai dating app, dating ai apps) — 2026-03-19
+- [x] hily review — 15,280 vol (hily application, hily reviews, is hily legit) — 2026-03-19
+- [x] how to get unbanned from tinder — 14,630 vol (how to get unbanned from hinge, how to get unbanned from grindr) — 2026-03-20
+- [x] best over 40 dating sites — 10,720 vol — 2026-03-18
+- [x] headline for plenty of fish — 9,850 vol (plenty of fish headlines, good headline for plenty of fish) — 2026-03-18
+- [x] happn review — 9,600 vol (dating apps happn, happn app dating) — 2026-03-18
+- [x] elitesingles review — 6,780 vol (elitesingles dating sites, elitesingles dating apps)
+- [x] tinder selfie under review — 4,900 vol (selfie under review tinder, how long does tinder selfie review take) — 2026-03-18
+- [x] her dating app review — 4,800 vol (her dating site, dating site her) — 2026-03-18
 - [ ] how to unblock on pof — 4,650 vol (how to unblock pof, unblocking on pof)
 - [ ] pick up lines for dating apps — 3,470 vol (dating apps pick up lines, best pick up lines for dating apps)
 - [ ] funny grindr bios — 2,890 vol (grindr bio examples, best bio for grindr)
