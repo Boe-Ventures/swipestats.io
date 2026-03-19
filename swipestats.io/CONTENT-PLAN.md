@@ -123,23 +123,23 @@ Affiliate revenue, high intent, strong internal linking to stats pages.
 - [x] elitesingles review — 6,780 vol (elitesingles dating sites, elitesingles dating apps)
 - [x] tinder selfie under review — 4,900 vol (selfie under review tinder, how long does tinder selfie review take) — 2026-03-18
 - [x] her dating app review — 4,800 vol (her dating site, dating site her) — 2026-03-18
-- [ ] how to unblock on pof — 4,650 vol (how to unblock pof, unblocking on pof)
-- [ ] pick up lines for dating apps — 3,470 vol (dating apps pick up lines, best pick up lines for dating apps)
-- [ ] funny grindr bios — 2,890 vol (grindr bio examples, best bio for grindr)
-- [ ] what does a tinder profile look like — 2,850 vol
-- [ ] eharmony vs match — 2,600 vol (match vs eharmony)
-- [ ] tinder plus vs tinder gold — 2,400 vol (tinder gold vs plus, tinder gold vs tinder plus)
-- [ ] hinge plus vs hinge x — 2,250 vol (hinge x vs hinge plus)
-- [ ] bumble vs okcupid — 2,160 vol (okcupid vs bumble)
-- [ ] feeld review — 1,580 vol (feeld profile example, feeld profiles, how to delete feeld account)
-- [ ] best online dating sites for serious relationships — 1,310 vol
-- [ ] do you have to pay for bumble — 1,200 vol
-- [ ] once dating app review — 1,070 vol
+- [x] how to unblock on pof — 4,650 vol (how to unblock pof, unblocking on pof)
+- [x] pick up lines for dating apps — 3,470 vol (dating apps pick up lines, best pick up lines for dating apps) — 2026-03-19
+- [x] funny grindr bios — 2,890 vol (grindr bio examples, best bio for grindr) — 2026-03-19
+- [x] what does a tinder profile look like — 2,850 vol — 2026-03-19
+- [x] eharmony vs match — 2,600 vol (match vs eharmony)
+- [x] tinder plus vs tinder gold — 2,400 vol (tinder gold vs plus, tinder gold vs tinder plus) — 2026-03-20
+- [x] hinge plus vs hinge x — 2,250 vol (hinge x vs hinge plus)
+- [x] bumble vs okcupid — 2,160 vol (okcupid vs bumble) — 2026-03-19
+- [x] feeld review — 1,580 vol (feeld profile example, feeld profiles, how to delete feeld account)
+- [x] best online dating sites for serious relationships — 1,310 vol — 2026-03-20
+- [x] do you have to pay for bumble — 1,200 vol — 2026-03-21
+- [x] once dating app review — 1,070 vol — 2026-03-19
 
 ### Bumble features and tips
 
-- [ ] bumble app guide — 123,600 vol (bumble app dating, bumble apps, what is bumble app)
-- [ ] how does bumble work — 7,600 vol (how does bumble work for men, how does bumble work for guys)
+- [x] bumble app guide — 123,600 vol (bumble app dating, bumble apps, what is bumble app) — 2026-05-01
+- [x] how does bumble work — 7,600 vol (how does bumble work for men, how does bumble work for guys) — 2026-05-02
 - [ ] bumble opening move — 4,440 vol (opening move bumble, bumble opening lines)
 - [ ] bumble swipe left or right — 3,720 vol
 - [ ] bumble no matches — 3,600 vol (no matches bumble)
