@@ -140,18 +140,18 @@ Affiliate revenue, high intent, strong internal linking to stats pages.
 
 - [x] bumble app guide — 123,600 vol (bumble app dating, bumble apps, what is bumble app) — 2026-05-01
 - [x] how does bumble work — 7,600 vol (how does bumble work for men, how does bumble work for guys) — 2026-05-02
-- [ ] bumble opening move — 4,440 vol (opening move bumble, bumble opening lines)
-- [ ] bumble swipe left or right — 3,720 vol
-- [ ] bumble no matches — 3,600 vol (no matches bumble)
-- [ ] bumble superswipe — 3,230 vol (what is bumble superswipe)
-- [ ] does bumble have read receipts — 2,290 vol (does bumble send read receipts)
-- [ ] bumble profile tips — 1,480 vol (bumble date profile)
-- [ ] bumble match — 1,280 vol (bumble liked, bumble chats)
-- [ ] does bumble notify screenshots — 1,240 vol (bumble screenshots)
-- [ ] bumble rematch — 1,170 vol
-- [ ] bumble scams — 390 vol
-- [ ] what does moderate mean on bumble — 320 vol
-- [ ] how to change age range on bumble — 320 vol
+- [x] bumble opening move — 4,440 vol (opening move bumble, bumble opening lines) — 2026-03-20
+- [x] bumble swipe left or right — 3,720 vol — 2026-03-20
+- [x] bumble no matches — 3,600 vol (no matches bumble) — 2026-03-20
+- [x] bumble superswipe — 3,230 vol (what is bumble superswipe) — 2026-03-20
+- [x] does bumble have read receipts — 2,290 vol (does bumble send read receipts) — 2026-03-20
+- [x] bumble profile tips — 1,480 vol (bumble date profile) — 2026-05-03
+- [x] bumble match — 1,280 vol (bumble liked, bumble chats) — 2026-05-04
+- [x] does bumble notify screenshots — 1,240 vol (bumble screenshots) — 2026-03-20
+- [x] bumble rematch — 1,170 vol — 2026-05-05
+- [x] bumble scams — 390 vol — 2026-03-20
+- [x] what does moderate mean on bumble — 320 vol — 2026-03-20
+- [x] how to change age range on bumble — 320 vol — 2026-03-20
 
 ## Phase 6 — Profile Optimization
 
@@ -159,8 +159,8 @@ Product-adjacent. Drives profile review signups and engagement.
 
 ### Dating profile optimization
 
-- [ ] attractiveness test — 256,480 vol (test of attractiveness, attractive test, attraction tests)
-- [ ] prettyscale — 60,920 vol (prettiness scale, scale pretty, pretty scale)
+- [x] attractiveness test — 256,480 vol (test of attractiveness, attractive test, attraction tests) — 2026-03-20
+- [x] prettyscale — 60,920 vol (prettiness scale, scale pretty, pretty scale) — 2026-03-20
 - [ ] best profile pic — 56,780 vol (best photos for profile, good photos for profile)
 - [ ] hotornot — 50,220 vol (hot or not, hot or not site, hot or not website)
 - [ ] guy profile pictures — 29,160 vol (profile picture for guys, men's profile picture)
