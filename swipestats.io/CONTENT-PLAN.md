@@ -161,20 +161,20 @@ Product-adjacent. Drives profile review signups and engagement.
 
 - [x] attractiveness test — 256,480 vol (test of attractiveness, attractive test, attraction tests) — 2026-03-20
 - [x] prettyscale — 60,920 vol (prettiness scale, scale pretty, pretty scale) — 2026-03-20
-- [ ] best profile pic — 56,780 vol (best photos for profile, good photos for profile)
-- [ ] hotornot — 50,220 vol (hot or not, hot or not site, hot or not website)
-- [ ] guy profile pictures — 29,160 vol (profile picture for guys, men's profile picture)
-- [ ] dating profile examples — 28,290 vol (example of dating profile, dating profile female examples)
-- [ ] photogenic meaning — 21,040 vol (what does photogenic mean, how to be photogenic)
-- [ ] women profile pictures — 16,060 vol (women's profile picture, ladies profile pictures)
-- [ ] photo ratings — 10,720 vol (photo rate, rate photo, photo rating)
-- [ ] funny bios — 10,260 vol (funny bio, good bios, bio examples)
-- [ ] bio for dating app — 8,170 vol (funny bio for dating app, dating app bio ideas)
-- [ ] tinder profile examples — 6,990 vol (example tinder profiles, tinder profile example)
-- [ ] bumble bios & profiles — 6,310 vol (bumble bio, bumble bios, best bumble bios)
-- [ ] anonymous profile picture — 5,700 vol (anonymous profile pictures)
-- [ ] ai bio generator — 1,780 vol
-- [ ] hinge verification not working — 1,520 vol (hinge selfie verification not working)
+- [x] best profile pic — 56,780 vol (best photos for profile, good photos for profile) — 2026-03-21
+- [x] hotornot — 50,220 vol (hot or not, hot or not site, hot or not website) — 2026-03-22
+- [x] guy profile pictures — 29,160 vol (profile picture for guys, men's profile picture) — 2026-03-21
+- [x] dating profile examples — 28,290 vol (example of dating profile, dating profile female examples) — 2026-03-13
+- [x] photogenic meaning — 21,040 vol (what does photogenic mean, how to be photogenic) — 2026-03-21
+- [x] women profile pictures — 16,060 vol (women's profile picture, ladies profile pictures) — 2026-03-21
+- [x] photo ratings — 10,720 vol (photo rate, rate photo, photo rating) — 2026-03-21
+- [x] funny bios — 10,260 vol (funny bio, good bios, bio examples) — 2026-03-21
+- [x] bio for dating app — 8,170 vol (funny bio for dating app, dating app bio ideas) — 2026-03-22
+- [x] tinder profile examples — 6,990 vol (example tinder profiles, tinder profile example) — 2026-03-21
+- [x] bumble bios & profiles — 6,310 vol (bumble bio, bumble bios, best bumble bios) — 2026-03-21
+- [x] anonymous profile picture — 5,700 vol (anonymous profile pictures) — 2026-03-21
+- [x] ai bio generator — 1,780 vol — 2026-03-21
+- [x] hinge verification not working — 1,520 vol (hinge selfie verification not working) — 2026-03-21
 - [ ] ai attractiveness rater — 1,440 vol (ai attractiveness rating)
 - [ ] emoji bios — 720 vol
 - [ ] matching bios for couples — 590 vol

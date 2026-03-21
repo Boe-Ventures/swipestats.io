@@ -2868,3 +2868,442 @@ Fri Mar 20 06:30:01 AM CET 2026: Next topic: prettyscale — 60,920 vol (prettin
 - CONTENT-PLAN.md updated: `[x]` with date 2026-03-20
 
 Fri Mar 20 06:47:31 AM CET 2026: Blog generation complete for: prettyscale — 60,920 vol (prettiness scale, scale pretty, pretty scale)
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-21 00:00
+════════════════════════════════════════════════════
+Sat Mar 21 12:00:01 AM CET 2026: Next topic: best profile pic — 56,780 vol (best photos for profile, good photos for profile) (publish: unset)
+## Created: Best Dating Profile Photos: The Data-Backed Guide to Getting More Matches
+
+**File:** content/posts/best-dating-profile-photos.mdx
+**Category:** Guides | **Author:** paw
+
+### SEO
+
+- **Primary keyword:** best dating profile photos (320 vol, KD 6)
+- **Meta title:** Best Dating Profile Photos: 6 Shots You Need (2026 Data) (57 chars)
+- **Meta description:** Data from 7,000+ profiles reveals the best dating profile photos. What to use, what to delete, and how photo order affects matches. (131 chars)
+- **H1:** Best Dating Profile Photos: The Data-Backed Guide to Getting More Matches
+
+### Content
+
+- **Word count:** ~3,600 words
+- **H2 sections:** Your Photos Are 80% of the Game, The 6 Best Dating Profile Photos, Photo Order, Photos to Delete, How to Take Photos, Men vs Women, FAQ
+- **Internal links:** 6 links (best-tinder-bios, tinder-review, hinge-review, dating-profile-examples, tinder-algorithm, /upload)
+- **Data points used:** 17+ statistics from AURA, Hinge, CMB, University of Amsterdam, Kennesaw State, Photofeeler, and SwipeStats
+- **Sources:** 7 citations (academic + industry)
+
+### Needs Attention
+
+- **Thumbnail:** create image at `public/images/blog/thumbnails/best-dating-profile-photos.png`
+- CONTENT-PLAN.md updated: `[x]` with date 2026-03-21
+
+Sat Mar 21 12:22:09 AM CET 2026: Blog generation complete for: best profile pic — 56,780 vol (best photos for profile, good photos for profile)
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-21 00:30
+════════════════════════════════════════════════════
+Sat Mar 21 12:30:01 AM CET 2026: Next topic: hotornot — 50,220 vol (hot or not, hot or not site, hot or not website) (publish: unset)
+## Created: Hot or Not: The Website That Accidentally Invented Modern Dating
+
+**File:** `content/posts/hot-or-not.mdx`
+**Category:** Guides | **Author:** paw
+
+### SEO
+
+- **Primary keyword:** hot or not (9,900 vol, KD 41)
+- **Meta title:** Hot or Not: The Website That Invented Modern Dating Apps (56 chars)
+- **Meta description:** Hot or Not launched in 2000 and changed dating forever. Its full history, what happened to it, and the best alternatives in 2026. (129 chars)
+- **H1:** Hot or Not: The Website That Accidentally Invented Modern Dating (64 chars)
+
+### Content
+
+- **Word count:** ~2,556 words
+- **H2 sections:** Two Dudes One Argument, How Hot or Not Broke the Internet, Innovations Nobody Gives Credit For, The $20M Side Project, What Happened to Hot or Not, Is Hot or Not Still a Thing in 2026, The Mechanic Never Died, Best Alternatives, FAQ
+- **Internal links:** 7 links (best-dating-profile-photos, badoo-review, best-dating-apps, tinder-algorithm, tinder-review, bumble-review, attractiveness-test)
+- **Data points used:** 5 SwipeStats statistics (7,000+ profiles, 294M swipes, 53% male right-swipe, 5% female right-swipe, 1.69% match rate)
+- **Sources:** 5 citations (Wikipedia, Mashable, TIME, Slate, Royal Society Open Science)
+
+### Needs Attention
+
+- **Thumbnail:** create image at `public/images/blog/thumbnails/hot-or-not.png`
+
+Sat Mar 21 12:46:49 AM CET 2026: Blog generation complete for: hotornot — 50,220 vol (hot or not, hot or not site, hot or not website)
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-21 01:00
+════════════════════════════════════════════════════
+Sat Mar 21 01:00:01 AM CET 2026: Next topic: guy profile pictures — 29,160 vol (profile picture for guys, men's profile picture) (publish: unset)
+## Created: Profile Pictures for Guys: The 6 Photos You Need to Stop Being Invisible
+
+**File:** content/posts/guy-profile-pictures.mdx
+**Category:** Guides | **Author:** paw
+
+### SEO
+
+- **Primary keyword:** profile pictures for guys (2,400 vol, LOW difficulty)
+- **Meta title:** Best Profile Pictures for Guys (Data-Backed, 2026) (51 chars)
+- **Meta description:** Data from 7,000+ profiles shows the best profile pictures for guys. What works, what to delete, and the 6 photos you need. (122 chars)
+- **H1:** Profile Pictures for Guys: The 6 Photos You Need to Stop Being Invisible
+
+### Content
+
+- **Word count:** ~3,300 words
+- **H2 sections:** TLDR, Your First Photo Is Your Entire Funnel, The 6 Best Profile Pictures Every Guy Actually Needs (6 subsections), Photos That Are Actively Destroying Your Dating Life, The Quality Gap Nobody Talks About, What Actual Women Think, FAQ (4 questions), Sources
+- **Internal links:** 6 links (upload x2, best-tinder-bios, dating-profile-photos-that-get-girls-to-notice-you, best-rizz-pickup-lines, best-dating-profile-photos)
+- **Data points used:** 20+ statistics from research, SwipeStats proprietary data
+- **Sources:** 9 citations (Journal of Communication, Hinge Labs, Photofeeler, SwipeStats, university studies)
+
+### Needs Attention
+
+- **Thumbnail:** create image at `public/images/blog/thumbnails/guy-profile-pictures.png`
+
+Sat Mar 21 01:19:12 AM CET 2026: Blog generation complete for: guy profile pictures — 29,160 vol (profile picture for guys, men's profile picture)
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-21 01:30
+════════════════════════════════════════════════════
+Sat Mar 21 01:30:01 AM CET 2026: Next topic: dating profile examples — 28,290 vol (example of dating profile, dating profile female examples) (publish: unset)
+Done. The post already exists at `content/posts/dating-profile-examples.mdx` (published 2026-03-13), so I marked the Phase 6 duplicate entry as `[x]` in CONTENT-PLAN.md.
+
+**Summary:**
+- **Existing post:** "Dating Profile Examples That Don't Make People Dry Heave"
+- **File:** `content/posts/dating-profile-examples.mdx`
+- **Published:** 2026-03-13
+- **Coverage:** Tinder, Hinge, Bumble examples for men and women, backed by 7,000+ profile data
+- **Action taken:** Marked Phase 6 line 167 as `[x]` with date 2026-03-13
+
+If you'd like me to **refurbish/update** the existing post instead (using the keyword research, competitor analysis, and YouTube insights I gathered), I can do that with the content refurbisher skill. Or I can move on to the next unchecked topic in the content plan.
+
+Sat Mar 21 01:42:51 AM CET 2026: Blog generation complete for: dating profile examples — 28,290 vol (example of dating profile, dating profile female examples)
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-21 02:00
+════════════════════════════════════════════════════
+Sat Mar 21 02:00:01 AM CET 2026: Next topic: photogenic meaning — 21,040 vol (what does photogenic mean, how to be photogenic) (publish: unset)
+## Created: Photogenic Meaning: What It Actually Means (And Why Your Dating Profile Depends on It)
+
+**File:** `content/posts/photogenic-meaning.mdx`
+**Category:** Guides | **Author:** paw
+
+### SEO
+
+- **Primary keyword:** photogenic meaning (9,900/mo)
+- **Meta title:** Photogenic Meaning: Definition + How to Be Photogenic (53 chars)
+- **Meta description:** What does photogenic mean? The real definition, the science behind it, and how to look photogenic in your dating app photos. (123 chars)
+- **H1:** Photogenic Meaning: What It Actually Means (And Why Your Dating Profile Depends on It)
+
+### Content
+
+- **Word count:** ~2,500 words
+- **H2 sections:** What Does Photogenic Mean (definition), Science of Photos, Is It a Compliment, Dating App Superpower, 9 Tips to Be Photogenic, The Photogenic Trap, FAQ
+- **Internal links:** 8 links (best-dating-profile-photos, tinder-statistics, tinder-study-80-20, dating-profile-photos, guy-profile-pictures, /upload, dating-profile-examples, how-to-get-more-matches-on-tinder)
+- **Data points used:** 10+ statistics (AURA 1.8M study, Epley & Whitchurch enhancement bias, Blackburn left-side bias, lens distortion research, SwipeStats 7,000+ profiles)
+- **Sources:** 4 citations (academic + industry)
+
+### Needs Attention
+
+- **Thumbnail:** create image at `public/images/blog/thumbnails/photogenic-meaning.png`
+- CONTENT-PLAN.md updated: `[x]` with date 2026-03-21
+
+Sat Mar 21 02:16:07 AM CET 2026: Blog generation complete for: photogenic meaning — 21,040 vol (what does photogenic mean, how to be photogenic)
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-21 02:30
+════════════════════════════════════════════════════
+Sat Mar 21 02:30:01 AM CET 2026: Next topic: women profile pictures — 16,060 vol (women's profile picture, ladies profile pictures) (publish: unset)
+## Created: Women Profile Pictures That Actually Get Quality Matches
+
+**File:** `content/posts/women-profile-pictures.mdx`
+**Category:** Guides | **Author:** paw
+
+### SEO
+
+- **Primary keyword:** women profile pictures (880 vol)
+- **Meta title:** Best Women Profile Pictures for Dating Apps (2026) (51 chars)
+- **Meta description:** Data from 7,000+ profiles shows the best women profile pictures. 6 photo types you need and why filtered photos work. (118 chars)
+- **H1:** Women Profile Pictures That Actually Get Quality Matches (56 chars)
+- **Secondary keywords hit:** ladies profile pictures, dating profile pictures for women, female dating profile pictures
+
+### Content
+
+- **Word count:** ~2,800 words
+- **H2 sections:** 8 (First Photo, 6 Photos You Need, Filtered Photo Paradox, Wall of Shame, How Many Photos, By App, FAQ, Sources)
+- **Internal links:** 6 links (`/blog/best-dating-profile-photos`, `/blog/how-to-get-more-matches-on-tinder`, `/blog/best-hinge-prompts-for-girls`, `/blog/photogenic-meaning`, `/blog/tinder-statistics`, `/upload`)
+- **Data points used:** 15+ statistics with sample sizes (AURA 1.85M profiles, Frontiers n=389, KSU 2026, SwipeStats 7K+ profiles)
+- **Sources:** 5 citations (AURA, Frontiers in Communication, KSU, Psychology Today, SwipeStats)
+
+### Needs Attention
+
+- **Thumbnail:** create image at `public/images/blog/thumbnails/women-profile-pictures.png`
+- CONTENT-PLAN.md updated: `[x]` with date 2026-03-21
+
+Sat Mar 21 02:48:09 AM CET 2026: Blog generation complete for: women profile pictures — 16,060 vol (women's profile picture, ladies profile pictures)
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-21 03:00
+════════════════════════════════════════════════════
+Sat Mar 21 03:00:01 AM CET 2026: Next topic: photo ratings — 10,720 vol (photo rate, rate photo, photo rating) (publish: unset)
+## Created: Rate My Photo: What Your Attractiveness Score Actually Means for Dating
+
+**File:** `content/posts/rate-my-photo.mdx`
+**Category:** Guides | **Author:** paw
+
+### SEO
+
+- **Primary keyword:** "rate my photo" (1,600 vol, KD 8)
+- **Meta title:** Rate My Photo: What Your Attractiveness Score Actually Means (59 chars)
+- **Meta description:** Photo rating tools give you a number. We tested them against real data from 7,000+ profiles. Here's what actually works. (120 chars)
+- **H1:** Rate My Photo: What Your Attractiveness Score Actually Means for Dating (71 chars)
+
+### Content
+
+- **Word count:** ~1,900 words
+- **H2 sections:** Your Photos Are Your Resume | The Attractiveness Scale Nobody Talks About | Every Photo Rating Tool Worth Your Time | Do Photo Rating Sites Actually Work? | What Actually Gets Right Swipes | How to Rate Your Photo for Dating | FAQ | Sources
+- **Internal links:** 6 links (SwipeStats upload x2, photogenic-meaning, how-to-get-more-matches-on-tinder, guy-profile-pictures, download-tinder-data)
+- **Data points used:** 10+ SwipeStats statistics (294M swipes, 7,000+ profiles, 3.14M matches, 53% male swipe rate, 8.4x match rate gap)
+- **Sources:** 5 citations (PMC meta-analysis, ScienceDirect conjoint study, Computers in Human Behavior, Nature, Ultimate Profile study)
+- **Keywords covered:** rate my photo, am i attractive, rate my face, attractiveness scale, attractiveness test, photo rating, am i hot or not, dating profile photo tips
+
+### Needs Attention
+
+- **Thumbnail:** Create image at `public/images/blog/thumbnails/rate-my-photo.png`
+- **Source URLs:** Verify the 5 source links resolve correctly before publishing (URLs sourced from web research but should be spot-checked)
+
+Sat Mar 21 03:15:43 AM CET 2026: Blog generation complete for: photo ratings — 10,720 vol (photo rate, rate photo, photo rating)
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-21 03:30
+════════════════════════════════════════════════════
+Sat Mar 21 03:30:01 AM CET 2026: Next topic: funny bios — 10,260 vol (funny bio, good bios, bio examples) (publish: unset)
+Done. Here's the summary:
+
+## Created: Funny Bios for Dating Apps: 75+ Examples That Actually Get Matches
+
+**File:** `content/posts/funny-bios.mdx`
+**Category:** Guides | **Author:** paw
+
+### SEO
+
+- **Primary keyword:** "funny bio" / "funny bios" (cluster ~10,260 vol)
+- **Meta title:** Funny Bios: 75+ Dating App Examples That Work (2026) (53 chars)
+- **Meta description:** Copy-paste funny bios for Tinder, Bumble, and Hinge. 75+ examples plus research on why humor gets more matches. (112 chars)
+- **H1:** Funny Bios for Dating Apps: 75+ Examples That Actually Get Matches
+
+### Content
+
+- **Word count:** ~3,693 words
+- **H2 sections:** Science of Funny Bios, 5 Types of Funny Bios, Funny Tinder Bios, Funny Bumble Bios, Funny Hinge Prompt Answers, Hall of Shame, How to Write Your Own, FAQ
+- **Internal links:** 6 links (tinder-statistics, best-tinder-bios, bumble-statistics, best-hinge-prompts, tinder-algorithm, /upload)
+- **Data points used:** 8 SwipeStats statistics + 6 external research citations
+- **Sources:** 5 academic/research citations (ASU, PLOS One, Kansas, UC Berkeley, ScienceDaily)
+
+### Needs Attention
+
+- **Thumbnail:** create image at `public/images/blog/thumbnails/funny-bios.png`
+- CONTENT-PLAN.md updated: marked as `[x]`
+
+Sat Mar 21 03:51:55 AM CET 2026: Blog generation complete for: funny bios — 10,260 vol (funny bio, good bios, bio examples)
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-21 04:00
+════════════════════════════════════════════════════
+Sat Mar 21 04:00:01 AM CET 2026: Next topic: bio for dating app — 8,170 vol (funny bio for dating app, dating app bio ideas) (publish: unset)
+## Created: Bio for Dating App: The Formula, the Examples, and the Hall of Shame
+
+**File:** `content/posts/bio-for-dating-app.mdx`
+**Category:** Guides | **Author:** paw
+
+### SEO
+
+- **Primary keyword:** bio for dating app (720 vol, KD 3)
+- **Meta title:** Bio for Dating App: Formula + 40 Examples (2026) (50 chars)
+- **Meta description:** How to write a good bio for any dating app. Copy-paste examples for guys and women plus a data-backed formula for Tinder, Bumble, and Hinge. (140 chars)
+- **H1:** Bio for Dating App: The Formula, the Examples, and the Hall of Shame
+
+### Content
+
+- **Word count:** ~2,800 words
+- **H2 sections:** Your Bio Is Either Working or Sabotaging You | The 3-Part Bio Formula | Funny Bio (Copy-Paste) | Bio Ideas for Guys | Bio Ideas for Women | Short Bios | Hall of Shame | 7 Tips Backed by Research | FAQ
+- **Internal links:** 8 links (funny-bios, best-tinder-bios, guy-profile-pictures, best-hinge-prompts-for-girls, best-bumble-prompts-for-guys, dating-profile-examples, tinder-statistics, tinder-algorithm)
+- **Data points used:** 4x matches stat, 23% blank bios, 53% male right-swipe rate, 3-5% male match rate, UC Berkeley curiosity study, Dutch originality study, 44% emoji usage, 15-45 word sweet spot, 7,000+ profiles / 294M swipes
+- **Sources:** 5 citations (UC Berkeley, Dutch study, SwipeStats data, Matthew Hussey, TextGod)
+
+### Needs Attention
+
+- **Thumbnail:** create image at `public/images/blog/thumbnails/bio-for-dating-app.png`
+- CONTENT-PLAN.md marked `[x]` with date 2026-03-22
+
+Sat Mar 21 04:15:16 AM CET 2026: Blog generation complete for: bio for dating app — 8,170 vol (funny bio for dating app, dating app bio ideas)
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-21 04:30
+════════════════════════════════════════════════════
+Sat Mar 21 04:30:01 AM CET 2026: Next topic: tinder profile examples — 6,990 vol (example tinder profiles, tinder profile example) (publish: unset)
+## Created: Tinder Profile Examples That Actually Get Matches (Not Just Pity Swipes)
+
+**File:** `content/posts/tinder-profile-examples.mdx`
+**Category:** Guides | **Author:** paw
+
+### SEO
+
+- **Primary keyword:** tinder profile examples (1,000 vol / KD 6)
+- **Meta title:** Tinder Profile Examples That Get Matches (2026) (48 chars)
+- **Meta description:** Best tinder profile examples backed by data from 7,000+ profiles. Short bios, photo tips, and what to stop doing. (113 chars)
+- **H1:** Tinder Profile Examples That Actually Get Matches (Not Just Pity Swipes)
+
+### Content
+
+- **Word count:** ~2,500 words
+- **H2 sections:** 8 (Intro, Data, Guys Examples, Girls Examples, Bio Formula, Photos, Testing, FAQ)
+- **Internal links:** 8 links (tinder-statistics, tinder-algorithm, best-tinder-bios, tinder-prompt-answers, best-dating-profile-photos, /upload, how-to-get-more-matches-on-tinder, funny-bios)
+- **Data points used:** 12+ SwipeStats statistics (match rates, bio length, job title penalty, selectivity, Super Likes)
+- **Sources:** 4 citations (SwipeStats, UOC 2025, UC Berkeley 2024, Match Lab)
+
+### Needs Attention
+
+- **Thumbnail:** create image at `public/images/blog/thumbnails/tinder-profile-examples.png`
+
+Sat Mar 21 04:45:09 AM CET 2026: Blog generation complete for: tinder profile examples — 6,990 vol (example tinder profiles, tinder profile example)
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-21 05:00
+════════════════════════════════════════════════════
+Sat Mar 21 05:00:01 AM CET 2026: Next topic: bumble bios & profiles — 6,310 vol (bumble bio, bumble bios, best bumble bios) (publish: unset)
+## Created: Bumble Bio: 50+ Examples, 6 Formulas, and a Hall of Shame
+
+**File:** `content/posts/bumble-bio.mdx`
+**Category:** Guides | **Author:** paw
+
+### SEO
+
+- **Primary keyword:** bumble bio (590 vol)
+- **Meta title:** Bumble Bio: 50+ Examples That Actually Get Matches (2026) (57 chars)
+- **Meta description:** Copy-paste the best Bumble bios for guys and girls. 6 proven formulas, 50+ examples, and a hall of shame. Data-backed. (119 chars)
+- **H1:** Bumble Bio: 50+ Examples, 6 Formulas, and a Hall of Shame
+
+### Content
+
+- **Word count:** ~3,100 words
+- **H2 sections:** 8 (intro, 6 formulas, guys, women, hall of shame, how-to, FAQ, sources)
+- **Internal links:** 6 links (best-dating-profile-photos, guy-profile-pictures, best-bumble-prompts-for-guys, hinge-vs-bumble, bumble-no-matches, tinder-vs-bumble)
+- **Data points used:** 10+ (conjoint study 7-20x, 60% bio engagement, 28% profile completion, 64% fail rate, 71% selfies, 1.69% male match rate, 3% Bumble estimate, 45% female match rate, 82% serious relationships, 50M MAU, positivity #1 trait, 36% humor boost)
+- **Sources:** 5 citations (TechCrunch, ScienceDirect, HZD Photography, Business of Apps, SwipeStats)
+- **Bio examples:** 50+ across 6 formula categories + gender-specific sections + hall of shame
+
+### Needs Attention
+
+- **Thumbnail:** Create image at `public/images/blog/thumbnails/bumble-bio.png`
+- CONTENT-PLAN.md updated: `[x]` marked
+
+Sat Mar 21 05:18:05 AM CET 2026: Blog generation complete for: bumble bios & profiles — 6,310 vol (bumble bio, bumble bios, best bumble bios)
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-21 05:30
+════════════════════════════════════════════════════
+Sat Mar 21 05:30:02 AM CET 2026: Next topic: anonymous profile picture — 5,700 vol (anonymous profile pictures) (publish: unset)
+## Created: Anonymous Profile Picture on Dating Apps: The Fastest Way to Get Zero Matches
+
+**File:** `content/posts/anonymous-profile-picture.mdx`
+**Category:** Guides | **Author:** paw
+
+### SEO
+
+- **Primary keyword:** anonymous profile picture (1,900 vol)
+- **Meta title:** Anonymous Profile Picture: Dating Impact & Data (47 chars)
+- **Meta description:** Anonymous profile pictures tank your match rate on dating apps. Data from 1.8M profiles on why going faceless fails. (116 chars)
+- **H1:** Anonymous Profile Picture on Dating Apps: The Fastest Way to Get Zero Matches
+
+### Content
+
+- **Word count:** ~1,700 words
+- **H2 sections:** What Is an Anonymous Profile Picture, What Your Blank Profile Picture Says, The Match Rate Massacre, Does It Work on [App], When Going Anonymous Makes Sense, What to Do Instead, FAQ
+- **Internal links:** 8 links (bumble-scams, tinder-profile-examples, tinder-statistics, tinder-study-80-20, best-dating-profile-photos, tinder-algorithm, guy-profile-pictures, /upload)
+- **Data points used:** AURA 1.8M profiles (272% match boost), Frontiers in Communication (389 participants), Love Made Logical (18x likes), SwipeStats (7,000+ profiles, 294M swipes), catfishing stats ($1.45B fraud)
+- **Sources:** 7 citations with specific URLs
+
+### Quality Gates Passed
+
+- Zero em-dashes
+- Zero banned transitional phrases
+- Zero passive voice constructions
+- Zero hedging openers
+- All frontmatter within character limits
+- All internal link URLs verified against published posts
+- CONTENT-PLAN.md updated
+
+### Needs Attention
+
+- **Thumbnail:** create image at `public/images/blog/thumbnails/anonymous-profile-picture.png`
+
+Sat Mar 21 05:41:55 AM CET 2026: Blog generation complete for: anonymous profile picture — 5,700 vol (anonymous profile pictures)
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-21 06:00
+════════════════════════════════════════════════════
+Sat Mar 21 06:00:02 AM CET 2026: Next topic: ai bio generator — 1,780 vol (publish: unset)
+## Created: AI Bio Generator for Dating Apps: Write a Bio That Doesn't Sound Like a Robot Wrote It
+
+**File:** content/posts/ai-bio-generator.mdx
+**Category:** Guides | **Author:** paw
+
+### SEO
+
+- **Primary keyword:** ai bio generator (1,300/mo)
+- **Meta title:** AI Bio Generator for Dating Apps (2026 Guide) (47 chars)
+- **Meta description:** AI bio generator guide for Tinder, Bumble, and Hinge. What works, what flops, and how to not sound like a robot. (112 chars)
+- **H1:** AI Bio Generator for Dating Apps: Write a Bio That Doesn't Sound Like a Robot Wrote It (87 chars)
+
+### Content
+
+- **Word count:** ~2,700 words
+- **H2 sections:** Your Bio Is a Ghost Town, The AI Dating Bio Gold Rush, What Actually Makes a Bio Work, The Problem With AI Bios, The AI Bio Generator Formula, The Cliche Hall of Shame, FAQ, Sources
+- **Internal links:** 8 links (tinder-statistics, best-tinder-bios, dating-profile-examples, bio-for-dating-app, bumble-bio, funny-bios, tinder-profile-examples, hinge-profile-examples)
+- **Data points used:** 12+ statistics (SwipeStats + external research)
+- **Sources:** 7 citations (Match/Kinsey, PLOS ONE, BU/Ipsos, Global Dating Insights, arXiv, The Black Tux, SwipeStats)
+
+### Needs Attention
+
+- **Thumbnail:** create image at `public/images/blog/thumbnails/ai-bio-generator.png`
+- CONTENT-PLAN.md updated: `[x]` with date 2026-03-21
+
+Sat Mar 21 06:15:52 AM CET 2026: Blog generation complete for: ai bio generator — 1,780 vol
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-21 06:30
+════════════════════════════════════════════════════
+Sat Mar 21 06:30:02 AM CET 2026: Next topic: hinge verification not working — 1,520 vol (hinge selfie verification not working) (publish: unset)
+## Created: Hinge Verification Not Working? Here's How to Fix It
+
+**File:** `content/posts/hinge-verification-not-working.mdx`
+**Category:** Guides | **Author:** paw
+
+### SEO
+
+- **Primary keyword:** hinge verification not working (880/mo)
+- **Meta title:** Hinge Verification Not Working? 8 Proven Fixes (47 chars)
+- **Meta description:** Hinge verification not working? Fix selfie verification, Face Check, blurry photos, and SMS code issues with these proven steps. (128 chars)
+- **H1:** Hinge Verification Not Working? Here's How to Fix It
+
+### Content
+
+- **Word count:** ~2,400 words
+- **H2 sections:** Why Verification Fails, Selfie vs Face Check, Complete Your Profile Error, 8 Fixes, iPhone Issues, SMS Issues, Post-Verification Benefits, FAQ
+- **Internal links:** 6 links (hinge-match-disappeared, best-dating-apps, best-hinge-prompts, hinge-profile-examples, dating-app-statistics, best-hinge-openers)
+- **Data points used:** 200% more dates for verified users, 6 photos + prompts requirement, 24-hour data retention vs lifetime retention, Face Check mandatory UK/Australia Feb 2026
+- **Sources:** 4 citations (Hinge Help x2, Biometric Update, FaceTec)
+
+### Differentiators vs Competitors
+
+- Only article to clearly explain Face Check vs Selfie Verification distinction
+- Covers FaceMap/FaceVector cross-account detection
+- Subscription refund angle for failed Face Check
+- Specific error messages + Top Photo toggle fix
+- Device-specific sections (iPhone, SMS)
+
+### Needs Attention
+
+- **Thumbnail:** create image at `public/images/blog/thumbnails/hinge-verification-not-working.png`
+- CONTENT-PLAN.md updated: `[x]` marked with date 2026-03-21
+
+Sat Mar 21 06:41:59 AM CET 2026: Blog generation complete for: hinge verification not working — 1,520 vol (hinge selfie verification not working)
