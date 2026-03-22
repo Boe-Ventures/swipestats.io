@@ -175,16 +175,16 @@ Product-adjacent. Drives profile review signups and engagement.
 - [x] anonymous profile picture — 5,700 vol (anonymous profile pictures) — 2026-03-21
 - [x] ai bio generator — 1,780 vol — 2026-03-21
 - [x] hinge verification not working — 1,520 vol (hinge selfie verification not working) — 2026-03-21
-- [ ] ai attractiveness rater — 1,440 vol (ai attractiveness rating)
-- [ ] emoji bios — 720 vol
-- [ ] matching bios for couples — 590 vol
-- [ ] bio for yubo — 590 vol
-- [ ] hinge bio — 480 vol
-- [ ] tinder no profile picture — 320 vol
+- [x] ai attractiveness rater — 1,440 vol (ai attractiveness rating) — 2026-03-22
+- [x] emoji bios — 720 vol — 2026-03-22
+- [x] matching bios for couples — 590 vol — 2026-03-22
+- [x] bio for yubo — 590 vol — 2026-03-22
+- [x] hinge bio — 480 vol — 2026-03-22
+- [x] tinder no profile picture — 320 vol — 2026-03-22
 
 ### Dating profile photography
 
-- [ ] tinder photographer near me — 980 vol (photographer for dating sites)
+- [x] tinder photographer near me — 980 vol (photographer for dating sites) — 2026-03-23
 
 ## Phase 7 — Tinder & Hinge Guides
 
@@ -192,13 +192,13 @@ Core audience content. Men 25-35 on Tinder/Hinge.
 
 ### Tinder features and tips
 
-- [ ] find profile on tinder — 85,220 vol (find tinder profile, can you search people on tinder)
-- [ ] deleting tinder account — 58,470 vol (tinder account deletion, delete account tinder)
-- [ ] tinder signs — 49,560 vol (tinder insights down, what happened to tinder insights)
-- [ ] swiped right on tinder — 35,950 vol (right swipe on tinder, swiping right on tinder)
-- [ ] how to change your tinder name — 24,900 vol
-- [ ] super like on tinder — 23,040 vol (super like tinder, tinder super like)
-- [ ] best tinder pictures — 21,600 vol (best pictures for tinder)
+- [x] find profile on tinder — 85,220 vol (find tinder profile, can you search people on tinder) — 2026-03-22
+- [x] deleting tinder account — 58,470 vol (tinder account deletion, delete account tinder) — 2026-03-22
+- [x] tinder signs — 49,560 vol (tinder insights down, what happened to tinder insights) — 2026-03-22
+- [x] swiped right on tinder — 35,950 vol (right swipe on tinder, swiping right on tinder) — 2026-03-22
+- [x] how to change your tinder name — 24,900 vol (covered by how-to-change-name-on-tinder.mdx)
+- [x] super like on tinder — 23,040 vol (super like tinder, tinder super like) — 2026-03-22
+- [x] best tinder pictures — 21,600 vol (best pictures for tinder) — 2026-03-22
 - [ ] how to use tinder — 20,300 vol (how to use tinder app)
 - [ ] good tinder openers — 19,660 vol (best opening lines for tinder)
 - [ ] tinder meaning — 17,480 vol (what does mean on tinder, what is tinder used for)
@@ -490,7 +490,7 @@ Widest top-of-funnel. Builds topical authority.
 - [ ] how to get out of the friend zone — 1,900 vol
 - [ ] attractive guys — 1,900 vol
 - [ ] how to know if someone dislikes you — 1,770 vol
-- [ ] ai attractiveness rater — 1,440 vol (ai attractiveness rating)
+- [x] ai attractiveness rater — 1,440 vol (ai attractiveness rating) — 2026-03-22
 - [ ] flirty eyes — 880 vol
 - [ ] how to be confident when talking — 480 vol
 - [ ] dating profile headlines to attract guys — 390 vol
