@@ -199,20 +199,20 @@ Core audience content. Men 25-35 on Tinder/Hinge.
 - [x] how to change your tinder name — 24,900 vol (covered by how-to-change-name-on-tinder.mdx)
 - [x] super like on tinder — 23,040 vol (super like tinder, tinder super like) — 2026-03-22
 - [x] best tinder pictures — 21,600 vol (best pictures for tinder) — 2026-03-22
-- [ ] how to use tinder — 20,300 vol (how to use tinder app)
-- [ ] good tinder openers — 19,660 vol (best opening lines for tinder)
-- [ ] tinder meaning — 17,480 vol (what does mean on tinder, what is tinder used for)
-- [ ] how to change age on tinder — 17,100 vol
-- [ ] tinder passport — 15,900 vol (change location on tinder)
-- [ ] is tinder down — 14,700 vol (tinder not working)
-- [ ] tinder appeal center — 12,130 vol (tinder appeals center, tinder appeals)
-- [ ] best tinder profiles — 11,980 vol (best tinder profile, sexiest tinder profile)
-- [ ] how to see who liked you on tinder — 10,510 vol
-- [ ] tinder about me — 10,210 vol (tinder profile template)
-- [ ] tinder unmatch — 9,830 vol (unmatched on tinder)
-- [ ] no matches on tinder — 8,040 vol (tinder no matches)
-- [ ] how to send pictures on tinder — 7,520 vol
-- [ ] secret admirer on tinder — 7,070 vol (tinder secret admirer, tinder first impressions)
+- [x] how to use tinder — 20,300 vol (how to use tinder app) — 2026-03-23
+- [x] good tinder openers — 19,660 vol (best opening lines for tinder) — 2026-03-23
+- [x] tinder meaning — 17,480 vol (what does mean on tinder, what is tinder used for) — 2026-03-23
+- [x] how to change age on tinder — 17,100 vol — 2026-03-23
+- [x] tinder passport — 15,900 vol (change location on tinder) — 2026-03-23
+- [x] is tinder down — 14,700 vol (tinder not working)
+- [x] tinder appeal center — 12,130 vol (tinder appeals center, tinder appeals) — 2026-03-24
+- [x] best tinder profiles — 11,980 vol (best tinder profile, sexiest tinder profile) — 2026-03-23
+- [x] how to see who liked you on tinder — 10,510 vol — 2026-03-24
+- [x] tinder about me — 10,210 vol (tinder profile template) — 2026-03-23
+- [x] tinder unmatch — 9,830 vol (unmatched on tinder) — 2026-03-23
+- [x] no matches on tinder — 8,040 vol (tinder no matches) — 2026-03-23
+- [x] how to send pictures on tinder — 7,520 vol — 2026-03-23
+- [x] secret admirer on tinder — 7,070 vol (tinder secret admirer, tinder first impressions) — 2026-03-23
 - [ ] tinder read receipts — 7,060 vol
 - [ ] tinder phone number — 6,580 vol (tinder short code)
 - [ ] tinder screenshots — 6,010 vol
