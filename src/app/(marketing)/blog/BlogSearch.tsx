@@ -136,6 +136,20 @@ export function BlogSearch({ allPosts, resultCount }: BlogSearchProps) {
         </div>
       )}
 
+      {/* Active Tag Filter */}
+      {selectedTag && (
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-gray-700">Tag:</span>
+          <button
+            onClick={() => void setSelectedTag(null)}
+            className="inline-flex items-center gap-1 rounded-full bg-gray-900 px-3 py-1 text-sm font-medium text-white transition-colors hover:bg-gray-700"
+          >
+            {selectedTag}
+            <X className="size-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Results Info & Clear Button - Flat Layout */}
       <div className="flex items-center justify-between border-t border-gray-200 pt-4">
         <p className="text-sm text-gray-600">

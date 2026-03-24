@@ -93,25 +93,12 @@ function BlogCardSimple({
   basePath?: string;
 }) {
   return (
-    <article className="flex max-w-xl flex-col items-start justify-between">
-      <div className="flex flex-wrap items-center gap-2 text-xs">
-        <time dateTime={post.publishedAt} className="text-gray-500">
-          {format(parseISO(post.publishedAt), "MMM dd, yyyy")}
-        </time>
-        {post.category && (
-          <span className="relative z-10 rounded-md bg-linear-to-r from-pink-600 to-rose-600 px-3 py-1.5 font-bold text-white shadow-sm">
-            {post.category}
-          </span>
-        )}
-        {(post.tags || []).map((tag: string) => (
-          <span
-            key={tag}
-            className="relative z-10 rounded-full bg-gray-50 px-3 py-1.5 font-medium text-gray-600 transition-colors hover:bg-gray-200 hover:text-gray-900"
-          >
-            #{tag}
-          </span>
-        ))}
-      </div>
+    <article className="flex max-w-xl flex-col items-start justify-between rounded-xl border border-gray-200 p-5 transition-shadow hover:shadow-md">
+      {post.category && (
+        <span className="rounded-md bg-linear-to-r from-pink-600 to-rose-600 px-3 py-1 text-xs font-bold text-white shadow-sm">
+          {post.category}
+        </span>
+      )}
       <div className="group relative grow">
         <h3 className="mt-3 text-lg leading-6 font-semibold text-gray-900 group-hover:text-gray-600">
           <Link href={`${basePath}/${post.slug}`}>
@@ -120,12 +107,26 @@ function BlogCardSimple({
           </Link>
         </h3>
         {(post.h1Subtitle || post.metaDescription) && (
-          <p className="mt-5 line-clamp-3 text-sm leading-6 text-gray-600">
+          <p className="mt-3 line-clamp-2 text-sm leading-6 text-gray-600">
             {post.h1Subtitle || post.metaDescription}
           </p>
         )}
       </div>
-      <div className="relative mt-8 flex items-center gap-x-4 justify-self-end">
+      {post.tags.length > 0 && (
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {post.tags.slice(0, 3).map((tag: string) => (
+            <Link
+              key={tag}
+              href={`/blog?tag=${encodeURIComponent(tag)}`}
+              scroll={false}
+              className="relative z-10 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-700"
+            >
+              {tag}
+            </Link>
+          ))}
+        </div>
+      )}
+      <div className="relative mt-4 flex w-full items-center gap-x-3">
         {AUTHORS[post.author].image ? (
           <Image
             src={
@@ -134,24 +135,28 @@ function BlogCardSimple({
                 : `/images/people/${AUTHORS[post.author].image}`
             }
             alt={AUTHORS[post.author].name}
-            width={40}
-            height={40}
-            className="size-10 rounded-full bg-gray-50 object-cover"
+            width={32}
+            height={32}
+            className="size-8 rounded-full bg-gray-50 object-cover"
           />
         ) : (
-          <div className="flex size-10 items-center justify-center rounded-full bg-gray-50">
-            <span className="text-sm font-semibold text-gray-600">
+          <div className="flex size-8 items-center justify-center rounded-full bg-gray-50">
+            <span className="text-xs font-semibold text-gray-600">
               {AUTHORS[post.author].name.charAt(0)}
             </span>
           </div>
         )}
-        <div className="text-sm leading-6">
-          <p className="font-semibold text-gray-900">
-            <span className="absolute inset-0" />
-            {AUTHORS[post.author].name}
-          </p>
-          <p className="text-gray-600">Author</p>
-        </div>
+        <p className="text-sm font-medium text-gray-900">
+          <span className="absolute inset-0" />
+          {AUTHORS[post.author].name}
+        </p>
+        <span className="text-gray-300">·</span>
+        <time
+          dateTime={post.updatedAt || post.publishedAt}
+          className="text-sm text-gray-500"
+        >
+          {format(parseISO(post.updatedAt || post.publishedAt), "MMM dd, yyyy")}
+        </time>
       </div>
     </article>
   );
@@ -210,11 +215,11 @@ export function BlogGrid({
                   <div className="absolute inset-0 -z-10 rounded-xl ring-1 ring-gray-900/10 ring-inset" />
                   <div className="flex flex-wrap items-center gap-2 overflow-hidden text-sm leading-6 text-gray-300">
                     <time
-                      dateTime={featuredPosts[0].publishedAt}
+                      dateTime={featuredPosts[0].updatedAt || featuredPosts[0].publishedAt}
                       className="mr-4"
                     >
                       {format(
-                        parseISO(featuredPosts[0].publishedAt),
+                        parseISO(featuredPosts[0].updatedAt || featuredPosts[0].publishedAt),
                         "MMM dd, yyyy",
                       )}
                     </time>
@@ -282,8 +287,8 @@ export function BlogGrid({
                   <div className="absolute inset-0 -z-10 bg-linear-to-t from-gray-900 via-gray-900/70" />
                   <div className="absolute inset-0 -z-10 rounded-xl ring-1 ring-gray-900/10 ring-inset" />
                   <div className="flex flex-wrap items-center gap-2 overflow-hidden text-sm leading-6 text-gray-300">
-                    <time dateTime={post.publishedAt} className="mr-2">
-                      {format(parseISO(post.publishedAt), "MMM dd, yyyy")}
+                    <time dateTime={post.updatedAt || post.publishedAt} className="mr-2">
+                      {format(parseISO(post.updatedAt || post.publishedAt), "MMM dd, yyyy")}
                     </time>
                     {post.category && (
                       <span className="relative z-10 cursor-pointer rounded-full bg-rose-500/80 px-3 py-1.5 font-semibold text-white transition-colors hover:bg-rose-500">
