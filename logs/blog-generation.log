@@ -4150,3 +4150,429 @@ Done. Here's the summary:
 - CONTENT-PLAN.md updated: `[x]` marked with date 2026-03-23
 
 Mon Mar 23 06:44:21 AM CET 2026: Blog generation complete for: secret admirer on tinder — 7,070 vol (tinder secret admirer, tinder first impressions)
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-24 00:00
+════════════════════════════════════════════════════
+Tue Mar 24 12:00:01 AM CET 2026: Next topic: tinder read receipts — 7,060 vol (publish: unset)
+Failed to authenticate. API Error: 401 {"type":"error","error":{"type":"authentication_error","message":"Invalid OAuth token. The provided token was not found or is malformed."},"request_id":"req_011CZLqpHwzZGaUj9MdNLcna"}
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-24 00:30
+════════════════════════════════════════════════════
+Tue Mar 24 12:30:01 AM CET 2026: Next topic: tinder read receipts — 7,060 vol (publish: unset)
+## Created: Tinder Read Receipts: Dead as of 2026 (RIP to Your Anxiety)
+
+**File:** `content/posts/tinder-read-receipts.mdx`
+**Category:** Guides | **Author:** paw
+
+### SEO
+
+- **Primary keyword:** tinder read receipts (1,600/mo)
+- **Meta title:** Tinder Read Receipts (2026): Removed. Here's What Happened. (59 chars)
+- **Meta description:** Tinder read receipts were removed January 2026. Here's what they were, what they cost, and what to do now. (106 chars)
+- **H1:** Tinder Read Receipts: Dead as of 2026 (RIP to Your Anxiety)
+
+### Content
+
+- **Word count:** ~2,100 words
+- **H2 sections:** 9 (Does Tinder Have Read Receipts?, What Were They?, Checkmark Decoder, Pricing, Psychology, Can You Still Tell?, vs Other Apps, How Do They Work Now?, FAQ)
+- **Internal links:** 8 links (tinder-statistics, tinder-plus-vs-tinder-gold, is-tinder-gold-worth-it, tinder-openers, does-bumble-have-read-receipts, tinder-algorithm, best-tinder-openers, /upload)
+- **Data points used:** 4 SwipeStats statistics (7,000+ profiles, 294M swipes, 3.14M matches, 53% male right-swipe rate)
+- **Sources:** 5 citations
+
+### Key differentiator
+
+Every competitor article in the SERP still describes read receipts as an active feature. **Tinder removed them January 7, 2026.** This article is the only correct one on the internet, giving us a massive freshness and accuracy advantage.
+
+### Needs Attention
+
+- **Thumbnail:** create image at `public/images/blog/thumbnails/tinder-read-receipts.png`
+
+Tue Mar 24 12:44:06 AM CET 2026: Blog generation complete for: tinder read receipts — 7,060 vol
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-24 01:00
+════════════════════════════════════════════════════
+Tue Mar 24 01:00:02 AM CET 2026: Next topic: tinder phone number — 6,580 vol (tinder short code) (publish: unset)
+## Created: Tinder Phone Number: Verification Codes, Short Codes, and Scams
+
+**File:** content/posts/tinder-phone-number.mdx
+**Category:** Guides | **Author:** paw
+
+### SEO
+
+- **Primary keyword:** tinder phone number (1,000/mo, KD 20)
+- **Meta title:** Tinder Phone Number: Short Codes & Verification (47 chars)
+- **Meta description:** Every Tinder short code, why they need your number, what to do when codes won't arrive, and what that mystery text actually means. (130 chars)
+- **H1:** Tinder Phone Number: Verification Codes, Short Codes, and Scams
+
+### Content
+
+- **Word count:** ~2,630 words
+- **H2 sections:** Verification explained, Complete short code list, Unrequested codes, Troubleshooting, Using without phone number, Safety, Customer service, Scams, FAQ
+- **Internal links:** 8 links (unbanned, delete account, no matches, find profile, selfie under review, algorithm, statistics, bumble scams)
+- **Data points used:** 7 confirmed short codes, $1.3B romance scam losses, 15% breach increase, 4% support resolution rate, 24% caller reach rate, $118.76/mo scam charges
+- **Sources:** 7 citations (FTC, Tinder Help, FBI, Sinch, PissedConsumer, etc.)
+
+### Needs Attention
+
+- **Thumbnail:** create image at `public/images/blog/thumbnails/tinder-phone-number.png`
+
+Tue Mar 24 01:12:31 AM CET 2026: Blog generation complete for: tinder phone number — 6,580 vol (tinder short code)
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-24 01:30
+════════════════════════════════════════════════════
+Tue Mar 24 01:30:02 AM CET 2026: Next topic: tinder screenshots — 6,010 vol (publish: unset)
+## Created: Tinder Screenshots: The Complete Guide to Screenshotting Without Getting Caught
+
+**File:** content/posts/tinder-screenshots.mdx
+**Category:** Guides | **Author:** paw
+
+### SEO
+
+- **Primary keyword:** tinder screenshots (590 vol)
+- **Meta title:** Tinder Screenshots: Can You Screenshot on Tinder? (2026) (56 chars)
+- **Meta description:** Can you screenshot on Tinder? Yes. Does it notify? No. Full guide to legality, cross-app comparison, and safety tips. (118 chars)
+- **H1:** Tinder Screenshots: The Complete Guide to Screenshotting Without Getting Caught (79 chars)
+
+### Content
+
+- **Word count:** ~2,100 words
+- **H2 sections:** 9 (Quick answer, Can you screenshot everything, Why people screenshot, How-to by device, Cross-app comparison table, Legal/TAKE IT DOWN Act, Ban risks, Reporting creeps, FAQ)
+- **Internal links:** 8 links (does-tinder-notify-screenshots, best-tinder-bios, tinder-pickup-lines, tinder-match-disappeared, tinder-vs-bumble, tinder-algorithm, tinder-read-receipts, /upload)
+- **Data points used:** TAKE IT DOWN Act (2025), 48 states + DC revenge porn laws, Bumble partial notification, Tinder ToS quotes
+- **Sources:** 5 citations (Congress.gov, Tinder Community Guidelines, Tinder ToS, Tinder Safety Center, NCSL)
+
+### Quality checks passed
+
+- Anti-slop: Zero em-dashes, zero forbidden words, zero passive voice
+- All internal links verified against published posts
+- All frontmatter fields within character limits
+- MDX components properly opened/closed
+- CONTENT-PLAN.md updated: `[x]` with date 2026-03-24
+
+### Needs Attention
+
+- **Thumbnail:** create image at `public/images/blog/thumbnails/tinder-screenshots.png`
+
+Tue Mar 24 01:43:41 AM CET 2026: Blog generation complete for: tinder screenshots — 6,010 vol
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-24 02:00
+════════════════════════════════════════════════════
+Tue Mar 24 02:00:01 AM CET 2026: Next topic: tinder plus price — 5,790 vol (how much for tinder plus) (publish: unset)
+## Created: Tinder Plus Price in 2026: What It Costs and Whether Your Wallet Should Care
+
+**File:** content/posts/tinder-plus-price.mdx
+**Category:** Guides | **Author:** paw
+
+### SEO
+
+- **Primary keyword:** tinder plus price (480/mo, KD 8)
+- **Meta title:** Tinder Plus Price 2026: Cost, Features & Is It Worth It? (56 chars)
+- **Meta description:** Tinder Plus costs $17.99-$24.99/mo in 2026. Compare all tiers and see real data on whether paying gets you more matches. (120 chars)
+- **H1:** Tinder Plus Price in 2026: What It Costs and Whether Your Wallet Should Care
+
+### Content
+
+- **Word count:** ~2,900 words
+- **H2 sections:** How Much Does Tinder Plus Actually Cost in 2026? | The Full Tinder Subscription Lineup | That Time Tinder Got Sued for $60.5 Million (The Age Tax) | Does Paying for Tinder Actually Get You More Matches? | Is Tinder Plus Worth It? | How to Get Tinder Plus Cheaper | FAQ
+- **Internal links:** 7 links (is-tinder-gold-worth-it x2, upload x2, tinder-statistics, best-tinder-bios, hinge-statistics, tinder-algorithm)
+- **Data points used:** 6 SwipeStats statistics (7,000+ profiles, 294M swipes, 3.14M matches, 1.69% match rate, 53% right-swipe rate)
+- **Sources:** 9 citations
+- **Video embed:** Zackary Smigel's "Are Dating Apps Pay-to-Win?" (1M+ views, mentions SwipeStats directly)
+
+### Key differentiators vs competitors
+- $60.5M age discrimination settlement (no other ranking article covers this)
+- Real match-rate data from SwipeStats + YouTube creators
+- Cost-per-match ROI analysis
+- "Just buy Boosts" alternative backed by data
+- Match Group declining payer numbers (Q4 2025 earnings)
+
+### Needs Attention
+
+- **Thumbnail:** create image at `public/images/blog/thumbnails/tinder-plus-price.png`
+- CONTENT-PLAN.md updated: `[x]` with date 2026-03-26
+
+Tue Mar 24 02:15:33 AM CET 2026: Blog generation complete for: tinder plus price — 5,790 vol (how much for tinder plus)
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-24 02:30
+════════════════════════════════════════════════════
+Tue Mar 24 02:30:02 AM CET 2026: Next topic: tinder hacks — 4,890 vol (how to get more likes on tinder) (publish: unset)
+All frontmatter fields valid. Here's the final report:
+
+## Created: Tinder Hacks 2026: The Brutally Honest Guide to Getting More Likes
+
+**File:** `content/posts/tinder-hacks.mdx`
+**Category:** Guides | **Author:** paw
+
+### SEO
+
+- **Primary keyword:** tinder hacks (390/mo)
+- **Meta title:** Tinder Hacks 2026: How to Get More Likes & Matches (Free) (58 chars)
+- **Meta description:** The only tinder hacks that work in 2026. Real data from 294M swipes on getting more likes, more matches, and beating the algorithm. (131 chars)
+- **H1:** Tinder Hacks 2026: The Brutally Honest Guide to Getting More Likes (67 chars)
+
+### Content
+
+- **Word count:** ~2,600 words
+- **H2 sections:** The Only Tinder Hack That Matters, How the Algorithm Actually Works in 2026, Stop Swiping Right on Everyone, Your Photos Are Doing 80% of the Work, Write a Bio That Doesn't Bore People to Death, How to Get More Likes Without Paying, The Nuclear Option: Delete and Start Over, When to Stop Being Cheap and Just Pay, FAQ (5 questions)
+- **Internal links:** 8 links (tinder-algorithm, tinder-statistics, best-tinder-pictures, best-tinder-bios, when-do-tinder-likes-reset, how-to-delete-tinder-account, how-to-see-who-liked-you-on-tinder, is-tinder-gold-worth-it)
+- **Data points used:** 3 SwipeStats statistics (1.69% male match rate, 53% right-swipe rate, 294M swipes from 7K+ profiles)
+- **Sources:** 4 citations (Queen Mary University study, Tinder official help, SwipeStats data, Tinder Sparks 2026)
+
+### Needs Attention
+
+- **Thumbnail:** Create image at `public/images/blog/thumbnails/tinder-hacks.png`
+- CONTENT-PLAN.md updated: `[x]` with date 2026-03-24
+
+Tue Mar 24 02:44:12 AM CET 2026: Blog generation complete for: tinder hacks — 4,890 vol (how to get more likes on tinder)
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-24 03:00
+════════════════════════════════════════════════════
+Tue Mar 24 03:00:01 AM CET 2026: Next topic: tinder scammers — 4,880 vol (tinder scammer, fake tinder account) (publish: unset)
+## Created: Tinder Scammers: 7 Scams That Will Empty Your Wallet (and Your Soul)
+
+**File:** content/posts/tinder-scammers.mdx
+**Category:** Guides | **Author:** paw
+
+### SEO
+
+- **Primary keyword:** tinder scammers (1,000 vol, KD 2)
+- **Meta title:** Tinder Scammers: Spot & Avoid Fake Profiles (2026) (50 chars)
+- **Meta description:** Romance scam losses hit $3B in 2025. Spot Tinder scammers and fake profiles with this data-backed guide to the 7 scams that actually work. (139 chars)
+- **H1:** Tinder Scammers: 7 Scams That Will Empty Your Wallet (and Your Soul) (68 chars)
+
+### Content
+
+- **Word count:** ~3,000 words
+- **H2 sections:** The Numbers That Should Terrify You, The 7 Tinder Scams That Actually Work in 2026, How to Spot a Fake Tinder Account, What to Actually Do If You Already Got Scammed, FAQ, Sources
+- **Internal links:** 8 links (tinder-statistics, find-tinder-profile, tinder-phone-number, tinder-review, does-tinder-notify-screenshots, tinder-match-disappeared, how-to-get-unbanned-from-tinder, bumble-scams)
+- **Data points used:** 12+ statistics (FTC, FBI, McAfee, Chainalysis, DOJ cases)
+- **Sources:** 8 citations (FTC, FBI IC3, McAfee, CFTC, Chainalysis, DOJ, SwipeStats)
+
+### Needs Attention
+
+- Thumbnail: create image at `public/images/blog/thumbnails/tinder-scammers.png`
+- Both CONTENT-PLAN.md entries marked `[x]` (line 221 "tinder scammers" + line 432 "tinder scams")
+
+Tue Mar 24 03:15:31 AM CET 2026: Blog generation complete for: tinder scammers — 4,880 vol (tinder scammer, fake tinder account)
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-24 03:30
+════════════════════════════════════════════════════
+Tue Mar 24 03:30:01 AM CET 2026: Next topic: tinder profile for women — 4,510 vol (tinder women profiles, tinder profile for men) (publish: unset)
+## Created: Tinder Profile for Women: The Data-Backed Guide to Getting Quality Matches
+
+**File:** content/posts/tinder-profile-for-women.mdx
+**Category:** Guides | **Author:** paw
+
+### SEO
+
+- **Primary keyword:** tinder profile for women (390 vol)
+- **Meta title:** Tinder Profile for Women: Tips, Bios & Examples (2026) (54 chars)
+- **Meta description:** Data from 7,000+ profiles reveals what works in women's Tinder bios and photos. Bio examples, tips, and common mistakes. (121 chars)
+- **H1:** Tinder Profile for Women: The Data-Backed Guide to Getting Quality Matches
+
+### Content
+
+- **Word count:** ~2,000 words
+- **H2 sections:** Reality Check (data), Photos, Bio, Bio Examples, Mistakes, FAQ
+- **Internal links:** 8 links (tinder-profile-examples, best-dating-profile-photos, best-tinder-bios, /upload, how-to-get-more-matches-on-tinder, bio-for-dating-app, best-tinder-profiles, dating-profile-examples)
+- **Data points used:** 10 SwipeStats/research statistics (match rates, swipe rates, bio impact, humor penalty, negativity penalty, filter trustworthiness, conversation death rate, user demographics)
+- **Sources:** 6 citations (SwipeStats, Business of Apps, Displayr, ScienceDirect, Frontiers in Psychology, PMC)
+- **Bio examples:** 12 concrete copy-paste examples across 4 categories
+
+### Needs Attention
+
+- **Thumbnail:** create image at `public/images/blog/thumbnails/tinder-profile-for-women.png`
+
+Tue Mar 24 03:45:22 AM CET 2026: Blog generation complete for: tinder profile for women — 4,510 vol (tinder women profiles, tinder profile for men)
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-24 04:00
+════════════════════════════════════════════════════
+Tue Mar 24 04:00:01 AM CET 2026: Next topic: create tinder account — 4,400 vol (publish: unset)
+## Created: How to Create a Tinder Account (Without Screwing It Up)
+
+**File:** content/posts/create-tinder-account.mdx
+**Category:** Guides | **Author:** paw
+
+### SEO
+
+- **Primary keyword:** create tinder account (880/mo, KD 14)
+- **Meta title:** How to Create a Tinder Account in 2026 (Full Guide) (52 chars)
+- **Meta description:** Create a Tinder account the right way. Phone verification, profile setup, the newbie boost, and what most guides won't tell you. (128 chars)
+- **H1:** How to Create a Tinder Account (Without Screwing It Up)
+
+### Content
+
+- **Word count:** ~2,700 words
+- **H2 sections:** What You Need (The Bare Minimum), Step-by-Step, Your Profile Is the Part That Actually Matters, Without a Phone Number (Sort Of), The Newbie Boost, Free vs. Paid, FAQ
+- **Internal links:** 8 body links + 3 source links (tinder-algorithm, tinder-statistics, best-tinder-pictures, tinder-hacks, best-tinder-bios, tinder-scammers, best-dating-apps-for-women, is-tinder-gold-worth-it, how-to-get-more-matches-on-tinder)
+- **Data points used:** 4 SwipeStats statistics (7,000+ profiles, 294M swipes, 53% male right-swipe rate, 19%/8% photo stats)
+- **Sources:** 4 citations
+
+### Needs Attention
+
+- **Thumbnail:** create image at `public/images/blog/thumbnails/create-tinder-account.png`
+
+Tue Mar 24 04:13:09 AM CET 2026: Blog generation complete for: create tinder account — 4,400 vol
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-24 04:30
+════════════════════════════════════════════════════
+Tue Mar 24 04:30:01 AM CET 2026: Next topic: what does active mean on tinder — 4,400 vol (what does star mean on tinder) (publish: unset)
+## Created: What Does Active Mean on Tinder?
+
+**File:** `content/posts/what-does-active-mean-on-tinder.mdx`
+**Category:** Guides | **Author:** paw
+
+### SEO
+
+- **Primary keyword:** what does active mean on tinder (590/mo)
+- **Meta title:** What Does Active Mean on Tinder? (2026 Guide) (47 chars)
+- **Meta description:** What does active mean on Tinder? The green dot, Recently Active, and Online Now labels decoded. Plus data on why activity gets you matches. (139 chars)
+- **H1:** What Does Active Mean on Tinder?
+
+### Content
+
+- **Word count:** ~2,300 words
+- **H2 sections:** 8 (Short Answer, Green Dot, Active vs Recently Active, Ignoring You?, Hide Status, Algorithm Data, Star Meaning, FAQ)
+- **Internal links:** 8 links (tinder-algorithm, tinder-signs, how-to-delete-tinder-account, tinder-statistics, tinder-read-receipts, how-to-get-more-matches-on-tinder, no-matches-on-tinder, best-tinder-pictures, super-like-on-tinder)
+- **Data points used:** 4 SwipeStats statistics (7,000+ profiles, 294M swipes, 53% right-swipe rate, 1-2% match rate)
+- **Sources:** 3 citations (2 Tinder Help Center, 1 SwipeStats)
+
+### Needs Attention
+
+- **Thumbnail:** create image at `public/images/blog/thumbnails/what-does-active-mean-on-tinder.png`
+- CONTENT-PLAN.md updated: `[x]` marked
+
+Tue Mar 24 04:43:59 AM CET 2026: Blog generation complete for: what does active mean on tinder — 4,400 vol (what does star mean on tinder)
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-24 05:00
+════════════════════════════════════════════════════
+Tue Mar 24 05:00:01 AM CET 2026: Next topic: personality type tinder — 3,840 vol (tinder personality types) (publish: unset)
+Done. The post `content/posts/tinder-personality-types.mdx` already exists and fully covers this keyword. It includes:
+
+- All 16 MBTI types with dating-focused descriptions
+- Population distribution stats vs Tinder representation
+- SwipeStats data (7,000+ profiles, 294M swipes)
+- How-to section for adding personality type
+- FAQ section targeting question keywords
+- Published date: 2026-04-03
+
+Marked `[x]` in CONTENT-PLAN.md (line 225). No new post needed since the existing one already targets "personality type tinder" / "tinder personality types."
+
+**Thumbnail needed:** `public/images/blog/thumbnails/tinder-personality-types.png` (check if it exists already).
+
+Tue Mar 24 05:00:55 AM CET 2026: Blog generation complete for: personality type tinder — 3,840 vol (tinder personality types)
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-24 05:30
+════════════════════════════════════════════════════
+Tue Mar 24 05:30:01 AM CET 2026: Next topic: how to start a chat on tinder — 3,660 vol (start a convo on tinder) (publish: unset)
+Done. Here's the summary:
+
+## Created: How to Start a Conversation on Tinder (Without Getting Left on Read)
+
+**File:** content/posts/how-to-start-a-conversation-on-tinder.mdx
+**Category:** Texting | **Author:** paw
+
+### SEO
+
+- **Primary keyword:** how to start a conversation on tinder (1,900 vol, KD 14)
+- **Meta title:** How to Start a Conversation on Tinder (2026 Guide) (51 chars)
+- **Meta description:** Data-backed tips to start a Tinder conversation that gets replies. Timing, formulas, and examples from 7,000+ profiles. (120 chars)
+- **H1:** How to Start a Conversation on Tinder (Without Getting Left on Read) (69 chars)
+
+### Content
+
+- **Word count:** ~2,700 words
+- **H2 sections:** 6 (Matches Dying in Silence, Framework, Conversation Starters, After They Reply, Conversation Killers, FAQ)
+- **Internal links:** 5 (how-to-get-more-matches-on-tinder, tinder-openers, how-to-text-a-girl-for-the-first-time, tinder-about-me, best-tinder-openers)
+- **Data points used:** 10+ SwipeStats and industry statistics
+- **Sources:** 5 citations (SwipeStats, Tinder Press, Business of Apps, Science Advances, Wiley)
+
+### Needs Attention
+
+- **Thumbnail:** create image at `public/images/blog/thumbnails/how-to-start-a-conversation-on-tinder.png`
+
+Tue Mar 24 05:45:25 AM CET 2026: Blog generation complete for: how to start a chat on tinder — 3,660 vol (start a convo on tinder)
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-24 06:00
+════════════════════════════════════════════════════
+Tue Mar 24 06:00:01 AM CET 2026: Next topic: tinder dark mode — 3,370 vol (tinder dark mode iphone) (publish: unset)
+## Created: Tinder Dark Mode: How to Enable It (And Why It Keeps Disappearing)
+
+**File:** content/posts/tinder-dark-mode.mdx
+**Category:** Guides | **Author:** paw
+
+### SEO
+
+- **Primary keyword:** tinder dark mode (880 vol, cluster total ~6K+)
+- **Meta title:** Tinder Dark Mode: How to Turn It On (iPhone & Android 2026) (59 chars)
+- **Meta description:** How to enable Tinder dark mode on iPhone and Android. Fixes for when the setting disappears, plus the truth about battery savings. (130 chars)
+- **H1:** Tinder Dark Mode: How to Enable It (And Why It Keeps Disappearing)
+
+### Content
+
+- **Word count:** ~1,750 words
+- **H2 sections:** Does Tinder Have Dark Mode?, How to Turn On (iPhone), How to Enable (Android), Not Showing? Here's Why, Why It Actually Matters, FAQ
+- **Internal links:** 8 links (is-tinder-gold-worth-it, best-tinder-bios, best-tinder-pictures, tinder-algorithm, tinder-selfie-under-review, how-to-get-more-matches-on-tinder, how-to-use-tinder, tinder-signs)
+- **Data points used:** Purdue OLED study (47% savings), SwipeStats 7K+ profiles / 294M swipes, peak usage 8-11pm, astigmatism 47-50%
+- **Sources:** 5 citations
+
+### Differentiators vs competitors
+- Troubleshooting section (no competitor covers this)
+- OLED vs LCD battery nuance
+- A/B testing / feature disappearance angle from YouTube research
+- SwipeStats late-night usage data
+- Astigmatism caveat
+
+### Needs Attention
+
+- **Thumbnail:** create image at `public/images/blog/thumbnails/tinder-dark-mode.png`
+
+Tue Mar 24 06:13:09 AM CET 2026: Blog generation complete for: tinder dark mode — 3,370 vol (tinder dark mode iphone)
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-24 06:30
+════════════════════════════════════════════════════
+Tue Mar 24 06:30:01 AM CET 2026: Next topic: bumble or tinder — 3,330 vol (tinder or bumble, is bumble or tinder better) (publish: unset)
+## Created: Bumble vs Tinder: Which Dating App Deserves Your Dignity?
+
+**File:** `content/posts/tinder-vs-bumble.mdx`
+**Category:** Guides | **Author:** paw
+
+### SEO
+
+- **Primary keyword:** bumble vs tinder (1,900/mo, KD ~7)
+- **Meta title:** Bumble vs Tinder: Which Dating App Is Better? (2026) (53 chars)
+- **Meta description:** Bumble vs Tinder compared with data from 7,000+ real profiles. Match rates, features, pricing, and which app works for you. (123 chars)
+- **H1:** Bumble vs Tinder: Which Dating App Deserves Your Dignity? (58 chars)
+
+### Content
+
+- **Word count:** ~2,773 words
+- **H2 sections:** The 30-Second Smackdown, The Bumble Identity Crisis Nobody's Talking About, What 7,000+ Profiles Actually Tell Us, 75 Million People Can't All Be Wrong, Features That Actually Matter, Is Bumble or Tinder Better for Hookups?, Is Tinder or Bumble Better for Guys?, The Honest Answer: Stop Picking Sides, FAQ
+- **Internal links:** 8 links (best-tinder-pictures, bumble-opening-move, tinder-study-80-20, tinder-algorithm, tinder-statistics, no-matches-on-tinder, hinge-review, how-to-get-more-matches-on-tinder)
+- **Data points used:** 12+ SwipeStats statistics (match rates, 80/20 rule, bio data, job title data, conversation rates)
+- **Sources:** 9 citations (Business of Apps, The Knot, Tinder Press Room, Bumble IR, Currys.co.uk, SwipeStats)
+
+### Key Differentiator
+
+The **Bumble identity crisis angle** (Opening Moves saga, CEO departure, Q3 2025 revenue decline, legal threats, market rollbacks) gives this piece a unique editorial hook that no competitor covers.
+
+### Needs Attention
+
+- **Thumbnail:** create image at `public/images/blog/thumbnails/tinder-vs-bumble.png`
+- CONTENT-PLAN.md updated: `[x]` marked
+
+Tue Mar 24 06:51:27 AM CET 2026: Blog generation complete for: bumble or tinder — 3,330 vol (tinder or bumble, is bumble or tinder better)

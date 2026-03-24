@@ -213,19 +213,19 @@ Core audience content. Men 25-35 on Tinder/Hinge.
 - [x] no matches on tinder — 8,040 vol (tinder no matches) — 2026-03-23
 - [x] how to send pictures on tinder — 7,520 vol — 2026-03-23
 - [x] secret admirer on tinder — 7,070 vol (tinder secret admirer, tinder first impressions) — 2026-03-23
-- [ ] tinder read receipts — 7,060 vol
-- [ ] tinder phone number — 6,580 vol (tinder short code)
-- [ ] tinder screenshots — 6,010 vol
-- [ ] tinder plus price — 5,790 vol (how much for tinder plus)
-- [ ] tinder hacks — 4,890 vol (how to get more likes on tinder)
-- [ ] tinder scammers — 4,880 vol (tinder scammer, fake tinder account)
-- [ ] tinder profile for women — 4,510 vol (tinder women profiles, tinder profile for men)
-- [ ] create tinder account — 4,400 vol
-- [ ] what does active mean on tinder — 4,400 vol (what does star mean on tinder)
-- [ ] personality type tinder — 3,840 vol (tinder personality types)
-- [ ] how to start a chat on tinder — 3,660 vol (start a convo on tinder)
-- [ ] tinder dark mode — 3,370 vol (tinder dark mode iphone)
-- [ ] bumble or tinder — 3,330 vol (tinder or bumble, is bumble or tinder better)
+- [x] tinder read receipts — 7,060 vol — 2026-03-24
+- [x] tinder phone number — 6,580 vol (tinder short code) — 2026-03-25
+- [x] tinder screenshots — 6,010 vol — 2026-03-24
+- [x] tinder plus price — 5,790 vol (how much for tinder plus) — 2026-03-26
+- [x] tinder hacks — 4,890 vol (how to get more likes on tinder) — 2026-03-24
+- [x] tinder scammers — 4,880 vol (tinder scammer, fake tinder account) — 2026-03-24
+- [x] tinder profile for women — 4,510 vol (tinder women profiles, tinder profile for men) — 2026-03-24
+- [x] create tinder account — 4,400 vol — 2026-03-24
+- [x] what does active mean on tinder — 4,400 vol (what does star mean on tinder)
+- [x] personality type tinder — 3,840 vol (tinder personality types)
+- [x] how to start a chat on tinder — 3,660 vol (start a convo on tinder)
+- [x] tinder dark mode — 3,370 vol (tinder dark mode iphone) — 2026-03-24
+- [x] bumble or tinder — 3,330 vol (tinder or bumble, is bumble or tinder better)
 - [ ] married on tinder — 2,040 vol (tinder for married)
 - [ ] tinder terms and conditions — 1,770 vol
 - [ ] is hinge better than tinder — 1,070 vol (hinge or tinder)
@@ -429,7 +429,7 @@ Broad awareness funnel.
 
 ### Dating safety and scams
 
-- [ ] tinder scams — 6,320 vol (scamming on tinder, fake tinder profile)
+- [x] tinder scams — 6,320 vol (scamming on tinder, fake tinder profile) — 2026-03-24
 
 ## Phase 10 — Relationships & Attraction
 
