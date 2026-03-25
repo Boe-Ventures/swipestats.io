@@ -11,7 +11,7 @@
 
 - Each post has a target publish date
 - The skill reads this file and uses the date for `publishedAt` and `updatedAt`
-- One post per day keeps Google happy with steady publishing cadence
+- Two posts per day keeps Google happy with steady publishing cadence
 
 ---
 
@@ -32,7 +32,7 @@
 
 - [x] when do hinge likes reset — 2026-03-13
 - [x] best dating apps for women — 2026-03-14
-- [x] best dating apps for men — 2026-03-15
+- [x] best dating apps for men — 2026-03-12
 - [x] best hinge openers — 2026-03-16
 - [x] how to start a conversation on hinge — 2026-03-17
 - [x] tinder prompt answers — 2026-03-18
@@ -69,7 +69,7 @@
 - [x] instead of drinks let's bumble answer — 2026-04-14
 - [x] what's your ideal first date bumble answer — 2026-04-15
 - [x] what to talk about with a girl over text — 2026-04-16
-- [x] how to text a girl for the first time — 2026-04-17
+- [x] how to text a girl for the first time — 2026-04-16
 
 ---
 
@@ -86,22 +86,22 @@ Our moat. Proprietary data, researcher revenue, link magnets.
 - [x] badoo statistics — 40 vol (badoo stats) — 2026-04-22
 - [x] match.com statistics — 40 vol (match.com stats) — 2026-04-23
 - [x] online dating statistics worldwide — 50 vol — 2026-04-24
-- [x] dating app user statistics — 40 vol — 2026-04-25
-- [x] coffee meets bagel statistics — 20 vol (coffee meets bagel stats) — 2026-03-13
-- [x] facebook dating statistics — 20 vol (facebook dating stats) — 2026-03-13
-- [x] christian mingle statistics — 20 vol (christian mingle stats) — 2026-03-13
+- [x] dating app user statistics — 40 vol — 2026-04-24
+- [x] coffee meets bagel statistics — 20 vol (coffee meets bagel stats) — 2026-04-25
+- [x] facebook dating statistics — 20 vol (facebook dating stats) — 2026-04-25
+- [x] christian mingle statistics — 20 vol (christian mingle stats) — 2026-04-26
 - [x] dating statistics by age — 20 vol — 2026-04-26
 - [x] plenty of fish statistics — 10 vol — 2026-04-27
-- [x] happn statistics — 10 vol — 2026-04-28
-- [x] zoosk statistics — 10 vol — 2026-04-29
-- [x] jdate statistics — 10 vol — 2026-04-30
+- [x] happn statistics — 10 vol — 2026-04-27
+- [x] zoosk statistics — 10 vol — 2026-04-28
+- [x] jdate statistics — 10 vol — 2026-04-28
 
 ### Dating data and research
 
-- [x] dating profile examples — 2,180 vol (sample dating profiles for women, tinder profile sample)
-- [x] tinder data download — 110 vol (tinder data analysis, tinder data request)
-- [x] dating app dataset — 60 vol (online dating research paper, dating app research paper)
-- [x] tinder study 80/20 — 40 vol — 2026-03-13
+- [x] dating profile examples — 2,180 vol (sample dating profiles for women, tinder profile sample) — 2026-04-29
+- [x] tinder data download — 110 vol (tinder data analysis, tinder data request) — 2026-04-29
+- [x] dating app dataset — 60 vol (online dating research paper, dating app research paper) — 2026-04-30
+- [x] tinder study 80/20 — 40 vol — 2026-04-30
 
 ## Phase 5 — App Reviews
 
@@ -109,48 +109,48 @@ Affiliate revenue, high intent, strong internal linking to stats pages.
 
 ### Dating app reviews
 
-- [x] okcupid review — 332,230 vol (ok cupid dating app, dating sites okcupid, online dating okcupid)
-- [x] free dating apps without payment — 54,080 vol (free online dating sites without payment) — 2026-03-18
-- [x] free online dating for 50 and over — 27,000 vol (free online dating 50 and over) — 2026-03-18
+- [x] okcupid review — 332,230 vol (ok cupid dating app, dating sites okcupid, online dating okcupid) — 2026-05-01
+- [x] free dating apps without payment — 54,080 vol (free online dating sites without payment) — 2026-05-01
+- [x] free online dating for 50 and over — 27,000 vol (free online dating 50 and over) — 2026-05-02
 - [x] dating app comparisons — 22,170 vol (hinge vs bumble, bumble vs hinge) — 2026-03-18
-- [x] dil mil review — 20,170 vol (dilmil, dil mil reddit) — 2026-03-18
-- [x] ai dating apps — 15,600 vol (ai dating app, dating ai apps) — 2026-03-19
-- [x] hily review — 15,280 vol (hily application, hily reviews, is hily legit) — 2026-03-19
-- [x] how to get unbanned from tinder — 14,630 vol (how to get unbanned from hinge, how to get unbanned from grindr) — 2026-03-20
-- [x] best over 40 dating sites — 10,720 vol — 2026-03-18
-- [x] headline for plenty of fish — 9,850 vol (plenty of fish headlines, good headline for plenty of fish) — 2026-03-18
-- [x] happn review — 9,600 vol (dating apps happn, happn app dating) — 2026-03-18
-- [x] elitesingles review — 6,780 vol (elitesingles dating sites, elitesingles dating apps)
-- [x] tinder selfie under review — 4,900 vol (selfie under review tinder, how long does tinder selfie review take) — 2026-03-18
-- [x] her dating app review — 4,800 vol (her dating site, dating site her) — 2026-03-18
-- [x] how to unblock on pof — 4,650 vol (how to unblock pof, unblocking on pof)
-- [x] pick up lines for dating apps — 3,470 vol (dating apps pick up lines, best pick up lines for dating apps) — 2026-03-19
-- [x] funny grindr bios — 2,890 vol (grindr bio examples, best bio for grindr) — 2026-03-19
+- [x] dil mil review — 20,170 vol (dilmil, dil mil reddit) — 2026-05-03
+- [x] ai dating apps — 15,600 vol (ai dating app, dating ai apps) — 2026-05-03
+- [x] hily review — 15,280 vol (hily application, hily reviews, is hily legit) — 2026-05-04
+- [x] how to get unbanned from tinder — 14,630 vol (how to get unbanned from hinge, how to get unbanned from grindr) — 2026-05-04
+- [x] best over 40 dating sites — 10,720 vol — 2026-05-05
+- [x] headline for plenty of fish — 9,850 vol (plenty of fish headlines, good headline for plenty of fish) — 2026-05-05
+- [x] happn review — 9,600 vol (dating apps happn, happn app dating) — 2026-05-06
+- [x] elitesingles review — 6,780 vol (elitesingles dating sites, elitesingles dating apps) — 2025-03-06
+- [x] tinder selfie under review — 4,900 vol (selfie under review tinder, how long does tinder selfie review take) — 2026-05-06
+- [x] her dating app review — 4,800 vol (her dating site, dating site her) — 2026-05-07
+- [x] how to unblock on pof — 4,650 vol (how to unblock pof, unblocking on pof) — 2026-05-07
+- [x] pick up lines for dating apps — 3,470 vol (dating apps pick up lines, best pick up lines for dating apps) — 2026-05-08
+- [x] funny grindr bios — 2,890 vol (grindr bio examples, best bio for grindr) — 2026-05-08
 - [x] what does a tinder profile look like — 2,850 vol — 2026-03-19
-- [x] eharmony vs match — 2,600 vol (match vs eharmony)
-- [x] tinder plus vs tinder gold — 2,400 vol (tinder gold vs plus, tinder gold vs tinder plus) — 2026-03-20
-- [x] hinge plus vs hinge x — 2,250 vol (hinge x vs hinge plus)
-- [x] bumble vs okcupid — 2,160 vol (okcupid vs bumble) — 2026-03-19
-- [x] feeld review — 1,580 vol (feeld profile example, feeld profiles, how to delete feeld account)
-- [x] best online dating sites for serious relationships — 1,310 vol — 2026-03-20
+- [x] eharmony vs match — 2,600 vol (match vs eharmony) — 2026-03-26
+- [x] tinder plus vs tinder gold — 2,400 vol (tinder gold vs plus, tinder gold vs tinder plus) — 2026-05-09
+- [x] hinge plus vs hinge x — 2,250 vol (hinge x vs hinge plus) — 2026-03-23
+- [x] bumble vs okcupid — 2,160 vol (okcupid vs bumble) — 2026-05-10
+- [x] feeld review — 1,580 vol (feeld profile example, feeld profiles, how to delete feeld account) — 2026-05-10
+- [x] best online dating sites for serious relationships — 1,310 vol — 2026-05-11
 - [x] do you have to pay for bumble — 1,200 vol — 2026-03-21
-- [x] once dating app review — 1,070 vol — 2026-03-19
+- [x] once dating app review — 1,070 vol — 2026-05-12
 
 ### Bumble features and tips
 
-- [x] bumble app guide — 123,600 vol (bumble app dating, bumble apps, what is bumble app) — 2026-05-01
-- [x] how does bumble work — 7,600 vol (how does bumble work for men, how does bumble work for guys) — 2026-05-02
-- [x] bumble opening move — 4,440 vol (opening move bumble, bumble opening lines) — 2026-03-20
-- [x] bumble swipe left or right — 3,720 vol — 2026-03-20
-- [x] bumble no matches — 3,600 vol (no matches bumble) — 2026-03-20
-- [x] bumble superswipe — 3,230 vol (what is bumble superswipe) — 2026-03-20
-- [x] does bumble have read receipts — 2,290 vol (does bumble send read receipts) — 2026-03-20
-- [x] bumble profile tips — 1,480 vol (bumble date profile) — 2026-05-03
-- [x] bumble match — 1,280 vol (bumble liked, bumble chats) — 2026-05-04
-- [x] does bumble notify screenshots — 1,240 vol (bumble screenshots) — 2026-03-20
-- [x] bumble rematch — 1,170 vol — 2026-05-05
-- [x] bumble scams — 390 vol — 2026-03-20
-- [x] what does moderate mean on bumble — 320 vol — 2026-03-20
+- [x] bumble app guide — 123,600 vol (bumble app dating, bumble apps, what is bumble app) — 2026-05-12
+- [x] how does bumble work — 7,600 vol (how does bumble work for men, how does bumble work for guys) — 2026-05-12
+- [x] bumble opening move — 4,440 vol (opening move bumble, bumble opening lines) — 2026-05-13
+- [x] bumble swipe left or right — 3,720 vol — 2026-05-13
+- [x] bumble no matches — 3,600 vol (no matches bumble) — 2026-05-14
+- [x] bumble superswipe — 3,230 vol (what is bumble superswipe) — 2026-05-14
+- [x] does bumble have read receipts — 2,290 vol (does bumble send read receipts) — 2026-05-15
+- [x] bumble profile tips — 1,480 vol (bumble date profile) — 2026-05-15
+- [x] bumble match — 1,280 vol (bumble liked, bumble chats) — 2026-05-16
+- [x] does bumble notify screenshots — 1,240 vol (bumble screenshots) — 2026-05-16
+- [x] bumble rematch — 1,170 vol — 2026-05-17
+- [x] bumble scams — 390 vol — 2026-05-17
+- [x] what does moderate mean on bumble — 320 vol — 2026-05-18
 - [x] how to change age range on bumble — 320 vol — 2026-03-20
 
 ## Phase 6 — Profile Optimization
@@ -159,32 +159,32 @@ Product-adjacent. Drives profile review signups and engagement.
 
 ### Dating profile optimization
 
-- [x] attractiveness test — 256,480 vol (test of attractiveness, attractive test, attraction tests) — 2026-03-20
-- [x] prettyscale — 60,920 vol (prettiness scale, scale pretty, pretty scale) — 2026-03-20
-- [x] best profile pic — 56,780 vol (best photos for profile, good photos for profile) — 2026-03-21
-- [x] hotornot — 50,220 vol (hot or not, hot or not site, hot or not website) — 2026-03-22
-- [x] guy profile pictures — 29,160 vol (profile picture for guys, men's profile picture) — 2026-03-21
-- [x] dating profile examples — 28,290 vol (example of dating profile, dating profile female examples) — 2026-03-13
-- [x] photogenic meaning — 21,040 vol (what does photogenic mean, how to be photogenic) — 2026-03-21
-- [x] women profile pictures — 16,060 vol (women's profile picture, ladies profile pictures) — 2026-03-21
-- [x] photo ratings — 10,720 vol (photo rate, rate photo, photo rating) — 2026-03-21
-- [x] funny bios — 10,260 vol (funny bio, good bios, bio examples) — 2026-03-21
-- [x] bio for dating app — 8,170 vol (funny bio for dating app, dating app bio ideas) — 2026-03-22
-- [x] tinder profile examples — 6,990 vol (example tinder profiles, tinder profile example) — 2026-03-21
-- [x] bumble bios & profiles — 6,310 vol (bumble bio, bumble bios, best bumble bios) — 2026-03-21
-- [x] anonymous profile picture — 5,700 vol (anonymous profile pictures) — 2026-03-21
-- [x] ai bio generator — 1,780 vol — 2026-03-21
-- [x] hinge verification not working — 1,520 vol (hinge selfie verification not working) — 2026-03-21
-- [x] ai attractiveness rater — 1,440 vol (ai attractiveness rating) — 2026-03-22
-- [x] emoji bios — 720 vol — 2026-03-22
-- [x] matching bios for couples — 590 vol — 2026-03-22
-- [x] bio for yubo — 590 vol — 2026-03-22
-- [x] hinge bio — 480 vol — 2026-03-22
-- [x] tinder no profile picture — 320 vol — 2026-03-22
+- [x] attractiveness test — 256,480 vol (test of attractiveness, attractive test, attraction tests) — 2026-05-19
+- [x] prettyscale — 60,920 vol (prettiness scale, scale pretty, pretty scale) — 2026-05-19
+- [x] best profile pic — 56,780 vol (best photos for profile, good photos for profile) — 2026-05-20
+- [x] hotornot — 50,220 vol (hot or not, hot or not site, hot or not website) — 2026-05-20
+- [x] guy profile pictures — 29,160 vol (profile picture for guys, men's profile picture) — 2026-05-21
+- [x] dating profile examples — 28,290 vol (example of dating profile, dating profile female examples) — 2026-04-29
+- [x] photogenic meaning — 21,040 vol (what does photogenic mean, how to be photogenic) — 2026-05-21
+- [x] women profile pictures — 16,060 vol (women's profile picture, ladies profile pictures) — 2026-05-22
+- [x] photo ratings — 10,720 vol (photo rate, rate photo, photo rating) — 2026-05-22
+- [x] funny bios — 10,260 vol (funny bio, good bios, bio examples) — 2026-05-23
+- [x] bio for dating app — 8,170 vol (funny bio for dating app, dating app bio ideas) — 2026-05-23
+- [x] tinder profile examples — 6,990 vol (example tinder profiles, tinder profile example) — 2026-05-24
+- [x] bumble bios & profiles — 6,310 vol (bumble bio, bumble bios, best bumble bios) — 2026-05-24
+- [x] anonymous profile picture — 5,700 vol (anonymous profile pictures) — 2026-05-25
+- [x] ai bio generator — 1,780 vol — 2026-05-25
+- [x] hinge verification not working — 1,520 vol (hinge selfie verification not working) — 2026-05-26
+- [x] ai attractiveness rater — 1,440 vol (ai attractiveness rating) — 2026-05-27
+- [x] emoji bios — 720 vol — 2026-05-27
+- [x] matching bios for couples — 590 vol — 2026-05-28
+- [x] bio for yubo — 590 vol — 2026-05-28
+- [x] hinge bio — 480 vol — 2026-05-29
+- [x] tinder no profile picture — 320 vol — 2026-05-29
 
 ### Dating profile photography
 
-- [x] tinder photographer near me — 980 vol (photographer for dating sites) — 2026-03-23
+- [x] tinder photographer near me — 980 vol (photographer for dating sites) — 2026-05-30
 
 ## Phase 7 — Tinder & Hinge Guides
 
@@ -192,57 +192,57 @@ Core audience content. Men 25-35 on Tinder/Hinge.
 
 ### Tinder features and tips
 
-- [x] find profile on tinder — 85,220 vol (find tinder profile, can you search people on tinder) — 2026-03-22
-- [x] deleting tinder account — 58,470 vol (tinder account deletion, delete account tinder) — 2026-03-22
-- [x] tinder signs — 49,560 vol (tinder insights down, what happened to tinder insights) — 2026-03-22
-- [x] swiped right on tinder — 35,950 vol (right swipe on tinder, swiping right on tinder) — 2026-03-22
-- [x] how to change your tinder name — 24,900 vol (covered by how-to-change-name-on-tinder.mdx)
-- [x] super like on tinder — 23,040 vol (super like tinder, tinder super like) — 2026-03-22
-- [x] best tinder pictures — 21,600 vol (best pictures for tinder) — 2026-03-22
-- [x] how to use tinder — 20,300 vol (how to use tinder app) — 2026-03-23
-- [x] good tinder openers — 19,660 vol (best opening lines for tinder) — 2026-03-23
-- [x] tinder meaning — 17,480 vol (what does mean on tinder, what is tinder used for) — 2026-03-23
-- [x] how to change age on tinder — 17,100 vol — 2026-03-23
-- [x] tinder passport — 15,900 vol (change location on tinder) — 2026-03-23
-- [x] is tinder down — 14,700 vol (tinder not working)
-- [x] tinder appeal center — 12,130 vol (tinder appeals center, tinder appeals) — 2026-03-24
-- [x] best tinder profiles — 11,980 vol (best tinder profile, sexiest tinder profile) — 2026-03-23
-- [x] how to see who liked you on tinder — 10,510 vol — 2026-03-24
-- [x] tinder about me — 10,210 vol (tinder profile template) — 2026-03-23
-- [x] tinder unmatch — 9,830 vol (unmatched on tinder) — 2026-03-23
-- [x] no matches on tinder — 8,040 vol (tinder no matches) — 2026-03-23
-- [x] how to send pictures on tinder — 7,520 vol — 2026-03-23
-- [x] secret admirer on tinder — 7,070 vol (tinder secret admirer, tinder first impressions) — 2026-03-23
-- [x] tinder read receipts — 7,060 vol — 2026-03-24
-- [x] tinder phone number — 6,580 vol (tinder short code) — 2026-03-25
-- [x] tinder screenshots — 6,010 vol — 2026-03-24
-- [x] tinder plus price — 5,790 vol (how much for tinder plus) — 2026-03-26
-- [x] tinder hacks — 4,890 vol (how to get more likes on tinder) — 2026-03-24
-- [x] tinder scammers — 4,880 vol (tinder scammer, fake tinder account) — 2026-03-24
-- [x] tinder profile for women — 4,510 vol (tinder women profiles, tinder profile for men) — 2026-03-24
-- [x] create tinder account — 4,400 vol — 2026-03-24
-- [x] what does active mean on tinder — 4,400 vol (what does star mean on tinder)
-- [x] personality type tinder — 3,840 vol (tinder personality types)
-- [x] how to start a chat on tinder — 3,660 vol (start a convo on tinder)
-- [x] tinder dark mode — 3,370 vol (tinder dark mode iphone) — 2026-03-24
+- [x] find profile on tinder — 85,220 vol (find tinder profile, can you search people on tinder) — 2026-05-30
+- [x] deleting tinder account — 58,470 vol (tinder account deletion, delete account tinder) — 2026-05-31
+- [x] tinder signs — 49,560 vol (tinder insights down, what happened to tinder insights) — 2026-05-31
+- [x] swiped right on tinder — 35,950 vol (right swipe on tinder, swiping right on tinder) — 2026-06-01
+- [x] how to change your tinder name — 24,900 vol (covered by how-to-change-name-on-tinder.mdx) — 2026-04-09
+- [x] super like on tinder — 23,040 vol (super like tinder, tinder super like) — 2026-06-01
+- [x] best tinder pictures — 21,600 vol (best pictures for tinder) — 2026-06-02
+- [x] how to use tinder — 20,300 vol (how to use tinder app) — 2026-06-02
+- [x] good tinder openers — 19,660 vol (best opening lines for tinder) — 2026-06-03
+- [x] tinder meaning — 17,480 vol (what does mean on tinder, what is tinder used for) — 2026-06-03
+- [x] how to change age on tinder — 17,100 vol — 2026-06-04
+- [x] tinder passport — 15,900 vol (change location on tinder) — 2026-06-04
+- [x] is tinder down — 14,700 vol (tinder not working) — 2026-06-05
+- [x] tinder appeal center — 12,130 vol (tinder appeals center, tinder appeals) — 2026-06-05
+- [x] best tinder profiles — 11,980 vol (best tinder profile, sexiest tinder profile) — 2026-06-06
+- [x] how to see who liked you on tinder — 10,510 vol — 2026-06-06
+- [x] tinder about me — 10,210 vol (tinder profile template) — 2026-06-07
+- [x] tinder unmatch — 9,830 vol (unmatched on tinder) — 2026-06-07
+- [x] no matches on tinder — 8,040 vol (tinder no matches) — 2026-06-08
+- [x] how to send pictures on tinder — 7,520 vol — 2026-06-08
+- [x] secret admirer on tinder — 7,070 vol (tinder secret admirer, tinder first impressions) — 2026-06-09
+- [x] tinder read receipts — 7,060 vol — 2026-06-10
+- [x] tinder phone number — 6,580 vol (tinder short code) — 2026-06-10
+- [x] tinder screenshots — 6,010 vol — 2026-06-11
+- [x] tinder plus price — 5,790 vol (how much for tinder plus) — 2026-06-11
+- [x] tinder hacks — 4,890 vol (how to get more likes on tinder) — 2026-06-12
+- [x] tinder scammers — 4,880 vol (tinder scammer, fake tinder account) — 2026-06-12
+- [x] tinder profile for women — 4,510 vol (tinder women profiles, tinder profile for men) — 2026-06-13
+- [x] create tinder account — 4,400 vol — 2026-06-13
+- [x] what does active mean on tinder — 4,400 vol (what does star mean on tinder) — 2026-06-14
+- [x] personality type tinder — 3,840 vol (tinder personality types) — 2026-04-03
+- [x] how to start a chat on tinder — 3,660 vol (start a convo on tinder) — 2026-06-14
+- [x] tinder dark mode — 3,370 vol (tinder dark mode iphone) — 2026-06-15
 - [x] bumble or tinder — 3,330 vol (tinder or bumble, is bumble or tinder better)
-- [ ] married on tinder — 2,040 vol (tinder for married)
-- [ ] tinder terms and conditions — 1,770 vol
-- [ ] is hinge better than tinder — 1,070 vol (hinge or tinder)
-- [ ] tinder for friends — 1,000 vol
-- [ ] tinder for seniors — 590 vol
-- [ ] tinder questionnaire — 590 vol
+- [x] married on tinder — 2,040 vol (tinder for married) — 2026-03-25
+- [x] tinder terms and conditions — 1,770 vol — 2026-03-25
+- [x] is hinge better than tinder — 1,070 vol (hinge or tinder) — 2026-03-25
+- [x] tinder for friends — 1,000 vol — 2026-03-25
+- [x] tinder for seniors — 590 vol — 2026-03-25
+- [x] tinder questionnaire — 590 vol — 2026-03-25
 
 ### Dating app algorithms and mechanics
 
-- [ ] tinder boost — 36,280 vol (boost on tinder, boosting on tinder)
-- [ ] how does tinder work — 32,000 vol (how the tinder works)
-- [ ] how to cancel tinder gold — 21,720 vol (cancel tinder subscription)
-- [ ] bumble boost — 14,100 vol (bumble boost subscription)
-- [ ] hinge bans & troubleshooting — 9,050 vol (hinge ban, banned on hinge)
-- [ ] bumble premium — 8,450 vol (how much is bumble premium, bumble pricing)
-- [ ] tinder shadowban — 7,140 vol (shadowban tinder, shadowbanned on tinder)
-- [ ] how does facebook dating work — 5,120 vol
+- [x] tinder boost — 36,280 vol (boost on tinder, boosting on tinder)
+- [x] how does tinder work — 32,000 vol (how the tinder works) — 2026-03-25
+- [x] how to cancel tinder gold — 21,720 vol (cancel tinder subscription) — 2026-03-25
+- [x] bumble boost — 14,100 vol (bumble boost subscription)
+- [x] hinge bans & troubleshooting — 9,050 vol (hinge ban, banned on hinge) — 2026-03-25
+- [x] bumble premium — 8,450 vol (how much is bumble premium, bumble pricing)
+- [x] tinder shadowban — 7,140 vol (shadowban tinder, shadowbanned on tinder)
+- [x] how does facebook dating work — 5,120 vol — 2026-03-25
 - [ ] how to get matches on tinder — 4,960 vol
 - [ ] how to reset hinge — 4,330 vol (reset hinge, hinge reset)
 - [ ] tinder platinum — 3,220 vol (tinder platinum price, is tinder platinum worth it)
@@ -490,7 +490,7 @@ Widest top-of-funnel. Builds topical authority.
 - [ ] how to get out of the friend zone — 1,900 vol
 - [ ] attractive guys — 1,900 vol
 - [ ] how to know if someone dislikes you — 1,770 vol
-- [x] ai attractiveness rater — 1,440 vol (ai attractiveness rating) — 2026-03-22
+- [x] ai attractiveness rater — 1,440 vol (ai attractiveness rating) — 2026-05-27
 - [ ] flirty eyes — 880 vol
 - [ ] how to be confident when talking — 480 vol
 - [ ] dating profile headlines to attract guys — 390 vol
