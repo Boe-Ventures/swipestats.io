@@ -243,23 +243,23 @@ Core audience content. Men 25-35 on Tinder/Hinge.
 - [x] bumble premium — 8,450 vol (how much is bumble premium, bumble pricing)
 - [x] tinder shadowban — 7,140 vol (shadowban tinder, shadowbanned on tinder)
 - [x] how does facebook dating work — 5,120 vol — 2026-03-25
-- [ ] how to get matches on tinder — 4,960 vol
-- [ ] how to reset hinge — 4,330 vol (reset hinge, hinge reset)
-- [ ] tinder platinum — 3,220 vol (tinder platinum price, is tinder platinum worth it)
-- [ ] tinder match reset — 3,150 vol (reset tinder matches, how to reset tinder)
-- [ ] how does hinge algorithm work — 2,870 vol (hinge elo)
-- [ ] hinge boost — 1,300 vol
-- [ ] when do hinge roses reset — 1,100 vol
-- [ ] tinder subscription — 1,000 vol
-- [ ] hinge subscription — 720 vol
-- [ ] how does match.com work — 390 vol
-- [ ] how does hinge work for guys — 320 vol
+- [x] how to get matches on tinder — 4,960 vol — 2026-03-26
+- [x] how to reset hinge — 4,330 vol (reset hinge, hinge reset)
+- [x] tinder platinum — 3,220 vol (tinder platinum price, is tinder platinum worth it)
+- [x] tinder match reset — 3,150 vol (reset tinder matches, how to reset tinder)
+- [x] how does hinge algorithm work — 2,870 vol (hinge elo) — 2026-03-26
+- [x] hinge boost — 1,300 vol — 2026-03-26
+- [x] when do hinge roses reset — 1,100 vol — 2026-03-26
+- [x] tinder subscription — 1,000 vol — 2026-03-26
+- [x] hinge subscription — 720 vol — 2026-03-26
+- [x] how does match.com work — 390 vol — 2026-03-26
+- [x] how does hinge work for guys — 320 vol — 2026-03-26
 
 ### Hinge features and tips
 
-- [ ] hinge app guide — 191,180 vol (hinge application, hinge dating)
-- [ ] hinge match disappeared — 10,540 vol (hinge matches disappear)
-- [ ] hinge roses — 10,080 vol (roses on hinge, how often do you get roses on hinge)
+- [x] hinge app guide — 191,180 vol (hinge application, hinge dating) — 2026-03-26
+- [x] hinge match disappeared — 10,540 vol (hinge matches disappear)
+- [x] hinge roses — 10,080 vol (roses on hinge, how often do you get roses on hinge) — 2026-03-26
 - [ ] how to like someone on hinge — 6,610 vol
 - [ ] hinge openers & conversation starters — 6,190 vol (best hinge openers, hinge opening lines)
 - [ ] is hinge a good dating app — 5,890 vol (is bumble a good dating app)
