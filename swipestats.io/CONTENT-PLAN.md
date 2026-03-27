@@ -260,20 +260,20 @@ Core audience content. Men 25-35 on Tinder/Hinge.
 - [x] hinge app guide — 191,180 vol (hinge application, hinge dating) — 2026-03-26
 - [x] hinge match disappeared — 10,540 vol (hinge matches disappear)
 - [x] hinge roses — 10,080 vol (roses on hinge, how often do you get roses on hinge) — 2026-03-26
-- [ ] how to like someone on hinge — 6,610 vol
-- [ ] hinge openers & conversation starters — 6,190 vol (best hinge openers, hinge opening lines)
-- [ ] is hinge a good dating app — 5,890 vol (is bumble a good dating app)
-- [ ] is hinge x worth it — 5,560 vol (hinge x, hinge preferred membership)
-- [ ] hinge app icons — 4,080 vol (hinge symbol, hinge symbols)
-- [ ] how many free likes on hinge — 3,960 vol (hinge likes per day)
-- [ ] hinge standouts — 3,230 vol (what are standouts on hinge)
-- [ ] hinge match note — 3,070 vol (hinge notes)
-- [ ] hinge or bumble — 2,870 vol (bumble or hinge, is bumble or hinge better)
-- [ ] can you send pics on hinge — 2,600 vol
-- [ ] does hinge automatically update your location — 2,400 vol (hinge location)
-- [ ] hinge phone number — 1,260 vol (hinge code, hinge account)
-- [ ] hinge desktop — 1,110 vol (can you use hinge on desktop)
-- [ ] how to refresh hinge — 780 vol (hinge take another look)
+- [x] how to like someone on hinge — 6,610 vol — 2026-03-27
+- [x] hinge openers & conversation starters — 6,190 vol (best hinge openers, hinge opening lines) — 2026-03-27
+- [x] is hinge a good dating app — 5,890 vol (is bumble a good dating app)
+- [x] is hinge x worth it — 5,560 vol (hinge x, hinge preferred membership) — 2026-03-27
+- [x] hinge app icons — 4,080 vol (hinge symbol, hinge symbols) — 2026-03-27
+- [x] how many free likes on hinge — 3,960 vol (hinge likes per day) — 2026-03-27
+- [x] hinge standouts — 3,230 vol (what are standouts on hinge) — 2026-03-27
+- [x] hinge match note — 3,070 vol (hinge notes) — 2026-03-27
+- [x] hinge or bumble — 2,870 vol (bumble or hinge, is bumble or hinge better) — 2026-03-27
+- [x] can you send pics on hinge — 2,600 vol — 2026-03-27
+- [x] does hinge automatically update your location — 2,400 vol (hinge location) — 2026-03-27
+- [x] hinge phone number — 1,260 vol (hinge code, hinge account) — 2026-03-27
+- [x] hinge desktop — 1,110 vol (can you use hinge on desktop) — 2026-03-27
+- [x] how to refresh hinge — 780 vol (hinge take another look) — 2026-03-28
 - [ ] hinge notifications — 780 vol (hinge push notifications)
 - [ ] hinge ai — 520 vol (how does hinge determine most compatible)
 - [ ] hinge verification — 390 vol
