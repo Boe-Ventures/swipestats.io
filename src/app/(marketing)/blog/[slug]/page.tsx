@@ -239,8 +239,11 @@ export default async function BlogPostPage({
                 <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-gray-500">
                   <div className="flex items-center gap-x-2">
                     <Calendar className="h-4 w-4" />
-                    <time dateTime={meta.publishedAt}>
-                      {format(parseISO(meta.publishedAt), "MMM dd, yyyy")}
+                    <time dateTime={meta.updatedAt || meta.publishedAt}>
+                      {format(
+                        parseISO(meta.updatedAt || meta.publishedAt),
+                        "MMM dd, yyyy",
+                      )}
                     </time>
                   </div>
                   <div className="flex items-center gap-x-2">
@@ -251,42 +254,10 @@ export default async function BlogPostPage({
 
                 {meta.updatedAt && meta.updatedAt !== meta.publishedAt && (
                   <div className="mt-2 text-xs text-gray-400">
-                    Updated {format(parseISO(meta.updatedAt), "MMM dd, yyyy")}
+                    First published{" "}
+                    {format(parseISO(meta.publishedAt), "MMM dd, yyyy")}
                   </div>
                 )}
-
-                {/* Category */}
-                {/* {meta.category && (
-                  <div className="mt-6 flex flex-col items-center">
-                    <span className="text-xs font-medium text-gray-500">
-                      Category
-                    </span>
-                    <div className="mt-2 flex justify-center">
-                      <span className="inline-flex items-center rounded-lg bg-rose-100 px-4 py-2 text-sm font-semibold text-rose-700">
-                        {meta.category}
-                      </span>
-                    </div>
-                  </div>
-                )} */}
-
-                {/* Tags */}
-                {/* {meta.tags.length > 0 && (
-                  <div className="mt-4 flex flex-col items-center">
-                    <span className="text-xs font-medium text-gray-500">
-                      Tags
-                    </span>
-                    <div className="mt-2 flex flex-wrap justify-center gap-2">
-                      {meta.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="inline-flex items-center rounded-md bg-gray-100 px-3 py-1 text-sm font-medium text-gray-600"
-                        >
-                          #{tag}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )} */}
 
                 {/* Back to Blog */}
                 <div className="mt-8 w-full border-t border-gray-200 pt-6">
@@ -433,8 +404,11 @@ export default async function BlogPostPage({
               <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-gray-500">
                 <div className="flex items-center gap-x-2">
                   <Calendar className="h-4 w-4" />
-                  <time dateTime={meta.publishedAt}>
-                    {format(parseISO(meta.publishedAt), "MMM dd, yyyy")}
+                  <time dateTime={meta.updatedAt || meta.publishedAt}>
+                    {format(
+                      parseISO(meta.updatedAt || meta.publishedAt),
+                      "MMM dd, yyyy",
+                    )}
                   </time>
                 </div>
                 <div className="flex items-center gap-x-2">
@@ -445,42 +419,10 @@ export default async function BlogPostPage({
 
               {meta.updatedAt && meta.updatedAt !== meta.publishedAt && (
                 <div className="mt-2 text-xs text-gray-400">
-                  Updated {format(parseISO(meta.updatedAt), "MMM dd, yyyy")}
+                  First published{" "}
+                  {format(parseISO(meta.publishedAt), "MMM dd, yyyy")}
                 </div>
               )}
-
-              {/* Category */}
-              {/* {meta.category && (
-                <div className="mt-6 flex flex-col items-center">
-                  <span className="text-xs font-medium text-gray-500">
-                    Category
-                  </span>
-                  <div className="mt-2 flex justify-center">
-                    <span className="inline-flex items-center rounded-lg bg-rose-100 px-4 py-2 text-sm font-semibold text-rose-700">
-                      {meta.category}
-                    </span>
-                  </div>
-                </div>
-              )} */}
-
-              {/* Tags */}
-              {/* {meta.tags.length > 0 && (
-                <div className="mt-4 flex flex-col items-center">
-                  <span className="text-xs font-medium text-gray-500">
-                    Tags
-                  </span>
-                  <div className="mt-2 flex flex-wrap justify-center gap-2">
-                    {meta.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="inline-flex items-center rounded-md bg-gray-100 px-3 py-1 text-sm font-medium text-gray-600"
-                      >
-                        #{tag}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )} */}
 
               {/* Back to Blog */}
               <div className="mt-8 w-full border-t border-gray-200 pt-6">

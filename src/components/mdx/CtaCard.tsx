@@ -13,40 +13,44 @@ interface CtaCardProps {
   features?: Feature[];
 }
 
-const FUNNEL_STEPS = [
-  { label: "Swipes", pct: 100 },
-  { label: "Matches", pct: 47 },
-  { label: "Chats", pct: 28 },
-  { label: "Dates", pct: 12 },
+const COMPARISON_ROWS = [
+  { label: "Match Rate", avg: "5.3%", you: "7.8%" },
+  { label: "Like Rate", avg: "46%", you: "29%" },
+  { label: "Swipes/Day", avg: "54", you: "38" },
+  { label: "Percentile", avg: "—", you: "Top 12%" },
 ];
 
-function MiniFunnelViz() {
+function ComparisonTable() {
   return (
-    <div aria-hidden="true" className="flex flex-col gap-2.5">
-      {FUNNEL_STEPS.map((step) => (
-        <div key={step.label} className="flex items-center gap-3">
-          <span className="w-16 text-right text-sm font-medium text-gray-500">
-            {step.label}
-          </span>
-          <div className="relative h-5 flex-1">
-            <div
-              className="h-full rounded-sm bg-linear-to-r from-rose-400 to-rose-600"
-              style={{ width: `${step.pct}%` }}
-            />
+    <div aria-hidden="true" className="overflow-hidden rounded-xl border border-rose-200 bg-white text-sm shadow-sm">
+      {/* Header */}
+      <div className="grid grid-cols-3 border-b border-rose-100 bg-rose-50 px-5 py-3 text-xs font-semibold tracking-wider uppercase">
+        <span />
+        <span className="text-center text-gray-500">Avg</span>
+        <span className="text-center text-rose-600">You</span>
+      </div>
+      {/* Rows */}
+      <div className="divide-y divide-rose-100">
+        {COMPARISON_ROWS.map((row) => (
+          <div key={row.label} className="grid grid-cols-3 items-center px-5 py-3.5">
+            <span className="text-gray-600">{row.label}</span>
+            <span className="text-center tabular-nums text-gray-500">
+              {row.avg}
+            </span>
+            <span className="text-center tabular-nums font-semibold text-rose-600 blur-[5px] select-none">
+              {row.you}
+            </span>
           </div>
-          <span className="w-10 text-sm text-gray-400 tabular-nums">
-            {step.pct}%
-          </span>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }
 
 export function CtaCard({
-  title = "Matches drop off a cliff?",
-  description = "Check your Tinder or Hinge data and get your dating funnel in seconds.",
-  buttonText = "Analyze My Data (Free)",
+  title = "How Does Your Match Rate Compare?",
+  description = "Find out in under 60 seconds.",
+  buttonText = "Check My Swipestats",
   buttonHref = "/upload",
 }: CtaCardProps) {
   return (
@@ -61,15 +65,19 @@ export function CtaCard({
             {description}
           </p>
           <div className="mt-5">
-            <ButtonLink href={buttonHref} size="lg">
+            <ButtonLink
+              href={buttonHref}
+              size="lg"
+              className="h-12 px-8 text-base"
+            >
               {buttonText}
             </ButtonLink>
           </div>
         </div>
 
-        {/* Right: Funnel visualization (desktop only) */}
-        <div className="hidden sm:block sm:w-64">
-          <MiniFunnelViz />
+        {/* Right: Blurred stats teaser (desktop only) */}
+        <div className="hidden sm:block sm:w-72">
+          <ComparisonTable />
         </div>
       </div>
 

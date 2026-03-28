@@ -42,9 +42,8 @@ const CTA_INJECTION_RULES: CtaPosition[] = [
     position: "before",
     ctaType: "card",
     props: {
-      title: "How Does Your Match Rate Compare?",
-      description: "Find out in under 60 seconds.",
-      buttonText: "Check My Stats — Free",
+      title: "Is Your Profile Actually Working?",
+      description: "Your swipe data knows. Find out in 60 seconds.",
     },
   },
   {
