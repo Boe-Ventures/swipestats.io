@@ -274,13 +274,13 @@ Core audience content. Men 25-35 on Tinder/Hinge.
 - [x] hinge phone number — 1,260 vol (hinge code, hinge account) — 2026-03-27
 - [x] hinge desktop — 1,110 vol (can you use hinge on desktop) — 2026-03-27
 - [x] how to refresh hinge — 780 vol (hinge take another look) — 2026-03-28
-- [ ] hinge notifications — 780 vol (hinge push notifications)
-- [ ] hinge ai — 520 vol (how does hinge determine most compatible)
-- [ ] hinge verification — 390 vol
-- [ ] hinge gift card — 320 vol
-- [ ] hinge for friends — 320 vol
-- [ ] can you search for someone on hinge — 260 vol
-- [ ] if you x someone on hinge what happens — 260 vol
+- [x] hinge notifications — 780 vol (hinge push notifications) — 2026-03-29
+- [x] hinge ai — 520 vol (how does hinge determine most compatible)
+- [x] hinge verification — 390 vol
+- [x] hinge gift card — 320 vol
+- [x] hinge for friends — 320 vol — 2026-03-28
+- [x] can you search for someone on hinge — 260 vol
+- [x] if you x someone on hinge what happens — 260 vol
 
 ## Phase 8 — Messaging & Conversation
 
@@ -288,12 +288,12 @@ Massive volume. Viral/linkable content.
 
 ### Texting and messaging
 
-- [ ] good morning texts — 161,910 vol (good morning texts for her, flirty good morning texts for her)
-- [ ] flirty & dirty texts — 127,260 vol (flirty text for him, flirty texts for him)
-- [ ] how to flirt over text — 100,730 vol (flirting on text, flirt on text)
-- [ ] dirty talk guide — 92,380 vol (how to talk dirty, dirty talk how to)
-- [ ] good morning message for him — 77,490 vol (good morning messages for him)
-- [ ] good night texts — 53,690 vol (good night text message for him, flirty good night message for her)
+- [x] good morning texts — 161,910 vol (good morning texts for her, flirty good morning texts for her)
+- [x] flirty & dirty texts — 127,260 vol (flirty text for him, flirty texts for him) — 2026-03-28
+- [x] how to flirt over text — 100,730 vol (flirting on text, flirt on text)
+- [x] dirty talk guide — 92,380 vol (how to talk dirty, dirty talk how to)
+- [x] good morning message for him — 77,490 vol (good morning messages for him)
+- [x] good night texts — 53,690 vol (good night text message for him, flirty good night message for her) — 2026-03-29
 - [ ] dry texting — 46,940 vol (dry text, dry texts, dry text meaning)
 - [ ] flirty emojis — 45,920 vol (flirty emoji, what are flirty emojis)
 - [ ] how to start a tinder conversation — 44,660 vol (how to start tinder conversation)
