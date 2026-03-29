@@ -6355,3 +6355,306 @@ Sat Mar 28 06:18:02 AM CET 2026: Blog generation complete for: good night texts 
 ════════════════════════════════════════════════════
 Sat Mar 28 06:30:01 AM CET 2026: Next topic: dry texting — 46,940 vol (dry text, dry texts, dry text meaning) (publish: unset)
 API Error: 400 {"type":"error","error":{"type":"invalid_request_error","message":"The request body is not valid JSON: no low surrogate in string: line 1 column 116429 (char 116428)"},"request_id":"req_011CZUvvhbaC4eFRH6gW93hU"}
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-29 00:00
+════════════════════════════════════════════════════
+Sun Mar 29 12:00:01 AM CET 2026: Next topic: dry texting — 46,940 vol (dry text, dry texts, dry text meaning) (publish: unset)
+API Error: 400 {"type":"error","error":{"type":"invalid_request_error","message":"The request body is not valid JSON: no low surrogate in string: line 1 column 97307 (char 97306)"},"request_id":"req_011CZWJxwUsPBA4VjsiKznze"}
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-29 00:30
+════════════════════════════════════════════════════
+Sun Mar 29 12:30:01 AM CET 2026: Next topic: dry texting — 46,940 vol (dry text, dry texts, dry text meaning) (publish: unset)
+## Created: Dry Texting: What It Means, Why It Happens, and What to Do About It
+
+**File:** content/posts/dry-texting.mdx
+**Category:** Texting | **Author:** paw
+
+### SEO
+
+- **Primary keyword:** dry texting (4,400/mo, difficulty: 4)
+- **Meta title:** Dry Texting: What It Means & How to Deal With It (2026) (55 chars)
+- **Meta description:** What is dry texting? Learn the signs, what data says about low-effort dating app messages, and how to respond with dignity. (122 chars)
+- **H1:** Dry Texting: What It Means, Why It Happens, and What to Do About It
+
+### Content
+
+- **Word count:** ~2,100 words
+- **H2 sections:** What Is Dry Texting, Why People Dry Text, What the Data Says, Is Dry Texting a Red Flag, How to Respond, How to Stop Being a Dry Texter, FAQ
+- **Internal links:** 8 links (how-to-start-a-conversation-on-tinder, tinder-match-disappeared, best-hinge-openers, best-tinder-openers, how-to-flirt-over-text, best-tinder-bios, dating-app-statistics, how-to-start-a-conversation-on-hinge)
+- **Data points used:** 15+ statistics from arXiv (2M conversations), IJCRT 2025 study, Preply survey, BankMyCell, SwipeStats (7,000+ profiles, 294M swipes)
+- **Sources:** 4 citations
+
+### Needs Attention
+
+- **Thumbnail:** create image at `public/images/blog/thumbnails/dry-texting.png`
+- CONTENT-PLAN.md updated: `[x]` with date 2026-03-29
+
+Sun Mar 29 12:44:46 AM CET 2026: Blog generation complete for: dry texting — 46,940 vol (dry text, dry texts, dry text meaning)
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-29 01:00
+════════════════════════════════════════════════════
+Sun Mar 29 01:00:01 AM CET 2026: Next topic: flirty emojis — 45,920 vol (flirty emoji, what are flirty emojis) (publish: unset)
+## Created: Flirty Emojis: The Complete Guide to Not Looking Desperate (or Boring)
+
+**File:** content/posts/flirty-emojis.mdx
+**Category:** Texting | **Author:** paw
+
+### SEO
+
+- **Primary keyword:** flirty emojis (8,100 vol)
+- **Meta title:** Flirty Emojis: Which Ones Work in 2026 (Data-Backed) (53 chars)
+- **Meta description:** The best flirty emojis backed by research from 5,327 singles. Which ones get responses, which kill conversations, and how to use them. (134 chars)
+- **H1:** Flirty Emojis: The Complete Guide to Not Looking Desperate (or Boring) (72 chars)
+
+### Content
+
+- **Word count:** ~2,700 words
+- **H2 sections:** What Makes an Emoji "Flirty"?, Best Flirty Emojis (Ranked), Flirty Emojis From a Guy, Gender Gap, Emoji Combos, Emojis That Kill the Vibe, Timing on Dating Apps, FAQ
+- **Internal links:** 8 links (how-to-flirt-over-text, best-tinder-openers, how-to-talk-dirty, dry-texting, good-night-texts, emoji-bios, how-to-start-a-conversation-on-hinge, best-hinge-prompts)
+- **Data points used:** 12 research-backed statistics (Kinsey Institute, Plenty of Fish, Hinge, SAGE Journals, Statista, ScienceDaily)
+- **Sources:** 9 citations
+
+### Needs Attention
+
+- Thumbnail: create image at `public/images/blog/thumbnails/flirty-emojis.png`
+
+Sun Mar 29 01:13:29 AM CET 2026: Blog generation complete for: flirty emojis — 45,920 vol (flirty emoji, what are flirty emojis)
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-29 01:30
+════════════════════════════════════════════════════
+Sun Mar 29 01:30:01 AM CET 2026: Next topic: how to start a tinder conversation — 44,660 vol (how to start tinder conversation) (publish: unset)
+Done. The post was already created at `content/posts/how-to-start-a-conversation-on-tinder.mdx` (published 2026-03-24) with:
+
+- **Category:** Texting | **Author:** paw
+- **Primary keyword:** "how to start a conversation on tinder" in H1, meta title, and multiple H2s
+- **~2,000 words** with strong voice, data from 7,000+ profiles, SwipeStats statistics
+- **Internal links:** 5 links to existing posts (`/blog/how-to-get-more-matches-on-tinder`, `/blog/tinder-openers`, `/blog/how-to-text-a-girl-for-the-first-time`, `/blog/best-tinder-openers`, `/blog/tinder-about-me`)
+- **Sources:** 5 citations including SwipeStats data, Tinder press, Business of Apps, Science Advances
+
+Marked as `[x]` in CONTENT-PLAN.md. Thumbnail still needed at `public/images/blog/thumbnails/how-to-start-a-conversation-on-tinder.png`.
+
+Sun Mar 29 01:31:14 AM CET 2026: Blog generation complete for: how to start a tinder conversation — 44,660 vol (how to start tinder conversation)
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-29 03:00
+════════════════════════════════════════════════════
+Sun Mar 29 03:00:01 AM CEST 2026: Next topic: how to tell if she likes you over text — 36,140 vol (how to know if she likes you) (publish: unset)
+## Created: How to Tell If She Likes You Over Text (15 Signs That Actually Hold Up)
+
+**File:** `content/posts/how-to-tell-if-she-likes-you-over-text.mdx`
+**Category:** Texting | **Author:** paw
+
+### SEO
+
+- **Primary keyword:** how to tell if she likes you over text (1,600 vol, KD 5)
+- **Meta title:** How to Tell If She Likes You Over Text: 15 Signs (49 chars)
+- **Meta description:** 15 research-backed signs she likes you over text, a mixed signals decoder, and the red flags someone had to tell you about. (123 chars)
+- **H1:** How to Tell If She Likes You Over Text (15 Signs That Actually Hold Up)
+
+### Content
+
+- **Word count:** ~3,500 words
+- **H2 sections:** Science intro, 15 Signs, Mixed Signals Decoder, Red Flags, Dating App vs Regular Texts, Call to Action, FAQ
+- **Internal links:** 8 links (how-to-compliment-a-girls-picture, good-morning-texts-for-her, good-night-texts, dry-texting, tinder-statistics, hinge-statistics, how-to-start-a-conversation-on-hinge, how-to-flirt-over-text)
+- **Data points used:** 4 research studies (Hurd & Bargh emoji study n=5,327, Teichmann et al. response timing, Ohadi et al. frequency matching, Huh 2025 emoji responsiveness)
+- **Sources:** 4 citations (PLOS One, SAGE Journals, Psychology Today, Phys.org)
+
+### Research Highlights
+
+- Keyword cluster has extremely low competition (KD 3-8), strong ranking potential
+- Differentiated from competitors via research-backed data (no competitor uses real statistics)
+- Covers content gaps: "NOT into you" signs, dating app context, scoring framework, "hiding it" section
+- Competitor analysis: 5 articles parsed, common patterns absorbed, unique angles exploited
+
+### Needs Attention
+
+- **Thumbnail:** create image at `public/images/blog/thumbnails/how-to-tell-if-she-likes-you-over-text.png`
+- **publishedAt:** set to 2026-03-30 (pairs with flirty-emojis)
+
+Sun Mar 29 03:14:56 AM CEST 2026: Blog generation complete for: how to tell if she likes you over text — 36,140 vol (how to know if she likes you)
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-29 03:30
+════════════════════════════════════════════════════
+Sun Mar 29 03:30:01 AM CEST 2026: Next topic: best conversation starters over text — 35,230 vol (good conversation starters over text, how to start a conversation over text) (publish: unset)
+## Created: Best Conversation Starters Over Text That People Actually Reply To
+
+**File:** `content/posts/best-conversation-starters-over-text.mdx`
+**Category:** Texting | **Author:** paw
+
+### SEO
+
+- **Primary keyword:** best conversation starters over text (2,400 vol/mo, KD 8)
+- **Meta title:** Best Conversation Starters Over Text (2026): Backed by Data (59 chars)
+- **Meta description:** 57% of dating app convos die after one message. These conversation starters over text actually get replies, backed by real data. (127 chars)
+- **H1:** Best Conversation Starters Over Text That People Actually Reply To
+
+### Content
+
+- **Word count:** ~2,800 words
+- **H2 sections:** 7 (Why 57% Die, 3 Ingredients, Best Starters, Kill Matches, Per-App Guide, Keep Going, FAQ)
+- **Internal links:** 8 links (how-to-flirt-over-text, best-rizz-pickup-lines, flirty-texts-for-him, dry-texting, best-tinder-openers, how-to-start-a-conversation-on-hinge, best-bumble-openers, how-to-flirt-over-text)
+- **Data points used:** 10+ (57% convo death rate, 43.4% match-to-message, 340% top opener boost, 50% "you mention" lift, 40% food mention lift, 71% grammar dealbreaker, 4-7 message rule, 21-30 word sweet spot, 7K+ profiles, 294M swipes, 3.14M matches)
+- **Sources:** 4 citations (Science Advances, Harvard Business School, Preply, DatingAdvice.com)
+
+### Needs Attention
+
+- **Thumbnail:** create image at `public/images/blog/thumbnails/best-conversation-starters-over-text.png`
+- CONTENT-PLAN.md updated: `[x]` with date 2026-03-31
+
+Sun Mar 29 03:44:14 AM CEST 2026: Blog generation complete for: best conversation starters over text — 35,230 vol (good conversation starters over text, how to start a conversation over text)
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-29 04:00
+════════════════════════════════════════════════════
+Sun Mar 29 04:00:01 AM CEST 2026: Next topic: slide into dms — 23,950 vol (sliding in dms, what does slide into dm mean) (publish: unset)
+## Created: How to Slide Into DMs Without Getting Blocked, Muted, or Reported
+
+**File:** content/posts/how-to-slide-into-dms.mdx
+**Category:** Texting | **Author:** paw
+
+### SEO
+
+- **Primary keyword:** how to slide into dms (2,400/mo)
+- **Meta title:** How to Slide Into DMs: The Data-Backed Guide (2026) (52 chars)
+- **Meta description:** Learn how to slide into DMs that actually get replies. Data-backed tips, example openers, and what not to do when messaging your crush. (134 chars)
+- **H1:** How to Slide Into DMs Without Getting Blocked, Muted, or Reported
+
+### Content
+
+- **Word count:** ~2,800 words (body)
+- **H2 sections:** What Does "Sliding Into DMs" Mean, Why Your DMs Get Ignored, Pre-Slide Checklist, How to Actually Slide Into DMs, Dating Apps vs Social Media, What NOT to Do, From DMs to a Date, FAQ
+- **Internal links:** 7 links (best-dating-profile-photos, how-to-flirt-over-text, how-to-start-a-conversation-on-tinder, best-tinder-openers, good-morning-texts-for-her, how-to-compliment-a-girls-picture, /upload)
+- **Data points used:** 14 statistics (47% relationships via DM, 18 messages for 50% reply chance, 25% higher female response rate, 60% personalization boost, 40-90 char sweet spot, 67% matches go silent, 78% app fatigue, and more)
+- **Sources:** 8 citations
+
+### Needs Attention
+
+- **Thumbnail:** create image at `public/images/blog/thumbnails/how-to-slide-into-dms.png`
+- CONTENT-PLAN.md updated: `[x]` with date 2026-03-29
+
+Sun Mar 29 04:13:49 AM CEST 2026: Blog generation complete for: slide into dms — 23,950 vol (sliding in dms, what does slide into dm mean)
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-29 04:30
+════════════════════════════════════════════════════
+Sun Mar 29 04:30:01 AM CEST 2026: Next topic: what to text your crush — 21,470 vol (what to ask your crush over text, how to text your crush) (publish: unset)
+All checks pass. Here's the final report:
+
+---
+
+## Created: What to Text Your Crush (That Won't Make Them Block You)
+
+**File:** content/posts/what-to-text-your-crush.mdx
+**Category:** Texting | **Author:** paw
+
+### SEO
+
+- **Primary keyword:** what to text your crush (1,900 vol / KD 14)
+- **Meta title:** What to Text Your Crush | 50+ Ideas That Get Replies (53 chars)
+- **Meta description:** Stop overthinking. Here's what to text your crush with real examples backed by data and psychology. (99 chars)
+- **H1:** What to Text Your Crush (That Won't Make Them Block You)
+
+### Content
+
+- **Word count:** ~3,176 words
+- **H2 sections:** 9 (intro, conversation starters, keeping interest, questions, boring rules, timing, confessing feelings, hall of shame, FAQ)
+- **Internal links:** 7 links (how-to-start-a-conversation-on-tinder, dry-texting, tinder-statistics, how-to-flirt-over-text, good-morning-texts-for-her, good-night-texts, how-to-slide-into-dms)
+- **Data points used:** 12+ statistics (OkCupid messaging data, Teichmann 2026 study, attachment style research, response time surveys)
+- **Sources:** 8 citations (academic journals, OkCupid archives, Pew Research, SwipeStats)
+
+### Keyword Coverage
+
+- "what to text your crush" in first paragraph + 2 H2s
+- "things to text your crush" in H2
+- "what to ask your crush over text" in H2
+- "how to text your crush" in body + H2
+- "how to tell your crush you like them over text" in H2
+- "texts to send your crush" in body
+- "what to say to your crush over text" in body
+
+### Needs Attention
+
+- **Thumbnail:** create image at `public/images/blog/thumbnails/what-to-text-your-crush.png`
+- CONTENT-PLAN.md updated: `[x]` marked
+
+Sun Mar 29 04:46:01 AM CEST 2026: Blog generation complete for: what to text your crush — 21,470 vol (what to ask your crush over text, how to text your crush)
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-29 05:00
+════════════════════════════════════════════════════
+Sun Mar 29 05:00:01 AM CEST 2026: Next topic: flirty gifs — 19,440 vol (flirty gif, flirty gif for him) (publish: unset)
+You've hit your limit · resets 6am (Europe/Budapest)
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-29 05:30
+════════════════════════════════════════════════════
+Sun Mar 29 05:30:01 AM CEST 2026: Next topic: flirty gifs — 19,440 vol (flirty gif, flirty gif for him) (publish: unset)
+You've hit your limit · resets 6am (Europe/Budapest)
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-29 06:00
+════════════════════════════════════════════════════
+Sun Mar 29 06:00:02 AM CEST 2026: Next topic: flirty gifs — 19,440 vol (flirty gif, flirty gif for him) (publish: unset)
+All done. Here's the summary:
+
+## Created: Flirty GIFs: The Secret Weapon Your Thumbs Have Been Sleeping On
+
+**File:** content/posts/flirty-gifs.mdx
+**Category:** Texting | **Author:** paw
+
+### SEO
+
+- **Primary keyword:** flirty gif (3,600/mo)
+- **Meta title:** Flirty GIFs That Actually Work on Dating Apps (2026 Guide) (59 chars)
+- **Meta description:** Flirty GIFs boost dating app replies by 30%. The best flirty GIFs for him and her, plus when to send them. (107 chars)
+- **H1:** Flirty GIFs: The Secret Weapon Your Thumbs Have Been Sleeping On
+
+### Content
+
+- **Word count:** ~2,500 words
+- **H2 sections:** Why GIFs Work (data), Best for Him, Best for Her, When to Send, Common Mistakes, Platform Comparison (Tinder/Hinge/Bumble), How to Find GIFs, FAQ
+- **Internal links:** 8 links (how-to-flirt-over-text, good-morning-messages-for-him, good-morning-texts-for-her, best-tinder-openers, dry-texting, what-to-text-your-crush, how-to-start-a-conversation-on-tinder, best-hinge-openers)
+- **Data points:** 30% response rate boost, 2x conversation length, <1% GIF usage, 7B daily GIFs, 294M swipes/7K+ profiles, 71% mobile users
+- **Sources:** 6 citations (TIME, Global Dating Insights, Well+Good, Small Biz Trends, Marketing Dive, SwipeStats)
+
+### Needs Attention
+
+- Thumbnail: create image at `public/images/blog/thumbnails/flirty-gifs.png`
+
+Sun Mar 29 06:20:11 AM CEST 2026: Blog generation complete for: flirty gifs — 19,440 vol (flirty gif, flirty gif for him)
+
+════════════════════════════════════════════════════
+  Blog Generation (swipestats) — 2026-03-29 06:30
+════════════════════════════════════════════════════
+Sun Mar 29 06:30:01 AM CEST 2026: Next topic: how to text a woman — 17,520 vol (how to text a woman you like, how to text a girlfriend) (publish: unset)
+## Created: How to Text a Woman (Without Making Her Regret Giving You Her Number)
+
+**File:** content/posts/how-to-text-a-woman.mdx
+**Category:** Texting | **Author:** paw
+
+### SEO
+
+- **Primary keyword:** how to text a woman (2,900/mo, KD 7)
+- **Meta title:** How to Text a Woman: The Data-Backed Guide (2026) (50 chars)
+- **Meta description:** Learn how to text a woman you like with tips backed by real data and research. First texts, flirting, timing, and asking her out. (127 chars)
+- **H1:** How to Text a Woman (Without Making Her Regret Giving You Her Number)
+
+### Content
+
+- **Word count:** ~3,000 words
+- **H2 sections:** Why Texts Get Left on Read, The First Text, Keeping Conversations Going, Flirting Over Text, Timing & Frequency, Asking Her Out, Hall of Shame, FAQ, Sources
+- **Internal links:** 8 links (best-tinder-openers, best-hinge-openers, tinder-statistics, dry-texting, how-to-flirt-over-text, dating-app-statistics, how-to-slide-into-dms, good-morning-texts-for-her)
+- **Data points used:** 8 (abbreviations study, timing study, dating app usage stats, ghosting rate, swipe rates, marriage stats, texting frequency research, emotional exhaustion survey)
+- **Sources:** 5 citations (Fang et al. 2024, Teichmann et al. 2026, Holtzman et al. 2021, SSRS 2025, SwipeStats)
+- **Secondary keywords hit:** how to text a woman you like, how to ask a woman out over text, how to flirt over text, how to keep a conversation going over text, how to text a woman for the first time, how to turn a woman on through text
+
+### Needs Attention
+
+- **Thumbnail:** create image at `public/images/blog/thumbnails/how-to-text-a-woman.png`
+
+Sun Mar 29 06:48:22 AM CEST 2026: Blog generation complete for: how to text a woman — 17,520 vol (how to text a woman you like, how to text a girlfriend)

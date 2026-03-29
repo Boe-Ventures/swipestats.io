@@ -294,15 +294,15 @@ Massive volume. Viral/linkable content.
 - [x] dirty talk guide — 92,380 vol (how to talk dirty, dirty talk how to)
 - [x] good morning message for him — 77,490 vol (good morning messages for him)
 - [x] good night texts — 53,690 vol (good night text message for him, flirty good night message for her) — 2026-03-29
-- [ ] dry texting — 46,940 vol (dry text, dry texts, dry text meaning)
-- [ ] flirty emojis — 45,920 vol (flirty emoji, what are flirty emojis)
-- [ ] how to start a tinder conversation — 44,660 vol (how to start tinder conversation)
-- [ ] how to tell if she likes you over text — 36,140 vol (how to know if she likes you)
-- [ ] best conversation starters over text — 35,230 vol (good conversation starters over text, how to start a conversation over text)
-- [ ] slide into dms — 23,950 vol (sliding in dms, what does slide into dm mean)
-- [ ] what to text your crush — 21,470 vol (what to ask your crush over text, how to text your crush)
-- [ ] flirty gifs — 19,440 vol (flirty gif, flirty gif for him)
-- [ ] how to text a woman — 17,520 vol (how to text a woman you like, how to text a girlfriend)
+- [x] dry texting — 46,940 vol (dry text, dry texts, dry text meaning) — 2026-03-29
+- [x] flirty emojis — 45,920 vol (flirty emoji, what are flirty emojis) — 2026-03-30
+- [x] how to start a tinder conversation — 44,660 vol (how to start tinder conversation)
+- [x] how to tell if she likes you over text — 36,140 vol (how to know if she likes you) — 2026-03-30
+- [x] best conversation starters over text — 35,230 vol (good conversation starters over text, how to start a conversation over text) — 2026-03-31
+- [x] slide into dms — 23,950 vol (sliding in dms, what does slide into dm mean) — 2026-03-29
+- [x] what to text your crush — 21,470 vol (what to ask your crush over text, how to text your crush)
+- [x] flirty gifs — 19,440 vol (flirty gif, flirty gif for him) — 2026-03-29
+- [x] how to text a woman — 17,520 vol (how to text a woman you like, how to text a girlfriend) — 2026-03-29
 - [ ] how to find someone on tinder — 14,690 vol (how to find someone on hinge)
 - [ ] double texting — 11,970 vol (what is double texting, should i double text)
 - [ ] break up text — 8,380 vol (break up texts, breakup text messages)
