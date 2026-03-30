@@ -20,6 +20,7 @@ export const env = createEnv({
     LEMON_SQUEEZY_WEBHOOK_SECRET: z.string(),
     ADMIN_TOKEN: z.string().min(32), // Require strong token (32+ chars)
     BLOB_READ_WRITE_TOKEN: z.string().optional(), // Optional for dev without Vercel Blob
+    VERCEL_DEPLOY_HOOK_URL: z.string().url().optional(),
     // Slack webhooks
     SLACK_WEBHOOK_BOT_MESSAGES: z.string().url(),
     SLACK_WEBHOOK_AI_PHOTOS: z.string().url(),
@@ -63,6 +64,7 @@ export const env = createEnv({
     ADMIN_TOKEN: process.env.ADMIN_TOKEN,
     BLOB_READ_WRITE_TOKEN: process.env.BLOB_READ_WRITE_TOKEN,
     // Slack webhooks
+    VERCEL_DEPLOY_HOOK_URL: process.env.VERCEL_DEPLOY_HOOK_URL,
     SLACK_WEBHOOK_BOT_MESSAGES: process.env.SLACK_WEBHOOK_BOT_MESSAGES,
     SLACK_WEBHOOK_AI_PHOTOS: process.env.SLACK_WEBHOOK_AI_PHOTOS,
     SLACK_WEBHOOK_BOT_DEVELOPER: process.env.SLACK_WEBHOOK_BOT_DEVELOPER,
