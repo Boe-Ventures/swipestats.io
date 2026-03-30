@@ -303,15 +303,15 @@ Massive volume. Viral/linkable content.
 - [x] what to text your crush — 21,470 vol (what to ask your crush over text, how to text your crush)
 - [x] flirty gifs — 19,440 vol (flirty gif, flirty gif for him) — 2026-03-29
 - [x] how to text a woman — 17,520 vol (how to text a woman you like, how to text a girlfriend) — 2026-03-29
-- [ ] how to find someone on tinder — 14,690 vol (how to find someone on hinge)
-- [ ] double texting — 11,970 vol (what is double texting, should i double text)
-- [ ] break up text — 8,380 vol (break up texts, breakup text messages)
-- [ ] hinge conversation starters — 7,970 vol (how to start a conversation on hinge)
-- [ ] how to keep a conversation going over text — 5,680 vol
-- [ ] ai text message generator — 5,410 vol (text response generator, dirty text response generator)
-- [ ] how to ask her out over text — 4,670 vol (how to ask someone out over text)
-- [ ] free messaging dating sites — 3,120 vol (online dating free messaging)
-- [ ] bumble messaging — 2,410 vol (bumble messages)
+- [x] how to find someone on tinder — 14,690 vol (how to find someone on hinge) — 2026-03-30
+- [x] double texting — 11,970 vol (what is double texting, should i double text) — 2026-03-30
+- [x] break up text — 8,380 vol (break up texts, breakup text messages) — 2026-03-30
+- [x] hinge conversation starters — 7,970 vol (how to start a conversation on hinge) — 2026-03-30
+- [x] how to keep a conversation going over text — 5,680 vol — 2026-03-31
+- [x] ai text message generator — 5,410 vol (text response generator, dirty text response generator)
+- [x] how to ask her out over text — 4,670 vol (how to ask someone out over text) — 2026-03-30
+- [x] free messaging dating sites — 3,120 vol (online dating free messaging) — 2026-03-30
+- [x] bumble messaging — 2,410 vol (bumble messages) — 2026-03-30
 - [ ] first message on dating app — 2,160 vol
 - [ ] how to text a guy to like you — 970 vol
 - [ ] who should text first after a date — 320 vol
