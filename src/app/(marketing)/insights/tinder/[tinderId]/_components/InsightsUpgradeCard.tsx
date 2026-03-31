@@ -20,7 +20,7 @@ import { SwipestatsPlanUpgradeModal } from "@/app/app/components/SwipestatsPlanU
 export function InsightsUpgradeCard() {
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [selectedPeriod, setSelectedPeriod] =
-    useState<BillingPeriod>("lifetime");
+    useState<BillingPeriod>("monthly");
   const { effectiveTier, isLifetime, periodEnd } = useSubscription();
 
   // Determine which tier to show based on current subscription
@@ -148,12 +148,17 @@ export function InsightsUpgradeCard() {
                 </div>
 
                 <p className="text-muted-foreground mb-2 text-xs font-semibold">
-                  Pay once, own it forever
+                  {selectedPeriod === "monthly"
+                    ? "🎉 Launch Special - 40% Off!"
+                    : "🎉 Launch Special - 50% Off!"}
                 </p>
 
                 <div className="mb-4 flex items-baseline justify-center gap-x-2">
+                  <span className="text-muted-foreground text-xl font-semibold line-through">
+                    ${selectedPeriod === "monthly" ? 15 : pricing.lifetime}
+                  </span>
                   <span className="text-4xl font-bold tracking-tight">
-                    ${pricing[selectedPeriod]}
+                    ${selectedPeriod === "monthly" ? pricing.monthly : pricing.lifetimeLaunchPrice}
                   </span>
                   <span className="text-muted-foreground text-sm font-semibold">
                     {selectedPeriod === "monthly" ? "/mo" : "USD"}
@@ -174,9 +179,9 @@ export function InsightsUpgradeCard() {
                 </Button>
 
                 <p className="text-muted-foreground mt-4 text-xs">
-                  {selectedPeriod === "lifetime"
-                    ? "One-time payment, no recurring charges"
-                    : "Cancel anytime. Secure payment by LemonSqueezy"}
+                  {selectedPeriod === "monthly"
+                    ? "Cancel anytime • Secure payment by LemonSqueezy"
+                    : "One-time payment • No recurring charges"}
                 </p>
               </div>
             </div>

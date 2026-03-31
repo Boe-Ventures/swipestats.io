@@ -34,7 +34,7 @@ export function SwipestatsPlusCard({
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedPeriod, setSelectedPeriod] =
-    useState<BillingPeriod>("lifetime");
+    useState<BillingPeriod>("monthly");
 
   const hasPremiumAccess =
     effectiveTier === "PLUS" || effectiveTier === "ELITE";
@@ -230,57 +230,55 @@ export function SwipestatsPlusCard({
               <button
                 onClick={() => setSelectedPeriod("monthly")}
                 className={cn(
-                  "cursor-pointer rounded-md px-3 py-1 text-xs font-medium transition-colors",
+                  "relative cursor-pointer rounded-md px-3 py-1 text-xs font-medium transition-colors",
                   selectedPeriod === "monthly"
                     ? "bg-white shadow-sm"
                     : "text-gray-600 hover:text-gray-900",
                 )}
               >
                 Monthly
+                <span className="absolute -top-2 -right-2 flex h-4 w-4">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75"></span>
+                  <span className="relative inline-flex h-4 w-4 rounded-full bg-rose-500"></span>
+                </span>
               </button>
               <button
                 onClick={() => setSelectedPeriod("lifetime")}
                 className={cn(
-                  "relative cursor-pointer rounded-md px-3 py-1 text-xs font-medium transition-colors",
+                  "cursor-pointer rounded-md px-3 py-1 text-xs font-medium transition-colors",
                   selectedPeriod === "lifetime"
                     ? "bg-white shadow-sm"
                     : "text-gray-600 hover:text-gray-900",
                 )}
               >
                 Lifetime
-                <span className="absolute -top-2 -right-2 flex h-4 w-4">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-rose-400 opacity-75"></span>
-                  <span className="relative inline-flex h-4 w-4 rounded-full bg-rose-500"></span>
-                </span>
               </button>
             </div>
 
             <p className="text-base font-semibold text-gray-600">
-              {selectedPeriod === "lifetime"
-                ? "🎉 Launch Special - 50% Off!"
-                : "Flexible monthly billing"}
+              {selectedPeriod === "monthly"
+                ? "🎉 Launch Special - 40% Off!"
+                : "🎉 Launch Special - 50% Off!"}
             </p>
             <p className="mt-6 flex items-baseline justify-center gap-x-2">
-              {selectedPeriod === "lifetime" && (
-                <span className="text-2xl font-semibold tracking-tight text-gray-400 line-through">
-                  ${pricing.lifetime}
-                </span>
-              )}
+              <span className="text-2xl font-semibold tracking-tight text-gray-400 line-through">
+                ${selectedPeriod === "monthly" ? 15 : pricing.lifetime}
+              </span>
               <span className="text-5xl font-semibold tracking-tight text-gray-900">
                 $
                 {selectedPeriod === "lifetime"
                   ? pricing.lifetimeLaunchPrice
-                  : pricing[selectedPeriod]}
+                  : pricing.monthly}
               </span>
               <span className="text-sm leading-6 font-semibold tracking-wide text-gray-600">
                 {selectedPeriod === "monthly" ? "/mo" : "USD"}
               </span>
             </p>
-            {selectedPeriod === "lifetime" && (
-              <p className="mt-2 text-xs font-semibold text-rose-600">
-                Save $50 • Limited time offer
-              </p>
-            )}
+            <p className="mt-2 text-xs font-semibold text-rose-600">
+              {selectedPeriod === "monthly"
+                ? "Save $6/mo • Limited time offer"
+                : "Save $50 • Limited time offer"}
+            </p>
 
             <button
               onClick={handleUpgrade}
@@ -298,9 +296,9 @@ export function SwipestatsPlusCard({
             </button>
 
             <p className="mt-6 text-xs leading-5 text-gray-600">
-              {selectedPeriod === "lifetime"
-                ? "One-time payment • No recurring charges • All future features included"
-                : "Cancel anytime • Upgrade to lifetime later"}
+              {selectedPeriod === "monthly"
+                ? "Cancel anytime • Secure payment by LemonSqueezy"
+                : "One-time payment • No recurring charges • All future features included"}
             </p>
           </div>
         </div>
