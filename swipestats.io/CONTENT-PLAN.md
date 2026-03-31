@@ -312,19 +312,19 @@ Massive volume. Viral/linkable content.
 - [x] how to ask her out over text — 4,670 vol (how to ask someone out over text) — 2026-03-30
 - [x] free messaging dating sites — 3,120 vol (online dating free messaging) — 2026-03-30
 - [x] bumble messaging — 2,410 vol (bumble messages) — 2026-03-30
-- [ ] first message on dating app — 2,160 vol
-- [ ] how to text a guy to like you — 970 vol
-- [ ] who should text first after a date — 320 vol
+- [x] first message on dating app — 2,160 vol
+- [x] how to text a guy to like you — 970 vol — 2026-03-31
+- [x] who should text first after a date — 320 vol — 2026-03-31
 
 ### Pickup lines
 
-- [ ] pick up lines — 2,015,400 vol (pick up line, picking up lines)
-- [ ] chat up lines — 490,340 vol (flirt chat up lines, best chat up lines)
-- [ ] what does rizz mean — 90,220 vol (how to rizz, how to get rizz, rizz definition)
-- [ ] cheesy pick up lines — 89,700 vol (cheesy pick up line for him)
-- [ ] dirty pick up lines — 69,320 vol (pick up lines dirty)
-- [ ] pick up lines for girls — 47,040 vol (chick pick up lines, pick up lines for boyfriend)
-- [ ] ai rizz generator — 10,240 vol (rizzgpt, rizz gpt, rizz app ai)
+- [x] pick up lines — 2,015,400 vol (pick up line, picking up lines)
+- [x] chat up lines — 490,340 vol (flirt chat up lines, best chat up lines) — 2026-04-01
+- [x] what does rizz mean — 90,220 vol (how to rizz, how to get rizz, rizz definition) — 2026-03-31
+- [x] cheesy pick up lines — 89,700 vol (cheesy pick up line for him)
+- [x] dirty pick up lines — 69,320 vol (pick up lines dirty) — 2026-03-31
+- [x] pick up lines for girls — 47,040 vol (chick pick up lines, pick up lines for boyfriend)
+- [x] ai rizz generator — 10,240 vol (rizzgpt, rizz gpt, rizz app ai) — 2026-03-31
 - [ ] nurse pick up lines — 10,130 vol (nursing pick up lines)
 - [ ] math pick up lines — 8,800 vol (math rizz, pick up lines using math)
 - [ ] harry potter pick up lines — 3,680 vol (dirty harry potter jokes)
