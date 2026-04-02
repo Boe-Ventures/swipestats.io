@@ -169,12 +169,13 @@ async function main() {
   // Check how many of the matched profiles already have blob URLs in DB
   if (matchedProfiles.length > 0) {
     const blobHostPattern = "%.vercel-storage.com%";
-    const [alreadyLinked] = await db.execute<{ count: number }>(sql`
+    const result = await db.execute<{ count: number }>(sql`
       SELECT count(DISTINCT tinder_profile_id)::int AS count
       FROM media
       WHERE tinder_profile_id IS NOT NULL
         AND url LIKE ${blobHostPattern}
     `);
+    const alreadyLinked = result.rows[0];
     console.log(
       `  DB profiles already pointing to blob: ${alreadyLinked?.count ?? 0}`,
     );
