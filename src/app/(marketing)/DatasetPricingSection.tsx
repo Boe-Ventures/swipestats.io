@@ -199,7 +199,7 @@ export function DatasetPricingSection() {
             href="/downloads/swipestats-demo-dataset.jsonl.zip"
             target="_blank"
           >
-            <Button variant={"ghost"}>Donwnload demo profile</Button>
+            <Button variant={"ghost"}>Download demo profile</Button>
           </Link>
           <a
             href="https://github.com/Boe-Ventures/swipestats.io"
