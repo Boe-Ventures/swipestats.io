@@ -253,62 +253,37 @@ async function sendSlackMessageAsync(params: {
 // =====================================================
 
 /**
- * INTERNAL: Send images as thumbnails in context block
+ * INTERNAL: Build a context block of image thumbnails to embed in a message.
  *
- * This is a defensive function that never throws - if images fail to send,
- * it just logs and continues. The main message is always prioritized.
+ * Defensive: filters out empty/invalid URLs and caps at 10 (Slack's max
+ * elements per context block). Returns null when there's nothing to show,
+ * so callers can simply skip pushing it.
  *
- * @param channel - Slack channel to send to
  * @param imageUrls - Array of public image URLs to display
  */
-function sendImagesFollowUp(params: {
-  channel: SlackChannel;
-  imageUrls: string[];
-}): void {
-  // Defensive: skip if no valid URLs
-  const validUrls = params.imageUrls.filter(
+function buildImageContextBlock(imageUrls?: string[]): ContextBlock | null {
+  if (!imageUrls || imageUrls.length === 0) return null;
+
+  // Defensive: skip empty/invalid URLs
+  const validUrls = imageUrls.filter(
     (url) => url && typeof url === "string" && url.trim().length > 0,
   );
 
-  if (validUrls.length === 0) {
-    return;
-  }
+  if (validUrls.length === 0) return null;
 
   // Limit to 10 images (Slack allows max 10 elements in context block)
   const limitedUrls = validUrls.slice(0, 10);
 
-  try {
-    // Create image elements for context block (thumbnails, clickable)
-    const imageElements: ImageElement[] = limitedUrls.map((url, index) => ({
-      type: "image",
-      image_url: url,
-      alt_text: `Photo ${index + 1}`,
-    }));
+  const imageElements: ImageElement[] = limitedUrls.map((url, index) => ({
+    type: "image",
+    image_url: url,
+    alt_text: `Photo ${index + 1}`,
+  }));
 
-    const blocks: Block[] = [
-      {
-        type: "context",
-        elements: imageElements,
-      },
-    ];
-
-    // Send as follow-up message (non-blocking, defensive)
-    sendSlackMessage({
-      channel: params.channel,
-      text: `📸 Profile Photos (${limitedUrls.length})`,
-      blocks,
-    });
-
-    console.log(
-      `📸 [Slack] Sent ${limitedUrls.length} thumbnail(s) to ${params.channel}`,
-    );
-  } catch (error) {
-    // Never throw - just log and continue
-    console.warn(
-      "⚠️ [Slack] Failed to send images (non-critical):",
-      error instanceof Error ? error.message : "Unknown error",
-    );
-  }
+  return {
+    type: "context",
+    elements: imageElements,
+  };
 }
 
 // =====================================================
@@ -319,7 +294,7 @@ function sendImagesFollowUp(params: {
  * Send a simple notification with automatic environment context
  *
  * Use for quick status updates or simple messages.
- * Optionally include images that will be sent in a follow-up message.
+ * Optionally include images that will be embedded as thumbnails in the message.
  *
  * @example
  * ```ts
@@ -335,24 +310,19 @@ export function sendNotification(params: {
   text: string;
   imageUrls?: string[];
 }): void {
-  const blocks: Block[] = [
-    createSectionBlock(params.text),
-    createContextBlock(`${ENV_LABEL} | ${new Date().toISOString()}`),
-  ];
+  const blocks: Block[] = [createSectionBlock(params.text)];
+
+  // Embed photo thumbnails inline (if any) so it's a single message
+  const imageBlock = buildImageContextBlock(params.imageUrls);
+  if (imageBlock) blocks.push(imageBlock);
+
+  blocks.push(createContextBlock(`${ENV_LABEL} | ${new Date().toISOString()}`));
 
   sendSlackMessage({
     channel: params.channel,
     text: params.text,
     blocks,
   });
-
-  // Send images in follow-up message if provided
-  if (params.imageUrls && params.imageUrls.length > 0) {
-    sendImagesFollowUp({
-      channel: params.channel,
-      imageUrls: params.imageUrls,
-    });
-  }
 }
 
 /**
@@ -360,7 +330,7 @@ export function sendNotification(params: {
  *
  * Formats as a section with field blocks and environment context.
  * Use for analytics events, user actions, or structured notifications.
- * Optionally include images that will be sent in a follow-up message.
+ * Optionally include images that will be embedded as thumbnails in the message.
  *
  * @example
  * ```ts
@@ -501,6 +471,10 @@ export function sendEvent(params: {
     );
   }
 
+  // Embed photo thumbnails inline (if any) so it's a single message
+  const imageBlock = buildImageContextBlock(params.imageUrls);
+  if (imageBlock) blocks.push(imageBlock);
+
   if (actionButtons.length > 0) {
     blocks.push(createActionsBlock(actionButtons));
   }
@@ -508,20 +482,12 @@ export function sendEvent(params: {
   // Add context block at the end
   blocks.push(createContextBlock(contextText));
 
-  // Send main message
+  // Send single message
   sendSlackMessage({
     channel: params.channel,
     text: `${emoji} ${title}`,
     blocks,
   });
-
-  // Send images in separate follow-up message if provided
-  if (params.imageUrls && params.imageUrls.length > 0) {
-    sendImagesFollowUp({
-      channel: params.channel,
-      imageUrls: params.imageUrls,
-    });
-  }
 }
 
 /**
@@ -529,7 +495,7 @@ export function sendEvent(params: {
  *
  * Formats error in a code block with optional context and log link.
  * Use for error monitoring and alerts.
- * Optionally include images (e.g., screenshots) that will be sent in a follow-up message.
+ * Optionally include images (e.g., screenshots) that will be embedded as thumbnails in the message.
  *
  * @example
  * ```ts
@@ -580,6 +546,10 @@ export function sendError(params: {
     );
   }
 
+  // Embed images inline (e.g. screenshots) so it's a single message
+  const imageBlock = buildImageContextBlock(params.imageUrls);
+  if (imageBlock) blocks.push(imageBlock);
+
   blocks.push(createContextBlock(contextParts.join(" | ")));
 
   sendSlackMessage({
@@ -587,14 +557,6 @@ export function sendError(params: {
     text: `⚠️ ${title}`,
     blocks,
   });
-
-  // Send images in follow-up message if provided
-  if (params.imageUrls && params.imageUrls.length > 0) {
-    sendImagesFollowUp({
-      channel: params.channel,
-      imageUrls: params.imageUrls,
-    });
-  }
 }
 
 // =====================================================
