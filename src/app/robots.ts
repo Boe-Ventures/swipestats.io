@@ -30,6 +30,9 @@ export default function robots(): MetadataRoute.Robots {
         ],
       },
     ],
-    sitemap: "https://www.swipestats.io/sitemap.xml",
+    sitemap: [
+      "https://www.swipestats.io/sitemap.xml",
+      "https://www.swipestats.io/llms.txt",
+    ],
   };
 }

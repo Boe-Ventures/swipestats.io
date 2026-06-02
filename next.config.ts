@@ -5,10 +5,42 @@
 import { envSelect } from "./src/env";
 import type { NextConfig } from "next";
 import { withPostHogConfig } from "@posthog/nextjs-config";
+import { fileURLToPath } from "node:url";
+import { dirname } from "node:path";
+
+// Pin the workspace root to this project. Without this, Next.js walks up to
+// the parent boe-ventures/ directory (which has a stray package.json +
+// bun.lock from an accidental `bun install`) and resolves modules from there,
+// breaking CSS imports like `tw-animate-css` that only live in
+// swipestats/node_modules.
+const projectRoot = dirname(fileURLToPath(import.meta.url));
+
+// RFC 8288 Link header for agent discovery on the homepage. Points crawlers
+// and LLMs at machine-readable resources — llms.txt, sitemap, the public
+// research dataset, and key policy/help pages — without them having to parse
+// HTML first. Relation types are IANA-registered where possible; the dataset
+// uses "alternate" as the closest registered fit for a downloadable data
+// representation of the site.
+const agentDiscoveryLinkHeader = [
+  '</llms.txt>; rel="describedby"; type="text/plain"; title="SwipeStats for AI agents"',
+  '</sitemap.xml>; rel="sitemap"; type="application/xml"',
+  '</downloads/swipestats-demo-dataset.jsonl>; rel="alternate"; type="application/jsonl"; title="SwipeStats free demo dataset"',
+  '</research>; rel="related"; title="Research datasets"',
+  '</how-to-request-your-data>; rel="help"',
+  '</contact>; rel="author"',
+  '</privacy>; rel="privacy-policy"',
+  '</tos>; rel="terms-of-service"',
+].join(", ");
 
 const config: NextConfig = {
   /** Enable MDX pages */
   pageExtensions: ["ts", "tsx", "md", "mdx"],
+
+  turbopack: {
+    root: projectRoot,
+  },
+
+  outputFileTracingRoot: projectRoot,
 
   images: {
     remotePatterns: [
@@ -83,6 +115,10 @@ const config: NextConfig = {
             value: "frame-ancestors 'self'",
           },
         ],
+      },
+      {
+        source: "/",
+        headers: [{ key: "Link", value: agentDiscoveryLinkHeader }],
       },
     ];
   },
