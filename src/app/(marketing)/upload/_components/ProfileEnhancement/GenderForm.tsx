@@ -5,13 +5,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+  Controller,
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLegend,
+  FieldSet,
+} from "@/components/ui/form-new";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { isGenderDataUnknown } from "@/lib/utils/gender";
@@ -78,28 +78,28 @@ export function GenderForm({
   };
 
   return (
-    <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(handleSubmit)}
-        className="w-full space-y-5"
-      >
-        <FormField
-          control={form.control}
-          name="gender"
-          render={({ field }) => (
-            <FormItem className="space-y-2">
-              <FormLabel className="text-sm font-medium text-gray-900">
-                What is your gender?
-              </FormLabel>
-              <FormControl>
-                <RadioGroup
-                  onValueChange={field.onChange}
-                  value={field.value}
-                  className="flex flex-wrap gap-2"
-                >
-                  {GENDER_OPTIONS.map((gender) => (
+    <form
+      onSubmit={form.handleSubmit(handleSubmit)}
+      className="w-full space-y-5"
+    >
+      <Controller
+        control={form.control}
+        name="gender"
+        render={({ field, fieldState }) => (
+          <FieldSet data-invalid={fieldState.invalid}>
+            <FieldLegend className="text-sm font-medium text-gray-900">
+              What is your gender?
+            </FieldLegend>
+            <FieldGroup>
+              <RadioGroup
+                onValueChange={field.onChange}
+                value={field.value}
+                aria-invalid={fieldState.invalid}
+                className="flex flex-wrap gap-2"
+              >
+                {GENDER_OPTIONS.map((gender) => (
+                  <Field key={gender} orientation="horizontal" data-invalid={fieldState.invalid}>
                     <Label
-                      key={gender}
                       htmlFor={`gender-${gender}`}
                       className="flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-50 active:bg-gray-100 sm:min-h-[40px] [&:has(:checked)]:border-red-500 [&:has(:checked)]:bg-red-50 [&:has(:checked)]:text-red-700"
                     >
@@ -107,34 +107,37 @@ export function GenderForm({
                         id={`gender-${gender}`}
                         value={gender}
                         className="h-4 w-4"
+                        aria-invalid={fieldState.invalid}
                       />
                       <span>{getGenderLabel(gender, false)}</span>
                     </Label>
-                  ))}
-                </RadioGroup>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                  </Field>
+                ))}
+              </RadioGroup>
+            </FieldGroup>
+            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+          </FieldSet>
+        )}
+      />
 
-        <FormField
-          control={form.control}
-          name="genderFilter"
-          render={({ field }) => (
-            <FormItem className="space-y-2">
-              <FormLabel className="text-sm font-medium text-gray-900">
-                Who are you looking for?
-              </FormLabel>
-              <FormControl>
-                <RadioGroup
-                  onValueChange={field.onChange}
-                  value={field.value}
-                  className="flex flex-wrap gap-2"
-                >
-                  {GENDER_OPTIONS.map((gender) => (
+      <Controller
+        control={form.control}
+        name="genderFilter"
+        render={({ field, fieldState }) => (
+          <FieldSet data-invalid={fieldState.invalid}>
+            <FieldLegend className="text-sm font-medium text-gray-900">
+              Who are you looking for?
+            </FieldLegend>
+            <FieldGroup>
+              <RadioGroup
+                onValueChange={field.onChange}
+                value={field.value}
+                aria-invalid={fieldState.invalid}
+                className="flex flex-wrap gap-2"
+              >
+                {GENDER_OPTIONS.map((gender) => (
+                  <Field key={gender} orientation="horizontal" data-invalid={fieldState.invalid}>
                     <Label
-                      key={gender}
                       htmlFor={`genderFilter-${gender}`}
                       className="flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-50 active:bg-gray-100 sm:min-h-[40px] [&:has(:checked)]:border-red-500 [&:has(:checked)]:bg-red-50 [&:has(:checked)]:text-red-700"
                     >
@@ -142,37 +145,38 @@ export function GenderForm({
                         id={`genderFilter-${gender}`}
                         value={gender}
                         className="h-4 w-4"
+                        aria-invalid={fieldState.invalid}
                       />
                       <span>{getGenderLabel(gender, true)}</span>
                     </Label>
-                  ))}
-                </RadioGroup>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                  </Field>
+                ))}
+              </RadioGroup>
+            </FieldGroup>
+            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+          </FieldSet>
+        )}
+      />
 
-        <div className="flex flex-col gap-2 pt-2 sm:flex-row">
-          {onCancel && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onCancel}
-              className="min-h-[44px] sm:min-h-[40px]"
-            >
-              Cancel
-            </Button>
-          )}
+      <div className="flex flex-col gap-2 pt-2 sm:flex-row">
+        {onCancel && (
           <Button
-            type="submit"
-            className="min-h-[44px] flex-1 bg-red-600 hover:bg-red-700 sm:min-h-[40px]"
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            className="min-h-[44px] sm:min-h-[40px]"
           >
-            Confirm
+            Cancel
           </Button>
-        </div>
-      </form>
-    </Form>
+        )}
+        <Button
+          type="submit"
+          className="min-h-[44px] flex-1 bg-red-600 hover:bg-red-700 sm:min-h-[40px]"
+        >
+          Confirm
+        </Button>
+      </div>
+    </form>
   );
 }
 
