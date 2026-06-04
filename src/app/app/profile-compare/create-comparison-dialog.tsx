@@ -17,16 +17,16 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/toast";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
+  Controller,
   useForm,
   zodResolver,
-  FormDescription,
-} from "@/components/ui/form";
+} from "@/components/ui/form-new";
+import {
+  Field,
+  FieldLabel,
+  FieldDescription,
+  FieldError,
+} from "@/components/ui/form-new";
 
 import { useTRPC } from "@/trpc/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -134,35 +134,34 @@ export function CreateComparisonDialog({
       }}
       size="default"
     >
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           {/* Name */}
-          <FormField
+          <Controller
             control={form.control}
             name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Name (optional)</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="e.g., Winter 2024 Profile"
-                    {...field}
-                    autoFocus
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel htmlFor={field.name}>Name (optional)</FieldLabel>
+                <Input
+                  placeholder="e.g., Winter 2024 Profile"
+                  {...field}
+                  id={field.name}
+                  aria-invalid={fieldState.invalid}
+                  autoFocus
+                />
+                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+              </Field>
             )}
           />
 
           {/* Comparison Columns */}
-          <FormField
+          <Controller
             control={form.control}
             name="columns"
-            render={({}) => (
-              <FormItem>
+            render={({ fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
                 <div className="mb-3 flex items-center justify-between">
-                  <FormLabel>Comparison Columns</FormLabel>
+                  <FieldLabel htmlFor="columns">Comparison Columns</FieldLabel>
                   <Button
                     type="button"
                     variant="outline"
@@ -174,98 +173,96 @@ export function CreateComparisonDialog({
                   </Button>
                 </div>
 
-                <FormControl>
-                  <>
-                    {columns.length === 0 ? (
-                      <div className="bg-muted/50 flex items-center justify-center rounded-lg border border-dashed py-8">
-                        <div className="text-center">
-                          <p className="text-muted-foreground mb-2 text-sm">
-                            No columns yet
-                          </p>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={handleAddColumn}
-                          >
-                            <Plus className="mr-1.5 h-3.5 w-3.5" />
-                            Add Your First Column
-                          </Button>
-                        </div>
+                <>
+                  {columns.length === 0 ? (
+                    <div className="bg-muted/50 flex items-center justify-center rounded-lg border border-dashed py-8">
+                      <div className="text-center">
+                        <p className="text-muted-foreground mb-2 text-sm">
+                          No columns yet
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleAddColumn}
+                        >
+                          <Plus className="mr-1.5 h-3.5 w-3.5" />
+                          Add Your First Column
+                        </Button>
                       </div>
-                    ) : (
-                      <div className="space-y-2">
-                        {columns.map((app, index) => (
-                          <div
-                            key={index}
-                            className="bg-background flex items-center gap-2 rounded-lg border p-2"
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {columns.map((app, index) => (
+                        <div
+                          key={index}
+                          className="bg-background flex items-center gap-2 rounded-lg border p-2"
+                        >
+                          <Badge variant="secondary" className="min-w-[80px]">
+                            Column {index + 1}
+                          </Badge>
+                          <Select
+                            value={app}
+                            onValueChange={(value) =>
+                              handleChangeColumn(index, value)
+                            }
                           >
-                            <Badge variant="secondary" className="min-w-[80px]">
-                              Column {index + 1}
-                            </Badge>
-                            <Select
-                              value={app}
-                              onValueChange={(value) =>
-                                handleChangeColumn(index, value)
-                              }
+                            <SelectTrigger className="flex-1">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {AVAILABLE_APPS.map((availableApp) => (
+                                <SelectItem
+                                  key={availableApp}
+                                  value={availableApp}
+                                >
+                                  {availableApp.charAt(0) +
+                                    availableApp.slice(1).toLowerCase()}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {columns.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRemoveColumn(index)}
+                              className="text-destructive hover:text-destructive"
                             >
-                              <SelectTrigger className="flex-1">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {AVAILABLE_APPS.map((availableApp) => (
-                                  <SelectItem
-                                    key={availableApp}
-                                    value={availableApp}
-                                  >
-                                    {availableApp.charAt(0) +
-                                      availableApp.slice(1).toLowerCase()}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            {columns.length > 1 && (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleRemoveColumn(index)}
-                                className="text-destructive hover:text-destructive"
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </>
-                </FormControl>
-                <FormDescription>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+                <FieldDescription>
                   You can add multiple columns of the same app (e.g., multiple
                   Tinder profiles)
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
+                </FieldDescription>
+                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+              </Field>
             )}
           />
 
           {/* Default Bio */}
-          <FormField
+          <Controller
             control={form.control}
             name="defaultBio"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Default Bio (optional)</FormLabel>
-                <FormControl>
-                  <textarea
-                    placeholder="A bio that applies to all apps (you can customize per app later)"
-                    className="border-input bg-background min-h-24 w-full rounded-md border px-3 py-2 text-sm"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel htmlFor={field.name}>Default Bio (optional)</FieldLabel>
+                <textarea
+                  placeholder="A bio that applies to all apps (you can customize per app later)"
+                  className="border-input bg-background min-h-24 w-full rounded-md border px-3 py-2 text-sm"
+                  {...field}
+                  id={field.name}
+                  aria-invalid={fieldState.invalid}
+                />
+                {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+              </Field>
             )}
           />
 
@@ -287,7 +284,6 @@ export function CreateComparisonDialog({
             </Button>
           </div>
         </form>
-      </Form>
     </SimpleDialog>
   );
 }

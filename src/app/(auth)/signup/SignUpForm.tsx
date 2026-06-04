@@ -8,8 +8,12 @@ import { Loader2, Mail, UserCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Field,
+  FieldLabel,
+  FieldDescription,
+} from "@/components/ui/form-new";
 import { Checkbox } from "@/components/ui/checkbox";
 import { authClient } from "@/server/better-auth/client";
 import { generateUniqueAnonymousEmail } from "@/lib/utils/auth";
@@ -125,8 +129,8 @@ export function SignUpForm() {
           />
 
           {/* Password field */}
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
+          <Field>
+            <FieldLabel htmlFor="password">Password</FieldLabel>
             <Input
               id="password"
               type="password"
@@ -137,14 +141,16 @@ export function SignUpForm() {
               placeholder="••••••••"
               disabled={isLoading}
             />
-            <p className="text-xs text-gray-500">At least 8 characters</p>
-          </div>
+            <FieldDescription className="text-xs text-gray-500">
+              At least 8 characters
+            </FieldDescription>
+          </Field>
 
           {/* Name field (optional) */}
-          <div className="space-y-2">
-            <Label htmlFor="name" className="text-gray-600">
+          <Field>
+            <FieldLabel htmlFor="name" className="text-gray-600">
               Name <span className="text-xs">(optional)</span>
-            </Label>
+            </FieldLabel>
             <Input
               id="name"
               type="text"
@@ -153,7 +159,7 @@ export function SignUpForm() {
               placeholder="Your name"
               disabled={isLoading}
             />
-          </div>
+          </Field>
 
           <CollapsibleEmailField
             email={email}

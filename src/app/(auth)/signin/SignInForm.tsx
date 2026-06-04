@@ -8,8 +8,8 @@ import { Loader2, UserCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Field, FieldLabel } from "@/components/ui/form-new";
 import { authClient } from "@/server/better-auth/client";
 import { ForgotPasswordDialog } from "./ForgotPasswordDialog";
 
@@ -92,8 +92,8 @@ export function SignInForm() {
           )}
 
           <form onSubmit={handleSignIn} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+            <Field>
+              <FieldLabel htmlFor="username">Username</FieldLabel>
               <Input
                 id="username"
                 type="text"
@@ -103,11 +103,11 @@ export function SignInForm() {
                 required
                 disabled={isLoading}
               />
-            </div>
+            </Field>
 
-            <div className="space-y-2">
+            <Field>
               <div className="flex items-center justify-between">
-                <Label htmlFor="password">Password</Label>
+                <FieldLabel htmlFor="password">Password</FieldLabel>
                 <button
                   type="button"
                   onClick={() => setIsForgotPasswordOpen(true)}
@@ -126,7 +126,7 @@ export function SignInForm() {
                 minLength={8}
                 disabled={isLoading}
               />
-            </div>
+            </Field>
 
             <Button
               type="submit"

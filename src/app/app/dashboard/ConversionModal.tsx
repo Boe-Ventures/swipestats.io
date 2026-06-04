@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Field, FieldLabel } from "@/components/ui/form-new";
 import { SimpleDialog } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { authClient } from "@/server/better-auth/client";
@@ -215,8 +215,8 @@ export function ConversionModal({
               />
 
               {/* Password field */}
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+              <Field>
+                <FieldLabel htmlFor="password">Password</FieldLabel>
                 <Input
                   id="password"
                   type="password"
@@ -227,13 +227,13 @@ export function ConversionModal({
                   placeholder="••••••••"
                   disabled={isLoading}
                 />
-              </div>
+              </Field>
 
               {/* Name field (optional) */}
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-muted-foreground">
+              <Field>
+                <FieldLabel htmlFor="name" className="text-muted-foreground">
                   Name <span className="text-xs">(optional)</span>
-                </Label>
+                </FieldLabel>
                 <Input
                   id="name"
                   type="text"
@@ -242,7 +242,7 @@ export function ConversionModal({
                   placeholder="Your name"
                   disabled={isLoading}
                 />
-              </div>
+              </Field>
 
               <CollapsibleEmailField
                 email={email}
@@ -280,8 +280,8 @@ export function ConversionModal({
           {/* Sign In Tab */}
           <TabsContent value="signin" className="mt-4 space-y-4">
             <form onSubmit={handleSignIn} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="signin-username">Username</Label>
+              <Field>
+                <FieldLabel htmlFor="signin-username">Username</FieldLabel>
                 <Input
                   id="signin-username"
                   type="text"
@@ -291,10 +291,10 @@ export function ConversionModal({
                   placeholder="cooluser123"
                   disabled={isLoading}
                 />
-              </div>
+              </Field>
 
-              <div className="space-y-2">
-                <Label htmlFor="signin-password">Password</Label>
+              <Field>
+                <FieldLabel htmlFor="signin-password">Password</FieldLabel>
                 <Input
                   id="signin-password"
                   type="password"
@@ -304,7 +304,7 @@ export function ConversionModal({
                   placeholder="••••••••"
                   disabled={isLoading}
                 />
-              </div>
+              </Field>
 
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "Signing in..." : "Sign In"}

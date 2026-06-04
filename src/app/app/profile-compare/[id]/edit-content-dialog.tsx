@@ -7,7 +7,7 @@ import { Loader2, Pencil, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SimpleDialog } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Field, FieldLabel } from "@/components/ui/form-new";
 import { toast } from "@/components/ui/toast";
 
 import { useTRPC } from "@/trpc/react";
@@ -147,27 +147,26 @@ export function EditContentDialog({
                 </div>
               )}
 
-              <div>
-                <Label htmlFor="caption">Caption</Label>
+              <Field>
+                <FieldLabel htmlFor="caption">Caption</FieldLabel>
                 <Input
                   id="caption"
                   value={caption}
                   onChange={(e) => setCaption(e.target.value)}
                   placeholder="e.g., Too tall to be a hobbit"
-                  className="mt-1"
                 />
-                <p className="text-muted-foreground mt-1 text-xs">
+                <p className="text-muted-foreground text-xs">
                   Leave empty to remove caption
                 </p>
-              </div>
+              </Field>
             </>
           )}
 
           {content.type === "prompt" && (
             <>
-              <div>
-                <div className="mb-2 flex items-center justify-between">
-                  <Label htmlFor="prompt">Prompt</Label>
+              <Field>
+                <div className="flex items-center justify-between">
+                  <FieldLabel htmlFor="prompt">Prompt</FieldLabel>
                   <Button
                     variant="ghost"
                     size="sm"
@@ -183,20 +182,19 @@ export function EditContentDialog({
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   placeholder="e.g., My simple pleasures"
-                  className="mt-1"
                 />
-              </div>
+              </Field>
 
-              <div>
-                <Label htmlFor="answer">Answer</Label>
+              <Field>
+                <FieldLabel htmlFor="answer">Answer</FieldLabel>
                 <textarea
                   id="answer"
                   value={answer}
                   onChange={(e) => setAnswer(e.target.value)}
                   placeholder="e.g., Coffee and long walks"
-                  className="border-input bg-background mt-1 min-h-24 w-full rounded-md border px-3 py-2 text-sm"
+                  className="border-input bg-background min-h-24 w-full rounded-md border px-3 py-2 text-sm"
                 />
-              </div>
+              </Field>
             </>
           )}
         </div>

@@ -5,13 +5,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+  Controller,
+  Field,
+  FieldLabel,
+  FieldError,
+} from "@/components/ui/form-new";
 import { Input } from "@/components/ui/input";
 
 const locationFormSchema = z.object({
@@ -50,79 +48,77 @@ export function LocationForm({
   });
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-4">
-        <FormField
-          control={form.control}
-          name="city"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>City</FormLabel>
-              <FormControl>
-                <Input
-                  {...field}
-                  placeholder="Oslo"
-                  className="min-h-[44px] sm:min-h-0"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="region"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Region/State</FormLabel>
-              <FormControl>
-                <Input
-                  {...field}
-                  placeholder="Oslo"
-                  className="min-h-[44px] sm:min-h-0"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="country"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Country (2-letter code)</FormLabel>
-              <FormControl>
-                <Input
-                  {...field}
-                  placeholder="NO"
-                  maxLength={2}
-                  className="min-h-[44px] uppercase sm:min-h-0"
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="flex flex-col gap-3 sm:flex-row">
-          {onCancel && (
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onCancel}
+    <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-4">
+      <Controller
+        control={form.control}
+        name="city"
+        render={({ field, fieldState }) => (
+          <Field data-invalid={fieldState.invalid}>
+            <FieldLabel htmlFor={field.name}>City</FieldLabel>
+            <Input
+              {...field}
+              id={field.name}
+              aria-invalid={fieldState.invalid}
+              placeholder="Oslo"
               className="min-h-[44px] sm:min-h-0"
-            >
-              Cancel
-            </Button>
-          )}
-          <Button type="submit" className="min-h-[44px] flex-1 sm:min-h-0">
-            Save Location
+            />
+            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+          </Field>
+        )}
+      />
+
+      <Controller
+        control={form.control}
+        name="region"
+        render={({ field, fieldState }) => (
+          <Field data-invalid={fieldState.invalid}>
+            <FieldLabel htmlFor={field.name}>Region/State</FieldLabel>
+            <Input
+              {...field}
+              id={field.name}
+              aria-invalid={fieldState.invalid}
+              placeholder="Oslo"
+              className="min-h-[44px] sm:min-h-0"
+            />
+            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+          </Field>
+        )}
+      />
+
+      <Controller
+        control={form.control}
+        name="country"
+        render={({ field, fieldState }) => (
+          <Field data-invalid={fieldState.invalid}>
+            <FieldLabel htmlFor={field.name}>Country (2-letter code)</FieldLabel>
+            <Input
+              {...field}
+              id={field.name}
+              aria-invalid={fieldState.invalid}
+              placeholder="NO"
+              maxLength={2}
+              className="min-h-[44px] uppercase sm:min-h-0"
+            />
+            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+          </Field>
+        )}
+      />
+
+      <div className="flex flex-col gap-3 sm:flex-row">
+        {onCancel && (
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            className="min-h-[44px] sm:min-h-0"
+          >
+            Cancel
           </Button>
-        </div>
-      </form>
-    </Form>
+        )}
+        <Button type="submit" className="min-h-[44px] flex-1 sm:min-h-0">
+          Save Location
+        </Button>
+      </div>
+    </form>
   );
 }

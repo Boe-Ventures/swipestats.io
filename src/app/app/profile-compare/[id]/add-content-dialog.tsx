@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { SimpleDialog } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { Field, FieldLabel } from "@/components/ui/form-new";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "@/components/ui/toast";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -364,19 +365,20 @@ export function AddContentDialog({
                         {/* Caption input - only show for single photo */}
                         {selectedPhotoIds.size === 1 && (
                           <div className="mt-4">
-                            <Label htmlFor="photoCaption">
-                              Caption (optional)
-                            </Label>
-                            <Input
-                              id="photoCaption"
-                              value={photoCaption}
-                              onChange={(e) => setPhotoCaption(e.target.value)}
-                              placeholder="e.g., Too tall to be a hobbit"
-                              className="mt-1"
-                            />
-                            <p className="text-muted-foreground mt-1 text-xs">
-                              Add a caption like in Tinder
-                            </p>
+                            <Field>
+                              <FieldLabel htmlFor="photoCaption">
+                                Caption (optional)
+                              </FieldLabel>
+                              <Input
+                                id="photoCaption"
+                                value={photoCaption}
+                                onChange={(e) => setPhotoCaption(e.target.value)}
+                                placeholder="e.g., Too tall to be a hobbit"
+                              />
+                              <p className="text-muted-foreground text-xs">
+                                Add a caption like in Tinder
+                              </p>
+                            </Field>
                           </div>
                         )}
 
@@ -436,28 +438,27 @@ export function AddContentDialog({
                 </div>
               </div>
 
-              <div>
-                <Label htmlFor="prompt">Prompt</Label>
+              <Field>
+                <FieldLabel htmlFor="prompt">Prompt</FieldLabel>
                 <Input
                   ref={promptInputRef}
                   id="prompt"
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
                   placeholder="e.g., My simple pleasures"
-                  className="mt-1"
                 />
-              </div>
+              </Field>
 
-              <div>
-                <Label htmlFor="answer">Answer</Label>
+              <Field>
+                <FieldLabel htmlFor="answer">Answer</FieldLabel>
                 <textarea
                   id="answer"
                   value={answer}
                   onChange={(e) => setAnswer(e.target.value)}
                   placeholder="e.g., Coffee and long walks"
-                  className="border-input bg-background mt-1 min-h-24 w-full rounded-md border px-3 py-2 text-sm"
+                  className="border-input bg-background min-h-24 w-full rounded-md border px-3 py-2 text-sm"
                 />
-              </div>
+              </Field>
 
               <div className="flex gap-2">
                 <Button

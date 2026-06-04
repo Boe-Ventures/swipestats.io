@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Field, FieldLabel } from "@/components/ui/form-new";
 import { toast } from "@/components/ui/toast";
 
 import { useTRPC } from "@/trpc/react";
@@ -132,8 +132,8 @@ export function PublishDialog({
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Your Name</Label>
+            <Field>
+              <FieldLabel htmlFor="name">Your Name</FieldLabel>
               <Input
                 id="name"
                 value={name}
@@ -143,7 +143,7 @@ export function PublishDialog({
                 autoFocus
                 maxLength={100}
               />
-            </div>
+            </Field>
             <p className="text-muted-foreground text-xs">
               You&apos;re creating an anonymous account. Your name will only be
               visible to the profile owner. Your version will be named &quot;

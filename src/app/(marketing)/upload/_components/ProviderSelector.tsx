@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { parseAsString, useQueryState } from "nuqs";
 import { RadioGroupCardsField } from "@/components/ui/form-inputs/RadioGroupCardsField";
-import { Form } from "@/components/ui/form";
+import { FormProvider } from "@/components/ui/form-new";
 
 const providers = [
   {
@@ -66,7 +66,7 @@ export function ProviderSelector() {
       </div>
 
       {/* Provider Selection */}
-      <Form {...form}>
+      <FormProvider {...form}>
         <form className="space-y-6">
           <RadioGroupCardsField
             control={form.control}
@@ -76,7 +76,7 @@ export function ProviderSelector() {
             gridCols={3}
           />
         </form>
-      </Form>
+      </FormProvider>
     </div>
   );
 }

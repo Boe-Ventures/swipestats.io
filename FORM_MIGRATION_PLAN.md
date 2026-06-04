@@ -5,8 +5,13 @@
 > hand-rolled `Label` + input markup to the modern `Field` / `Controller`
 > pattern that already lives in `src/components/ui/form-new.tsx`.
 >
-> **Status:** Not started. This is consistency + a11y polish, not a bug fix.
-> The team explicitly chose not to rush (see `src/components/ui/FORM_MIGRATION.md`).
+> **Status:** ✅ DONE (this branch). All app code now uses `form-new`; zero
+> files import the legacy `@/components/ui/form` (only this doc + FORM_MIGRATION.md
+> reference it in examples). `bun typecheck` is clean. Migrated across 5 commits
+> on `refactor/swipestats/form-field-migration`. Remaining optional cleanup:
+> delete/deprecate `src/components/ui/form.tsx` once confirmed unused, and
+> functionally test auth/account/profile-compare forms in a browser (typecheck
+> verified, behavior preserved, but not click-tested).
 
 ## Why
 
