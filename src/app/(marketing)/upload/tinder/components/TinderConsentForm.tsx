@@ -1,7 +1,7 @@
 "use client";
 
 import { useForm } from "react-hook-form";
-import { Form } from "@/components/ui/form";
+import { FormProvider } from "@/components/ui/form-new";
 import { CheckboxGroupCardsField } from "@/components/ui/form-inputs/CheckboxGroupCardsField";
 import { InfoAlert } from "@/components/ui/alert";
 import type { TinderConsentState } from "@/lib/interfaces/TinderConsent";
@@ -44,7 +44,7 @@ export function TinderConsentForm({ value, onChange }: TinderConsentFormProps) {
   }, [consents, onChange, value.terms]);
 
   return (
-    <Form {...form}>
+    <FormProvider {...form}>
       <form className="space-y-4">
         <CheckboxGroupCardsField
           control={form.control}
@@ -60,6 +60,6 @@ export function TinderConsentForm({ value, onChange }: TinderConsentFormProps) {
           users&apos; profiles either.
         </InfoAlert>
       </form>
-    </Form>
+    </FormProvider>
   );
 }
