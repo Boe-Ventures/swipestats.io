@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import { Field, FieldLabel } from "@/components/ui/form-new";
 import { useTRPC } from "@/trpc/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -41,9 +41,9 @@ export function SelfAssessmentForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-4">
-        <div className="space-y-3">
+        <Field className="space-y-3">
           <div className="flex items-center justify-between">
-            <Label htmlFor="hotness">Current Hotness</Label>
+            <FieldLabel htmlFor="hotness">Current Hotness</FieldLabel>
             <span className="text-lg font-semibold text-purple-600">
               {currentHotness}/10
             </span>
@@ -65,11 +65,11 @@ export function SelfAssessmentForm() {
             <span>5</span>
             <span>10</span>
           </div>
-        </div>
+        </Field>
 
-        <div className="space-y-3">
+        <Field className="space-y-3">
           <div className="flex items-center justify-between">
-            <Label htmlFor="happiness">Current Happiness</Label>
+            <FieldLabel htmlFor="happiness">Current Happiness</FieldLabel>
             <span className="text-lg font-semibold text-pink-600">
               {currentHappiness}/10
             </span>
@@ -91,7 +91,7 @@ export function SelfAssessmentForm() {
             <span>5</span>
             <span>10</span>
           </div>
-        </div>
+        </Field>
       </div>
 
       <Button type="submit" disabled={updateSelfAssessment.isPending}>

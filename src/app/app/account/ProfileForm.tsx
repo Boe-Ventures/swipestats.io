@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Field, FieldLabel } from "@/components/ui/form-new";
 import { useTRPC } from "@/trpc/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -43,8 +43,8 @@ export function ProfileForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="name">Name</Label>
+      <Field>
+        <FieldLabel htmlFor="name">Name</FieldLabel>
         <Input
           id="name"
           type="text"
@@ -52,10 +52,10 @@ export function ProfileForm() {
           onChange={(e) => setName(e.target.value)}
           placeholder="Your name"
         />
-      </div>
+      </Field>
 
-      <div className="space-y-2">
-        <Label htmlFor="displayUsername">Display Username</Label>
+      <Field>
+        <FieldLabel htmlFor="displayUsername">Display Username</FieldLabel>
         <Input
           id="displayUsername"
           type="text"
@@ -63,7 +63,7 @@ export function ProfileForm() {
           onChange={(e) => setDisplayUsername(e.target.value)}
           placeholder="Your display username"
         />
-      </div>
+      </Field>
 
       <Button type="submit" disabled={updateProfile.isPending}>
         {updateProfile.isPending ? "Saving..." : "Save Changes"}

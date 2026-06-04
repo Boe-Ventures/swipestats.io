@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
+import { Field, FieldLabel } from "@/components/ui/form-new";
 import { useTRPC } from "@/trpc/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -57,66 +57,68 @@ export function DatingAppsForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <Label htmlFor="tinder">Tinder</Label>
+        <Field orientation="horizontal">
+          <FieldLabel htmlFor="tinder">Tinder</FieldLabel>
           <Switch
             id="tinder"
             checked={activeOnTinder}
             onCheckedChange={setActiveOnTinder}
           />
-        </div>
+        </Field>
 
-        <div className="flex items-center justify-between">
-          <Label htmlFor="hinge">Hinge</Label>
+        <Field orientation="horizontal">
+          <FieldLabel htmlFor="hinge">Hinge</FieldLabel>
           <Switch
             id="hinge"
             checked={activeOnHinge}
             onCheckedChange={setActiveOnHinge}
           />
-        </div>
+        </Field>
 
-        <div className="flex items-center justify-between">
-          <Label htmlFor="bumble">Bumble</Label>
+        <Field orientation="horizontal">
+          <FieldLabel htmlFor="bumble">Bumble</FieldLabel>
           <Switch
             id="bumble"
             checked={activeOnBumble}
             onCheckedChange={setActiveOnBumble}
           />
-        </div>
+        </Field>
 
-        <div className="flex items-center justify-between">
-          <Label htmlFor="happn">Happn</Label>
+        <Field orientation="horizontal">
+          <FieldLabel htmlFor="happn">Happn</FieldLabel>
           <Switch
             id="happn"
             checked={activeOnHappn}
             onCheckedChange={setActiveOnHappn}
           />
-        </div>
+        </Field>
 
-        <div className="flex items-center justify-between">
-          <Label htmlFor="other">Other Apps</Label>
+        <Field orientation="horizontal">
+          <FieldLabel htmlFor="other">Other Apps</FieldLabel>
           <Switch
             id="other"
             checked={activeOnOther}
             onCheckedChange={setActiveOnOther}
           />
-        </div>
+        </Field>
 
         {activeOnOther && (
           <div className="space-y-2 pl-4">
-            <Label
-              htmlFor="otherApps"
-              className="text-muted-foreground text-sm"
-            >
-              List other apps (comma-separated)
-            </Label>
-            <Input
-              id="otherApps"
-              type="text"
-              value={otherApps}
-              onChange={(e) => setOtherApps(e.target.value)}
-              placeholder="e.g., OkCupid, Match, Feeld"
-            />
+            <Field>
+              <FieldLabel
+                htmlFor="otherApps"
+                className="text-muted-foreground text-sm"
+              >
+                List other apps (comma-separated)
+              </FieldLabel>
+              <Input
+                id="otherApps"
+                type="text"
+                value={otherApps}
+                onChange={(e) => setOtherApps(e.target.value)}
+                placeholder="e.g., OkCupid, Match, Feeld"
+              />
+            </Field>
           </div>
         )}
       </div>
