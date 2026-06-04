@@ -15,6 +15,20 @@
       "when": 1770631980276,
       "tag": "0001_eager_harrier",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1780545273390,
+      "tag": "0002_normal_felicia_hardy",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1780559694440,
+      "tag": "0003_wealthy_gunslinger",
+      "breakpoints": true
     }
   ]
 }

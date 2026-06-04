@@ -16,11 +16,12 @@ export const dataProviderEnum = pgEnum("DataProvider", [
   "TINDER",
   "HINGE",
   "BUMBLE",
-  "GRINDER",
+  "GRINDR",
   "BADOO",
   "BOO",
   "OK_CUPID",
   "FEELD",
+  "RAYA",
 ]);
 
 export const eventTypeEnum = pgEnum("EventType", [
@@ -988,6 +989,10 @@ export const attachmentTable = pgTable(
     index("attachment_resource_idx").on(table.resourceType, table.resourceId),
     index("attachment_uploaded_by_idx").on(table.uploadedBy),
     index("attachment_mime_type_idx").on(table.mimeType),
+    // Blob URLs are globally unique, so this both prevents duplicate rows for
+    // the same upload and lets createAttachmentFromBlob upsert idempotently
+    // (client-side creation + the webhook backstop can't double-insert).
+    uniqueIndex("attachment_url_key").on(table.url),
   ],
 );
 
@@ -1057,6 +1062,10 @@ export const comparisonColumnTable = pgTable(
     order: t.integer().notNull(),
     bio: t.text(),
     title: t.text(),
+    // Internal "mark as done" flag for the user. Nullable timestamp instead of
+    // a boolean so we also capture *when* the column was marked complete.
+    // null = not done, a timestamp = done.
+    completedAt: t.timestamp(),
     createdAt: t
       .timestamp()
       .$defaultFn(() => new Date())
@@ -1175,6 +1184,52 @@ export type ProfileComparisonFeedback =
 export type ProfileComparisonFeedbackInsert =
   typeof profileComparisonFeedbackTable.$inferInsert;
 
+// ---- ROAST TABLE --------------------------------------------------
+
+export const roastTable = pgTable(
+  "roast",
+  (t) => ({
+    id: t
+      .text()
+      .primaryKey()
+      .$defaultFn(() => createId("rst")),
+    userId: t
+      .text()
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    tinderProfileId: t
+      .text()
+      .references(() => tinderProfileTable.tinderId, { onDelete: "cascade" }),
+    hingeProfileId: t
+      .text()
+      .references(() => hingeProfileTable.hingeId, { onDelete: "cascade" }),
+    // AI-generated content stored as JSON
+    roastLines: t.jsonb().$type<string[]>().notNull(),
+    realTalkInsights: t.jsonb().$type<string[]>().notNull(),
+    headline: t.text().notNull(), // best one-liner for OG image
+    overallScore: t.integer().notNull(), // 0-100 "dateability score"
+    // Share infrastructure
+    shareKey: t
+      .text()
+      .unique()
+      .$defaultFn(() => createId("share")),
+    isPublic: t.boolean().default(false).notNull(),
+    createdAt: t
+      .timestamp()
+      .$defaultFn(() => new Date())
+      .notNull(),
+  }),
+  (table) => [
+    index("roast_user_id_idx").on(table.userId),
+    index("roast_tinder_profile_id_idx").on(table.tinderProfileId),
+    index("roast_hinge_profile_id_idx").on(table.hingeProfileId),
+    index("roast_share_key_idx").on(table.shareKey),
+  ],
+);
+
+export type Roast = typeof roastTable.$inferSelect;
+export type RoastInsert = typeof roastTable.$inferInsert;
+
 // ---- COHORT SYSTEM TABLES -----------------------------------------
 
 // Cohort definition - what filters constitute a cohort
@@ -1286,6 +1341,7 @@ export const userRelations = relations(userTable, ({ one, many }) => ({
   profileComparisons: many(profileComparisonTable),
   uploadedAttachments: many(attachmentTable),
   cohortDefinitions: many(cohortDefinitionTable),
+  roasts: many(roastTable),
 }));
 
 export const accountRelations = relations(accountTable, ({ one }) => ({
@@ -1580,5 +1636,20 @@ export const cohortStatsRelations = relations(cohortStatsTable, ({ one }) => ({
   cohort: one(cohortDefinitionTable, {
     fields: [cohortStatsTable.cohortId],
     references: [cohortDefinitionTable.id],
+  }),
+}));
+
+export const roastRelations = relations(roastTable, ({ one }) => ({
+  user: one(userTable, {
+    fields: [roastTable.userId],
+    references: [userTable.id],
+  }),
+  tinderProfile: one(tinderProfileTable, {
+    fields: [roastTable.tinderProfileId],
+    references: [tinderProfileTable.tinderId],
+  }),
+  hingeProfile: one(hingeProfileTable, {
+    fields: [roastTable.hingeProfileId],
+    references: [hingeProfileTable.hingeId],
   }),
 }));
