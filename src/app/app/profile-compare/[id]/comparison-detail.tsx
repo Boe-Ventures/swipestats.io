@@ -336,18 +336,17 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
             age={comparison.age || undefined}
           />
         ))}
-        {/* Add Column Button — don't stretch to match tall content columns;
-            keep it compact, top-aligned, and visible while scrolling. */}
-        <div className="border-muted-foreground/25 sticky top-6 flex min-h-[28rem] items-center justify-center self-start rounded-lg border-2 border-dashed">
-          <Button
-            variant="ghost"
-            onClick={() => setAddColumnOpen(true)}
-            className="h-full w-full flex-col gap-2"
-          >
-            <Plus className="text-muted-foreground h-8 w-8" />
-            <span className="text-muted-foreground">Add Column</span>
-          </Button>
-        </div>
+        {/* Add Column — the whole dashed box is the button so hover/click
+            covers the entire area. Doesn't stretch to match tall content
+            columns; stays compact, top-aligned, and visible while scrolling. */}
+        <Button
+          variant="ghost"
+          onClick={() => setAddColumnOpen(true)}
+          className="border-muted-foreground/25 hover:border-muted-foreground/40 sticky top-6 flex h-auto min-h-[28rem] w-full flex-col items-center justify-center gap-2 self-start rounded-lg border-2 border-dashed"
+        >
+          <Plus className="text-muted-foreground h-8 w-8" />
+          <span className="text-muted-foreground">Add Column</span>
+        </Button>
       </div>
 
       {/* Mobile: Tabs */}
