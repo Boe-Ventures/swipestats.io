@@ -1,7 +1,15 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Copy, Eye, Share2, Settings, Plus, BarChart3 } from "lucide-react";
+import {
+  Copy,
+  Eye,
+  Share2,
+  Settings,
+  Plus,
+  BarChart3,
+  ImagePlus,
+} from "lucide-react";
 import { z } from "zod";
 import Link from "next/link";
 
@@ -36,6 +44,14 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 
 import { useTRPC } from "@/trpc/react";
 import type { RouterOutputs } from "@/trpc/react";
@@ -146,9 +162,9 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
 
   const updateMutation = useMutation(
     trpc.profileCompare.update.mutationOptions({
+      // Always refresh affected queries; callers add their own success toast
+      // so the message matches the action (saving settings vs publishing).
       onSuccess: () => {
-        toast.success("Settings saved successfully!");
-        setSettingsOpen(false);
         void queryClient.invalidateQueries(
           trpc.profileCompare.get.queryOptions({ id: comparison.id }),
         );
@@ -163,25 +179,33 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
   );
 
   const onSubmit = (data: SettingsFormValues) => {
-    updateMutation.mutate({
-      id: comparison.id,
-      name: data.name || undefined,
-      profileName: data.profileName || undefined,
-      defaultBio: data.defaultBio || undefined,
-      heightCm: data.heightCm ? parseInt(data.heightCm, 10) : undefined,
-      educationLevel:
-        data.educationLevel === "__none__" || !data.educationLevel
-          ? undefined
-          : (data.educationLevel as
-              | (typeof educationLevelEnum.enumValues)[number]
-              | undefined),
-      city: data.city || undefined,
-      state: data.state || undefined,
-      country: data.country || undefined,
-      nationality: data.nationality || undefined,
-      hometown: data.hometown || undefined,
-      isPublic: data.isPublic,
-    });
+    updateMutation.mutate(
+      {
+        id: comparison.id,
+        name: data.name || undefined,
+        profileName: data.profileName || undefined,
+        defaultBio: data.defaultBio || undefined,
+        heightCm: data.heightCm ? parseInt(data.heightCm, 10) : undefined,
+        educationLevel:
+          data.educationLevel === "__none__" || !data.educationLevel
+            ? undefined
+            : (data.educationLevel as
+                | (typeof educationLevelEnum.enumValues)[number]
+                | undefined),
+        city: data.city || undefined,
+        state: data.state || undefined,
+        country: data.country || undefined,
+        nationality: data.nationality || undefined,
+        hometown: data.hometown || undefined,
+        isPublic: data.isPublic,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Settings saved successfully!");
+          setSettingsOpen(false);
+        },
+      },
+    );
   };
 
   const handleCopyShareLink = () => {
@@ -191,6 +215,26 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
       toast.success("Share link copied to clipboard! Ready to share.");
     }
   };
+
+  // Publish = make the comparison public so it gets a share link. After
+  // publishing we open the Share dialog so the link is immediately at hand.
+  const handlePublish = () => {
+    updateMutation.mutate(
+      { id: comparison.id, isPublic: true },
+      {
+        onSuccess: () => {
+          toast.success("Comparison is now public! Share link is ready.");
+          setShareOpen(true);
+        },
+      },
+    );
+  };
+
+  // The whole comparison is empty when it has profiles but none of them have
+  // any content yet — the cue to guide the user to upload photos first.
+  const hasNoContent =
+    comparison.columns.length > 0 &&
+    comparison.columns.every((c) => c.content.length === 0);
 
   return (
     <div className="space-y-6">
@@ -230,8 +274,55 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
             <Settings className="mr-2 h-4 w-4" />
             Settings
           </Button>
+          {comparison.isPublic ? (
+            <Button size="sm" onClick={handleCopyShareLink}>
+              <Copy className="mr-2 h-4 w-4" />
+              Copy link
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              onClick={handlePublish}
+              disabled={updateMutation.isPending}
+            >
+              <Eye className="mr-2 h-4 w-4" />
+              {updateMutation.isPending ? "Publishing..." : "Publish"}
+            </Button>
+          )}
         </div>
       </div>
+
+      {/* Shared getting-started empty state — uploading photos is step 1 */}
+      {hasNoContent && (
+        <Empty className="overflow-hidden rounded-2xl border border-rose-200 bg-gradient-to-br from-rose-50 via-white to-rose-100/60 shadow-sm">
+          <EmptyHeader>
+            <EmptyMedia
+              variant="icon"
+              className="size-14 bg-rose-600 text-white shadow-lg shadow-rose-600/30 [&_svg:not([class*='size-'])]:size-7"
+            >
+              <ImagePlus />
+            </EmptyMedia>
+            <EmptyTitle className="text-2xl">
+              Start by uploading your photos
+            </EmptyTitle>
+            <EmptyDescription className="text-base">
+              Add photos to your gallery once, then drop them into each profile
+              to compare them side by side.
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Link href="/app/profile-compare/photos">
+              <Button size="lg" className="bg-rose-600 hover:bg-rose-500">
+                <ImagePlus className="mr-2 h-4 w-4" />
+                Upload your photos
+              </Button>
+            </Link>
+            <p className="text-muted-foreground text-xs">
+              Already uploaded? Add them to a profile below ↓
+            </p>
+          </EmptyContent>
+        </Empty>
+      )}
 
       {/* Desktop: Side-by-side columns */}
       <div className="hidden gap-6 lg:grid lg:grid-cols-3">
@@ -245,8 +336,9 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
             age={comparison.age || undefined}
           />
         ))}
-        {/* Add Column Button */}
-        <div className="border-muted-foreground/25 flex items-center justify-center rounded-lg border-2 border-dashed">
+        {/* Add Column Button — don't stretch to match tall content columns;
+            keep it compact, top-aligned, and visible while scrolling. */}
+        <div className="border-muted-foreground/25 sticky top-6 flex min-h-[28rem] items-center justify-center self-start rounded-lg border-2 border-dashed">
           <Button
             variant="ghost"
             onClick={() => setAddColumnOpen(true)}
@@ -551,20 +643,22 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
           {comparison.isPublic && comparison.shareKey ? (
             <div className="space-y-4">
               <div>
-                <Label>Share Link</Label>
+                <Label className="mb-2 block">Share Link</Label>
                 <div className="flex gap-2">
                   <Input
                     readOnly
                     value={`${window.location.origin}/share/profile-compare/${comparison.shareKey}`}
                     className="flex-1"
                   />
-                  <Button onClick={handleCopyShareLink} size="sm">
+                  <Button onClick={handleCopyShareLink} size="icon">
                     <Copy className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
               <div>
-                <Label>Invite Friend to Create Version</Label>
+                <Label className="mb-2 block">
+                  Invite Friend to Create Version
+                </Label>
                 <div className="flex gap-2">
                   <Input
                     readOnly
@@ -577,7 +671,7 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
                       void navigator.clipboard.writeText(createUrl);
                       toast.success("Friend creation link copied!");
                     }}
-                    size="sm"
+                    size="icon"
                   >
                     <Copy className="h-4 w-4" />
                   </Button>
@@ -595,26 +689,11 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
                 a share link.
               </p>
               <Button
-                onClick={() => {
-                  updateMutation.mutate(
-                    { id: comparison.id, isPublic: true },
-                    {
-                      onSuccess: () => {
-                        toast.success(
-                          "Comparison is now public! Share link is ready.",
-                        );
-                        void queryClient.invalidateQueries(
-                          trpc.profileCompare.get.queryOptions({
-                            id: comparison.id,
-                          }),
-                        );
-                      },
-                    },
-                  );
-                }}
+                onClick={handlePublish}
+                disabled={updateMutation.isPending}
               >
                 <Eye className="mr-2 h-4 w-4" />
-                Make Public
+                {updateMutation.isPending ? "Publishing..." : "Make Public"}
               </Button>
             </div>
           )}
@@ -640,12 +719,14 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
 
           <div className="space-y-4">
             <div>
-              <Label htmlFor="provider">Dating App</Label>
+              <Label htmlFor="provider" className="mb-2 block">
+                Dating App
+              </Label>
               <Select
                 value={newColumnProvider}
                 onValueChange={setNewColumnProvider}
               >
-                <SelectTrigger id="provider">
+                <SelectTrigger id="provider" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>

@@ -14,7 +14,7 @@ import {
 
 const ThemeModeSchema = z.enum(["light", "dark", "auto"]);
 
-const themeKey = "theme-mode";
+const themeKey = "swipestats-theme";
 
 export type ThemeMode = z.output<typeof ThemeModeSchema>;
 export type ResolvedTheme = Exclude<ThemeMode, "auto">;
@@ -80,7 +80,7 @@ export const themeDetectorScript = (function () {
     };
 
     try {
-      const storedTheme = localStorage?.getItem("theme-mode") ?? "light";
+      const storedTheme = localStorage?.getItem("swipestats-theme") ?? "light";
       const validTheme = isValidTheme(storedTheme) ? storedTheme : "light";
 
       if (validTheme === "auto") {

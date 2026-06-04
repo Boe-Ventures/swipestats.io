@@ -2,7 +2,6 @@
 
 import { useState, useRef } from "react";
 import Image from "next/image";
-import { upload } from "@vercel/blob/client";
 import {
   Image as ImageIcon,
   MessageSquare,
@@ -23,6 +22,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useTRPC } from "@/trpc/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { PromptSelector } from "./prompt-selector";
+import { useGalleryUpload } from "../_hooks/useGalleryUpload";
 import type { Prompt } from "@/lib/prompt-bank";
 
 interface AddContentDialogProps {
@@ -43,8 +43,8 @@ export function AddContentDialog({
   appName,
 }: AddContentDialogProps) {
   const [contentType, setContentType] = useState<ContentType>("image");
-  const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const promptInputRef = useRef<HTMLInputElement>(null);
 
   // Image selection state
   const [selectedPhotoIds, setSelectedPhotoIds] = useState<Set<string>>(
@@ -62,18 +62,11 @@ export function AddContentDialog({
 
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const { uploadFiles, isUploading } = useGalleryUpload();
 
   // Fetch user's gallery photos
   const { data: galleryPhotos, isLoading: isLoadingGallery } = useQuery(
     trpc.blob.getUserUploads.queryOptions({ limit: 100 }),
-  );
-
-  const createAttachmentMutation = useMutation(
-    trpc.blob.createAttachmentFromBlob.mutationOptions({
-      onError: (error) => {
-        console.error("Failed to create attachment record:", error);
-      },
-    }),
   );
 
   const addPhotoMutation = useMutation(
@@ -147,78 +140,38 @@ export function AddContentDialog({
     }
   };
 
-  const handleImageUpload = async (file: File) => {
-    // Validate file type
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-    if (!allowedTypes.includes(file.type)) {
-      toast.error("Please upload an image file (JPG, PNG, WebP, or GIF)");
-      return;
-    }
+  // Upload one or more new photos to the gallery, then add them all to this
+  // column. The gallery itself is a shared library — newly uploaded photos also
+  // become available to every other profile.
+  const handleUploadNewPhotos = async (files: File[]) => {
+    if (files.length === 0) return;
 
-    // Validate file size (10MB max)
-    const maxSize = 10 * 1024 * 1024;
-    if (file.size > maxSize) {
-      toast.error("File size must be less than 10MB");
-      return;
-    }
-
-    setIsUploading(true);
+    const attachments = await uploadFiles(files, { successToast: false });
+    if (attachments.length === 0) return;
 
     try {
-      // Upload to blob storage (save to user_photo gallery)
-      const clientPayload = {
-        resourceType: "user_photo",
-        resourceId: "gallery",
-      };
-
-      const result = await upload(file.name, file, {
-        access: "public",
-        handleUploadUrl: "/api/blob/client-upload",
-        clientPayload: JSON.stringify(clientPayload),
-      });
-
-      console.log("📎 File uploaded:", result.url);
-
-      // Create attachment record in gallery
-      const attachment = await createAttachmentMutation.mutateAsync({
-        url: result.url,
-        pathname: result.pathname,
-        contentType: result.contentType || file.type,
-        size: file.size,
-        filename: file.name,
-        resourceType: "user_photo",
-        resourceId: "gallery",
-      });
-
-      // Add photo to column
-      await addPhotoMutation.mutateAsync({
-        columnId: columnId,
-        attachmentId: attachment.id,
-      });
-
-      toast.success("Photo uploaded and added!");
-
-      // Refresh gallery
-      void queryClient.invalidateQueries(
-        trpc.blob.getUserUploads.queryOptions({ limit: 100 }),
+      await Promise.all(
+        attachments.map((attachment) =>
+          addPhotoMutation.mutateAsync({
+            columnId,
+            attachmentId: attachment.id,
+          }),
+        ),
       );
+      toast.success(
+        `${attachments.length} ${attachments.length === 1 ? "photo" : "photos"} added`,
+      );
+      onOpenChange(false);
     } catch (error) {
-      console.error("Upload failed:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Failed to upload photo",
-      );
-    } finally {
-      setIsUploading(false);
+      console.error("Failed to add uploaded photos:", error);
     }
   };
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      void handleImageUpload(file);
-    }
-    // Reset input so same file can be selected again
+    const files = Array.from(e.target.files ?? []);
+    // Reset input so the same files can be selected again.
     e.target.value = "";
+    void handleUploadNewPhotos(files);
   };
 
   const handleSelectPrompt = (selectedPrompt: Prompt) => {
@@ -227,10 +180,12 @@ export function AddContentDialog({
     // Keep focus on answer input after selecting prompt
   };
 
-  const handleAddPrompt = async () => {
+  // Submit the prompt and clear the fields. Returns true on success so callers
+  // can decide whether to close the dialog or keep it open for another entry.
+  const submitPrompt = async () => {
     if (!prompt.trim() || !answer.trim()) {
       toast.error("Please enter both prompt and answer");
-      return;
+      return false;
     }
 
     try {
@@ -246,10 +201,19 @@ export function AddContentDialog({
       setPrompt("");
       setAnswer("");
       setSelectedPromptImageId(undefined);
-      onOpenChange(false);
+      return true;
     } catch (error) {
       console.error("Failed to add prompt:", error);
+      return false;
     }
+  };
+
+  const handleAddPrompt = async () => {
+    if (await submitPrompt()) onOpenChange(false);
+  };
+
+  const handleAddAnotherPrompt = async () => {
+    if (await submitPrompt()) promptInputRef.current?.focus();
   };
 
   const handleClose = () => {
@@ -270,6 +234,7 @@ export function AddContentDialog({
         open={open}
         onOpenChange={handleClose}
         size="lg"
+        scrollable
       >
         <Tabs
           value={contentType}
@@ -303,6 +268,7 @@ export function AddContentDialog({
                   type="file"
                   onChange={handleFileInputChange}
                   accept="image/jpeg,image/png,image/webp,image/gif"
+                  multiple
                   className="hidden"
                 />
 
@@ -320,7 +286,7 @@ export function AddContentDialog({
                   ) : (
                     <>
                       <Plus className="mr-2 h-4 w-4" />
-                      Upload New Image
+                      Upload New Images
                     </>
                   )}
                 </Button>
@@ -359,7 +325,7 @@ export function AddContentDialog({
                   </div>
                 ) : (
                   <>
-                    <div className="mt-2 grid max-h-64 grid-cols-3 gap-2 overflow-y-auto">
+                    <div className="mt-2 grid grid-cols-3 gap-2">
                       {galleryPhotos
                         .filter((photo) => photo.mimeType.startsWith("image/"))
                         .map((photo) => {
@@ -381,11 +347,12 @@ export function AddContentDialog({
                                 className="object-cover"
                               />
                               {isSelected && (
-                                <div className="bg-primary absolute inset-0 flex items-center justify-center bg-black/50">
-                                  <div className="bg-primary flex h-8 w-8 items-center justify-center rounded-full">
-                                    <Check className="h-5 w-5 text-white" />
+                                <>
+                                  <div className="absolute inset-0 bg-black/20" />
+                                  <div className="bg-primary absolute top-1.5 right-1.5 flex h-6 w-6 items-center justify-center rounded-full shadow-md ring-2 ring-white">
+                                    <Check className="h-4 w-4 text-white" />
                                   </div>
-                                </div>
+                                </>
                               )}
                             </button>
                           );
@@ -472,6 +439,7 @@ export function AddContentDialog({
               <div>
                 <Label htmlFor="prompt">Prompt</Label>
                 <Input
+                  ref={promptInputRef}
                   id="prompt"
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
@@ -491,14 +459,48 @@ export function AddContentDialog({
                 />
               </div>
 
-              <Button
-                onClick={handleAddPrompt}
-                disabled={!prompt.trim() || !answer.trim()}
-                className="w-full"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Add Prompt
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  onClick={handleAddAnotherPrompt}
+                  disabled={
+                    !prompt.trim() ||
+                    !answer.trim() ||
+                    addContentMutation.isPending
+                  }
+                  className="flex-1"
+                >
+                  {addContentMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Adding...
+                    </>
+                  ) : (
+                    <>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add &amp; Add Another
+                    </>
+                  )}
+                </Button>
+                <Button
+                  onClick={handleAddPrompt}
+                  disabled={
+                    !prompt.trim() ||
+                    !answer.trim() ||
+                    addContentMutation.isPending
+                  }
+                  className="flex-1"
+                >
+                  {addContentMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Adding...
+                    </>
+                  ) : (
+                    "Add & Close"
+                  )}
+                </Button>
+              </div>
             </div>
           </TabsContent>
         </Tabs>

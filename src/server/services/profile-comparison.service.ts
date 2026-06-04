@@ -312,6 +312,7 @@ export async function updateColumn(data: {
   bio?: string;
   title?: string;
   order?: number;
+  completed?: boolean;
 }) {
   // Verify ownership
   const column = await db.query.comparisonColumnTable.findFirst({
@@ -331,6 +332,13 @@ export async function updateColumn(data: {
       bio: data.bio !== undefined ? data.bio : column.bio,
       title: data.title !== undefined ? data.title : column.title,
       order: data.order !== undefined ? data.order : column.order,
+      // Toggle completion: stamp now when marking done, clear when undone.
+      completedAt:
+        data.completed === undefined
+          ? column.completedAt
+          : data.completed
+            ? new Date()
+            : null,
     })
     .where(eq(comparisonColumnTable.id, data.columnId))
     .returning();
@@ -340,6 +348,30 @@ export async function updateColumn(data: {
   }
 
   return updated;
+}
+
+/**
+ * Remove a column from a comparison. Cascades to the column's content and any
+ * feedback (FKs are onDelete: "cascade"), so a single delete is sufficient.
+ */
+export async function removeColumn(data: { columnId: string; userId: string }) {
+  // Verify ownership via the parent comparison
+  const column = await db.query.comparisonColumnTable.findFirst({
+    where: eq(comparisonColumnTable.id, data.columnId),
+    with: {
+      comparison: true,
+    },
+  });
+
+  if (column?.comparison.userId !== data.userId) {
+    throw new Error("Column not found or unauthorized");
+  }
+
+  await db
+    .delete(comparisonColumnTable)
+    .where(eq(comparisonColumnTable.id, data.columnId));
+
+  return { success: true };
 }
 
 /**
@@ -1192,6 +1224,7 @@ export const ProfileComparisonService = {
   delete: deleteComparison,
   addColumn,
   updateColumn,
+  removeColumn,
   addContentToColumn,
   addPhotoToColumn, // legacy
   updateContent,

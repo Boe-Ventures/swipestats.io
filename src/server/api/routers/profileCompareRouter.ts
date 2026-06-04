@@ -119,11 +119,22 @@ export const profileCompareRouter = createTRPCRouter({
         bio: z.string().optional(),
         title: z.string().optional(),
         order: z.number().optional(),
+        completed: z.boolean().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       return ProfileComparisonService.updateColumn({
         ...input,
+        userId: ctx.session.user.id,
+      });
+    }),
+
+  // Remove a column (cascades to its content + feedback)
+  removeColumn: protectedProcedure
+    .input(z.object({ columnId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      return ProfileComparisonService.removeColumn({
+        columnId: input.columnId,
         userId: ctx.session.user.id,
       });
     }),
