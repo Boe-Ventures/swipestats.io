@@ -83,9 +83,26 @@ const faqs = [
   // More questions...
 ];
 
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: faqs.map((faq) => ({
+    "@type": "Question",
+    name: faq.question,
+    acceptedAnswer: {
+      "@type": "Answer",
+      text: faq.answer,
+    },
+  })),
+};
+
 export function FAQ() {
   return (
     <div id="faq" className="">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
       <div className="mx-auto max-w-2xl px-6 py-24 sm:py-32 lg:max-w-7xl lg:px-8 lg:py-40">
         <div className="mx-auto max-w-3xl">
           <h2 className="mb-3 text-3xl leading-tight font-bold tracking-tight text-gray-900 sm:text-4xl">

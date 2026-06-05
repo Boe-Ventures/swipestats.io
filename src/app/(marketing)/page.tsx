@@ -79,12 +79,55 @@ const organizationJsonLd = {
   ],
 };
 
+const websiteJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "SwipeStats",
+  url: "https://www.swipestats.io",
+  description:
+    "Upload your Tinder or Hinge data and get insights on match rates, swipe patterns, and percentile rankings.",
+  potentialAction: {
+    "@type": "SearchAction",
+    target: {
+      "@type": "EntryPoint",
+      urlTemplate:
+        "https://www.swipestats.io/blog?q={search_term_string}",
+    },
+    "query-input": "required name=search_term_string",
+  },
+};
+
+const softwareAppJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "SwipeStats",
+  url: "https://www.swipestats.io",
+  applicationCategory: "LifestyleApplication",
+  operatingSystem: "Web",
+  description:
+    "Dating app analytics platform. Upload your Tinder or Hinge data and get insights on match rates, swipe patterns, and percentile rankings from 7,000+ real profiles.",
+  offers: {
+    "@type": "Offer",
+    price: "0",
+    priceCurrency: "USD",
+    description: "Free dating analytics. Upload your data and get instant insights.",
+  },
+};
+
 export default function HomePage() {
   return (
     <div className="isolate">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(softwareAppJsonLd) }}
       />
       {/* Profile Previews launch announcement */}
       <Banner
