@@ -55,6 +55,7 @@ export default defineConfig(
         {
           argsIgnorePattern: "^_",
           varsIgnorePattern: "^_",
+          ignoreRestSiblings: true,
         },
       ],
       "@typescript-eslint/require-await": "off",

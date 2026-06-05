@@ -39,13 +39,21 @@ interface CreateComparisonDialogProps {
 
 const AVAILABLE_APPS = dataProviderEnum.enumValues;
 
+/** Northern-hemisphere season for the given month (0-indexed). */
+function getSeason(month: number): string {
+  if (month <= 1 || month === 11) return "Winter";
+  if (month <= 4) return "Spring";
+  if (month <= 7) return "Summer";
+  return "Fall";
+}
+
 // Form validation schema
 const formSchema = z.object({
   name: z.string().max(255).optional(),
   defaultBio: z.string().optional(),
   columns: z
     .array(z.enum(dataProviderEnum.enumValues))
-    .min(1, "Please add at least one column"),
+    .min(1, "Please add at least one profile"),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -57,6 +65,9 @@ export function CreateComparisonDialog({
   const router = useRouter();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+
+  const now = new Date();
+  const namePlaceholder = `e.g., ${getSeason(now.getMonth())} ${now.getFullYear()} Profile`;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -144,11 +155,7 @@ export function CreateComparisonDialog({
               <FormItem>
                 <FormLabel>Name (optional)</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder="e.g., Winter 2024 Profile"
-                    {...field}
-                    autoFocus
-                  />
+                  <Input placeholder={namePlaceholder} {...field} autoFocus />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -162,7 +169,7 @@ export function CreateComparisonDialog({
             render={({}) => (
               <FormItem>
                 <div className="mb-3 flex items-center justify-between">
-                  <FormLabel>Comparison Columns</FormLabel>
+                  <FormLabel>Profiles to compare</FormLabel>
                   <Button
                     type="button"
                     variant="outline"
@@ -170,7 +177,7 @@ export function CreateComparisonDialog({
                     onClick={handleAddColumn}
                   >
                     <Plus className="mr-1.5 h-3.5 w-3.5" />
-                    Add Column
+                    Add profile
                   </Button>
                 </div>
 
@@ -180,7 +187,7 @@ export function CreateComparisonDialog({
                       <div className="bg-muted/50 flex items-center justify-center rounded-lg border border-dashed py-8">
                         <div className="text-center">
                           <p className="text-muted-foreground mb-2 text-sm">
-                            No columns yet
+                            No profiles yet
                           </p>
                           <Button
                             type="button"
@@ -189,7 +196,7 @@ export function CreateComparisonDialog({
                             onClick={handleAddColumn}
                           >
                             <Plus className="mr-1.5 h-3.5 w-3.5" />
-                            Add Your First Column
+                            Add your first profile
                           </Button>
                         </div>
                       </div>
@@ -201,7 +208,7 @@ export function CreateComparisonDialog({
                             className="bg-background flex items-center gap-2 rounded-lg border p-2"
                           >
                             <Badge variant="secondary" className="min-w-[80px]">
-                              Column {index + 1}
+                              Profile {index + 1}
                             </Badge>
                             <Select
                               value={app}
@@ -242,8 +249,8 @@ export function CreateComparisonDialog({
                   </>
                 </FormControl>
                 <FormDescription>
-                  You can add multiple columns of the same app (e.g., multiple
-                  Tinder profiles)
+                  Add more than one profile from the same app to A/B test
+                  different versions (e.g., two Tinder profiles)
                 </FormDescription>
                 <FormMessage />
               </FormItem>

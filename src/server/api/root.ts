@@ -13,6 +13,7 @@ import { billingRouter } from "@/server/api/routers/billingRouter";
 import { researchRouter } from "@/server/api/routers/researchRouter";
 import { cohortRouter } from "@/server/api/routers/cohortRouter";
 import { matchRouter } from "@/server/api/routers/matchRouter";
+import { roastRouter } from "@/server/api/routers/roastRouter";
 import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
 
 /**
@@ -36,6 +37,7 @@ export const appRouter = createTRPCRouter({
   research: researchRouter,
   cohort: cohortRouter,
   match: matchRouter,
+  roast: roastRouter,
 });
 
 // export type definition of API

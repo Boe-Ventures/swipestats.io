@@ -3,12 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import {
-  ExternalLink,
-  Loader2,
-  FileJson,
-  Filter,
-} from "lucide-react";
+import { ExternalLink, Loader2, FileJson, Filter } from "lucide-react";
 import { useTRPC } from "@/trpc/react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -37,9 +32,7 @@ export function RecentProfiles() {
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-900">
-          Recent Profiles
-        </h2>
+        <h2 className="text-xl font-semibold text-gray-900">Recent Profiles</h2>
         <div className="flex items-center gap-3">
           <Filter className="h-4 w-4 text-gray-500" />
           <Select
@@ -71,10 +64,7 @@ export function RecentProfiles() {
           <CardContent className="p-0">
             <div className="divide-y">
               {data.profiles.map((profile) => {
-                const blobUrlRaw = profile.blobUrl as
-                  | string
-                  | null
-                  | undefined;
+                const blobUrlRaw = profile.blobUrl as string | null | undefined;
                 const blobUrlString =
                   typeof blobUrlRaw === "string" && blobUrlRaw
                     ? blobUrlRaw
@@ -108,8 +98,7 @@ export function RecentProfiles() {
                       </div>
                       <div className="mt-2 flex gap-4 text-xs text-gray-600">
                         <span>
-                          {profile.matchesTotal?.toLocaleString() ?? 0}{" "}
-                          matches
+                          {profile.matchesTotal?.toLocaleString() ?? 0} matches
                         </span>
                         <span>
                           {profile.swipeLikesTotal?.toLocaleString() ?? 0}{" "}
@@ -117,8 +106,7 @@ export function RecentProfiles() {
                         </span>
                         {profile.matchRate && (
                           <span>
-                            {(profile.matchRate * 100).toFixed(1)}% match
-                            rate
+                            {(profile.matchRate * 100).toFixed(1)}% match rate
                           </span>
                         )}
                       </div>

@@ -17,6 +17,7 @@ import NewsletterCTA from "../../../../NewsletterCTA";
 import { SwipestatsPlusCard } from "../compare/_components/SwipestatsPlusCard";
 import { MainInsightsSkeleton } from "./LoadingSkeletons";
 import { CohortBenchmarksSection } from "./CohortBenchmarksSection";
+import { RoastCtaCard } from "./RoastCtaCard";
 // import { MasterCohortBenchmarkSection } from "./MasterCohortBenchmarkSection";
 import { toast } from "sonner";
 // import { CompareToOthersSection } from "./CompareToOthersSection"; // Deprecated: keeping component file for potential future use
@@ -112,6 +113,8 @@ export function MainInsightsPageContent() {
 
         {/* Row 5: Upgrade CTA for anonymous owners */}
         {isAnonymous && isOwner && <UpgradeAccountCTA />}
+
+        {isOwner && <RoastCtaCard />}
 
         <SwipestatsPlusCard tinderId={tinderId} />
 

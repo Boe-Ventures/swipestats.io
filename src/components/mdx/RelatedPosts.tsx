@@ -57,9 +57,7 @@ export function RelatedPosts({
       <ul>
         {displayPosts.map((post) => (
           <li key={post.slug}>
-            <Link href={`${basePath}/${post.slug}`}>
-              {post.h1}
-            </Link>
+            <Link href={`${basePath}/${post.slug}`}>{post.h1}</Link>
           </li>
         ))}
       </ul>

@@ -72,7 +72,9 @@ async function analyzeMediaUrls() {
 
     console.log(`  [${host}]`);
     for (const s of samplesResult.rows) {
-      console.log(`    (${s.type}) ${s.url.substring(0, 120)}${s.url.length > 120 ? "..." : ""}`);
+      console.log(
+        `    (${s.type}) ${s.url.substring(0, 120)}${s.url.length > 120 ? "..." : ""}`,
+      );
     }
     console.log("");
   }
@@ -96,7 +98,9 @@ async function analyzeMediaUrls() {
   `);
 
   for (const row of pathPatternsResult.rows) {
-    console.log(`  ${row.host}/${row.path_prefix}  (${row.count.toLocaleString()})`);
+    console.log(
+      `  ${row.host}/${row.path_prefix}  (${row.count.toLocaleString()})`,
+    );
   }
   console.log("");
 

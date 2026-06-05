@@ -1,17 +1,9 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Layers, List } from "lucide-react";
+import { ImageOff, Layers, List, MessageCircle } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { useTRPC, type RouterOutputs } from "@/trpc/react";
@@ -20,6 +12,7 @@ import type { DisplayMode } from "@/app/app/profile-compare/[id]/provider-config
 import type { ProviderConfig } from "@/app/app/profile-compare/[id]/provider-config";
 import { StackView } from "@/app/app/profile-compare/[id]/stack-view";
 import { FlowView } from "@/app/app/profile-compare/[id]/flow-view";
+import { ProviderIconChip } from "@/app/app/profile-compare/[id]/provider-icon-chip";
 import { FeedbackDialog } from "./feedback-dialog";
 
 type ComparisonColumn =
@@ -50,6 +43,9 @@ export function ViewOnlyColumn({
     string | undefined
   >();
 
+  const hasContent = column.content.length > 0;
+  const displayName = column.title || providerConfig.name;
+
   // Get all content IDs for this column
   const contentIds = useMemo(
     () => column.content.map((c) => c.id),
@@ -75,48 +71,38 @@ export function ViewOnlyColumn({
     return counts;
   }, [allFeedback]);
 
+  const commentCount = allFeedback.length;
+
   const handleFeedbackClick = (contentId: string) => {
     setSelectedContentId(contentId);
     setFeedbackDialogOpen(true);
   };
 
-  return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <Badge
-              variant="secondary"
-              style={{
-                backgroundColor: `${providerConfig.brandColor}22`,
-                color: providerConfig.brandColor,
-                borderColor: `${providerConfig.brandColor}44`,
-              }}
-            >
-              {column.title || column.dataProvider}
-            </Badge>
-          </CardTitle>
-        </div>
-        <CardDescription>
-          {column.content.length}{" "}
-          {column.content.length === 1 ? "item" : "items"}
-          {column.title && (
-            <span className="text-muted-foreground ml-1">
-              • {column.dataProvider}
-            </span>
-          )}
-        </CardDescription>
-      </CardHeader>
+  const openColumnFeedback = () => {
+    setSelectedContentId(undefined);
+    setFeedbackDialogOpen(true);
+  };
 
-      <CardContent className="space-y-4">
-        {/* Display Mode Selector */}
-        <div>
-          <Label className="mb-2 block text-sm font-medium">View Mode</Label>
+  return (
+    <div className="flex flex-col gap-3">
+      {/* Header: identity on the left, view toggle on the right */}
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex min-w-0 items-center gap-2">
+          <ProviderIconChip config={providerConfig} />
+          <span className="truncate text-base font-semibold">
+            {displayName}
+          </span>
+          <span className="text-muted-foreground shrink-0 text-sm">
+            · {column.content.length}
+          </span>
+        </div>
+
+        {hasContent && (
           <Tabs
             value={displayMode}
             onValueChange={(v) => setDisplayMode(v as DisplayMode)}
           >
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="h-8">
               <TabsTrigger value="stack" className="text-xs">
                 <Layers className="mr-1.5 h-3.5 w-3.5" />
                 Stack
@@ -125,53 +111,63 @@ export function ViewOnlyColumn({
                 <List className="mr-1.5 h-3.5 w-3.5" />
                 Flow
               </TabsTrigger>
-              {/* <TabsTrigger value="platform" disabled className="text-xs">
-                <Smartphone className="mr-1.5 h-3.5 w-3.5" />
-                Platform
-              </TabsTrigger> */}
             </TabsList>
-
-            {/* Stack View */}
-            <TabsContent value="stack" className="mt-4">
-              <StackView
-                column={column}
-                providerConfig={providerConfig}
-                defaultBio={defaultBio}
-                profileName={profileName}
-                age={age}
-                onFeedbackClick={handleFeedbackClick}
-                feedbackCounts={feedbackCounts}
-              />
-            </TabsContent>
-
-            {/* Flow View */}
-            <TabsContent value="flow" className="mt-4">
-              <FlowView
-                column={column}
-                providerConfig={providerConfig}
-                defaultBio={defaultBio}
-                profileName={profileName}
-                age={age}
-                onFeedbackClick={handleFeedbackClick}
-                feedbackCounts={feedbackCounts}
-              />
-            </TabsContent>
-
-            {/* Platform View (V3) - Coming Soon */}
-            {/* <TabsContent value="platform" className="mt-4">
-              <div className="bg-muted/50 flex aspect-[9/16] flex-col items-center justify-center rounded-xl border border-dashed p-6 text-center">
-                <Smartphone className="text-muted-foreground mb-4 h-12 w-12" />
-                <p className="text-muted-foreground mb-2 font-medium">
-                  Platform View
-                </p>
-                <p className="text-muted-foreground text-sm">
-                  Pixel-perfect {providerConfig.name} UI recreation coming soon
-                </p>
-              </div>
-            </TabsContent> */}
           </Tabs>
+        )}
+      </div>
+
+      {/* Body: phone preview is the hero, no card chrome around it */}
+      {hasContent ? (
+        <Tabs value={displayMode}>
+          <TabsContent value="stack" className="mt-0">
+            <StackView
+              column={column}
+              providerConfig={providerConfig}
+              defaultBio={defaultBio}
+              profileName={profileName}
+              age={age}
+              onFeedbackClick={handleFeedbackClick}
+              feedbackCounts={feedbackCounts}
+            />
+          </TabsContent>
+          <TabsContent value="flow" className="mt-0">
+            <FlowView
+              column={column}
+              providerConfig={providerConfig}
+              defaultBio={defaultBio}
+              profileName={profileName}
+              age={age}
+              onFeedbackClick={handleFeedbackClick}
+              feedbackCounts={feedbackCounts}
+            />
+          </TabsContent>
+        </Tabs>
+      ) : (
+        <div className="border-muted-foreground/20 flex aspect-[2/3] flex-col items-center justify-center rounded-xl border-2 border-dashed p-6 text-center">
+          <div className="bg-muted text-muted-foreground mb-4 rounded-full p-4">
+            <ImageOff className="h-7 w-7" />
+          </div>
+          <p className="font-semibold">Nothing shared here yet</p>
+          <p className="text-muted-foreground mt-1 text-sm">
+            {profileName ? `${profileName} hasn't` : "No one has"} added a{" "}
+            {providerConfig.name} profile to this collection.
+          </p>
         </div>
-      </CardContent>
+      )}
+
+      {/* Per-column comment affordance */}
+      <Button
+        variant="outline"
+        size="sm"
+        className="w-fit rounded-full"
+        onClick={openColumnFeedback}
+      >
+        <MessageCircle className="mr-1.5 h-4 w-4" />
+        Comment
+        {commentCount > 0 && (
+          <span className="text-muted-foreground ml-1">· {commentCount}</span>
+        )}
+      </Button>
 
       {/* Feedback Dialog */}
       <FeedbackDialog
@@ -180,6 +176,6 @@ export function ViewOnlyColumn({
         contentId={selectedContentId}
         columnId={column.id}
       />
-    </Card>
+    </div>
   );
 }

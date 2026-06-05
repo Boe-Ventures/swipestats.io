@@ -9,6 +9,7 @@ export const TIER_FEATURES = {
     demographicComparison: false,
     messageIntelligence: false,
     fullDirectoryAccess: false,
+    aiRoast: false,
   },
   PLUS: {
     maxDataUploads: Infinity,
@@ -17,6 +18,7 @@ export const TIER_FEATURES = {
     demographicComparison: true,
     messageIntelligence: false,
     fullDirectoryAccess: false,
+    aiRoast: true,
   },
   ELITE: {
     maxDataUploads: Infinity,
@@ -25,6 +27,7 @@ export const TIER_FEATURES = {
     demographicComparison: true,
     messageIntelligence: true,
     fullDirectoryAccess: true,
+    aiRoast: true,
   },
 } as const;
 

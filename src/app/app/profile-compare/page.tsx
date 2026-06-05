@@ -30,26 +30,8 @@ import { toast } from "@/components/ui/toast";
 import { useTRPC } from "@/trpc/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { CreateComparisonDialog } from "./create-comparison-dialog";
-import { ComingSoonWrapper } from "@/components/ComingSoonWrapper";
 
 export default function ProfileCompareDashboard() {
-  return (
-    <ComingSoonWrapper
-      featureName="Profile Comparisons"
-      description="Compare your dating app profiles side-by-side to see which photos, bios, and prompts perform best"
-      topic="waitlist-profile-compare"
-      benefits={[
-        "A/B test different profile versions",
-        "Get feedback from other users",
-        "Optimize for better matches",
-      ]}
-    >
-      <ProfileCompareDashboardContent />
-    </ComingSoonWrapper>
-  );
-}
-
-function ProfileCompareDashboardContent() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);

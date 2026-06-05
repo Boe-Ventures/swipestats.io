@@ -215,11 +215,17 @@ export function BlogGrid({
                   <div className="absolute inset-0 -z-10 rounded-xl ring-1 ring-gray-900/10 ring-inset" />
                   <div className="flex flex-wrap items-center gap-2 overflow-hidden text-sm leading-6 text-gray-300">
                     <time
-                      dateTime={featuredPosts[0].updatedAt || featuredPosts[0].publishedAt}
+                      dateTime={
+                        featuredPosts[0].updatedAt ||
+                        featuredPosts[0].publishedAt
+                      }
                       className="mr-4"
                     >
                       {format(
-                        parseISO(featuredPosts[0].updatedAt || featuredPosts[0].publishedAt),
+                        parseISO(
+                          featuredPosts[0].updatedAt ||
+                            featuredPosts[0].publishedAt,
+                        ),
                         "MMM dd, yyyy",
                       )}
                     </time>
@@ -287,8 +293,14 @@ export function BlogGrid({
                   <div className="absolute inset-0 -z-10 bg-linear-to-t from-gray-900 via-gray-900/70" />
                   <div className="absolute inset-0 -z-10 rounded-xl ring-1 ring-gray-900/10 ring-inset" />
                   <div className="flex flex-wrap items-center gap-2 overflow-hidden text-sm leading-6 text-gray-300">
-                    <time dateTime={post.updatedAt || post.publishedAt} className="mr-2">
-                      {format(parseISO(post.updatedAt || post.publishedAt), "MMM dd, yyyy")}
+                    <time
+                      dateTime={post.updatedAt || post.publishedAt}
+                      className="mr-2"
+                    >
+                      {format(
+                        parseISO(post.updatedAt || post.publishedAt),
+                        "MMM dd, yyyy",
+                      )}
                     </time>
                     {post.category && (
                       <span className="relative z-10 cursor-pointer rounded-full bg-rose-500/80 px-3 py-1.5 font-semibold text-white transition-colors hover:bg-rose-500">

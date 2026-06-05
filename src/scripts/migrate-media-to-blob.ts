@@ -74,7 +74,9 @@ async function main() {
 
   const unmigrated = rows.filter((r) => !r.originalUrl).length;
   const remigrating = rows.filter((r) => r.originalUrl).length;
-  console.log(`Found ${rows.length} rows (${unmigrated} new, ${remigrating} remigrate)\n`);
+  console.log(
+    `Found ${rows.length} rows (${unmigrated} new, ${remigrating} remigrate)\n`,
+  );
 
   if (rows.length === 0) {
     console.log("Nothing to migrate.");
@@ -92,7 +94,9 @@ async function main() {
 
     if (DRY_RUN) {
       const tag = row.originalUrl ? "REMIGRATE" : "NEW";
-      console.log(`[DRY RUN][${tag}] ${row.id}  ${downloadUrl}  →  ${blobPath}`);
+      console.log(
+        `[DRY RUN][${tag}] ${row.id}  ${downloadUrl}  →  ${blobPath}`,
+      );
       success++;
       continue;
     }
@@ -105,8 +109,7 @@ async function main() {
       }
 
       const buffer = Buffer.from(await response.arrayBuffer());
-      const contentType =
-        response.headers.get("content-type") ?? "image/jpeg";
+      const contentType = response.headers.get("content-type") ?? "image/jpeg";
 
       // Upload to Vercel Blob
       const blob = await uploadBlob(blobPath, buffer, {
@@ -125,7 +128,9 @@ async function main() {
         .where(eq(mediaTable.id, row.id));
 
       success++;
-      console.log(`✅ [${success + failed}/${rows.length}] ${row.id} → ${blob.url}`);
+      console.log(
+        `✅ [${success + failed}/${rows.length}] ${row.id} → ${blob.url}`,
+      );
     } catch (err) {
       failed++;
       console.error(

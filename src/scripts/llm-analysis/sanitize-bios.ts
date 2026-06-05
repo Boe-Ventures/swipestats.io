@@ -48,7 +48,9 @@ const piiTypeEnum = z.enum([
 ]);
 
 const bioAnalysisSchema = z.object({
-  redactedBio: z.string().describe("Bio text with PII replaced by redaction tokens"),
+  redactedBio: z
+    .string()
+    .describe("Bio text with PII replaced by redaction tokens"),
   hasPii: z.boolean().describe("Whether any PII was found"),
   piiTypes: z.array(piiTypeEnum).describe("Types of PII found, empty if none"),
 });
@@ -114,9 +116,15 @@ ${bio}`,
 // ════════════════════════════════════════════════════════════════════
 
 async function main() {
-  console.log(bold("\n╔═══════════════════════════════════════════════════════╗"));
-  console.log(bold("║  Bio Sanitization Pipeline                             ║"));
-  console.log(bold("╚═══════════════════════════════════════════════════════╝\n"));
+  console.log(
+    bold("\n╔═══════════════════════════════════════════════════════╗"),
+  );
+  console.log(
+    bold("║  Bio Sanitization Pipeline                             ║"),
+  );
+  console.log(
+    bold("╚═══════════════════════════════════════════════════════╝\n"),
+  );
 
   console.log(`  DRY_RUN: ${CONFIG.DRY_RUN ? yellow("true") : green("false")}`);
   console.log(`  BATCH_SIZE: ${CONFIG.BATCH_SIZE}`);
@@ -140,7 +148,9 @@ async function main() {
     ? await query.limit(CONFIG.PROFILE_LIMIT)
     : await query;
 
-  console.log(`  Found ${cyan(fmtNum(profiles.length))} profiles with bios to analyze\n`);
+  console.log(
+    `  Found ${cyan(fmtNum(profiles.length))} profiles with bios to analyze\n`,
+  );
 
   if (profiles.length === 0) {
     console.log(green("  All profiles already analyzed!"));
@@ -177,9 +187,7 @@ async function main() {
           console.log(
             `    ${yellow("PII")} ${profile.tinderId.slice(0, 12)}... | ${analysis.piiTypes.join(", ")}`,
           );
-          console.log(
-            dim(`      Before: ${truncate(profile.bio, 80)}`),
-          );
+          console.log(dim(`      Before: ${truncate(profile.bio, 80)}`));
           console.log(
             dim(`      After:  ${truncate(analysis.redactedBio, 80)}`),
           );
@@ -217,9 +225,15 @@ async function main() {
   // Summary
   console.log(bold("\n═══ Summary ═══\n"));
   console.log(`  Profiles processed: ${green(fmtNum(processed))}`);
-  console.log(`  Profiles with PII:  ${piiFound > 0 ? yellow(fmtNum(piiFound)) : green("0")}`);
-  console.log(`  Errors:             ${errors > 0 ? red(fmtNum(errors)) : green("0")}`);
-  console.log(`  PII rate:           ${((piiFound / processed) * 100).toFixed(1)}%`);
+  console.log(
+    `  Profiles with PII:  ${piiFound > 0 ? yellow(fmtNum(piiFound)) : green("0")}`,
+  );
+  console.log(
+    `  Errors:             ${errors > 0 ? red(fmtNum(errors)) : green("0")}`,
+  );
+  console.log(
+    `  PII rate:           ${((piiFound / processed) * 100).toFixed(1)}%`,
+  );
 
   if (piiTypeCounts.size > 0) {
     console.log(bold("\n  PII type breakdown:"));

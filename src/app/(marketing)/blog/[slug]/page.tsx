@@ -188,7 +188,9 @@ export default async function BlogPostPage({
                   .filter((p) => p.slug !== meta.slug && p.isPublished)
                   .filter(
                     (p) =>
-                      (p.category && meta.category && p.category === meta.category) ||
+                      (p.category &&
+                        meta.category &&
+                        p.category === meta.category) ||
                       p.tags.some((tag) => meta.tags.includes(tag)),
                   )}
               />
@@ -278,7 +280,6 @@ export default async function BlogPostPage({
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <NewsletterCTA />
         </div>
-
       </div>
     );
   }
@@ -344,7 +345,9 @@ export default async function BlogPostPage({
                     .filter((p) => p.slug !== meta.slug && p.isPublished)
                     .filter(
                       (p) =>
-                        (p.category && meta.category && p.category === meta.category) ||
+                        (p.category &&
+                          meta.category &&
+                          p.category === meta.category) ||
                         p.tags.some((tag) => meta.tags.includes(tag)),
                     )}
                 />

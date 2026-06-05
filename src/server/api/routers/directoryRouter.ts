@@ -119,9 +119,10 @@ export const directoryRouter = {
         .select({
           userId: originalAnonymizedFileTable.userId,
           blobUrl: originalAnonymizedFileTable.blobUrl,
-          rowNum: sql<number>`ROW_NUMBER() OVER (PARTITION BY ${originalAnonymizedFileTable.userId} ORDER BY ${originalAnonymizedFileTable.createdAt} DESC)`.as(
-            "row_num",
-          ),
+          rowNum:
+            sql<number>`ROW_NUMBER() OVER (PARTITION BY ${originalAnonymizedFileTable.userId} ORDER BY ${originalAnonymizedFileTable.createdAt} DESC)`.as(
+              "row_num",
+            ),
         })
         .from(originalAnonymizedFileTable)
         .where(eq(originalAnonymizedFileTable.dataProvider, "TINDER"))
@@ -165,9 +166,10 @@ export const directoryRouter = {
         .select({
           userId: originalAnonymizedFileTable.userId,
           blobUrl: originalAnonymizedFileTable.blobUrl,
-          rowNum: sql<number>`ROW_NUMBER() OVER (PARTITION BY ${originalAnonymizedFileTable.userId} ORDER BY ${originalAnonymizedFileTable.createdAt} DESC)`.as(
-            "row_num",
-          ),
+          rowNum:
+            sql<number>`ROW_NUMBER() OVER (PARTITION BY ${originalAnonymizedFileTable.userId} ORDER BY ${originalAnonymizedFileTable.createdAt} DESC)`.as(
+              "row_num",
+            ),
         })
         .from(originalAnonymizedFileTable)
         .where(eq(originalAnonymizedFileTable.dataProvider, "HINGE"))

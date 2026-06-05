@@ -688,6 +688,67 @@ export const profileMetaTable = pgTable("profile_meta", (t) => ({
 export type ProfileMeta = typeof profileMetaTable.$inferSelect;
 export type ProfileMetaInsert = typeof profileMetaTable.$inferInsert;
 
+// ---- ROAST TABLE --------------------------------------------------
+
+export const roastTable = pgTable(
+  "roast",
+  (t) => ({
+    id: t
+      .text()
+      .primaryKey()
+      .$defaultFn(() => createId("rst")),
+    userId: t
+      .text()
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    tinderProfileId: t
+      .text()
+      .references(() => tinderProfileTable.tinderId, { onDelete: "cascade" }),
+    hingeProfileId: t
+      .text()
+      .references(() => hingeProfileTable.hingeId, { onDelete: "cascade" }),
+    // AI-generated content stored as JSON
+    roastLines: t.jsonb().$type<string[]>().notNull(),
+    realTalkInsights: t.jsonb().$type<string[]>().notNull(),
+    headline: t.text().notNull(), // best one-liner for OG image
+    overallScore: t.integer().notNull(), // 0-100 "dateability score"
+    // Share infrastructure
+    shareKey: t
+      .text()
+      .unique()
+      .$defaultFn(() => createId("share")),
+    isPublic: t.boolean().default(false).notNull(),
+    createdAt: t
+      .timestamp()
+      .$defaultFn(() => new Date())
+      .notNull(),
+  }),
+  (table) => [
+    index("roast_user_id_idx").on(table.userId),
+    index("roast_tinder_profile_id_idx").on(table.tinderProfileId),
+    index("roast_hinge_profile_id_idx").on(table.hingeProfileId),
+    index("roast_share_key_idx").on(table.shareKey),
+  ],
+);
+
+export type Roast = typeof roastTable.$inferSelect;
+export type RoastInsert = typeof roastTable.$inferInsert;
+
+export const roastRelations = relations(roastTable, ({ one }) => ({
+  user: one(userTable, {
+    fields: [roastTable.userId],
+    references: [userTable.id],
+  }),
+  tinderProfile: one(tinderProfileTable, {
+    fields: [roastTable.tinderProfileId],
+    references: [tinderProfileTable.tinderId],
+  }),
+  hingeProfile: one(hingeProfileTable, {
+    fields: [roastTable.hingeProfileId],
+    references: [hingeProfileTable.hingeId],
+  }),
+}));
+
 // ---- SUPPORT TABLES -----------------------------------------------
 
 export const eventTable = pgTable("event", (t) => ({

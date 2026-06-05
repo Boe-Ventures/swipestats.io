@@ -205,9 +205,7 @@ Website: https://swipestats.io
   console.log("\n📊 Demo Dataset Summary:");
   console.log(`   Profiles: ${profiles.length}`);
   console.log(`   Profile IDs: ${profileIds.join(", ")}`);
-  console.log(
-    `   Size: ${(jsonlContent.length / 1024).toFixed(2)} KB`,
-  );
+  console.log(`   Size: ${(jsonlContent.length / 1024).toFixed(2)} KB`);
   console.log(`   Output: public/downloads/swipestats-demo-dataset.jsonl.zip`);
   console.log("\n🎉 Demo dataset ready for download!");
 }

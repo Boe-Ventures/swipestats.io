@@ -17,11 +17,12 @@ export function ImageGrid({ images }: ImageGridProps) {
   const cols = Math.min(images.length, 3) as 1 | 2 | 3;
 
   return (
-    <div
-      className={`not-prose my-6 mx-auto grid gap-4 ${gridClass[cols]}`}
-    >
+    <div className={`not-prose mx-auto my-6 grid gap-4 ${gridClass[cols]}`}>
       {images.map((img, i) => (
-        <div key={i} className="overflow-hidden rounded-lg border border-gray-200">
+        <div
+          key={i}
+          className="overflow-hidden rounded-lg border border-gray-200"
+        >
           <Image
             src={img.src}
             alt={img.alt}

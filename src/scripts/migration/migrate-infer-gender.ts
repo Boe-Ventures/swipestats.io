@@ -39,9 +39,7 @@ const genderInferenceSchema = z.object({
   inferredGender: z
     .enum(["MALE", "FEMALE", "OTHER", "UNKNOWN"])
     .describe("Inferred gender identity"),
-  confidence: z
-    .number()
-    .describe("Confidence score from 0.0 to 1.0"),
+  confidence: z.number().describe("Confidence score from 0.0 to 1.0"),
   signals: z
     .array(
       z.object({
@@ -54,9 +52,7 @@ const genderInferenceSchema = z.object({
           "RAW_DATA",
         ]),
         evidence: z.string().describe("Text evidence for this signal"),
-        weight: z
-          .number()
-          .describe("Weight of this signal from 0.1 to 1.0"),
+        weight: z.number().describe("Weight of this signal from 0.1 to 1.0"),
       }),
     )
     .describe("Evidence signals used in inference"),
@@ -92,7 +88,9 @@ async function inferGender(
   signals: GenderSignals,
 ): Promise<GenderInferenceResult> {
   // Log incoming signals
-  console.log(`\n  📥 Signals for ${signals.profileType}:${signals.profileId.substring(0, 12)}:`);
+  console.log(
+    `\n  📥 Signals for ${signals.profileType}:${signals.profileId.substring(0, 12)}:`,
+  );
   console.log(`     Bio: ${signals.bioText.length > 0 ? "✓" : "None"}`);
   console.log(`     Messages: ${signals.messageSamples.length}`);
   console.log(`     Metadata: ${Object.keys(signals.metadata).length} fields`);
@@ -275,7 +273,10 @@ async function gatherHingeSignals(profile: {
   // Get message samples from matches
   const messages = await db.query.messageTable.findMany({
     where: (message, { eq, and, isNotNull }) =>
-      and(eq(message.hingeProfileId, profile.hingeId), isNotNull(message.content)),
+      and(
+        eq(message.hingeProfileId, profile.hingeId),
+        isNotNull(message.content),
+      ),
     orderBy: (message, { desc }) => desc(message.sentDate),
     limit: MAX_MESSAGES_PER_PROFILE,
   });
@@ -283,9 +284,7 @@ async function gatherHingeSignals(profile: {
   const messageSamples = messages
     .filter(
       (m) =>
-        m.content !== null &&
-        m.content.length >= 20 &&
-        m.content.length <= 500,
+        m.content !== null && m.content.length >= 20 && m.content.length <= 500,
     )
     .map((m) => m.content)
     .slice(0, 30);
@@ -530,7 +529,9 @@ async function migrateGenderInference() {
           errors++;
           const profileId =
             type === "tinder" ? profile.tinderId : profile.hingeId;
-          console.error(`❌ ${type}:${profileId.substring(0, 12)}: ${String(error)}`);
+          console.error(
+            `❌ ${type}:${profileId.substring(0, 12)}: ${String(error)}`,
+          );
         }
       }),
     );

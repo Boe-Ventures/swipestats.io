@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -116,17 +118,25 @@ export default function SharedComparisonPage() {
                     {comparison.name || "Profile Comparison"}
                   </h1>
                 </div>
-                <div className="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
-                  <span className="flex items-center gap-1">
-                    <span className="text-xs">🔗</span>
-                    Shared via SwipeStats
-                  </span>
+                <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
                   {comparison.profileName && (
-                    <span className="flex items-center gap-1">
-                      <span className="text-xs">👤</span>
-                      {comparison.profileName}
+                    <span className="flex items-center gap-2">
+                      <Avatar className="h-6 w-6">
+                        <AvatarFallback className="bg-rose-500 text-[11px] text-white">
+                          {comparison.profileName.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-foreground font-medium">
+                        {comparison.profileName}
+                      </span>
                     </span>
                   )}
+                  <span className="flex items-center gap-1">
+                    Shared via SwipeStats ·{" "}
+                    {formatDistanceToNow(new Date(comparison.createdAt), {
+                      addSuffix: true,
+                    })}
+                  </span>
                   {comparison.age && (
                     <span className="flex items-center gap-1">
                       <span className="text-xs">🎂</span>

@@ -31,7 +31,6 @@ const green = (s: string) => `\x1b[32m${s}\x1b[0m`;
 const red = (s: string) => `\x1b[31m${s}\x1b[0m`;
 const magenta = (s: string) => `\x1b[35m${s}\x1b[0m`;
 
-
 function fmtNum(n: number): string {
   return Number(n).toLocaleString();
 }
@@ -46,11 +45,7 @@ function bar(n: number, max: number, width = 30): string {
   return "█".repeat(filled) + dim("░".repeat(width - filled));
 }
 
-function printTable(
-  headers: string[],
-  rows: string[][],
-  maxWidths?: number[],
-) {
+function printTable(headers: string[], rows: string[][], maxWidths?: number[]) {
   const widths = headers.map((h, i) => {
     const max = maxWidths?.[i] ?? 60;
     return Math.min(
@@ -82,14 +77,19 @@ async function main() {
   // SECTION 1: Basic counts
   // ═══════════════════════════════════════════════════════════════════
 
-  const [[messageCount], [matchCount], [tinderCount], [hingeCount], [userCount]] =
-    await Promise.all([
-      db.select({ count: sql<number>`count(*)` }).from(messageTable),
-      db.select({ count: sql<number>`count(*)` }).from(matchTable),
-      db.select({ count: sql<number>`count(*)` }).from(tinderProfileTable),
-      db.select({ count: sql<number>`count(*)` }).from(hingeProfileTable),
-      db.select({ count: sql<number>`count(*)` }).from(userTable),
-    ]);
+  const [
+    [messageCount],
+    [matchCount],
+    [tinderCount],
+    [hingeCount],
+    [userCount],
+  ] = await Promise.all([
+    db.select({ count: sql<number>`count(*)` }).from(messageTable),
+    db.select({ count: sql<number>`count(*)` }).from(matchTable),
+    db.select({ count: sql<number>`count(*)` }).from(tinderProfileTable),
+    db.select({ count: sql<number>`count(*)` }).from(hingeProfileTable),
+    db.select({ count: sql<number>`count(*)` }).from(userTable),
+  ]);
 
   const totalMessages = Number(messageCount!.count);
   const totalMatches = Number(matchCount!.count);
@@ -100,7 +100,9 @@ async function main() {
   console.log(`  Hinge profiles:  ${cyan(fmtNum(Number(hingeCount!.count)))}`);
   console.log(`  Matches:         ${cyan(fmtNum(totalMatches))}`);
   console.log(`  Messages:        ${cyan(fmtNum(totalMessages))}`);
-  console.log(`  Avg msgs/match:  ${cyan((totalMessages / totalMatches).toFixed(1))}`);
+  console.log(
+    `  Avg msgs/match:  ${cyan((totalMessages / totalMatches).toFixed(1))}`,
+  );
 
   // Column fill status
   const [[langFilled], [sanitizedFilled]] = await Promise.all([
@@ -146,18 +148,39 @@ async function main() {
 
   // Percentile buckets
   const buckets = [
-    { label: "Top 1% profiles", n: Math.max(1, Math.ceil(counts.length * 0.01)) },
-    { label: "Top 5% profiles", n: Math.max(1, Math.ceil(counts.length * 0.05)) },
-    { label: "Top 10% profiles", n: Math.max(1, Math.ceil(counts.length * 0.1)) },
-    { label: "Top 25% profiles", n: Math.max(1, Math.ceil(counts.length * 0.25)) },
-    { label: "Top 50% profiles", n: Math.max(1, Math.ceil(counts.length * 0.5)) },
+    {
+      label: "Top 1% profiles",
+      n: Math.max(1, Math.ceil(counts.length * 0.01)),
+    },
+    {
+      label: "Top 5% profiles",
+      n: Math.max(1, Math.ceil(counts.length * 0.05)),
+    },
+    {
+      label: "Top 10% profiles",
+      n: Math.max(1, Math.ceil(counts.length * 0.1)),
+    },
+    {
+      label: "Top 25% profiles",
+      n: Math.max(1, Math.ceil(counts.length * 0.25)),
+    },
+    {
+      label: "Top 50% profiles",
+      n: Math.max(1, Math.ceil(counts.length * 0.5)),
+    },
   ];
 
   console.log(`  Total Tinder profiles: ${fmtNum(counts.length)}`);
-  console.log(`  Profiles with messages: ${fmtNum(nonZeroCounts.length)} (${fmtPct(nonZeroCounts.length, counts.length)})`);
-  console.log(`  Profiles with 0 messages: ${fmtNum(counts.length - nonZeroCounts.length)}`);
+  console.log(
+    `  Profiles with messages: ${fmtNum(nonZeroCounts.length)} (${fmtPct(nonZeroCounts.length, counts.length)})`,
+  );
+  console.log(
+    `  Profiles with 0 messages: ${fmtNum(counts.length - nonZeroCounts.length)}`,
+  );
   console.log(`  Max messages on 1 profile: ${fmtNum(counts[0] ?? 0)}`);
-  console.log(`  Median messages: ${fmtNum(nonZeroCounts[Math.floor(nonZeroCounts.length / 2)] ?? 0)}`);
+  console.log(
+    `  Median messages: ${fmtNum(nonZeroCounts[Math.floor(nonZeroCounts.length / 2)] ?? 0)}`,
+  );
   console.log("");
 
   for (const bucket of buckets) {
@@ -217,9 +240,11 @@ async function main() {
     bar(Number(t.count), totalMessages),
   ]);
 
-  printTable(["Type", "Count", "% Total", "Avg Chars", "Distribution"], rows, [
-    14, 12, 8, 9, 30,
-  ]);
+  printTable(
+    ["Type", "Count", "% Total", "Avg Chars", "Distribution"],
+    rows,
+    [14, 12, 8, 9, 30],
+  );
 
   // ═══════════════════════════════════════════════════════════════════
   // SECTION 4: Message length distribution (for TEXT only)
@@ -243,7 +268,8 @@ async function main() {
     })
     .from(messageTable)
     .where(eq(messageTable.messageType, "TEXT"))
-    .groupBy(sql`CASE
+    .groupBy(
+      sql`CASE
       WHEN ${messageTable.charCount} <= 1 THEN '0-1 (emoji/single)'
       WHEN ${messageTable.charCount} <= 5 THEN '2-5 (tiny)'
       WHEN ${messageTable.charCount} <= 20 THEN '6-20 (short)'
@@ -251,7 +277,8 @@ async function main() {
       WHEN ${messageTable.charCount} <= 100 THEN '51-100 (long)'
       WHEN ${messageTable.charCount} <= 200 THEN '101-200 (very long)'
       ELSE '200+ (essay)'
-    END`)
+    END`,
+    )
     .orderBy(sql`min(${messageTable.charCount})`);
 
   const textTotal = lengthBuckets.reduce((a, b) => a + Number(b.count), 0);
@@ -261,12 +288,18 @@ async function main() {
     const cnt = Number(b.count);
     const chars = Number(b.totalChars);
     console.log(
-      `  ${(b.bucket).padEnd(22)} ${bar(cnt, textTotal, 20)} ${fmtNum(cnt).padStart(10)} msgs (${fmtPct(cnt, textTotal).padStart(6)}) │ ${fmtNum(chars).padStart(12)} chars (${fmtPct(chars, charTotal).padStart(6)})`,
+      `  ${b.bucket.padEnd(22)} ${bar(cnt, textTotal, 20)} ${fmtNum(cnt).padStart(10)} msgs (${fmtPct(cnt, textTotal).padStart(6)}) │ ${fmtNum(chars).padStart(12)} chars (${fmtPct(chars, charTotal).padStart(6)})`,
     );
   }
 
-  console.log(dim(`\n  Total TEXT messages: ${fmtNum(textTotal)}, Total chars: ${fmtNum(charTotal)}`));
-  console.log(dim(`  Estimated tokens (chars/4): ~${fmtNum(Math.round(charTotal / 4))}`));
+  console.log(
+    dim(
+      `\n  Total TEXT messages: ${fmtNum(textTotal)}, Total chars: ${fmtNum(charTotal)}`,
+    ),
+  );
+  console.log(
+    dim(`  Estimated tokens (chars/4): ~${fmtNum(Math.round(charTotal / 4))}`),
+  );
 
   // ═══════════════════════════════════════════════════════════════════
   // SECTION 5: Geographic distribution
@@ -313,7 +346,9 @@ async function main() {
   }
 
   // Cross-reference: messages per country (via tinder profile → user)
-  console.log(bold("\n  Messages per country (top 15, via Tinder profile → user):"));
+  console.log(
+    bold("\n  Messages per country (top 15, via Tinder profile → user):"),
+  );
 
   const msgsByCountry = await db
     .select({
@@ -408,9 +443,17 @@ async function main() {
   const avgTokensPerMsg = avgCharsPerTextMsg / 4; // rough chars-to-tokens ratio
 
   console.log(dim(`  Assumptions:`));
-  console.log(dim(`    Avg chars/msg: ${avgCharsPerTextMsg.toFixed(0)}, Avg tokens/msg: ${avgTokensPerMsg.toFixed(0)}`));
+  console.log(
+    dim(
+      `    Avg chars/msg: ${avgCharsPerTextMsg.toFixed(0)}, Avg tokens/msg: ${avgTokensPerMsg.toFixed(0)}`,
+    ),
+  );
   console.log(dim(`    System prompt: ~300 tokens, Batch size: 30 msgs/call`));
-  console.log(dim(`    Output per msg: ~30 tokens (structured: {language, hasPII, sanitized})`));
+  console.log(
+    dim(
+      `    Output per msg: ~30 tokens (structured: {language, hasPII, sanitized})`,
+    ),
+  );
   console.log("");
 
   const batchSize = 30;
@@ -440,8 +483,12 @@ async function main() {
   });
 
   console.log(`  API calls needed: ${cyan(fmtNum(apiCalls))}`);
-  console.log(`  Input tokens:     ${cyan(fmtNum(Math.round(inputTokensTotal)))}`);
-  console.log(`  Output tokens:    ${cyan(fmtNum(Math.round(outputTokensTotal)))}`);
+  console.log(
+    `  Input tokens:     ${cyan(fmtNum(Math.round(inputTokensTotal)))}`,
+  );
+  console.log(
+    `  Output tokens:    ${cyan(fmtNum(Math.round(outputTokensTotal)))}`,
+  );
   console.log("");
 
   printTable(
@@ -470,23 +517,27 @@ async function main() {
       msgCount: sql<number>`sum(${matchTable.totalMessageCount})`,
     })
     .from(matchTable)
-    .groupBy(sql`CASE
+    .groupBy(
+      sql`CASE
       WHEN ${matchTable.totalMessageCount} = 0 THEN '0 (ghosted)'
       WHEN ${matchTable.totalMessageCount} <= 2 THEN '1-2 (opener)'
       WHEN ${matchTable.totalMessageCount} <= 10 THEN '3-10 (short chat)'
       WHEN ${matchTable.totalMessageCount} <= 30 THEN '11-30 (conversation)'
       WHEN ${matchTable.totalMessageCount} <= 100 THEN '31-100 (extended)'
       ELSE '100+ (relationship)'
-    END`)
+    END`,
+    )
     .orderBy(sql`min(${matchTable.totalMessageCount})`);
 
-  console.log(dim("  Conversation depth → great for deciding batch-by-match strategy:\n"));
+  console.log(
+    dim("  Conversation depth → great for deciding batch-by-match strategy:\n"),
+  );
 
   for (const b of matchMsgDistribution) {
     const matches = Number(b.matchCount);
     const msgs = Number(b.msgCount);
     console.log(
-      `  ${(b.bucket).padEnd(24)} ${bar(matches, totalMatches, 15)} ${fmtNum(matches).padStart(8)} matches (${fmtPct(matches, totalMatches).padStart(6)}) │ ${fmtNum(msgs).padStart(10)} msgs (${fmtPct(msgs, totalMessages).padStart(6)})`,
+      `  ${b.bucket.padEnd(24)} ${bar(matches, totalMatches, 15)} ${fmtNum(matches).padStart(8)} matches (${fmtPct(matches, totalMatches).padStart(6)}) │ ${fmtNum(msgs).padStart(10)} msgs (${fmtPct(msgs, totalMessages).padStart(6)})`,
     );
   }
 
@@ -526,17 +577,27 @@ async function main() {
         .where(isNotNull(tinderProfileTable.school)),
     ]);
 
-  console.log(`  Tinder profiles with bio:         ${fmtNum(Number(biosCount!.count))}`);
-  console.log(`  Tinder profiles with bioOriginal:  ${fmtNum(Number(bioOrigCount!.count))}`);
-  console.log(`  Tinder profiles with jobTitle:     ${fmtNum(Number(jobsCount!.count))}`);
-  console.log(`  Tinder profiles with school:       ${fmtNum(Number(schoolsCount!.count))}`);
+  console.log(
+    `  Tinder profiles with bio:         ${fmtNum(Number(biosCount!.count))}`,
+  );
+  console.log(
+    `  Tinder profiles with bioOriginal:  ${fmtNum(Number(bioOrigCount!.count))}`,
+  );
+  console.log(
+    `  Tinder profiles with jobTitle:     ${fmtNum(Number(jobsCount!.count))}`,
+  );
+  console.log(
+    `  Tinder profiles with school:       ${fmtNum(Number(schoolsCount!.count))}`,
+  );
   console.log(dim(`  (These are small numbers — cheap to process with LLM)`));
 
   // Hinge prompts
   const [hingePromptCount] = await db
     .select({ count: sql<number>`count(*)` })
     .from(sql`hinge_prompt`);
-  console.log(`  Hinge prompts:                     ${fmtNum(Number(hingePromptCount!.count))}`);
+  console.log(
+    `  Hinge prompts:                     ${fmtNum(Number(hingePromptCount!.count))}`,
+  );
 
   // ═══════════════════════════════════════════════════════════════════
   // Done
@@ -568,7 +629,10 @@ async function main() {
     `\n  ${magenta("5.")} ${bold("Profile bios/jobs/schools are tiny — process separately, cheap.")}`,
   );
 
-  console.log(bold("\n\nDone. ") + dim("This was a read-only exploration — no data was modified.\n"));
+  console.log(
+    bold("\n\nDone. ") +
+      dim("This was a read-only exploration — no data was modified.\n"),
+  );
 }
 
 main().catch(console.error);

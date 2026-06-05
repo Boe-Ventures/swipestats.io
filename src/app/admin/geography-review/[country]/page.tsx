@@ -91,7 +91,8 @@ export default function CountryGeographyPage() {
           </div>
           <h1 className="mt-2 text-3xl font-bold text-gray-900">{country}</h1>
           <p className="mt-2 text-gray-600">
-            Profile distribution by {groupBy === "region" ? "state/region" : "city"}
+            Profile distribution by{" "}
+            {groupBy === "region" ? "state/region" : "city"}
           </p>
         </div>
       </div>

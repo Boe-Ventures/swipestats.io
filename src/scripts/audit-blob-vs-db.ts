@@ -83,13 +83,9 @@ async function main() {
 
   console.log("\n--- Blob Storage Summary ---");
   console.log(`Tinder blobs:    ${tinderBlobs.length.toLocaleString()}`);
-  console.log(
-    `  Unique profiles: ${tinderProfileIds.size.toLocaleString()}`,
-  );
+  console.log(`  Unique profiles: ${tinderProfileIds.size.toLocaleString()}`);
   console.log(`Hinge blobs:     ${hingeBlobs.length.toLocaleString()}`);
-  console.log(
-    `  Unique profiles: ${hingeProfileIds.size.toLocaleString()}`,
-  );
+  console.log(`  Unique profiles: ${hingeProfileIds.size.toLocaleString()}`);
   console.log(
     `Total blob size: ${(totalBlobSize / 1024 / 1024).toFixed(1)} MB`,
   );

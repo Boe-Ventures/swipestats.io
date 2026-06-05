@@ -44,7 +44,8 @@ const profileSkip = skipIdx !== -1 ? parseInt(args[skipIdx + 1]!, 10) : 0;
 // Remove flags from args so input file detection still works
 const flagsWithValues = new Set(["--limit", "--skip"]);
 const positionalArgs = args.filter(
-  (a, i) => !a.startsWith("--") && !(i > 0 && flagsWithValues.has(args[i - 1]!)),
+  (a, i) =>
+    !a.startsWith("--") && !(i > 0 && flagsWithValues.has(args[i - 1]!)),
 );
 
 const MODEL_ID = useSonnet ? "claude-sonnet-4-6" : "claude-haiku-4-5";
@@ -81,15 +82,15 @@ const bioAnalysisSchema = z.object({
       `Bio with PII replaced using ONLY these exact tokens: ${PII_TOKENS_STR}. Never invent other tokens.`,
     ),
   hasPii: z.boolean().describe("Whether any PII was found"),
-  piiTypes: z
-    .array(piiTypeEnum)
-    .describe("Types of PII found, empty if none"),
+  piiTypes: z.array(piiTypeEnum).describe("Types of PII found, empty if none"),
 });
 
 const conversationAnalysisSchema = z.object({
   primaryLanguage: z
     .string()
-    .describe("ISO 639-1 two-letter code, e.g. 'en', 'es', 'fr', 'de'. Must be exactly 2 lowercase letters."),
+    .describe(
+      "ISO 639-1 two-letter code, e.g. 'en', 'es', 'fr', 'de'. Must be exactly 2 lowercase letters.",
+    ),
   languages: z.array(
     z.string().describe("ISO 639-1 two-letter code, e.g. 'en', 'es'"),
   ),
@@ -362,9 +363,15 @@ async function anonymizeProfile(
           `  ${yellow("BIO PII")} ${truncate(result.profile.bio, 70)}`,
         );
         console.log(
-          dim(`    → ${truncate(bioResult.redactedBio, 70)} | ${bioResult.piiTypes.join(", ")}`),
+          dim(
+            `    → ${truncate(bioResult.redactedBio, 70)} | ${bioResult.piiTypes.join(", ")}`,
+          ),
         );
-        console.log(dim(`    "${truncate(result.profile.bio, 60)}" → "${truncate(bioResult.redactedBio, 60)}"`));
+        console.log(
+          dim(
+            `    "${truncate(result.profile.bio, 60)}" → "${truncate(bioResult.redactedBio, 60)}"`,
+          ),
+        );
 
         result.profile.bio = bioResult.redactedBio;
         if (result.profile.bioOriginal) {
@@ -420,7 +427,9 @@ async function anonymizeProfile(
           `  ${yellow("MSG PII")} msg[${pii.messageIndex}] ${truncate(msg.content, 70)}`,
         );
         console.log(
-          dim(`    → ${truncate(pii.redactedContent, 70)} | ${pii.piiTypes.join(", ")}`),
+          dim(
+            `    → ${truncate(pii.redactedContent, 70)} | ${pii.piiTypes.join(", ")}`,
+          ),
         );
 
         msg.content = pii.redactedContent;
@@ -446,12 +455,16 @@ async function anonymizeProfile(
 
 function printSummary(stats: Stats) {
   console.log(bold("\n═══ Summary ═══\n"));
-  console.log(`  Profiles processed:        ${green(fmtNum(stats.profilesProcessed))}`);
+  console.log(
+    `  Profiles processed:        ${green(fmtNum(stats.profilesProcessed))}`,
+  );
   console.log(`  Bios analyzed:             ${fmtNum(stats.biosAnalyzed)}`);
   console.log(
     `  Bios with PII:             ${stats.biosWithPii > 0 ? yellow(fmtNum(stats.biosWithPii)) : green("0")}`,
   );
-  console.log(`  Conversations analyzed:    ${fmtNum(stats.conversationsAnalyzed)}`);
+  console.log(
+    `  Conversations analyzed:    ${fmtNum(stats.conversationsAnalyzed)}`,
+  );
   console.log(`  Total messages scanned:    ${fmtNum(stats.totalMessages)}`);
   console.log(
     `  Messages with PII:         ${stats.messagesWithPii > 0 ? yellow(fmtNum(stats.messagesWithPii)) : green("0")}`,
@@ -477,10 +490,7 @@ function printSummary(stats: Stats) {
       (a, b) => b[1] - a[1],
     );
     for (const [lang, count] of sortedLangs.slice(0, 20)) {
-      const pct = (
-        (count / stats.conversationsAnalyzed) *
-        100
-      ).toFixed(1);
+      const pct = ((count / stats.conversationsAnalyzed) * 100).toFixed(1);
       console.log(
         `    ${lang.padEnd(4)} ${fmtNum(count).padStart(8)} (${pct}%)`,
       );
@@ -496,9 +506,15 @@ function printSummary(stats: Stats) {
   const inputCost = (stats.inputTokens / 1e6) * inputRate;
   const outputCost = (stats.outputTokens / 1e6) * outputRate;
   console.log(bold(`\n  Cost estimate (${MODEL_ID}):`));
-  console.log(`    Input tokens:  ~${fmtNum(stats.inputTokens)} → $${inputCost.toFixed(2)}`);
-  console.log(`    Output tokens: ~${fmtNum(stats.outputTokens)} → $${outputCost.toFixed(2)}`);
-  console.log(`    ${bold("Estimated total:")} $${(inputCost + outputCost).toFixed(2)}`);
+  console.log(
+    `    Input tokens:  ~${fmtNum(stats.inputTokens)} → $${inputCost.toFixed(2)}`,
+  );
+  console.log(
+    `    Output tokens: ~${fmtNum(stats.outputTokens)} → $${outputCost.toFixed(2)}`,
+  );
+  console.log(
+    `    ${bold("Estimated total:")} $${(inputCost + outputCost).toFixed(2)}`,
+  );
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -520,26 +536,18 @@ function findLatestInputFile(): string | null {
 
 async function main() {
   console.log(
-    bold(
-      "\n╔═══════════════════════════════════════════════════════╗",
-    ),
+    bold("\n╔═══════════════════════════════════════════════════════╗"),
   );
   console.log(
-    bold(
-      "║  Research Dataset Anonymization Pipeline               ║",
-    ),
+    bold("║  Research Dataset Anonymization Pipeline               ║"),
   );
   console.log(
-    bold(
-      "╚═══════════════════════════════════════════════════════╝\n",
-    ),
+    bold("╚═══════════════════════════════════════════════════════╝\n"),
   );
 
   // Resolve input file
   const inputArg = positionalArgs[0];
-  const inputPath = inputArg
-    ? path.resolve(inputArg)
-    : findLatestInputFile();
+  const inputPath = inputArg ? path.resolve(inputArg) : findLatestInputFile();
 
   if (!inputPath) {
     console.log(
@@ -567,9 +575,13 @@ async function main() {
   console.log(`  Input:  ${inputPath}`);
   console.log(`  Output: ${outputPath}`);
   console.log(`  Model:  ${cyan(MODEL_ID)}`);
-  if (profileSkip) console.log(`  Skip:   ${cyan(String(profileSkip))} profiles`);
-  if (profileLimit) console.log(`  Limit:  ${cyan(String(profileLimit))} profiles`);
-  console.log(`  Concurrency: ${CONFIG.PROFILE_CONCURRENCY} profiles in parallel\n`);
+  if (profileSkip)
+    console.log(`  Skip:   ${cyan(String(profileSkip))} profiles`);
+  if (profileLimit)
+    console.log(`  Limit:  ${cyan(String(profileLimit))} profiles`);
+  console.log(
+    `  Concurrency: ${CONFIG.PROFILE_CONCURRENCY} profiles in parallel\n`,
+  );
 
   // Read input
   const inputContent = readFileSync(inputPath, "utf-8");
@@ -590,7 +602,9 @@ async function main() {
     skipLines = existing ? existing.split("\n").length : 0;
   }
   if (skipLines > 0) {
-    console.log(`  ${yellow(`Resuming: skipping ${skipLines} already-processed profiles`)}\n`);
+    console.log(
+      `  ${yellow(`Resuming: skipping ${skipLines} already-processed profiles`)}\n`,
+    );
   } else {
     writeFileSync(outputPath, "");
   }
@@ -599,11 +613,7 @@ async function main() {
   const startTime = Date.now();
 
   // Process profiles in concurrent batches
-  for (
-    let i = skipLines;
-    i < lines.length;
-    i += CONFIG.PROFILE_CONCURRENCY
-  ) {
+  for (let i = skipLines; i < lines.length; i += CONFIG.PROFILE_CONCURRENCY) {
     const batchLines = lines.slice(i, i + CONFIG.PROFILE_CONCURRENCY);
     const batchNum = Math.floor(i / CONFIG.PROFILE_CONCURRENCY) + 1;
     const totalBatches = Math.ceil(lines.length / CONFIG.PROFILE_CONCURRENCY);
@@ -626,8 +636,7 @@ async function main() {
         return sum + Math.ceil(textLen / 4) + 300;
       }, 0);
       stats.inputTokens += bioTokens + convTokens;
-      stats.outputTokens +=
-        (p.profile.bio ? 100 : 0) + matchesWithMsgs * 80;
+      stats.outputTokens += (p.profile.bio ? 100 : 0) + matchesWithMsgs * 80;
     }
 
     // Process all profiles in this batch concurrently

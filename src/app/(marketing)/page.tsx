@@ -35,6 +35,7 @@ import { About } from "./AboutSection";
 import { InsightsShowcase } from "./InsightsShowcase";
 import { DatasetPricingSection } from "./DatasetPricingSection";
 import { MarketingCtaSection } from "./MarketingCtaSection";
+import { Banner } from "@/components/ui/banner";
 import Image from "next/image";
 
 const features = [
@@ -84,6 +85,13 @@ export default function HomePage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+      />
+      {/* Profile Previews launch announcement */}
+      <Banner
+        title="Profile Previews are here"
+        message="A/B test your dating profiles and get feedback to optimize for better matches."
+        ctaText="Try it now"
+        ctaHref="/app/profile-compare"
       />
       {/* Hero section */}
       <div className="relative pt-14">

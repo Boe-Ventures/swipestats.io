@@ -362,10 +362,7 @@ export const adminRouter = {
               .from(tinderProfileTable)
               .innerJoin(userTable, eq(tinderProfileTable.userId, userTable.id))
               .where(
-                and(
-                  eq(userTable.country, country),
-                  isNotNull(locationField),
-                ),
+                and(eq(userTable.country, country), isNotNull(locationField)),
               )
               .groupBy(locationField, tinderProfileTable.gender);
 
@@ -382,10 +379,7 @@ export const adminRouter = {
               .from(hingeProfileTable)
               .innerJoin(userTable, eq(hingeProfileTable.userId, userTable.id))
               .where(
-                and(
-                  eq(userTable.country, country),
-                  isNotNull(locationField),
-                ),
+                and(eq(userTable.country, country), isNotNull(locationField)),
               )
               .groupBy(locationField, hingeProfileTable.gender);
 

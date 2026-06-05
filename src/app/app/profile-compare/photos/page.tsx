@@ -2,7 +2,6 @@
 
 import { useState, useRef } from "react";
 import Image from "next/image";
-import { upload } from "@vercel/blob/client";
 import { formatDistanceToNow } from "date-fns";
 import { Upload, Trash2, Image as ImageIcon, Loader2 } from "lucide-react";
 
@@ -28,11 +27,12 @@ import { toast } from "@/components/ui/toast";
 
 import { useTRPC } from "@/trpc/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useGalleryUpload } from "../_hooks/useGalleryUpload";
 
 export default function PhotoGalleryPage() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const [isUploading, setIsUploading] = useState(false);
+  const { uploadFiles, isUploading } = useGalleryUpload();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [photoToDelete, setPhotoToDelete] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -59,72 +59,13 @@ export default function PhotoGalleryPage() {
     }),
   );
 
-  const handleFileUpload = async (file: File) => {
-    // Validate file type
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-    if (!allowedTypes.includes(file.type)) {
-      toast.error(
-        `${file.name}: Please upload an image file (JPG, PNG, WebP, or GIF)`,
-      );
-      return;
-    }
-
-    // Validate file size (10MB max)
-    const maxSize = 10 * 1024 * 1024;
-    if (file.size > maxSize) {
-      toast.error(`${file.name}: File size must be less than 10MB`);
-      return;
-    }
-
-    try {
-      // Upload to blob storage
-      const clientPayload = {
-        resourceType: "user_photo",
-        resourceId: "gallery", // Generic ID for user photo library
-      };
-
-      const result = await upload(file.name, file, {
-        access: "public",
-        handleUploadUrl: "/api/blob/client-upload",
-        clientPayload: JSON.stringify(clientPayload),
-      });
-
-      console.log("📎 File uploaded:", result.url);
-
-      toast.success("Photo uploaded!");
-      void queryClient.invalidateQueries(
-        trpc.blob.getUserUploads.queryOptions({ limit: 100 }),
-      );
-    } catch (error) {
-      console.error("Upload failed:", error);
-      toast.error(
-        `${file.name}: ${error instanceof Error ? error.message : "Failed to upload"}`,
-      );
-    }
-  };
-
   const handleFileInputChange = async (
     e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
-
-    setIsUploading(true);
-
-    // Upload all files in parallel
-    const uploadPromises = files.map((file) => handleFileUpload(file));
-
-    try {
-      await Promise.all(uploadPromises);
-    } catch (error) {
-      // Individual errors already handled in handleFileUpload
-      console.error("Some uploads failed:", error);
-    } finally {
-      setIsUploading(false);
-    }
-
-    // Reset input so same files can be selected again
+    // Reset input first so the same files can be selected again.
     e.target.value = "";
+    await uploadFiles(files);
   };
 
   const handleDelete = () => {

@@ -477,4 +477,3 @@ export async function resetTinderProfile(tinderId: string): Promise<void> {
 
   console.log(`✅ Profile reset complete: ${tinderId}\n`);
 }
-

@@ -1,14 +1,18 @@
 "use client";
 
-import { useMemo } from "react";
-import { MessageCircle, Star, TrendingUp, BarChart3 } from "lucide-react";
+import { useMemo, useState } from "react";
+import { Loader2, MessageSquare, Send } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Textarea } from "@/components/ui/textarea";
+import { toast } from "@/components/ui/toast";
+import { getProviderConfig } from "@/app/app/profile-compare/[id]/provider-config";
 import { useTRPC, type RouterOutputs } from "@/trpc/react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 type Comparison = RouterOutputs["profileCompare"]["getPublic"];
 
@@ -16,242 +20,187 @@ interface FeedbackSummaryProps {
   comparison: Comparison;
 }
 
+const NEW_WINDOW_MS = 24 * 60 * 60 * 1000; // feedback within the last day counts as "new"
+
 export function FeedbackSummary({ comparison }: FeedbackSummaryProps) {
   const trpc = useTRPC();
-  // Get all feedback for this comparison
+  const queryClient = useQueryClient();
+  const [comment, setComment] = useState("");
+
+  const profileName = comparison.profileName || "Marcus";
+  const firstColumnId = comparison.columns[0]?.id;
+
+  const feedbackQueryOptions = trpc.profileCompare.getFeedback.queryOptions({
+    comparisonId: comparison.id,
+  });
+
   const { data: allFeedback = [] } = useQuery({
-    ...trpc.profileCompare.getFeedback.queryOptions({
-      comparisonId: comparison.id,
-    }),
+    ...feedbackQueryOptions,
     enabled: !!comparison.id,
   });
 
-  // Calculate statistics
-  const stats = useMemo(() => {
-    const ratings = allFeedback
-      .map((f) => f.rating)
-      .filter((r): r is number => r !== null && r !== undefined);
-    const comments = allFeedback.filter((f) => f.body?.trim());
-
-    const averageRating =
-      ratings.length > 0
-        ? ratings.reduce((sum, r) => sum + r, 0) / ratings.length
-        : null;
-
-    // Rating distribution
-    const ratingDistribution: Record<number, number> = {};
-    ratings.forEach((r) => {
-      ratingDistribution[r] = (ratingDistribution[r] || 0) + 1;
+  // Map each content/column id to the provider + item number so we can tag feedback.
+  const sourceById = useMemo(() => {
+    const map: Record<string, { provider: string; index: number | null }> = {};
+    comparison.columns.forEach((col) => {
+      const config = getProviderConfig(col.dataProvider);
+      map[col.id] = { provider: col.title || config.name, index: null };
+      col.content.forEach((item, i) => {
+        map[item.id] = { provider: col.title || config.name, index: i + 1 };
+      });
     });
+    return map;
+  }, [comparison.columns]);
 
-    // Get unique authors
-    const uniqueAuthors = new Set(
-      allFeedback.map((f) => f.authorId).filter(Boolean),
-    );
+  const feed = useMemo(
+    () =>
+      [...allFeedback].sort(
+        (a, b) =>
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      ),
+    [allFeedback],
+  );
 
-    // Get most commented items
-    const contentFeedbackCounts: Record<string, number> = {};
-    allFeedback.forEach((f) => {
-      if (f.contentId) {
-        contentFeedbackCounts[f.contentId] =
-          (contentFeedbackCounts[f.contentId] || 0) + 1;
-      }
-    });
+  const newCount = useMemo(() => {
+    const cutoff = Date.now() - NEW_WINDOW_MS;
+    return feed.filter((f) => new Date(f.createdAt).getTime() >= cutoff).length;
+  }, [feed]);
 
-    const mostCommentedContentId = Object.entries(contentFeedbackCounts).sort(
-      ([, a], [, b]) => b - a,
-    )[0]?.[0];
+  const createFeedback = useMutation(
+    trpc.profileCompare.createFeedback.mutationOptions({
+      onSuccess: () => {
+        void queryClient.invalidateQueries({
+          queryKey: feedbackQueryOptions.queryKey,
+        });
+        setComment("");
+        toast.success("Feedback sent");
+      },
+      onError: (error) => {
+        toast.error(error.message || "Failed to send feedback");
+      },
+    }),
+  );
 
-    // Find the content item
-    const mostCommentedItem = comparison.columns
-      .flatMap((col) => col.content)
-      .find((c) => c.id === mostCommentedContentId);
-
-    return {
-      totalFeedback: allFeedback.length,
-      totalRatings: ratings.length,
-      totalComments: comments.length,
-      averageRating,
-      ratingDistribution,
-      uniqueAuthors: uniqueAuthors.size,
-      mostCommentedItem,
-      contentFeedbackCounts,
-      recentFeedback: allFeedback
-        .sort(
-          (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-        )
-        .slice(0, 5),
-    };
-  }, [allFeedback, comparison.columns]);
-
-  if (stats.totalFeedback === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart3 className="h-5 w-5" />
-            Feedback Summary
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-muted-foreground py-12 text-center">
-            <MessageCircle className="mx-auto mb-4 h-12 w-12 opacity-50" />
-            <p className="text-base font-medium">No feedback yet</p>
-            <p className="text-sm">
-              Share this page to start collecting feedback!
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  const handleSubmit = () => {
+    const body = comment.trim();
+    if (!body) return;
+    if (!firstColumnId) {
+      toast.error("Nothing to leave feedback on yet");
+      return;
+    }
+    createFeedback.mutate({ columnId: firstColumnId, body });
+  };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <BarChart3 className="h-5 w-5" />
-          Feedback Summary
+    <Card className="flex flex-col">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0">
+        <CardTitle className="flex items-center gap-2 text-base">
+          <MessageSquare className="h-4 w-4" />
+          Feedback
         </CardTitle>
+        {newCount > 0 && (
+          <Badge
+            variant="secondary"
+            className="bg-rose-100 text-rose-600 dark:bg-rose-950 dark:text-rose-300"
+          >
+            {newCount} new
+          </Badge>
+        )}
       </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Overview Stats */}
-        <div className="grid grid-cols-3 gap-4">
-          <div className="text-center">
-            <div className="text-2xl font-bold">{stats.totalFeedback}</div>
-            <div className="text-muted-foreground text-xs">Total Feedback</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold">{stats.totalRatings}</div>
-            <div className="text-muted-foreground text-xs">Ratings</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold">{stats.totalComments}</div>
-            <div className="text-muted-foreground text-xs">Comments</div>
-          </div>
-        </div>
 
-        {/* Average Rating */}
-        {stats.averageRating !== null && (
-          <div className="bg-muted/50 rounded-lg border p-4">
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-sm font-medium">Average Rating</span>
-              <div className="flex items-center gap-1">
-                <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-                <span className="text-lg font-bold">
-                  {stats.averageRating.toFixed(1)}
-                </span>
-              </div>
-            </div>
-            {/* Rating Distribution */}
-            {Object.keys(stats.ratingDistribution).length > 0 && (
-              <div className="mt-3 space-y-1.5">
-                {Object.entries(stats.ratingDistribution)
-                  .sort(([a], [b]) => Number(b) - Number(a))
-                  .map(([rating, count]) => (
-                    <div key={rating} className="flex items-center gap-2">
-                      <span className="text-muted-foreground w-8 text-xs">
-                        {rating === "-1" ? "−" : rating}
+      <CardContent className="flex min-h-0 flex-1 flex-col gap-4">
+        {/* Feed */}
+        {feed.length === 0 ? (
+          <div className="text-muted-foreground flex flex-1 flex-col items-center justify-center py-10 text-center">
+            <MessageSquare className="mb-3 h-10 w-10 opacity-40" />
+            <p className="text-sm font-medium">No feedback yet</p>
+            <p className="text-xs">
+              Share this page to start collecting feedback.
+            </p>
+          </div>
+        ) : (
+          <div className="-mr-1 max-h-[520px] flex-1 space-y-5 overflow-y-auto pr-1">
+            {feed.map((item) => {
+              const source =
+                (item.contentId && sourceById[item.contentId]) ||
+                (item.columnId && sourceById[item.columnId]) ||
+                null;
+              return (
+                <div key={item.id} className="flex gap-3">
+                  <Avatar className="h-8 w-8 shrink-0">
+                    <AvatarImage src={item.author?.image ?? undefined} />
+                    <AvatarFallback className="text-[11px]">
+                      {item.author?.name
+                        ?.split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .slice(0, 2)
+                        .toUpperCase() || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span className="text-sm font-semibold">
+                        {item.author?.name || "Anonymous"}
                       </span>
-                      <div className="bg-muted h-2 flex-1 overflow-hidden rounded-full">
-                        <div
-                          className="bg-primary h-full"
-                          style={{
-                            width: `${(count / stats.totalRatings) * 100}%`,
-                          }}
-                        />
-                      </div>
-                      <span className="text-muted-foreground w-8 text-right text-xs">
-                        {count}
-                      </span>
-                    </div>
-                  ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Contributors */}
-        <div>
-          <div className="mb-2 flex items-center gap-2">
-            <TrendingUp className="text-muted-foreground h-4 w-4" />
-            <span className="text-sm font-medium">
-              {stats.uniqueAuthors} Contributor
-              {stats.uniqueAuthors !== 1 ? "s" : ""}
-            </span>
-          </div>
-        </div>
-
-        {/* Most Commented Item */}
-        {stats.mostCommentedItem && (
-          <div className="bg-muted/50 rounded-lg border p-4">
-            <div className="mb-2 text-sm font-medium">Most Discussed Item</div>
-            <div className="text-muted-foreground text-xs">
-              {stats.mostCommentedItem.type === "photo" ? (
-                <span>Photo {stats.mostCommentedItem.caption || ""}</span>
-              ) : (
-                <span>{stats.mostCommentedItem.prompt || "Prompt"}</span>
-              )}
-            </div>
-            <Badge variant="secondary" className="mt-2">
-              {stats.contentFeedbackCounts[stats.mostCommentedItem.id] || 0}{" "}
-              feedback
-            </Badge>
-          </div>
-        )}
-
-        {/* Recent Feedback */}
-        {stats.recentFeedback.length > 0 && (
-          <div>
-            <div className="mb-3 text-sm font-medium">Recent Feedback</div>
-            <div className="space-y-3">
-              {stats.recentFeedback.map((feedback) => (
-                <div
-                  key={feedback.id}
-                  className="border-border/50 rounded-lg border p-3"
-                >
-                  <div className="flex items-start gap-2">
-                    <Avatar className="h-6 w-6 flex-shrink-0">
-                      <AvatarImage src={feedback.author?.image ?? undefined} />
-                      <AvatarFallback className="text-[10px]">
-                        {feedback.author?.name
-                          ?.split(" ")
-                          .map((n) => n[0])
-                          .join("")
-                          .toUpperCase() || "U"}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="min-w-0 flex-1">
-                      <div className="mb-1 flex items-center gap-2">
-                        <span className="text-xs font-medium">
-                          {feedback.author?.name || "Anonymous"}
-                        </span>
-                        {feedback.rating !== null &&
-                          feedback.rating !== undefined && (
-                            <div className="flex items-center gap-0.5">
-                              <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
-                              <span className="text-xs">{feedback.rating}</span>
-                            </div>
-                          )}
-                        <span className="text-muted-foreground text-[10px]">
-                          {formatDistanceToNow(new Date(feedback.createdAt), {
-                            addSuffix: true,
-                          })}
-                        </span>
-                      </div>
-                      {feedback.body && (
-                        <p className="text-muted-foreground line-clamp-2 text-xs">
-                          {feedback.body}
-                        </p>
+                      {source && (
+                        <Badge
+                          variant="secondary"
+                          className="px-1.5 py-0 text-[10px] font-medium"
+                        >
+                          {source.provider}
+                          {source.index !== null && ` · ${source.index}`}
+                        </Badge>
                       )}
+                      <span className="text-muted-foreground ml-auto text-xs">
+                        {formatDistanceToNow(new Date(item.createdAt))}
+                      </span>
                     </div>
+                    {item.body && (
+                      <p className="text-muted-foreground mt-1 text-sm leading-relaxed">
+                        {item.body}
+                      </p>
+                    )}
                   </div>
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
         )}
+
+        {/* Composer */}
+        <div className="space-y-2 border-t pt-4">
+          <Textarea
+            placeholder={`Leave ${profileName} some feedback...`}
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            onKeyDown={(e) => {
+              if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                e.preventDefault();
+                handleSubmit();
+              }
+            }}
+            rows={2}
+            maxLength={2000}
+            disabled={!firstColumnId}
+          />
+          <div className="flex justify-end">
+            <Button
+              size="sm"
+              onClick={handleSubmit}
+              disabled={
+                createFeedback.isPending || !comment.trim() || !firstColumnId
+              }
+            >
+              {createFeedback.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Send className="mr-2 h-4 w-4" />
+              )}
+              Send
+            </Button>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

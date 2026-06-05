@@ -63,8 +63,11 @@ export const blobRouter = createTRPCRouter({
         `📎 Creating attachment record for ${input.resourceType}:${input.resourceId} from blob: ${input.url}`,
       );
 
-      // Create the attachment record directly since blob is already uploaded
-      const [attachment] = await ctx.db
+      // Idempotent insert keyed on the (globally unique) blob URL. This makes
+      // the mutation safe to call from the client as the primary path while the
+      // upload webhook acts as a backstop — neither can produce a duplicate, and
+      // a re-submit/retry simply returns the existing row.
+      const [inserted] = await ctx.db
         .insert(attachmentTable)
         .values({
           resourceType: input.resourceType,
@@ -80,13 +83,22 @@ export const blobRouter = createTRPCRouter({
             uploadType: "client",
           },
         })
+        .onConflictDoNothing({ target: attachmentTable.url })
         .returning();
+
+      const attachment =
+        inserted ??
+        (await ctx.db.query.attachmentTable.findFirst({
+          where: eq(attachmentTable.url, input.url),
+        }));
 
       if (!attachment) {
         throw new Error("Failed to create attachment record");
       }
 
-      console.log(`✅ Attachment record created: ${attachment.id}`);
+      console.log(
+        `✅ Attachment record ${inserted ? "created" : "reused"}: ${attachment.id}`,
+      );
 
       return {
         ...attachment,

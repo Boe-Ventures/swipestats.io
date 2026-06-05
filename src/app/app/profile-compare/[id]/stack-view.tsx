@@ -151,18 +151,9 @@ export function StackView({
                 </p>
               )}
 
-              {/* Info pills - Tinder style */}
-              {isTinder && (
-                <div className="flex flex-wrap gap-2">
-                  <div className="flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 backdrop-blur-sm">
-                    <span className="text-sm">📍</span>
-                    <span className="text-sm">Less than a mile away</span>
-                  </div>
-                </div>
-              )}
-
-              {/* Provider badge and comment button */}
-              <div className="absolute right-5 bottom-3 flex items-center gap-2">
+              {/* Provider badge and comment button — z-20 lifts it above the
+                  full-photo prev/next nav overlay (z-10) so it stays clickable. */}
+              <div className="absolute right-5 bottom-3 z-20 flex items-center gap-2">
                 {onFeedbackClick && currentPhoto && (
                   <Button
                     size="icon"

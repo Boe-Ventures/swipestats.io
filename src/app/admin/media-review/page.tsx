@@ -146,9 +146,7 @@ export default function AdminMediaReviewPage() {
                               : "secondary"
                           }
                         >
-                          {profile.platform === "tinder"
-                            ? "Tinder"
-                            : "Hinge"}
+                          {profile.platform === "tinder" ? "Tinder" : "Hinge"}
                         </Badge>
                         <CardTitle className="text-base">
                           {profile.genderStr ?? "Unknown"},{" "}
@@ -157,9 +155,7 @@ export default function AdminMediaReviewPage() {
                         <CardDescription>
                           {profile.city && profile.country
                             ? `${profile.city}, ${profile.country}`
-                            : profile.city ||
-                              profile.country ||
-                              "No location"}
+                            : profile.city || profile.country || "No location"}
                         </CardDescription>
                       </div>
                       <div className="flex items-center gap-2">
@@ -192,7 +188,7 @@ export default function AdminMediaReviewPage() {
                       </div>
                     </div>
                     {profile.bio && (
-                      <p className="mt-1 max-w-2xl truncate text-xs italic text-gray-500">
+                      <p className="mt-1 max-w-2xl truncate text-xs text-gray-500 italic">
                         &quot;{profile.bio}&quot;
                       </p>
                     )}
@@ -209,12 +205,9 @@ export default function AdminMediaReviewPage() {
                           <div
                             key={item.id}
                             className="group relative aspect-square cursor-pointer overflow-hidden rounded-md border bg-gray-100 transition-all hover:ring-2 hover:ring-blue-300"
-                            onClick={() =>
-                              openLightbox(validMedia, mediaIdx)
-                            }
+                            onClick={() => openLightbox(validMedia, mediaIdx)}
                           >
-                            {item.type === "photo" ||
-                            item.type === "image" ? (
+                            {item.type === "photo" || item.type === "image" ? (
                               <Image
                                 src={item.url}
                                 alt={`Media ${mediaIdx + 1}`}
@@ -231,9 +224,7 @@ export default function AdminMediaReviewPage() {
                             )}
                             {item.prompt && (
                               <div className="absolute top-0.5 right-0.5">
-                                <Badge className="h-4 px-1 text-[8px]">
-                                  P
-                                </Badge>
+                                <Badge className="h-4 px-1 text-[8px]">P</Badge>
                               </div>
                             )}
                           </div>
@@ -253,8 +244,8 @@ export default function AdminMediaReviewPage() {
           {/* Pagination */}
           <div className="flex items-center justify-between border-t pt-4">
             <p className="text-sm text-gray-600">
-              Page {data.page} of {data.totalPages} ({data.totalCount}{" "}
-              profiles total)
+              Page {data.page} of {data.totalPages} ({data.totalCount} profiles
+              total)
             </p>
             <div className="flex gap-2">
               <Button
@@ -326,18 +317,13 @@ export default function AdminMediaReviewPage() {
                   variant="ghost"
                   size="sm"
                   disabled={
-                    !lightbox ||
-                    lightbox.index >= lightbox.media.length - 1
+                    !lightbox || lightbox.index >= lightbox.media.length - 1
                   }
                   onClick={() => navigateLightbox(1)}
                 >
                   <ChevronRight className="h-4 w-4" />
                 </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={closeLightbox}
-                >
+                <Button variant="ghost" size="sm" onClick={closeLightbox}>
                   <X className="h-4 w-4" />
                 </Button>
               </div>

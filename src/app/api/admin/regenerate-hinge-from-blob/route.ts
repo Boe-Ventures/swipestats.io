@@ -47,9 +47,7 @@ export async function POST(request: Request) {
     const existing = await getHingeProfile(hingeId);
 
     if (existing) {
-      console.log(
-        `🗑️  [Admin] Deleting existing Hinge profile: ${hingeId}`,
-      );
+      console.log(`🗑️  [Admin] Deleting existing Hinge profile: ${hingeId}`);
       console.log(
         `   This will cascade delete: interactions, prompts, matches, messages, media, events, profile_meta`,
       );
@@ -61,9 +59,7 @@ export async function POST(request: Request) {
 
       console.log(`✅ [Admin] Profile deleted successfully`);
     } else {
-      console.log(
-        `ℹ️  [Admin] No existing profile found for: ${hingeId}`,
-      );
+      console.log(`ℹ️  [Admin] No existing profile found for: ${hingeId}`);
     }
 
     // Step 2: Create fresh profile from blob

@@ -22,7 +22,10 @@ const COMPARISON_ROWS = [
 
 function ComparisonTable() {
   return (
-    <div aria-hidden="true" className="overflow-hidden rounded-xl border border-rose-200 bg-white text-sm shadow-sm">
+    <div
+      aria-hidden="true"
+      className="overflow-hidden rounded-xl border border-rose-200 bg-white text-sm shadow-sm"
+    >
       {/* Header */}
       <div className="grid grid-cols-3 border-b border-rose-100 bg-rose-50 px-5 py-3 text-xs font-semibold tracking-wider uppercase">
         <span />
@@ -32,12 +35,15 @@ function ComparisonTable() {
       {/* Rows */}
       <div className="divide-y divide-rose-100">
         {COMPARISON_ROWS.map((row) => (
-          <div key={row.label} className="grid grid-cols-3 items-center px-5 py-3.5">
+          <div
+            key={row.label}
+            className="grid grid-cols-3 items-center px-5 py-3.5"
+          >
             <span className="text-gray-600">{row.label}</span>
-            <span className="text-center tabular-nums text-gray-500">
+            <span className="text-center text-gray-500 tabular-nums">
               {row.avg}
             </span>
-            <span className="text-center tabular-nums font-semibold text-rose-600 blur-[5px] select-none">
+            <span className="text-center font-semibold text-rose-600 tabular-nums blur-[5px] select-none">
               {row.you}
             </span>
           </div>

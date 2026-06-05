@@ -56,10 +56,6 @@ interface MigrationStats {
   usersNotMigrated: number;
 }
 
-// ---- CONFIGURATION ------------------------------------------------
-
-const DEFAULT_BATCH_SIZE = 50;
-
 // ---- QUERY FUNCTIONS ----------------------------------------------
 
 async function queryPaidUsersFromOldDb(

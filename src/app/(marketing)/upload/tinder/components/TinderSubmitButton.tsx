@@ -204,7 +204,8 @@ export function TinderSubmitButton({
 
   const termsAccepted = consent.terms;
   const hasUploadContext = !!uploadContext?.scenario;
-  const canSubmit = !hasUnknownGender && !disabled && termsAccepted && hasUploadContext;
+  const canSubmit =
+    !hasUnknownGender && !disabled && termsAccepted && hasUploadContext;
   const isLoading =
     isCreatingSession ||
     uploadState !== "idle" ||

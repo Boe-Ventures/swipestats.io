@@ -311,7 +311,9 @@ export function createHingeMessagesAndMatches(
     `      - ${matchesWithMessages} matches with messages (avg ${avgMessagesPerMatch} msgs/match)`,
   );
   console.log(`      - ${matchesWithoutMessages} matches with no messages`);
-  console.log(`      - ${messageSentInteractionsCount} MESSAGE_SENT interactions`);
+  console.log(
+    `      - ${messageSentInteractionsCount} MESSAGE_SENT interactions`,
+  );
   console.log(`      - ${totalMessages} message records`);
   console.log(`      - ${rejectsCount} REJECT interactions`);
   console.log(`      - ${unmatchesCount} UNMATCH interactions`);

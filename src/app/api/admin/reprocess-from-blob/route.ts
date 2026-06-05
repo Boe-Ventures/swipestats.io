@@ -78,9 +78,7 @@ export async function POST(request: Request) {
         });
       }
 
-      console.log(
-        `📝 [Admin] Creating new Tinder profile: ${profileId}`,
-      );
+      console.log(`📝 [Admin] Creating new Tinder profile: ${profileId}`);
       const result = await createTinderProfile({
         tinderId: profileId,
         blobUrl,
@@ -120,9 +118,7 @@ export async function POST(request: Request) {
       });
     }
 
-    console.log(
-      `📝 [Admin] Creating new Hinge profile: ${profileId}`,
-    );
+    console.log(`📝 [Admin] Creating new Hinge profile: ${profileId}`);
     const result = await createHingeProfile({
       hingeId: profileId,
       blobUrl,

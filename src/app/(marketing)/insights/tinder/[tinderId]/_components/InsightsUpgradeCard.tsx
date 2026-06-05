@@ -158,7 +158,10 @@ export function InsightsUpgradeCard() {
                     ${selectedPeriod === "monthly" ? 15 : pricing.lifetime}
                   </span>
                   <span className="text-4xl font-bold tracking-tight">
-                    ${selectedPeriod === "monthly" ? pricing.monthly : pricing.lifetimeLaunchPrice}
+                    $
+                    {selectedPeriod === "monthly"
+                      ? pricing.monthly
+                      : pricing.lifetimeLaunchPrice}
                   </span>
                   <span className="text-muted-foreground text-sm font-semibold">
                     {selectedPeriod === "monthly" ? "/mo" : "USD"}

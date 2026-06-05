@@ -320,10 +320,7 @@ async function queryMatchesWithMessages(): Promise<
       .orderBy(messageTable.matchId, messageTable.order);
 
     // Group messages by matchId
-    const messagesByMatch = new Map<
-      string,
-      (typeof messages)[number][]
-    >();
+    const messagesByMatch = new Map<string, (typeof messages)[number][]>();
     for (const msg of messages) {
       const existing = messagesByMatch.get(msg.matchId) ?? [];
       existing.push(msg);
@@ -441,7 +438,12 @@ async function submitBatch(jsonlPath: string): Promise<string> {
   // Read and parse the JSONL file into individual requests
   const fileContent = readFileSync(jsonlPath, "utf-8");
   const lines = fileContent.trim().split("\n");
-  const requests = lines.map((line) => JSON.parse(line) as Parameters<typeof client.messages.batches.create>[0]["requests"][number]);
+  const requests = lines.map(
+    (line) =>
+      JSON.parse(line) as Parameters<
+        typeof client.messages.batches.create
+      >[0]["requests"][number],
+  );
 
   console.log(
     `  Submitting ${cyan(fmtNum(requests.length))} requests from ${path.basename(jsonlPath)}...`,
@@ -501,9 +503,7 @@ async function pollAndDownloadResults(
     if (status === "ended") break;
 
     console.log(
-      dim(
-        `  Polling again in ${CONFIG.POLL_INTERVAL_MS / 1000}s...`,
-      ),
+      dim(`  Polling again in ${CONFIG.POLL_INTERVAL_MS / 1000}s...`),
     );
     await sleep(CONFIG.POLL_INTERVAL_MS);
   } while (status !== "ended");
@@ -536,9 +536,7 @@ async function pollAndDownloadResults(
     if (toolUse?.type !== "tool_use") {
       failed++;
       console.log(
-        yellow(
-          `  Warning: ${matchId} — no tool_use block in response`,
-        ),
+        yellow(`  Warning: ${matchId} — no tool_use block in response`),
       );
       continue;
     }
@@ -550,20 +548,17 @@ async function pollAndDownloadResults(
     } catch (parseErr) {
       failed++;
       console.log(
-        yellow(
-          `  Warning: ${matchId} — failed to parse: ${String(parseErr)}`,
-        ),
+        yellow(`  Warning: ${matchId} — failed to parse: ${String(parseErr)}`),
       );
     }
   }
 
-  console.log(`\n  Results: ${green(fmtNum(succeeded))} succeeded, ${failed > 0 ? red(fmtNum(failed)) : fmtNum(failed)} failed`);
+  console.log(
+    `\n  Results: ${green(fmtNum(succeeded))} succeeded, ${failed > 0 ? red(fmtNum(failed)) : fmtNum(failed)} failed`,
+  );
 
   // Save results to JSONL for backup
-  const resultsPath = path.join(
-    CONFIG.OUTPUT_DIR,
-    `results-${batchId}.jsonl`,
-  );
+  const resultsPath = path.join(CONFIG.OUTPUT_DIR, `results-${batchId}.jsonl`);
   const resultLines = results.map((r) => JSON.stringify(r));
   writeFileSync(resultsPath, resultLines.join("\n") + "\n");
   console.log(`  Results saved to: ${resultsPath}`);
@@ -641,13 +636,13 @@ async function processResults(
   }
 
   console.log(`\n  ${green("Done!")} Updated:`);
-  console.log(`    Matches (language + llmAnalyzedAt): ${fmtNum(matchesUpdated)}`);
+  console.log(
+    `    Matches (language + llmAnalyzedAt): ${fmtNum(matchesUpdated)}`,
+  );
   console.log(`    Messages (PII redacted): ${fmtNum(messagesRedacted)}`);
 }
 
-function printResultsSummary(
-  results: MatchAnalysisResult[],
-): void {
+function printResultsSummary(results: MatchAnalysisResult[]): void {
   // Language distribution
   const langCounts = new Map<string, number>();
   for (const r of results) {
@@ -709,7 +704,9 @@ async function aggregateUserLanguages(): Promise<void> {
     .from(tinderProfileTable)
     .where(isNotNull(tinderProfileTable.userId));
 
-  console.log(`  Processing ${fmtNum(users.length)} users with Tinder profiles...`);
+  console.log(
+    `  Processing ${fmtNum(users.length)} users with Tinder profiles...`,
+  );
 
   let updated = 0;
   for (const { userId } of users) {
@@ -723,9 +720,12 @@ async function aggregateUserLanguages(): Promise<void> {
       .from(matchTable)
       .where(
         and(
-          eq(matchTable.tinderProfileId, sql`(
+          eq(
+            matchTable.tinderProfileId,
+            sql`(
             SELECT tinder_id FROM tinder_profile WHERE user_id = ${userId}
-          )`),
+          )`,
+          ),
           isNotNull(matchTable.llmAnalyzedAt),
         ),
       );
@@ -750,7 +750,9 @@ async function aggregateUserLanguages(): Promise<void> {
     }
   }
 
-  console.log(`  ${green("Done!")} Updated ${fmtNum(updated)} users with languages\n`);
+  console.log(
+    `  ${green("Done!")} Updated ${fmtNum(updated)} users with languages\n`,
+  );
 }
 
 // ════════════════════════════════════════════════════════════════════
@@ -761,13 +763,21 @@ async function main() {
   const args = process.argv.slice(2);
   const mode = args[0] ?? "--dry-run";
 
-  console.log(bold("\n╔═══════════════════════════════════════════════════════╗"));
-  console.log(bold("║  LLM Batch Message Analysis Pipeline                  ║"));
-  console.log(bold("╚═══════════════════════════════════════════════════════╝\n"));
+  console.log(
+    bold("\n╔═══════════════════════════════════════════════════════╗"),
+  );
+  console.log(
+    bold("║  LLM Batch Message Analysis Pipeline                  ║"),
+  );
+  console.log(
+    bold("╚═══════════════════════════════════════════════════════╝\n"),
+  );
 
   console.log(`  Mode: ${cyan(mode)}`);
   console.log(`  DRY_RUN: ${CONFIG.DRY_RUN ? yellow("true") : green("false")}`);
-  console.log(`  MATCH_LIMIT: ${CONFIG.MATCH_LIMIT ? fmtNum(CONFIG.MATCH_LIMIT) : "all"}`);
+  console.log(
+    `  MATCH_LIMIT: ${CONFIG.MATCH_LIMIT ? fmtNum(CONFIG.MATCH_LIMIT) : "all"}`,
+  );
   console.log(`  MODEL: ${CONFIG.MODEL}`);
 
   if (mode === "--aggregate") {
@@ -790,11 +800,17 @@ async function main() {
     }
 
     // We need the message ID map. Try to load from a saved file, or re-query.
-    const mapPath = path.join(CONFIG.OUTPUT_DIR, `message-id-map-${batchId}.json`);
+    const mapPath = path.join(
+      CONFIG.OUTPUT_DIR,
+      `message-id-map-${batchId}.json`,
+    );
     let messageIdMap: Map<string, string[]>;
 
     if (existsSync(mapPath)) {
-      const mapData = JSON.parse(readFileSync(mapPath, "utf-8")) as Record<string, string[]>;
+      const mapData = JSON.parse(readFileSync(mapPath, "utf-8")) as Record<
+        string,
+        string[]
+      >;
       messageIdMap = new Map(Object.entries(mapData));
     } else {
       console.log(
@@ -835,13 +851,11 @@ async function main() {
 
   if (mode === "--dry-run" || CONFIG.DRY_RUN) {
     console.log(
-      bold(`\n  DRY RUN complete. JSONL files written to: ${CONFIG.OUTPUT_DIR}`),
-    );
-    console.log(
-      dim(
-        "  To submit: set DRY_RUN=false and run with --submit\n",
+      bold(
+        `\n  DRY RUN complete. JSONL files written to: ${CONFIG.OUTPUT_DIR}`,
       ),
     );
+    console.log(dim("  To submit: set DRY_RUN=false and run with --submit\n"));
     return;
   }
 

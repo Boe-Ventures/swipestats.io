@@ -54,11 +54,7 @@ export function GlobalStats({ stats }: GlobalStatsProps) {
         Global Statistics
       </h2>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard
-          title="Users"
-          value={stats.totalUsers}
-          icon={Users}
-        />
+        <StatCard title="Users" value={stats.totalUsers} icon={Users} />
         <StatCard
           title="Tinder Profiles"
           value={stats.totalTinderProfiles}
@@ -69,16 +65,8 @@ export function GlobalStats({ stats }: GlobalStatsProps) {
           value={stats.totalHingeProfiles}
           icon={UserCircle}
         />
-        <StatCard
-          title="Media"
-          value={stats.totalMedia}
-          icon={Image}
-        />
-        <StatCard
-          title="Matches"
-          value={stats.totalMatches}
-          icon={Users2}
-        />
+        <StatCard title="Media" value={stats.totalMedia} icon={Image} />
+        <StatCard title="Matches" value={stats.totalMatches} icon={Users2} />
         <StatCard
           title="Messages"
           value={stats.totalMessages}

@@ -5,8 +5,7 @@ import { z } from "zod";
 
 import type { HandleUploadBody } from "@vercel/blob/client";
 import { getSession } from "@/server/better-auth/server";
-import { db } from "@/server/db";
-import { attachmentTable, RESOURCE_TYPES } from "@/server/db/schema";
+import { RESOURCE_TYPES } from "@/server/db/schema";
 import { ALLOWED_FILE_TYPES } from "@/server/services/blob.service";
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -98,68 +97,17 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         };
       },
       onUploadCompleted: async ({ blob, tokenPayload }) => {
+        // Observability only — DO NOT create attachment rows here.
+        //
+        // Attachments are created client-side via the
+        // `blob.createAttachmentFromBlob` mutation, which is idempotent on the
+        // blob URL and carries real metadata (size/filename). That keeps
+        // dev/prod parity, since this webhook is never delivered to localhost.
+        // Creating rows here too would double-insert in production (and write a
+        // worse row, with size = 0). The unique index on attachment.url is the
+        // backstop if this is ever re-enabled as a safety net.
         console.log(`✅ Client upload completed:`, blob.url);
         console.log(`📦 Token payload:`, tokenPayload);
-
-        try {
-          // Parse token payload to get upload context
-          const payload = JSON.parse(tokenPayload || "{}") as {
-            userId?: string;
-            resourceType?: string;
-            resourceId?: string;
-          };
-          const { userId, resourceType, resourceId } = payload;
-
-          // Create attachment record if resource info provided
-          if (resourceType && resourceId && userId) {
-            console.log(
-              `📎 Creating attachment record for ${resourceType}:${resourceId}`,
-            );
-
-            // Detect content type from blob metadata
-            const contentType = blob.contentType || "application/octet-stream";
-            // Note: Vercel blob doesn't provide size in the result, estimate from pathname or use 0
-            const size = 0; // Will be populated by Vercel blob storage
-
-            // Validate resource type using schema
-            const resourceTypeResult = z
-              .enum(RESOURCE_TYPES)
-              .safeParse(resourceType);
-            if (!resourceTypeResult.success) {
-              console.error(`❌ Invalid resource type: ${resourceType}`);
-              return; // Skip attachment creation but don't fail upload
-            }
-
-            // Create attachment record directly in database since blob is already uploaded
-            const [attachment] = await db
-              .insert(attachmentTable)
-              .values({
-                resourceType: resourceTypeResult.data,
-                resourceId,
-                uploadedBy: userId,
-                filename: blob.pathname.split("/").pop() || "unknown",
-                originalFilename: blob.pathname.split("/").pop() || "unknown",
-                mimeType: contentType,
-                size,
-                url: blob.url,
-                metadata: {
-                  blobPathname: blob.pathname,
-                  uploadType: "client",
-                },
-              })
-              .returning();
-
-            console.log(`✅ Attachment record created: ${attachment?.id}`);
-          } else {
-            console.log(
-              `📄 Direct blob upload completed (no attachment record needed)`,
-            );
-          }
-        } catch (error) {
-          console.error("❌ Post-upload processing failed:", error);
-          // Don't throw here - upload succeeded, just post-processing failed
-          // The blob is already stored successfully
-        }
       },
     });
 
