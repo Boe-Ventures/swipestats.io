@@ -9,6 +9,7 @@ import {
   Plus,
   BarChart3,
   ImagePlus,
+  Upload,
 } from "lucide-react";
 import { z } from "zod";
 import Link from "next/link";
@@ -68,6 +69,13 @@ interface ComparisonDetailProps {
 const settingsFormSchema = z.object({
   name: z.string().optional(),
   profileName: z.string().optional(),
+  age: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || (!isNaN(Number(val)) && Number(val) > 0),
+      "Age must be a positive number",
+    ),
   defaultBio: z.string().optional(),
   heightCm: z
     .string()
@@ -100,6 +108,7 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
     defaultValues: {
       name: comparison.name || "",
       profileName: comparison.profileName || "",
+      age: comparison.age?.toString() || "",
       defaultBio: comparison.defaultBio || "",
       heightCm: comparison.heightCm?.toString() || "",
       educationLevel: comparison.educationLevel || "__none__",
@@ -118,6 +127,7 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
       form.reset({
         name: comparison.name || "",
         profileName: comparison.profileName || "",
+        age: comparison.age?.toString() || "",
         defaultBio: comparison.defaultBio || "",
         heightCm: comparison.heightCm?.toString() || "",
         educationLevel: comparison.educationLevel || "__none__",
@@ -138,7 +148,7 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
     trpc.profileCompare.addColumn.mutationOptions({
       onSuccess: () => {
         toast.success(
-          `Column added successfully! Added ${newColumnProvider.charAt(0) + newColumnProvider.slice(1).toLowerCase()} to your comparison.`,
+          `Profile added successfully! Added ${newColumnProvider.charAt(0) + newColumnProvider.slice(1).toLowerCase()} to your comparison.`,
         );
         void queryClient.invalidateQueries(
           trpc.profileCompare.get.queryOptions({ id: comparison.id }),
@@ -147,7 +157,7 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
         setNewColumnProvider("TINDER");
       },
       onError: (error) => {
-        toast.error(error.message || "Failed to add column");
+        toast.error(error.message || "Failed to add profile");
       },
     }),
   );
@@ -157,6 +167,63 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
       comparisonId: comparison.id,
       dataProvider:
         newColumnProvider as (typeof dataProviderEnum.enumValues)[number],
+    });
+  };
+
+  const getQueryKey = trpc.profileCompare.get.queryOptions({
+    id: comparison.id,
+  }).queryKey;
+
+  const reorderColumnsMutation = useMutation(
+    trpc.profileCompare.reorderColumns.mutationOptions({
+      // Optimistically apply the new ordering so the columns move instantly.
+      onMutate: async ({ columnOrders }) => {
+        await queryClient.cancelQueries({ queryKey: getQueryKey });
+        const previous = queryClient.getQueryData<Comparison>(getQueryKey);
+
+        if (previous) {
+          const orderById = new Map(
+            columnOrders.map((c) => [c.id, c.order] as const),
+          );
+          const reordered = [...previous.columns]
+            .map((col) => ({ ...col, order: orderById.get(col.id) ?? col.order }))
+            .sort((a, b) => a.order - b.order);
+
+          queryClient.setQueryData<Comparison>(getQueryKey, {
+            ...previous,
+            columns: reordered,
+          });
+        }
+
+        return { previous };
+      },
+      onError: (error, _vars, context) => {
+        // Roll back to the snapshot taken in onMutate.
+        if (context?.previous) {
+          queryClient.setQueryData(getQueryKey, context.previous);
+        }
+        toast.error(error.message || "Failed to reorder columns");
+      },
+      onSettled: () => {
+        void queryClient.invalidateQueries({ queryKey: getQueryKey });
+      },
+    }),
+  );
+
+  // Swap a column with its neighbour and persist the full new ordering.
+  const handleMoveColumn = (columnId: string, direction: "left" | "right") => {
+    const cols = comparison.columns;
+    const index = cols.findIndex((c) => c.id === columnId);
+    const target = direction === "left" ? index - 1 : index + 1;
+    if (index === -1 || target < 0 || target >= cols.length) return;
+
+    const reordered = [...cols];
+    const [moved] = reordered.splice(index, 1);
+    reordered.splice(target, 0, moved!);
+
+    reorderColumnsMutation.mutate({
+      comparisonId: comparison.id,
+      columnOrders: reordered.map((c, i) => ({ id: c.id, order: i })),
     });
   };
 
@@ -184,6 +251,7 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
         id: comparison.id,
         name: data.name || undefined,
         profileName: data.profileName || undefined,
+        age: data.age ? parseInt(data.age, 10) : undefined,
         defaultBio: data.defaultBio || undefined,
         heightCm: data.heightCm ? parseInt(data.heightCm, 10) : undefined,
         educationLevel:
@@ -311,14 +379,22 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
-            <Link href="/app/profile-compare/photos">
-              <Button size="lg" className="bg-rose-600 hover:bg-rose-500">
-                <ImagePlus className="mr-2 h-4 w-4" />
-                Upload your photos
-              </Button>
-            </Link>
+            <div className="flex flex-col items-center gap-3 sm:flex-row">
+              <Link href="/app/profile-compare/photos">
+                <Button size="lg" className="bg-rose-600 hover:bg-rose-500">
+                  <ImagePlus className="mr-2 h-4 w-4" />
+                  Upload your photos
+                </Button>
+              </Link>
+              <Link href="https://www.swipestats.io/upload">
+                <Button size="lg" variant="outline">
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload your dating data
+                </Button>
+              </Link>
+            </div>
             <p className="text-muted-foreground text-xs">
-              Already uploaded? Add them to a profile below ↓
+              New to SwipeStats? Upload your Tinder or Hinge data to get started.
             </p>
           </EmptyContent>
         </Empty>
@@ -326,7 +402,7 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
 
       {/* Desktop: Side-by-side columns */}
       <div className="hidden gap-6 lg:grid lg:grid-cols-3">
-        {comparison.columns.map((column) => (
+        {comparison.columns.map((column, index) => (
           <ComparisonColumn
             key={column.id}
             column={column}
@@ -334,9 +410,12 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
             defaultBio={comparison.defaultBio || undefined}
             profileName={comparison.profileName || undefined}
             age={comparison.age || undefined}
+            canMoveLeft={index > 0}
+            canMoveRight={index < comparison.columns.length - 1}
+            onMove={(direction) => handleMoveColumn(column.id, direction)}
           />
         ))}
-        {/* Add Column — the whole dashed box is the button so hover/click
+        {/* Add Profile — the whole dashed box is the button so hover/click
             covers the entire area. Doesn't stretch to match tall content
             columns; stays compact, top-aligned, and visible while scrolling. */}
         <Button
@@ -345,7 +424,7 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
           className="border-muted-foreground/25 hover:border-muted-foreground/40 sticky top-6 flex h-auto min-h-[28rem] w-full flex-col items-center justify-center gap-2 self-start rounded-lg border-2 border-dashed"
         >
           <Plus className="text-muted-foreground h-8 w-8" />
-          <span className="text-muted-foreground">Add Column</span>
+          <span className="text-muted-foreground">Add profile</span>
         </Button>
       </div>
 
@@ -367,7 +446,7 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
                 <Plus className="h-4 w-4" />
               </TabsTrigger>
             </TabsList>
-            {comparison.columns.map((column) => (
+            {comparison.columns.map((column, index) => (
               <TabsContent key={column.id} value={column.id}>
                 <ComparisonColumn
                   column={column}
@@ -375,6 +454,9 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
                   defaultBio={comparison.defaultBio || undefined}
                   profileName={comparison.profileName || undefined}
                   age={comparison.age || undefined}
+                  canMoveLeft={index > 0}
+                  canMoveRight={index < comparison.columns.length - 1}
+                  onMove={(direction) => handleMoveColumn(column.id, direction)}
                 />
               </TabsContent>
             ))}
@@ -386,7 +468,7 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
                   className="flex-col gap-2"
                 >
                   <Plus className="text-muted-foreground h-8 w-8" />
-                  <span className="text-muted-foreground">Add Column</span>
+                  <span className="text-muted-foreground">Add profile</span>
                 </Button>
               </div>
             </TabsContent>
@@ -400,7 +482,7 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
             >
               <Plus className="text-muted-foreground h-8 w-8" />
               <span className="text-muted-foreground">
-                Add Your First Column
+                Add your first profile
               </span>
             </Button>
           </div>
@@ -436,19 +518,39 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="profileName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Your Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., John" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="profileName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Your Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., John" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="age"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Age</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          placeholder="e.g., 28"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               <FormField
                 control={form.control}
@@ -705,13 +807,13 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
         </DialogContent>
       </Dialog>
 
-      {/* Add Column Dialog */}
+      {/* Add Profile Dialog */}
       <Dialog open={addColumnOpen} onOpenChange={setAddColumnOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Column</DialogTitle>
+            <DialogTitle>Add profile</DialogTitle>
             <DialogDescription>
-              Add a new column to compare. You can add multiple columns of the
+              Add a new profile to compare. You can add multiple profiles of the
               same app.
             </DialogDescription>
           </DialogHeader>
@@ -747,7 +849,7 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
               onClick={handleAddColumn}
               disabled={addColumnMutation.isPending}
             >
-              {addColumnMutation.isPending ? "Adding..." : "Add Column"}
+              {addColumnMutation.isPending ? "Adding..." : "Add profile"}
             </Button>
           </DialogFooter>
         </DialogContent>

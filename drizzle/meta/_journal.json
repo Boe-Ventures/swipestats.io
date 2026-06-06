@@ -29,6 +29,13 @@
       "when": 1780559694440,
       "tag": "0003_wealthy_gunslinger",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1780726179632,
+      "tag": "0004_early_puff_adder",
+      "breakpoints": true
     }
   ]
 }

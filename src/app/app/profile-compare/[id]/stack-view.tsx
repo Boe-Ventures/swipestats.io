@@ -5,13 +5,16 @@ import Link from "next/link";
 import { Check, Plus, Image as ImageIcon, MessageCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 
 import type { RouterOutputs } from "@/trpc/react";
 import type { ProviderConfig } from "./provider-config";
 
-type ComparisonColumn =
-  RouterOutputs["profileCompare"]["get"]["columns"][number];
+// Shared by the authed edit page and the public share page. The public column
+// has no `roastStatus`, and this view doesn't need it, so omit it from the prop.
+type ComparisonColumn = Omit<
+  RouterOutputs["profileCompare"]["get"]["columns"][number],
+  "roastStatus"
+>;
 
 interface StackViewProps {
   column: ComparisonColumn;
@@ -151,8 +154,9 @@ export function StackView({
                 </p>
               )}
 
-              {/* Provider badge and comment button */}
-              <div className="absolute right-5 bottom-3 flex items-center gap-2">
+              {/* Comment button — z-20 lifts it above the full-photo
+                  prev/next nav overlay (z-10) so it stays clickable. */}
+              <div className="absolute right-5 bottom-3 z-20 flex items-center gap-2">
                 {onFeedbackClick && currentPhoto && (
                   <Button
                     size="icon"
@@ -173,16 +177,6 @@ export function StackView({
                     ) : null}
                   </Button>
                 )}
-                <Badge
-                  variant="secondary"
-                  className="text-xs font-semibold opacity-60"
-                  style={{
-                    backgroundColor: providerConfig.brandColor,
-                    color: "white",
-                  }}
-                >
-                  {providerConfig.name}
-                </Badge>
               </div>
             </div>
           </div>

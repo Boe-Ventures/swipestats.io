@@ -1230,6 +1230,97 @@ export const roastTable = pgTable(
 export type Roast = typeof roastTable.$inferSelect;
 export type RoastInsert = typeof roastTable.$inferInsert;
 
+// ---- PROFILE-COMPARE ROAST ----------------------------------------
+//
+// One mutable roast per (target, tone): regeneration UPDATEs `result` in place
+// (upsert keyed on the unique index below) rather than appending rows.
+// To upgrade to a full history later: stop upserting, INSERT one row per
+// generation, and add `parentRoastId` (self-FK) + `regenScope` jsonb to thread
+// partial regenerations together.
+
+/**
+ * Self-contained roast payload stored as jsonb. Photos/prompts are keyed by
+ * content id; image URLs are resolved live on read (not frozen here), so the
+ * roast always renders against the current profile.
+ */
+export type ProfileRoastResult = {
+  overall: {
+    tagline: string; // short verdict badge, e.g. "Solid, but playing it safe"
+    headline: string; // shareable punchline one-liner
+    verdict: string; // 2-3 sentence summary
+    score: number; // 0-100
+  };
+  photos: {
+    contentId: string | null;
+    keepOrCut: "keep" | "maybe" | "cut";
+    caption: string; // factual "what the AI saw" — doubles as the row header
+    title: string; // bold zinger
+    body: string; // the full roast
+  }[];
+  prompts: {
+    contentId: string | null;
+    roast: string;
+    rewrite: string; // a sharper suggested answer for this prompt
+  }[];
+  bio: {
+    roast: string;
+    rewrites: { label: string; text: string }[]; // >=2 named styles (Witty/Sincere)
+  } | null;
+  realTalk: {
+    title: string;
+    detail?: string;
+    action?: "reorder" | "editBio" | "addPrompt"; // optional deep-link hint (future)
+  }[];
+};
+
+export const profileRoastTable = pgTable(
+  "profile_roast",
+  (t) => ({
+    id: t
+      .text()
+      .primaryKey()
+      .$defaultFn(() => createId("pcr")),
+    userId: t
+      .text()
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    // Polymorphic target: a single column (profile roast) OR a whole comparison
+    // (full roast, slice 3). Exactly one is set.
+    columnId: t
+      .text()
+      .references(() => comparisonColumnTable.id, { onDelete: "cascade" }),
+    comparisonId: t
+      .text()
+      .references(() => profileComparisonTable.id, { onDelete: "cascade" }),
+    tone: t.text().notNull(),
+    result: t.jsonb().$type<ProfileRoastResult>().notNull(),
+    // Hash of the roasted profile state (ordered content ids + bio + title).
+    // If it differs from the live state, the roast is stale.
+    contentFingerprint: t.text().notNull(),
+    model: t.text().notNull(),
+    createdAt: t
+      .timestamp()
+      .$defaultFn(() => new Date())
+      .notNull(),
+    updatedAt: t
+      .timestamp()
+      .$defaultFn(() => new Date())
+      .notNull(),
+  }),
+  (table) => [
+    // One roast per profile — regeneration upserts on this key and overwrites
+    // (tone just changes the voice of that single roast; a "new roast" = a new
+    // column/config). Comparison roasts (columnId null) get their own partial
+    // unique index in slice 3.
+    uniqueIndex("profile_roast_column_id_key").on(table.columnId),
+    index("profile_roast_comparison_id_idx").on(table.comparisonId),
+    index("profile_roast_user_id_idx").on(table.userId),
+  ],
+);
+
+export type ProfileRoastRow = typeof profileRoastTable.$inferSelect;
+export type ProfileRoastRowInsert = typeof profileRoastTable.$inferInsert;
+
 // ---- COHORT SYSTEM TABLES -----------------------------------------
 
 // Cohort definition - what filters constitute a cohort
@@ -1577,6 +1668,10 @@ export const comparisonColumnRelations = relations(
     }),
     content: many(comparisonColumnContentTable),
     feedback: many(profileComparisonFeedbackTable),
+    // One saved roast per column (unique on columnId) — inverse of
+    // profileRoastRelations.column. Lets the comparison query surface whether
+    // a profile has been roasted, and whether that roast is stale.
+    roast: one(profileRoastTable),
   }),
 );
 
@@ -1651,5 +1746,20 @@ export const roastRelations = relations(roastTable, ({ one }) => ({
   hingeProfile: one(hingeProfileTable, {
     fields: [roastTable.hingeProfileId],
     references: [hingeProfileTable.hingeId],
+  }),
+}));
+
+export const profileRoastRelations = relations(profileRoastTable, ({ one }) => ({
+  user: one(userTable, {
+    fields: [profileRoastTable.userId],
+    references: [userTable.id],
+  }),
+  column: one(comparisonColumnTable, {
+    fields: [profileRoastTable.columnId],
+    references: [comparisonColumnTable.id],
+  }),
+  comparison: one(profileComparisonTable, {
+    fields: [profileRoastTable.comparisonId],
+    references: [profileComparisonTable.id],
   }),
 }));

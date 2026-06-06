@@ -17,6 +17,8 @@ import NewsletterCTA from "../../../../NewsletterCTA";
 import { SwipestatsPlusCard } from "../compare/_components/SwipestatsPlusCard";
 import { MainInsightsSkeleton } from "./LoadingSkeletons";
 import { CohortBenchmarksSection } from "./CohortBenchmarksSection";
+import { RoastCtaCard } from "./RoastCtaCard";
+import { ROAST_ENABLED } from "@/lib/constants/feature-flags";
 // import { MasterCohortBenchmarkSection } from "./MasterCohortBenchmarkSection";
 import { toast } from "sonner";
 // import { CompareToOthersSection } from "./CompareToOthersSection"; // Deprecated: keeping component file for potential future use
@@ -102,6 +104,7 @@ export function MainInsightsPageContent() {
           {/* Right column: Stacked placeholder cards */}
           <div className="flex w-full min-w-0 flex-col gap-4 sm:gap-6">
             <ProfileOverview className="w-full" />
+            {ROAST_ENABLED && isOwner && <RoastCtaCard />}
             <MessagesMetaCard />
             <div className="grid w-full grid-cols-2 gap-4 sm:gap-6">
               <AddEventsCard />

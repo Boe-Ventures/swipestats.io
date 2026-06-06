@@ -48,29 +48,41 @@ export function FeedbackDialog({
 
   const { data: session } = authClient.useSession();
 
+  const feedbackQueryInput = {
+    ...(contentId ? { contentId } : {}),
+    ...(columnId && !contentId ? { columnId } : {}),
+    ...(comparisonId && !contentId && !columnId ? { comparisonId } : {}),
+  };
+
+  const feedbackQueryOptions =
+    trpc.profileCompare.getFeedback.queryOptions(feedbackQueryInput);
+
+  const invalidateFeedbackQueries = () => {
+    void queryClient.invalidateQueries({
+      queryKey: feedbackQueryOptions.queryKey,
+    });
+
+    if (comparisonId) {
+      void queryClient.invalidateQueries({
+        queryKey: trpc.profileCompare.getFeedback.queryOptions({
+          comparisonId,
+        }).queryKey,
+      });
+    }
+  };
+
   // Get feedback for this content/column
   // If contentId is provided, only query for that content (not the whole column)
-  const { data: feedback = [] } = useQuery(
-    trpc.profileCompare.getFeedback.queryOptions(
-      {
-        ...(contentId ? { contentId } : {}),
-        ...(columnId && !contentId ? { columnId } : {}),
-        ...(comparisonId && !contentId && !columnId ? { comparisonId } : {}),
-      },
-      {
-        enabled: open && (!!contentId || !!columnId || !!comparisonId),
-      },
-    ),
-  );
+  const { data: feedback = [] } = useQuery({
+    ...feedbackQueryOptions,
+    enabled: open && (!!contentId || !!columnId || !!comparisonId),
+  });
 
   // Create feedback mutation
   const createFeedback = useMutation(
     trpc.profileCompare.createFeedback.mutationOptions({
       onSuccess: () => {
-        // Invalidate all related feedback queries
-        void queryClient.invalidateQueries(
-          trpc.profileCompare.getFeedback.queryOptions({ comparisonId }),
-        );
+        invalidateFeedbackQueries();
         setComment("");
         setRating(undefined);
         toast.success("Feedback added successfully");
@@ -85,10 +97,7 @@ export function FeedbackDialog({
   const deleteFeedback = useMutation(
     trpc.profileCompare.deleteFeedback.mutationOptions({
       onSuccess: () => {
-        // Invalidate all related feedback queries
-        void queryClient.invalidateQueries(
-          trpc.profileCompare.getFeedback.queryOptions({ comparisonId }),
-        );
+        invalidateFeedbackQueries();
         toast.success("Feedback deleted successfully");
       },
       onError: (error) => {

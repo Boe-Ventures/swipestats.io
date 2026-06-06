@@ -63,21 +63,44 @@ export const blobRouter = createTRPCRouter({
         `📎 Creating attachment record for ${input.resourceType}:${input.resourceId} from blob: ${input.url}`,
       );
 
-      // Create the attachment record directly since blob is already uploaded
+      // Idempotent upsert keyed on the globally-unique blob URL.
+      //
+      // The client is the authoritative writer: it has the real File, so it
+      // carries true size/filename/mimeType. On conflict we therefore refresh
+      // the row with the client's metadata. This makes retries safe and lets
+      // the client's good data win even if the upload webhook
+      // (`onUploadCompleted`, a best-effort safety net that can only record a
+      // size:0 placeholder) happened to insert the row first. The unique index
+      // on attachment.url (schema: "attachment_url_key") is the conflict target.
+      const attachmentValues = {
+        resourceType: input.resourceType,
+        resourceId: input.resourceId,
+        uploadedBy: ctx.session.user.id,
+        filename: input.filename,
+        originalFilename: input.filename,
+        mimeType: input.contentType,
+        size: input.size,
+        url: input.url,
+        metadata: {
+          blobPathname: input.pathname,
+          uploadType: "client" as const,
+        },
+      };
+
       const [attachment] = await ctx.db
         .insert(attachmentTable)
-        .values({
-          resourceType: input.resourceType,
-          resourceId: input.resourceId,
-          uploadedBy: ctx.session.user.id,
-          filename: input.filename,
-          originalFilename: input.filename,
-          mimeType: input.contentType,
-          size: input.size,
-          url: input.url,
-          metadata: {
-            blobPathname: input.pathname,
-            uploadType: "client",
+        .values(attachmentValues)
+        .onConflictDoUpdate({
+          target: attachmentTable.url,
+          set: {
+            resourceType: attachmentValues.resourceType,
+            resourceId: attachmentValues.resourceId,
+            uploadedBy: attachmentValues.uploadedBy,
+            filename: attachmentValues.filename,
+            originalFilename: attachmentValues.originalFilename,
+            mimeType: attachmentValues.mimeType,
+            size: attachmentValues.size,
+            metadata: attachmentValues.metadata,
           },
         })
         .returning();
@@ -86,7 +109,7 @@ export const blobRouter = createTRPCRouter({
         throw new Error("Failed to create attachment record");
       }
 
-      console.log(`✅ Attachment record created: ${attachment.id}`);
+      console.log(`✅ Attachment record upserted: ${attachment.id}`);
 
       return {
         ...attachment,

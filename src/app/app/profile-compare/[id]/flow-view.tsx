@@ -1,18 +1,22 @@
 "use client";
 
+import { Fragment } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Check, Plus, Image as ImageIcon, MessageCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 import type { RouterOutputs } from "@/trpc/react";
 import type { ProviderConfig } from "./provider-config";
 
-type ComparisonColumn =
-  RouterOutputs["profileCompare"]["get"]["columns"][number];
+// Shared by the authed edit page and the public share page. The public column
+// has no `roastStatus`, and this view doesn't need it, so omit it from the prop.
+type ComparisonColumn = Omit<
+  RouterOutputs["profileCompare"]["get"]["columns"][number],
+  "roastStatus"
+>;
 
 interface FlowViewProps {
   column: ComparisonColumn;
@@ -42,6 +46,23 @@ export function FlowView({
 
   const hasContent = content.length > 0;
 
+  // Hinge interleaves the bio between photos rather than dumping it at the end.
+  // Inject it right after the second photo; if there are fewer than two photos
+  // we render it at the end instead (see fallback below).
+  const photoContentIndexes = content
+    .map((item, i) => (item.type === "photo" && item.attachment ? i : -1))
+    .filter((i) => i !== -1);
+  const bioAfterIndex = photoContentIndexes[1] ?? -1;
+
+  const bioSection = displayBio ? (
+    <div className="bg-white px-4 pb-4">
+      <div className="mb-3">
+        <h3 className="text-lg font-bold text-gray-900">My bio</h3>
+      </div>
+      <p className="text-base leading-relaxed text-gray-900">{displayBio}</p>
+    </div>
+  ) : null;
+
   return (
     <div
       className="relative overflow-hidden rounded-xl shadow-2xl"
@@ -49,42 +70,32 @@ export function FlowView({
         background: `linear-gradient(135deg, ${providerConfig.brandColor}22 0%, ${providerConfig.secondaryColor}11 100%)`,
       }}
     >
-      {/* Mock Device Frame */}
+      {/* Mock Device Frame. The empty state is rendered directly in the frame
+          (not inside ScrollArea) so its h-full stretches to the full aspect
+          ratio — content scrolls, but the placeholder should fill the card
+          like the stack view does. */}
       <div className="relative aspect-[2/3] overflow-hidden rounded-xl bg-white">
         {hasContent ? (
-          <div className="flex h-full flex-col">
-            {/* Profile Header - Hinge Style (static, sits above the scroll area) */}
-            <div className="z-10 shrink-0 bg-white px-4 py-4 shadow-sm">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <h2 className="text-xl font-bold text-gray-900">
-                    {profileName || "Name"}
-                    {age && `, ${age}`}
-                  </h2>
-                  <div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-500">
-                    <Check className="h-3 w-3 text-white" />
-                  </div>
+          <ScrollArea className="h-full">
+            <div className="space-y-0">
+              {/* Profile Header - Hinge Style. Sits inline at the top of the
+                  flow and scrolls away with the content (no longer floats). */}
+              <div className="flex items-center gap-2 px-4 pt-4 pb-3">
+                <h2 className="text-xl font-bold text-gray-900">
+                  {profileName || "Name"}
+                  {age && `, ${age}`}
+                </h2>
+                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-500">
+                  <Check className="h-3 w-3 text-white" />
                 </div>
-                <Badge
-                  variant="secondary"
-                  className="text-xs"
-                  style={{
-                    backgroundColor: `${providerConfig.brandColor}22`,
-                    color: providerConfig.brandColor,
-                  }}
-                >
-                  {providerConfig.name}
-                </Badge>
               </div>
-            </div>
 
-            <ScrollArea className="min-h-0 flex-1">
-              <div className="space-y-0 pt-3">
-                {/* Content Flow - Photos and Prompts */}
-                {content.map((item, index) => {
-                  if (item.type === "photo" && item.attachment) {
-                    return (
-                      <div key={item.id} className="px-4 pb-3">
+              {/* Content Flow - Photos and Prompts */}
+              {content.map((item, index) => {
+                if (item.type === "photo" && item.attachment) {
+                  return (
+                    <Fragment key={item.id}>
+                      <div className="px-4 pb-3">
                         <div className="relative overflow-hidden rounded-2xl">
                           <Image
                             src={item.attachment.url}
@@ -129,113 +140,101 @@ export function FlowView({
                           </div>
                         </div>
                       </div>
-                    );
-                  }
+                      {/* Inject the bio right after the second photo */}
+                      {index === bioAfterIndex && bioSection}
+                    </Fragment>
+                  );
+                }
 
-                  if (item.type === "prompt") {
-                    return (
-                      <div key={item.id} className="px-4 pb-3">
-                        <div className="relative rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-200">
-                          {onFeedbackClick && (
-                            <div className="absolute top-3 right-3">
-                              <Button
-                                size="icon"
-                                variant="secondary"
-                                className="h-8 w-8 border-0 bg-gray-100 text-gray-700 hover:bg-gray-200"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onFeedbackClick(item.id);
-                                }}
-                              >
-                                <MessageCircle className="h-4 w-4" />
-                                {feedbackCounts?.[item.id] ? (
-                                  <div className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-[9px] font-bold text-white">
-                                    {(feedbackCounts[item.id] ?? 0) > 9
-                                      ? "9+"
-                                      : (feedbackCounts[item.id] ?? 0)}
-                                  </div>
-                                ) : null}
-                              </Button>
-                            </div>
-                          )}
-                          <p className="mb-3 text-sm font-semibold text-gray-600">
-                            {item.prompt}
-                          </p>
-                          <p className="text-base text-gray-900">
-                            {item.answer}
-                          </p>
-                        </div>
+                if (item.type === "prompt") {
+                  return (
+                    <div key={item.id} className="px-4 pb-3">
+                      <div className="relative rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-200">
+                        {onFeedbackClick && (
+                          <div className="absolute top-3 right-3">
+                            <Button
+                              size="icon"
+                              variant="secondary"
+                              className="h-8 w-8 border-0 bg-gray-100 text-gray-700 hover:bg-gray-200"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onFeedbackClick(item.id);
+                              }}
+                            >
+                              <MessageCircle className="h-4 w-4" />
+                              {feedbackCounts?.[item.id] ? (
+                                <div className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-blue-600 text-[9px] font-bold text-white">
+                                  {(feedbackCounts[item.id] ?? 0) > 9
+                                    ? "9+"
+                                    : (feedbackCounts[item.id] ?? 0)}
+                                </div>
+                              ) : null}
+                            </Button>
+                          </div>
+                        )}
+                        <p className="mb-3 text-sm font-semibold text-gray-600">
+                          {item.prompt}
+                        </p>
+                        <p className="text-base text-gray-900">{item.answer}</p>
                       </div>
-                    );
-                  }
+                    </div>
+                  );
+                }
 
-                  return null;
-                })}
+                return null;
+              })}
 
-                {/* My bio Section - Hinge Style */}
-                {displayBio && (
-                  <div className="bg-white px-4 pb-4">
-                    <div className="mb-3">
-                      <h3 className="text-lg font-bold text-gray-900">
-                        My bio
-                      </h3>
-                    </div>
-                    <p className="text-base leading-relaxed text-gray-900">
-                      {displayBio}
-                    </p>
-                  </div>
-                )}
+              {/* Fallback: with fewer than two photos there's no "second
+                  photo" to inject after, so the bio lands here instead. */}
+              {bioAfterIndex === -1 && bioSection}
 
-                {/* About me Section - Hinge Style */}
-                <div className="bg-white px-4 pb-4">
-                  <div className="mb-3">
-                    <h3 className="text-lg font-bold text-gray-900">
-                      About me
-                    </h3>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <div className="flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2">
-                      <span>📏</span>
-                      <span className="text-sm text-gray-900">194 cm</span>
-                    </div>
-                    <div className="flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2">
-                      <span>🏃</span>
-                      <span className="text-sm text-gray-900">Active</span>
-                    </div>
-                    <div className="flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2">
-                      <span>🎓</span>
-                      <span className="text-sm text-gray-900">
-                        Graduate degree
-                      </span>
-                    </div>
-                  </div>
+              {/* About me Section - Hinge Style */}
+              <div className="bg-white px-4 pb-4">
+                <div className="mb-3">
+                  <h3 className="text-lg font-bold text-gray-900">About me</h3>
                 </div>
-
-                {/* Prompts Section Placeholder (V2) */}
-                <div className="bg-gray-50 px-4 pt-4 pb-6">
-                  <div className="mb-3">
-                    <h3 className="text-lg font-bold text-gray-900">Prompts</h3>
+                <div className="flex flex-wrap gap-2">
+                  <div className="flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2">
+                    <span>📏</span>
+                    <span className="text-sm text-gray-900">194 cm</span>
                   </div>
-                  <div className="bg-muted/50 flex items-center justify-center rounded-xl border border-dashed py-8">
-                    <div className="text-center">
-                      <p className="text-muted-foreground mb-1 text-sm font-medium">
-                        Coming in V2
-                      </p>
-                      <p className="text-muted-foreground text-xs">
-                        Add Hinge-style prompts with answers
-                      </p>
-                    </div>
+                  <div className="flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2">
+                    <span>🏃</span>
+                    <span className="text-sm text-gray-900">Active</span>
+                  </div>
+                  <div className="flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2">
+                    <span>🎓</span>
+                    <span className="text-sm text-gray-900">
+                      Graduate degree
+                    </span>
                   </div>
                 </div>
               </div>
-            </ScrollArea>
-          </div>
+
+              {/* Prompts Section Placeholder (V2) */}
+              <div className="bg-gray-50 px-4 pt-4 pb-6">
+                <div className="mb-3">
+                  <h3 className="text-lg font-bold text-gray-900">Prompts</h3>
+                </div>
+                <div className="bg-muted/50 flex items-center justify-center rounded-xl border border-dashed py-8">
+                  <div className="text-center">
+                    <p className="text-muted-foreground mb-1 text-sm font-medium">
+                      Coming in V2
+                    </p>
+                    <p className="text-muted-foreground text-xs">
+                      Add Hinge-style prompts with answers
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </ScrollArea>
         ) : (
-          <div className="flex h-full w-full flex-col items-center justify-center bg-white p-6 text-center">
-            <div className="mb-4 rounded-full bg-gray-100 p-4">
+          <div className="flex h-full w-full flex-col items-center justify-center bg-linear-to-b from-gray-100 to-gray-200 p-6 text-center transition-all hover:from-gray-200 hover:to-gray-300">
+            <div className="mb-4 rounded-full bg-white/80 p-4 shadow-sm">
               <Plus className="text-muted-foreground h-8 w-8" />
             </div>
-            <p className="mb-2 font-medium text-gray-900">No content yet</p>
+            <p className="mb-2 font-medium text-gray-900">No photos yet</p>
             <p className="text-muted-foreground mb-4 text-sm">
               Click to add photos and preview your {providerConfig.name} profile
             </p>

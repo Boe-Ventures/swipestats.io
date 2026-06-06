@@ -61,6 +61,16 @@ export const profileCompareRouter = createTRPCRouter({
       });
     }),
 
+  // Seed a comparison from the user's already-uploaded Tinder photos
+  createFromTinderMedia: protectedProcedure
+    .input(z.object({ tinderId: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      return ProfileComparisonService.createFromTinderMedia({
+        userId: ctx.session.user.id,
+        tinderId: input.tinderId,
+      });
+    }),
+
   // Update comparison metadata
   update: protectedProcedure
     .input(
@@ -129,11 +139,41 @@ export const profileCompareRouter = createTRPCRouter({
       });
     }),
 
+  // Reorder columns within a comparison
+  reorderColumns: protectedProcedure
+    .input(
+      z.object({
+        comparisonId: z.string(),
+        columnOrders: z.array(
+          z.object({
+            id: z.string(),
+            order: z.number(),
+          }),
+        ),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      return ProfileComparisonService.reorderColumns({
+        ...input,
+        userId: ctx.session.user.id,
+      });
+    }),
+
   // Remove a column (cascades to its content + feedback)
   removeColumn: protectedProcedure
     .input(z.object({ columnId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       return ProfileComparisonService.removeColumn({
+        columnId: input.columnId,
+        userId: ctx.session.user.id,
+      });
+    }),
+
+  // Duplicate a column + its content (fork to tweak & compare side by side)
+  duplicateColumn: protectedProcedure
+    .input(z.object({ columnId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      return ProfileComparisonService.duplicateColumn({
         columnId: input.columnId,
         userId: ctx.session.user.id,
       });
@@ -392,6 +432,7 @@ export const profileCompareRouter = createTRPCRouter({
         shareKey: z.string(),
         columnLabel: z.string().min(1).max(100),
         photoAttachmentIds: z.array(z.string()).min(1).max(6),
+        dataProvider: z.enum(dataProviderEnum.enumValues).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {

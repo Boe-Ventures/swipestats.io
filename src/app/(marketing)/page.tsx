@@ -35,6 +35,7 @@ import { About } from "./AboutSection";
 import { InsightsShowcase } from "./InsightsShowcase";
 import { DatasetPricingSection } from "./DatasetPricingSection";
 import { MarketingCtaSection } from "./MarketingCtaSection";
+import { ProfilePreviewsBanner } from "./ProfilePreviewsBanner";
 import Image from "next/image";
 
 const features = [
@@ -85,6 +86,7 @@ export default function HomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
       />
+      <ProfilePreviewsBanner />
       {/* Hero section */}
       <div className="relative pt-14">
         <div

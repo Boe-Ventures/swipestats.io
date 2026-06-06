@@ -30,26 +30,8 @@ import { toast } from "@/components/ui/toast";
 import { useTRPC } from "@/trpc/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { CreateComparisonDialog } from "./create-comparison-dialog";
-import { ComingSoonWrapper } from "@/components/ComingSoonWrapper";
 
 export default function ProfileCompareDashboard() {
-  return (
-    <ComingSoonWrapper
-      featureName="Profile Comparisons"
-      description="Compare your dating app profiles side-by-side to see which photos, bios, and prompts perform best"
-      topic="waitlist-profile-compare"
-      benefits={[
-        "A/B test different profile versions",
-        "Get feedback from other users",
-        "Optimize for better matches",
-      ]}
-    >
-      <ProfileCompareDashboardContent />
-    </ComingSoonWrapper>
-  );
-}
-
-function ProfileCompareDashboardContent() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
@@ -165,9 +147,28 @@ function ProfileCompareDashboardContent() {
                 )}
 
                 <CardHeader>
-                  <CardTitle className="line-clamp-1">
-                    {comparison.name || "Untitled Comparison"}
-                  </CardTitle>
+                  <div className="flex items-start justify-between gap-2">
+                    <CardTitle className="line-clamp-1">
+                      {comparison.name || "Untitled Comparison"}
+                    </CardTitle>
+                    {/* Status, not an action — non-interactive badge */}
+                    <Badge
+                      variant={comparison.isPublic ? "secondary" : "outline"}
+                      className="text-muted-foreground shrink-0 gap-1 font-normal"
+                      title={
+                        comparison.isPublic
+                          ? "Public — anyone with the link can view"
+                          : "Private — only you can view"
+                      }
+                    >
+                      {comparison.isPublic ? (
+                        <Eye className="h-3 w-3" />
+                      ) : (
+                        <EyeOff className="h-3 w-3" />
+                      )}
+                      {comparison.isPublic ? "Public" : "Private"}
+                    </Badge>
+                  </div>
                   <CardDescription>
                     {columnCount} {columnCount === 1 ? "app" : "apps"} •{" "}
                     {formatDistanceToNow(new Date(comparison.updatedAt), {
@@ -195,22 +196,6 @@ function ProfileCompareDashboardContent() {
                       View
                     </Button>
                   </Link>
-
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    title={
-                      comparison.isPublic
-                        ? "Public - anyone with link can view"
-                        : "Private - only you can view"
-                    }
-                  >
-                    {comparison.isPublic ? (
-                      <Eye className="h-4 w-4" />
-                    ) : (
-                      <EyeOff className="h-4 w-4" />
-                    )}
-                  </Button>
 
                   {comparison.isPublic && comparison.shareKey && (
                     <Link

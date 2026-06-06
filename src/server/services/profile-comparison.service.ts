@@ -8,10 +8,13 @@ import {
   comparisonColumnContentTable,
   profileComparisonFeedbackTable,
   attachmentTable,
+  mediaTable,
+  tinderProfileTable,
   userTable,
   type DataProvider,
   type educationLevelEnum,
 } from "../db/schema";
+import { buildRoastFingerprint } from "./profile-roast.service";
 
 // Generate a cryptographically secure random share key
 function generateShareKey(): string {
@@ -112,6 +115,15 @@ export async function getComparison(comparisonId: string, userId: string) {
               attachment: true,
             },
           },
+          // Only the metadata needed to render the roast-status badge — the
+          // heavy `result` jsonb stays server-side.
+          roast: {
+            columns: {
+              tone: true,
+              contentFingerprint: true,
+              updatedAt: true,
+            },
+          },
         },
       },
     },
@@ -121,7 +133,30 @@ export async function getComparison(comparisonId: string, userId: string) {
     throw new Error("Comparison not found");
   }
 
-  return comparison;
+  // Derive a lightweight roast status per column (roasted? + stale?) so the
+  // edit page can badge it without shipping or re-hashing the roast payload.
+  const columns = comparison.columns.map((column) => {
+    const { roast, ...rest } = column;
+    const effectiveBio = column.bio ?? comparison.defaultBio ?? null;
+    const roastStatus = roast
+      ? {
+          roasted: true as const,
+          tone: roast.tone,
+          isStale:
+            roast.contentFingerprint !==
+            buildRoastFingerprint(column, effectiveBio),
+          updatedAt: roast.updatedAt,
+        }
+      : {
+          roasted: false as const,
+          tone: null,
+          isStale: false,
+          updatedAt: null,
+        };
+    return { ...rest, roastStatus };
+  });
+
+  return { ...comparison, columns };
 }
 
 /**
@@ -304,6 +339,73 @@ export async function addColumn(data: {
 }
 
 /**
+ * Duplicate a column (and all its content) into the same comparison — the
+ * "fork to tweak & compare side by side" action. Photos are shared gallery
+ * items, so we reuse the same attachment references rather than re-uploading.
+ */
+export async function duplicateColumn(data: {
+  columnId: string;
+  userId: string;
+}) {
+  const source = await db.query.comparisonColumnTable.findFirst({
+    where: eq(comparisonColumnTable.id, data.columnId),
+    with: {
+      comparison: true,
+      content: {
+        orderBy: (content, { asc }) => [asc(content.order)],
+      },
+    },
+  });
+
+  if (source?.comparison.userId !== data.userId) {
+    throw new Error("Column not found or unauthorized");
+  }
+
+  // Place the copy after the current last column.
+  const lastColumn = await db.query.comparisonColumnTable.findMany({
+    where: eq(comparisonColumnTable.comparisonId, source.comparisonId),
+    orderBy: (table, { desc }) => [desc(table.order)],
+    limit: 1,
+  });
+  const order = lastColumn.length > 0 ? lastColumn[0]!.order + 1 : 0;
+
+  // neon-http has no transaction support — withTransaction runs on the
+  // WebSocket (neon-serverless) driver, which does.
+  return await withTransaction(async (tx) => {
+    const [column] = await tx
+      .insert(comparisonColumnTable)
+      .values({
+        comparisonId: source.comparisonId,
+        dataProvider: source.dataProvider,
+        bio: source.bio,
+        title: source.title ? `${source.title} (copy)` : "Copy",
+        order,
+      })
+      .returning();
+
+    if (!column) {
+      throw new Error("Failed to duplicate column");
+    }
+
+    if (source.content.length > 0) {
+      await tx.insert(comparisonColumnContentTable).values(
+        source.content.map((c) => ({
+          columnId: column.id,
+          type: c.type,
+          attachmentId: c.attachmentId,
+          caption: c.caption,
+          prompt: c.prompt,
+          answer: c.answer,
+          order: c.order,
+        })),
+      );
+    }
+
+    return column;
+  });
+}
+
+/**
  * Update a column
  */
 export async function updateColumn(data: {
@@ -348,6 +450,42 @@ export async function updateColumn(data: {
   }
 
   return updated;
+}
+
+/**
+ * Reorder columns within a comparison. Takes the full desired ordering and
+ * writes each column's new `order` index in a single transaction.
+ */
+export async function reorderColumns(data: {
+  comparisonId: string;
+  userId: string;
+  columnOrders: Array<{ id: string; order: number }>;
+}) {
+  // Verify ownership of the parent comparison
+  const comparison = await db.query.profileComparisonTable.findFirst({
+    where: eq(profileComparisonTable.id, data.comparisonId),
+  });
+
+  if (comparison?.userId !== data.userId) {
+    throw new Error("Comparison not found or unauthorized");
+  }
+
+  // Only touch columns that actually belong to this comparison.
+  await withTransaction(async (tx) => {
+    for (const columnOrder of data.columnOrders) {
+      await tx
+        .update(comparisonColumnTable)
+        .set({ order: columnOrder.order })
+        .where(
+          and(
+            eq(comparisonColumnTable.id, columnOrder.id),
+            eq(comparisonColumnTable.comparisonId, data.comparisonId),
+          ),
+        );
+    }
+  });
+
+  return { success: true };
 }
 
 /**
@@ -886,6 +1024,12 @@ export async function getForFriendCreation(shareKey: string) {
           name: true,
         },
       },
+      columns: {
+        orderBy: (columns, { asc }) => [asc(columns.order)],
+        columns: {
+          dataProvider: true,
+        },
+      },
     },
   });
 
@@ -914,6 +1058,9 @@ export async function getForFriendCreation(shareKey: string) {
       state: comparison.state,
       country: comparison.country,
       shareKey: comparison.shareKey,
+      // The friend's version inherits the app the comparison is built around
+      // so the preview + published column match the other columns.
+      dataProvider: deriveComparisonProvider(comparison.columns),
     },
     owner: {
       id: comparison.user.id,
@@ -924,6 +1071,17 @@ export async function getForFriendCreation(shareKey: string) {
 }
 
 /**
+ * Default data provider for a friend-created column: mirror the comparison's
+ * existing columns (the first one in display order), falling back to Hinge when
+ * there are none yet. The friend can override this from the create UI.
+ */
+function deriveComparisonProvider(
+  columns: { dataProvider: DataProvider }[],
+): DataProvider {
+  return columns[0]?.dataProvider ?? "HINGE";
+}
+
+/**
  * Create a column from a friend (requires anonymous user)
  */
 export async function createFriendColumn(data: {
@@ -931,6 +1089,7 @@ export async function createFriendColumn(data: {
   userId: string;
   columnLabel: string;
   photoAttachmentIds: string[];
+  dataProvider?: DataProvider;
 }) {
   // Verify user is anonymous
   const user = await db.query.userTable.findFirst({
@@ -971,22 +1130,27 @@ export async function createFriendColumn(data: {
   }
 
   return withTransaction(async (tx) => {
-    // Get the highest order number for existing columns
+    // Get existing columns to compute order + inherit the comparison's app
     const existingColumns = await tx.query.comparisonColumnTable.findMany({
       where: eq(comparisonColumnTable.comparisonId, comparison.id),
-      orderBy: (table, { desc }) => [desc(table.order)],
-      limit: 1,
+      orderBy: (table, { asc }) => [asc(table.order)],
     });
 
     const order =
-      existingColumns.length > 0 ? existingColumns[0]!.order + 1 : 0;
+      existingColumns.length > 0
+        ? Math.max(...existingColumns.map((c) => c.order)) + 1
+        : 0;
 
-    // Create column with HINGE provider and custom label
+    // Use the friend's chosen app, falling back to the comparison's own
+    const dataProvider =
+      data.dataProvider ?? deriveComparisonProvider(existingColumns);
+
+    // Create column with the selected provider and a custom label
     const [column] = await tx
       .insert(comparisonColumnTable)
       .values({
         comparisonId: comparison.id,
-        dataProvider: "HINGE",
+        dataProvider,
         title: data.columnLabel,
         order,
       })
@@ -1215,8 +1379,90 @@ export async function getPhotoSummary(comparisonId: string, userId: string) {
 }
 
 // Service object export
+/**
+ * Seed a brand-new comparison from a user's already-uploaded Tinder photos.
+ *
+ * Bridges the `media` table (dating-data photos) into `attachment` rows
+ * (resourceType "user_photo") by pointing at the same public URLs — no blob
+ * copy needed. The unique index on attachment.url keeps this idempotent, so the
+ * user can run it repeatedly without piling up duplicate gallery photos.
+ */
+export async function createFromTinderMedia(data: {
+  userId: string;
+  tinderId: string;
+}) {
+  // 1. The profile must belong to the requesting user
+  const profile = await db.query.tinderProfileTable.findFirst({
+    where: eq(tinderProfileTable.tinderId, data.tinderId),
+    columns: { tinderId: true, userId: true },
+  });
+
+  if (!profile) {
+    throw new Error("Profile not found");
+  }
+  if (profile.userId !== data.userId) {
+    throw new Error("You can only build a comparison from your own profile");
+  }
+
+  // 2. Pull the profile's photos. We don't filter on media.type so this stays
+  // consistent with the public getMedia query that powers the CTA preview.
+  const media = await db.query.mediaTable.findMany({
+    where: eq(mediaTable.tinderProfileId, data.tinderId),
+    limit: 9,
+  });
+  const photos = media.filter((m) => m.url);
+
+  if (photos.length === 0) {
+    throw new Error("This profile has no photos to build a comparison from");
+  }
+
+  const urls = photos.map((m) => m.url);
+
+  // 3. Mirror each photo into a user_photo attachment (idempotent on url)
+  await db
+    .insert(attachmentTable)
+    .values(
+      photos.map((m, index) => ({
+        resourceType: "user_photo" as const,
+        resourceId: "gallery",
+        uploadedBy: data.userId,
+        filename: `tinder-${data.tinderId}-${index}`,
+        originalFilename: `tinder-photo-${index + 1}.jpg`,
+        mimeType: "image/jpeg",
+        size: 0,
+        url: m.url,
+        metadata: { source: "tinder_media", tinderId: data.tinderId },
+      })),
+    )
+    .onConflictDoNothing({ target: attachmentTable.url });
+
+  // 4. Resolve attachment ids for those URLs, preserving the media order
+  const attachments = await db.query.attachmentTable.findMany({
+    where: and(
+      inArray(attachmentTable.url, urls),
+      isNull(attachmentTable.deletedAt),
+    ),
+  });
+  const idByUrl = new Map(attachments.map((a) => [a.url, a.id]));
+  const photoAttachmentIds = urls
+    .map((url) => idByUrl.get(url))
+    .filter((id): id is string => !!id);
+
+  if (photoAttachmentIds.length === 0) {
+    throw new Error("Failed to import photos");
+  }
+
+  // 5. Create the comparison with a single Tinder column, pre-filled
+  return createComparison({
+    userId: data.userId,
+    name: "My Tinder profile",
+    columns: [{ dataProvider: "TINDER", photoAttachmentIds }],
+  });
+}
+
 export const ProfileComparisonService = {
   create: createComparison,
+  createFromTinderMedia,
   get: getComparison,
   getPublic: getPublicComparison,
   list: listComparisons,
@@ -1224,7 +1470,9 @@ export const ProfileComparisonService = {
   delete: deleteComparison,
   addColumn,
   updateColumn,
+  reorderColumns,
   removeColumn,
+  duplicateColumn,
   addContentToColumn,
   addPhotoToColumn, // legacy
   updateContent,

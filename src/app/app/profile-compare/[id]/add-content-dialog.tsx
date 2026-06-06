@@ -22,8 +22,16 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useTRPC } from "@/trpc/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { PromptSelector } from "./prompt-selector";
+import { PromptSuggestions } from "./prompt-suggestions";
 import { useGalleryUpload } from "../_hooks/useGalleryUpload";
-import type { Prompt } from "@/lib/prompt-bank";
+import { isPromptSource, type Prompt } from "@/lib/prompt-bank";
+
+/** A prompt already on this profile — shown for context in the Prompt tab. */
+export interface ExistingPromptItem {
+  id: string;
+  prompt: string;
+  answer: string;
+}
 
 interface AddContentDialogProps {
   open: boolean;
@@ -31,6 +39,8 @@ interface AddContentDialogProps {
   columnId: string;
   comparisonId: string;
   appName: string;
+  /** Prompts already on this profile (for the "your prompts" context list). */
+  existingPrompts?: ExistingPromptItem[];
 }
 
 type ContentType = "image" | "prompt";
@@ -41,10 +51,12 @@ export function AddContentDialog({
   columnId,
   comparisonId,
   appName,
+  existingPrompts = [],
 }: AddContentDialogProps) {
   const [contentType, setContentType] = useState<ContentType>("image");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const promptInputRef = useRef<HTMLInputElement>(null);
+  const answerInputRef = useRef<HTMLTextAreaElement>(null);
 
   // Image selection state
   const [selectedPhotoIds, setSelectedPhotoIds] = useState<Set<string>>(
@@ -180,6 +192,41 @@ export function AddContentDialog({
     // Keep focus on answer input after selecting prompt
   };
 
+  // Drop an AI-suggested prompt into the custom-prompt form and focus the
+  // answer so the user can finish it in their own words (prompts-only flow).
+  const handleUseSuggestedPrompt = (suggestedPrompt: string) => {
+    setPrompt(suggestedPrompt);
+    setAnswer("");
+    setSelectedPromptImageId(undefined);
+    requestAnimationFrame(() => answerInputRef.current?.focus());
+  };
+
+  // Add an AI suggestion (prompt + answer) straight to the profile. Falls back
+  // to the form when there's no answer yet so nothing empty gets saved.
+  const handleAddSuggestion = async (
+    suggestedPrompt: string,
+    suggestedAnswer: string,
+  ): Promise<boolean> => {
+    if (!suggestedAnswer.trim()) {
+      handleUseSuggestedPrompt(suggestedPrompt);
+      toast.info("Add an answer, then save it below");
+      return false;
+    }
+
+    try {
+      await addContentMutation.mutateAsync({
+        columnId,
+        type: "prompt",
+        prompt: suggestedPrompt.trim(),
+        answer: suggestedAnswer.trim(),
+      });
+      return true;
+    } catch (error) {
+      console.error("Failed to add suggested prompt:", error);
+      return false;
+    }
+  };
+
   // Submit the prompt and clear the fields. Returns true on success so callers
   // can decide whether to close the dialog or keep it open for another entry.
   const submitPrompt = async () => {
@@ -248,7 +295,6 @@ export function AddContentDialog({
             <TabsTrigger value="prompt">
               <MessageSquare className="mr-2 h-4 w-4" />
               Prompt
-              <span className="text-muted-foreground ml-2 text-xs">(V2)</span>
             </TabsTrigger>
           </TabsList>
 
@@ -409,6 +455,46 @@ export function AddContentDialog({
           {/* Prompt Tab */}
           <TabsContent value="prompt" className="space-y-4">
             <div className="space-y-4 py-4">
+              {/* Your current prompts on this profile — context before adding */}
+              {existingPrompts.length > 0 && (
+                <div className="space-y-2">
+                  <Label>On this profile ({existingPrompts.length})</Label>
+                  <div className="space-y-1.5">
+                    {existingPrompts.map((p) => (
+                      <div
+                        key={p.id}
+                        className="bg-muted/30 rounded-md border px-3 py-2"
+                      >
+                        <p className="text-xs font-medium">{p.prompt}</p>
+                        {p.answer && (
+                          <p className="text-muted-foreground line-clamp-1 text-xs italic">
+                            {p.answer}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* AI prompt suggestions */}
+              <PromptSuggestions
+                columnId={columnId}
+                onAdd={handleAddSuggestion}
+                onUsePrompt={handleUseSuggestedPrompt}
+              />
+
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background text-muted-foreground px-2">
+                    Or browse &amp; write your own
+                  </span>
+                </div>
+              </div>
+
               {/* Browse Prompts Button */}
               <div>
                 <Label>Choose a Prompt</Label>
@@ -423,17 +509,6 @@ export function AddContentDialog({
                 <p className="text-muted-foreground mt-1 text-xs">
                   Or type your own custom prompt below
                 </p>
-              </div>
-
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background text-muted-foreground px-2">
-                    Or custom prompt
-                  </span>
-                </div>
               </div>
 
               <div>
@@ -451,6 +526,7 @@ export function AddContentDialog({
               <div>
                 <Label htmlFor="answer">Answer</Label>
                 <textarea
+                  ref={answerInputRef}
                   id="answer"
                   value={answer}
                   onChange={(e) => setAnswer(e.target.value)}
@@ -511,9 +587,7 @@ export function AddContentDialog({
         open={promptSelectorOpen}
         onOpenChange={setPromptSelectorOpen}
         onSelect={handleSelectPrompt}
-        currentApp={
-          appName === "TINDER" || appName === "HINGE" ? appName : undefined
-        }
+        currentApp={isPromptSource(appName) ? appName : undefined}
       />
     </>
   );

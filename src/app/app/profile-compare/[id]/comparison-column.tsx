@@ -7,13 +7,16 @@ import {
   Trash2,
   Layers,
   List,
-  Smartphone,
   Image as ImageIcon,
   GripVertical,
   Pencil,
   MoreVertical,
   CheckCircle2,
   Circle,
+  Flame,
+  Copy,
+  ArrowLeft,
+  ArrowRight,
 } from "lucide-react";
 import {
   DndContext,
@@ -51,18 +54,28 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DeleteAlert } from "@/components/ui/alert-dialog";
+import { cn } from "@/components/ui/lib/utils";
 
 import { useTRPC } from "@/trpc/react";
 import type { RouterOutputs } from "@/trpc/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AddContentDialog } from "./add-content-dialog";
 import { EditContentDialog } from "./edit-content-dialog";
+import { RoastProfileDialog } from "./roast-profile-dialog";
 import { getProviderConfig, type DisplayMode } from "./provider-config";
+import { ProviderIconChip } from "./provider-icon-chip";
 import { StackView } from "./stack-view";
 import { FlowView } from "./flow-view";
+import { isPromptSource } from "@/lib/prompt-bank";
 
 type ComparisonColumn =
   RouterOutputs["profileCompare"]["get"]["columns"][number];
+
+// Shared pill style for the status badges floating over a column preview, so
+// the static "Done" span and the interactive roast button stay pixel-identical.
+// `leading-none` keeps the icon + label crisply centered at this small size.
+const STATUS_PILL =
+  "flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium leading-none shadow-md";
 
 interface ComparisonColumnProps {
   column: ComparisonColumn;
@@ -70,6 +83,9 @@ interface ComparisonColumnProps {
   defaultBio?: string;
   profileName?: string;
   age?: number;
+  canMoveLeft?: boolean;
+  canMoveRight?: boolean;
+  onMove?: (direction: "left" | "right") => void;
 }
 
 // Sortable Content Component (photos and prompts)
@@ -220,16 +236,21 @@ export function ComparisonColumn({
   defaultBio,
   profileName,
   age,
+  canMoveLeft = false,
+  canMoveRight = false,
+  onMove,
 }: ComparisonColumnProps) {
   const [bio, setBio] = useState(column.bio || "");
   const [title, setTitle] = useState(column.title || "");
   const [addContentDialogOpen, setAddContentDialogOpen] = useState(false);
+  const [roastDialogOpen, setRoastDialogOpen] = useState(false);
   const [editContentDialogOpen, setEditContentDialogOpen] = useState(false);
   const [contentToEdit, setContentToEdit] = useState<
     ComparisonColumn["content"][number] | null
   >(null);
 
   const isDone = !!column.completedAt;
+  const roastStatus = column.roastStatus;
   const providerConfig = getProviderConfig(column.dataProvider);
   const [displayMode, setDisplayMode] = useState<DisplayMode>(
     providerConfig.defaultDisplayMode,
@@ -313,6 +334,20 @@ export function ComparisonColumn({
     }),
   );
 
+  const duplicateColumnMutation = useMutation(
+    trpc.profileCompare.duplicateColumn.mutationOptions({
+      onSuccess: () => {
+        toast.success("Profile duplicated — tweak it and compare");
+        void queryClient.invalidateQueries(
+          trpc.profileCompare.get.queryOptions({ id: comparisonId }),
+        );
+      },
+      onError: (error) => {
+        toast.error(error.message || "Failed to duplicate profile");
+      },
+    }),
+  );
+
   // Empty columns delete immediately; columns with content require confirmation.
   const handleDeleteColumn = () => {
     if (column.content.length === 0) {
@@ -380,7 +415,6 @@ export function ComparisonColumn({
   };
 
   const displayBio = column.bio || defaultBio || "";
-  const Icon = providerConfig.icon;
   const displayName = column.title || providerConfig.name;
 
   return (
@@ -390,23 +424,14 @@ export function ComparisonColumn({
         onValueChange={(v) => setDisplayMode(v as DisplayMode)}
       >
         <CardHeader>
+          {/* Identity on the left, view toggle + menu right-aligned — same
+              layout as the share page header. */}
           <div className="flex items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-2">
-              <span
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white shadow-sm"
-                style={{ backgroundColor: providerConfig.brandColor }}
-              >
-                <Icon className="h-4 w-4" />
-              </span>
+              <ProviderIconChip config={providerConfig} />
               <span className="truncate text-base font-semibold">
                 {displayName}
               </span>
-              <span className="text-muted-foreground shrink-0 text-sm">
-                · {column.content.length}
-              </span>
-              {isDone && (
-                <CheckCircle2 className="h-4 w-4 shrink-0 text-green-600" />
-              )}
             </div>
             <div className="flex items-center gap-1">
               <TabsList className="hidden h-8 lg:flex">
@@ -417,10 +442,6 @@ export function ComparisonColumn({
                 <TabsTrigger value="flow" className="text-xs">
                   <List className="mr-1.5 h-3.5 w-3.5" />
                   Flow
-                </TabsTrigger>
-                <TabsTrigger value="platform" disabled className="text-xs">
-                  <Smartphone className="mr-1.5 h-3.5 w-3.5" />
-                  Platform
                 </TabsTrigger>
               </TabsList>
               <DropdownMenu>
@@ -440,6 +461,19 @@ export function ComparisonColumn({
                   >
                     <Plus className="mr-2 h-4 w-4" />
                     Add content
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => setRoastDialogOpen(true)}>
+                    <Flame className="mr-2 h-4 w-4 text-rose-500" />
+                    Roast this profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() =>
+                      duplicateColumnMutation.mutate({ columnId: column.id })
+                    }
+                    disabled={duplicateColumnMutation.isPending}
+                  >
+                    <Copy className="mr-2 h-4 w-4" />
+                    Duplicate profile
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() =>
@@ -461,6 +495,25 @@ export function ComparisonColumn({
                       </>
                     )}
                   </DropdownMenuItem>
+                  {onMove && (canMoveLeft || canMoveRight) && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => onMove("left")}
+                        disabled={!canMoveLeft}
+                      >
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Move left
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => onMove("right")}
+                        disabled={!canMoveRight}
+                      >
+                        <ArrowRight className="mr-2 h-4 w-4" />
+                        Move right
+                      </DropdownMenuItem>
+                    </>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     variant="destructive"
@@ -474,7 +527,7 @@ export function ComparisonColumn({
             </div>
           </div>
           {/* Compact toggle drops below the identity row on narrow widths */}
-          <TabsList className="mt-2 grid h-8 w-full grid-cols-3 lg:hidden">
+          <TabsList className="mt-2 grid h-8 w-full grid-cols-2 lg:hidden">
             <TabsTrigger value="stack" className="text-xs">
               <Layers className="mr-1.5 h-3.5 w-3.5" />
               Stack
@@ -483,18 +536,57 @@ export function ComparisonColumn({
               <List className="mr-1.5 h-3.5 w-3.5" />
               Flow
             </TabsTrigger>
-            <TabsTrigger value="platform" disabled className="text-xs">
-              <Smartphone className="mr-1.5 h-3.5 w-3.5" />
-              Platform
-            </TabsTrigger>
           </TabsList>
         </CardHeader>
 
         <CardContent className="space-y-4">
-          {/* Stack View */}
-
-            {/* Stack View */}
-            <TabsContent value="stack" className="mt-4">
+          {/* Preview nearly fills the card: -mx-4 against CardContent's px-6
+              leaves a tiny 8px breathing margin (the share page is borderless
+              and stays fully flush). Status badges float over the preview's
+              top-right so they don't compete with the title for header width
+              (which truncated longer column names): the "Done" badge plus a
+              roast-status badge that doubles as a shortcut into the roast. */}
+          <div className="relative -mx-4">
+            {/* Status pills sit in a single right-aligned row so their heights
+                line up cleanly (a vertical stack left the differently-sized
+                pills with a ragged edge). Shared base class keeps the static
+                "Done" span and the interactive roast button pixel-identical. */}
+            <div className="absolute top-3 right-3 z-20 flex flex-wrap items-center justify-end gap-1.5">
+              {isDone && (
+                <span className={cn(STATUS_PILL, "bg-green-600 text-white")}>
+                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                  Done
+                </span>
+              )}
+              <button
+                type="button"
+                onClick={() => setRoastDialogOpen(true)}
+                title={
+                  roastStatus.roasted
+                    ? roastStatus.isStale
+                      ? "This profile changed since its roast — re-roast to refresh"
+                      : "This profile has been roasted — click to view"
+                    : "This profile hasn't been roasted yet — click to roast it"
+                }
+                className={cn(
+                  STATUS_PILL,
+                  "transition-colors",
+                  roastStatus.roasted
+                    ? roastStatus.isStale
+                      ? "bg-amber-500 text-white hover:bg-amber-600"
+                      : "bg-rose-600 text-white hover:bg-rose-500"
+                    : "bg-black/55 text-white backdrop-blur-sm hover:bg-black/70",
+                )}
+              >
+                <Flame className="h-3.5 w-3.5 shrink-0" />
+                {roastStatus.roasted
+                  ? roastStatus.isStale
+                    ? "Roast outdated"
+                    : "Roasted"
+                  : "Not roasted"}
+              </button>
+            </div>
+            <TabsContent value="stack" className="mt-0">
               <StackView
                 column={column}
                 providerConfig={providerConfig}
@@ -505,8 +597,7 @@ export function ComparisonColumn({
               />
             </TabsContent>
 
-            {/* Flow View */}
-            <TabsContent value="flow" className="mt-4">
+            <TabsContent value="flow" className="mt-0">
               <FlowView
                 column={column}
                 providerConfig={providerConfig}
@@ -516,19 +607,7 @@ export function ComparisonColumn({
                 age={age}
               />
             </TabsContent>
-
-            {/* Platform View (V3) */}
-            <TabsContent value="platform" className="mt-4">
-              <div className="bg-muted/50 flex aspect-[9/16] flex-col items-center justify-center rounded-xl border border-dashed p-6 text-center">
-                <Smartphone className="text-muted-foreground mb-4 h-12 w-12" />
-                <p className="text-muted-foreground mb-2 font-medium">
-                  Platform View
-                </p>
-                <p className="text-muted-foreground text-sm">
-                  Pixel-perfect {providerConfig.name} UI recreation coming soon
-                </p>
-              </div>
-            </TabsContent>
+          </div>
 
           {/* Edit Section Divider — two real line segments with a gap for the
             label, so there's no background box that can stand out against the
@@ -718,6 +797,32 @@ export function ComparisonColumn({
         columnId={column.id}
         comparisonId={comparisonId}
         appName={column.dataProvider}
+        existingPrompts={column.content
+          .filter((c) => c.type === "prompt")
+          .map((c) => ({
+            id: c.id,
+            prompt: c.prompt ?? "",
+            answer: c.answer ?? "",
+          }))}
+      />
+
+      {/* Roast Dialog */}
+      <RoastProfileDialog
+        columnId={column.id}
+        comparisonId={comparisonId}
+        displayName={displayName}
+        photoCount={
+          column.content.filter((c) => c.type === "photo" && c.attachment)
+            .length
+        }
+        promptCount={column.content.filter((c) => c.type === "prompt").length}
+        hasBio={Boolean(column.bio || defaultBio)}
+        onAddContent={() => {
+          setRoastDialogOpen(false);
+          setAddContentDialogOpen(true);
+        }}
+        open={roastDialogOpen}
+        onOpenChange={setRoastDialogOpen}
       />
 
       {/* Edit Content Dialog */}
@@ -726,6 +831,9 @@ export function ComparisonColumn({
         onOpenChange={setEditContentDialogOpen}
         content={contentToEdit}
         comparisonId={comparisonId}
+        currentApp={
+          isPromptSource(column.dataProvider) ? column.dataProvider : undefined
+        }
       />
 
       {/* Confirm deletion when the column still has content */}

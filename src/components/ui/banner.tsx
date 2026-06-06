@@ -1,4 +1,5 @@
 import { XMarkIcon } from "@heroicons/react/20/solid";
+import Link from "next/link";
 
 interface BannerProps {
   title?: string;
@@ -7,7 +8,14 @@ interface BannerProps {
   showDismiss?: boolean;
   ctaText?: string;
   ctaOnClick?: () => void;
+  /** Renders the CTA as a link instead of a button. Takes precedence over ctaOnClick. */
+  ctaHref?: string;
+  /** Optional pill rendered before the title (e.g. "New"). */
+  badge?: string;
 }
+
+const CTA_CLASSNAME =
+  "flex-none rounded-full bg-gray-900 px-3.5 py-1 text-sm font-semibold text-white shadow-xs hover:bg-gray-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900";
 
 export function Banner({
   title = "GeneriCon 2023",
@@ -16,6 +24,8 @@ export function Banner({
   showDismiss = false,
   ctaText,
   ctaOnClick,
+  ctaHref,
+  badge,
 }: BannerProps) {
   return (
     <div className="relative isolate z-40 flex items-center gap-x-6 overflow-hidden bg-gray-50 px-6 py-2.5 sm:px-3.5 sm:before:flex-1">
@@ -45,6 +55,11 @@ export function Banner({
       </div>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <p className="text-sm/6 text-gray-900">
+          {badge && (
+            <span className="mr-2 inline-flex items-center rounded-full bg-gray-900 px-2 py-0.5 text-xs font-semibold text-white">
+              {badge}
+            </span>
+          )}
           <strong className="font-semibold">{title}</strong>
           <svg
             viewBox="0 0 2 2"
@@ -55,14 +70,19 @@ export function Banner({
           </svg>
           {typeof message === "string" ? message : <span>{message}</span>}
         </p>
-        {ctaText && ctaOnClick && (
+        {ctaText && ctaHref && (
+          <Link href={ctaHref} className={CTA_CLASSNAME}>
+            {ctaText} <span aria-hidden="true">&rarr;</span>
+          </Link>
+        )}
+        {ctaText && !ctaHref && ctaOnClick && (
           <a
             href="#"
             onClick={(e) => {
               e.preventDefault();
               ctaOnClick();
             }}
-            className="flex-none rounded-full bg-gray-900 px-3.5 py-1 text-sm font-semibold text-white shadow-xs hover:bg-gray-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900"
+            className={CTA_CLASSNAME}
           >
             {ctaText} <span aria-hidden="true">&rarr;</span>
           </a>

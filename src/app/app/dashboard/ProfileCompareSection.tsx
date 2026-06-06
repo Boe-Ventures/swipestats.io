@@ -1,20 +1,27 @@
 import Link from "next/link";
 import Image from "next/image";
 import { formatDistanceToNow } from "date-fns";
-import { Plus, ExternalLink, Trash2, Eye, EyeOff } from "lucide-react";
+import {
+  Plus,
+  ExternalLink,
+  Trash2,
+  Eye,
+  EyeOff,
+  ArrowRight,
+  Images,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/toast";
+
+import { getProviderConfig } from "@/app/app/profile-compare/[id]/provider-config";
+import { ProviderIconChip } from "@/app/app/profile-compare/[id]/provider-icon-chip";
 
 import { useTRPC } from "@/trpc/react";
 import { useState } from "react";
@@ -27,18 +34,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ComingSoonWrapper } from "@/components/ComingSoonWrapper";
 
 export function ProfileCompareSection() {
-  return (
-    <ComingSoonWrapper
-      featureName="Profile Comparisons"
-      description="Compare your dating profiles side-by-side"
-      topic="waitlist-profile-compare"
-    >
-      <ProfileCompareSectionContent />
-    </ComingSoonWrapper>
-  );
+  return <ProfileCompareSectionContent />;
 }
 
 function ProfileCompareSectionContent() {
@@ -84,9 +82,9 @@ function ProfileCompareSectionContent() {
     return (
       <div className="space-y-4">
         <Skeleton className="h-8 w-64" />
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-64" />
+        <div className="space-y-4">
+          {[1, 2].map((i) => (
+            <Skeleton key={i} className="h-40 rounded-xl" />
           ))}
         </div>
       </div>
@@ -147,107 +145,138 @@ function ProfileCompareSectionContent() {
           </Link>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="space-y-4">
           {comparisons.slice(0, 3).map((comparison) => {
             const thumbnail =
               comparison.columns[0]?.content[0]?.attachment?.url;
             const columnCount = comparison.columns.length;
+            const photoCount = comparison.columns.reduce(
+              (sum, column) =>
+                sum +
+                column.content.filter((c) => c.attachment?.url).length,
+              0,
+            );
+            const href = `/app/profile-compare/${comparison.id}`;
 
             return (
               <Card
                 key={comparison.id}
-                className="overflow-hidden border-gray-200 bg-white pt-0 shadow-sm transition-shadow hover:shadow-lg"
+                className="group relative flex flex-row gap-0 overflow-hidden border-gray-200 bg-white p-0 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg"
               >
-                {/* Thumbnail */}
-                {thumbnail ? (
-                  <div className="bg-muted relative aspect-square overflow-hidden">
+                {/* Thumbnail — left rail */}
+                <Link
+                  href={href}
+                  className="bg-muted relative w-28 shrink-0 self-stretch overflow-hidden sm:w-44"
+                >
+                  {thumbnail ? (
                     <Image
                       src={thumbnail}
                       alt={comparison.name || "Profile comparison"}
                       fill
-                      className="object-cover"
+                      sizes="(min-width: 640px) 176px, 112px"
+                      className="object-cover transition-transform duration-300 group-hover:scale-105"
                     />
-                  </div>
-                ) : (
-                  <div className="bg-muted flex aspect-square items-center justify-center">
-                    <Plus className="text-muted-foreground h-12 w-12" />
-                  </div>
-                )}
+                  ) : (
+                    <div className="from-muted to-muted/60 flex h-full w-full items-center justify-center bg-gradient-to-br">
+                      <Images className="text-muted-foreground/50 h-8 w-8" />
+                    </div>
+                  )}
+                  {/* photo count chip */}
+                  {photoCount > 0 && (
+                    <span className="absolute bottom-2 left-2 flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[11px] font-medium text-white backdrop-blur-sm">
+                      <Images className="h-3 w-3" />
+                      {photoCount}
+                    </span>
+                  )}
+                </Link>
 
-                <CardHeader className="pb-3">
-                  <CardTitle className="line-clamp-1 text-base">
-                    {comparison.name || "Untitled Comparison"}
-                  </CardTitle>
-                  <CardDescription className="text-xs">
-                    {columnCount} {columnCount === 1 ? "app" : "apps"} •{" "}
-                    {formatDistanceToNow(new Date(comparison.updatedAt), {
-                      addSuffix: true,
-                    })}
-                  </CardDescription>
-                </CardHeader>
-
-                <CardContent className="pb-3">
-                  <div className="flex flex-wrap gap-1.5">
-                    {comparison.columns.map((column) => (
+                {/* Body */}
+                <CardContent className="flex min-w-0 flex-1 flex-col justify-between gap-3 p-4 sm:p-5">
+                  <div className="min-w-0 space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <Link href={href} className="min-w-0">
+                        <h3 className="truncate text-base font-semibold tracking-tight group-hover:underline">
+                          {comparison.name || "Untitled Comparison"}
+                        </h3>
+                        <p className="text-muted-foreground mt-0.5 text-xs">
+                          {columnCount} {columnCount === 1 ? "app" : "apps"} •{" "}
+                          {formatDistanceToNow(new Date(comparison.updatedAt), {
+                            addSuffix: true,
+                          })}
+                        </p>
+                      </Link>
+                      {/* Status, not an action — non-interactive badge */}
                       <Badge
-                        key={column.id}
-                        variant="secondary"
-                        className="text-xs"
+                        variant={comparison.isPublic ? "secondary" : "outline"}
+                        className="text-muted-foreground shrink-0 gap-1 font-normal"
+                        title={
+                          comparison.isPublic
+                            ? "Public — anyone with the link can view"
+                            : "Private — only you can view"
+                        }
                       >
-                        {column.dataProvider}
+                        {comparison.isPublic ? (
+                          <Eye className="h-3 w-3" />
+                        ) : (
+                          <EyeOff className="h-3 w-3" />
+                        )}
+                        {comparison.isPublic ? "Public" : "Private"}
                       </Badge>
-                    ))}
+                    </div>
+
+                    {/* Provider brand chips */}
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {comparison.columns.map((column) => (
+                        <ProviderIconChip
+                          key={column.id}
+                          config={getProviderConfig(column.dataProvider)}
+                          className="h-7 w-7 rounded-lg"
+                        />
+                      ))}
+                    </div>
                   </div>
-                </CardContent>
 
-                <CardFooter className="flex items-center justify-between gap-2 pt-0">
-                  <Link
-                    href={`/app/profile-compare/${comparison.id}`}
-                    className="flex-1"
-                  >
-                    <Button className="w-full" size="sm">
-                      View
-                    </Button>
-                  </Link>
-
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    title={
-                      comparison.isPublic
-                        ? "Public - anyone with link can view"
-                        : "Private - only you can view"
-                    }
-                  >
-                    {comparison.isPublic ? (
-                      <Eye className="h-4 w-4" />
-                    ) : (
-                      <EyeOff className="h-4 w-4" />
-                    )}
-                  </Button>
-
-                  {comparison.isPublic && comparison.shareKey && (
-                    <Link
-                      href={`/share/profile-compare/${comparison.shareKey}`}
-                      target="_blank"
-                    >
-                      <Button variant="ghost" size="sm" title="Open share link">
-                        <ExternalLink className="h-4 w-4" />
+                  {/* Actions */}
+                  <div className="flex items-center gap-2">
+                    <Link href={href} className="flex-1 sm:flex-none">
+                      <Button size="sm" className="w-full sm:w-auto">
+                        View
+                        <ArrowRight className="ml-1.5 h-4 w-4" />
                       </Button>
                     </Link>
-                  )}
 
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setComparisonToDelete(comparison.id);
-                      setDeleteDialogOpen(true);
-                    }}
-                  >
-                    <Trash2 className="text-destructive h-4 w-4" />
-                  </Button>
-                </CardFooter>
+                    <div className="ml-auto flex items-center gap-0.5">
+                      {comparison.isPublic && comparison.shareKey && (
+                        <Link
+                          href={`/share/profile-compare/${comparison.shareKey}`}
+                          target="_blank"
+                        >
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="text-muted-foreground h-8 w-8"
+                            title="Open share link"
+                          >
+                            <ExternalLink className="h-4 w-4" />
+                          </Button>
+                        </Link>
+                      )}
+
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground hover:text-destructive h-8 w-8"
+                        title="Delete comparison"
+                        onClick={() => {
+                          setComparisonToDelete(comparison.id);
+                          setDeleteDialogOpen(true);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
               </Card>
             );
           })}

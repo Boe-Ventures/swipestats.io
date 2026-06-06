@@ -19,12 +19,14 @@ import { toast } from "@/components/ui/toast";
 import { useTRPC } from "@/trpc/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { authClient } from "@/server/better-auth/client";
+import type { DataProvider } from "@/server/db/schema";
 
 interface PublishDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   shareKey: string;
   selectedPhotos: string[];
+  dataProvider: DataProvider;
   onSuccess: () => void;
 }
 
@@ -33,6 +35,7 @@ export function PublishDialog({
   onOpenChange,
   shareKey,
   selectedPhotos,
+  dataProvider,
   onSuccess,
 }: PublishDialogProps) {
   const trpc = useTRPC();
@@ -108,6 +111,7 @@ export function PublishDialog({
         shareKey,
         columnLabel,
         photoAttachmentIds: selectedPhotos,
+        dataProvider,
       });
     } catch (err) {
       console.error("Publish error:", err);

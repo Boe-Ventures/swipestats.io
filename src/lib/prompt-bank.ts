@@ -1,10 +1,12 @@
 export type PromptType = "text" | "image";
+export const PROMPT_SOURCES = ["TINDER", "HINGE", "BUMBLE"] as const;
+export type PromptSource = (typeof PROMPT_SOURCES)[number];
 
 export interface Prompt {
   id: string;
   text: string;
   type: PromptType;
-  source: "TINDER" | "HINGE";
+  source: PromptSource;
   imageAttachmentId?: string; // For image-paired prompts - reference to attachment table
   category?: string; // Optional categorization
 }
@@ -26,7 +28,7 @@ export interface Prompt {
  * }
  */
 
-export const PROMPT_BANK: Record<"TINDER" | "HINGE", Prompt[]> = {
+export const PROMPT_BANK: Record<PromptSource, Prompt[]> = {
   TINDER: [
     {
       id: "tinder-1",
@@ -1734,15 +1736,455 @@ export const PROMPT_BANK: Record<"TINDER" | "HINGE", Prompt[]> = {
       category: "Photo Captions",
     },
   ],
+  BUMBLE: [
+    {
+      id: "bumble-bit-of-fun-1",
+      text: "I'll never forget the time I",
+      type: "text",
+      source: "BUMBLE",
+      category: "Bit of fun",
+    },
+    {
+      id: "bumble-bit-of-fun-2",
+      text: "I probably shouldn't admit this, but",
+      type: "text",
+      source: "BUMBLE",
+      category: "Bit of fun",
+    },
+    {
+      id: "bumble-bit-of-fun-3",
+      text: "If I could bring back one trend, it would be",
+      type: "text",
+      source: "BUMBLE",
+      category: "Bit of fun",
+    },
+    {
+      id: "bumble-bit-of-fun-4",
+      text: "A nickname my friends have for me is",
+      type: "text",
+      source: "BUMBLE",
+      category: "Bit of fun",
+    },
+    {
+      id: "bumble-bit-of-fun-5",
+      text: "My most random skill is",
+      type: "text",
+      source: "BUMBLE",
+      category: "Bit of fun",
+    },
+    {
+      id: "bumble-bit-of-fun-6",
+      text: "The best thing my kid has ever taught me is",
+      type: "text",
+      source: "BUMBLE",
+      category: "Bit of fun",
+    },
+    {
+      id: "bumble-bit-of-fun-7",
+      text: "I was today years old when I learned",
+      type: "text",
+      source: "BUMBLE",
+      category: "Bit of fun",
+    },
+    {
+      id: "bumble-bit-of-fun-8",
+      text: "When my phone dies I",
+      type: "text",
+      source: "BUMBLE",
+      category: "Bit of fun",
+    },
+    {
+      id: "bumble-bit-of-fun-9",
+      text: "A fictional character I relate to is",
+      type: "text",
+      source: "BUMBLE",
+      category: "Bit of fun",
+    },
+    {
+      id: "bumble-bit-of-fun-10",
+      text: "Two truths and a lie",
+      type: "text",
+      source: "BUMBLE",
+      category: "Bit of fun",
+    },
+    {
+      id: "bumble-bit-of-fun-11",
+      text: "My favorite way to do nothing is",
+      type: "text",
+      source: "BUMBLE",
+      category: "Bit of fun",
+    },
+    {
+      id: "bumble-bit-of-fun-12",
+      text: "Something funny I think about all the time is",
+      type: "text",
+      source: "BUMBLE",
+      category: "Bit of fun",
+    },
+    {
+      id: "bumble-bit-of-fun-13",
+      text: "The last note I wrote on my phone says",
+      type: "text",
+      source: "BUMBLE",
+      category: "Bit of fun",
+    },
+    {
+      id: "bumble-about-me-1",
+      text: "My simple pleasures are",
+      type: "text",
+      source: "BUMBLE",
+      category: "About me",
+    },
+    {
+      id: "bumble-about-me-2",
+      text: "After work you can find me",
+      type: "text",
+      source: "BUMBLE",
+      category: "About me",
+    },
+    {
+      id: "bumble-about-me-3",
+      text: "I'm happiest when",
+      type: "text",
+      source: "BUMBLE",
+      category: "About me",
+    },
+    {
+      id: "bumble-about-me-4",
+      text: "I'm known for",
+      type: "text",
+      source: "BUMBLE",
+      category: "About me",
+    },
+    {
+      id: "bumble-about-me-5",
+      text: "My personal hell is",
+      type: "text",
+      source: "BUMBLE",
+      category: "About me",
+    },
+    {
+      id: "bumble-about-me-6",
+      text: "The quickest way to my heart is",
+      type: "text",
+      source: "BUMBLE",
+      category: "About me",
+    },
+    {
+      id: "bumble-about-me-7",
+      text: "One thing you need to know about me is",
+      type: "text",
+      source: "BUMBLE",
+      category: "About me",
+    },
+    {
+      id: "bumble-about-me-8",
+      text: "I'm a real nerd about",
+      type: "text",
+      source: "BUMBLE",
+      category: "About me",
+    },
+    {
+      id: "bumble-about-me-9",
+      text: "My humble brag is",
+      type: "text",
+      source: "BUMBLE",
+      category: "About me",
+    },
+    {
+      id: "bumble-about-me-10",
+      text: "My real-life superpower is",
+      type: "text",
+      source: "BUMBLE",
+      category: "About me",
+    },
+    {
+      id: "bumble-real-talk-1",
+      text: "The chapter I'm most proud of in my life is",
+      type: "text",
+      source: "BUMBLE",
+      category: "Real talk",
+    },
+    {
+      id: "bumble-real-talk-2",
+      text: "My character flaw is",
+      type: "text",
+      source: "BUMBLE",
+      category: "Real talk",
+    },
+    {
+      id: "bumble-real-talk-3",
+      text: "Do you agree or disagree that",
+      type: "text",
+      source: "BUMBLE",
+      category: "Real talk",
+    },
+    {
+      id: "bumble-real-talk-4",
+      text: "Something my family taught me about love is",
+      type: "text",
+      source: "BUMBLE",
+      category: "Real talk",
+    },
+    {
+      id: "bumble-real-talk-5",
+      text: "My dream is to",
+      type: "text",
+      source: "BUMBLE",
+      category: "Real talk",
+    },
+    {
+      id: "bumble-real-talk-6",
+      text: "The world would be a better place with more",
+      type: "text",
+      source: "BUMBLE",
+      category: "Real talk",
+    },
+    {
+      id: "bumble-real-talk-7",
+      text: "A pro and a con of dating me",
+      type: "text",
+      source: "BUMBLE",
+      category: "Real talk",
+    },
+    {
+      id: "bumble-real-talk-8",
+      text: "I show I care by",
+      type: "text",
+      source: "BUMBLE",
+      category: "Real talk",
+    },
+    {
+      id: "bumble-real-talk-9",
+      text: "Don't be mad if I",
+      type: "text",
+      source: "BUMBLE",
+      category: "Real talk",
+    },
+    {
+      id: "bumble-real-talk-10",
+      text: "What if I told you that",
+      type: "text",
+      source: "BUMBLE",
+      category: "Real talk",
+    },
+    {
+      id: "bumble-looking-for-1",
+      text: "Teach me something about",
+      type: "text",
+      source: "BUMBLE",
+      category: "Looking for",
+    },
+    {
+      id: "bumble-looking-for-2",
+      text: "Send me a like if you",
+      type: "text",
+      source: "BUMBLE",
+      category: "Looking for",
+    },
+    {
+      id: "bumble-looking-for-3",
+      text: "What makes a relationship great is",
+      type: "text",
+      source: "BUMBLE",
+      category: "Looking for",
+    },
+    {
+      id: "bumble-looking-for-4",
+      text: "My ultimate green flag is",
+      type: "text",
+      source: "BUMBLE",
+      category: "Looking for",
+    },
+    {
+      id: "bumble-looking-for-5",
+      text: "What I'd really like to find is",
+      type: "text",
+      source: "BUMBLE",
+      category: "Looking for",
+    },
+    {
+      id: "bumble-looking-for-6",
+      text: "I'm hoping you",
+      type: "text",
+      source: "BUMBLE",
+      category: "Looking for",
+    },
+    {
+      id: "bumble-looking-for-7",
+      text: "Hopefully you're also really into",
+      type: "text",
+      source: "BUMBLE",
+      category: "Looking for",
+    },
+    {
+      id: "bumble-looking-for-8",
+      text: "My favorite quality in a person is",
+      type: "text",
+      source: "BUMBLE",
+      category: "Looking for",
+    },
+    {
+      id: "bumble-looking-for-9",
+      text: "A value I'd love to share with a partner is",
+      type: "text",
+      source: "BUMBLE",
+      category: "Looking for",
+    },
+    {
+      id: "bumble-looking-for-10",
+      text: "I'll know we're aligned if",
+      type: "text",
+      source: "BUMBLE",
+      category: "Looking for",
+    },
+    {
+      id: "bumble-looking-for-11",
+      text: "Love, to me, means building",
+      type: "text",
+      source: "BUMBLE",
+      category: "Looking for",
+    },
+    {
+      id: "bumble-date-night-1",
+      text: "My perfect first date is",
+      type: "text",
+      source: "BUMBLE",
+      category: "Date night",
+    },
+    {
+      id: "bumble-date-night-2",
+      text: "If I cooked you dinner it would be",
+      type: "text",
+      source: "BUMBLE",
+      category: "Date night",
+    },
+    {
+      id: "bumble-date-night-3",
+      text: "I'll know we vibe on a date if",
+      type: "text",
+      source: "BUMBLE",
+      category: "Date night",
+    },
+    {
+      id: "bumble-date-night-4",
+      text: "My idea of quality time is",
+      type: "text",
+      source: "BUMBLE",
+      category: "Date night",
+    },
+    {
+      id: "bumble-date-night-5",
+      text: "To me, home feels complete when",
+      type: "text",
+      source: "BUMBLE",
+      category: "Date night",
+    },
+    {
+      id: "bumble-date-night-6",
+      text: "Send me a like if you know a great spot for",
+      type: "text",
+      source: "BUMBLE",
+      category: "Date night",
+    },
+    {
+      id: "bumble-date-night-7",
+      text: "Together, we could",
+      type: "text",
+      source: "BUMBLE",
+      category: "Date night",
+    },
+    {
+      id: "bumble-date-night-8",
+      text: "Instead of drinks, let's",
+      type: "text",
+      source: "BUMBLE",
+      category: "Date night",
+    },
+    {
+      id: "bumble-date-night-9",
+      text: "Win me over by",
+      type: "text",
+      source: "BUMBLE",
+      category: "Date night",
+    },
+    {
+      id: "bumble-self-care-1",
+      text: "To me, self-care is",
+      type: "text",
+      source: "BUMBLE",
+      category: "Self-care",
+    },
+    {
+      id: "bumble-self-care-2",
+      text: "My morning routine looks like",
+      type: "text",
+      source: "BUMBLE",
+      category: "Self-care",
+    },
+    {
+      id: "bumble-self-care-3",
+      text: "When I unplug I like to",
+      type: "text",
+      source: "BUMBLE",
+      category: "Self-care",
+    },
+    {
+      id: "bumble-self-care-4",
+      text: "I get out of a bad mood by",
+      type: "text",
+      source: "BUMBLE",
+      category: "Self-care",
+    },
+    {
+      id: "bumble-self-care-5",
+      text: "My healthy obsession is",
+      type: "text",
+      source: "BUMBLE",
+      category: "Self-care",
+    },
+    {
+      id: "bumble-self-care-6",
+      text: "I'm really proud of",
+      type: "text",
+      source: "BUMBLE",
+      category: "Self-care",
+    },
+    {
+      id: "bumble-self-care-7",
+      text: "I've been challenging myself to",
+      type: "text",
+      source: "BUMBLE",
+      category: "Self-care",
+    },
+    {
+      id: "bumble-self-care-8",
+      text: "My perfect Sunday includes",
+      type: "text",
+      source: "BUMBLE",
+      category: "Self-care",
+    },
+    {
+      id: "bumble-self-care-9",
+      text: "I feel my hottest when",
+      type: "text",
+      source: "BUMBLE",
+      category: "Self-care",
+    },
+  ],
 };
 
 // Helper functions
-export function getPromptsByApp(app: "TINDER" | "HINGE"): Prompt[] {
+export function isPromptSource(app: string): app is PromptSource {
+  return PROMPT_SOURCES.includes(app as PromptSource);
+}
+
+export function getPromptsByApp(app: PromptSource): Prompt[] {
   return PROMPT_BANK[app] || [];
 }
 
 export function getAllPrompts(): Prompt[] {
-  return [...PROMPT_BANK.TINDER, ...PROMPT_BANK.HINGE];
+  return Object.values(PROMPT_BANK).flat();
 }
 
 export function getPromptById(id: string): Prompt | undefined {

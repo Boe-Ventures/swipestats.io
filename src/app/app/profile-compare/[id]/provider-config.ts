@@ -56,8 +56,8 @@ export const PROVIDER_CONFIGS: Record<DataProvider, ProviderConfig> = {
     accentColor: "#FFE55C",
     icon: Hexagon,
     iconImage: "/images/brand/bumble.jpg",
-    defaultDisplayMode: "stack",
-    supportedModes: ["stack", "flow", "platform"],
+    defaultDisplayMode: "flow",
+    supportedModes: ["flow", "stack", "platform"],
     description: "Women make the first move",
   },
   GRINDR: {

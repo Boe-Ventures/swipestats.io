@@ -14,7 +14,7 @@ import { useTRPC } from "@/trpc/react";
 import type { RouterOutputs } from "@/trpc/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { PromptSelector } from "./prompt-selector";
-import type { Prompt } from "@/lib/prompt-bank";
+import type { Prompt, PromptSource } from "@/lib/prompt-bank";
 
 type ContentItem =
   RouterOutputs["profileCompare"]["get"]["columns"][number]["content"][number];
@@ -24,6 +24,7 @@ interface EditContentDialogProps {
   onOpenChange: (open: boolean) => void;
   content: ContentItem | null;
   comparisonId: string;
+  currentApp?: PromptSource;
 }
 
 export function EditContentDialog({
@@ -31,6 +32,7 @@ export function EditContentDialog({
   onOpenChange,
   content,
   comparisonId,
+  currentApp,
 }: EditContentDialogProps) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -207,6 +209,7 @@ export function EditContentDialog({
         open={promptSelectorOpen}
         onOpenChange={setPromptSelectorOpen}
         onSelect={handleSelectPrompt}
+        currentApp={currentApp}
       />
     </>
   );
