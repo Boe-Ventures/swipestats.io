@@ -1186,63 +1186,123 @@ export type ProfileComparisonFeedbackInsert =
 
 // ---- ROAST TABLE --------------------------------------------------
 
-export const roastTable = pgTable(
-  "roast",
+// ---- AI OUTPUT ----------------------------------------------------
+//
+// One table for every PERSISTED, regenerable, shareable AI artifact about a
+// subject the user owns — profile roasts today, "your year"/Wrapped-style
+// recaps later. Ephemeral AI (prompt suggestions, on-the-fly analysis) does NOT
+// belong here; it's returned to the client and never stored.
+//
+// Shape:
+//  - `kind` (plain text, validated at the edge — adding a kind needs no
+//    migration) + `subjectId` + `scope` identify the artifact. One row per
+//    (kind, subjectId, scope); regenerating OVERWRITES it (a user expects one
+//    current version, not a history).
+//  - `input` records what we fed the model (reproducibility/debugging);
+//    `output` is the rendered result. Both jsonb. Each generator owns its
+//    `output` shape and validates it with a zod schema at write time.
+//  - `version` is the output-format version. The UI renders the current version
+//    and offers a manual "refresh" (regenerate) for rows left behind — so the
+//    payload can evolve without DB migrations or backfills.
+//  - `fingerprint` flags content-staleness (subject changed since generation).
+//  - `shareKey`/`isPublic` are the share primitive, built once for all kinds.
+//  - `subjectId` is intentionally NOT a FK (it points into several tables);
+//    roasts are cheap derived data, pruned by the app layer on subject delete.
+
+export type AiOutputKind = "tinder_roast" | "hinge_roast" | "profile_roast";
+
+/** Stats-roast payload (was the flat `roast` columns) — output for the *_roast stats kinds. */
+export type StatsRoastResult = {
+  tagline: string;
+  headline: string;
+  verdict: string;
+  roastLines: string[];
+  realTalkInsights: string[];
+  overallScore: number; // 0-100
+};
+
+/** `output` payload — shape depends on `kind`, narrowed at the edge by zod. */
+export type AiOutputPayload = StatsRoastResult | ProfileRoastResult;
+
+/** What was fed to the model, stored for reproducibility. Shape depends on kind. */
+export type AiOutputInput =
+  | {
+      dataProvider: string;
+      gender: string | null;
+      benchmarks: {
+        label: string;
+        valueLabel: string;
+        bucket: string;
+        cohortLabel: string;
+      }[];
+    }
+  | { providerKey: string; steer: string | null };
+
+export const aiOutputTable = pgTable(
+  "ai_output",
   (t) => ({
     id: t
       .text()
       .primaryKey()
-      .$defaultFn(() => createId("rst")),
+      .$defaultFn(() => createId("aio")),
     userId: t
       .text()
       .notNull()
       .references(() => userTable.id, { onDelete: "cascade" }),
-    tinderProfileId: t
-      .text()
-      .references(() => tinderProfileTable.tinderId, { onDelete: "cascade" }),
-    hingeProfileId: t
-      .text()
-      .references(() => hingeProfileTable.hingeId, { onDelete: "cascade" }),
-    // AI-generated content stored as JSON
-    roastLines: t.jsonb().$type<string[]>().notNull(),
-    realTalkInsights: t.jsonb().$type<string[]>().notNull(),
-    headline: t.text().notNull(), // best one-liner for OG image
-    overallScore: t.integer().notNull(), // 0-100 "dateability score"
-    // Share infrastructure
+    // `kind` + `subjectId` + `scope` identify the artifact. kind is plain text
+    // (validated at the edge) so a new kind needs no migration; subjectId points
+    // into whatever table `kind` implies (tinderId / hingeId / column id).
+    kind: t.text().$type<AiOutputKind>().notNull(),
+    subjectId: t.text().notNull(),
+    // "" = the whole subject; a period like "2024" / "2024-01" for recaps. Part
+    // of the uniqueness key. NOT NULL (empty string, never NULL) so the unique
+    // index treats it as one slot — NULLs would be distinct and break overwrite.
+    scope: t.text().notNull().default(""),
+    // Voice knob, promoted out of `input` because it's read back often. Nullable
+    // (not every kind has a tone).
+    tone: t.text(),
+    model: t.text().notNull(),
+    version: t.smallint().notNull().default(1),
+    input: t.jsonb().$type<AiOutputInput>().notNull(),
+    output: t.jsonb().$type<AiOutputPayload>().notNull(),
+    // Hash of the subject state the output was generated against; if it differs
+    // from the live state the output is stale. Null when staleness is N/A.
+    fingerprint: t.text(),
     shareKey: t
       .text()
       .unique()
       .$defaultFn(() => createId("share")),
-    isPublic: t.boolean().default(false).notNull(),
+    isPublic: t.boolean().notNull().default(false),
     createdAt: t
+      .timestamp()
+      .$defaultFn(() => new Date())
+      .notNull(),
+    updatedAt: t
       .timestamp()
       .$defaultFn(() => new Date())
       .notNull(),
   }),
   (table) => [
-    index("roast_user_id_idx").on(table.userId),
-    index("roast_tinder_profile_id_idx").on(table.tinderProfileId),
-    index("roast_hinge_profile_id_idx").on(table.hingeProfileId),
-    index("roast_share_key_idx").on(table.shareKey),
+    // One artifact per (kind, subject, scope) — regeneration upserts here and
+    // overwrites in place.
+    uniqueIndex("ai_output_subject_key").on(
+      table.kind,
+      table.subjectId,
+      table.scope,
+    ),
+    index("ai_output_user_id_idx").on(table.userId),
+    index("ai_output_share_key_idx").on(table.shareKey),
   ],
 );
 
-export type Roast = typeof roastTable.$inferSelect;
-export type RoastInsert = typeof roastTable.$inferInsert;
+export type AiOutputRow = typeof aiOutputTable.$inferSelect;
+export type AiOutputRowInsert = typeof aiOutputTable.$inferInsert;
 
-// ---- PROFILE-COMPARE ROAST ----------------------------------------
+// ---- PROFILE-COMPARE (VISION) ROAST PAYLOAD -----------------------
 //
-// One mutable roast per (target, tone): regeneration UPDATEs `result` in place
-// (upsert keyed on the unique index below) rather than appending rows.
-// To upgrade to a full history later: stop upserting, INSERT one row per
-// generation, and add `parentRoastId` (self-FK) + `regenScope` jsonb to thread
-// partial regenerations together.
-
-/**
- * Self-contained roast payload stored as jsonb. Photos/prompts are keyed by
- * content id; image URLs are resolved live on read (not frozen here), so the
- * roast always renders against the current profile.
- */
+// The `output` shape for kind="profile_roast" rows in `ai_output`. Photos/
+// prompts are keyed by content id; image URLs are resolved live on read (not
+// frozen here), so the roast always renders against the current profile.
 export type ProfileRoastResult = {
   overall: {
     tagline: string; // short verdict badge, e.g. "Solid, but playing it safe"
@@ -1272,54 +1332,6 @@ export type ProfileRoastResult = {
     action?: "reorder" | "editBio" | "addPrompt"; // optional deep-link hint (future)
   }[];
 };
-
-export const profileRoastTable = pgTable(
-  "profile_roast",
-  (t) => ({
-    id: t
-      .text()
-      .primaryKey()
-      .$defaultFn(() => createId("pcr")),
-    userId: t
-      .text()
-      .notNull()
-      .references(() => userTable.id, { onDelete: "cascade" }),
-    // Polymorphic target: a single column (profile roast) OR a whole comparison
-    // (full roast, slice 3). Exactly one is set.
-    columnId: t
-      .text()
-      .references(() => comparisonColumnTable.id, { onDelete: "cascade" }),
-    comparisonId: t
-      .text()
-      .references(() => profileComparisonTable.id, { onDelete: "cascade" }),
-    tone: t.text().notNull(),
-    result: t.jsonb().$type<ProfileRoastResult>().notNull(),
-    // Hash of the roasted profile state (ordered content ids + bio + title).
-    // If it differs from the live state, the roast is stale.
-    contentFingerprint: t.text().notNull(),
-    model: t.text().notNull(),
-    createdAt: t
-      .timestamp()
-      .$defaultFn(() => new Date())
-      .notNull(),
-    updatedAt: t
-      .timestamp()
-      .$defaultFn(() => new Date())
-      .notNull(),
-  }),
-  (table) => [
-    // One roast per profile — regeneration upserts on this key and overwrites
-    // (tone just changes the voice of that single roast; a "new roast" = a new
-    // column/config). Comparison roasts (columnId null) get their own partial
-    // unique index in slice 3.
-    uniqueIndex("profile_roast_column_id_key").on(table.columnId),
-    index("profile_roast_comparison_id_idx").on(table.comparisonId),
-    index("profile_roast_user_id_idx").on(table.userId),
-  ],
-);
-
-export type ProfileRoastRow = typeof profileRoastTable.$inferSelect;
-export type ProfileRoastRowInsert = typeof profileRoastTable.$inferInsert;
 
 // ---- COHORT SYSTEM TABLES -----------------------------------------
 
@@ -1432,7 +1444,7 @@ export const userRelations = relations(userTable, ({ one, many }) => ({
   profileComparisons: many(profileComparisonTable),
   uploadedAttachments: many(attachmentTable),
   cohortDefinitions: many(cohortDefinitionTable),
-  roasts: many(roastTable),
+  aiOutputs: many(aiOutputTable),
 }));
 
 export const accountRelations = relations(accountTable, ({ one }) => ({
@@ -1668,10 +1680,9 @@ export const comparisonColumnRelations = relations(
     }),
     content: many(comparisonColumnContentTable),
     feedback: many(profileComparisonFeedbackTable),
-    // One saved roast per column (unique on columnId) — inverse of
-    // profileRoastRelations.column. Lets the comparison query surface whether
-    // a profile has been roasted, and whether that roast is stale.
-    roast: one(profileRoastTable),
+    // Roast state (roasted? stale?) lives in `ai_output` keyed by
+    // (kind="profile_roast", subjectId=column.id) — no FK relation, queried
+    // explicitly where the comparison is read.
   }),
 );
 
@@ -1734,32 +1745,9 @@ export const cohortStatsRelations = relations(cohortStatsTable, ({ one }) => ({
   }),
 }));
 
-export const roastRelations = relations(roastTable, ({ one }) => ({
+export const aiOutputRelations = relations(aiOutputTable, ({ one }) => ({
   user: one(userTable, {
-    fields: [roastTable.userId],
+    fields: [aiOutputTable.userId],
     references: [userTable.id],
-  }),
-  tinderProfile: one(tinderProfileTable, {
-    fields: [roastTable.tinderProfileId],
-    references: [tinderProfileTable.tinderId],
-  }),
-  hingeProfile: one(hingeProfileTable, {
-    fields: [roastTable.hingeProfileId],
-    references: [hingeProfileTable.hingeId],
-  }),
-}));
-
-export const profileRoastRelations = relations(profileRoastTable, ({ one }) => ({
-  user: one(userTable, {
-    fields: [profileRoastTable.userId],
-    references: [userTable.id],
-  }),
-  column: one(comparisonColumnTable, {
-    fields: [profileRoastTable.columnId],
-    references: [comparisonColumnTable.id],
-  }),
-  comparison: one(profileComparisonTable, {
-    fields: [profileRoastTable.comparisonId],
-    references: [profileComparisonTable.id],
   }),
 }));

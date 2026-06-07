@@ -1,5 +1,5 @@
 import { anthropic } from "@ai-sdk/anthropic";
-import { generateObject } from "ai";
+import { generateText, Output, NoObjectGeneratedError } from "ai";
 import { z } from "zod";
 
 /**
@@ -168,14 +168,29 @@ ${contextBlock}
 
 Give exactly ${input.count} suggestions. Vary them across different vibes (funny, sincere, intriguing, niche-interest) so there's real choice. Every suggestion must be distinct from the others and from what's already on the profile.`;
 
-  const result = await generateObject({
-    model: anthropic(PROMPT_SUGGEST_MODEL),
-    schema: outputSchema,
-    prompt,
-    temperature: 0.9,
-  });
+  try {
+    const { output } = await generateText({
+      model: anthropic(PROMPT_SUGGEST_MODEL),
+      temperature: 0.9,
+      output: Output.object({
+        name: "PromptSuggestions",
+        description:
+          "Distinct, on-brand dating-profile prompt/answer suggestions personalised to the user.",
+        schema: outputSchema,
+      }),
+      prompt,
+    });
 
-  return result.object.suggestions;
+    return output.suggestions;
+  } catch (error) {
+    if (NoObjectGeneratedError.isInstance(error)) {
+      console.error("[prompt-suggest] no object generated", {
+        cause: error.cause,
+        text: error.text,
+      });
+    }
+    throw error;
+  }
 }
 
 /**
@@ -208,14 +223,19 @@ Their direction for the change (follow it closely): ${input.steer.trim()}
 
 Return a SINGLE improved suggestion. You may keep the same prompt and only rework the answer, or switch to a better-fitting prompt — whatever best satisfies their direction.`;
 
-  const result = await generateObject({
+  const { output } = await generateText({
     model: anthropic(PROMPT_SUGGEST_MODEL),
-    schema: outputSchema,
-    prompt,
     temperature: 0.9,
+    output: Output.object({
+      name: "PromptSuggestion",
+      description:
+        "A single improved dating-profile prompt/answer suggestion, following the user's steering.",
+      schema: outputSchema,
+    }),
+    prompt,
   });
 
-  const first = result.object.suggestions[0];
+  const first = output.suggestions[0];
   if (!first) {
     throw new Error("No suggestion generated");
   }

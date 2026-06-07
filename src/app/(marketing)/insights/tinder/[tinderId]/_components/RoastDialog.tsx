@@ -10,6 +10,7 @@ import {
   Loader2,
   Lock,
   MessageSquare,
+  RefreshCw,
   Share2,
   Trophy,
 } from "lucide-react";
@@ -36,6 +37,15 @@ interface RoastDialogProps {
 }
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://swipestats.io";
+
+/** Mirrors the profile-compare roast tone dial (server enum: helpful/mild/spicy). */
+const TONES = [
+  { key: "helpful", label: "Helpful", emoji: "💡", blurb: "Honest, encouraging notes." },
+  { key: "mild", label: "Mild", emoji: "😏", blurb: "Playful jabs, mostly friendly." },
+  { key: "spicy", label: "Spicy", emoji: "🌶️", blurb: "No mercy. Bring tissues." },
+] as const;
+
+type Tone = (typeof TONES)[number]["key"];
 
 function scoreColor(score: number) {
   return score >= 70 ? "#22c55e" : score >= 45 ? "#f59e0b" : "#ef4444";
@@ -257,6 +267,22 @@ export function RoastDialog({ open, onOpenChange }: RoastDialogProps) {
   const isGenerating =
     generateMutation.isPending || (generateMutation.isSuccess && !roast);
 
+  // The tone currently in flight (optimistic) or saved on the roast; drives the
+  // selector's active state. Falls back to "mild" before anything is roasted.
+  const activeTone: Tone =
+    generateMutation.variables?.tone ??
+    (roast?.tone as Tone | null) ??
+    "mild";
+
+  // Explicit tone clicks always re-roll (server reuses cache only for the same
+  // tone); for the first-ever roast `regenerate` is a harmless no-op.
+  const runRoast = (tone: Tone) =>
+    generateMutation.mutate({
+      tinderProfileId: tinderId,
+      tone,
+      regenerate: true,
+    });
+
   const getShareUrl = (shareKey: string) =>
     `${BASE_URL}/share/roast/${shareKey}`;
 
@@ -292,7 +318,7 @@ export function RoastDialog({ open, onOpenChange }: RoastDialogProps) {
       <DialogContent
         size="lg"
         scrollable
-        className="border-white/10 bg-[#0f0a1e] p-0 text-white"
+        className="border-white/10 bg-[#0f0a1e] p-0 text-white [&_[data-slot=dialog-close]]:bg-white/10 [&_[data-slot=dialog-close]]:text-white/80 [&_[data-slot=dialog-close]]:hover:bg-white/20 [&_[data-slot=dialog-close]]:hover:text-white"
       >
         <div className="space-y-6 p-6">
           <DialogHeader>
@@ -319,16 +345,19 @@ export function RoastDialog({ open, onOpenChange }: RoastDialogProps) {
             </div>
           )}
 
-          {/* No roast yet — owner without one */}
+          {/* No roast yet — owner without one: pick a heat level to generate */}
           {!isGenerating && !roastQuery.isLoading && isOwner && !roast && (
-            <div className="space-y-4 py-8 text-center">
+            <div className="space-y-5 py-6 text-center">
               <div className="relative mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-rose-400 to-rose-600 shadow-lg shadow-rose-500/40">
                 <Flame className="h-8 w-8 text-white" />
                 <span className="absolute inset-0 animate-ping rounded-2xl ring-2 ring-rose-400/50" />
               </div>
-              <p className="text-white/70">
-                Get a data-driven AI roast of your dating app performance.
-              </p>
+              <div className="space-y-1">
+                <p className="text-lg font-bold text-white">Pick your heat</p>
+                <p className="text-sm text-white/60">
+                  A data-driven roast of your stats — you choose how hard we go.
+                </p>
+              </div>
               {!isPaid ? (
                 <div className="space-y-3">
                   <p className="text-sm text-white/40">
@@ -342,14 +371,26 @@ export function RoastDialog({ open, onOpenChange }: RoastDialogProps) {
                   </Button>
                 </div>
               ) : (
-                <Button
-                  onClick={() =>
-                    generateMutation.mutate({ tinderProfileId: tinderId })
-                  }
-                  className="bg-rose-600 text-white hover:bg-rose-500"
-                >
-                  Generate My Roast 🔥
-                </Button>
+                <div className="grid gap-2 text-left sm:grid-cols-3">
+                  {TONES.map((t) => (
+                    <button
+                      key={t.key}
+                      type="button"
+                      onClick={() => runRoast(t.key)}
+                      className="group flex flex-col items-center gap-1.5 rounded-xl border border-white/10 bg-white/5 p-4 text-center transition-colors hover:border-rose-400/60 hover:bg-rose-500/10 focus-visible:ring-2 focus-visible:ring-rose-400 focus-visible:outline-none"
+                    >
+                      <span className="text-2xl transition-transform group-hover:scale-110">
+                        {t.emoji}
+                      </span>
+                      <span className="text-sm font-semibold text-white">
+                        {t.label}
+                      </span>
+                      <span className="text-xs leading-snug text-white/50">
+                        {t.blurb}
+                      </span>
+                    </button>
+                  ))}
+                </div>
               )}
             </div>
           )}
@@ -357,7 +398,7 @@ export function RoastDialog({ open, onOpenChange }: RoastDialogProps) {
           {/* Roast content */}
           {!isGenerating && roast && (
             <div className="space-y-6">
-              {/* Hero — score ring + headline */}
+              {/* Hero — score ring + tagline + headline + verdict */}
               <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800 p-5 sm:p-6">
                 <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
                   <ScoreRing score={roast.overallScore} />
@@ -366,13 +407,45 @@ export function RoastDialog({ open, onOpenChange }: RoastDialogProps) {
                       variant="secondary"
                       className="border-0 bg-white/10 font-semibold tracking-widest text-white/60 uppercase"
                     >
-                      Dateability Score
+                      {roast.tagline ?? "Dateability Score"}
                     </Badge>
                     <p className="font-serif text-xl leading-snug text-white italic sm:text-2xl">
                       &ldquo;{roast.headline}&rdquo;
                     </p>
+                    {roast.verdict && (
+                      <p className="text-sm leading-relaxed text-white/60">
+                        {roast.verdict}
+                      </p>
+                    )}
                   </div>
                 </div>
+              </div>
+
+              {/* Tone dial — re-roll at a different heat */}
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="mr-1 text-xs font-medium text-white/40">
+                  Re-roast:
+                </span>
+                {TONES.map((t) => (
+                  <Button
+                    key={t.key}
+                    size="sm"
+                    variant="outline"
+                    onClick={() => runRoast(t.key)}
+                    className={cn(
+                      "border-white/15 bg-white/5 text-white hover:bg-white/15 hover:text-white",
+                      activeTone === t.key &&
+                        "border-rose-400/60 bg-rose-500/20 text-white",
+                    )}
+                  >
+                    {activeTone === t.key ? (
+                      <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
+                    ) : (
+                      <span className="mr-1.5">{t.emoji}</span>
+                    )}
+                    {t.label}
+                  </Button>
+                ))}
               </div>
 
               {/* Roast lines */}

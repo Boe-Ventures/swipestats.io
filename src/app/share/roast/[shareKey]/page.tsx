@@ -3,20 +3,28 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 
 import { db } from "@/server/db";
-import { roastTable } from "@/server/db/schema";
+import { aiOutputTable, type StatsRoastResult } from "@/server/db/schema";
 import { eq } from "drizzle-orm";
-import { env } from "@/env";
 
 interface Props {
   params: Promise<{ shareKey: string }>;
 }
 
 async function getRoast(shareKey: string) {
-  const roast = await db.query.roastTable.findFirst({
-    where: eq(roastTable.shareKey, shareKey),
+  const row = await db.query.aiOutputTable.findFirst({
+    where: eq(aiOutputTable.shareKey, shareKey),
   });
-  if (!roast?.isPublic) return null;
-  return roast;
+  if (
+    !row?.isPublic ||
+    (row.kind !== "tinder_roast" && row.kind !== "hinge_roast")
+  ) {
+    return null;
+  }
+  const output = row.output as StatsRoastResult;
+  // Defensive on the public path: a malformed/older-version payload renders the
+  // not-found state rather than throwing for an anonymous viewer.
+  if (!Array.isArray(output.roastLines)) return null;
+  return { ...row, ...output };
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -27,28 +35,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return { title: "Roast Not Found | SwipeStats" };
   }
 
-  const baseUrl = env.NEXT_PUBLIC_BASE_URL;
-  const ogParams = new URLSearchParams({
-    score: String(roast.overallScore),
-    headline: roast.headline,
-  });
-  const ogImageUrl = `${baseUrl}/api/og/roast?${ogParams.toString()}`;
+  // The dynamic share card lives in opengraph-image.tsx (colocated); Next wires
+  // it into both og:image and twitter:image automatically.
+  const title = `${roast.overallScore}/100 Dateability — My Dating App Roast`;
+  const description = roast.verdict ?? roast.headline;
 
   return {
     title: `My Dating App Roast | SwipeStats`,
-    description: roast.headline,
-    openGraph: {
-      title: `My Dating App Roast — ${roast.overallScore}/100 Dateability`,
-      description: roast.headline,
-      images: [{ url: ogImageUrl, width: 1200, height: 630 }],
-      type: "website",
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: `My Dating App Roast — ${roast.overallScore}/100 Dateability`,
-      description: roast.headline,
-      images: [ogImageUrl],
-    },
+    description,
+    openGraph: { title, description, type: "website" },
+    twitter: { card: "summary_large_image", title, description },
   };
 }
 
@@ -86,9 +82,15 @@ export default async function SharedRoastPage({ params }: Props) {
       <div className="mx-auto max-w-3xl px-6 py-12">
         {/* Score card */}
         <div className="mb-10 text-center">
-          <div className="mb-2 text-sm font-semibold tracking-widest text-white/40 uppercase">
-            Dateability Score
-          </div>
+          {roast.tagline ? (
+            <div className="mb-3 inline-block rounded-full bg-white/10 px-4 py-1.5 text-sm font-bold tracking-widest text-white/70 uppercase">
+              {roast.tagline}
+            </div>
+          ) : (
+            <div className="mb-2 text-sm font-semibold tracking-widest text-white/40 uppercase">
+              Dateability Score
+            </div>
+          )}
           <div
             className="text-[96px] leading-none font-black"
             style={{
@@ -102,14 +104,19 @@ export default async function SharedRoastPage({ params }: Props) {
           >
             {roast.overallScore}
           </div>
-          <div className="text-lg text-white/40">/ 100</div>
+          <div className="text-lg text-white/40">/ 100 Dateability</div>
         </div>
 
-        {/* Headline */}
+        {/* Headline + verdict */}
         <blockquote className="mb-10 rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
           <p className="text-xl font-medium text-white/90 italic">
             {`"${roast.headline}"`}
           </p>
+          {roast.verdict && (
+            <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-white/50">
+              {roast.verdict}
+            </p>
+          )}
         </blockquote>
 
         {/* Preview roast lines */}

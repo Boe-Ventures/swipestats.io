@@ -79,7 +79,7 @@ export function RoastCtaCard() {
               setDialogOpen(true);
             }}
           >
-            {hasRoast ? "View" : "Get Roasted 🔥"}
+            {hasRoast ? "View" : "Get Roasted"}
           </Button>
         </CardContent>
       </Card>

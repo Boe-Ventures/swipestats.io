@@ -85,8 +85,8 @@ export function FlowView({
                   {profileName || "Name"}
                   {age && `, ${age}`}
                 </h2>
-                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-500">
-                  <Check className="h-3 w-3 text-white" />
+                <div className="flex h-4 w-4 items-center justify-center rounded-full bg-blue-500">
+                  <Check className="h-2.5 w-2.5 text-white" />
                 </div>
               </div>
 
@@ -207,23 +207,6 @@ export function FlowView({
                     <span className="text-sm text-gray-900">
                       Graduate degree
                     </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Prompts Section Placeholder (V2) */}
-              <div className="bg-gray-50 px-4 pt-4 pb-6">
-                <div className="mb-3">
-                  <h3 className="text-lg font-bold text-gray-900">Prompts</h3>
-                </div>
-                <div className="bg-muted/50 flex items-center justify-center rounded-xl border border-dashed py-8">
-                  <div className="text-center">
-                    <p className="text-muted-foreground mb-1 text-sm font-medium">
-                      Coming in V2
-                    </p>
-                    <p className="text-muted-foreground text-xs">
-                      Add Hinge-style prompts with answers
-                    </p>
                   </div>
                 </div>
               </div>

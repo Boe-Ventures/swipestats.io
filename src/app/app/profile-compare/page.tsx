@@ -1,20 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { formatDistanceToNow } from "date-fns";
-import { Plus, ExternalLink, Trash2, Eye, EyeOff } from "lucide-react";
+import { Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -23,13 +13,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/toast";
 
 import { useTRPC } from "@/trpc/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { CreateComparisonDialog } from "./create-comparison-dialog";
+import { ProfileComparisonCard } from "./ProfileComparisonCard";
 
 export default function ProfileCompareDashboard() {
   const trpc = useTRPC();
@@ -78,9 +68,9 @@ export default function ProfileCompareDashboard() {
           <Skeleton className="h-8 w-48" />
           <Skeleton className="h-10 w-40" />
         </div>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        <div className="space-y-4">
           {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-64" />
+            <Skeleton key={i} className="h-40 rounded-xl" />
           ))}
         </div>
       </div>
@@ -122,106 +112,17 @@ export default function ProfileCompareDashboard() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {comparisons.map((comparison) => {
-            const thumbnail =
-              comparison.columns[0]?.content[0]?.attachment?.url;
-            const columnCount = comparison.columns.length;
-
-            return (
-              <Card key={comparison.id} className="overflow-hidden pt-0">
-                {/* Thumbnail */}
-                {thumbnail ? (
-                  <div className="bg-muted relative aspect-square overflow-hidden">
-                    <Image
-                      src={thumbnail}
-                      alt={comparison.name || "Profile comparison"}
-                      fill
-                      className="object-cover"
-                    />
-                  </div>
-                ) : (
-                  <div className="bg-muted flex aspect-square items-center justify-center">
-                    <Plus className="text-muted-foreground h-12 w-12" />
-                  </div>
-                )}
-
-                <CardHeader>
-                  <div className="flex items-start justify-between gap-2">
-                    <CardTitle className="line-clamp-1">
-                      {comparison.name || "Untitled Comparison"}
-                    </CardTitle>
-                    {/* Status, not an action — non-interactive badge */}
-                    <Badge
-                      variant={comparison.isPublic ? "secondary" : "outline"}
-                      className="text-muted-foreground shrink-0 gap-1 font-normal"
-                      title={
-                        comparison.isPublic
-                          ? "Public — anyone with the link can view"
-                          : "Private — only you can view"
-                      }
-                    >
-                      {comparison.isPublic ? (
-                        <Eye className="h-3 w-3" />
-                      ) : (
-                        <EyeOff className="h-3 w-3" />
-                      )}
-                      {comparison.isPublic ? "Public" : "Private"}
-                    </Badge>
-                  </div>
-                  <CardDescription>
-                    {columnCount} {columnCount === 1 ? "app" : "apps"} •{" "}
-                    {formatDistanceToNow(new Date(comparison.updatedAt), {
-                      addSuffix: true,
-                    })}
-                  </CardDescription>
-                </CardHeader>
-
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    {comparison.columns.map((column) => (
-                      <Badge key={column.id} variant="secondary">
-                        {column.dataProvider}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-
-                <CardFooter className="flex items-center justify-between gap-2">
-                  <Link
-                    href={`/app/profile-compare/${comparison.id}`}
-                    className="flex-1"
-                  >
-                    <Button className="w-full" size="sm">
-                      View
-                    </Button>
-                  </Link>
-
-                  {comparison.isPublic && comparison.shareKey && (
-                    <Link
-                      href={`/share/profile-compare/${comparison.shareKey}`}
-                      target="_blank"
-                    >
-                      <Button variant="ghost" size="sm" title="Open share link">
-                        <ExternalLink className="h-4 w-4" />
-                      </Button>
-                    </Link>
-                  )}
-
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setComparisonToDelete(comparison.id);
-                      setDeleteDialogOpen(true);
-                    }}
-                  >
-                    <Trash2 className="text-destructive h-4 w-4" />
-                  </Button>
-                </CardFooter>
-              </Card>
-            );
-          })}
+        <div className="space-y-4">
+          {comparisons.map((comparison) => (
+            <ProfileComparisonCard
+              key={comparison.id}
+              comparison={comparison}
+              onDelete={(id) => {
+                setComparisonToDelete(id);
+                setDeleteDialogOpen(true);
+              }}
+            />
+          ))}
         </div>
       )}
 

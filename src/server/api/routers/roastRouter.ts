@@ -3,29 +3,82 @@ import { z } from "zod";
 import { eq, and } from "drizzle-orm";
 
 import {
-  roastTable,
+  aiOutputTable,
   profileMetaTable,
   tinderProfileTable,
   hingeProfileTable,
   userTable,
   comparisonColumnTable,
-  profileRoastTable,
+  type AiOutputKind,
+  type AiOutputRow,
+  type StatsRoastResult,
   type ProfileRoastResult,
 } from "@/server/db/schema";
 import { protectedProcedure, publicProcedure } from "../trpc";
-import { generateRoast } from "@/server/services/roast.service";
+import {
+  generateRoast,
+  buildRoastBenchmarks,
+  STATS_ROAST_MODEL,
+  type RoastBenchmark,
+} from "@/server/services/roast.service";
 import {
   roastProfile,
   roastSinglePhoto,
   buildRoastFingerprint,
   ROAST_MODEL,
   ROAST_TONES,
+  PROVIDER_NAME,
   type RoastTone,
 } from "@/server/services/profile-roast.service";
+import { getCohortStats } from "@/server/services/cohort/cohort.service";
 import { canAccessFeature } from "@/server/services/gating.service";
 import { ProfileComparisonService } from "@/server/services/profile-comparison.service";
-import { ROAST_ENABLED } from "@/lib/constants/feature-flags";
 import { env } from "@/env";
+
+/** Output-format version per kind. Bump a kind's number when its `output` shape
+ * changes; the UI offers a manual re-roast for rows left on an older version. */
+const ROAST_VERSION = 1;
+
+/**
+ * System cohort id + human label for a profile's gender on a provider, used to
+ * pull percentile benchmarks for the stats roast. Falls back to the all-gender
+ * cohort when gender is unknown/non-binary (no dedicated cohort exists).
+ */
+function resolveCohort(
+  providerKey: string,
+  gender: string | undefined,
+): { cohortId: string; cohortLabel: string } {
+  const p = providerKey.toLowerCase(); // "tinder" | "hinge"
+  const providerName = PROVIDER_NAME[providerKey] ?? providerKey;
+  if (gender === "MALE")
+    return { cohortId: `${p}_male`, cohortLabel: `men on ${providerName}` };
+  if (gender === "FEMALE")
+    return { cohortId: `${p}_female`, cohortLabel: `women on ${providerName}` };
+  return { cohortId: `${p}_all`, cohortLabel: `everyone on ${providerName}` };
+}
+
+/** Stats roast lives in ai_output keyed by (kind, subjectId, scope=""). */
+function statsTarget(input: {
+  tinderProfileId?: string;
+  hingeProfileId?: string;
+}): { kind: AiOutputKind; subjectId: string } {
+  return input.tinderProfileId
+    ? { kind: "tinder_roast", subjectId: input.tinderProfileId }
+    : { kind: "hinge_roast", subjectId: input.hingeProfileId! };
+}
+
+/** Map a stats ai_output row to the flat shape the insights UI consumes. */
+function mapStatsRoast(row: AiOutputRow) {
+  const output = row.output as StatsRoastResult;
+  return {
+    id: row.id,
+    shareKey: row.shareKey,
+    isPublic: row.isPublic,
+    tone: row.tone,
+    createdAt: row.createdAt,
+    ...output,
+  };
+}
 
 /** Photo sort priority when applying a roast: keep first, cut last. */
 const RANK: Record<"keep" | "maybe" | "cut", number> = {
@@ -81,7 +134,8 @@ function hydrateRoast(
 
 export const roastRouter = {
   /**
-   * Generate a new roast for a profile. Caches in DB so we don't re-call AI on every request.
+   * Generate a stats roast for a profile. Upserts one row per profile in
+   * ai_output (overwrite on regenerate) so we don't re-call AI every request.
    * Requires PLUS or ELITE tier.
    */
   generate: protectedProcedure
@@ -89,18 +143,14 @@ export const roastRouter = {
       z.object({
         tinderProfileId: z.string().optional(),
         hingeProfileId: z.string().optional(),
+        tone: z.enum(ROAST_TONES).default("mild"),
+        /** Force a fresh roast even if a cached one exists (e.g. tone change). */
+        regenerate: z.boolean().default(false),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      const { tinderProfileId, hingeProfileId } = input;
+      const { tinderProfileId, hingeProfileId, tone, regenerate } = input;
       const userId = ctx.session.user.id;
-
-      if (!ROAST_ENABLED) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "AI Roast is not available yet",
-        });
-      }
 
       if (!tinderProfileId && !hingeProfileId) {
         throw new TRPCError({
@@ -123,34 +173,44 @@ export const roastRouter = {
         });
       }
 
-      // Verify profile ownership
+      // Verify ownership and gather gender/provider in one pass.
+      let gender: string | undefined;
+      let providerKey = "TINDER";
       if (tinderProfileId) {
-        const profile = await ctx.db.query.tinderProfileTable.findFirst({
+        const tp = await ctx.db.query.tinderProfileTable.findFirst({
           where: eq(tinderProfileTable.tinderId, tinderProfileId),
         });
-        if (profile?.userId !== userId) {
+        if (tp?.userId !== userId) {
           throw new TRPCError({ code: "FORBIDDEN" });
         }
-      }
-      if (hingeProfileId) {
-        const profile = await ctx.db.query.hingeProfileTable.findFirst({
-          where: eq(hingeProfileTable.hingeId, hingeProfileId),
+        gender = tp.gender;
+        providerKey = "TINDER";
+      } else {
+        const hp = await ctx.db.query.hingeProfileTable.findFirst({
+          where: eq(hingeProfileTable.hingeId, hingeProfileId!),
         });
-        if (profile?.userId !== userId) {
+        if (hp?.userId !== userId) {
           throw new TRPCError({ code: "FORBIDDEN" });
         }
+        gender = hp.gender;
+        providerKey = "HINGE";
       }
 
-      // Return cached roast if it exists (roasts are stable)
-      const existing = await ctx.db.query.roastTable.findFirst({
+      const { kind, subjectId } = statsTarget(input);
+
+      // Reuse the cached roast unless the caller wants a fresh one or switched
+      // tone. The share key / public flag are preserved across regenerations.
+      const existing = await ctx.db.query.aiOutputTable.findFirst({
         where: and(
-          eq(roastTable.userId, userId),
-          tinderProfileId
-            ? eq(roastTable.tinderProfileId, tinderProfileId)
-            : eq(roastTable.hingeProfileId, hingeProfileId!),
+          eq(aiOutputTable.kind, kind),
+          eq(aiOutputTable.subjectId, subjectId),
+          eq(aiOutputTable.scope, ""),
         ),
       });
-      if (existing) return existing;
+      const existingTone = existing?.tone ?? "spicy"; // legacy rows = old default
+      if (existing && !regenerate && existingTone === tone) {
+        return mapStatsRoast(existing);
+      }
 
       // Fetch ProfileMeta
       const profileMeta = await ctx.db.query.profileMetaTable.findFirst({
@@ -165,50 +225,66 @@ export const roastRouter = {
         });
       }
 
-      // Determine gender + data provider for better roast context
-      let gender: string | undefined;
-      let dataProvider = "Tinder";
-      if (tinderProfileId) {
-        const tp = await ctx.db.query.tinderProfileTable.findFirst({
-          where: eq(tinderProfileTable.tinderId, tinderProfileId),
-        });
-        gender = tp?.gender;
-        dataProvider = "Tinder";
-      } else if (hingeProfileId) {
-        const hp = await ctx.db.query.hingeProfileTable.findFirst({
-          where: eq(hingeProfileTable.hingeId, hingeProfileId),
-        });
-        gender = hp?.gender;
-        dataProvider = "Hinge";
+      // Pull cohort percentiles so the roast knows what's actually good vs bad
+      // (otherwise it dunks on elite numbers). Best-effort.
+      let benchmarks: RoastBenchmark[] = [];
+      const { cohortId, cohortLabel } = resolveCohort(providerKey, gender);
+      const cohortStats = await getCohortStats(cohortId);
+      if (cohortStats) {
+        benchmarks = buildRoastBenchmarks(profileMeta, cohortStats, cohortLabel);
       }
 
-      // Generate roast via AI
-      const roastOutput = await generateRoast({
+      const output = await generateRoast({
         profileMeta,
+        tone,
         gender,
-        dataProvider,
+        dataProvider: providerKey,
+        benchmarks,
       });
 
-      // Cache in DB
-      const [roast] = await ctx.db
-        .insert(roastTable)
+      const inputSnapshot = {
+        dataProvider: providerKey,
+        gender: gender ?? null,
+        benchmarks,
+      };
+
+      // One stats roast per profile — upsert overwrites in place, preserving the
+      // existing id / shareKey / isPublic.
+      const [row] = await ctx.db
+        .insert(aiOutputTable)
         .values({
           userId,
-          tinderProfileId: tinderProfileId ?? null,
-          hingeProfileId: hingeProfileId ?? null,
-          roastLines: roastOutput.roastLines,
-          realTalkInsights: roastOutput.realTalkInsights,
-          headline: roastOutput.headline,
-          overallScore: roastOutput.overallScore,
-          isPublic: false,
+          kind,
+          subjectId,
+          scope: "",
+          tone,
+          model: STATS_ROAST_MODEL,
+          version: ROAST_VERSION,
+          input: inputSnapshot,
+          output,
+        })
+        .onConflictDoUpdate({
+          target: [
+            aiOutputTable.kind,
+            aiOutputTable.subjectId,
+            aiOutputTable.scope,
+          ],
+          set: {
+            tone,
+            model: STATS_ROAST_MODEL,
+            version: ROAST_VERSION,
+            input: inputSnapshot,
+            output,
+            updatedAt: new Date(),
+          },
         })
         .returning();
 
-      return roast!;
+      return mapStatsRoast(row!);
     }),
 
   /**
-   * Get cached roast for a profile (if exists).
+   * Get the cached stats roast for a profile (if any).
    */
   getByProfile: protectedProcedure
     .input(
@@ -225,16 +301,17 @@ export const roastRouter = {
         return null;
       }
 
-      const roast = await ctx.db.query.roastTable.findFirst({
+      const { kind, subjectId } = statsTarget(input);
+      const row = await ctx.db.query.aiOutputTable.findFirst({
         where: and(
-          eq(roastTable.userId, userId),
-          tinderProfileId
-            ? eq(roastTable.tinderProfileId, tinderProfileId)
-            : eq(roastTable.hingeProfileId, hingeProfileId!),
+          eq(aiOutputTable.kind, kind),
+          eq(aiOutputTable.subjectId, subjectId),
+          eq(aiOutputTable.scope, ""),
+          eq(aiOutputTable.userId, userId),
         ),
       });
 
-      return roast ?? null;
+      return row ? mapStatsRoast(row) : null;
     }),
 
   /**
@@ -243,25 +320,29 @@ export const roastRouter = {
   getPublic: publicProcedure
     .input(z.object({ shareKey: z.string() }))
     .query(async ({ ctx, input }) => {
-      const roast = await ctx.db.query.roastTable.findFirst({
-        where: eq(roastTable.shareKey, input.shareKey),
+      const row = await ctx.db.query.aiOutputTable.findFirst({
+        where: eq(aiOutputTable.shareKey, input.shareKey),
       });
 
-      if (!roast?.isPublic) {
+      if (
+        !row?.isPublic ||
+        (row.kind !== "tinder_roast" && row.kind !== "hinge_roast")
+      ) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Roast not found or not shared",
         });
       }
 
+      const output = row.output as StatsRoastResult;
       // Return only first 3 lines publicly (the hook)
       return {
-        id: roast.id,
-        shareKey: roast.shareKey,
-        roastLines: roast.roastLines.slice(0, 3),
-        headline: roast.headline,
-        overallScore: roast.overallScore,
-        createdAt: roast.createdAt,
+        id: row.id,
+        shareKey: row.shareKey,
+        roastLines: output.roastLines.slice(0, 3),
+        headline: output.headline,
+        overallScore: output.overallScore,
+        createdAt: row.createdAt,
       };
     }),
 
@@ -273,21 +354,21 @@ export const roastRouter = {
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
 
-      const roast = await ctx.db.query.roastTable.findFirst({
+      const row = await ctx.db.query.aiOutputTable.findFirst({
         where: and(
-          eq(roastTable.id, input.roastId),
-          eq(roastTable.userId, userId),
+          eq(aiOutputTable.id, input.roastId),
+          eq(aiOutputTable.userId, userId),
         ),
       });
 
-      if (!roast) {
+      if (!row) {
         throw new TRPCError({ code: "NOT_FOUND" });
       }
 
       const [updated] = await ctx.db
-        .update(roastTable)
+        .update(aiOutputTable)
         .set({ isPublic: true })
-        .where(eq(roastTable.id, input.roastId))
+        .where(eq(aiOutputTable.id, input.roastId))
         .returning();
 
       return { shareKey: updated?.shareKey };
@@ -308,13 +389,6 @@ export const roastRouter = {
     )
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
-
-      if (!ROAST_ENABLED) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "AI Roast is not available yet",
-        });
-      }
 
       const user = await ctx.db.query.userTable.findFirst({
         where: eq(userTable.id, userId),
@@ -412,27 +486,41 @@ export const roastRouter = {
         realTalk: roast.realTalk,
       };
 
-      const contentFingerprint = buildRoastFingerprint(column, effectiveBio);
+      const fingerprint = buildRoastFingerprint(column, effectiveBio);
       const updatedAt = new Date();
+      const inputSnapshot = {
+        providerKey: column.dataProvider,
+        steer: input.steer ?? null,
+      };
 
       // One roast per profile — overwrite on regeneration.
       await ctx.db
-        .insert(profileRoastTable)
+        .insert(aiOutputTable)
         .values({
           userId,
-          columnId: input.columnId,
+          kind: "profile_roast",
+          subjectId: input.columnId,
+          scope: "",
           tone: input.tone,
-          result,
-          contentFingerprint,
           model: ROAST_MODEL,
+          version: ROAST_VERSION,
+          input: inputSnapshot,
+          output: result,
+          fingerprint,
         })
         .onConflictDoUpdate({
-          target: profileRoastTable.columnId,
+          target: [
+            aiOutputTable.kind,
+            aiOutputTable.subjectId,
+            aiOutputTable.scope,
+          ],
           set: {
             tone: input.tone,
-            result,
-            contentFingerprint,
             model: ROAST_MODEL,
+            version: ROAST_VERSION,
+            input: inputSnapshot,
+            output: result,
+            fingerprint,
             updatedAt,
           },
         });
@@ -460,13 +548,6 @@ export const roastRouter = {
     )
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
-
-      if (!ROAST_ENABLED) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "AI Roast is not available yet",
-        });
-      }
 
       const user = await ctx.db.query.userTable.findFirst({
         where: eq(userTable.id, userId),
@@ -499,8 +580,12 @@ export const roastRouter = {
       }
 
       // A single-photo correction only makes sense against an existing roast.
-      const row = await ctx.db.query.profileRoastTable.findFirst({
-        where: eq(profileRoastTable.columnId, input.columnId),
+      const row = await ctx.db.query.aiOutputTable.findFirst({
+        where: and(
+          eq(aiOutputTable.kind, "profile_roast"),
+          eq(aiOutputTable.subjectId, input.columnId),
+          eq(aiOutputTable.scope, ""),
+        ),
       });
       if (!row) {
         throw new TRPCError({
@@ -508,6 +593,7 @@ export const roastRouter = {
           message: "Roast this profile before correcting a photo.",
         });
       }
+      const result = row.output as ProfileRoastResult;
 
       const photoContent = column.content.find(
         (c) => c.id === input.contentId && c.type === "photo",
@@ -522,7 +608,7 @@ export const roastRouter = {
 
       // The verdict must already exist in the stored roast; if not, the roast
       // predates this photo — a full re-roast is the right move.
-      const targetIndex = row.result.photos.findIndex(
+      const targetIndex = result.photos.findIndex(
         (p) => p.contentId === input.contentId,
       );
       if (targetIndex === -1) {
@@ -533,11 +619,10 @@ export const roastRouter = {
         });
       }
 
-      const tone: RoastTone = (ROAST_TONES as readonly string[]).includes(
-        row.tone,
-      )
-        ? (row.tone as RoastTone)
-        : "mild";
+      const tone: RoastTone =
+        row.tone && (ROAST_TONES as readonly string[]).includes(row.tone)
+          ? (row.tone as RoastTone)
+          : "mild";
 
       const verdict = await roastSinglePhoto({
         providerKey: column.dataProvider,
@@ -548,7 +633,7 @@ export const roastRouter = {
 
       // Patch just this photo's verdict; everything else (and the fingerprint —
       // content is unchanged) stays put.
-      const updatedPhotos = row.result.photos.map((p, i) =>
+      const updatedPhotos = result.photos.map((p, i) =>
         i === targetIndex
           ? {
               contentId: p.contentId,
@@ -560,14 +645,14 @@ export const roastRouter = {
           : p,
       );
       const updatedResult: ProfileRoastResult = {
-        ...row.result,
+        ...result,
         photos: updatedPhotos,
       };
 
       await ctx.db
-        .update(profileRoastTable)
-        .set({ result: updatedResult })
-        .where(eq(profileRoastTable.id, row.id));
+        .update(aiOutputTable)
+        .set({ output: updatedResult, updatedAt: new Date() })
+        .where(eq(aiOutputTable.id, row.id));
 
       // Return the refreshed photo (hydrated with its live URL) so the client
       // can swap just this card in place.
@@ -607,19 +692,24 @@ export const roastRouter = {
         });
       }
 
-      const row = await ctx.db.query.profileRoastTable.findFirst({
-        where: eq(profileRoastTable.columnId, input.columnId),
+      const row = await ctx.db.query.aiOutputTable.findFirst({
+        where: and(
+          eq(aiOutputTable.kind, "profile_roast"),
+          eq(aiOutputTable.subjectId, input.columnId),
+          eq(aiOutputTable.scope, ""),
+        ),
       });
       if (!row) return null;
 
+      const result = row.output as ProfileRoastResult;
       const effectiveBio = column.bio ?? column.comparison.defaultBio ?? null;
       const currentFingerprint = buildRoastFingerprint(column, effectiveBio);
 
       return {
         tone: row.tone,
-        isStale: row.contentFingerprint !== currentFingerprint,
+        isStale: row.fingerprint !== currentFingerprint,
         updatedAt: row.updatedAt,
-        ...hydrateRoast(row.result, column.content, effectiveBio),
+        ...hydrateRoast(result, column.content, effectiveBio),
       };
     }),
 
@@ -641,13 +731,6 @@ export const roastRouter = {
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
 
-      if (!ROAST_ENABLED) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "AI Roast is not available yet",
-        });
-      }
-
       // Source column (ordered content) + ownership + saved roast.
       const source = await ctx.db.query.comparisonColumnTable.findFirst({
         where: eq(comparisonColumnTable.id, input.columnId),
@@ -666,8 +749,12 @@ export const roastRouter = {
         });
       }
 
-      const roastRow = await ctx.db.query.profileRoastTable.findFirst({
-        where: eq(profileRoastTable.columnId, input.columnId),
+      const roastRow = await ctx.db.query.aiOutputTable.findFirst({
+        where: and(
+          eq(aiOutputTable.kind, "profile_roast"),
+          eq(aiOutputTable.subjectId, input.columnId),
+          eq(aiOutputTable.scope, ""),
+        ),
       });
       if (!roastRow) {
         throw new TRPCError({
@@ -675,13 +762,14 @@ export const roastRouter = {
           message: "Roast this profile before applying changes.",
         });
       }
+      const roastResult = roastRow.output as ProfileRoastResult;
 
       // keep/maybe/cut keyed by the ORDER of the source photo it was given for —
       // order survives duplication, so the same map drives both modes. Stale-safe:
       // verdicts for since-deleted photos simply won't match any live content.
       const verdictByOrder = new Map<number, "keep" | "maybe" | "cut">();
       const verdictByContentId = new Map<string, "keep" | "maybe" | "cut">();
-      for (const p of roastRow.result.photos) {
+      for (const p of roastResult.photos) {
         if (p.contentId) verdictByContentId.set(p.contentId, p.keepOrCut);
       }
       for (const c of source.content) {
@@ -729,7 +817,7 @@ export const roastRouter = {
       // Bio: apply the chosen rewrite.
       const rewrite =
         input.rewriteIndex !== undefined
-          ? roastRow.result.bio?.rewrites[input.rewriteIndex]
+          ? roastResult.bio?.rewrites[input.rewriteIndex]
           : undefined;
       if (rewrite) {
         await ProfileComparisonService.updateColumn({
@@ -769,8 +857,13 @@ export const roastRouter = {
       }
 
       await ctx.db
-        .delete(profileRoastTable)
-        .where(eq(profileRoastTable.columnId, input.columnId));
+        .delete(aiOutputTable)
+        .where(
+          and(
+            eq(aiOutputTable.kind, "profile_roast"),
+            eq(aiOutputTable.subjectId, input.columnId),
+          ),
+        );
 
       return { success: true };
     }),

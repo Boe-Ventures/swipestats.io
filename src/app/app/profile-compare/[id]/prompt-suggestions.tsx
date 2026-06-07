@@ -18,6 +18,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { toast } from "@/components/ui/toast";
 import { cn } from "@/components/ui/lib/utils";
+import { useSubscription } from "@/hooks/useSubscription";
+import { useUpgrade } from "@/contexts/UpgradeContext";
 import type { SuggestMode } from "@/server/services/prompt-suggest.service";
 
 type Suggestion = { prompt: string; answer: string; rationale: string };
@@ -42,6 +44,9 @@ export function PromptSuggestions({
   onUsePrompt,
 }: PromptSuggestionsProps) {
   const trpc = useTRPC();
+  const { effectiveTier } = useSubscription();
+  const { openUpgradeModal } = useUpgrade();
+  const isPaid = effectiveTier === "PLUS" || effectiveTier === "ELITE";
   const [mode, setMode] = useState<SuggestMode>("full");
   const [cards, setCards] = useState<SuggestionCardData[]>([]);
 
@@ -100,11 +105,20 @@ export function PromptSuggestions({
 
       <Button
         size="sm"
-        onClick={() => suggestMutation.mutate({ columnId, mode })}
-        disabled={suggestMutation.isPending}
+        onClick={() =>
+          isPaid
+            ? suggestMutation.mutate({ columnId, mode })
+            : openUpgradeModal({ feature: "aiRoast" })
+        }
+        disabled={isPaid && suggestMutation.isPending}
         className="w-full bg-rose-600 text-white hover:bg-rose-500"
       >
-        {suggestMutation.isPending ? (
+        {!isPaid ? (
+          <>
+            <Sparkles className="mr-2 h-4 w-4" />
+            Upgrade to unlock
+          </>
+        ) : suggestMutation.isPending ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
             Thinking…

@@ -7,7 +7,6 @@ import {
   Share2,
   Settings,
   Plus,
-  BarChart3,
   ImagePlus,
   Upload,
 } from "lucide-react";
@@ -320,12 +319,6 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
           )}
         </div>
         <div className="flex items-center gap-2">
-          <Link href={`/app/profile-compare/${comparison.id}/summary`}>
-            <Button variant="outline" size="sm">
-              <BarChart3 className="mr-2 h-4 w-4" />
-              Summary
-            </Button>
-          </Link>
           <Button
             variant="outline"
             size="sm"

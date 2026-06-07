@@ -1,7 +1,16 @@
 import { createHash } from "crypto";
 import { anthropic } from "@ai-sdk/anthropic";
-import { generateText, Output } from "ai";
+import { generateText, Output, NoObjectGeneratedError } from "ai";
 import { z } from "zod";
+import {
+  ROAST_TONES,
+  TONE_PERSONA,
+  PROVIDER_NAME,
+  type RoastTone,
+} from "./roast-tone";
+
+// Re-exported so existing importers (e.g. roastRouter) keep their import path.
+export { ROAST_TONES, PROVIDER_NAME, type RoastTone };
 
 /**
  * Vision-based roast of a profile-compare "profile" (one comparison column:
@@ -59,18 +68,6 @@ export function buildRoastFingerprint(
   });
 }
 
-export const ROAST_TONES = ["helpful", "mild", "spicy"] as const;
-export type RoastTone = (typeof ROAST_TONES)[number];
-
-/** Tone is pure prompt injection — same schema, different voice + harshness. */
-const TONE_PERSONA: Record<RoastTone, string> = {
-  helpful:
-    "a supportive dating coach — warm and encouraging, but specific and honest. Lead with what works, then give concrete fixes. No cruelty.",
-  mild: "a witty friend playfully teasing them over drinks — light jabs, clearly affectionate, never actually mean.",
-  spicy:
-    "a savage roast comedian 🌶️ — brutally funny and unfiltered. Go hard for the laugh, but stay clever, not hateful, bigoted, or body-shaming.",
-};
-
 /**
  * Each app has its own culture, so the roast should weigh things differently.
  * Keyed by the DataProvider enum value; falls back to a generic vibe.
@@ -87,19 +84,6 @@ const PROVIDER_VIBE: Record<string, string> = {
 
 const GENERIC_VIBE =
   "A modern dating app where photos and a short bio have to do a lot of work fast.";
-
-/** DataProvider enum value -> display name (server-safe; avoids importing the client provider-config). */
-const PROVIDER_NAME: Record<string, string> = {
-  TINDER: "Tinder",
-  HINGE: "Hinge",
-  BUMBLE: "Bumble",
-  GRINDR: "Grindr",
-  BADOO: "Badoo",
-  BOO: "Boo",
-  OK_CUPID: "OkCupid",
-  FEELD: "Feeld",
-  RAYA: "Raya",
-};
 
 export interface ProfileRoastPhoto {
   /** Publicly fetchable blob URL passed to the vision model. */
@@ -173,9 +157,8 @@ const profileRoastSchema = z.object({
       ),
     score: z
       .number()
-      .int()
       .describe(
-        "Overall profile strength from 0 to 100 (inclusive). Honest but not cruel.",
+        "Overall profile strength as a whole number from 0 to 100 (inclusive). Honest but not cruel.",
       ),
   }),
   photos: z
@@ -183,9 +166,8 @@ const profileRoastSchema = z.object({
       z.object({
         index: z
           .number()
-          .int()
           .describe(
-            "1-based index of the photo exactly as labeled in the prompt",
+            "1-based whole-number index of the photo exactly as labeled in the prompt",
           ),
         ...photoVerdictShape,
       }),
@@ -194,7 +176,9 @@ const profileRoastSchema = z.object({
   prompts: z
     .array(
       z.object({
-        index: z.number().int().describe("1-based index of the prompt"),
+        index: z
+          .number()
+          .describe("1-based whole-number index of the prompt"),
         roast: z
           .string()
           .describe(
@@ -301,28 +285,46 @@ Reference specific details you can actually see in the photos — that's what ma
       : ""
   }`;
 
-  const { output } = await generateText({
-    model: anthropic(ROAST_MODEL),
-    temperature: 0.9,
-    output: Output.object({
-      name: "ProfileRoast",
-      schema: profileRoastSchema,
-    }),
-    messages: [
-      {
-        role: "user",
-        content: [
-          { type: "text", text: instructions },
-          ...photos.map((p) => ({
-            type: "image" as const,
-            image: new URL(p.url),
-          })),
-        ],
-      },
-    ],
-  });
+  try {
+    const { output } = await generateText({
+      model: anthropic(ROAST_MODEL),
+      temperature: 0.9,
+      output: Output.object({
+        name: "ProfileRoast",
+        description:
+          "A vision-based roast of a dating profile: an overall verdict + score, per-photo keep/cut calls, prompt rewrites, bio rewrites, and prioritized fixes.",
+        schema: profileRoastSchema,
+      }),
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: instructions },
+            ...photos.map((p) => ({
+              type: "image" as const,
+              image: new URL(p.url),
+            })),
+          ],
+        },
+      ],
+    });
 
-  return output;
+    return {
+      ...output,
+      overall: {
+        ...output.overall,
+        score: Math.max(0, Math.min(100, Math.round(output.overall.score))),
+      },
+    };
+  } catch (error) {
+    if (NoObjectGeneratedError.isInstance(error)) {
+      console.error("[roast] profile roast: no object generated", {
+        cause: error.cause,
+        text: error.text,
+      });
+    }
+    throw error;
+  }
 }
 
 export interface SinglePhotoRoastInput {
@@ -370,23 +372,35 @@ Return a fresh verdict for THIS photo only:
 
 BE CONCISE — one sharp line beats three soft ones.`;
 
-  const { output } = await generateText({
-    model: anthropic(ROAST_MODEL),
-    temperature: 0.9,
-    output: Output.object({
-      name: "PhotoVerdict",
-      schema: singlePhotoRoastSchema,
-    }),
-    messages: [
-      {
-        role: "user",
-        content: [
-          { type: "text", text: instructions },
-          { type: "image" as const, image: new URL(photo.url) },
-        ],
-      },
-    ],
-  });
+  try {
+    const { output } = await generateText({
+      model: anthropic(ROAST_MODEL),
+      temperature: 0.9,
+      output: Output.object({
+        name: "PhotoVerdict",
+        description:
+          "A fresh single-photo verdict (factual caption, zinger title, one-line roast, keep/maybe/cut) after a user correction.",
+        schema: singlePhotoRoastSchema,
+      }),
+      messages: [
+        {
+          role: "user",
+          content: [
+            { type: "text", text: instructions },
+            { type: "image" as const, image: new URL(photo.url) },
+          ],
+        },
+      ],
+    });
 
-  return output;
+    return output;
+  } catch (error) {
+    if (NoObjectGeneratedError.isInstance(error)) {
+      console.error("[roast] single-photo roast: no object generated", {
+        cause: error.cause,
+        text: error.text,
+      });
+    }
+    throw error;
+  }
 }

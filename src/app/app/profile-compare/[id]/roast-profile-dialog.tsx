@@ -44,6 +44,8 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/toast";
 import { cn } from "@/components/ui/lib/utils";
+import { useSubscription } from "@/hooks/useSubscription";
+import { useUpgrade } from "@/contexts/UpgradeContext";
 
 type Roast = NonNullable<RouterOutputs["roast"]["getProfileRoast"]>;
 type RoastPhoto = Roast["photos"][number];
@@ -109,6 +111,9 @@ export function RoastProfileDialog({
 }: RoastProfileDialogProps) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const { effectiveTier } = useSubscription();
+  const { openUpgradeModal } = useUpgrade();
+  const isPaid = effectiveTier === "PLUS" || effectiveTier === "ELITE";
 
   // Which bio rewrite is selected — shared between the bio toggle and the
   // "Create improved version" apply action so they stay in sync.
@@ -191,7 +196,17 @@ export function RoastProfileDialog({
   const isIdle =
     !roast && !isGenerating && !isLoadingExisting && !notEnoughToRoast;
 
+  // AI Roast is a PLUS/ELITE feature. With no global kill-switch anymore, a free
+  // user would otherwise just hit a FORBIDDEN error toast — so show an upgrade
+  // card instead (a pre-existing roast from a prior subscription still shows
+  // read-only; runRoast guards re-rolls).
+  const showUpgrade = !isPaid && !roast;
+
   const runRoast = (tone: Tone) => {
+    if (!isPaid) {
+      openUpgradeModal({ feature: "aiRoast" });
+      return;
+    }
     // A full re-roast replaces every verdict, so drop any per-photo corrections.
     setPhotoOverrides({});
     roastMutation.mutate({ columnId, tone });
@@ -259,8 +274,15 @@ export function RoastProfileDialog({
           </div>
         )}
 
+        {/* Upgrade — free user, no roast: surface the paywall, not an error */}
+        {showUpgrade && (
+          <RoastUpgradeCard
+            onUpgrade={() => openUpgradeModal({ feature: "aiRoast" })}
+          />
+        )}
+
         {/* Empty — not enough material to roast yet */}
-        {notEnoughToRoast && (
+        {notEnoughToRoast && !showUpgrade && (
           <RoastEmptyState
             displayName={displayName}
             hasBio={hasBio}
@@ -269,7 +291,7 @@ export function RoastProfileDialog({
         )}
 
         {/* Idle — has content, no roast yet: the tone picker is the show */}
-        {isIdle && (
+        {isIdle && !showUpgrade && (
           <RoastIdleState
             displayName={displayName}
             isBusy={isGenerating}
@@ -1104,6 +1126,30 @@ function WhatToChange({ items }: { items: Roast["realTalk"] }) {
         ))}
       </ul>
     </section>
+  );
+}
+
+function RoastUpgradeCard({ onUpgrade }: { onUpgrade: () => void }) {
+  return (
+    <div className="space-y-4 rounded-2xl border border-rose-200 bg-gradient-to-br from-rose-50 to-white p-6 text-center dark:border-rose-900/40 dark:from-rose-950/30 dark:to-transparent">
+      <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-rose-100 dark:bg-rose-950/50">
+        <Flame className="h-6 w-6 text-rose-500" />
+      </div>
+      <div className="space-y-1">
+        <h3 className="text-lg font-bold">AI Roast is a SwipeStats+ feature</h3>
+        <p className="text-muted-foreground mx-auto max-w-sm text-sm">
+          A brutally honest, data-driven roast of this profile — photo-by-photo
+          verdicts, a sharper bio, and one-tap fixes.
+        </p>
+      </div>
+      <Button
+        className="bg-rose-600 text-white hover:bg-rose-500"
+        onClick={onUpgrade}
+      >
+        <Sparkles className="mr-2 h-4 w-4" />
+        Upgrade to unlock 🔥
+      </Button>
+    </div>
   );
 }
 

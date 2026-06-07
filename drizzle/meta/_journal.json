@@ -19,22 +19,8 @@
     {
       "idx": 2,
       "version": "7",
-      "when": 1780545273390,
-      "tag": "0002_normal_felicia_hardy",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1780559694440,
-      "tag": "0003_wealthy_gunslinger",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1780726179632,
-      "tag": "0004_early_puff_adder",
+      "when": 1780798489582,
+      "tag": "0002_burly_mongu",
       "breakpoints": true
     }
   ]

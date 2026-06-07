@@ -11,6 +11,7 @@ import {
   mediaTable,
   tinderProfileTable,
   userTable,
+  aiOutputTable,
   type DataProvider,
   type educationLevelEnum,
 } from "../db/schema";
@@ -115,15 +116,6 @@ export async function getComparison(comparisonId: string, userId: string) {
               attachment: true,
             },
           },
-          // Only the metadata needed to render the roast-status badge — the
-          // heavy `result` jsonb stays server-side.
-          roast: {
-            columns: {
-              tone: true,
-              contentFingerprint: true,
-              updatedAt: true,
-            },
-          },
         },
       },
     },
@@ -133,18 +125,36 @@ export async function getComparison(comparisonId: string, userId: string) {
     throw new Error("Comparison not found");
   }
 
+  // Roast status lives in ai_output (kind="profile_roast", subjectId=column.id).
+  // Fetch just the badge metadata for these columns in one query.
+  const columnIds = comparison.columns.map((c) => c.id);
+  const roastRows = columnIds.length
+    ? await db.query.aiOutputTable.findMany({
+        where: and(
+          eq(aiOutputTable.kind, "profile_roast"),
+          inArray(aiOutputTable.subjectId, columnIds),
+        ),
+        columns: {
+          subjectId: true,
+          tone: true,
+          fingerprint: true,
+          updatedAt: true,
+        },
+      })
+    : [];
+  const roastBySubject = new Map(roastRows.map((r) => [r.subjectId, r]));
+
   // Derive a lightweight roast status per column (roasted? + stale?) so the
   // edit page can badge it without shipping or re-hashing the roast payload.
   const columns = comparison.columns.map((column) => {
-    const { roast, ...rest } = column;
     const effectiveBio = column.bio ?? comparison.defaultBio ?? null;
+    const roast = roastBySubject.get(column.id);
     const roastStatus = roast
       ? {
           roasted: true as const,
           tone: roast.tone,
           isStale:
-            roast.contentFingerprint !==
-            buildRoastFingerprint(column, effectiveBio),
+            roast.fingerprint !== buildRoastFingerprint(column, effectiveBio),
           updatedAt: roast.updatedAt,
         }
       : {
@@ -153,7 +163,7 @@ export async function getComparison(comparisonId: string, userId: string) {
           isStale: false,
           updatedAt: null,
         };
-    return { ...rest, roastStatus };
+    return { ...column, roastStatus };
   });
 
   return { ...comparison, columns };
@@ -739,7 +749,9 @@ export async function createFeedback(data: {
     throw new Error("Must provide rating or comment body");
   }
 
-  // Verify the target exists and user has access
+  // Verify the target exists and belongs to a public comparison. Feedback is
+  // only ever submitted from the public share page, so a private comparison
+  // (or a guessed content/column id) must be rejected.
   if (data.contentId) {
     const content = await db.query.comparisonColumnContentTable.findFirst({
       where: eq(comparisonColumnContentTable.id, data.contentId),
@@ -754,6 +766,9 @@ export async function createFeedback(data: {
     if (!content) {
       throw new Error("Content not found");
     }
+    if (!content.column?.comparison?.isPublic) {
+      throw new Error("Comparison is not public");
+    }
   } else if (data.columnId) {
     const column = await db.query.comparisonColumnTable.findFirst({
       where: eq(comparisonColumnTable.id, data.columnId),
@@ -763,6 +778,9 @@ export async function createFeedback(data: {
     });
     if (!column) {
       throw new Error("Column not found");
+    }
+    if (!column.comparison?.isPublic) {
+      throw new Error("Comparison is not public");
     }
   }
 

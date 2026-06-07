@@ -17,6 +17,9 @@ import {
   Copy,
   ArrowLeft,
   ArrowRight,
+  Download,
+  Images,
+  FileJson,
 } from "lucide-react";
 import {
   DndContext,
@@ -50,11 +53,11 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DeleteAlert } from "@/components/ui/alert-dialog";
-import { cn } from "@/components/ui/lib/utils";
 
 import { useTRPC } from "@/trpc/react";
 import type { RouterOutputs } from "@/trpc/react";
@@ -67,15 +70,14 @@ import { ProviderIconChip } from "./provider-icon-chip";
 import { StackView } from "./stack-view";
 import { FlowView } from "./flow-view";
 import { isPromptSource } from "@/lib/prompt-bank";
+import { downloadFromUrl } from "../_lib/download";
+
+// Local-only developer tools (bulk downloads / export). On Vercel both preview
+// and production run a production build, so this is true only under `next dev`.
+const isDev = process.env.NODE_ENV === "development";
 
 type ComparisonColumn =
   RouterOutputs["profileCompare"]["get"]["columns"][number];
-
-// Shared pill style for the status badges floating over a column preview, so
-// the static "Done" span and the interactive roast button stay pixel-identical.
-// `leading-none` keeps the icon + label crisply centered at this small size.
-const STATUS_PILL =
-  "flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium leading-none shadow-md";
 
 interface ComparisonColumnProps {
   column: ComparisonColumn;
@@ -248,9 +250,13 @@ export function ComparisonColumn({
   const [contentToEdit, setContentToEdit] = useState<
     ComparisonColumn["content"][number] | null
   >(null);
+  // Which dev download (if any) is currently running, so the menu items can
+  // disable while a zip/export is being prepared.
+  const [devDownload, setDevDownload] = useState<
+    null | "column" | "library" | "export"
+  >(null);
 
   const isDone = !!column.completedAt;
-  const roastStatus = column.roastStatus;
   const providerConfig = getProviderConfig(column.dataProvider);
   const [displayMode, setDisplayMode] = useState<DisplayMode>(
     providerConfig.defaultDisplayMode,
@@ -414,6 +420,27 @@ export function ComparisonColumn({
     });
   };
 
+  // Dev-only bulk downloads. Each hits a `/api/dev` endpoint that 404s outside
+  // local dev, fetches the payload, and triggers a browser download.
+  const handleDevDownload = async (
+    kind: "column" | "library" | "export",
+    url: string,
+    fallbackName: string,
+  ) => {
+    setDevDownload(kind);
+    toast.info("Preparing download…");
+    try {
+      await downloadFromUrl(url, fallbackName);
+      toast.success("Download ready");
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Download failed",
+      );
+    } finally {
+      setDevDownload(null);
+    }
+  };
+
   const displayBio = column.bio || defaultBio || "";
   const displayName = column.title || providerConfig.name;
 
@@ -428,7 +455,7 @@ export function ComparisonColumn({
               layout as the share page header. */}
           <div className="flex items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-2">
-              <ProviderIconChip config={providerConfig} />
+              <ProviderIconChip config={providerConfig} done={isDone} />
               <span className="truncate text-base font-semibold">
                 {displayName}
               </span>
@@ -514,6 +541,53 @@ export function ComparisonColumn({
                       </DropdownMenuItem>
                     </>
                   )}
+                  {isDev && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">
+                        Dev tools
+                      </DropdownMenuLabel>
+                      <DropdownMenuItem
+                        disabled={devDownload !== null}
+                        onClick={() =>
+                          void handleDevDownload(
+                            "column",
+                            `/api/dev/profile-compare/column-photos/${column.id}`,
+                            `${displayName}-photos.zip`,
+                          )
+                        }
+                      >
+                        <Download className="mr-2 h-4 w-4" />
+                        Download column photos (.zip)
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        disabled={devDownload !== null}
+                        onClick={() =>
+                          void handleDevDownload(
+                            "library",
+                            `/api/dev/profile-compare/library`,
+                            "swipestats-photo-library.zip",
+                          )
+                        }
+                      >
+                        <Images className="mr-2 h-4 w-4" />
+                        Download my photo library (.zip)
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        disabled={devDownload !== null}
+                        onClick={() =>
+                          void handleDevDownload(
+                            "export",
+                            `/api/dev/profile-compare/export/${comparisonId}`,
+                            "comparison-export.json",
+                          )
+                        }
+                      >
+                        <FileJson className="mr-2 h-4 w-4" />
+                        Export comparison (.json)
+                      </DropdownMenuItem>
+                    </>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     variant="destructive"
@@ -542,50 +616,9 @@ export function ComparisonColumn({
         <CardContent className="space-y-4">
           {/* Preview nearly fills the card: -mx-4 against CardContent's px-6
               leaves a tiny 8px breathing margin (the share page is borderless
-              and stays fully flush). Status badges float over the preview's
-              top-right so they don't compete with the title for header width
-              (which truncated longer column names): the "Done" badge plus a
-              roast-status badge that doubles as a shortcut into the roast. */}
+              and stays fully flush). Done-status now rides the provider chip in
+              the header (a green ring) rather than a pill over the preview. */}
           <div className="relative -mx-4">
-            {/* Status pills sit in a single right-aligned row so their heights
-                line up cleanly (a vertical stack left the differently-sized
-                pills with a ragged edge). Shared base class keeps the static
-                "Done" span and the interactive roast button pixel-identical. */}
-            <div className="absolute top-3 right-3 z-20 flex flex-wrap items-center justify-end gap-1.5">
-              {isDone && (
-                <span className={cn(STATUS_PILL, "bg-green-600 text-white")}>
-                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-                  Done
-                </span>
-              )}
-              <button
-                type="button"
-                onClick={() => setRoastDialogOpen(true)}
-                title={
-                  roastStatus.roasted
-                    ? roastStatus.isStale
-                      ? "This profile changed since its roast — re-roast to refresh"
-                      : "This profile has been roasted — click to view"
-                    : "This profile hasn't been roasted yet — click to roast it"
-                }
-                className={cn(
-                  STATUS_PILL,
-                  "transition-colors",
-                  roastStatus.roasted
-                    ? roastStatus.isStale
-                      ? "bg-amber-500 text-white hover:bg-amber-600"
-                      : "bg-rose-600 text-white hover:bg-rose-500"
-                    : "bg-black/55 text-white backdrop-blur-sm hover:bg-black/70",
-                )}
-              >
-                <Flame className="h-3.5 w-3.5 shrink-0" />
-                {roastStatus.roasted
-                  ? roastStatus.isStale
-                    ? "Roast outdated"
-                    : "Roasted"
-                  : "Not roasted"}
-              </button>
-            </div>
             <TabsContent value="stack" className="mt-0">
               <StackView
                 column={column}

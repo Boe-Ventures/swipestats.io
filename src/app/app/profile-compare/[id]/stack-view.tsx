@@ -143,8 +143,8 @@ export function StackView({
                   {profileName || "Name"}
                   {age && `, ${age}`}
                 </h2>
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-500">
-                  <Check className="h-4 w-4 text-white" />
+                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-500">
+                  <Check className="h-3 w-3 text-white" />
                 </div>
               </div>
 

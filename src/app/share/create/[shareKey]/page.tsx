@@ -175,12 +175,9 @@ export default function FriendCreationPage() {
           <div className="container mx-auto max-w-6xl px-4 py-6 sm:px-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="flex-1 space-y-2">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="text-primary h-5 w-5" />
-                  <h1 className="text-2xl font-bold sm:text-3xl">
-                    Build your version
-                  </h1>
-                </div>
+                <h1 className="text-2xl font-bold sm:text-3xl">
+                  Build your version
+                </h1>
                 <p className="text-muted-foreground max-w-xl text-sm">
                   Pick and arrange up to {MAX_PHOTOS} photos from{" "}
                   <span className="text-foreground font-medium">
@@ -315,9 +312,6 @@ export default function FriendCreationPage() {
                       </p>
                     </div>
                   )}
-                  <p className="text-muted-foreground mt-3 text-center text-xs">
-                    Live preview · tap the card to flip through photos
-                  </p>
                 </div>
               </div>
 

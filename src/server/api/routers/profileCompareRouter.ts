@@ -299,7 +299,7 @@ export const profileCompareRouter = createTRPCRouter({
           contentId: z.string().optional(),
           columnId: z.string().optional(),
           rating: z.number().optional(),
-          body: z.string().optional(),
+          body: z.string().max(2000).optional(),
         })
         .refine(
           (data) => data.contentId || data.columnId,
@@ -323,7 +323,7 @@ export const profileCompareRouter = createTRPCRouter({
       z.object({
         feedbackId: z.string(),
         rating: z.number().optional(),
-        body: z.string().optional(),
+        body: z.string().max(2000).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
