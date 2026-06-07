@@ -11,6 +11,7 @@ import {
   Upload,
   Sparkles,
   Loader2,
+  Wand2,
 } from "lucide-react";
 import { z } from "zod";
 import Link from "next/link";
@@ -61,6 +62,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { dataProviderEnum, educationLevelEnum } from "@/server/db/schema";
 import { ComparisonColumn } from "./comparison-column";
 import { useGalleryUpload } from "../_hooks/useGalleryUpload";
+import { useSubscription } from "@/hooks/useSubscription";
+import { useUpgrade } from "@/contexts/UpgradeContext";
+
+// Apps the AI composer supports (must match the profileCompose router enum).
+const COMPOSE_PROVIDERS = ["TINDER", "HINGE", "BUMBLE"] as const;
+type ComposeProvider = (typeof COMPOSE_PROVIDERS)[number];
 
 type Comparison = RouterOutputs["profileCompare"]["get"];
 
@@ -169,6 +176,44 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
       comparisonId: comparison.id,
       dataProvider:
         newColumnProvider as (typeof dataProviderEnum.enumValues)[number],
+    });
+  };
+
+  // "Build with AI" in the Add Profile dialog: compose a column straight into
+  // THIS comparison (the router takes a comparisonId), so there's no redirect —
+  // the dialog closes and the new column appears. Only offered for the apps the
+  // composer supports, and gated like the rest of the AI features.
+  const { effectiveTier } = useSubscription();
+  const { openUpgradeModal } = useUpgrade();
+  const isPaid = effectiveTier === "PLUS" || effectiveTier === "ELITE";
+  const canCompose = (COMPOSE_PROVIDERS as readonly string[]).includes(
+    newColumnProvider,
+  );
+
+  const composeColumnMutation = useMutation(
+    trpc.profileCompose.compose.mutationOptions({
+      onSuccess: () => {
+        toast.success("AI profile added — tweak it however you like");
+        void queryClient.invalidateQueries(
+          trpc.profileCompare.get.queryOptions({ id: comparison.id }),
+        );
+        setAddColumnOpen(false);
+        setNewColumnProvider("TINDER");
+      },
+      onError: (error) => {
+        toast.error(error.message || "Couldn't compose a profile");
+      },
+    }),
+  );
+
+  const handleComposeColumn = () => {
+    if (!isPaid) {
+      openUpgradeModal({ feature: "aiRoast" });
+      return;
+    }
+    composeColumnMutation.mutate({
+      provider: newColumnProvider as ComposeProvider,
+      comparisonId: comparison.id,
     });
   };
 
@@ -993,16 +1038,51 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
                   ))}
                 </SelectContent>
               </Select>
+              {canCompose && (
+                <p className="text-muted-foreground mt-2 text-xs">
+                  Or let AI build it from your analyzed photos — it picks the
+                  best shots, orders them, and drafts a bio and prompts.
+                </p>
+              )}
             </div>
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAddColumnOpen(false)}>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setAddColumnOpen(false)}
+              disabled={
+                addColumnMutation.isPending || composeColumnMutation.isPending
+              }
+            >
               Cancel
             </Button>
+            {canCompose && (
+              <Button
+                variant="outline"
+                onClick={handleComposeColumn}
+                disabled={
+                  composeColumnMutation.isPending || addColumnMutation.isPending
+                }
+              >
+                {composeColumnMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Building…
+                  </>
+                ) : (
+                  <>
+                    <Wand2 className="mr-2 h-4 w-4" />
+                    Build with AI
+                  </>
+                )}
+              </Button>
+            )}
             <Button
               onClick={handleAddColumn}
-              disabled={addColumnMutation.isPending}
+              disabled={
+                addColumnMutation.isPending || composeColumnMutation.isPending
+              }
             >
               {addColumnMutation.isPending ? "Adding..." : "Add profile"}
             </Button>
