@@ -31,6 +31,7 @@ import {
 import { useTRPC } from "@/trpc/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { dataProviderEnum } from "@/server/db/schema";
+import { getDefaultComparisonName } from "./_lib/default-name";
 
 interface CreateComparisonDialogProps {
   open: boolean;
@@ -38,14 +39,6 @@ interface CreateComparisonDialogProps {
 }
 
 const AVAILABLE_APPS = dataProviderEnum.enumValues;
-
-/** Northern-hemisphere season for the given month (0-indexed). */
-function getSeason(month: number): string {
-  if (month <= 1 || month === 11) return "Winter";
-  if (month <= 4) return "Spring";
-  if (month <= 7) return "Summer";
-  return "Fall";
-}
 
 // Form validation schema
 const formSchema = z.object({
@@ -66,13 +59,13 @@ export function CreateComparisonDialog({
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
-  const now = new Date();
-  const namePlaceholder = `e.g., ${getSeason(now.getMonth())} ${now.getFullYear()} Profile`;
+  const defaultName = getDefaultComparisonName();
+  const namePlaceholder = `e.g., ${defaultName}`;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
+      name: defaultName,
       defaultBio: "",
       columns: ["TINDER", "HINGE"],
     },

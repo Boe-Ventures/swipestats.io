@@ -26,6 +26,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { NewOldLogo } from "@/components/ui/NewOldLogo";
 import { authClient } from "@/server/better-auth/client";
 import { useTRPC } from "@/trpc/react";
+import { getDefaultComparisonName } from "@/app/app/profile-compare/_lib/default-name";
 
 /** Columns a freshly seeded comparison starts with — matches the create dialog. */
 const DEFAULT_COLUMNS = [
@@ -111,7 +112,10 @@ function TryGateway() {
         );
         const target =
           existing[0] ??
-          (await createComparison.mutateAsync({ columns: DEFAULT_COLUMNS }));
+          (await createComparison.mutateAsync({
+            name: getDefaultComparisonName(),
+            columns: DEFAULT_COLUMNS,
+          }));
 
         router.replace(`/app/profile-compare/${target.id}`);
       } catch (err) {
