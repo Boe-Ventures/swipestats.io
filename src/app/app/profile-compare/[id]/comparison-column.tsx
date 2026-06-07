@@ -253,7 +253,7 @@ export function ComparisonColumn({
   // Which dev download (if any) is currently running, so the menu items can
   // disable while a zip/export is being prepared.
   const [devDownload, setDevDownload] = useState<
-    null | "column" | "library" | "export"
+    null | "column" | "library" | "export" | "column-json"
   >(null);
 
   const isDone = !!column.completedAt;
@@ -423,7 +423,7 @@ export function ComparisonColumn({
   // Dev-only bulk downloads. Each hits a `/api/dev` endpoint that 404s outside
   // local dev, fetches the payload, and triggers a browser download.
   const handleDevDownload = async (
-    kind: "column" | "library" | "export",
+    kind: "column" | "library" | "export" | "column-json",
     url: string,
     fallbackName: string,
   ) => {
@@ -577,6 +577,19 @@ export function ComparisonColumn({
                         disabled={devDownload !== null}
                         onClick={() =>
                           void handleDevDownload(
+                            "column-json",
+                            `/api/dev/profile-compare/export-column/${column.id}`,
+                            `${displayName}-export.json`,
+                          )
+                        }
+                      >
+                        <FileJson className="mr-2 h-4 w-4" />
+                        Export this column (.json)
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        disabled={devDownload !== null}
+                        onClick={() =>
+                          void handleDevDownload(
                             "export",
                             `/api/dev/profile-compare/export/${comparisonId}`,
                             "comparison-export.json",
@@ -584,7 +597,7 @@ export function ComparisonColumn({
                         }
                       >
                         <FileJson className="mr-2 h-4 w-4" />
-                        Export comparison (.json)
+                        Export whole comparison (.json)
                       </DropdownMenuItem>
                     </>
                   )}

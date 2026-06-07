@@ -22,6 +22,11 @@ ALTER TABLE "comparison_column" ALTER COLUMN "data_provider" SET DATA TYPE text;
 ALTER TABLE "email_reminder" ALTER COLUMN "data_provider" SET DATA TYPE text;--> statement-breakpoint
 ALTER TABLE "original_anonymized_file" ALTER COLUMN "data_provider" SET DATA TYPE text;--> statement-breakpoint
 ALTER TABLE "waitlist" ALTER COLUMN "data_provider" SET DATA TYPE text;--> statement-breakpoint
+UPDATE "cohort_definition" SET "data_provider" = 'GRINDR' WHERE "data_provider" = 'GRINDER';--> statement-breakpoint
+UPDATE "comparison_column" SET "data_provider" = 'GRINDR' WHERE "data_provider" = 'GRINDER';--> statement-breakpoint
+UPDATE "email_reminder" SET "data_provider" = 'GRINDR' WHERE "data_provider" = 'GRINDER';--> statement-breakpoint
+UPDATE "original_anonymized_file" SET "data_provider" = 'GRINDR' WHERE "data_provider" = 'GRINDER';--> statement-breakpoint
+UPDATE "waitlist" SET "data_provider" = 'GRINDR' WHERE "data_provider" = 'GRINDER';--> statement-breakpoint
 DROP TYPE "public"."DataProvider";--> statement-breakpoint
 CREATE TYPE "public"."DataProvider" AS ENUM('TINDER', 'HINGE', 'BUMBLE', 'GRINDR', 'BADOO', 'BOO', 'OK_CUPID', 'FEELD', 'RAYA');--> statement-breakpoint
 ALTER TABLE "cohort_definition" ALTER COLUMN "data_provider" SET DATA TYPE "public"."DataProvider" USING "data_provider"::"public"."DataProvider";--> statement-breakpoint

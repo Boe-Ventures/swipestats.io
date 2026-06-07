@@ -24,7 +24,17 @@ async function getRoast(shareKey: string) {
   // Defensive on the public path: a malformed/older-version payload renders the
   // not-found state rather than throwing for an anonymous viewer.
   if (!Array.isArray(output.roastLines)) return null;
-  return { ...row, ...output };
+  // PAYWALL: only the first 3 lines may reach the browser. CSS blur is not
+  // access control, so the locked lines must never enter the server-rendered
+  // HTML — mirror roast.getPublic and drop them here.
+  return {
+    tagline: output.tagline,
+    headline: output.headline,
+    verdict: output.verdict,
+    overallScore: output.overallScore,
+    roastLines: output.roastLines.slice(0, 3),
+    hiddenCount: Math.max(0, output.roastLines.length - 3),
+  };
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -56,8 +66,8 @@ export default async function SharedRoastPage({ params }: Props) {
     notFound();
   }
 
-  const previewLines = roast.roastLines.slice(0, 3);
-  const hiddenCount = roast.roastLines.length - previewLines.length;
+  const previewLines = roast.roastLines;
+  const hiddenCount = roast.hiddenCount;
 
   return (
     <main className="min-h-screen bg-[#0f0a1e]">
@@ -149,7 +159,8 @@ export default async function SharedRoastPage({ params }: Props) {
                 >
                   <span className="mt-0.5 text-lg">🔥</span>
                   <p className="leading-relaxed text-white/85">
-                    {roast.roastLines[3 + i]}
+                    Another brutally accurate read on your dating data, locked
+                    until you upload your own.
                   </p>
                 </li>
               ))}
