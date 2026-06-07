@@ -247,9 +247,15 @@ export const auth = betterAuth({
   trustedOrigins: [
     "http://localhost:3000",
     "https://swipestats-42.beta.localcan.dev",
-    "https://swipestats-4-beta.vercel.app",
+    // Trust all of THIS project's Vercel preview + per-deployment URLs. The
+    // stable branch alias is already covered via baseURL (VERCEL_BRANCH_URL),
+    // but the per-deployment hash URLs are not — this wildcard covers both.
+    // better-auth's matchesOriginPattern supports `*`; scoped to `swipestats-*`
+    // so we don't trust unrelated *.vercel.app apps. No baseURL change needed:
+    // we use email/password only (no OAuth callbacks) and cookies are host-only.
+    "https://swipestats-*.vercel.app",
 
-    // Add production domains here when deploying
+    // Production
     "https://www.swipestats.io",
   ],
   plugins: [
