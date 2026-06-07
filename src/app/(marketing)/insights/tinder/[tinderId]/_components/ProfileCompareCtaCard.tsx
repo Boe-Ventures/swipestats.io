@@ -67,7 +67,7 @@ export function ProfileCompareCtaCard() {
             Bumble profiles. Share with friends or use for feedback.
           </p>
           <div className="mt-auto flex items-center gap-x-4 pt-2">
-            <Link href="/app/profile-compare">
+            <Link href="/app/dashboard">
               <Button>
                 Compare My Profiles
                 <ArrowRight className="ml-2 h-4 w-4" />

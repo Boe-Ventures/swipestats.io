@@ -6,7 +6,7 @@ import { Banner } from "@/components/ui/banner";
 const DISMISS_KEY = "swipestats:profile-previews-banner-dismissed";
 
 /**
- * Homepage announcement for the Profile Previews (profile-compare) feature.
+ * Homepage announcement for the Profile Comparisons (profile-compare) feature.
  * Dismissible, and the dismissal persists across visits via localStorage so
  * returning visitors aren't nagged. Renders nothing until mounted to avoid a
  * hydration mismatch (server has no access to localStorage).
@@ -22,11 +22,10 @@ export function ProfilePreviewsBanner() {
 
   return (
     <Banner
-      badge="New"
-      title="Profile Previews"
-      message="A/B test your dating photos and prompts, then see what people actually notice first."
+      title="Profile Comparisons"
+      message="Put your dating photos and prompts side by side and get real ratings and feedback from friends."
       ctaText="Try it free"
-      ctaHref="/app/profile-compare"
+      ctaHref="/try"
       showDismiss
       onDismiss={() => {
         localStorage.setItem(DISMISS_KEY, "1");

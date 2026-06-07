@@ -9,9 +9,12 @@ import {
   Plus,
   ImagePlus,
   Upload,
+  Sparkles,
+  Loader2,
 } from "lucide-react";
 import { z } from "zod";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -55,7 +58,7 @@ import {
 
 import { useTRPC } from "@/trpc/react";
 import type { RouterOutputs } from "@/trpc/react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { dataProviderEnum, educationLevelEnum } from "@/server/db/schema";
 import { ComparisonColumn } from "./comparison-column";
 
@@ -303,6 +306,38 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
     comparison.columns.length > 0 &&
     comparison.columns.every((c) => c.content.length === 0);
 
+  const router = useRouter();
+
+  // Offer a one-tap path that seeds a *new* comparison from photos the user
+  // already uploaded. Only fetched while the empty state is showing.
+  const uploadedProfilesQuery = useQuery(
+    trpc.user.getUploadedProfiles.queryOptions(undefined, {
+      enabled: hasNoContent,
+      refetchOnWindowFocus: false,
+    }),
+  );
+  const seedTinderId = uploadedProfilesQuery.data?.tinder[0]?.tinderId;
+  const seedMediaQuery = useQuery(
+    trpc.profile.getMedia.queryOptions(
+      { tinderId: seedTinderId ?? "" },
+      { enabled: hasNoContent && !!seedTinderId, refetchOnWindowFocus: false },
+    ),
+  );
+  const canSeedFromTinder =
+    !!seedTinderId && (seedMediaQuery.data ?? []).some((m) => m.url);
+
+  const createFromTinderMutation = useMutation(
+    trpc.profileCompare.createFromTinderMedia.mutationOptions({
+      onSuccess: (created) => {
+        toast.success("Comparison created from your photos");
+        router.push(`/app/profile-compare/${created.id}`);
+      },
+      onError: (error) => {
+        toast.error(error.message || "Couldn't build your comparison");
+      },
+    }),
+  );
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -364,17 +399,49 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
               <ImagePlus />
             </EmptyMedia>
             <EmptyTitle className="text-2xl">
-              Start by uploading your photos
+              Add your photos to get started
             </EmptyTitle>
             <EmptyDescription className="text-base">
-              Add photos to your gallery once, then drop them into each profile
-              to compare them side by side.
+              Upload once to your gallery, then drop them into each profile to
+              compare them side by side.
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
-            <div className="flex flex-col items-center gap-3 sm:flex-row">
+            <div className="flex flex-col items-center gap-3 sm:flex-row sm:flex-wrap sm:justify-center">
+              {/* Fastest path for returning users — seed from photos they
+                  already uploaded. Creates a separate, pre-filled comparison. */}
+              {canSeedFromTinder && seedTinderId && (
+                <Button
+                  size="lg"
+                  className="bg-rose-600 hover:bg-rose-500"
+                  onClick={() =>
+                    createFromTinderMutation.mutate({ tinderId: seedTinderId })
+                  }
+                  disabled={createFromTinderMutation.isPending}
+                >
+                  {createFromTinderMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Building…
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Use my uploaded Tinder photos
+                    </>
+                  )}
+                </Button>
+              )}
               <Link href="/app/profile-compare/photos">
-                <Button size="lg" className="bg-rose-600 hover:bg-rose-500">
+                <Button
+                  size="lg"
+                  variant={canSeedFromTinder ? "outline" : "default"}
+                  className={
+                    canSeedFromTinder
+                      ? undefined
+                      : "bg-rose-600 hover:bg-rose-500"
+                  }
+                >
                   <ImagePlus className="mr-2 h-4 w-4" />
                   Upload your photos
                 </Button>
@@ -387,7 +454,21 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
               </Link>
             </div>
             <p className="text-muted-foreground text-xs">
-              New to SwipeStats? Upload your Tinder or Hinge data to get started.
+              {canSeedFromTinder ? (
+                "Pulled from a profile you already uploaded — no re-uploading needed."
+              ) : (
+                <>
+                  Photos are all you need to compare. Uploading your Tinder or
+                  Hinge data is optional — it unlocks your full dating analytics
+                  and imports your photos.{" "}
+                  <Link
+                    href="https://www.swipestats.io/how-to-request-your-data"
+                    className="hover:text-foreground underline underline-offset-2"
+                  >
+                    How to request your data
+                  </Link>
+                </>
+              )}
             </p>
           </EmptyContent>
         </Empty>
