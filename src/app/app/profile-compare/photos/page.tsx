@@ -1,10 +1,24 @@
 "use client";
 
 import { useState, useRef } from "react";
-import { Upload, Image as ImageIcon, Loader2, Sparkles } from "lucide-react";
+import { useRouter } from "next/navigation";
+import {
+  Upload,
+  Image as ImageIcon,
+  Loader2,
+  Sparkles,
+  Wand2,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
@@ -25,6 +39,19 @@ import { useUpgrade } from "@/contexts/UpgradeContext";
 import { readPhotoAnalysis } from "@/lib/photo-analysis";
 import { PhotoGalleryCard } from "./photo-gallery-card";
 
+// Apps the AI composer can build a profile for (must match the server enum).
+const COMPOSE_APPS = [
+  { key: "TINDER", label: "Tinder" },
+  { key: "HINGE", label: "Hinge" },
+  { key: "BUMBLE", label: "Bumble" },
+] as const;
+type ComposeProvider = (typeof COMPOSE_APPS)[number]["key"];
+const COMPOSE_LABELS: Record<ComposeProvider, string> = {
+  TINDER: "Tinder",
+  HINGE: "Hinge",
+  BUMBLE: "Bumble",
+};
+
 export default function PhotoGalleryPage() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -32,6 +59,7 @@ export default function PhotoGalleryPage() {
   const { effectiveTier } = useSubscription();
   const { openUpgradeModal } = useUpgrade();
   const isPaid = effectiveTier === "PLUS" || effectiveTier === "ELITE";
+  const router = useRouter();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [photoToDelete, setPhotoToDelete] = useState<string | null>(null);
   // Attachment ids currently being analyzed by the "Analyze all" pool — each
@@ -110,6 +138,31 @@ export default function PhotoGalleryPage() {
     }
   };
 
+  // How many images are analyzed — the composer needs tagged photos to work
+  // from, so the "Build a profile" CTA only shows once there's something to use.
+  const analyzedCount = (photos ?? []).filter(
+    (p) => p.mimeType.startsWith("image/") && readPhotoAnalysis(p.metadata),
+  ).length;
+
+  const composeMutation = useMutation(
+    trpc.profileCompose.compose.mutationOptions({
+      onSuccess: (res) => {
+        toast.success(`Built a ${COMPOSE_LABELS[res.provider]} profile draft`);
+        router.push(`/app/profile-compare/${res.comparisonId}`);
+      },
+      onError: (error) =>
+        toast.error(error.message || "Couldn't compose a profile"),
+    }),
+  );
+
+  const handleCompose = (provider: ComposeProvider) => {
+    if (!isPaid) {
+      openUpgradeModal({ feature: "aiRoast" });
+      return;
+    }
+    composeMutation.mutate({ provider });
+  };
+
   const deleteAttachmentMutation = useMutation(
     trpc.blob.deleteAttachment.mutationOptions({
       onSuccess: () => {
@@ -167,6 +220,31 @@ export default function PhotoGalleryPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {analyzedCount > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" disabled={composeMutation.isPending}>
+                  {composeMutation.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Wand2 className="mr-2 h-4 w-4" />
+                  )}
+                  {composeMutation.isPending ? "Building…" : "Build a profile"}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Compose a profile with AI</DropdownMenuLabel>
+                {COMPOSE_APPS.map((app) => (
+                  <DropdownMenuItem
+                    key={app.key}
+                    onClick={() => handleCompose(app.key)}
+                  >
+                    {app.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
           {unanalyzedCount > 0 && (
             <Button
               variant="outline"
