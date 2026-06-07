@@ -31,7 +31,6 @@ async function getRoast(shareKey: string) {
     tagline: output.tagline,
     headline: output.headline,
     verdict: output.verdict,
-    overallScore: output.overallScore,
     roastLines: output.roastLines.slice(0, 3),
     hiddenCount: Math.max(0, output.roastLines.length - 3),
   };
@@ -47,7 +46,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
   // The dynamic share card lives in opengraph-image.tsx (colocated); Next wires
   // it into both og:image and twitter:image automatically.
-  const title = `${roast.overallScore}/100 Dateability — My Dating App Roast`;
+  const title = roast.tagline
+    ? `${roast.tagline} — My Dating App Roast`
+    : "My Dating App Roast";
   const description = roast.verdict ?? roast.headline;
 
   return {
@@ -90,36 +91,16 @@ export default async function SharedRoastPage({ params }: Props) {
       </header>
 
       <div className="mx-auto max-w-3xl px-6 py-12">
-        {/* Score card */}
-        <div className="mb-10 text-center">
-          {roast.tagline ? (
-            <div className="mb-3 inline-block rounded-full bg-white/10 px-4 py-1.5 text-sm font-bold tracking-widest text-white/70 uppercase">
-              {roast.tagline}
-            </div>
-          ) : (
-            <div className="mb-2 text-sm font-semibold tracking-widest text-white/40 uppercase">
-              Dateability Score
-            </div>
-          )}
-          <div
-            className="text-[96px] leading-none font-black"
-            style={{
-              color:
-                roast.overallScore >= 70
-                  ? "#4ade80"
-                  : roast.overallScore >= 45
-                    ? "#fbbf24"
-                    : "#f87171",
-            }}
-          >
-            {roast.overallScore}
+        {/* Verdict badge */}
+        <div className="mb-8 text-center">
+          <div className="inline-block rounded-full bg-rose-500/15 px-5 py-2 text-sm font-bold tracking-widest text-rose-300 uppercase">
+            {roast.tagline || "The Roast"}
           </div>
-          <div className="text-lg text-white/40">/ 100 Dateability</div>
         </div>
 
         {/* Headline + verdict */}
-        <blockquote className="mb-10 rounded-2xl border border-white/10 bg-white/5 p-6 text-center">
-          <p className="text-xl font-medium text-white/90 italic">
+        <blockquote className="mb-10 rounded-2xl border border-white/10 bg-white/5 p-8 text-center">
+          <p className="text-2xl font-medium text-white/90 italic sm:text-3xl">
             {`"${roast.headline}"`}
           </p>
           {roast.verdict && (

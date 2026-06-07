@@ -341,7 +341,6 @@ export const roastRouter = {
         shareKey: row.shareKey,
         roastLines: output.roastLines.slice(0, 3),
         headline: output.headline,
-        overallScore: output.overallScore,
         createdAt: row.createdAt,
       };
     }),

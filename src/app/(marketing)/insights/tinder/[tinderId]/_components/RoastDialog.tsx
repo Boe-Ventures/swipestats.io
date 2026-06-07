@@ -47,51 +47,6 @@ const TONES = [
 
 type Tone = (typeof TONES)[number]["key"];
 
-function scoreColor(score: number) {
-  return score >= 70 ? "#22c55e" : score >= 45 ? "#f59e0b" : "#ef4444";
-}
-
-/** SVG progress ring, mirrors the profile-compare roast hero. */
-function ScoreRing({ score, size = 104 }: { score: number; size?: number }) {
-  const stroke = 9;
-  const r = (size - stroke) / 2;
-  const circumference = 2 * Math.PI * r;
-  const clamped = Math.max(0, Math.min(100, score));
-  const offset = circumference * (1 - clamped / 100);
-  const color = scoreColor(score);
-  return (
-    <div className="relative shrink-0" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90">
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          fill="none"
-          strokeWidth={stroke}
-          className="stroke-white/15"
-        />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          fill="none"
-          stroke={color}
-          strokeWidth={stroke}
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-3xl leading-none font-black" style={{ color }}>
-          {score}
-        </span>
-        <span className="text-[10px] text-white/50">/ 100</span>
-      </div>
-    </div>
-  );
-}
-
 /* ---------------------------------------------------------------- *
  * Loading theater — the wait is the entertainment. Ported from the
  * profile-compare roast: pulsing flame, rotating status lines, and a
@@ -299,7 +254,7 @@ export function RoastDialog({ open, onOpenChange }: RoastDialogProps) {
     const shareUrl = await ensurePublicAndGetUrl();
     if (!shareUrl || !roast) return;
 
-    const text = `My dating app dateability score: ${roast.overallScore}/100 🔥\n\n"${roast.headline}"\n\nGet your own AI roast:`;
+    const text = `My AI dating roast 🔥\n\n"${roast.headline}"\n\nGet your own:`;
     const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(shareUrl)}`;
     window.open(twitterUrl, "_blank", "noopener,noreferrer");
   };
@@ -398,26 +353,23 @@ export function RoastDialog({ open, onOpenChange }: RoastDialogProps) {
           {/* Roast content */}
           {!isGenerating && roast && (
             <div className="space-y-6">
-              {/* Hero — score ring + tagline + headline + verdict */}
+              {/* Hero — tagline + headline + verdict */}
               <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800 p-5 sm:p-6">
-                <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
-                  <ScoreRing score={roast.overallScore} />
-                  <div className="min-w-0 flex-1 space-y-2">
-                    <Badge
-                      variant="secondary"
-                      className="border-0 bg-white/10 font-semibold tracking-widest text-white/60 uppercase"
-                    >
-                      {roast.tagline ?? "Dateability Score"}
-                    </Badge>
-                    <p className="font-serif text-xl leading-snug text-white italic sm:text-2xl">
-                      &ldquo;{roast.headline}&rdquo;
+                <div className="space-y-3 text-center sm:text-left">
+                  <Badge
+                    variant="secondary"
+                    className="border-0 bg-white/10 font-semibold tracking-widest text-white/60 uppercase"
+                  >
+                    {roast.tagline || "The Roast"}
+                  </Badge>
+                  <p className="font-serif text-2xl leading-snug text-white italic sm:text-3xl">
+                    &ldquo;{roast.headline}&rdquo;
+                  </p>
+                  {roast.verdict && (
+                    <p className="text-sm leading-relaxed text-white/60">
+                      {roast.verdict}
                     </p>
-                    {roast.verdict && (
-                      <p className="text-sm leading-relaxed text-white/60">
-                        {roast.verdict}
-                      </p>
-                    )}
-                  </div>
+                  )}
                 </div>
               </div>
 

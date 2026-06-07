@@ -7,7 +7,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/components/ui/lib/utils";
 import { useTinderProfile } from "../TinderProfileProvider";
 import { RoastDialog } from "./RoastDialog";
 
@@ -31,14 +30,6 @@ export function RoastCtaCard() {
   const existingRoast = roastQuery.data;
   const hasRoast = !!existingRoast;
 
-  const scoreColor = existingRoast
-    ? existingRoast.overallScore >= 70
-      ? "text-green-600 dark:text-green-400"
-      : existingRoast.overallScore >= 45
-        ? "text-amber-600 dark:text-amber-400"
-        : "text-red-600 dark:text-red-400"
-    : "";
-
   return (
     <>
       <Card
@@ -55,12 +46,12 @@ export function RoastCtaCard() {
               <h3 className="text-sm font-semibold">
                 {hasRoast ? "Your AI Roast" : "Get Your AI Roast"}
               </h3>
-              {hasRoast && (
+              {hasRoast && existingRoast.tagline && (
                 <Badge
                   variant="secondary"
-                  className={cn("border-0 px-1.5 py-0 font-bold", scoreColor)}
+                  className="border-0 px-1.5 py-0 font-bold text-rose-600 dark:text-rose-400"
                 >
-                  {existingRoast.overallScore}/100
+                  {existingRoast.tagline}
                 </Badge>
               )}
             </div>

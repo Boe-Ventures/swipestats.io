@@ -9,7 +9,7 @@ import drizzle from "eslint-plugin-drizzle";
 export default defineConfig(
   // Global ignores
   {
-    ignores: [".next/**", "node_modules/**", ".velite/**"],
+    ignores: [".next/**", "node_modules/**", ".velite/**", ".context/**"],
   },
   // Base config for all JS/TS files
   {

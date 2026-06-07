@@ -1218,7 +1218,6 @@ export type StatsRoastResult = {
   verdict: string;
   roastLines: string[];
   realTalkInsights: string[];
-  overallScore: number; // 0-100
 };
 
 /** `output` payload — shape depends on `kind`, narrowed at the edge by zod. */
@@ -1308,7 +1307,6 @@ export type ProfileRoastResult = {
     tagline: string; // short verdict badge, e.g. "Solid, but playing it safe"
     headline: string; // shareable punchline one-liner
     verdict: string; // 2-3 sentence summary
-    score: number; // 0-100
   };
   photos: {
     contentId: string | null;

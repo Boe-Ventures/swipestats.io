@@ -155,11 +155,6 @@ const profileRoastSchema = z.object({
       .describe(
         "The overall take — punchy, 2 sentences MAX (~240 chars). No rambling.",
       ),
-    score: z
-      .number()
-      .describe(
-        "Overall profile strength as a whole number from 0 to 100 (inclusive). Honest but not cruel.",
-      ),
   }),
   photos: z
     .array(
@@ -273,7 +268,7 @@ Bio: ${bio?.trim() ? bio : "(no bio written)"}
 BE CONCISE. This is a punchy roast, not an essay — favour one sharp line over three soft ones. Every field below is SHORT (one or two sentences max). No rambling, no repeating yourself.
 
 Give:
-1. Overall: a short "tagline" badge (2-5 words capturing the verdict, e.g. "Solid, but playing it safe"), one shareable "headline" punchline, a "verdict" summary of 2 sentences MAX, and a 0-100 "score". No letter grade, no sub-scores.
+1. Overall: a short "tagline" badge (2-5 words capturing the verdict, e.g. "Solid, but playing it safe"), one shareable "headline" punchline, and a "verdict" summary of 2 sentences MAX. No letter grade, no numeric score.
 2. For EACH photo: a "caption" — a neutral, factual description of what is actually visible (setting, pose, activity, lighting; NOT a joke — this proves you looked); a bold "title" zinger; a "body" roast of ONE punchy sentence citing a specific visible detail; and a keep/maybe/cut call.
 3. For EACH prompt: a one-sentence "roast" of their answer, plus a "rewrite" — a sharper answer to the SAME prompt they could actually use (concrete, in their voice).
 4. Bio (or null if there's none): a "roast" of 2 sentences max; and "rewrites" = at least two concise replacement bios in distinct named styles (default "Witty" and "Sincere").
@@ -309,13 +304,7 @@ Reference specific details you can actually see in the photos — that's what ma
       ],
     });
 
-    return {
-      ...output,
-      overall: {
-        ...output.overall,
-        score: Math.max(0, Math.min(100, Math.round(output.overall.score))),
-      },
-    };
+    return output;
   } catch (error) {
     if (NoObjectGeneratedError.isInstance(error)) {
       console.error("[roast] profile roast: no object generated", {

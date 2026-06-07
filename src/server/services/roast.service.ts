@@ -33,11 +33,6 @@ const roastOutputSchema = z.object({
     .describe(
       "Exactly 3 genuine, actionable insights to actually improve their dating app game, most impactful first",
     ),
-  overallScore: z
-    .number()
-    .describe(
-      "Overall dateability score as a whole number from 0 to 100 (inclusive). Anchor it to how they rank vs their cohort, NOT to absolutes — someone in the top 10% of their cohort should score high (75+) even if their raw numbers look modest. Be honest but not cruel.",
-    ),
 });
 
 export type RoastOutput = z.infer<typeof roastOutputSchema>;
@@ -225,13 +220,7 @@ For the "Real Talk" insights, be genuinely helpful — what would actually move 
       prompt,
     });
 
-    // Clamp the score in app code (kept out of the tool schema, which Anthropic
-    // structured output dislikes constraining) so a model that emits 105 / 92.5
-    // is stored as a clean 0-100 integer.
-    return {
-      ...output,
-      overallScore: Math.max(0, Math.min(100, Math.round(output.overallScore))),
-    };
+    return output;
   } catch (error) {
     if (NoObjectGeneratedError.isInstance(error)) {
       console.error("[roast] stats roast: no object generated", {

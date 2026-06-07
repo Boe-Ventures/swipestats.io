@@ -709,46 +709,6 @@ function RequirementRow({
   );
 }
 
-function ScoreRing({ score, size = 96 }: { score: number; size?: number }) {
-  const stroke = 8;
-  const r = (size - stroke) / 2;
-  const circumference = 2 * Math.PI * r;
-  const clamped = Math.max(0, Math.min(100, score));
-  const offset = circumference * (1 - clamped / 100);
-  const color = score >= 70 ? "#22c55e" : score >= 45 ? "#f59e0b" : "#ef4444";
-  return (
-    <div className="relative shrink-0" style={{ width: size, height: size }}>
-      <svg width={size} height={size} className="-rotate-90">
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          fill="none"
-          strokeWidth={stroke}
-          className="stroke-white/15"
-        />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          fill="none"
-          stroke={color}
-          strokeWidth={stroke}
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-2xl leading-none font-black" style={{ color }}>
-          {score}
-        </span>
-        <span className="text-[10px] text-white/50">/ 100</span>
-      </div>
-    </div>
-  );
-}
-
 function HeroCard({
   overall,
   isGenerating,
@@ -765,20 +725,17 @@ function HeroCard({
 }) {
   return (
     <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800 p-5 text-white sm:p-6">
-      <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
-        <ScoreRing score={overall.score} />
-        <div className="min-w-0 flex-1 space-y-2">
-          <Badge
-            variant="secondary"
-            className="border-0 bg-white/10 font-medium text-white"
-          >
-            {overall.tagline}
-          </Badge>
-          <p className="font-serif text-xl leading-snug italic sm:text-2xl">
-            {overall.headline}
-          </p>
-          <p className="text-sm text-zinc-300">{overall.verdict}</p>
-        </div>
+      <div className="space-y-3 text-center sm:text-left">
+        <Badge
+          variant="secondary"
+          className="border-0 bg-white/10 font-medium text-white"
+        >
+          {overall.tagline}
+        </Badge>
+        <p className="font-serif text-2xl leading-snug italic sm:text-3xl">
+          {overall.headline}
+        </p>
+        <p className="text-sm text-zinc-300">{overall.verdict}</p>
       </div>
       <div className="mt-4 flex flex-col gap-2 sm:flex-row">
         <Button

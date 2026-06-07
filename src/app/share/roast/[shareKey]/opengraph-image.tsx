@@ -10,10 +10,6 @@ export const alt = "My AI dating app roast on SwipeStats";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
-function scoreColor(score: number) {
-  return score >= 70 ? "#4ade80" : score >= 45 ? "#fbbf24" : "#f87171";
-}
-
 export default async function Image({
   params,
 }: {
@@ -31,12 +27,10 @@ export default async function Image({
     (row.kind === "tinder_roast" || row.kind === "hinge_roast")
       ? (row.output as StatsRoastResult)
       : null;
-  const score = output ? output.overallScore : null;
   const headline = output
     ? output.headline
     : "Get brutally, lovingly roasted by your own dating data.";
   const tagline = output ? output.tagline : null;
-  const color = score !== null ? scoreColor(score) : "#fb7185";
 
   return new ImageResponse(
     (
@@ -77,79 +71,37 @@ export default async function Image({
           </span>
         </div>
 
-        {/* Score + headline */}
-        <div
-          style={{ display: "flex", alignItems: "center", gap: "56px" }}
-        >
-          {score !== null && (
+        {/* Verdict + headline */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
+          {tagline && (
             <div
               style={{
                 display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
+                alignSelf: "flex-start",
+                padding: "10px 22px",
+                borderRadius: "999px",
+                background: "rgba(251,113,133,0.15)",
+                fontSize: "28px",
+                fontWeight: 700,
+                letterSpacing: "2px",
+                textTransform: "uppercase",
+                color: "#fda4af",
               }}
             >
-              <span
-                style={{
-                  fontSize: "200px",
-                  lineHeight: 1,
-                  fontWeight: 900,
-                  color,
-                }}
-              >
-                {score}
-              </span>
-              <span
-                style={{
-                  fontSize: "26px",
-                  letterSpacing: "4px",
-                  textTransform: "uppercase",
-                  color: "rgba(255,255,255,0.45)",
-                }}
-              >
-                / 100 Dateability
-              </span>
+              {tagline}
             </div>
           )}
-
-          <div
+          <span
             style={{
-              display: "flex",
-              flexDirection: "column",
-              flex: 1,
-              gap: "20px",
+              fontSize: "76px",
+              lineHeight: 1.1,
+              fontWeight: 700,
+              fontStyle: "italic",
+              color: "white",
             }}
           >
-            {tagline && (
-              <div
-                style={{
-                  display: "flex",
-                  alignSelf: "flex-start",
-                  padding: "8px 18px",
-                  borderRadius: "999px",
-                  background: "rgba(255,255,255,0.1)",
-                  fontSize: "24px",
-                  fontWeight: 700,
-                  letterSpacing: "1px",
-                  textTransform: "uppercase",
-                  color: "rgba(255,255,255,0.7)",
-                }}
-              >
-                {tagline}
-              </div>
-            )}
-            <span
-              style={{
-                fontSize: score !== null ? "52px" : "64px",
-                lineHeight: 1.15,
-                fontWeight: 700,
-                fontStyle: "italic",
-                color: "white",
-              }}
-            >
-              {`“${headline.length > 130 ? headline.slice(0, 127) + "…" : headline}”`}
-            </span>
-          </div>
+            {`“${headline.length > 120 ? headline.slice(0, 117) + "…" : headline}”`}
+          </span>
         </div>
 
         {/* Footer CTA */}
