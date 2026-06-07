@@ -15,7 +15,6 @@ import {
   type DataProvider,
   type educationLevelEnum,
 } from "../db/schema";
-import { buildRoastFingerprint } from "./profile-roast.service";
 
 // Generate a cryptographically secure random share key
 function generateShareKey(): string {
@@ -137,30 +136,26 @@ export async function getComparison(comparisonId: string, userId: string) {
         columns: {
           subjectId: true,
           tone: true,
-          fingerprint: true,
           updatedAt: true,
         },
       })
     : [];
   const roastBySubject = new Map(roastRows.map((r) => [r.subjectId, r]));
 
-  // Derive a lightweight roast status per column (roasted? + stale?) so the
-  // edit page can badge it without shipping or re-hashing the roast payload.
+  // Derive a lightweight roast status per column (roasted? + tone + when) so the
+  // edit page can badge it without shipping the roast payload. Staleness was
+  // dropped in favour of on-demand re-roasting.
   const columns = comparison.columns.map((column) => {
-    const effectiveBio = column.bio ?? comparison.defaultBio ?? null;
     const roast = roastBySubject.get(column.id);
     const roastStatus = roast
       ? {
           roasted: true as const,
           tone: roast.tone,
-          isStale:
-            roast.fingerprint !== buildRoastFingerprint(column, effectiveBio),
           updatedAt: roast.updatedAt,
         }
       : {
           roasted: false as const,
           tone: null,
-          isStale: false,
           updatedAt: null,
         };
     return { ...column, roastStatus };

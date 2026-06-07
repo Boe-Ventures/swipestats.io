@@ -1,4 +1,3 @@
-import { createHash } from "crypto";
 import { anthropic } from "@ai-sdk/anthropic";
 import { generateText, Output, NoObjectGeneratedError } from "ai";
 import { z } from "zod";
@@ -24,51 +23,6 @@ export { ROAST_TONES, PROVIDER_NAME, type RoastTone };
 export const ROAST_MODEL = "claude-sonnet-4-6";
 
 /**
- * Stable hash of whatever profile state a roast was generated against. If the
- * live state hashes differently, the stored roast is stale.
- */
-export function fingerprint(value: unknown): string {
-  return createHash("sha1").update(JSON.stringify(value)).digest("hex");
-}
-
-/** The slice of column content the fingerprint actually hashes over. */
-type FingerprintContent = {
-  id: string;
-  type: string;
-  attachmentId: string | null;
-  caption: string | null;
-  prompt: string | null;
-  answer: string | null;
-};
-
-/**
- * Canonical hash of the profile state a roast was generated against — ordered
- * content (type/id/attachment/caption/prompt/answer), title, and effective bio.
- * Shared so the roast router (on write) and the comparison query (to flag stale
- * roasts in the UI) compute byte-identical fingerprints.
- */
-export function buildRoastFingerprint(
-  column: {
-    title: string | null;
-    content: ReadonlyArray<FingerprintContent>;
-  },
-  effectiveBio: string | null,
-): string {
-  return fingerprint({
-    bio: effectiveBio,
-    title: column.title ?? null,
-    content: column.content.map((c) => [
-      c.type,
-      c.id,
-      c.attachmentId,
-      c.caption,
-      c.prompt,
-      c.answer,
-    ]),
-  });
-}
-
-/**
  * Each app has its own culture, so the roast should weigh things differently.
  * Keyed by the DataProvider enum value; falls back to a generic vibe.
  */
@@ -89,6 +43,12 @@ export interface ProfileRoastPhoto {
   /** Publicly fetchable blob URL passed to the vision model. */
   url: string;
   caption?: string;
+  /**
+   * Category tags from the photo tagger (e.g. ["selfie","sunglasses"]), when the
+   * photo has been analyzed. Used to ground the read and compute the profile's
+   * photo mix so the roast can call out repetition/gaps and justify ordering.
+   */
+  tags?: string[];
 }
 
 export interface ProfileRoastPrompt {
@@ -251,6 +211,29 @@ export async function roastProfile(
           .join("\n")
       : "(no prompts)";
 
+  // Photo-tagger context (only when photos have been analyzed): per-photo tags
+  // plus the aggregate mix, so the roast can ground its read and give concrete
+  // diversity/ordering advice instead of inferring it blind.
+  const perPhotoTags = photos
+    .map((p, i) =>
+      p.tags?.length ? `Photo ${i + 1}: ${p.tags.join(", ")}` : null,
+    )
+    .filter((line): line is string => line !== null)
+    .join("\n");
+
+  const mixCounts: Record<string, number> = {};
+  for (const p of photos) {
+    for (const tag of p.tags ?? []) mixCounts[tag] = (mixCounts[tag] ?? 0) + 1;
+  }
+  const mixSummary = Object.entries(mixCounts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([tag, n]) => `${n}× ${tag}`)
+    .join(", ");
+
+  const tagSection = perPhotoTags
+    ? `\nThe photos have been auto-tagged. Tags per photo:\n${perPhotoTags}\n\nPhoto mix across the profile: ${mixSummary}.\nUse this to flag repetition (too many of one kind) and gaps (e.g. no group or full-body shot), and to justify the photo order — surface concrete fixes in "real talk" with action "reorder".\n`
+    : "";
+
   const instructions = `You are ${TONE_PERSONA[tone]}
 
 You're reviewing someone's ${provider} dating profile.
@@ -259,7 +242,7 @@ About ${provider}: ${vibe}
 Weight your roast accordingly — judge this profile by what actually matters on ${provider}.
 
 ${photos.length} photo(s) are attached below, in order, labeled Photo 1 through Photo ${photos.length}. Reference each photo by its number.
-
+${tagSection}
 Prompts on the profile:
 ${promptLines}
 

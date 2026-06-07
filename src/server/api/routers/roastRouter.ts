@@ -24,12 +24,12 @@ import {
 import {
   roastProfile,
   roastSinglePhoto,
-  buildRoastFingerprint,
   ROAST_MODEL,
   ROAST_TONES,
   PROVIDER_NAME,
   type RoastTone,
 } from "@/server/services/profile-roast.service";
+import { readPhotoAnalysis } from "@/lib/photo-analysis";
 import { getCohortStats } from "@/server/services/cohort/cohort.service";
 import { canAccessFeature } from "@/server/services/gating.service";
 import { ProfileComparisonService } from "@/server/services/profile-comparison.service";
@@ -428,12 +428,15 @@ export const roastRouter = {
         if (c.type !== "photo") return [];
         const url = c.attachment?.url;
         if (!url) return [];
+        // The tagger's output rides on the attachment we already loaded.
+        const analysis = readPhotoAnalysis(c.attachment?.metadata);
         return [
           {
             id: c.id,
             attachmentId: c.attachmentId,
             url,
             caption: c.caption ?? undefined,
+            tags: analysis?.tags ?? [],
           },
         ];
       });
@@ -457,7 +460,11 @@ export const roastRouter = {
         providerKey: column.dataProvider,
         tone: input.tone,
         steer: input.steer,
-        photos: photoItems.map((p) => ({ url: p.url, caption: p.caption })),
+        photos: photoItems.map((p) => ({
+          url: p.url,
+          caption: p.caption,
+          tags: p.tags,
+        })),
         prompts: promptItems.map((p) => ({
           prompt: p.prompt,
           answer: p.answer,
@@ -485,7 +492,6 @@ export const roastRouter = {
         realTalk: roast.realTalk,
       };
 
-      const fingerprint = buildRoastFingerprint(column, effectiveBio);
       const updatedAt = new Date();
       const inputSnapshot = {
         providerKey: column.dataProvider,
@@ -505,7 +511,6 @@ export const roastRouter = {
           version: ROAST_VERSION,
           input: inputSnapshot,
           output: result,
-          fingerprint,
         })
         .onConflictDoUpdate({
           target: [
@@ -519,14 +524,12 @@ export const roastRouter = {
             version: ROAST_VERSION,
             input: inputSnapshot,
             output: result,
-            fingerprint,
             updatedAt,
           },
         });
 
       return {
         tone: input.tone,
-        isStale: false,
         updatedAt,
         ...hydrateRoast(result, column.content, effectiveBio),
       };
@@ -630,8 +633,7 @@ export const roastRouter = {
         steer: input.steer,
       });
 
-      // Patch just this photo's verdict; everything else (and the fingerprint —
-      // content is unchanged) stays put.
+      // Patch just this photo's verdict; everything else stays put.
       const updatedPhotos = result.photos.map((p, i) =>
         i === targetIndex
           ? {
@@ -667,7 +669,7 @@ export const roastRouter = {
 
   /**
    * Load the (single) saved roast for a profile, if any. Resolves photo URLs
-   * live and flags staleness when the profile changed since the roast.
+   * live. Re-roast on demand to refresh after profile changes.
    */
   getProfileRoast: protectedProcedure
     .input(z.object({ columnId: z.string() }))
@@ -702,11 +704,9 @@ export const roastRouter = {
 
       const result = row.output as ProfileRoastResult;
       const effectiveBio = column.bio ?? column.comparison.defaultBio ?? null;
-      const currentFingerprint = buildRoastFingerprint(column, effectiveBio);
 
       return {
         tone: row.tone,
-        isStale: row.fingerprint !== currentFingerprint,
         updatedAt: row.updatedAt,
         ...hydrateRoast(result, column.content, effectiveBio),
       };

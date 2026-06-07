@@ -179,7 +179,6 @@ export function RoastProfileDialog({
   const reRoastTone = (activeTone ?? "mild") as Tone;
   const isGenerating = roastMutation.isPending;
   const isLoadingExisting = roastQuery.isLoading && !roastMutation.data;
-  const isStale = !roastMutation.data && !!roastQuery.data?.isStale;
 
   // Pre-flight gate: the backend needs at least one photo or prompt to roast,
   // so when there's nothing yet we guide instead of letting a tone click fail.
@@ -254,23 +253,6 @@ export function RoastProfileDialog({
                 })}
               </span>
             )}
-          </div>
-        )}
-
-        {/* Stale — profile changed since this roast */}
-        {isStale && !isGenerating && (
-          <div className="flex items-center justify-between gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm">
-            <span className="text-amber-700 dark:text-amber-300">
-              This profile changed since the roast — re-run to refresh.
-            </span>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => runRoast(reRoastTone)}
-            >
-              <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
-              Re-roast
-            </Button>
           </div>
         )}
 

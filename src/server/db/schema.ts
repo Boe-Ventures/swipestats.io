@@ -1204,7 +1204,9 @@ export type ProfileComparisonFeedbackInsert =
 //  - `version` is the output-format version. The UI renders the current version
 //    and offers a manual "refresh" (regenerate) for rows left behind — so the
 //    payload can evolve without DB migrations or backfills.
-//  - `fingerprint` flags content-staleness (subject changed since generation).
+//  - `fingerprint` is DEPRECATED — roast staleness was dropped in favour of
+//    on-demand re-roasting. The column is kept (nullable, unwritten) to avoid a
+//    migration; safe to drop in a future migration.
 //  - `shareKey`/`isPublic` are the share primitive, built once for all kinds.
 //  - `subjectId` is intentionally NOT a FK (it points into several tables);
 //    roasts are cheap derived data, pruned by the app layer on subject delete.
@@ -1264,8 +1266,8 @@ export const aiOutputTable = pgTable(
     version: t.smallint().notNull().default(1),
     input: t.jsonb().$type<AiOutputInput>().notNull(),
     output: t.jsonb().$type<AiOutputPayload>().notNull(),
-    // Hash of the subject state the output was generated against; if it differs
-    // from the live state the output is stale. Null when staleness is N/A.
+    // DEPRECATED: staleness was dropped for on-demand re-roasting. Kept nullable
+    // and unwritten to avoid a migration; safe to drop later.
     fingerprint: t.text(),
     shareKey: t
       .text()
@@ -1678,7 +1680,7 @@ export const comparisonColumnRelations = relations(
     }),
     content: many(comparisonColumnContentTable),
     feedback: many(profileComparisonFeedbackTable),
-    // Roast state (roasted? stale?) lives in `ai_output` keyed by
+    // Roast state (roasted? + tone + when) lives in `ai_output` keyed by
     // (kind="profile_roast", subjectId=column.id) — no FK relation, queried
     // explicitly where the comparison is read.
   }),
