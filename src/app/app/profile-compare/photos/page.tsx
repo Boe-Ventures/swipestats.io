@@ -1,19 +1,10 @@
 "use client";
 
 import { useState, useRef } from "react";
-import Image from "next/image";
-import { upload } from "@vercel/blob/client";
-import { formatDistanceToNow } from "date-fns";
-import { Upload, Trash2, Image as ImageIcon, Loader2 } from "lucide-react";
+import { Upload, Image as ImageIcon, Loader2, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -22,19 +13,30 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/toast";
 
 import { useTRPC } from "@/trpc/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
+import { useGalleryUpload } from "../_hooks/useGalleryUpload";
+import { useSubscription } from "@/hooks/useSubscription";
+import { useUpgrade } from "@/contexts/UpgradeContext";
+import { readPhotoAnalysis } from "@/lib/photo-analysis";
+import { PhotoGalleryCard } from "./photo-gallery-card";
+
 export default function PhotoGalleryPage() {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const [isUploading, setIsUploading] = useState(false);
+  const { uploadFiles, isUploading } = useGalleryUpload();
+  const { effectiveTier } = useSubscription();
+  const { openUpgradeModal } = useUpgrade();
+  const isPaid = effectiveTier === "PLUS" || effectiveTier === "ELITE";
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [photoToDelete, setPhotoToDelete] = useState<string | null>(null);
+  // Attachment ids currently being analyzed by the "Analyze all" pool — each
+  // card reflects its own status from this set.
+  const [analyzingIds, setAnalyzingIds] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: photos, isLoading } = useQuery(
@@ -42,6 +44,71 @@ export default function PhotoGalleryPage() {
       limit: 100,
     }),
   );
+
+  const analyzeMutation = useMutation(
+    trpc.photoAnalysis.analyze.mutationOptions(),
+  );
+
+  // How many images still need analysis — drives the "Analyze N photos" button.
+  const unanalyzedCount = (photos ?? []).filter(
+    (p) => p.mimeType.startsWith("image/") && !readPhotoAnalysis(p.metadata),
+  ).length;
+
+  // "Analyze all" runs a small worker pool rather than firing every card at
+  // once, so we never burst 100 concurrent vision calls (rate limits / cost).
+  // Cards show their status via `analyzingIds`; the gallery refreshes per photo
+  // so tags reveal as each completes.
+  const handleAnalyzeAll = async () => {
+    if (!isPaid) {
+      openUpgradeModal({ feature: "aiRoast" });
+      return;
+    }
+    const targets = (photos ?? []).filter(
+      (p) => p.mimeType.startsWith("image/") && !readPhotoAnalysis(p.metadata),
+    );
+    if (targets.length === 0) return;
+
+    toast.info(
+      `Analyzing ${targets.length} ${targets.length === 1 ? "photo" : "photos"}…`,
+    );
+    setAnalyzingIds(new Set(targets.map((t) => t.id)));
+
+    const queue = [...targets];
+    const CONCURRENCY = 5;
+    let failed = 0;
+
+    const worker = async () => {
+      while (queue.length > 0) {
+        const target = queue.shift();
+        if (!target) break;
+        try {
+          await analyzeMutation.mutateAsync({ attachmentId: target.id });
+        } catch {
+          failed++;
+        } finally {
+          setAnalyzingIds((prev) => {
+            const next = new Set(prev);
+            next.delete(target.id);
+            return next;
+          });
+        }
+        // Reveal each photo's tags as soon as it finishes.
+        void queryClient.invalidateQueries(
+          trpc.blob.getUserUploads.queryOptions({ limit: 100 }),
+        );
+      }
+    };
+
+    await Promise.all(
+      Array.from({ length: Math.min(CONCURRENCY, queue.length) }, worker),
+    );
+
+    if (failed > 0) {
+      toast.error(
+        `${failed} ${failed === 1 ? "photo" : "photos"} couldn't be analyzed`,
+      );
+    }
+  };
 
   const deleteAttachmentMutation = useMutation(
     trpc.blob.deleteAttachment.mutationOptions({
@@ -59,86 +126,21 @@ export default function PhotoGalleryPage() {
     }),
   );
 
-  const handleFileUpload = async (file: File) => {
-    // Validate file type
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-    if (!allowedTypes.includes(file.type)) {
-      toast.error(
-        `${file.name}: Please upload an image file (JPG, PNG, WebP, or GIF)`,
-      );
-      return;
-    }
-
-    // Validate file size (10MB max)
-    const maxSize = 10 * 1024 * 1024;
-    if (file.size > maxSize) {
-      toast.error(`${file.name}: File size must be less than 10MB`);
-      return;
-    }
-
-    try {
-      // Upload to blob storage
-      const clientPayload = {
-        resourceType: "user_photo",
-        resourceId: "gallery", // Generic ID for user photo library
-      };
-
-      const result = await upload(file.name, file, {
-        access: "public",
-        handleUploadUrl: "/api/blob/client-upload",
-        clientPayload: JSON.stringify(clientPayload),
-      });
-
-      console.log("📎 File uploaded:", result.url);
-
-      toast.success("Photo uploaded!");
-      void queryClient.invalidateQueries(
-        trpc.blob.getUserUploads.queryOptions({ limit: 100 }),
-      );
-    } catch (error) {
-      console.error("Upload failed:", error);
-      toast.error(
-        `${file.name}: ${error instanceof Error ? error.message : "Failed to upload"}`,
-      );
-    }
-  };
-
   const handleFileInputChange = async (
     e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     const files = Array.from(e.target.files || []);
+    // Reset input so the same files can be selected again, even on failure.
+    e.target.value = "";
     if (files.length === 0) return;
 
-    setIsUploading(true);
-
-    // Upload all files in parallel
-    const uploadPromises = files.map((file) => handleFileUpload(file));
-
-    try {
-      await Promise.all(uploadPromises);
-    } catch (error) {
-      // Individual errors already handled in handleFileUpload
-      console.error("Some uploads failed:", error);
-    } finally {
-      setIsUploading(false);
-    }
-
-    // Reset input so same files can be selected again
-    e.target.value = "";
+    await uploadFiles(files);
   };
 
   const handleDelete = () => {
     if (photoToDelete) {
       deleteAttachmentMutation.mutate({ id: photoToDelete });
     }
-  };
-
-  const getFileSize = (bytes: number) => {
-    if (bytes === 0) return "0 B";
-    const k = 1024;
-    const sizes = ["B", "KB", "MB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
   };
 
   if (isLoading) {
@@ -164,17 +166,34 @@ export default function PhotoGalleryPage() {
             Your uploaded photos ({photos?.length || 0})
           </p>
         </div>
-        <Button
-          onClick={() => fileInputRef.current?.click()}
-          disabled={isUploading}
-        >
-          {isUploading ? (
-            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Upload className="mr-2 h-4 w-4" />
+        <div className="flex items-center gap-2">
+          {unanalyzedCount > 0 && (
+            <Button
+              variant="outline"
+              onClick={() => void handleAnalyzeAll()}
+              disabled={analyzingIds.size > 0}
+            >
+              {analyzingIds.size > 0 ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="mr-2 h-4 w-4" />
+              )}
+              Analyze {unanalyzedCount}{" "}
+              {unanalyzedCount === 1 ? "photo" : "photos"}
+            </Button>
           )}
-          {isUploading ? "Uploading..." : "Upload Photos"}
-        </Button>
+          <Button
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading}
+          >
+            {isUploading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Upload className="mr-2 h-4 w-4" />
+            )}
+            {isUploading ? "Uploading..." : "Upload Photos"}
+          </Button>
+        </div>
       </div>
 
       {/* Hidden file input */}
@@ -207,93 +226,19 @@ export default function PhotoGalleryPage() {
         </Card>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-          {photos.map((photo) => {
-            const isImage = photo.mimeType.startsWith("image/");
-            const isVideo = photo.mimeType.startsWith("video/");
-            const isAudio = photo.mimeType.startsWith("audio/");
-
-            return (
-              <Card key={photo.id} className="group overflow-hidden pt-0">
-                {/* Media Preview */}
-                <div className="bg-muted relative aspect-square overflow-hidden">
-                  {isImage ? (
-                    <Image
-                      src={photo.url}
-                      alt={photo.originalFilename}
-                      fill
-                      className="object-cover"
-                    />
-                  ) : isVideo ? (
-                    <video
-                      src={photo.url}
-                      className="h-full w-full object-cover"
-                    />
-                  ) : isAudio ? (
-                    <div className="flex h-full items-center justify-center">
-                      <div className="text-muted-foreground">
-                        <svg
-                          className="h-12 w-12"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3"
-                          />
-                        </svg>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex h-full items-center justify-center">
-                      <ImageIcon className="text-muted-foreground h-12 w-12" />
-                    </div>
-                  )}
-
-                  {/* Delete button overlay */}
-                  <div className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      onClick={() => {
-                        setPhotoToDelete(photo.id);
-                        setDeleteDialogOpen(true);
-                      }}
-                    >
-                      <Trash2 className="mr-2 h-3 w-3" />
-                      Delete
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Info */}
-                <CardHeader className="p-4">
-                  <CardTitle className="line-clamp-1 text-sm">
-                    {photo.originalFilename}
-                  </CardTitle>
-                  <CardDescription className="flex items-center gap-2 text-xs">
-                    <Badge variant="outline" className="text-xs">
-                      {isImage
-                        ? "Image"
-                        : isVideo
-                          ? "Video"
-                          : isAudio
-                            ? "Audio"
-                            : "File"}
-                    </Badge>
-                    <span>{getFileSize(photo.size)}</span>
-                  </CardDescription>
-                  <p className="text-muted-foreground text-xs">
-                    {formatDistanceToNow(new Date(photo.createdAt), {
-                      addSuffix: true,
-                    })}
-                  </p>
-                </CardHeader>
-              </Card>
-            );
-          })}
+          {photos.map((photo) => (
+            <PhotoGalleryCard
+              key={photo.id}
+              photo={photo}
+              isPaid={isPaid}
+              isBulkAnalyzing={analyzingIds.has(photo.id)}
+              onRequireUpgrade={() => openUpgradeModal({ feature: "aiRoast" })}
+              onDelete={(id) => {
+                setPhotoToDelete(id);
+                setDeleteDialogOpen(true);
+              }}
+            />
+          ))}
         </div>
       )}
 

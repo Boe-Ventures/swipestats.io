@@ -15,6 +15,7 @@ import { cohortRouter } from "@/server/api/routers/cohortRouter";
 import { matchRouter } from "@/server/api/routers/matchRouter";
 import { roastRouter } from "@/server/api/routers/roastRouter";
 import { promptSuggestRouter } from "@/server/api/routers/promptSuggestRouter";
+import { photoAnalysisRouter } from "@/server/api/routers/photoAnalysisRouter";
 import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
 
 /**
@@ -40,6 +41,7 @@ export const appRouter = createTRPCRouter({
   match: matchRouter,
   roast: roastRouter,
   promptSuggest: promptSuggestRouter,
+  photoAnalysis: photoAnalysisRouter,
 });
 
 // export type definition of API

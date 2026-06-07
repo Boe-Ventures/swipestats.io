@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   Copy,
   Eye,
@@ -14,7 +14,6 @@ import {
 } from "lucide-react";
 import { z } from "zod";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -61,6 +60,7 @@ import type { RouterOutputs } from "@/trpc/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { dataProviderEnum, educationLevelEnum } from "@/server/db/schema";
 import { ComparisonColumn } from "./comparison-column";
+import { useGalleryUpload } from "../_hooks/useGalleryUpload";
 
 type Comparison = RouterOutputs["profileCompare"]["get"];
 
@@ -306,9 +306,7 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
     comparison.columns.length > 0 &&
     comparison.columns.every((c) => c.content.length === 0);
 
-  const router = useRouter();
-
-  // Offer a one-tap path that seeds a *new* comparison from photos the user
+  // Offer a one-tap path that seeds this comparison from photos the user
   // already uploaded. Only fetched while the empty state is showing.
   const uploadedProfilesQuery = useQuery(
     trpc.user.getUploadedProfiles.queryOptions(undefined, {
@@ -326,17 +324,74 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
   const canSeedFromTinder =
     !!seedTinderId && (seedMediaQuery.data ?? []).some((m) => m.url);
 
-  const createFromTinderMutation = useMutation(
-    trpc.profileCompare.createFromTinderMedia.mutationOptions({
-      onSuccess: (created) => {
-        toast.success("Comparison created from your photos");
-        router.push(`/app/profile-compare/${created.id}`);
+  // "Use my uploaded Tinder photos" seeds THIS comparison's empty columns (no
+  // navigating off to a separate one), so it's consistent with the "Upload your
+  // photos" button beside it.
+  const seedFromTinderMutation = useMutation(
+    trpc.profileCompare.seedFromTinderMedia.mutationOptions({
+      onSuccess: () => {
+        toast.success("Added your Tinder photos");
+        void queryClient.invalidateQueries(
+          trpc.profileCompare.get.queryOptions({ id: comparison.id }),
+        );
       },
       onError: (error) => {
-        toast.error(error.message || "Couldn't build your comparison");
+        toast.error(error.message || "Couldn't add your photos");
       },
     }),
   );
+
+  // Empty-state upload. Uploading to the gallery alone wouldn't clear the empty
+  // state (it keys off column content, not the library), so we upload AND seed
+  // every empty profile in one step — the comparison is then set up side by side
+  // instead of dead-ending in the library.
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { uploadFiles, isUploading } = useGalleryUpload();
+
+  const addPhotosToColumnMutation = useMutation(
+    trpc.profileCompare.addPhotosToColumn.mutationOptions({
+      onError: (error) => {
+        toast.error(error.message || "Couldn't add your photos");
+      },
+    }),
+  );
+
+  const isSeedingPhotos = isUploading || addPhotosToColumnMutation.isPending;
+
+  const handleEmptyStateUpload = async (files: File[]) => {
+    if (files.length === 0 || comparison.columns.length === 0) return;
+
+    const attachments = await uploadFiles(files, { successToast: false });
+    if (attachments.length === 0) return;
+
+    const photos = attachments.map((a) => ({ attachmentId: a.id }));
+    // Seed every profile so the comparison is set up side by side in one step.
+    await Promise.all(
+      comparison.columns.map((column) =>
+        addPhotosToColumnMutation.mutateAsync({ columnId: column.id, photos }),
+      ),
+    );
+
+    await queryClient.invalidateQueries(
+      trpc.profileCompare.get.queryOptions({ id: comparison.id }),
+    );
+
+    const n = attachments.length;
+    toast.success(
+      `Added ${n} ${n === 1 ? "photo" : "photos"} to your ${
+        comparison.columns.length === 1 ? "profile" : "profiles"
+      }`,
+    );
+  };
+
+  const handleEmptyStateFileChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const files = Array.from(e.target.files ?? []);
+    // Reset so the same files can be picked again after a failed attempt.
+    e.target.value = "";
+    void handleEmptyStateUpload(files);
+  };
 
   return (
     <div className="space-y-6">
@@ -402,11 +457,21 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
               Add your photos to get started
             </EmptyTitle>
             <EmptyDescription className="text-base">
-              Upload once to your gallery, then drop them into each profile to
-              compare them side by side.
+              Upload your photos and we&apos;ll add them to each profile so you
+              can compare side by side — then reorder, caption, and tweak per
+              app.
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
+            {/* Hidden input driven by the "Upload your photos" button below. */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              onChange={handleEmptyStateFileChange}
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              multiple
+              className="hidden"
+            />
             <div className="flex flex-col items-center gap-3 sm:flex-row sm:flex-wrap sm:justify-center">
               {/* Fastest path for returning users — seed from photos they
                   already uploaded. Creates a separate, pre-filled comparison. */}
@@ -415,14 +480,17 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
                   size="lg"
                   className="bg-rose-600 hover:bg-rose-500"
                   onClick={() =>
-                    createFromTinderMutation.mutate({ tinderId: seedTinderId })
+                    seedFromTinderMutation.mutate({
+                      comparisonId: comparison.id,
+                      tinderId: seedTinderId,
+                    })
                   }
-                  disabled={createFromTinderMutation.isPending}
+                  disabled={seedFromTinderMutation.isPending}
                 >
-                  {createFromTinderMutation.isPending ? (
+                  {seedFromTinderMutation.isPending ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Building…
+                      Adding…
                     </>
                   ) : (
                     <>
@@ -432,20 +500,27 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
                   )}
                 </Button>
               )}
-              <Link href="/app/profile-compare/photos">
-                <Button
-                  size="lg"
-                  variant={canSeedFromTinder ? "outline" : "default"}
-                  className={
-                    canSeedFromTinder
-                      ? undefined
-                      : "bg-rose-600 hover:bg-rose-500"
-                  }
-                >
-                  <ImagePlus className="mr-2 h-4 w-4" />
-                  Upload your photos
-                </Button>
-              </Link>
+              <Button
+                size="lg"
+                variant={canSeedFromTinder ? "outline" : "default"}
+                className={
+                  canSeedFromTinder ? undefined : "bg-rose-600 hover:bg-rose-500"
+                }
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isSeedingPhotos}
+              >
+                {isSeedingPhotos ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Uploading…
+                  </>
+                ) : (
+                  <>
+                    <ImagePlus className="mr-2 h-4 w-4" />
+                    Upload your photos
+                  </>
+                )}
+              </Button>
               <Link href="https://www.swipestats.io/upload">
                 <Button size="lg" variant="outline">
                   <Upload className="mr-2 h-4 w-4" />
@@ -470,6 +545,12 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
                 </>
               )}
             </p>
+            <Link
+              href="/app/profile-compare/photos"
+              className="text-muted-foreground hover:text-foreground text-xs underline underline-offset-2"
+            >
+              Or manage your photo library
+            </Link>
           </EmptyContent>
         </Empty>
       )}

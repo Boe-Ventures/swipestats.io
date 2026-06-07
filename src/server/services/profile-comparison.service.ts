@@ -589,6 +589,77 @@ export async function addPhotoToColumn(data: {
 }
 
 /**
+ * Bulk-add gallery photos to a column in a single transaction, appended in the
+ * given array order.
+ *
+ * Prefer this over calling `addPhotoToColumn` N times in parallel: each of those
+ * reads the column's current max `order` independently, so concurrent calls all
+ * see the same value and collide on order (every photo lands at the same index,
+ * leaving the final order undefined). Here the max is read once and the inserts
+ * get sequential `order` values, so the photos keep the order they were passed.
+ */
+export async function addPhotosToColumn(data: {
+  columnId: string;
+  userId: string;
+  photos: Array<{ attachmentId: string; caption?: string }>;
+}) {
+  if (data.photos.length === 0) return [];
+
+  return withTransaction(async (tx) => {
+    // Verify column ownership and read the current max order in one query.
+    const column = await tx.query.comparisonColumnTable.findFirst({
+      where: eq(comparisonColumnTable.id, data.columnId),
+      with: {
+        comparison: true,
+        content: {
+          orderBy: (content, { desc }) => [desc(content.order)],
+          limit: 1,
+        },
+      },
+    });
+
+    if (column?.comparison.userId !== data.userId) {
+      throw new Error("Column not found or unauthorized");
+    }
+
+    // Verify every attachment belongs to this user and isn't soft-deleted, so a
+    // caller can't link someone else's blob into their column (mirrors the
+    // ownership guard in createFriendColumn).
+    const attachmentIds = data.photos.map((p) => p.attachmentId);
+    const owned = await tx.query.attachmentTable.findMany({
+      where: and(
+        inArray(attachmentTable.id, attachmentIds),
+        eq(attachmentTable.uploadedBy, data.userId),
+        isNull(attachmentTable.deletedAt),
+      ),
+      columns: { id: true },
+    });
+    const ownedIds = new Set(owned.map((a) => a.id));
+    if (data.photos.some((p) => !ownedIds.has(p.attachmentId))) {
+      throw new Error("Some photos are invalid or not yours");
+    }
+
+    const startOrder =
+      column.content.length > 0 ? column.content[0]!.order + 1 : 0;
+
+    const rows = await tx
+      .insert(comparisonColumnContentTable)
+      .values(
+        data.photos.map((photo, index) => ({
+          columnId: data.columnId,
+          type: "photo" as const,
+          attachmentId: photo.attachmentId,
+          caption: photo.caption,
+          order: startOrder + index,
+        })),
+      )
+      .returning();
+
+    return rows;
+  });
+}
+
+/**
  * Reorder content within a column
  */
 export async function reorderContent(data: {
@@ -1398,34 +1469,33 @@ export async function getPhotoSummary(comparisonId: string, userId: string) {
 
 // Service object export
 /**
- * Seed a brand-new comparison from a user's already-uploaded Tinder photos.
- *
- * Bridges the `media` table (dating-data photos) into `attachment` rows
- * (resourceType "user_photo") by pointing at the same public URLs — no blob
- * copy needed. The unique index on attachment.url keeps this idempotent, so the
- * user can run it repeatedly without piling up duplicate gallery photos.
+ * Bridge a user's already-uploaded Tinder photos (the `media` table) into
+ * `attachment` rows (resourceType "user_photo") by pointing at the same public
+ * URLs — no blob copy needed. The unique index on attachment.url keeps this
+ * idempotent, so it can run repeatedly without piling up duplicate gallery
+ * photos. Returns the attachment ids in media order.
  */
-export async function createFromTinderMedia(data: {
-  userId: string;
-  tinderId: string;
-}) {
+async function importTinderPhotosAsAttachments(
+  userId: string,
+  tinderId: string,
+): Promise<string[]> {
   // 1. The profile must belong to the requesting user
   const profile = await db.query.tinderProfileTable.findFirst({
-    where: eq(tinderProfileTable.tinderId, data.tinderId),
+    where: eq(tinderProfileTable.tinderId, tinderId),
     columns: { tinderId: true, userId: true },
   });
 
   if (!profile) {
     throw new Error("Profile not found");
   }
-  if (profile.userId !== data.userId) {
+  if (profile.userId !== userId) {
     throw new Error("You can only build a comparison from your own profile");
   }
 
   // 2. Pull the profile's photos. We don't filter on media.type so this stays
   // consistent with the public getMedia query that powers the CTA preview.
   const media = await db.query.mediaTable.findMany({
-    where: eq(mediaTable.tinderProfileId, data.tinderId),
+    where: eq(mediaTable.tinderProfileId, tinderId),
     limit: 9,
   });
   const photos = media.filter((m) => m.url);
@@ -1443,13 +1513,13 @@ export async function createFromTinderMedia(data: {
       photos.map((m, index) => ({
         resourceType: "user_photo" as const,
         resourceId: "gallery",
-        uploadedBy: data.userId,
-        filename: `tinder-${data.tinderId}-${index}`,
+        uploadedBy: userId,
+        filename: `tinder-${tinderId}-${index}`,
         originalFilename: `tinder-photo-${index + 1}.jpg`,
         mimeType: "image/jpeg",
         size: 0,
         url: m.url,
-        metadata: { source: "tinder_media", tinderId: data.tinderId },
+        metadata: { source: "tinder_media", tinderId },
       })),
     )
     .onConflictDoNothing({ target: attachmentTable.url });
@@ -1470,7 +1540,22 @@ export async function createFromTinderMedia(data: {
     throw new Error("Failed to import photos");
   }
 
-  // 5. Create the comparison with a single Tinder column, pre-filled
+  return photoAttachmentIds;
+}
+
+/**
+ * Seed a brand-new comparison from a user's already-uploaded Tinder photos.
+ * Used by the dashboard / insights CTAs where there's no existing comparison.
+ */
+export async function createFromTinderMedia(data: {
+  userId: string;
+  tinderId: string;
+}) {
+  const photoAttachmentIds = await importTinderPhotosAsAttachments(
+    data.userId,
+    data.tinderId,
+  );
+
   return createComparison({
     userId: data.userId,
     name: "My Tinder profile",
@@ -1478,9 +1563,57 @@ export async function createFromTinderMedia(data: {
   });
 }
 
+/**
+ * Seed an EXISTING comparison's empty columns from the user's uploaded Tinder
+ * photos. This is the empty-state "Use my uploaded Tinder photos" path — it
+ * fills the comparison the user is already on (consistent with the adjacent
+ * "Upload your photos" button) instead of creating a separate one.
+ */
+export async function seedComparisonFromTinderMedia(data: {
+  userId: string;
+  comparisonId: string;
+  tinderId: string;
+}) {
+  // Verify comparison ownership and find which columns still need content.
+  const comparison = await db.query.profileComparisonTable.findFirst({
+    where: eq(profileComparisonTable.id, data.comparisonId),
+    with: { columns: { with: { content: { columns: { id: true } } } } },
+  });
+
+  if (comparison?.userId !== data.userId) {
+    throw new Error("Comparison not found or unauthorized");
+  }
+
+  const photoAttachmentIds = await importTinderPhotosAsAttachments(
+    data.userId,
+    data.tinderId,
+  );
+
+  // Seed every empty column so the whole comparison is set up at once. Skip
+  // columns that already have content so we never duplicate into a filled one.
+  const emptyColumns = comparison.columns.filter(
+    (c) => c.content.length === 0,
+  );
+  const targets = emptyColumns.length > 0 ? emptyColumns : comparison.columns;
+
+  for (const column of targets) {
+    await addPhotosToColumn({
+      columnId: column.id,
+      userId: data.userId,
+      photos: photoAttachmentIds.map((attachmentId) => ({ attachmentId })),
+    });
+  }
+
+  return {
+    seededColumns: targets.length,
+    photoCount: photoAttachmentIds.length,
+  };
+}
+
 export const ProfileComparisonService = {
   create: createComparison,
   createFromTinderMedia,
+  seedComparisonFromTinderMedia,
   get: getComparison,
   getPublic: getPublicComparison,
   list: listComparisons,
@@ -1493,6 +1626,7 @@ export const ProfileComparisonService = {
   duplicateColumn,
   addContentToColumn,
   addPhotoToColumn, // legacy
+  addPhotosToColumn,
   updateContent,
   reorderContent,
   reorderPhotos, // legacy

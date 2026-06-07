@@ -81,8 +81,8 @@ export function AddContentDialog({
     trpc.blob.getUserUploads.queryOptions({ limit: 100 }),
   );
 
-  const addPhotoMutation = useMutation(
-    trpc.profileCompare.addPhotoToColumn.mutationOptions({
+  const addPhotosMutation = useMutation(
+    trpc.profileCompare.addPhotosToColumn.mutationOptions({
       onSuccess: () => {
         void queryClient.invalidateQueries(
           trpc.profileCompare.get.queryOptions({ id: comparisonId }),
@@ -125,23 +125,18 @@ export function AddContentDialog({
     }
 
     try {
-      // Add all selected photos to the column
-      const promises = Array.from(selectedPhotoIds).map((attachmentId) =>
-        addPhotoMutation.mutateAsync({
-          columnId,
-          attachmentId,
-          // Include caption only if provided and single photo selected
-          caption:
-            selectedPhotoIds.size === 1 && photoCaption
-              ? photoCaption
-              : undefined,
-        }),
-      );
+      const ids = Array.from(selectedPhotoIds);
+      // Caption only applies when a single photo is selected.
+      const caption =
+        ids.length === 1 && photoCaption ? photoCaption : undefined;
 
-      await Promise.all(promises);
+      await addPhotosMutation.mutateAsync({
+        columnId,
+        photos: ids.map((attachmentId) => ({ attachmentId, caption })),
+      });
 
       toast.success(
-        `${selectedPhotoIds.size} ${selectedPhotoIds.size === 1 ? "photo" : "photos"} added`,
+        `${ids.length} ${ids.length === 1 ? "photo" : "photos"} added`,
       );
 
       setSelectedPhotoIds(new Set());
@@ -162,14 +157,12 @@ export function AddContentDialog({
     if (attachments.length === 0) return;
 
     try {
-      await Promise.all(
-        attachments.map((attachment) =>
-          addPhotoMutation.mutateAsync({
-            columnId,
-            attachmentId: attachment.id,
-          }),
-        ),
-      );
+      await addPhotosMutation.mutateAsync({
+        columnId,
+        photos: attachments.map((attachment) => ({
+          attachmentId: attachment.id,
+        })),
+      });
       toast.success(
         `${attachments.length} ${attachments.length === 1 ? "photo" : "photos"} added`,
       );
@@ -428,10 +421,10 @@ export function AddContentDialog({
 
                         <Button
                           onClick={handleAddSelectedPhotos}
-                          disabled={addPhotoMutation.isPending}
+                          disabled={addPhotosMutation.isPending}
                           className="mt-4 w-full"
                         >
-                          {addPhotoMutation.isPending ? (
+                          {addPhotosMutation.isPending ? (
                             <>
                               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                               Adding...

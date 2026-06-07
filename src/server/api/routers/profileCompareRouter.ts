@@ -61,12 +61,28 @@ export const profileCompareRouter = createTRPCRouter({
       });
     }),
 
-  // Seed a comparison from the user's already-uploaded Tinder photos
+  // Seed a NEW comparison from the user's already-uploaded Tinder photos
   createFromTinderMedia: protectedProcedure
     .input(z.object({ tinderId: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
       return ProfileComparisonService.createFromTinderMedia({
         userId: ctx.session.user.id,
+        tinderId: input.tinderId,
+      });
+    }),
+
+  // Seed the EXISTING comparison's empty columns from uploaded Tinder photos
+  seedFromTinderMedia: protectedProcedure
+    .input(
+      z.object({
+        comparisonId: z.string(),
+        tinderId: z.string().min(1),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      return ProfileComparisonService.seedComparisonFromTinderMedia({
+        userId: ctx.session.user.id,
+        comparisonId: input.comparisonId,
         tinderId: input.tinderId,
       });
     }),
@@ -209,6 +225,28 @@ export const profileCompareRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       return ProfileComparisonService.addPhotoToColumn({
+        ...input,
+        userId: ctx.session.user.id,
+      });
+    }),
+
+  // Bulk-add gallery photos to a column (transactional, order-preserving).
+  addPhotosToColumn: protectedProcedure
+    .input(
+      z.object({
+        columnId: z.string(),
+        photos: z
+          .array(
+            z.object({
+              attachmentId: z.string(),
+              caption: z.string().optional(),
+            }),
+          )
+          .min(1),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      return ProfileComparisonService.addPhotosToColumn({
         ...input,
         userId: ctx.session.user.id,
       });
