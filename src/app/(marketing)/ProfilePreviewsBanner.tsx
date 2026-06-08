@@ -25,7 +25,7 @@ export function ProfilePreviewsBanner() {
       title="Profile Comparisons"
       message="Put your dating photos and prompts side by side and get real ratings and feedback from friends."
       ctaText="Try it free"
-      ctaHref="/try"
+      ctaHref="/try?source=home_banner"
       showDismiss
       onDismiss={() => {
         localStorage.setItem(DISMISS_KEY, "1");

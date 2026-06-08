@@ -27,6 +27,10 @@ import { NewOldLogo } from "@/components/ui/NewOldLogo";
 import { authClient } from "@/server/better-auth/client";
 import { useTRPC } from "@/trpc/react";
 import { getDefaultComparisonName } from "@/app/app/profile-compare/_lib/default-name";
+import {
+  ANONYMOUS_SOURCES,
+  type AnonymousSource,
+} from "@/lib/analytics/analytics.types";
 
 /** Columns a freshly seeded comparison starts with — matches the create dialog. */
 const DEFAULT_COLUMNS = [
@@ -36,8 +40,23 @@ const DEFAULT_COLUMNS = [
 
 /** Only allow internal app paths so `?next=` can't be used as an open redirect. */
 function resolveNext(next: string | null): string | null {
-  if (next && next.startsWith("/app/")) return next;
+  if (next?.startsWith("/app/")) return next;
   return null;
+}
+
+/**
+ * Where this `/try` visit originated, for lead attribution. External CTAs pass
+ * `?source=` (e.g. `roast_share`, `home_banner`); a bare `/try` is the generic
+ * gateway. Validated against the shared allowlist so we never forward an
+ * arbitrary value into analytics. The source rides along as the
+ * `X-Anonymous-Source` header when we mint a guest session, and stays in the URL
+ * for PostHog pageview attribution — it does not change where the visitor lands.
+ */
+function resolveSource(source: string | null): AnonymousSource {
+  if (source && (ANONYMOUS_SOURCES as readonly string[]).includes(source)) {
+    return source as AnonymousSource;
+  }
+  return "try_gateway";
 }
 
 function Splash({ error, onRetry }: { error?: string; onRetry?: () => void }) {
@@ -73,6 +92,7 @@ function TryGateway() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const next = resolveNext(searchParams.get("next"));
+  const source = resolveSource(searchParams.get("source"));
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const hasStarted = useRef(false);
@@ -92,7 +112,7 @@ function TryGateway() {
         const session = await authClient.getSession();
         if (!session.data?.user) {
           const result = await authClient.signIn.anonymous({
-            fetchOptions: { headers: { "X-Anonymous-Source": "try_gateway" } },
+            fetchOptions: { headers: { "X-Anonymous-Source": source } },
           });
           if (result.error) {
             throw new Error(result.error.message || "Failed to create session");
@@ -125,7 +145,7 @@ function TryGateway() {
     };
 
     void run();
-  }, [next, router, trpc, queryClient, createComparison]);
+  }, [next, source, router, trpc, queryClient, createComparison]);
 
   return (
     <Splash

@@ -9,6 +9,10 @@ import { env } from "@/env";
 import { db } from "@/server/db";
 import * as schema from "@/server/db/schema";
 import { trackServerEvent } from "@/server/services/analytics.service";
+import {
+  ANONYMOUS_SOURCES,
+  type AnonymousSource,
+} from "@/lib/analytics/analytics.types";
 import { EmailVerificationInline } from "../../../emails/EmailVerificationInline";
 import { resend } from "@/server/clients/resend.client";
 
@@ -140,11 +144,13 @@ export const auth = betterAuth({
       if (!newSession?.user) return;
 
       // Read source from custom header (passed from client via fetchOptions)
-      // This lets us track where anonymous users are coming from for analytics
+      // This lets us track where anonymous users are coming from for analytics.
+      // Validated against the shared allowlist; anything else → "direct".
       const sourceHeader = ctx.headers?.get("x-anonymous-source");
-      const source =
-        sourceHeader === "upload_flow" || sourceHeader === "comparison_view"
-          ? sourceHeader
+      const source: AnonymousSource =
+        sourceHeader &&
+        (ANONYMOUS_SOURCES as readonly string[]).includes(sourceHeader)
+          ? (sourceHeader as AnonymousSource)
           : "direct";
 
       // Track anonymous user creation with specific source
