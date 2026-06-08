@@ -23,7 +23,6 @@ import {
   Share2,
 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { formatDistanceToNow } from "date-fns";
 
 import { useTRPC, type RouterOutputs } from "@/trpc/react";
 import {
@@ -127,6 +126,13 @@ export function RoastProfileDialog({
   const [photoOverrides, setPhotoOverrides] = useState<
     Record<string, RoastPhoto>
   >({});
+
+  // When re-roasting, swap the result for the tone picker again (no top pill
+  // row). Reset whenever the dialog (re)opens so it never opens mid-pick.
+  const [pickingTone, setPickingTone] = useState(false);
+  useEffect(() => {
+    if (open) setPickingTone(false);
+  }, [open]);
 
   const handleReplacePhoto = (photo: RoastPhoto) => {
     if (!photo.contentId) return;
@@ -244,35 +250,6 @@ export function RoastProfileDialog({
           </DialogTitle>
         </DialogHeader>
 
-        {/* Tone selector — picking a tone runs (or re-runs) the roast.
-            Hidden when there's nothing to roast yet (the empty state owns the
-            screen) so a tone click can't fail, and while idle (the idle picker
-            owns tone selection). */}
-        {!notEnoughToRoast && !isIdle && (
-          <div className="flex flex-wrap items-center gap-2">
-            {TONES.map((t) => (
-              <Button
-                key={t.key}
-                size="sm"
-                variant={activeTone === t.key ? "default" : "outline"}
-                disabled={isGenerating}
-                onClick={() => runRoast(t.key)}
-              >
-                <span className="mr-1.5">{t.emoji}</span>
-                {t.label}
-              </Button>
-            ))}
-            {roast && !isGenerating && (
-              <span className="text-muted-foreground ml-auto text-xs">
-                roasted{" "}
-                {formatDistanceToNow(new Date(roast.updatedAt), {
-                  addSuffix: true,
-                })}
-              </span>
-            )}
-          </div>
-        )}
-
         {/* Upgrade — free user, no roast: surface the paywall, not an error */}
         {showUpgrade && (
           <RoastUpgradeCard
@@ -289,14 +266,22 @@ export function RoastProfileDialog({
           />
         )}
 
-        {/* Idle — has content, no roast yet: the tone picker is the show */}
-        {isIdle && !showUpgrade && (
-          <RoastIdleState
-            displayName={displayName}
-            isBusy={isGenerating}
-            onPick={runRoast}
-          />
-        )}
+        {/* Tone picker — shown when there's no roast yet (idle) OR the user hit
+            "Re-roast" on an existing one. Picking a tone runs the roast. */}
+        {(isIdle || pickingTone) &&
+          !showUpgrade &&
+          !isGenerating &&
+          !isLoadingExisting &&
+          !notEnoughToRoast && (
+            <RoastIdleState
+              displayName={displayName}
+              isBusy={isGenerating}
+              onPick={(tone) => {
+                setPickingTone(false);
+                runRoast(tone);
+              }}
+            />
+          )}
 
         {/* Loading — the wait is the show */}
         {(isGenerating || isLoadingExisting) && (
@@ -307,12 +292,12 @@ export function RoastProfileDialog({
         )}
 
         {/* Result */}
-        {roast && !isGenerating && (
+        {roast && !isGenerating && !pickingTone && (
           <div className="min-w-0 space-y-6">
             <HeroCard
               overall={roast.overall}
               isGenerating={isGenerating}
-              onReRoast={() => runRoast(reRoastTone)}
+              onReRoast={() => setPickingTone(true)}
               onShare={() => void handleShare()}
               isSharing={publishMutation.isPending}
               onDeleteRoast={
