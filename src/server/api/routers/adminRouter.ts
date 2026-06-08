@@ -12,7 +12,6 @@ import { adminProcedure } from "../trpc";
 import type { TRPCRouterRecord } from "@trpc/server";
 import { resetTinderProfile } from "@/server/services/profile/profile.service";
 import { BlobService } from "@/server/services/blob.service";
-import { pruneAiOutputsForSubjects } from "@/server/services/ai-output.service";
 
 export const adminRouter = {
   // Delete a Tinder profile by tinderId (admin/dev only)
@@ -77,9 +76,6 @@ export const adminRouter = {
       await ctx.db
         .delete(tinderProfileTable)
         .where(eq(tinderProfileTable.tinderId, input.tinderId));
-
-      // Roasts (ai_output) have no FK, so cascades miss them — prune explicitly.
-      await pruneAiOutputsForSubjects([input.tinderId]);
 
       return {
         success: true,
@@ -176,9 +172,6 @@ export const adminRouter = {
       await ctx.db
         .delete(hingeProfileTable)
         .where(eq(hingeProfileTable.hingeId, input.hingeId));
-
-      // Roasts (ai_output) have no FK, so cascades miss them — prune explicitly.
-      await pruneAiOutputsForSubjects([input.hingeId]);
 
       return {
         success: true,

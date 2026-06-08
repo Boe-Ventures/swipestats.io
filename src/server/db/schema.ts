@@ -1,10 +1,12 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
+  check,
   foreignKey,
   index,
   pgEnum,
   pgTable,
   primaryKey,
+  unique,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 
@@ -1201,9 +1203,16 @@ export type ProfileComparisonFeedbackInsert =
 //
 // Shape:
 //  - `kind` (plain text, validated at the edge — adding a kind needs no
-//    migration) + `subjectId` + `scope` identify the artifact. One row per
-//    (kind, subjectId, scope); regenerating OVERWRITES it (a user expects one
+//    migration) + the subject + `scope` identify the artifact. One row per
+//    (kind, subject, scope); regenerating OVERWRITES it (a user expects one
 //    current version, not a history).
+//  - The subject is an EXCLUSIVE ARC of typed FKs: exactly one of
+//    `tinderProfileId` / `hingeProfileId` / `columnId` is set (enforced by the
+//    `ai_output_one_subject` CHECK). Each FK is `onDelete: cascade`, so deleting
+//    the subject deletes its artifacts — no app-layer prune to forget. `kind`
+//    is still the discriminant and is NOT derivable from which FK is set (a
+//    subject table can host several kinds — e.g. a future `tinder_wrapped` would
+//    also point at `tinderProfileId`).
 //  - `input` records what we fed the model (reproducibility/debugging);
 //    `output` is the rendered result. Both jsonb. Each generator owns its
 //    `output` shape and validates it with a zod schema at write time.
@@ -1211,11 +1220,6 @@ export type ProfileComparisonFeedbackInsert =
 //    per-kind version and offer a manual "refresh" (regenerate) for rows left
 //    behind — so the payload can evolve without DB migrations or backfills.
 //  - `shareKey`/`isPublic` are the share primitive, built once for all kinds.
-//  - `subjectId` is intentionally NOT a FK (it points into several tables);
-//    roasts are cheap derived data, pruned by the app layer on subject delete
-//    via `pruneAiOutputsForSubjects` (see ai-output.service.ts) — every delete
-//    path for a roastable subject MUST call it or the row (and its public
-//    share link) outlives the deleted subject.
 
 export type AiOutputKind = "tinder_roast" | "hinge_roast" | "profile_roast";
 
@@ -1251,11 +1255,21 @@ export const aiOutputTable = pgTable(
       .text()
       .notNull()
       .references(() => userTable.id, { onDelete: "cascade" }),
-    // `kind` + `subjectId` + `scope` identify the artifact. kind is plain text
-    // (validated at the edge) so a new kind needs no migration; subjectId points
-    // into whatever table `kind` implies (tinderId / hingeId / column id).
+    // `kind` is the artifact discriminant (plain text — a new kind needs no
+    // migration). NOT derivable from the FKs: a subject table can host several
+    // kinds (e.g. tinder_roast and a future tinder_wrapped both → tinderProfileId).
     kind: t.text().$type<AiOutputKind>().notNull(),
-    subjectId: t.text().notNull(),
+    // Exclusive-arc subject: exactly one of these is set (CHECK below), each
+    // cascading on delete so artifacts can't outlive their subject.
+    tinderProfileId: t
+      .text()
+      .references(() => tinderProfileTable.tinderId, { onDelete: "cascade" }),
+    hingeProfileId: t
+      .text()
+      .references(() => hingeProfileTable.hingeId, { onDelete: "cascade" }),
+    columnId: t
+      .text()
+      .references(() => comparisonColumnTable.id, { onDelete: "cascade" }),
     // "" = the whole subject; a period like "2024" / "2024-01" for recaps. Part
     // of the uniqueness key. NOT NULL (empty string, never NULL) so the unique
     // index treats it as one slot — NULLs would be distinct and break overwrite.
@@ -1285,15 +1299,26 @@ export const aiOutputTable = pgTable(
       .notNull(),
   }),
   (table) => [
-    // One artifact per (kind, subject, scope) — regeneration upserts here and
-    // overwrites in place.
-    uniqueIndex("ai_output_subject_key").on(
-      table.kind,
-      table.subjectId,
-      table.scope,
+    // Exactly one subject FK is set — the exclusive arc.
+    check(
+      "ai_output_one_subject",
+      sql`num_nonnulls(${table.tinderProfileId}, ${table.hingeProfileId}, ${table.columnId}) = 1`,
     ),
+    // One artifact per (kind, subject, scope) — the upsert overwrites in place.
+    // NULLS NOT DISTINCT so the two unused arc columns (always NULL for a given
+    // kind) collapse to one slot; otherwise NULL <> NULL would let duplicates in.
+    unique("ai_output_subject_key")
+      .on(
+        table.kind,
+        table.scope,
+        table.tinderProfileId,
+        table.hingeProfileId,
+        table.columnId,
+      )
+      .nullsNotDistinct(),
     index("ai_output_user_id_idx").on(table.userId),
     index("ai_output_share_key_idx").on(table.shareKey),
+    index("ai_output_column_id_idx").on(table.columnId),
   ],
 );
 
@@ -1721,5 +1746,17 @@ export const aiOutputRelations = relations(aiOutputTable, ({ one }) => ({
   user: one(userTable, {
     fields: [aiOutputTable.userId],
     references: [userTable.id],
+  }),
+  tinderProfile: one(tinderProfileTable, {
+    fields: [aiOutputTable.tinderProfileId],
+    references: [tinderProfileTable.tinderId],
+  }),
+  hingeProfile: one(hingeProfileTable, {
+    fields: [aiOutputTable.hingeProfileId],
+    references: [hingeProfileTable.hingeId],
+  }),
+  column: one(comparisonColumnTable, {
+    fields: [aiOutputTable.columnId],
+    references: [comparisonColumnTable.id],
   }),
 }));

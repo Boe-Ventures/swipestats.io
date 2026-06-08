@@ -15,7 +15,6 @@ import {
   type DataProvider,
   type educationLevelEnum,
 } from "../db/schema";
-import { pruneAiOutputsForSubjects } from "./ai-output.service";
 
 // Generate a cryptographically secure random share key
 function generateShareKey(): string {
@@ -125,23 +124,23 @@ export async function getComparison(comparisonId: string, userId: string) {
     throw new Error("Comparison not found");
   }
 
-  // Roast status lives in ai_output (kind="profile_roast", subjectId=column.id).
+  // Roast status lives in ai_output (kind="profile_roast", columnId=column.id).
   // Fetch just the badge metadata for these columns in one query.
   const columnIds = comparison.columns.map((c) => c.id);
   const roastRows = columnIds.length
     ? await db.query.aiOutputTable.findMany({
         where: and(
           eq(aiOutputTable.kind, "profile_roast"),
-          inArray(aiOutputTable.subjectId, columnIds),
+          inArray(aiOutputTable.columnId, columnIds),
         ),
         columns: {
-          subjectId: true,
+          columnId: true,
           tone: true,
           updatedAt: true,
         },
       })
     : [];
-  const roastBySubject = new Map(roastRows.map((r) => [r.subjectId, r]));
+  const roastBySubject = new Map(roastRows.map((r) => [r.columnId, r]));
 
   // Derive a lightweight roast status per column (roasted? + tone + when) so the
   // edit page can badge it without shipping the roast payload. Staleness was
@@ -278,14 +277,8 @@ export async function updateComparison(data: {
  * Delete a comparison
  */
 export async function deleteComparison(id: string, userId: string) {
-  // Grab the column ids up front: deleting the comparison cascades them away,
-  // but each column may own a `profile_roast` in ai_output (no FK, so no cascade
-  // reaches it). We prune those after the ownership-verified delete succeeds.
-  const columns = await db.query.comparisonColumnTable.findMany({
-    where: eq(comparisonColumnTable.comparisonId, id),
-    columns: { id: true },
-  });
-
+  // Deleting the comparison cascades to its columns, which cascade to their
+  // ai_output roasts (columnId FK, onDelete cascade) — nothing to prune.
   const [deleted] = await db
     .delete(profileComparisonTable)
     .where(
@@ -299,8 +292,6 @@ export async function deleteComparison(id: string, userId: string) {
   if (!deleted) {
     throw new Error("Comparison not found or unauthorized");
   }
-
-  await pruneAiOutputsForSubjects(columns.map((c) => c.id));
 
   return { success: true };
 }
@@ -521,13 +512,10 @@ export async function removeColumn(data: { columnId: string; userId: string }) {
     throw new Error("Column not found or unauthorized");
   }
 
+  // Deleting the column cascades to its ai_output roast (columnId FK).
   await db
     .delete(comparisonColumnTable)
     .where(eq(comparisonColumnTable.id, data.columnId));
-
-  // The column's roast (ai_output kind="profile_roast", subjectId=columnId) has
-  // no FK, so the cascade above doesn't reach it — prune it explicitly.
-  await pruneAiOutputsForSubjects([data.columnId]);
 
   return { success: true };
 }

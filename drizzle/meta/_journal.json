@@ -22,6 +22,13 @@
       "when": 1780798489582,
       "tag": "0002_burly_mongu",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1780894719412,
+      "tag": "0003_harsh_golden_guardian",
+      "breakpoints": true
     }
   ]
 }

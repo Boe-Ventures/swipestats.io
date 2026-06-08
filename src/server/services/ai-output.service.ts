@@ -1,4 +1,4 @@
-import { inArray } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 import { db } from "@/server/db";
 import {
@@ -19,33 +19,43 @@ import {
 export const AI_OUTPUT_VERSION = 1;
 
 /**
- * Delete every AI output (roasts today, Wrapped-style recaps later) whose
- * subject is being removed.
- *
- * `ai_output.subjectId` is a polymorphic pointer — a comparison-column id, a
- * tinderId or a hingeId depending on `kind` — and deliberately has no foreign
- * key, so DB cascades can't reach these rows. Every delete path for a roastable
- * subject must call this, otherwise a published roast (its text AND its public
- * share link) outlives the subject the user just deleted.
- *
- * subjectIds are collision-free cuids, so passing a mix of kinds in one call is
- * safe — we match purely on the id set.
+ * Map a (kind, subjectId) onto the exclusive-arc FK column the subject lives in.
+ * One source of the kind→column mapping, used on write.
  */
-export async function pruneAiOutputsForSubjects(
-  subjectIds: string[],
-): Promise<void> {
-  if (subjectIds.length === 0) return;
-  await db
-    .delete(aiOutputTable)
-    .where(inArray(aiOutputTable.subjectId, subjectIds));
+function subjectColumns(kind: AiOutputKind, subjectId: string) {
+  return {
+    tinderProfileId: kind === "tinder_roast" ? subjectId : null,
+    hingeProfileId: kind === "hinge_roast" ? subjectId : null,
+    columnId: kind === "profile_roast" ? subjectId : null,
+  };
+}
+
+/**
+ * WHERE fragment matching the row for (kind, subjectId) — selects the right FK
+ * column so callers don't repeat the kind→column mapping. Combine with
+ * `eq(aiOutputTable.scope, …)` for the full identity key.
+ *
+ * (There is no `pruneAiOutputsForSubjects` anymore: each subject FK is
+ * onDelete:cascade, so deleting the subject deletes its artifacts at the DB.)
+ */
+export function aiOutputSubjectEq(kind: AiOutputKind, subjectId: string) {
+  switch (kind) {
+    case "tinder_roast":
+      return eq(aiOutputTable.tinderProfileId, subjectId);
+    case "hinge_roast":
+      return eq(aiOutputTable.hingeProfileId, subjectId);
+    case "profile_roast":
+      return eq(aiOutputTable.columnId, subjectId);
+  }
 }
 
 /**
  * Upsert one ai_output row. There's exactly one artifact per
- * (kind, subjectId, scope) — regenerating OVERWRITES it in place, preserving the
+ * (kind, subject, scope) — regenerating OVERWRITES it in place, preserving the
  * existing id / shareKey / isPublic (never touched here). Owns the conflict
  * target, the `set` keys, and `version`, so the two roast writers can't drift on
- * which columns get updated. Always returns the row (callers ignore it if unused).
+ * which columns get updated. The subject is written to one of the exclusive-arc
+ * FK columns. Always returns the row (callers ignore it if unused).
  */
 export async function upsertAiOutput(args: {
   db: typeof db;
@@ -76,7 +86,7 @@ export async function upsertAiOutput(args: {
     .values({
       userId,
       kind,
-      subjectId,
+      ...subjectColumns(kind, subjectId),
       scope,
       tone,
       model,
@@ -85,10 +95,13 @@ export async function upsertAiOutput(args: {
       output,
     })
     .onConflictDoUpdate({
+      // Matches the nullsNotDistinct unique constraint (kind, scope, arc).
       target: [
         aiOutputTable.kind,
-        aiOutputTable.subjectId,
         aiOutputTable.scope,
+        aiOutputTable.tinderProfileId,
+        aiOutputTable.hingeProfileId,
+        aiOutputTable.columnId,
       ],
       // Note: `userId` is intentionally NOT reassigned on conflict — never
       // re-owner an existing artifact.

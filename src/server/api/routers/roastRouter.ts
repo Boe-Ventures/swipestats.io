@@ -32,6 +32,7 @@ import { getProviderMeta } from "@/server/services/providers";
 import {
   upsertAiOutput,
   AI_OUTPUT_VERSION,
+  aiOutputSubjectEq,
 } from "@/server/services/ai-output.service";
 import {
   loadOwnedColumnWithContent,
@@ -199,7 +200,7 @@ export const roastRouter = {
       const existing = await ctx.db.query.aiOutputTable.findFirst({
         where: and(
           eq(aiOutputTable.kind, kind),
-          eq(aiOutputTable.subjectId, subjectId),
+          aiOutputSubjectEq(kind, subjectId),
           eq(aiOutputTable.scope, ""),
         ),
       });
@@ -282,7 +283,7 @@ export const roastRouter = {
       const row = await ctx.db.query.aiOutputTable.findFirst({
         where: and(
           eq(aiOutputTable.kind, kind),
-          eq(aiOutputTable.subjectId, subjectId),
+          aiOutputSubjectEq(kind, subjectId),
           eq(aiOutputTable.scope, ""),
           eq(aiOutputTable.userId, userId),
         ),
@@ -372,7 +373,7 @@ export const roastRouter = {
       const row = await ctx.db.query.aiOutputTable.findFirst({
         where: and(
           eq(aiOutputTable.kind, "profile_roast"),
-          eq(aiOutputTable.subjectId, input.columnId),
+          eq(aiOutputTable.columnId, input.columnId),
           eq(aiOutputTable.scope, ""),
           eq(aiOutputTable.userId, userId),
         ),
@@ -428,16 +429,20 @@ export const roastRouter = {
 
       const result = row.output as ProfileRoastResult;
 
-      const column = await ctx.db.query.comparisonColumnTable.findFirst({
-        where: eq(comparisonColumnTable.id, row.subjectId),
-        with: {
-          comparison: true,
-          content: {
-            orderBy: (content, { asc }) => [asc(content.order)],
-            with: { attachment: true },
-          },
-        },
-      });
+      // profile_roast rows always carry columnId (exclusive-arc CHECK), but it's
+      // typed nullable — guard so the orphan branch below handles a missing one.
+      const column = row.columnId
+        ? await ctx.db.query.comparisonColumnTable.findFirst({
+            where: eq(comparisonColumnTable.id, row.columnId),
+            with: {
+              comparison: true,
+              content: {
+                orderBy: (content, { asc }) => [asc(content.order)],
+                with: { attachment: true },
+              },
+            },
+          })
+        : null;
 
       // The roast TEXT is the shared artifact and always renders. The profile
       // PREVIEW (photos, bio, name, age) is the underlying private profile, so we
@@ -627,7 +632,7 @@ export const roastRouter = {
       const row = await ctx.db.query.aiOutputTable.findFirst({
         where: and(
           eq(aiOutputTable.kind, "profile_roast"),
-          eq(aiOutputTable.subjectId, input.columnId),
+          eq(aiOutputTable.columnId, input.columnId),
           eq(aiOutputTable.scope, ""),
         ),
       });
@@ -727,7 +732,7 @@ export const roastRouter = {
       const row = await ctx.db.query.aiOutputTable.findFirst({
         where: and(
           eq(aiOutputTable.kind, "profile_roast"),
-          eq(aiOutputTable.subjectId, input.columnId),
+          eq(aiOutputTable.columnId, input.columnId),
           eq(aiOutputTable.scope, ""),
         ),
       });
@@ -773,7 +778,7 @@ export const roastRouter = {
       const roastRow = await ctx.db.query.aiOutputTable.findFirst({
         where: and(
           eq(aiOutputTable.kind, "profile_roast"),
-          eq(aiOutputTable.subjectId, input.columnId),
+          eq(aiOutputTable.columnId, input.columnId),
           eq(aiOutputTable.scope, ""),
         ),
       });
@@ -876,7 +881,7 @@ export const roastRouter = {
         .where(
           and(
             eq(aiOutputTable.kind, "profile_roast"),
-            eq(aiOutputTable.subjectId, input.columnId),
+            eq(aiOutputTable.columnId, input.columnId),
           ),
         );
 

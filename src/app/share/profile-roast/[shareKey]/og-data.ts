@@ -33,18 +33,20 @@ export async function getPublicProfileRoastForShare(
 
   const result = row.output as ProfileRoastResult;
 
-  // subjectId points at the comparison column (intentionally not a FK), which
-  // may have been deleted — handle the orphaned roast gracefully.
-  const column = await db.query.comparisonColumnTable.findFirst({
-    where: eq(comparisonColumnTable.id, row.subjectId),
-    with: {
-      comparison: true,
-      content: {
-        orderBy: (content, { asc }) => [asc(content.order)],
-        with: { attachment: true },
-      },
-    },
-  });
+  // columnId is the profile_roast subject; with FK cascade a deleted column
+  // takes its roast with it, but guard the nullable type just in case.
+  const column = row.columnId
+    ? await db.query.comparisonColumnTable.findFirst({
+        where: eq(comparisonColumnTable.id, row.columnId),
+        with: {
+          comparison: true,
+          content: {
+            orderBy: (content, { asc }) => [asc(content.order)],
+            with: { attachment: true },
+          },
+        },
+      })
+    : null;
 
   // Only put the actual profile photo in the share card when the underlying
   // comparison is public — mirrors the preview gate in
