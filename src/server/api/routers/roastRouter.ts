@@ -374,6 +374,102 @@ export const roastRouter = {
     }),
 
   /**
+   * Publish a profile roast (by column) so it can be opened on the public
+   * /share/profile-roast/[shareKey] page. Idempotent; returns the share key.
+   */
+  publishProfileRoast: protectedProcedure
+    .input(z.object({ columnId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id;
+      const row = await ctx.db.query.aiOutputTable.findFirst({
+        where: and(
+          eq(aiOutputTable.kind, "profile_roast"),
+          eq(aiOutputTable.subjectId, input.columnId),
+          eq(aiOutputTable.scope, ""),
+          eq(aiOutputTable.userId, userId),
+        ),
+      });
+      if (!row) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Roast this profile before sharing it.",
+        });
+      }
+      if (!row.isPublic) {
+        await ctx.db
+          .update(aiOutputTable)
+          .set({ isPublic: true })
+          .where(eq(aiOutputTable.id, row.id));
+      }
+      return { shareKey: row.shareKey };
+    }),
+
+  /**
+   * Public endpoint for the profile-roast share page: resolves a shared roast by
+   * shareKey and returns the hydrated verdicts plus the column's profile preview
+   * (so the page can toggle between the profile and the roast). Gracefully
+   * handles an orphaned roast whose column was since deleted (no preview).
+   */
+  getPublicProfileRoast: publicProcedure
+    .input(z.object({ shareKey: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const row = await ctx.db.query.aiOutputTable.findFirst({
+        where: eq(aiOutputTable.shareKey, input.shareKey),
+      });
+      if (!row?.isPublic || row.kind !== "profile_roast") {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "Roast not found or not shared",
+        });
+      }
+
+      const result = row.output as ProfileRoastResult;
+
+      const column = await ctx.db.query.comparisonColumnTable.findFirst({
+        where: eq(comparisonColumnTable.id, row.subjectId),
+        with: {
+          comparison: true,
+          content: {
+            orderBy: (content, { asc }) => [asc(content.order)],
+            with: { attachment: true },
+          },
+        },
+      });
+
+      if (!column) {
+        // Orphaned roast: column was deleted. Show the verdicts, skip preview.
+        return {
+          tone: row.tone,
+          updatedAt: row.updatedAt,
+          providerKey: null,
+          profileName: null,
+          comparisonName: null,
+          age: null,
+          defaultBio: null,
+          column: null,
+          ...hydrateRoast(result, [], null),
+        };
+      }
+
+      // Don't leak the parent comparison row (userId/shareKey/flags) publicly —
+      // surface only the display fields the share page needs.
+      const { comparison, ...columnForView } = column;
+      const effectiveBio = column.bio ?? comparison.defaultBio ?? null;
+
+      return {
+        tone: row.tone,
+        updatedAt: row.updatedAt,
+        providerKey: column.dataProvider,
+        profileName: comparison.profileName,
+        comparisonName: comparison.name,
+        age: comparison.age,
+        defaultBio: comparison.defaultBio,
+        column: columnForView,
+        ...hydrateRoast(result, column.content, effectiveBio),
+      };
+    }),
+
+  /**
    * Vision roast of a single profile-compare profile (one column): its photos,
    * prompts and bio. Persisted as one roast per profile (upsert) — regenerating
    * overwrites it. Tone adjusts the voice; `steer` is optional free-text nudge.

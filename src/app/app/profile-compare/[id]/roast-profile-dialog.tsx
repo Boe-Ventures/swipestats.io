@@ -20,6 +20,7 @@ import {
   Info,
   Search,
   Trash2,
+  Share2,
 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow } from "date-fns";
@@ -211,6 +212,22 @@ export function RoastProfileDialog({
     roastMutation.mutate({ columnId, tone });
   };
 
+  // Publish the roast (idempotent) and copy its public share link.
+  const publishMutation = useMutation(
+    trpc.roast.publishProfileRoast.mutationOptions({
+      onError: (error) =>
+        toast.error(error.message || "Couldn't create a share link"),
+    }),
+  );
+
+  const handleShare = async () => {
+    const { shareKey } = await publishMutation.mutateAsync({ columnId });
+    if (!shareKey) return;
+    const url = `${window.location.origin}/share/profile-roast/${shareKey}`;
+    await navigator.clipboard.writeText(url);
+    toast.success("Share link copied — anyone can view this roast");
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       {/* [&>*]:min-w-0 — DialogContent is a CSS grid; without it, grid children
@@ -296,6 +313,8 @@ export function RoastProfileDialog({
               overall={roast.overall}
               isGenerating={isGenerating}
               onReRoast={() => runRoast(reRoastTone)}
+              onShare={() => void handleShare()}
+              isSharing={publishMutation.isPending}
               onDeleteRoast={
                 isDev
                   ? () => deleteRoastMutation.mutate({ columnId })
@@ -695,12 +714,16 @@ function HeroCard({
   overall,
   isGenerating,
   onReRoast,
+  onShare,
+  isSharing,
   onDeleteRoast,
   isDeleting,
 }: {
   overall: Roast["overall"];
   isGenerating: boolean;
   onReRoast: () => void;
+  onShare: () => void;
+  isSharing?: boolean;
   /** Dev-only: present only outside production. */
   onDeleteRoast?: () => void;
   isDeleting?: boolean;
@@ -733,11 +756,16 @@ function HeroCard({
         <Button
           size="sm"
           variant="outline"
-          disabled
-          className="border-white/10 bg-white/5 text-white/40"
-          title="Coming soon"
+          className="border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+          disabled={isSharing}
+          onClick={onShare}
         >
-          Share · Soon
+          {isSharing ? (
+            <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+          ) : (
+            <Share2 className="mr-1.5 h-4 w-4" />
+          )}
+          {isSharing ? "Sharing…" : "Share"}
         </Button>
         {onDeleteRoast && (
           <Button
