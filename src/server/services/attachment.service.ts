@@ -189,12 +189,19 @@ export async function getAttachment(
 }
 
 /**
- * Delete an attachment (soft delete + blob cleanup)
+ * Delete an attachment (hard delete + blob cleanup).
+ *
+ * Hard delete (not soft): when a user deletes a photo they expect it gone for
+ * good, and the row's `url` is covered by a unique index. A soft-deleted row
+ * keeps occupying that url slot, so a later re-upload/re-import of the same
+ * (stable) URL silently collides and drops the photo. Removing the row frees the
+ * slot. The FK from comparison_column_content.attachmentId cascades, so the
+ * photo also disappears from any comparison column it was used in.
  */
 export async function deleteAttachment(
   id: string,
   userId: string,
-): Promise<{ success: boolean; deletedAt: Date }> {
+): Promise<{ success: boolean }> {
   try {
     console.log(`🗑️ Deleting attachment: ${id}`);
 
@@ -209,12 +216,8 @@ export async function deleteAttachment(
       throw new Error("You can only delete your own attachments");
     }
 
-    // Soft delete in database
-    const deletedAt = new Date();
-    await db
-      .update(attachmentTable)
-      .set({ deletedAt })
-      .where(eq(attachmentTable.id, id));
+    // Hard delete the row (cascades to comparison_column_content references).
+    await db.delete(attachmentTable).where(eq(attachmentTable.id, id));
 
     // Delete from blob storage (fire and forget - don't fail if blob deletion fails)
     BlobService.delete(attachment.url).catch((error: unknown) => {
@@ -222,7 +225,7 @@ export async function deleteAttachment(
     });
 
     console.log(`✅ Attachment deleted: ${id}`);
-    return { success: true, deletedAt };
+    return { success: true };
   } catch (error) {
     console.error("❌ Delete attachment failed:", error);
     throw new Error(
@@ -258,17 +261,14 @@ export async function deleteResourceAttachments(
       return { deleted: 0, failed: [] };
     }
 
-    // Soft delete all user attachments
-    const deletedAt = new Date();
+    // Hard delete all of this user's attachments for the resource.
     await db
-      .update(attachmentTable)
-      .set({ deletedAt })
+      .delete(attachmentTable)
       .where(
         and(
           eq(attachmentTable.resourceType, resourceType),
           eq(attachmentTable.resourceId, resourceId),
           eq(attachmentTable.uploadedBy, userId),
-          isNull(attachmentTable.deletedAt),
         ),
       );
 

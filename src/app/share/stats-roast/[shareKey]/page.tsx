@@ -1,3 +1,6 @@
+// Public share page for the STATS roast (ai_output kinds tinder_roast /
+// hinge_roast) — the data-driven roast of a profile's ProfileMeta numbers.
+// Distinct from /share/profile-roast (kind profile_roast, the vision roast).
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
@@ -41,7 +44,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const roast = await getRoast(shareKey);
 
   if (!roast) {
-    return { title: "Roast Not Found | SwipeStats" };
+    return { title: "Roast Not Found" };
   }
 
   // The dynamic share card lives in opengraph-image.tsx (colocated); Next wires
@@ -52,7 +55,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const description = roast.verdict ?? roast.headline;
 
   return {
-    title: `My Dating App Roast | SwipeStats`,
+    // Root title.template appends " | SwipeStats" to the document <title>.
+    title: "My Dating App Roast",
     description,
     openGraph: { title, description, type: "website" },
     twitter: { card: "summary_large_image", title, description },

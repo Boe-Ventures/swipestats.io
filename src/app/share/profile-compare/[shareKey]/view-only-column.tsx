@@ -25,7 +25,6 @@ interface ViewOnlyColumnProps {
   shareKey: string;
   providerConfig: ProviderConfig;
   defaultBio?: string;
-  comparisonName?: string;
   profileName?: string;
   age?: number;
 }

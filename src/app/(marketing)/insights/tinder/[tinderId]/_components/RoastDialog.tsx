@@ -1,13 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   BarChart3,
-  Check,
   Copy,
   Flame,
   Heart,
-  Loader2,
   Lock,
   MessageSquare,
   RefreshCw,
@@ -26,6 +24,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/components/ui/lib/utils";
+import {
+  RoastLoadingTheater,
+  type LoadingStep,
+} from "@/components/roast/roast-loading-theater";
+import { TONES, type Tone } from "@/components/roast/tones.client";
 import { useTinderProfile } from "../TinderProfileProvider";
 import { useUpgrade } from "@/contexts/UpgradeContext";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -38,20 +41,8 @@ interface RoastDialogProps {
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://swipestats.io";
 
-/** Mirrors the profile-compare roast tone dial (server enum: helpful/mild/spicy). */
-const TONES = [
-  { key: "helpful", label: "Helpful", emoji: "💡", blurb: "Honest, encouraging notes." },
-  { key: "mild", label: "Mild", emoji: "😏", blurb: "Playful jabs, mostly friendly." },
-  { key: "spicy", label: "Spicy", emoji: "🌶️", blurb: "No mercy. Bring tissues." },
-] as const;
-
-type Tone = (typeof TONES)[number]["key"];
-
-/* ---------------------------------------------------------------- *
- * Loading theater — the wait is the entertainment. Ported from the
- * profile-compare roast: pulsing flame, rotating status lines, and a
- * sequential analysis tracker tuned to the stats roast.
- * ---------------------------------------------------------------- */
+/* Loading theater copy + tracker, tuned to the stats roast. The animation
+ * itself is the shared <RoastLoadingTheater>. */
 
 const LOADING_LINES = [
   "Warming up the grill…",
@@ -64,113 +55,28 @@ const LOADING_LINES = [
   "Plating up the verdict…",
 ];
 
-const LOADING_STEPS = [
+const LOADING_STEPS: LoadingStep[] = [
   { label: "Stats", icon: BarChart3 },
   { label: "Swipes", icon: Heart },
   { label: "Messages", icon: MessageSquare },
   { label: "Verdict", icon: Trophy },
-] as const;
+];
 
 function RoastLoadingState() {
-  const [lineIdx, setLineIdx] = useState(0);
-  const [step, setStep] = useState(0);
-
-  useEffect(() => {
-    const lineTimer = setInterval(
-      () => setLineIdx((i) => (i + 1) % LOADING_LINES.length),
-      2600,
-    );
-    const stepTimer = setInterval(
-      () => setStep((s) => Math.min(s + 1, LOADING_STEPS.length - 1)),
-      4500,
-    );
-    return () => {
-      clearInterval(lineTimer);
-      clearInterval(stepTimer);
-    };
-  }, []);
-
   return (
-    <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800 px-6 py-10 text-center">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -top-24 left-1/2 h-72 w-72 -translate-x-1/2 animate-pulse rounded-full bg-rose-500/25 blur-3xl"
-        />
-
-        <div className="relative mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-rose-400 to-rose-600 shadow-lg shadow-rose-500/40">
-          <Flame className="h-8 w-8 animate-pulse text-white" />
-          <span className="absolute inset-0 animate-ping rounded-2xl ring-2 ring-rose-400/60" />
+    <RoastLoadingTheater
+      lines={LOADING_LINES}
+      steps={LOADING_STEPS}
+      stepIntervalMs={4500}
+      skeleton={
+        <div className="space-y-2">
+          <Skeleton className="h-3 w-24 bg-white/10" />
+          {[0, 1, 2].map((i) => (
+            <Skeleton key={i} className="h-12 w-full rounded-xl bg-white/5" />
+          ))}
         </div>
-
-        <p
-          key={lineIdx}
-          className="mx-auto mt-5 flex min-h-[3.5rem] max-w-sm items-center justify-center font-serif text-xl text-white italic duration-500 animate-in fade-in slide-in-from-bottom-1 sm:text-2xl"
-        >
-          {LOADING_LINES[lineIdx]}
-        </p>
-
-        <div className="mx-auto mt-6 flex max-w-sm items-start justify-between">
-          {LOADING_STEPS.map((s, i) => {
-            const done = i < step;
-            const active = i === step;
-            const Icon = s.icon;
-            return (
-              <div
-                key={s.label}
-                className="relative flex flex-1 flex-col items-center gap-2"
-              >
-                {i > 0 && (
-                  <span
-                    className={cn(
-                      "absolute top-4 z-0 h-0.5 transition-colors",
-                      done || active ? "bg-rose-500" : "bg-white/15",
-                    )}
-                    style={{
-                      left: "calc(-50% + 20px)",
-                      right: "calc(50% + 20px)",
-                    }}
-                  />
-                )}
-                <span
-                  className={cn(
-                    "relative z-10 grid h-8 w-8 place-items-center rounded-full border transition-colors",
-                    done &&
-                      "border-transparent bg-gradient-to-br from-rose-400 to-rose-600 text-white",
-                    active && "border-rose-400 text-rose-300",
-                    !done && !active && "border-white/15 text-white/40",
-                  )}
-                >
-                  {active ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : done ? (
-                    <Check className="h-4 w-4" />
-                  ) : (
-                    <Icon className="h-4 w-4" />
-                  )}
-                </span>
-                <span
-                  className={cn(
-                    "text-[11px] font-medium",
-                    done || active ? "text-white" : "text-white/40",
-                  )}
-                >
-                  {s.label}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* skeleton so the reveal doesn't jump */}
-      <div className="space-y-2">
-        <Skeleton className="h-3 w-24 bg-white/10" />
-        {[0, 1, 2].map((i) => (
-          <Skeleton key={i} className="h-12 w-full rounded-xl bg-white/5" />
-        ))}
-      </div>
-    </div>
+      }
+    />
   );
 }
 
@@ -239,7 +145,7 @@ export function RoastDialog({ open, onOpenChange }: RoastDialogProps) {
     });
 
   const getShareUrl = (shareKey: string) =>
-    `${BASE_URL}/share/roast/${shareKey}`;
+    `${BASE_URL}/share/stats-roast/${shareKey}`;
 
   const ensurePublicAndGetUrl = async (): Promise<string | null> => {
     if (!roast) return null;

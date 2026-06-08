@@ -35,6 +35,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Empty,
   EmptyContent,
   EmptyDescription,
@@ -46,41 +52,15 @@ import { toast } from "@/components/ui/toast";
 import { cn } from "@/components/ui/lib/utils";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUpgrade } from "@/contexts/UpgradeContext";
+import { TONES, type Tone } from "@/components/roast/tones.client";
+import {
+  RoastLoadingTheater,
+  type LoadingStep,
+} from "@/components/roast/roast-loading-theater";
+import { KEEP_CUT_STYLES, SECTION_HEADER } from "@/components/roast/roast-view";
 
 type Roast = NonNullable<RouterOutputs["roast"]["getProfileRoast"]>;
 type RoastPhoto = Roast["photos"][number];
-
-const TONES = [
-  {
-    key: "helpful",
-    label: "Helpful",
-    emoji: "💡",
-    blurb: "Constructive, encouraging notes.",
-  },
-  {
-    key: "mild",
-    label: "Mild",
-    emoji: "😏",
-    blurb: "Playful jabs, mostly friendly.",
-  },
-  {
-    key: "spicy",
-    label: "Spicy",
-    emoji: "🌶️",
-    blurb: "No mercy. Bring tissues.",
-  },
-] as const;
-
-type Tone = (typeof TONES)[number]["key"];
-
-const KEEP_CUT_STYLES: Record<string, string> = {
-  keep: "bg-green-500/15 text-green-600 dark:text-green-400",
-  maybe: "bg-amber-500/15 text-amber-600 dark:text-amber-400",
-  cut: "bg-red-500/15 text-red-600 dark:text-red-400",
-};
-
-const SECTION_HEADER =
-  "text-muted-foreground text-xs font-semibold tracking-widest uppercase";
 
 interface RoastProfileDialogProps {
   columnId: string;
@@ -226,12 +206,21 @@ export function RoastProfileDialog({
     }),
   );
 
-  const handleShare = async () => {
-    const { shareKey } = await publishMutation.mutateAsync({ columnId });
+  // includePreview=false → share the roast verdicts only; true → also publish the
+  // parent comparison so the photo/bio profile preview shows on the share page.
+  const handleShare = async (includePreview: boolean) => {
+    const { shareKey } = await publishMutation.mutateAsync({
+      columnId,
+      includePreview,
+    });
     if (!shareKey) return;
     const url = `${window.location.origin}/share/profile-roast/${shareKey}`;
     await navigator.clipboard.writeText(url);
-    toast.success("Share link copied — anyone can view this roast");
+    toast.success(
+      includePreview
+        ? "Share link copied — roast + profile preview"
+        : "Share link copied — roast only",
+    );
   };
 
   return (
@@ -298,7 +287,7 @@ export function RoastProfileDialog({
               overall={roast.overall}
               isGenerating={isGenerating}
               onReRoast={() => setPickingTone(true)}
-              onShare={() => void handleShare()}
+              onShare={(includePreview) => void handleShare(includePreview)}
               isSharing={publishMutation.isPending}
               onDeleteRoast={
                 isDev
@@ -391,12 +380,12 @@ const LOADING_LINES: Record<Tone, string[]> = {
   ],
 };
 
-const LOADING_STEPS = [
+const LOADING_STEPS: LoadingStep[] = [
   { label: "Photos", icon: Images },
   { label: "Bio", icon: AlignLeft },
   { label: "Prompts", icon: MessageSquareText },
   { label: "Verdict", icon: Trophy },
-] as const;
+];
 
 function RoastLoadingState({
   tone,
@@ -405,129 +394,31 @@ function RoastLoadingState({
   tone: Tone;
   mode: "roasting" | "loading";
 }) {
-  const isRoasting = mode === "roasting";
-  const lines = LOADING_LINES[tone] ?? LOADING_LINES.mild;
-  const [lineIdx, setLineIdx] = useState(0);
-  const [step, setStep] = useState(0);
-
-  // Rotate the status copy and advance the tracker only while actively
-  // generating — loading an existing roast is a quick fetch, no theater needed.
-  useEffect(() => {
-    if (!isRoasting) return;
-    const lineTimer = setInterval(
-      () => setLineIdx((i) => (i + 1) % lines.length),
-      2600,
-    );
-    // Pace the tracker to a realistic roast (~15s to reach the verdict), so it
-    // doesn't blow through every step in the first few seconds and then sit.
-    const stepTimer = setInterval(
-      () => setStep((s) => Math.min(s + 1, LOADING_STEPS.length - 1)),
-      5000,
-    );
-    return () => {
-      clearInterval(lineTimer);
-      clearInterval(stepTimer);
-    };
-  }, [isRoasting, lines.length]);
-
   return (
-    <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800 px-6 py-10 text-center">
-        {/* ambient glow */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -top-24 left-1/2 h-72 w-72 -translate-x-1/2 animate-pulse rounded-full bg-rose-500/25 blur-3xl"
-        />
-
-        {/* flame with ripple */}
-        <div className="relative mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-rose-400 to-rose-600 shadow-lg shadow-rose-500/40">
-          <Flame className="h-8 w-8 animate-pulse text-white" />
-          <span className="absolute inset-0 animate-ping rounded-2xl ring-2 ring-rose-400/60" />
-        </div>
-
-        {/* rotating status line */}
-        <p
-          key={isRoasting ? lineIdx : "loading"}
-          className="animate-in fade-in slide-in-from-bottom-1 mx-auto mt-5 flex min-h-[3.5rem] max-w-sm items-center justify-center font-serif text-xl text-white italic duration-500 sm:text-2xl"
-        >
-          {isRoasting ? lines[lineIdx] : "Loading your roast…"}
-        </p>
-
-        {/* analysis tracker */}
-        {isRoasting && (
-          <div className="mx-auto mt-6 flex max-w-sm items-start justify-between">
-            {LOADING_STEPS.map((s, i) => {
-              const done = i < step;
-              const active = i === step;
-              const Icon = s.icon;
-              return (
-                <div
-                  key={s.label}
-                  className="relative flex flex-1 flex-col items-center gap-2"
-                >
-                  {i > 0 && (
-                    // Span between the two dot centers, but inset by the dot
-                    // radius (16px) + a small gap so the line stops outside the
-                    // circles instead of running under them.
-                    <span
-                      className={cn(
-                        "absolute top-4 z-0 h-0.5 transition-colors",
-                        done || active ? "bg-rose-500" : "bg-white/15",
-                      )}
-                      style={{
-                        left: "calc(-50% + 20px)",
-                        right: "calc(50% + 20px)",
-                      }}
-                    />
-                  )}
-                  <span
-                    className={cn(
-                      "relative z-10 grid h-8 w-8 place-items-center rounded-full border transition-colors",
-                      done &&
-                        "border-transparent bg-gradient-to-br from-rose-400 to-rose-600 text-white",
-                      active && "border-rose-400 text-rose-300",
-                      !done && !active && "border-white/15 text-white/40",
-                    )}
-                  >
-                    {active ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : done ? (
-                      <Check className="h-4 w-4" />
-                    ) : (
-                      <Icon className="h-4 w-4" />
-                    )}
-                  </span>
-                  <span
-                    className={cn(
-                      "text-[11px] font-medium",
-                      done || active ? "text-white" : "text-white/40",
-                    )}
-                  >
-                    {s.label}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* skeleton preview — mirrors the photo-verdict rows so the reveal lands
-          with no layout jump */}
-      <div className="space-y-3">
-        <Skeleton className="h-3 w-28" />
-        {[0, 1].map((i) => (
-          <div key={i} className="flex gap-3 rounded-xl border p-3">
-            <Skeleton className="h-20 w-16 shrink-0 rounded-lg" />
-            <div className="flex-1 space-y-2 pt-1">
-              <Skeleton className="h-3 w-1/3" />
-              <Skeleton className="h-3 w-5/6" />
-              <Skeleton className="h-3 w-4/6" />
+    <RoastLoadingTheater
+      // Loading an existing roast is a quick fetch — no theater, just a label.
+      active={mode === "roasting"}
+      lines={LOADING_LINES[tone] ?? LOADING_LINES.mild}
+      steps={LOADING_STEPS}
+      // Pace the tracker to a realistic roast (~15s to reach the verdict).
+      stepIntervalMs={5000}
+      skeleton={
+        // mirrors the photo-verdict rows so the reveal lands with no jump
+        <div className="space-y-3">
+          <Skeleton className="h-3 w-28" />
+          {[0, 1].map((i) => (
+            <div key={i} className="flex gap-3 rounded-xl border p-3">
+              <Skeleton className="h-20 w-16 shrink-0 rounded-lg" />
+              <div className="flex-1 space-y-2 pt-1">
+                <Skeleton className="h-3 w-1/3" />
+                <Skeleton className="h-3 w-5/6" />
+                <Skeleton className="h-3 w-4/6" />
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
-    </div>
+          ))}
+        </div>
+      }
+    />
   );
 }
 
@@ -707,7 +598,8 @@ function HeroCard({
   overall: Roast["overall"];
   isGenerating: boolean;
   onReRoast: () => void;
-  onShare: () => void;
+  /** includePreview=true also publishes the profile photo/bio preview. */
+  onShare: (includePreview: boolean) => void;
   isSharing?: boolean;
   /** Dev-only: present only outside production. */
   onDeleteRoast?: () => void;
@@ -738,20 +630,31 @@ function HeroCard({
           <RefreshCw className="mr-1.5 h-4 w-4" />
           Re-roast
         </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          className="border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white"
-          disabled={isSharing}
-          onClick={onShare}
-        >
-          {isSharing ? (
-            <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-          ) : (
-            <Share2 className="mr-1.5 h-4 w-4" />
-          )}
-          {isSharing ? "Sharing…" : "Share"}
-        </Button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+              disabled={isSharing}
+            >
+              {isSharing ? (
+                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+              ) : (
+                <Share2 className="mr-1.5 h-4 w-4" />
+              )}
+              {isSharing ? "Sharing…" : "Share"}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem onSelect={() => onShare(false)}>
+              Share roast only
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => onShare(true)}>
+              Share roast + profile
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         {onDeleteRoast && (
           <Button
             size="sm"

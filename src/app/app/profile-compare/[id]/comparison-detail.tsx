@@ -64,10 +64,10 @@ import { ComparisonColumn } from "./comparison-column";
 import { useGalleryUpload } from "../_hooks/useGalleryUpload";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUpgrade } from "@/contexts/UpgradeContext";
-
-// Apps the AI composer supports (must match the profileCompose router enum).
-const COMPOSE_PROVIDERS = ["TINDER", "HINGE", "BUMBLE"] as const;
-type ComposeProvider = (typeof COMPOSE_PROVIDERS)[number];
+import {
+  COMPOSE_PROVIDER_KEYS,
+  type ComposeProvider,
+} from "../compose-providers";
 
 type Comparison = RouterOutputs["profileCompare"]["get"];
 
@@ -186,7 +186,7 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
   const { effectiveTier } = useSubscription();
   const { openUpgradeModal } = useUpgrade();
   const isPaid = effectiveTier === "PLUS" || effectiveTier === "ELITE";
-  const canCompose = (COMPOSE_PROVIDERS as readonly string[]).includes(
+  const canCompose = (COMPOSE_PROVIDER_KEYS as readonly string[]).includes(
     newColumnProvider,
   );
 

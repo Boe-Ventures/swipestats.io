@@ -191,17 +191,11 @@
           "primaryKey": false,
           "notNull": true
         },
-        "fingerprint": {
-          "name": "fingerprint",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
         "share_key": {
           "name": "share_key",
           "type": "text",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true
         },
         "is_public": {
           "name": "is_public",

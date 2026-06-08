@@ -19,6 +19,7 @@ import { ViewOnlyColumn } from "./view-only-column";
 import { FeedbackTray } from "./feedback-tray";
 import { ComposeProfileCard } from "./compose-profile-card";
 import { AnonymousNamePrompt } from "./anonymous-name-prompt";
+import { ShareFooter, ShareNotFound } from "@/components/share/share-shell";
 
 export default function SharedComparisonPage() {
   const params = useParams<{ shareKey: string }>();
@@ -83,17 +84,10 @@ export default function SharedComparisonPage() {
 
   if (!comparison) {
     return (
-      <div className="bg-background flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold">Comparison not found</h2>
-          <p className="text-muted-foreground mt-2">
-            This comparison may have been deleted or is no longer public.
-          </p>
-          <Link href="https://www.swipestats.io" className="mt-4 inline-block">
-            <Button>Go to SwipeStats</Button>
-          </Link>
-        </div>
-      </div>
+      <ShareNotFound
+        title="Comparison not found"
+        description="This comparison may have been deleted or is no longer public."
+      />
     );
   }
 
@@ -185,7 +179,6 @@ export default function SharedComparisonPage() {
                   shareKey={shareKey}
                   providerConfig={providerConfig}
                   defaultBio={displayBio}
-                  comparisonName={comparison.name || undefined}
                   profileName={comparison.profileName || undefined}
                   age={comparison.age || undefined}
                 />
@@ -223,7 +216,6 @@ export default function SharedComparisonPage() {
                         shareKey={shareKey}
                         providerConfig={providerConfig}
                         defaultBio={displayBio}
-                        comparisonName={comparison.name || undefined}
                         profileName={comparison.profileName || undefined}
                         age={comparison.age || undefined}
                       />
@@ -256,19 +248,7 @@ export default function SharedComparisonPage() {
         <FeedbackTray comparison={comparison} />
 
         {/* Footer — extra bottom padding clears the sticky tray */}
-        <footer className="border-t py-8 pb-28">
-          <div className="container mx-auto px-4 text-center">
-            <p className="text-muted-foreground text-sm">
-              Created with{" "}
-              <Link
-                href="https://www.swipestats.io"
-                className="font-semibold hover:underline"
-              >
-                SwipeStats
-              </Link>
-            </p>
-          </div>
-        </footer>
+        <ShareFooter className="pb-28" />
       </div>
     </>
   );

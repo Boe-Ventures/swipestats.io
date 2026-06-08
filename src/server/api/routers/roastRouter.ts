@@ -5,16 +5,16 @@ import { eq, and } from "drizzle-orm";
 import {
   aiOutputTable,
   profileMetaTable,
+  profileComparisonTable,
   tinderProfileTable,
   hingeProfileTable,
-  userTable,
   comparisonColumnTable,
   type AiOutputKind,
   type AiOutputRow,
   type StatsRoastResult,
   type ProfileRoastResult,
 } from "@/server/db/schema";
-import { protectedProcedure, publicProcedure } from "../trpc";
+import { aiProcedure, protectedProcedure, publicProcedure } from "../trpc";
 import {
   generateRoast,
   buildRoastBenchmarks,
@@ -26,18 +26,27 @@ import {
   roastSinglePhoto,
   ROAST_MODEL,
   ROAST_TONES,
-  PROVIDER_NAME,
   type RoastTone,
 } from "@/server/services/profile-roast.service";
+import { getProviderMeta } from "@/server/services/providers";
+import {
+  upsertAiOutput,
+  AI_OUTPUT_VERSION,
+} from "@/server/services/ai-output.service";
+import {
+  loadOwnedColumnWithContent,
+  loadOwnedColumnLight,
+} from "@/server/services/comparison-column.service";
 import { readPhotoAnalysis } from "@/lib/photo-analysis";
 import { getCohortStats } from "@/server/services/cohort/cohort.service";
-import { canAccessFeature } from "@/server/services/gating.service";
 import { ProfileComparisonService } from "@/server/services/profile-comparison.service";
 import { env } from "@/env";
 
-/** Output-format version per kind. Bump a kind's number when its `output` shape
- * changes; the UI offers a manual re-roast for rows left on an older version. */
-const ROAST_VERSION = 1;
+/** A stored row is outdated when its format predates the current version. The
+ * version lives in `ai-output.service` (shared with the upsert writer). */
+function isOutdated(row: AiOutputRow): boolean {
+  return (row.version ?? 1) < AI_OUTPUT_VERSION;
+}
 
 /**
  * System cohort id + human label for a profile's gender on a provider, used to
@@ -49,7 +58,7 @@ function resolveCohort(
   gender: string | undefined,
 ): { cohortId: string; cohortLabel: string } {
   const p = providerKey.toLowerCase(); // "tinder" | "hinge"
-  const providerName = PROVIDER_NAME[providerKey] ?? providerKey;
+  const providerName = getProviderMeta(providerKey).name;
   if (gender === "MALE")
     return { cohortId: `${p}_male`, cohortLabel: `men on ${providerName}` };
   if (gender === "FEMALE")
@@ -76,6 +85,7 @@ function mapStatsRoast(row: AiOutputRow) {
     isPublic: row.isPublic,
     tone: row.tone,
     createdAt: row.createdAt,
+    isOutdated: isOutdated(row),
     ...output,
   };
 }
@@ -138,7 +148,7 @@ export const roastRouter = {
    * ai_output (overwrite on regenerate) so we don't re-call AI every request.
    * Requires PLUS or ELITE tier.
    */
-  generate: protectedProcedure
+  generate: aiProcedure
     .input(
       z.object({
         tinderProfileId: z.string().optional(),
@@ -156,20 +166,6 @@ export const roastRouter = {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message: "Must provide tinderProfileId or hingeProfileId",
-        });
-      }
-
-      // Gating check
-      const user = await ctx.db.query.userTable.findFirst({
-        where: eq(userTable.id, userId),
-      });
-      if (!user) {
-        throw new TRPCError({ code: "UNAUTHORIZED" });
-      }
-      if (!canAccessFeature(user, "aiRoast")) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "AI Roast requires PLUS or ELITE subscription",
         });
       }
 
@@ -250,37 +246,18 @@ export const roastRouter = {
 
       // One stats roast per profile — upsert overwrites in place, preserving the
       // existing id / shareKey / isPublic.
-      const [row] = await ctx.db
-        .insert(aiOutputTable)
-        .values({
-          userId,
-          kind,
-          subjectId,
-          scope: "",
-          tone,
-          model: STATS_ROAST_MODEL,
-          version: ROAST_VERSION,
-          input: inputSnapshot,
-          output,
-        })
-        .onConflictDoUpdate({
-          target: [
-            aiOutputTable.kind,
-            aiOutputTable.subjectId,
-            aiOutputTable.scope,
-          ],
-          set: {
-            tone,
-            model: STATS_ROAST_MODEL,
-            version: ROAST_VERSION,
-            input: inputSnapshot,
-            output,
-            updatedAt: new Date(),
-          },
-        })
-        .returning();
+      const row = await upsertAiOutput({
+        db: ctx.db,
+        userId,
+        kind,
+        subjectId,
+        tone,
+        model: STATS_ROAST_MODEL,
+        input: inputSnapshot,
+        output,
+      });
 
-      return mapStatsRoast(row!);
+      return mapStatsRoast(row);
     }),
 
   /**
@@ -378,7 +355,18 @@ export const roastRouter = {
    * /share/profile-roast/[shareKey] page. Idempotent; returns the share key.
    */
   publishProfileRoast: protectedProcedure
-    .input(z.object({ columnId: z.string() }))
+    .input(
+      z.object({
+        columnId: z.string(),
+        /**
+         * Also make the underlying profile preview (photos/bio) visible on the
+         * share page. Off by default: sharing a roast exposes only the verdict
+         * text. Flipping this publishes the parent comparison (reusing its own
+         * isPublic flag), which is what gates the preview in getPublicProfileRoast.
+         */
+        includePreview: z.boolean().default(false),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
       const row = await ctx.db.query.aiOutputTable.findFirst({
@@ -400,6 +388,21 @@ export const roastRouter = {
           .update(aiOutputTable)
           .set({ isPublic: true })
           .where(eq(aiOutputTable.id, row.id));
+      }
+      if (input.includePreview) {
+        // Publish the parent comparison too. Verify ownership via the column so
+        // we never flip a comparison the caller doesn't own.
+        const column = await ctx.db.query.comparisonColumnTable.findFirst({
+          where: eq(comparisonColumnTable.id, input.columnId),
+          columns: { comparisonId: true },
+          with: { comparison: { columns: { userId: true } } },
+        });
+        if (column?.comparison.userId === userId) {
+          await ctx.db
+            .update(profileComparisonTable)
+            .set({ isPublic: true })
+            .where(eq(profileComparisonTable.id, column.comparisonId));
+        }
       }
       return { shareKey: row.shareKey };
     }),
@@ -436,11 +439,19 @@ export const roastRouter = {
         },
       });
 
-      if (!column) {
-        // Orphaned roast: column was deleted. Show the verdicts, skip preview.
+      // The roast TEXT is the shared artifact and always renders. The profile
+      // PREVIEW (photos, bio, name, age) is the underlying private profile, so we
+      // only expose it when the parent comparison is itself public. This keeps
+      // the two share primitives independent: publishing a roast never leaks the
+      // profile unless the user also published the comparison. An orphaned roast
+      // (column since deleted) is handled by the same branch — verdicts only.
+      // Passing no content to hydrateRoast nulls the photo URLs while keeping the
+      // verdict text intact, so the share page renders text-only photo cards.
+      if (!column?.comparison.isPublic) {
         return {
           tone: row.tone,
           updatedAt: row.updatedAt,
+          previewPublic: false,
           providerKey: null,
           profileName: null,
           comparisonName: null,
@@ -459,6 +470,7 @@ export const roastRouter = {
       return {
         tone: row.tone,
         updatedAt: row.updatedAt,
+        previewPublic: true,
         providerKey: column.dataProvider,
         profileName: comparison.profileName,
         comparisonName: comparison.name,
@@ -474,7 +486,7 @@ export const roastRouter = {
    * prompts and bio. Persisted as one roast per profile (upsert) — regenerating
    * overwrites it. Tone adjusts the voice; `steer` is optional free-text nudge.
    */
-  roastProfile: protectedProcedure
+  roastProfile: aiProcedure
     .input(
       z.object({
         columnId: z.string(),
@@ -485,38 +497,13 @@ export const roastRouter = {
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
 
-      const user = await ctx.db.query.userTable.findFirst({
-        where: eq(userTable.id, userId),
-      });
-      if (!user) {
-        throw new TRPCError({ code: "UNAUTHORIZED" });
-      }
-      if (!canAccessFeature(user, "aiRoast")) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "AI Roast requires PLUS or ELITE subscription",
-        });
-      }
-
-      // Fetch the column with its ordered content + attachments + parent
-      // comparison (for ownership check and the fallback bio).
-      const column = await ctx.db.query.comparisonColumnTable.findFirst({
-        where: eq(comparisonColumnTable.id, input.columnId),
-        with: {
-          comparison: true,
-          content: {
-            orderBy: (content, { asc }) => [asc(content.order)],
-            with: { attachment: true },
-          },
-        },
-      });
-
-      if (column?.comparison.userId !== userId) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Profile not found",
-        });
-      }
+      // Fetch the owned column with its ordered content + attachments + parent
+      // comparison (for the fallback bio).
+      const column = await loadOwnedColumnWithContent(
+        ctx.db,
+        input.columnId,
+        userId,
+      );
 
       // Ordered photo/prompt items — index in these arrays is what the model
       // references, so we map the roast back to real content/attachment IDs.
@@ -588,45 +575,28 @@ export const roastRouter = {
         realTalk: roast.realTalk,
       };
 
-      const updatedAt = new Date();
       const inputSnapshot = {
         providerKey: column.dataProvider,
         steer: input.steer ?? null,
       };
 
       // One roast per profile — overwrite on regeneration.
-      await ctx.db
-        .insert(aiOutputTable)
-        .values({
-          userId,
-          kind: "profile_roast",
-          subjectId: input.columnId,
-          scope: "",
-          tone: input.tone,
-          model: ROAST_MODEL,
-          version: ROAST_VERSION,
-          input: inputSnapshot,
-          output: result,
-        })
-        .onConflictDoUpdate({
-          target: [
-            aiOutputTable.kind,
-            aiOutputTable.subjectId,
-            aiOutputTable.scope,
-          ],
-          set: {
-            tone: input.tone,
-            model: ROAST_MODEL,
-            version: ROAST_VERSION,
-            input: inputSnapshot,
-            output: result,
-            updatedAt,
-          },
-        });
+      const row = await upsertAiOutput({
+        db: ctx.db,
+        userId,
+        kind: "profile_roast",
+        subjectId: input.columnId,
+        tone: input.tone,
+        model: ROAST_MODEL,
+        input: inputSnapshot,
+        output: result,
+      });
 
       return {
         tone: input.tone,
-        updatedAt,
+        updatedAt: row.updatedAt,
+        // A freshly generated roast is always the current format.
+        isOutdated: false,
         ...hydrateRoast(result, column.content, effectiveBio),
       };
     }),
@@ -636,7 +606,7 @@ export const roastRouter = {
    * — look again"). Re-uses the saved roast's tone, patches just that photo's
    * verdict in the stored result, and returns the refreshed (hydrated) photo.
    */
-  reroastPhoto: protectedProcedure
+  reroastPhoto: aiProcedure
     .input(
       z.object({
         columnId: z.string(),
@@ -647,35 +617,11 @@ export const roastRouter = {
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
 
-      const user = await ctx.db.query.userTable.findFirst({
-        where: eq(userTable.id, userId),
-      });
-      if (!user) {
-        throw new TRPCError({ code: "UNAUTHORIZED" });
-      }
-      if (!canAccessFeature(user, "aiRoast")) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "AI Roast requires PLUS or ELITE subscription",
-        });
-      }
-
-      const column = await ctx.db.query.comparisonColumnTable.findFirst({
-        where: eq(comparisonColumnTable.id, input.columnId),
-        with: {
-          comparison: true,
-          content: {
-            orderBy: (content, { asc }) => [asc(content.order)],
-            with: { attachment: true },
-          },
-        },
-      });
-      if (column?.comparison.userId !== userId) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Profile not found",
-        });
-      }
+      const column = await loadOwnedColumnWithContent(
+        ctx.db,
+        input.columnId,
+        userId,
+      );
 
       // A single-photo correction only makes sense against an existing roast.
       const row = await ctx.db.query.aiOutputTable.findFirst({
@@ -772,22 +718,11 @@ export const roastRouter = {
     .query(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
 
-      const column = await ctx.db.query.comparisonColumnTable.findFirst({
-        where: eq(comparisonColumnTable.id, input.columnId),
-        with: {
-          comparison: true,
-          content: {
-            orderBy: (content, { asc }) => [asc(content.order)],
-            with: { attachment: true },
-          },
-        },
-      });
-      if (column?.comparison.userId !== userId) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Profile not found",
-        });
-      }
+      const column = await loadOwnedColumnWithContent(
+        ctx.db,
+        input.columnId,
+        userId,
+      );
 
       const row = await ctx.db.query.aiOutputTable.findFirst({
         where: and(
@@ -804,6 +739,8 @@ export const roastRouter = {
       return {
         tone: row.tone,
         updatedAt: row.updatedAt,
+        // Older-format roast → UI can nudge a re-roast instead of rendering stale.
+        isOutdated: isOutdated(row),
         ...hydrateRoast(result, column.content, effectiveBio),
       };
     }),
@@ -827,22 +764,11 @@ export const roastRouter = {
       const userId = ctx.session.user.id;
 
       // Source column (ordered content) + ownership + saved roast.
-      const source = await ctx.db.query.comparisonColumnTable.findFirst({
-        where: eq(comparisonColumnTable.id, input.columnId),
-        with: {
-          comparison: true,
-          content: {
-            orderBy: (content, { asc }) => [asc(content.order)],
-            with: { attachment: true },
-          },
-        },
-      });
-      if (source?.comparison.userId !== userId) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Profile not found",
-        });
-      }
+      const source = await loadOwnedColumnWithContent(
+        ctx.db,
+        input.columnId,
+        userId,
+      );
 
       const roastRow = await ctx.db.query.aiOutputTable.findFirst({
         where: and(
@@ -943,13 +869,7 @@ export const roastRouter = {
       const userId = ctx.session.user.id;
 
       // Ownership check via the column's parent comparison.
-      const column = await ctx.db.query.comparisonColumnTable.findFirst({
-        where: eq(comparisonColumnTable.id, input.columnId),
-        with: { comparison: true },
-      });
-      if (column?.comparison.userId !== userId) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Profile not found" });
-      }
+      await loadOwnedColumnLight(ctx.db, input.columnId, userId);
 
       await ctx.db
         .delete(aiOutputTable)

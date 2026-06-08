@@ -11,7 +11,14 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -38,19 +45,11 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { useUpgrade } from "@/contexts/UpgradeContext";
 import { readPhotoAnalysis } from "@/lib/photo-analysis";
 import { PhotoGalleryCard } from "./photo-gallery-card";
-
-// Apps the AI composer can build a profile for (must match the server enum).
-const COMPOSE_APPS = [
-  { key: "TINDER", label: "Tinder" },
-  { key: "HINGE", label: "Hinge" },
-  { key: "BUMBLE", label: "Bumble" },
-] as const;
-type ComposeProvider = (typeof COMPOSE_APPS)[number]["key"];
-const COMPOSE_LABELS: Record<ComposeProvider, string> = {
-  TINDER: "Tinder",
-  HINGE: "Hinge",
-  BUMBLE: "Bumble",
-};
+import {
+  COMPOSE_PROVIDERS,
+  composeProviderLabel,
+  type ComposeProvider,
+} from "../compose-providers";
 
 export default function PhotoGalleryPage() {
   const trpc = useTRPC();
@@ -147,7 +146,9 @@ export default function PhotoGalleryPage() {
   const composeMutation = useMutation(
     trpc.profileCompose.compose.mutationOptions({
       onSuccess: (res) => {
-        toast.success(`Built a ${COMPOSE_LABELS[res.provider]} profile draft`);
+        toast.success(
+          `Built a ${composeProviderLabel(res.provider)} profile draft`,
+        );
         router.push(`/app/profile-compare/${res.comparisonId}`);
       },
       onError: (error) =>
@@ -234,7 +235,7 @@ export default function PhotoGalleryPage() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Compose a profile with AI</DropdownMenuLabel>
-                {COMPOSE_APPS.map((app) => (
+                {COMPOSE_PROVIDERS.map((app) => (
                   <DropdownMenuItem
                     key={app.key}
                     onClick={() => handleCompose(app.key)}
@@ -286,22 +287,24 @@ export default function PhotoGalleryPage() {
 
       {/* Photo Grid */}
       {!photos || photos.length === 0 ? (
-        <Card className="py-12">
-          <CardContent className="flex flex-col items-center justify-center text-center">
-            <div className="bg-muted mb-4 rounded-full p-4">
-              <ImageIcon className="text-muted-foreground h-8 w-8" />
-            </div>
-            <h3 className="mb-2 text-lg font-semibold">No photos yet</h3>
-            <p className="text-muted-foreground mb-4 max-w-md text-sm">
+        <Empty className="border">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <ImageIcon />
+            </EmptyMedia>
+            <EmptyTitle>No photos yet</EmptyTitle>
+            <EmptyDescription>
               Upload photos to your gallery. You can then add them to your
               profile comparisons.
-            </p>
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
             <Button onClick={() => fileInputRef.current?.click()}>
               <Upload className="mr-2 h-4 w-4" />
               Upload Your First Photo
             </Button>
-          </CardContent>
-        </Card>
+          </EmptyContent>
+        </Empty>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
           {photos.map((photo) => (

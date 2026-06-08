@@ -11,6 +11,7 @@ import { Button } from "../button";
 import { Card, CardContent } from "../card";
 import { toast } from "../toast";
 import { optimizeImage, shouldOptimizeImage } from "./SimpleImageOptimization";
+import { formatFileSize } from "@/lib/format";
 
 // Types
 export interface ImageUploadProps {
@@ -323,15 +324,6 @@ export function ImageUpload({
   const closePreview = useCallback(() => {
     setPreviewUrl(null);
   }, []);
-
-  // Format file size
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return "0 Bytes";
-    const k = 1024;
-    const sizes = ["Bytes", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-  };
 
   // Get aspect ratio class
   const getAspectRatioClass = () => {

@@ -2,21 +2,18 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { and, eq, isNull } from "drizzle-orm";
 
-import { createTRPCRouter, protectedProcedure } from "../trpc";
+import { createTRPCRouter, aiProcedure } from "../trpc";
 import {
   attachmentTable,
-  userTable,
   profileComparisonTable,
 } from "@/server/db/schema";
-import { canAccessFeature } from "@/server/services/gating.service";
 import { composeProfilePhotos } from "@/server/services/compose-profile.service";
 import { suggestPrompts } from "@/server/services/prompt-suggest.service";
 import { ProfileComparisonService } from "@/server/services/profile-comparison.service";
 import { readPhotoAnalysis, type PhotoAnalysis } from "@/lib/photo-analysis";
 import { PROMPT_BANK } from "@/lib/prompt-bank";
+import { COMPOSE_PROVIDER_KEYS } from "@/app/app/profile-compare/compose-providers";
 
-// Apps the composer offers. Subset of DataProvider; all have a prompt bank.
-const COMPOSE_PROVIDERS = ["TINDER", "HINGE", "BUMBLE"] as const;
 const PHOTO_COUNT = 6;
 const PROMPT_COUNT = 4;
 
@@ -28,26 +25,15 @@ export const profileComposeRouter = createTRPCRouter({
    * the target comparison (explicit id > latest used > a fresh one) and returns
    * the comparison id so the client can redirect. PLUS/ELITE only.
    */
-  compose: protectedProcedure
+  compose: aiProcedure
     .input(
       z.object({
-        provider: z.enum(COMPOSE_PROVIDERS),
+        provider: z.enum(COMPOSE_PROVIDER_KEYS),
         comparisonId: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
-
-      const user = await ctx.db.query.userTable.findFirst({
-        where: eq(userTable.id, userId),
-      });
-      if (!user) throw new TRPCError({ code: "UNAUTHORIZED" });
-      if (!canAccessFeature(user, "aiRoast")) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "AI profile composer requires a PLUS or ELITE subscription",
-        });
-      }
 
       // Gather the user's analyzed gallery photos — the composer reasons over
       // the tagger output, so un-analyzed photos can't take part.

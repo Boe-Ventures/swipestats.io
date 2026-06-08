@@ -14,7 +14,8 @@ import { z, ZodError } from "zod";
 import { auth } from "@/server/better-auth";
 import { db } from "@/server/db";
 import { eq } from "drizzle-orm";
-import { tinderProfileTable } from "@/server/db/schema";
+import { tinderProfileTable, userTable } from "@/server/db/schema";
+import { canAccessFeature } from "@/server/services/gating.service";
 import { env } from "@/env";
 
 /**
@@ -229,6 +230,49 @@ export const tinderProfileOwnerProcedure = t.procedure
       ctx: {
         session: { ...ctx.session, user: ctx.session.user },
         profile,
+      },
+    });
+  });
+
+/**
+ * AI feature procedure
+ *
+ * Gate for every paid AI feature (roast, profile roast, photo analysis,
+ * compose, prompt suggestions) — all share the single `aiRoast` entitlement.
+ * Resolves auth + entitlement ONCE and injects the loaded `ctx.user`, so AI
+ * handlers stay thin and can't ship ungated by omission (the gate was copy-
+ * pasted into 6 handlers before, with 5 drifted FORBIDDEN messages).
+ *
+ * - UNAUTHORIZED if not signed in / user row missing
+ * - FORBIDDEN (one canonical message) if the tier lacks AI access
+ */
+export const AI_ENTITLEMENT_MESSAGE =
+  "This AI feature requires a PLUS or ELITE subscription.";
+
+export const aiProcedure = t.procedure
+  .use(timingMiddleware)
+  .use(async ({ ctx, next }) => {
+    if (!ctx.session?.user) {
+      throw new TRPCError({ code: "UNAUTHORIZED" });
+    }
+
+    const user = await ctx.db.query.userTable.findFirst({
+      where: eq(userTable.id, ctx.session.user.id),
+    });
+    if (!user) {
+      throw new TRPCError({ code: "UNAUTHORIZED" });
+    }
+    if (!canAccessFeature(user, "aiRoast")) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: AI_ENTITLEMENT_MESSAGE,
+      });
+    }
+
+    return next({
+      ctx: {
+        session: { ...ctx.session, user: ctx.session.user },
+        user,
       },
     });
   });

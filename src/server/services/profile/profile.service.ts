@@ -6,6 +6,7 @@ import type {
 } from "@/lib/interfaces/TinderDataJSON";
 import { withTransaction, db } from "@/server/db";
 import {
+  aiOutputTable,
   matchTable,
   mediaTable,
   messageTable,
@@ -470,6 +471,11 @@ export async function resetTinderProfile(tinderId: string): Promise<void> {
     await tx
       .delete(profileMetaTable)
       .where(eq(profileMetaTable.tinderProfileId, tinderId));
+    // Stats roast (ai_output kind="tinder_roast", subjectId=tinderId) has no FK,
+    // so nothing cascades it — delete it here or the roast outlives the profile.
+    await tx
+      .delete(aiOutputTable)
+      .where(eq(aiOutputTable.subjectId, tinderId));
     await tx
       .delete(tinderProfileTable)
       .where(eq(tinderProfileTable.tinderId, tinderId));

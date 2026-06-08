@@ -1,6 +1,8 @@
-import { anthropic } from "@ai-sdk/anthropic";
-import { generateText, Output, NoObjectGeneratedError } from "ai";
 import { z } from "zod";
+
+import { AI_MODELS } from "@/lib/ai/models";
+import { generateStructured } from "@/lib/ai/generate-structured";
+import { getProviderMeta } from "./providers";
 
 /**
  * AI prompt suggestions for a profile-compare "profile" (one comparison
@@ -16,40 +18,10 @@ import { z } from "zod";
  * (suggestImages / generateImage) and reuse the same router/UI shape.
  */
 
-export const PROMPT_SUGGEST_MODEL = "claude-haiku-4-5-20251001";
+export const PROMPT_SUGGEST_MODEL = AI_MODELS.haiku;
 
 export const SUGGEST_MODES = ["full", "promptsOnly"] as const;
 export type SuggestMode = (typeof SUGGEST_MODES)[number];
-
-/** DataProvider enum value -> display name (server-safe). */
-const PROVIDER_NAME: Record<string, string> = {
-  TINDER: "Tinder",
-  HINGE: "Hinge",
-  BUMBLE: "Bumble",
-  GRINDR: "Grindr",
-  BADOO: "Badoo",
-  BOO: "Boo",
-  OK_CUPID: "OkCupid",
-  FEELD: "Feeld",
-  RAYA: "Raya",
-};
-
-/**
- * App-specific guidance for what a *good* prompt answer looks like — this is
- * the suggestion-flavoured cousin of the roast service's PROVIDER_VIBE.
- */
-const PROVIDER_GUIDANCE: Record<string, string> = {
-  TINDER:
-    "Tinder is fast and casual. Answers should be short, punchy and a little flirty — one-liners that spark a swipe. Humour and confidence land; paragraphs don't.",
-  HINGE:
-    "Hinge is prompt-and-bio heavy — the prompts ARE the personality. Favour specific, story-driven or playfully vulnerable answers with a concrete detail someone can reply to. Avoid generic one-word answers.",
-  BUMBLE:
-    "On Bumble women message first, so every answer should hand them an easy opening line — a clear interest, a question, or a hook to react to.",
-  RAYA: "Raya skews creative and clout-aware. Answers should feel effortless and a little intriguing, never try-hard.",
-};
-
-const GENERIC_GUIDANCE =
-  "A modern dating app where a short, specific, personable answer beats a generic one every time.";
 
 export interface ExistingPrompt {
   prompt: string;
@@ -97,8 +69,8 @@ function buildContextBlock(args: {
   context: ProfileContext;
 }): string {
   const { providerKey, mode, bankPrompts, existingPrompts, context } = args;
-  const provider = PROVIDER_NAME[providerKey] ?? providerKey;
-  const guidance = PROVIDER_GUIDANCE[providerKey] ?? GENERIC_GUIDANCE;
+  const { name: provider, promptGuidance: guidance } =
+    getProviderMeta(providerKey);
 
   const aboutLines = [
     context.name ? `Name: ${context.name}` : null,
@@ -161,36 +133,25 @@ export async function suggestPrompts(input: {
   const contextBlock = buildContextBlock(input);
 
   const prompt = `You are a sharp dating-profile copywriter helping someone fill out their ${
-    PROVIDER_NAME[input.providerKey] ?? input.providerKey
+    getProviderMeta(input.providerKey).name
   } profile.
 
 ${contextBlock}
 
 Give exactly ${input.count} suggestions. Vary them across different vibes (funny, sincere, intriguing, niche-interest) so there's real choice. Every suggestion must be distinct from the others and from what's already on the profile.`;
 
-  try {
-    const { output } = await generateText({
-      model: anthropic(PROMPT_SUGGEST_MODEL),
-      temperature: 0.9,
-      output: Output.object({
-        name: "PromptSuggestions",
-        description:
-          "Distinct, on-brand dating-profile prompt/answer suggestions personalised to the user.",
-        schema: outputSchema,
-      }),
-      prompt,
-    });
+  const output = await generateStructured({
+    schema: outputSchema,
+    name: "PromptSuggestions",
+    description:
+      "Distinct, on-brand dating-profile prompt/answer suggestions personalised to the user.",
+    model: PROMPT_SUGGEST_MODEL,
+    temperature: 0.9,
+    logTag: "[prompt-suggest]",
+    prompt,
+  });
 
-    return output.suggestions;
-  } catch (error) {
-    if (NoObjectGeneratedError.isInstance(error)) {
-      console.error("[prompt-suggest] no object generated", {
-        cause: error.cause,
-        text: error.text,
-      });
-    }
-    throw error;
-  }
+  return output.suggestions;
 }
 
 /**
@@ -209,7 +170,7 @@ export async function regeneratePrompt(input: {
   const contextBlock = buildContextBlock(input);
 
   const prompt = `You are a sharp dating-profile copywriter helping someone refine ONE prompt on their ${
-    PROVIDER_NAME[input.providerKey] ?? input.providerKey
+    getProviderMeta(input.providerKey).name
   } profile.
 
 ${contextBlock}
@@ -223,15 +184,14 @@ Their direction for the change (follow it closely): ${input.steer.trim()}
 
 Return a SINGLE improved suggestion. You may keep the same prompt and only rework the answer, or switch to a better-fitting prompt — whatever best satisfies their direction.`;
 
-  const { output } = await generateText({
-    model: anthropic(PROMPT_SUGGEST_MODEL),
+  const output = await generateStructured({
+    schema: outputSchema,
+    name: "PromptSuggestion",
+    description:
+      "A single improved dating-profile prompt/answer suggestion, following the user's steering.",
+    model: PROMPT_SUGGEST_MODEL,
     temperature: 0.9,
-    output: Output.object({
-      name: "PromptSuggestion",
-      description:
-        "A single improved dating-profile prompt/answer suggestion, following the user's steering.",
-      schema: outputSchema,
-    }),
+    logTag: "[prompt-suggest] regenerate",
     prompt,
   });
 

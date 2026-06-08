@@ -2,10 +2,9 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { and, eq, isNull } from "drizzle-orm";
 
-import { createTRPCRouter, protectedProcedure } from "../trpc";
-import { attachmentTable, userTable } from "@/server/db/schema";
-import { canAccessFeature } from "@/server/services/gating.service";
-import { analyzePhoto } from "@/server/services/photo-analyze.service";
+import { createTRPCRouter, aiProcedure } from "../trpc";
+import { attachmentTable } from "@/server/db/schema";
+import { analyzePhoto } from "@/server/services/photo-analysis.service";
 import { METADATA_ANALYSIS_KEY, type PhotoAnalysis } from "@/lib/photo-analysis";
 
 export const photoAnalysisRouter = createTRPCRouter({
@@ -15,7 +14,7 @@ export const photoAnalysisRouter = createTRPCRouter({
    * — same `aiRoast` entitlement as the roast. The caller fans these out one per
    * photo, so each call stays small and independently retryable.
    */
-  analyze: protectedProcedure
+  analyze: aiProcedure
     .input(
       z.object({
         attachmentId: z.string(),
@@ -24,19 +23,6 @@ export const photoAnalysisRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
-
-      const user = await ctx.db.query.userTable.findFirst({
-        where: eq(userTable.id, userId),
-      });
-      if (!user) {
-        throw new TRPCError({ code: "UNAUTHORIZED" });
-      }
-      if (!canAccessFeature(user, "aiRoast")) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "AI photo analysis requires a PLUS or ELITE subscription",
-        });
-      }
 
       const attachment = await ctx.db.query.attachmentTable.findFirst({
         where: and(

@@ -15,6 +15,7 @@ import {
   type DataProvider,
   type educationLevelEnum,
 } from "../db/schema";
+import { pruneAiOutputsForSubjects } from "./ai-output.service";
 
 // Generate a cryptographically secure random share key
 function generateShareKey(): string {
@@ -277,6 +278,14 @@ export async function updateComparison(data: {
  * Delete a comparison
  */
 export async function deleteComparison(id: string, userId: string) {
+  // Grab the column ids up front: deleting the comparison cascades them away,
+  // but each column may own a `profile_roast` in ai_output (no FK, so no cascade
+  // reaches it). We prune those after the ownership-verified delete succeeds.
+  const columns = await db.query.comparisonColumnTable.findMany({
+    where: eq(comparisonColumnTable.comparisonId, id),
+    columns: { id: true },
+  });
+
   const [deleted] = await db
     .delete(profileComparisonTable)
     .where(
@@ -290,6 +299,8 @@ export async function deleteComparison(id: string, userId: string) {
   if (!deleted) {
     throw new Error("Comparison not found or unauthorized");
   }
+
+  await pruneAiOutputsForSubjects(columns.map((c) => c.id));
 
   return { success: true };
 }
@@ -513,6 +524,10 @@ export async function removeColumn(data: { columnId: string; userId: string }) {
   await db
     .delete(comparisonColumnTable)
     .where(eq(comparisonColumnTable.id, data.columnId));
+
+  // The column's roast (ai_output kind="profile_roast", subjectId=columnId) has
+  // no FK, so the cascade above doesn't reach it — prune it explicitly.
+  await pruneAiOutputsForSubjects([data.columnId]);
 
   return { success: true };
 }

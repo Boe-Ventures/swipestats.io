@@ -1,8 +1,8 @@
-import { anthropic } from "@ai-sdk/anthropic";
-import { generateText, Output, NoObjectGeneratedError } from "ai";
 import { z } from "zod";
 
 import { PHOTO_TAGS } from "@/lib/photo-analysis";
+import { AI_MODELS } from "@/lib/ai/models";
+import { generateStructured } from "@/lib/ai/generate-structured";
 
 /**
  * Vision-based analysis of a SINGLE gallery photo: a friendly name, a factual
@@ -15,7 +15,7 @@ import { PHOTO_TAGS } from "@/lib/photo-analysis";
  * structured-output pattern, matching `profile-roast.service.ts`.
  */
 
-export const PHOTO_ANALYSIS_MODEL = "claude-sonnet-4-6";
+export const PHOTO_ANALYSIS_MODEL = AI_MODELS.sonnet;
 
 // No min/max on the tags array on purpose: range constraints make the model's
 // structured output unreliable, and "every tag that applies" already implies a
@@ -76,36 +76,23 @@ Only include tags you can actually see. It's fine to return one tag, several, or
       : ""
   }`;
 
-  try {
-    const { output } = await generateText({
-      model: anthropic(PHOTO_ANALYSIS_MODEL),
-      // Tagging should be fairly stable, so run cooler than the roast (0.9).
-      temperature: 0.3,
-      output: Output.object({
-        name: "PhotoAnalysis",
-        description:
-          "A factual name, description, and category tags for a single dating-profile photo.",
-        schema: photoAnalysisSchema,
-      }),
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: instructions },
-            { type: "image" as const, image: new URL(url) },
-          ],
-        },
-      ],
-    });
-
-    return output;
-  } catch (error) {
-    if (NoObjectGeneratedError.isInstance(error)) {
-      console.error("[photo-analyze] no object generated", {
-        cause: error.cause,
-        text: error.text,
-      });
-    }
-    throw error;
-  }
+  return generateStructured({
+    schema: photoAnalysisSchema,
+    name: "PhotoAnalysis",
+    description:
+      "A factual name, description, and category tags for a single dating-profile photo.",
+    model: PHOTO_ANALYSIS_MODEL,
+    // Tagging should be fairly stable, so run cooler than the roast (0.9).
+    temperature: 0.3,
+    logTag: "[photo-analyze]",
+    messages: [
+      {
+        role: "user",
+        content: [
+          { type: "text", text: instructions },
+          { type: "image" as const, image: new URL(url) },
+        ],
+      },
+    ],
+  });
 }

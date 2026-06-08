@@ -1,41 +1,15 @@
-import { anthropic } from "@ai-sdk/anthropic";
-import { generateText, Output, NoObjectGeneratedError } from "ai";
-import { z } from "zod";
 import type { CohortStats, ProfileMeta } from "@/server/db/schema";
-import { TONE_PERSONA, PROVIDER_NAME, type RoastTone } from "./roast-tone";
+import { AI_MODELS } from "@/lib/ai/models";
+import { generateStructured } from "@/lib/ai/generate-structured";
+import { statsRoastSchema, type StatsRoastResult } from "@/lib/ai/roast-schemas";
+import { TONE_PERSONA, type RoastTone } from "./roast-tone";
+import { getProviderMeta } from "./providers";
 
 /** Sonnet writes sharper comedy and reasons about percentiles better than Haiku. */
-export const STATS_ROAST_MODEL = "claude-sonnet-4-6";
+export const STATS_ROAST_MODEL = AI_MODELS.sonnet;
 
-const roastOutputSchema = z.object({
-  tagline: z
-    .string()
-    .describe(
-      "A short verdict badge, 2-5 words, capturing the overall read — e.g. 'Elite stats, zero follow-through' or 'Casanova in volume only'.",
-    ),
-  headline: z
-    .string()
-    .describe(
-      "The single best one-liner from the roast — punchy, shareable, under 100 characters",
-    ),
-  verdict: z
-    .string()
-    .describe(
-      "The overall take in 1-2 sentences MAX (~240 chars). Punchy, no rambling. This is the summary under the headline.",
-    ),
-  roastLines: z
-    .array(z.string())
-    .describe(
-      "Exactly 5 (4-6 is fine) witty, data-driven roast lines about the user's dating app performance. Each a single punchy sentence under 140 characters. No two should make the same point.",
-    ),
-  realTalkInsights: z
-    .array(z.string())
-    .describe(
-      "Exactly 3 genuine, actionable insights to actually improve their dating app game, most impactful first",
-    ),
-});
-
-export type RoastOutput = z.infer<typeof roastOutputSchema>;
+/** The stats-roast output shape (single source of truth: `roast-schemas.ts`). */
+export type RoastOutput = StatsRoastResult;
 
 /**
  * One metric's standing vs the user's cohort. The roast uses these so it knows
@@ -153,7 +127,7 @@ export async function generateRoast(input: RoastInput): Promise<RoastOutput> {
     benchmarks = [],
   } = input;
 
-  const providerName = PROVIDER_NAME[dataProvider] ?? dataProvider;
+  const providerName = getProviderMeta(dataProvider).name;
 
   const matchRatePct = (profileMeta.matchRate * 100).toFixed(1);
   const likeRatePct = (profileMeta.likeRate * 100).toFixed(1);
@@ -207,27 +181,14 @@ Roast rules:
 
 For the "Real Talk" insights, be genuinely helpful — what would actually move the needle for someone with these stats and this ranking?`;
 
-  try {
-    const { output } = await generateText({
-      model: anthropic(STATS_ROAST_MODEL),
-      temperature: 0.9,
-      output: Output.object({
-        name: "DatingStatsRoast",
-        description:
-          "A punchy, data-driven roast of someone's dating-app stats: a score, a one-line verdict, roast lines, and real-talk tips.",
-        schema: roastOutputSchema,
-      }),
-      prompt,
-    });
-
-    return output;
-  } catch (error) {
-    if (NoObjectGeneratedError.isInstance(error)) {
-      console.error("[roast] stats roast: no object generated", {
-        cause: error.cause,
-        text: error.text,
-      });
-    }
-    throw error;
-  }
+  return generateStructured({
+    schema: statsRoastSchema,
+    name: "DatingStatsRoast",
+    description:
+      "A punchy, data-driven roast of someone's dating-app stats: a score, a one-line verdict, roast lines, and real-talk tips.",
+    model: STATS_ROAST_MODEL,
+    temperature: 0.9,
+    logTag: "[roast] stats roast",
+    prompt,
+  });
 }

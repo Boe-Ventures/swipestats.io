@@ -1,11 +1,8 @@
-import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { eq } from "drizzle-orm";
 
 import type { db as Database } from "@/server/db";
-import { comparisonColumnTable, userTable } from "@/server/db/schema";
-import { protectedProcedure } from "../trpc";
-import { canAccessFeature } from "@/server/services/gating.service";
+import { aiProcedure } from "../trpc";
+import { loadOwnedColumnWithContent } from "@/server/services/comparison-column.service";
 import {
   suggestPrompts,
   regeneratePrompt,
@@ -28,19 +25,7 @@ async function loadColumnContext(
   columnId: string,
   userId: string,
 ) {
-  const column = await db.query.comparisonColumnTable.findFirst({
-    where: eq(comparisonColumnTable.id, columnId),
-    with: {
-      comparison: true,
-      content: {
-        orderBy: (content, { asc }) => [asc(content.order)],
-      },
-    },
-  });
-
-  if (column?.comparison.userId !== userId) {
-    throw new TRPCError({ code: "NOT_FOUND", message: "Profile not found" });
-  }
+  const column = await loadOwnedColumnWithContent(db, columnId, userId);
 
   const existingPrompts: ExistingPrompt[] = column.content
     .filter((c) => c.type === "prompt")
@@ -67,32 +52,13 @@ async function loadColumnContext(
   };
 }
 
-/** Shared gate: AI prompt suggestions reuse the aiRoast tier entitlement. */
-async function assertCanSuggest(
-  db: typeof Database,
-  userId: string,
-) {
-  const user = await db.query.userTable.findFirst({
-    where: eq(userTable.id, userId),
-  });
-  if (!user) {
-    throw new TRPCError({ code: "UNAUTHORIZED" });
-  }
-  if (!canAccessFeature(user, "aiRoast")) {
-    throw new TRPCError({
-      code: "FORBIDDEN",
-      message: "AI suggestions require a PLUS or ELITE subscription",
-    });
-  }
-}
-
 export const promptSuggestRouter = {
   /**
    * Generate a batch of prompt suggestions for a profile, personalised to the
    * app + the user's existing prompts/bio. `mode` toggles whether answers are
    * written too ("full") or just the prompt shells ("promptsOnly").
    */
-  suggest: protectedProcedure
+  suggest: aiProcedure
     .input(
       z.object({
         columnId: z.string(),
@@ -100,7 +66,6 @@ export const promptSuggestRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      await assertCanSuggest(ctx.db, ctx.session.user.id);
       const loaded = await loadColumnContext(
         ctx.db,
         input.columnId,
@@ -120,7 +85,7 @@ export const promptSuggestRouter = {
    * Regenerate a single suggestion with free-text steering from the user
    * (e.g. "make it funnier", "mention I love climbing").
    */
-  regenerate: protectedProcedure
+  regenerate: aiProcedure
     .input(
       z.object({
         columnId: z.string(),
@@ -133,7 +98,6 @@ export const promptSuggestRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      await assertCanSuggest(ctx.db, ctx.session.user.id);
       const loaded = await loadColumnContext(
         ctx.db,
         input.columnId,

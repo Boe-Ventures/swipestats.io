@@ -1,15 +1,11 @@
-import { anthropic } from "@ai-sdk/anthropic";
-import { generateText, Output, NoObjectGeneratedError } from "ai";
 import { z } from "zod";
-import {
-  ROAST_TONES,
-  TONE_PERSONA,
-  PROVIDER_NAME,
-  type RoastTone,
-} from "./roast-tone";
+import { AI_MODELS } from "@/lib/ai/models";
+import { generateStructured } from "@/lib/ai/generate-structured";
+import { ROAST_TONES, TONE_PERSONA, type RoastTone } from "./roast-tone";
+import { getProviderMeta } from "./providers";
 
 // Re-exported so existing importers (e.g. roastRouter) keep their import path.
-export { ROAST_TONES, PROVIDER_NAME, type RoastTone };
+export { ROAST_TONES, type RoastTone };
 
 /**
  * Vision-based roast of a profile-compare "profile" (one comparison column:
@@ -20,24 +16,7 @@ export { ROAST_TONES, PROVIDER_NAME, type RoastTone };
  * (the current AI SDK structured-output pattern).
  */
 
-export const ROAST_MODEL = "claude-sonnet-4-6";
-
-/**
- * Each app has its own culture, so the roast should weigh things differently.
- * Keyed by the DataProvider enum value; falls back to a generic vibe.
- */
-const PROVIDER_VIBE: Record<string, string> = {
-  TINDER:
-    "Tinder is fast, swipe-first and photo-driven — people decide in under a second and the vibe skews casual/flirty. The photos carry the profile; bios are short by design. Roast the photo game hardest.",
-  HINGE:
-    "Hinge brands itself 'designed to be deleted' and is prompt-and-bio heavy — the prompts are where personality lives. Roast lazy, cliché or one-word prompt answers hardest; an all-photos-no-effort Hinge profile is wasting the format.",
-  BUMBLE:
-    "On Bumble women message first, so the profile's whole job is to hand her an easy opening line. Reward clear interests and conversation hooks; roast profiles that give her nothing to start a chat with.",
-  RAYA: "Raya is invite-only and clout-leaning (creatives, semi-famous). Roast try-hard exclusivity, humblebrags and festival photos.",
-};
-
-const GENERIC_VIBE =
-  "A modern dating app where photos and a short bio have to do a lot of work fast.";
+export const ROAST_MODEL = AI_MODELS.sonnet;
 
 export interface ProfileRoastPhoto {
   /** Publicly fetchable blob URL passed to the vision model. */
@@ -201,8 +180,7 @@ export async function roastProfile(
 ): Promise<ProfileRoast> {
   const { providerKey, tone, photos, prompts, bio, steer } = input;
 
-  const provider = PROVIDER_NAME[providerKey] ?? providerKey;
-  const vibe = PROVIDER_VIBE[providerKey] ?? GENERIC_VIBE;
+  const { name: provider, roastVibe: vibe } = getProviderMeta(providerKey);
 
   const promptLines =
     prompts.length > 0
@@ -265,40 +243,27 @@ Reference specific details you can actually see in the photos — that's what ma
       : ""
   }`;
 
-  try {
-    const { output } = await generateText({
-      model: anthropic(ROAST_MODEL),
-      temperature: 0.9,
-      output: Output.object({
-        name: "ProfileRoast",
-        description:
-          "A vision-based roast of a dating profile: an overall verdict + score, per-photo keep/cut calls, prompt rewrites, bio rewrites, and prioritized fixes.",
-        schema: profileRoastSchema,
-      }),
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: instructions },
-            ...photos.map((p) => ({
-              type: "image" as const,
-              image: new URL(p.url),
-            })),
-          ],
-        },
-      ],
-    });
-
-    return output;
-  } catch (error) {
-    if (NoObjectGeneratedError.isInstance(error)) {
-      console.error("[roast] profile roast: no object generated", {
-        cause: error.cause,
-        text: error.text,
-      });
-    }
-    throw error;
-  }
+  return generateStructured({
+    schema: profileRoastSchema,
+    name: "ProfileRoast",
+    description:
+      "A vision-based roast of a dating profile: an overall verdict + score, per-photo keep/cut calls, prompt rewrites, bio rewrites, and prioritized fixes.",
+    model: ROAST_MODEL,
+    temperature: 0.9,
+    logTag: "[roast] profile roast",
+    messages: [
+      {
+        role: "user",
+        content: [
+          { type: "text", text: instructions },
+          ...photos.map((p) => ({
+            type: "image" as const,
+            image: new URL(p.url),
+          })),
+        ],
+      },
+    ],
+  });
 }
 
 export interface SinglePhotoRoastInput {
@@ -324,8 +289,7 @@ export async function roastSinglePhoto(
 ): Promise<PhotoVerdict> {
   const { providerKey, tone, photo, steer } = input;
 
-  const provider = PROVIDER_NAME[providerKey] ?? providerKey;
-  const vibe = PROVIDER_VIBE[providerKey] ?? GENERIC_VIBE;
+  const { name: provider, roastVibe: vibe } = getProviderMeta(providerKey);
 
   const instructions = `You are ${TONE_PERSONA[tone]}
 
@@ -346,35 +310,22 @@ Return a fresh verdict for THIS photo only:
 
 BE CONCISE — one sharp line beats three soft ones.`;
 
-  try {
-    const { output } = await generateText({
-      model: anthropic(ROAST_MODEL),
-      temperature: 0.9,
-      output: Output.object({
-        name: "PhotoVerdict",
-        description:
-          "A fresh single-photo verdict (factual caption, zinger title, one-line roast, keep/maybe/cut) after a user correction.",
-        schema: singlePhotoRoastSchema,
-      }),
-      messages: [
-        {
-          role: "user",
-          content: [
-            { type: "text", text: instructions },
-            { type: "image" as const, image: new URL(photo.url) },
-          ],
-        },
-      ],
-    });
-
-    return output;
-  } catch (error) {
-    if (NoObjectGeneratedError.isInstance(error)) {
-      console.error("[roast] single-photo roast: no object generated", {
-        cause: error.cause,
-        text: error.text,
-      });
-    }
-    throw error;
-  }
+  return generateStructured({
+    schema: singlePhotoRoastSchema,
+    name: "PhotoVerdict",
+    description:
+      "A fresh single-photo verdict (factual caption, zinger title, one-line roast, keep/maybe/cut) after a user correction.",
+    model: ROAST_MODEL,
+    temperature: 0.9,
+    logTag: "[roast] single-photo roast",
+    messages: [
+      {
+        role: "user",
+        content: [
+          { type: "text", text: instructions },
+          { type: "image" as const, image: new URL(photo.url) },
+        ],
+      },
+    ],
+  });
 }

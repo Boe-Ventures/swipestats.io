@@ -8,6 +8,13 @@ import { ExternalLink, ImageOff, Layers, List, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -15,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ShareNotFound } from "@/components/share/share-shell";
 
 import { useTRPC, type RouterOutputs } from "@/trpc/react";
 import { useQuery } from "@tanstack/react-query";
@@ -128,17 +136,10 @@ export default function FriendCreationPage() {
 
   if (!data) {
     return (
-      <div className="bg-background flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold">Comparison not found</h2>
-          <p className="text-muted-foreground mt-2">
-            This comparison may have been deleted or is no longer available.
-          </p>
-          <Link href="https://www.swipestats.io" className="mt-4 inline-block">
-            <Button>Go to SwipeStats</Button>
-          </Link>
-        </div>
-      </div>
+      <ShareNotFound
+        title="Comparison not found"
+        description="This comparison may have been deleted or is no longer available."
+      />
     );
   }
 
@@ -246,16 +247,18 @@ export default function FriendCreationPage() {
         {/* Main Content */}
         <main className="container mx-auto max-w-6xl px-4 py-8 sm:px-6">
           {photos.length === 0 ? (
-            <div className="border-muted-foreground/25 mx-auto flex max-w-md flex-col items-center justify-center rounded-xl border-2 border-dashed py-16 text-center">
-              <div className="bg-muted mb-4 rounded-full p-4">
-                <ImageOff className="text-muted-foreground h-8 w-8" />
-              </div>
-              <h3 className="mb-2 text-lg font-semibold">No photos available</h3>
-              <p className="text-muted-foreground max-w-md text-sm">
-                {ownerLabel} hasn&apos;t uploaded any photos yet, so there&apos;s
-                nothing to build with.
-              </p>
-            </div>
+            <Empty className="mx-auto max-w-md border-2">
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <ImageOff />
+                </EmptyMedia>
+                <EmptyTitle>No photos available</EmptyTitle>
+                <EmptyDescription>
+                  {ownerLabel} hasn&apos;t uploaded any photos yet, so
+                  there&apos;s nothing to build with.
+                </EmptyDescription>
+              </EmptyHeader>
+            </Empty>
           ) : (
             <div className="grid gap-8 lg:grid-cols-[minmax(0,360px)_1fr]">
               {/* Live preview — same StackView the share page renders */}

@@ -4,7 +4,8 @@
  *  - the vision roast (profile-roast.service.ts) — roasts photos/prompts/bio.
  *
  * Storage stays separate (the two roasts model different things), but the tone
- * vocabulary and provider display names live here so the two can't drift apart.
+ * vocabulary lives here so the two can't drift apart. Provider display names +
+ * per-app guidance live in `providers.ts` (`getProviderMeta`).
  */
 
 export const ROAST_TONES = ["helpful", "mild", "spicy"] as const;
@@ -17,17 +18,4 @@ export const TONE_PERSONA: Record<RoastTone, string> = {
   mild: "a witty friend playfully teasing them over drinks — light jabs, clearly affectionate, never actually mean.",
   spicy:
     "a savage roast comedian 🌶️ — brutally funny and unfiltered. Go hard for the laugh, but stay clever, not hateful, bigoted, or body-shaming.",
-};
-
-/** DataProvider enum value -> display name (server-safe; avoids importing the client provider-config). */
-export const PROVIDER_NAME: Record<string, string> = {
-  TINDER: "Tinder",
-  HINGE: "Hinge",
-  BUMBLE: "Bumble",
-  GRINDR: "Grindr",
-  BADOO: "Badoo",
-  BOO: "Boo",
-  OK_CUPID: "OkCupid",
-  FEELD: "Feeld",
-  RAYA: "Raya",
 };

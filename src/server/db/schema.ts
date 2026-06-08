@@ -9,6 +9,12 @@ import {
 } from "drizzle-orm/pg-core";
 
 import { createId } from "./utils";
+// Roast payload types are inferred from canonical zod schemas in this leaf
+// module (zod-only — no import cycle, since services import FROM schema.ts).
+import type {
+  StatsRoastResult,
+  ProfileRoastResult,
+} from "@/lib/ai/roast-schemas";
 
 // ---- ENUMS --------------------------------------------------------
 
@@ -1201,26 +1207,21 @@ export type ProfileComparisonFeedbackInsert =
 //  - `input` records what we fed the model (reproducibility/debugging);
 //    `output` is the rendered result. Both jsonb. Each generator owns its
 //    `output` shape and validates it with a zod schema at write time.
-//  - `version` is the output-format version. The UI renders the current version
-//    and offers a manual "refresh" (regenerate) for rows left behind — so the
-//    payload can evolve without DB migrations or backfills.
-//  - `fingerprint` is DEPRECATED — roast staleness was dropped in favour of
-//    on-demand re-roasting. The column is kept (nullable, unwritten) to avoid a
-//    migration; safe to drop in a future migration.
+//  - `version` is the output-format version. Readers compare it to the current
+//    per-kind version and offer a manual "refresh" (regenerate) for rows left
+//    behind — so the payload can evolve without DB migrations or backfills.
 //  - `shareKey`/`isPublic` are the share primitive, built once for all kinds.
 //  - `subjectId` is intentionally NOT a FK (it points into several tables);
-//    roasts are cheap derived data, pruned by the app layer on subject delete.
+//    roasts are cheap derived data, pruned by the app layer on subject delete
+//    via `pruneAiOutputsForSubjects` (see ai-output.service.ts) — every delete
+//    path for a roastable subject MUST call it or the row (and its public
+//    share link) outlives the deleted subject.
 
 export type AiOutputKind = "tinder_roast" | "hinge_roast" | "profile_roast";
 
-/** Stats-roast payload (was the flat `roast` columns) — output for the *_roast stats kinds. */
-export type StatsRoastResult = {
-  tagline: string;
-  headline: string;
-  verdict: string;
-  roastLines: string[];
-  realTalkInsights: string[];
-};
+// Re-exported so existing importers keep `import { StatsRoastResult } from
+// "@/server/db/schema"`. Definitions live in the zod leaf (imported above).
+export type { StatsRoastResult, ProfileRoastResult };
 
 /** `output` payload — shape depends on `kind`, narrowed at the edge by zod. */
 export type AiOutputPayload = StatsRoastResult | ProfileRoastResult;
@@ -1266,11 +1267,11 @@ export const aiOutputTable = pgTable(
     version: t.smallint().notNull().default(1),
     input: t.jsonb().$type<AiOutputInput>().notNull(),
     output: t.jsonb().$type<AiOutputPayload>().notNull(),
-    // DEPRECATED: staleness was dropped for on-demand re-roasting. Kept nullable
-    // and unwritten to avoid a migration; safe to drop later.
-    fingerprint: t.text(),
+    // Always generated app-side, so it's NOT NULL: a row always has a share key
+    // (publishing just flips isPublic). Enforces the "a roast is shareable" invariant.
     shareKey: t
       .text()
+      .notNull()
       .unique()
       .$defaultFn(() => createId("share")),
     isPublic: t.boolean().notNull().default(false),
@@ -1299,39 +1300,10 @@ export const aiOutputTable = pgTable(
 export type AiOutputRow = typeof aiOutputTable.$inferSelect;
 export type AiOutputRowInsert = typeof aiOutputTable.$inferInsert;
 
-// ---- PROFILE-COMPARE (VISION) ROAST PAYLOAD -----------------------
-//
-// The `output` shape for kind="profile_roast" rows in `ai_output`. Photos/
-// prompts are keyed by content id; image URLs are resolved live on read (not
-// frozen here), so the roast always renders against the current profile.
-export type ProfileRoastResult = {
-  overall: {
-    tagline: string; // short verdict badge, e.g. "Solid, but playing it safe"
-    headline: string; // shareable punchline one-liner
-    verdict: string; // 2-3 sentence summary
-  };
-  photos: {
-    contentId: string | null;
-    keepOrCut: "keep" | "maybe" | "cut";
-    caption: string; // factual "what the AI saw" — doubles as the row header
-    title: string; // bold zinger
-    body: string; // the full roast
-  }[];
-  prompts: {
-    contentId: string | null;
-    roast: string;
-    rewrite: string; // a sharper suggested answer for this prompt
-  }[];
-  bio: {
-    roast: string;
-    rewrites: { label: string; text: string }[]; // >=2 named styles (Witty/Sincere)
-  } | null;
-  realTalk: {
-    title: string;
-    detail?: string;
-    action?: "reorder" | "editBio" | "addPrompt"; // optional deep-link hint (future)
-  }[];
-};
+// The `output` shape for kind="profile_roast" rows (`ProfileRoastResult`) lives
+// in `@/lib/ai/roast-schemas` and is re-exported above. Photos/prompts are keyed
+// by content id; image URLs are resolved live on read (not frozen), so the roast
+// always renders against the current profile.
 
 // ---- COHORT SYSTEM TABLES -----------------------------------------
 
