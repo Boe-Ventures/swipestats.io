@@ -231,7 +231,7 @@ export async function roastProfile(
     .join(", ");
 
   const tagSection = perPhotoTags
-    ? `\nThe photos have been auto-tagged. Tags per photo:\n${perPhotoTags}\n\nPhoto mix across the profile: ${mixSummary}.\nUse this to flag repetition (too many of one kind) and gaps (e.g. no group or full-body shot), and to justify the photo order — surface concrete fixes in "real talk" with action "reorder".\n`
+    ? `\nThe photos have been auto-tagged. Tags per photo:\n${perPhotoTags}\n\nPhoto mix across the profile: ${mixSummary}.\nThese counts are AUTHORITATIVE: when you state how many photos are of a kind (e.g. group shots), use these exact numbers — never a higher count. Use them to flag repetition and gaps (e.g. no group or full-body shot), and to justify the photo order — surface concrete fixes in "real talk" with action "reorder".\n`
     : "";
 
   const instructions = `You are ${TONE_PERSONA[tone]}
@@ -256,6 +256,8 @@ Give:
 3. For EACH prompt: a one-sentence "roast" of their answer, plus a "rewrite" — a sharper answer to the SAME prompt they could actually use (concrete, in their voice).
 4. Bio (or null if there's none): a "roast" of 2 sentences max; and "rewrites" = at least two concise replacement bios in distinct named styles (default "Witty" and "Sincere").
 5. "Real talk": 2-5 prioritized, actionable fixes, each a { title, optional detail, optional action }. Put the highest-impact fix first. Tag "action" when a fix is mechanical: "reorder" (photo order), "editBio", or "addPrompt".
+
+CONSISTENCY: your "overall" and "real talk" must agree with your per-photo verdicts. Before citing a count (e.g. "five group shots"), count it against the photos you actually flagged as such — never claim more than that. Don't reference a "Photo N" that doesn't exist (there are only ${photos.length}).
 
 Reference specific details you can actually see in the photos — that's what makes it land.${
     steer?.trim()
