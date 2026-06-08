@@ -8,7 +8,8 @@ import { BlogPageContent } from "./BlogPageContent";
 const ogImageUrl = `${env.NEXT_PUBLIC_BASE_URL}/api/og/blog?title=${encodeURIComponent("SwipeStats Blog")}&description=${encodeURIComponent("Data-driven dating insights")}`;
 
 export const metadata = {
-  title: "Blog | SwipeStats - Data-Driven Dating Insights",
+  // Root/marketing title.template appends " | SwipeStats", so don't repeat it here.
+  title: "Blog - Data-Driven Dating Insights",
   description:
     "Expert insights, data-driven strategies, and actionable advice for improving your online dating success.",
   keywords: [
