@@ -147,11 +147,23 @@
           "primaryKey": false,
           "notNull": true
         },
-        "subject_id": {
-          "name": "subject_id",
+        "tinder_profile_id": {
+          "name": "tinder_profile_id",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
+        },
+        "hinge_profile_id": {
+          "name": "hinge_profile_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "column_id": {
+          "name": "column_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
         },
         "scope": {
           "name": "scope",
@@ -218,33 +230,6 @@
         }
       },
       "indexes": {
-        "ai_output_subject_key": {
-          "name": "ai_output_subject_key",
-          "columns": [
-            {
-              "expression": "kind",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "subject_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "scope",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "ai_output_user_id_idx": {
           "name": "ai_output_user_id_idx",
           "columns": [
@@ -274,6 +259,21 @@
           "concurrently": false,
           "method": "btree",
           "with": {}
+        },
+        "ai_output_column_id_idx": {
+          "name": "ai_output_column_id_idx",
+          "columns": [
+            {
+              "expression": "column_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
         }
       },
       "foreignKeys": {
@@ -283,6 +283,45 @@
           "tableTo": "user",
           "columnsFrom": [
             "user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "ai_output_tinder_profile_id_tinder_profile_tinder_id_fk": {
+          "name": "ai_output_tinder_profile_id_tinder_profile_tinder_id_fk",
+          "tableFrom": "ai_output",
+          "tableTo": "tinder_profile",
+          "columnsFrom": [
+            "tinder_profile_id"
+          ],
+          "columnsTo": [
+            "tinder_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "ai_output_hinge_profile_id_hinge_profile_hinge_id_fk": {
+          "name": "ai_output_hinge_profile_id_hinge_profile_hinge_id_fk",
+          "tableFrom": "ai_output",
+          "tableTo": "hinge_profile",
+          "columnsFrom": [
+            "hinge_profile_id"
+          ],
+          "columnsTo": [
+            "hinge_id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "ai_output_column_id_comparison_column_id_fk": {
+          "name": "ai_output_column_id_comparison_column_id_fk",
+          "tableFrom": "ai_output",
+          "tableTo": "comparison_column",
+          "columnsFrom": [
+            "column_id"
           ],
           "columnsTo": [
             "id"
@@ -299,10 +338,26 @@
           "columns": [
             "share_key"
           ]
+        },
+        "ai_output_subject_key": {
+          "name": "ai_output_subject_key",
+          "nullsNotDistinct": true,
+          "columns": [
+            "kind",
+            "scope",
+            "tinder_profile_id",
+            "hinge_profile_id",
+            "column_id"
+          ]
         }
       },
       "policies": {},
-      "checkConstraints": {},
+      "checkConstraints": {
+        "ai_output_one_subject": {
+          "name": "ai_output_one_subject",
+          "value": "num_nonnulls(\"ai_output\".\"tinder_profile_id\", \"ai_output\".\"hinge_profile_id\", \"ai_output\".\"column_id\") = 1"
+        }
+      },
       "isRLSEnabled": false
     },
     "public.attachment": {
