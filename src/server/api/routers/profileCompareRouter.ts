@@ -85,19 +85,23 @@ export const profileCompareRouter = createTRPCRouter({
   // Update comparison metadata
   update: protectedProcedure
     .input(
+      // null clears a field; undefined leaves it unchanged.
       z.object({
         id: z.string(),
-        name: z.string().optional(),
-        profileName: z.string().optional(),
-        defaultBio: z.string().optional(),
-        age: z.number().optional(),
-        city: z.string().optional(),
-        state: z.string().optional(),
-        country: z.string().optional(),
-        nationality: z.string().optional(),
-        hometown: z.string().optional(),
-        heightCm: z.number().optional(),
-        educationLevel: z.enum(educationLevelEnum.enumValues).optional(),
+        name: z.string().nullable().optional(),
+        profileName: z.string().nullable().optional(),
+        defaultBio: z.string().nullable().optional(),
+        age: z.number().nullable().optional(),
+        city: z.string().nullable().optional(),
+        state: z.string().nullable().optional(),
+        country: z.string().nullable().optional(),
+        nationality: z.string().nullable().optional(),
+        hometown: z.string().nullable().optional(),
+        heightCm: z.number().nullable().optional(),
+        educationLevel: z
+          .enum(educationLevelEnum.enumValues)
+          .nullable()
+          .optional(),
         isPublic: z.boolean().optional(),
       }),
     )

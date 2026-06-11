@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import {
   Copy,
   Eye,
+  Flame,
   Share2,
   Settings,
   Plus,
@@ -31,6 +32,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -62,8 +64,10 @@ import type { RouterOutputs } from "@/trpc/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { dataProviderEnum, educationLevelEnum } from "@/server/db/schema";
 import { ComparisonColumn } from "./comparison-column";
+import { getProviderConfig } from "./provider-config";
 import { PhotoLibraryDialog } from "./photo-library-dialog";
 import { useGalleryUpload } from "../_hooks/useGalleryUpload";
+import { getDefaultComparisonName } from "../_lib/default-name";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUpgrade } from "@/contexts/UpgradeContext";
 import {
@@ -296,25 +300,25 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
   );
 
   const onSubmit = (data: SettingsFormValues) => {
+    // Cleared fields are sent as null (= clear in the DB) — undefined would
+    // mean "leave unchanged", making it impossible to remove a value.
     updateMutation.mutate(
       {
         id: comparison.id,
-        name: data.name || undefined,
-        profileName: data.profileName || undefined,
-        age: data.age ? parseInt(data.age, 10) : undefined,
-        defaultBio: data.defaultBio || undefined,
-        heightCm: data.heightCm ? parseInt(data.heightCm, 10) : undefined,
+        name: data.name?.trim() || null,
+        profileName: data.profileName?.trim() || null,
+        age: data.age ? parseInt(data.age, 10) : null,
+        defaultBio: data.defaultBio?.trim() || null,
+        heightCm: data.heightCm ? parseInt(data.heightCm, 10) : null,
         educationLevel:
           data.educationLevel === "__none__" || !data.educationLevel
-            ? undefined
-            : (data.educationLevel as
-                | (typeof educationLevelEnum.enumValues)[number]
-                | undefined),
-        city: data.city || undefined,
-        state: data.state || undefined,
-        country: data.country || undefined,
-        nationality: data.nationality || undefined,
-        hometown: data.hometown || undefined,
+            ? null
+            : (data.educationLevel as (typeof educationLevelEnum.enumValues)[number]),
+        city: data.city?.trim() || null,
+        state: data.state?.trim() || null,
+        country: data.country?.trim() || null,
+        nationality: data.nationality?.trim() || null,
+        hometown: data.hometown?.trim() || null,
         isPublic: data.isPublic,
       },
       {
@@ -636,7 +640,7 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
                   value={column.id}
                   className="flex-1"
                 >
-                  {column.title || column.dataProvider}
+                  {column.title || getProviderConfig(column.dataProvider).name}
                 </TabsTrigger>
               ))}
               <TabsTrigger value="add" className="flex-1">
@@ -714,13 +718,16 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Comparison Name</FormLabel>
+                    <FormLabel>Comparison name</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="e.g., Winter 2024 Profile"
+                        placeholder={`e.g., ${getDefaultComparisonName()}`}
                         {...field}
                       />
                     </FormControl>
+                    <FormDescription>
+                      Also the headline on your public share page.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -1006,6 +1013,16 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
               </Button>
             </div>
           )}
+
+          {/* Roasts publish separately (their own shareKey + page), so neither
+              link above includes them — worth a heads-up here. */}
+          <div className="flex items-start gap-2 rounded-md border border-rose-200/70 bg-rose-50/50 p-3 dark:border-rose-900/40 dark:bg-rose-950/20">
+            <Flame className="mt-0.5 h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400" />
+            <p className="text-muted-foreground text-sm">
+              AI roasts aren&apos;t included in these links. Each profile&apos;s
+              roast has its own share link — open the roast to share it.
+            </p>
+          </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setShareOpen(false)}>

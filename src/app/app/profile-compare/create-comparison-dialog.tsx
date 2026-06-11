@@ -146,10 +146,13 @@ export function CreateComparisonDialog({
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Name (optional)</FormLabel>
+                <FormLabel>Comparison name</FormLabel>
                 <FormControl>
                   <Input placeholder={namePlaceholder} {...field} autoFocus />
                 </FormControl>
+                <FormDescription>
+                  Also the headline on your public share page.
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
