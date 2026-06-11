@@ -5,7 +5,6 @@ import { eq, and } from "drizzle-orm";
 import {
   aiOutputTable,
   profileMetaTable,
-  profileComparisonTable,
   tinderProfileTable,
   hingeProfileTable,
   comparisonColumnTable,
@@ -228,7 +227,11 @@ export const roastRouter = {
       const { cohortId, cohortLabel } = resolveCohort(providerKey, gender);
       const cohortStats = await getCohortStats(cohortId);
       if (cohortStats) {
-        benchmarks = buildRoastBenchmarks(profileMeta, cohortStats, cohortLabel);
+        benchmarks = buildRoastBenchmarks(
+          profileMeta,
+          cohortStats,
+          cohortLabel,
+        );
       }
 
       const output = await generateRoast({
@@ -354,20 +357,14 @@ export const roastRouter = {
   /**
    * Publish a profile roast (by column) so it can be opened on the public
    * /share/profile-roast/[shareKey] page. Idempotent; returns the share key.
+   *
+   * Sharing a roast shares the roasted PROFILE: verdicts, photos, and the
+   * single column's preview (name/age/bio). It never touches the parent
+   * comparison's isPublic flag — the multi-column compare view is an internal
+   * tool for the owner and has its own share flow.
    */
   publishProfileRoast: protectedProcedure
-    .input(
-      z.object({
-        columnId: z.string(),
-        /**
-         * Also make the underlying profile preview (photos/bio) visible on the
-         * share page. Off by default: sharing a roast exposes only the verdict
-         * text. Flipping this publishes the parent comparison (reusing its own
-         * isPublic flag), which is what gates the preview in getPublicProfileRoast.
-         */
-        includePreview: z.boolean().default(false),
-      }),
-    )
+    .input(z.object({ columnId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
       const row = await ctx.db.query.aiOutputTable.findFirst({
@@ -389,21 +386,6 @@ export const roastRouter = {
           .update(aiOutputTable)
           .set({ isPublic: true })
           .where(eq(aiOutputTable.id, row.id));
-      }
-      if (input.includePreview) {
-        // Publish the parent comparison too. Verify ownership via the column so
-        // we never flip a comparison the caller doesn't own.
-        const column = await ctx.db.query.comparisonColumnTable.findFirst({
-          where: eq(comparisonColumnTable.id, input.columnId),
-          columns: { comparisonId: true },
-          with: { comparison: { columns: { userId: true } } },
-        });
-        if (column?.comparison.userId === userId) {
-          await ctx.db
-            .update(profileComparisonTable)
-            .set({ isPublic: true })
-            .where(eq(profileComparisonTable.id, column.comparisonId));
-        }
       }
       return { shareKey: row.shareKey };
     }),
@@ -444,19 +426,16 @@ export const roastRouter = {
           })
         : null;
 
-      // The roast TEXT is the shared artifact and always renders. The profile
-      // PREVIEW (photos, bio, name, age) is the underlying private profile, so we
-      // only expose it when the parent comparison is itself public. This keeps
-      // the two share primitives independent: publishing a roast never leaks the
-      // profile unless the user also published the comparison. An orphaned roast
-      // (column since deleted) is handled by the same branch — verdicts only.
-      // Passing no content to hydrateRoast nulls the photo URLs while keeping the
-      // verdict text intact, so the share page renders text-only photo cards.
-      if (!column?.comparison.isPublic) {
+      // Sharing a roast shares the roasted PROFILE — verdicts, photos, and the
+      // single column's preview (name/age/bio). What is NOT exposed is the
+      // parent comparison itself (the multi-column compare view stays private
+      // with its own share flow); we surface only this column's display fields,
+      // never the comparison row's userId/shareKey/flags. An orphaned roast
+      // (column since deleted) renders verdicts with text-only photo cards.
+      if (!column) {
         return {
           tone: row.tone,
           updatedAt: row.updatedAt,
-          previewPublic: false,
           providerKey: null,
           profileName: null,
           comparisonName: null,
@@ -467,15 +446,12 @@ export const roastRouter = {
         };
       }
 
-      // Don't leak the parent comparison row (userId/shareKey/flags) publicly —
-      // surface only the display fields the share page needs.
       const { comparison, ...columnForView } = column;
       const effectiveBio = column.bio ?? comparison.defaultBio ?? null;
 
       return {
         tone: row.tone,
         updatedAt: row.updatedAt,
-        previewPublic: true,
         providerKey: column.dataProvider,
         profileName: comparison.profileName,
         comparisonName: comparison.name,

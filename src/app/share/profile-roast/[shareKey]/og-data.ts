@@ -9,7 +9,8 @@ import {
 
 export type ShareProfileRoast = {
   result: ProfileRoastResult;
-  /** profileName, falling back to the comparison name. */
+  /** profileName; null when unset (the comparison name is a date label like
+   * "Summer 2026", not a person, so it makes a nonsense subject). */
   subject: string | null;
   age: number | null;
   providerKey: string | null;
@@ -48,18 +49,17 @@ export async function getPublicProfileRoastForShare(
       })
     : null;
 
-  // Only put the actual profile photo in the share card when the underlying
-  // comparison is public — mirrors the preview gate in
-  // roast.getPublicProfileRoast so the unfurl never shows a photo the page
-  // itself hides. The roast text + name stay (sharing a roast implies that).
-  const photoUrl = column?.comparison.isPublic
-    ? (column.content.find((c) => c.type === "photo" && c.attachment?.url)
-        ?.attachment?.url ?? null)
-    : null;
+  // The roasted photos ride with any shared roast (mirrors
+  // roast.getPublicProfileRoast, where only the profile preview — name, age,
+  // bio — stays gated behind the comparison being public), so the unfurl can
+  // always lead with the first photo.
+  const photoUrl =
+    column?.content.find((c) => c.type === "photo" && c.attachment?.url)
+      ?.attachment?.url ?? null;
 
   return {
     result,
-    subject: column?.comparison.profileName ?? column?.comparison.name ?? null,
+    subject: column?.comparison.profileName ?? null,
     age: column?.comparison.age ?? null,
     providerKey: column?.dataProvider ?? null,
     photoUrl,

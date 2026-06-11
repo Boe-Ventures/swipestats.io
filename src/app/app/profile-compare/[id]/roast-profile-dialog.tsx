@@ -35,12 +35,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
   Empty,
   EmptyContent,
   EmptyDescription,
@@ -157,7 +151,8 @@ export function RoastProfileDialog({
         );
         toast.success("Roast deleted");
       },
-      onError: (error) => toast.error(error.message || "Failed to delete roast"),
+      onError: (error) =>
+        toast.error(error.message || "Failed to delete roast"),
     }),
   );
 
@@ -206,21 +201,14 @@ export function RoastProfileDialog({
     }),
   );
 
-  // includePreview=false → share the roast verdicts only; true → also publish the
-  // parent comparison so the photo/bio profile preview shows on the share page.
-  const handleShare = async (includePreview: boolean) => {
-    const { shareKey } = await publishMutation.mutateAsync({
-      columnId,
-      includePreview,
-    });
+  // Sharing a roast shares the roasted profile (verdicts, photos, preview) —
+  // never the parent comparison, which stays the owner's internal view.
+  const handleShare = async () => {
+    const { shareKey } = await publishMutation.mutateAsync({ columnId });
     if (!shareKey) return;
     const url = `${window.location.origin}/share/profile-roast/${shareKey}`;
     await navigator.clipboard.writeText(url);
-    toast.success(
-      includePreview
-        ? "Share link copied — roast + profile preview"
-        : "Share link copied — roast only",
-    );
+    toast.success("Share link copied");
   };
 
   return (
@@ -287,7 +275,7 @@ export function RoastProfileDialog({
               overall={roast.overall}
               isGenerating={isGenerating}
               onReRoast={() => setPickingTone(true)}
-              onShare={(includePreview) => void handleShare(includePreview)}
+              onShare={() => void handleShare()}
               isSharing={publishMutation.isPending}
               onDeleteRoast={
                 isDev
@@ -598,8 +586,8 @@ function HeroCard({
   overall: Roast["overall"];
   isGenerating: boolean;
   onReRoast: () => void;
-  /** includePreview=true also publishes the profile photo/bio preview. */
-  onShare: (includePreview: boolean) => void;
+  /** Publishes the roast (verdicts + photos + profile preview) and copies the link. */
+  onShare: () => void;
   isSharing?: boolean;
   /** Dev-only: present only outside production. */
   onDeleteRoast?: () => void;
@@ -630,31 +618,20 @@ function HeroCard({
           <RefreshCw className="mr-1.5 h-4 w-4" />
           Re-roast
         </Button>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              size="sm"
-              variant="outline"
-              className="border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white"
-              disabled={isSharing}
-            >
-              {isSharing ? (
-                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-              ) : (
-                <Share2 className="mr-1.5 h-4 w-4" />
-              )}
-              {isSharing ? "Sharing…" : "Share"}
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            <DropdownMenuItem onSelect={() => onShare(false)}>
-              Share roast only
-            </DropdownMenuItem>
-            <DropdownMenuItem onSelect={() => onShare(true)}>
-              Share roast + profile
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <Button
+          size="sm"
+          variant="outline"
+          className="border-white/20 bg-white/10 text-white hover:bg-white/20 hover:text-white"
+          disabled={isSharing}
+          onClick={onShare}
+        >
+          {isSharing ? (
+            <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+          ) : (
+            <Share2 className="mr-1.5 h-4 w-4" />
+          )}
+          {isSharing ? "Sharing…" : "Share"}
+        </Button>
         {onDeleteRoast && (
           <Button
             size="sm"
@@ -736,12 +713,22 @@ function PhotoVerdict({
         onReplace(updated);
         setSteer("");
         setLookAgainOpen(false);
+        // Keep the fresh caption visible — it's the proof the AI actually
+        // looked again and saw what the user said it should.
+        setShowCaption(true);
         toast.success("Took another look");
       },
       onError: (error) =>
         toast.error(error.message || "Couldn't redo this photo"),
     }),
   );
+
+  // The caption is what the user is correcting against, so always reveal it
+  // alongside the input — you can't fix a misread you can't see.
+  const openLookAgain = () => {
+    setShowCaption(true);
+    setLookAgainOpen(true);
+  };
 
   const submitLookAgain = () => {
     if (!steer.trim() || !photo.contentId) return;
@@ -765,9 +752,6 @@ function PhotoVerdict({
             className="object-cover"
           />
         )}
-        <span className="absolute top-1 left-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-[10px] font-bold text-white">
-          {index + 1}
-        </span>
         {/* "What the AI saw" is hidden by default — peek it via this icon. */}
         {photo.caption && (
           <button
@@ -797,6 +781,15 @@ function PhotoVerdict({
         {showCaption && photo.caption && (
           <p className="text-muted-foreground/70 mt-1.5 text-xs italic">
             What the AI saw: {photo.caption}
+            {photo.contentId && !lookAgainOpen && (
+              <button
+                type="button"
+                onClick={openLookAgain}
+                className="text-muted-foreground hover:text-foreground ml-1.5 font-medium not-italic underline underline-offset-2 transition-colors"
+              >
+                Wrong?
+              </button>
+            )}
           </p>
         )}
 
@@ -807,7 +800,8 @@ function PhotoVerdict({
             {!lookAgainOpen ? (
               <button
                 type="button"
-                onClick={() => setLookAgainOpen(true)}
+                onClick={openLookAgain}
+                title="Correct what the AI saw and redo this photo's verdict"
                 className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-xs font-medium transition-colors"
               >
                 <Search className="h-3 w-3" />
@@ -826,20 +820,23 @@ function PhotoVerdict({
                     }
                     if (e.key === "Escape") setLookAgainOpen(false);
                   }}
-                  placeholder="What's actually in it? e.g. no wine glass"
+                  maxLength={500}
+                  placeholder={`Correct it — e.g. "that's a shaka sign, not a wine glass"`}
                   className="h-8 text-sm"
                   disabled={busy}
                 />
                 <Button
                   size="sm"
+                  className="shrink-0"
                   onClick={submitLookAgain}
                   disabled={!steer.trim() || busy}
                 >
                   {busy ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
                   ) : (
-                    <RefreshCw className="h-3.5 w-3.5" />
+                    <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
                   )}
+                  Redo
                 </Button>
               </div>
             )}
