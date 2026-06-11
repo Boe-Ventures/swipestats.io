@@ -22,7 +22,7 @@ export function ComposeProfileCard({
 }: ComposeProfileCardProps) {
   const who = profileName ? `${profileName}'s` : "their";
 
-  return (
+  const link = (
     <Link
       href={`/share/create/${shareKey}`}
       className={
@@ -51,5 +51,17 @@ export function ComposeProfileCard({
         </span>
       </span>
     </Link>
+  );
+
+  // In the desktop grid, sibling columns have an h-8 header row above their
+  // aspect-[2/3] body. Mirror that spacer so this card's body lines up with the
+  // phone previews instead of floating a header-height too high.
+  if (fullWidth) return link;
+
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="h-8 shrink-0" aria-hidden />
+      {link}
+    </div>
   );
 }

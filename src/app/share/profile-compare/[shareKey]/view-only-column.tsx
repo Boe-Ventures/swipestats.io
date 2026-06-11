@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { useTRPC, type RouterOutputs } from "@/trpc/react";
+import type { EducationLevel } from "@/server/db/schema";
 import { useQuery } from "@tanstack/react-query";
 import type { DisplayMode } from "@/app/app/profile-compare/[id]/provider-config";
 import type { ProviderConfig } from "@/app/app/profile-compare/[id]/provider-config";
@@ -27,6 +28,9 @@ interface ViewOnlyColumnProps {
   defaultBio?: string;
   profileName?: string;
   age?: number;
+  heightCm?: number;
+  educationLevel?: EducationLevel;
+  hometown?: string;
 }
 
 export function ViewOnlyColumn({
@@ -37,6 +41,9 @@ export function ViewOnlyColumn({
   defaultBio,
   profileName,
   age,
+  heightCm,
+  educationLevel,
+  hometown,
 }: ViewOnlyColumnProps) {
   const trpc = useTRPC();
   const [displayMode, setDisplayMode] = useState<DisplayMode>(
@@ -150,6 +157,9 @@ export function ViewOnlyColumn({
               defaultBio={defaultBio}
               profileName={profileName}
               age={age}
+              heightCm={heightCm}
+              educationLevel={educationLevel}
+              hometown={hometown}
               onFeedbackClick={handleFeedbackClick}
               feedbackCounts={feedbackCounts}
             />

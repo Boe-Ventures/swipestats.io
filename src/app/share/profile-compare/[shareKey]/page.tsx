@@ -93,6 +93,13 @@ export default function SharedComparisonPage() {
 
   const displayBio = comparison.defaultBio || "";
 
+  // Public viewers can't act on an empty profile column, so we hide them here.
+  // This is purely a render-time filter — the columns still exist, so the
+  // moment the owner adds content they reappear on the next load.
+  const visibleColumns = comparison.columns.filter(
+    (c) => c.content.length > 0,
+  );
+
   return (
     <>
       <AnonymousNamePrompt
@@ -169,7 +176,7 @@ export default function SharedComparisonPage() {
         <main className="container mx-auto px-4 py-8 pb-28">
           {/* Desktop: Side-by-side columns */}
           <div className="hidden gap-6 md:grid-cols-2 lg:grid lg:grid-cols-4">
-            {comparison.columns.map((column) => {
+            {visibleColumns.map((column) => {
               const providerConfig = getProviderConfig(column.dataProvider);
               return (
                 <ViewOnlyColumn
@@ -181,6 +188,9 @@ export default function SharedComparisonPage() {
                   defaultBio={displayBio}
                   profileName={comparison.profileName || undefined}
                   age={comparison.age || undefined}
+                  heightCm={comparison.heightCm || undefined}
+                  educationLevel={comparison.educationLevel || undefined}
+                  hometown={comparison.hometown || undefined}
                 />
               );
             })}
@@ -193,10 +203,10 @@ export default function SharedComparisonPage() {
 
           {/* Mobile: Tabs */}
           <div className="lg:hidden">
-            {comparison.columns.length > 0 ? (
-              <Tabs defaultValue={comparison.columns[0]!.id}>
+            {visibleColumns.length > 0 ? (
+              <Tabs defaultValue={visibleColumns[0]!.id}>
                 <TabsList className="w-full">
-                  {comparison.columns.map((column) => (
+                  {visibleColumns.map((column) => (
                     <TabsTrigger
                       key={column.id}
                       value={column.id}
@@ -206,7 +216,7 @@ export default function SharedComparisonPage() {
                     </TabsTrigger>
                   ))}
                 </TabsList>
-                {comparison.columns.map((column) => {
+                {visibleColumns.map((column) => {
                   const providerConfig = getProviderConfig(column.dataProvider);
                   return (
                     <TabsContent key={column.id} value={column.id}>
@@ -218,6 +228,9 @@ export default function SharedComparisonPage() {
                         defaultBio={displayBio}
                         profileName={comparison.profileName || undefined}
                         age={comparison.age || undefined}
+                        heightCm={comparison.heightCm || undefined}
+                        educationLevel={comparison.educationLevel || undefined}
+                        hometown={comparison.hometown || undefined}
                       />
                     </TabsContent>
                   );
