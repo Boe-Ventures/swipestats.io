@@ -31,20 +31,6 @@ export interface Prompt {
 export const PROMPT_BANK: Record<PromptSource, Prompt[]> = {
   TINDER: [
     {
-      id: "tinder-1",
-      text: "My simple pleasures",
-      type: "text",
-      source: "TINDER",
-      category: "Lifestyle",
-    },
-    {
-      id: "tinder-2",
-      text: "I'm looking for",
-      type: "text",
-      source: "TINDER",
-      category: "Dating",
-    },
-    {
       id: "tinder-3",
       text: "My biggest flex",
       type: "text",
@@ -66,39 +52,11 @@ export const PROMPT_BANK: Record<PromptSource, Prompt[]> = {
       category: "Lifestyle",
     },
     {
-      id: "tinder-6",
-      text: "I go crazy for",
-      type: "text",
-      source: "TINDER",
-      category: "Interests",
-    },
-    {
-      id: "tinder-7",
-      text: "A life goal of mine",
-      type: "text",
-      source: "TINDER",
-      category: "Values",
-    },
-    {
-      id: "tinder-8",
-      text: "I'm weirdly attracted to",
-      type: "text",
-      source: "TINDER",
-      category: "Humor",
-    },
-    {
       id: "tinder-9",
       text: "My most controversial opinion",
       type: "text",
       source: "TINDER",
       category: "Conversation",
-    },
-    {
-      id: "tinder-10",
-      text: "Don't hate me if I",
-      type: "text",
-      source: "TINDER",
-      category: "Humor",
     },
     {
       id: "tinder-11",
@@ -120,13 +78,6 @@ export const PROMPT_BANK: Record<PromptSource, Prompt[]> = {
       type: "text",
       source: "TINDER",
       category: "Personality",
-    },
-    {
-      id: "tinder-14",
-      text: "The hottest thing you can do is",
-      type: "text",
-      source: "TINDER",
-      category: "Dating",
     },
     {
       id: "tinder-15",
@@ -227,13 +178,6 @@ export const PROMPT_BANK: Record<PromptSource, Prompt[]> = {
       category: "Humor",
     },
     {
-      id: "tinder-29",
-      text: "The key to my heart is",
-      type: "text",
-      source: "TINDER",
-      category: "Dating",
-    },
-    {
       id: "tinder-30",
       text: "If I'm not home, you can find me",
       type: "text",
@@ -246,13 +190,6 @@ export const PROMPT_BANK: Record<PromptSource, Prompt[]> = {
       type: "text",
       source: "TINDER",
       category: "Interests",
-    },
-    {
-      id: "tinder-32",
-      text: "I want someone who",
-      type: "text",
-      source: "TINDER",
-      category: "Dating",
     },
     {
       id: "tinder-33",
@@ -274,6 +211,20 @@ export const PROMPT_BANK: Record<PromptSource, Prompt[]> = {
       type: "text",
       source: "TINDER",
       category: "Dating",
+    },
+    {
+      id: "tinder-36",
+      text: "The most romantic thing you can do for me is",
+      type: "text",
+      source: "TINDER",
+      category: "Dating",
+    },
+    {
+      id: "tinder-37",
+      text: "My biggest green flag is",
+      type: "text",
+      source: "TINDER",
+      category: "Personality",
     },
     // Photo Caption Prompts
     {
@@ -440,6 +391,13 @@ export const PROMPT_BANK: Record<PromptSource, Prompt[]> = {
     {
       id: "tinder-caption-24",
       text: "Biggest obsession? Here's a clue",
+      type: "text",
+      source: "TINDER",
+      category: "Photo Captions",
+    },
+    {
+      id: "tinder-caption-25",
+      text: "Peak chaos in one photo",
       type: "text",
       source: "TINDER",
       category: "Photo Captions",
