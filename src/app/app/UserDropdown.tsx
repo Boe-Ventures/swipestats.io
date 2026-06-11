@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { LogOut, User, Settings, Sun, Moon, Monitor } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -73,14 +72,14 @@ interface UserDropdownProps {
 }
 
 export function UserDropdown({ user }: UserDropdownProps) {
-  const router = useRouter();
   const { trackEvent } = useAnalytics();
 
   const handleSignOut = async () => {
     trackEvent("sign_out_clicked", undefined);
     await authClient.signOut();
-    router.push("/");
-    router.refresh();
+    // Hard navigation, not router.push: it drops the whole JS heap (React
+    // Query cache included), so the next session can't see this one's data.
+    window.location.href = "/";
   };
 
   // Generate initials from name or email
