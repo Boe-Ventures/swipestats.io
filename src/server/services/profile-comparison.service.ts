@@ -14,6 +14,7 @@ import {
   aiOutputTable,
   type DataProvider,
   type educationLevelEnum,
+  type ProfileRoastResult,
 } from "../db/schema";
 
 // Generate a cryptographically secure random share key
@@ -137,26 +138,34 @@ export async function getComparison(comparisonId: string, userId: string) {
           columnId: true,
           tone: true,
           updatedAt: true,
+          output: true,
         },
       })
     : [];
   const roastBySubject = new Map(roastRows.map((r) => [r.columnId, r]));
 
-  // Derive a lightweight roast status per column (roasted? + tone + when) so the
-  // edit page can badge it without shipping the roast payload. Staleness was
-  // dropped in favour of on-demand re-roasting.
+  // Derive a lightweight roast status per column (roasted? + tone + when, plus
+  // the overall tagline/headline for the roast CTA strip) so the edit page can
+  // surface it without shipping the full roast payload. Staleness was dropped
+  // in favour of on-demand re-roasting.
   const columns = comparison.columns.map((column) => {
     const roast = roastBySubject.get(column.id);
+    // kind="profile_roast" rows always hold a ProfileRoastResult payload.
+    const overall = roast ? (roast.output as ProfileRoastResult).overall : null;
     const roastStatus = roast
       ? {
           roasted: true as const,
           tone: roast.tone,
           updatedAt: roast.updatedAt,
+          tagline: overall?.tagline ?? null,
+          headline: overall?.headline ?? null,
         }
       : {
           roasted: false as const,
           tone: null,
           updatedAt: null,
+          tagline: null,
+          headline: null,
         };
     return { ...column, roastStatus };
   });
@@ -222,22 +231,23 @@ export async function listComparisons(userId: string) {
 }
 
 /**
- * Update comparison metadata
+ * Update comparison metadata. For each field, null clears it and undefined
+ * leaves it unchanged.
  */
 export async function updateComparison(data: {
   id: string;
   userId: string;
-  name?: string;
-  profileName?: string;
-  defaultBio?: string;
-  age?: number;
-  city?: string;
-  state?: string;
-  country?: string;
-  nationality?: string;
-  hometown?: string;
-  heightCm?: number;
-  educationLevel?: (typeof educationLevelEnum.enumValues)[number];
+  name?: string | null;
+  profileName?: string | null;
+  defaultBio?: string | null;
+  age?: number | null;
+  city?: string | null;
+  state?: string | null;
+  country?: string | null;
+  nationality?: string | null;
+  hometown?: string | null;
+  heightCm?: number | null;
+  educationLevel?: (typeof educationLevelEnum.enumValues)[number] | null;
   isPublic?: boolean;
 }) {
   const updateData: Record<string, unknown> = {};

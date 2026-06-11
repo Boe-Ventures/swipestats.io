@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import {
   Plus,
@@ -58,6 +58,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { DeleteAlert } from "@/components/ui/alert-dialog";
+import { RoastCtaStrip } from "@/components/roast/roast-cta-strip";
+import { cn } from "@/components/ui/lib/utils";
 
 import { useTRPC } from "@/trpc/react";
 import type { RouterOutputs } from "@/trpc/react";
@@ -121,11 +123,72 @@ function SortableContent({
     isDragging,
   } = useSortable({ id: content.id });
 
+  // The tile is both the drag handle and the click-to-edit target. The
+  // PointerSensor's distance constraint keeps a plain click from starting a
+  // drag, but after a real drag the browser still fires a click on drop —
+  // remember the drag so that click doesn't open the edit dialog.
+  const wasDragged = useRef(false);
+  useEffect(() => {
+    if (isDragging) wasDragged.current = true;
+  }, [isDragging]);
+
+  const handleClick = () => {
+    if (wasDragged.current) {
+      wasDragged.current = false;
+      return;
+    }
+    onEdit(content);
+  };
+
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
   };
+
+  // Corner action cluster (edit + delete) and a drag affordance hint. The
+  // whole tile already drags and clicks-to-edit; these exist so both actions
+  // are *visible*, not just possible. pointer-down must not bubble into the
+  // tile's drag listeners, and click must not bubble into click-to-edit.
+  const cornerButtonClass =
+    "text-foreground grid h-7 w-7 place-items-center rounded-full bg-white/90 opacity-0 shadow-sm backdrop-blur transition group-hover:opacity-100 hover:bg-white focus-visible:opacity-100 disabled:pointer-events-none";
+
+  const actionButtons = (
+    <div className="absolute top-1.5 right-1.5 z-[2] flex gap-1">
+      <button
+        type="button"
+        aria-label="Edit"
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.stopPropagation();
+          onEdit(content);
+        }}
+        className={cornerButtonClass}
+      >
+        <Pencil className="h-3.5 w-3.5" />
+      </button>
+      <button
+        type="button"
+        aria-label="Remove from profile"
+        disabled={isDeleting}
+        onPointerDown={(e) => e.stopPropagation()}
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete(content.id);
+        }}
+        className={cn(cornerButtonClass, "hover:text-red-600")}
+      >
+        <Trash2 className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  );
+
+  // Purely visual "you can drag this" hint — the tile itself is the handle.
+  const dragHint = (
+    <span className="pointer-events-none absolute top-1.5 left-1.5 z-[2] grid h-7 w-7 place-items-center rounded-full bg-white/90 opacity-0 shadow-sm backdrop-blur transition group-hover:opacity-100">
+      <GripVertical className="text-foreground h-3.5 w-3.5" />
+    </span>
+  );
 
   // Render photo content
   if (content.type === "photo" && content.attachment) {
@@ -133,7 +196,10 @@ function SortableContent({
       <div
         ref={setNodeRef}
         style={style}
-        className="group relative aspect-square"
+        {...attributes}
+        {...listeners}
+        onClick={handleClick}
+        className="group relative aspect-square cursor-pointer touch-none active:cursor-grabbing"
       >
         <Image
           src={content.attachment.url}
@@ -146,38 +212,10 @@ function SortableContent({
             {content.caption}
           </div>
         )}
-        <div className="absolute inset-0 flex items-center justify-center rounded-md bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-          {/* Drag Handle */}
-          <button
-            {...attributes}
-            {...listeners}
-            className="absolute top-2 left-2 cursor-grab rounded bg-white/90 p-1.5 shadow-sm active:cursor-grabbing"
-          >
-            <GripVertical className="h-4 w-4" />
-          </button>
-
-          {/* Action Buttons */}
-          <div className="flex gap-1">
-            {/* Edit Button */}
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => onEdit(content)}
-            >
-              <Pencil className="h-3 w-3" />
-            </Button>
-
-            {/* Delete Button */}
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={() => onDelete(content.id)}
-              disabled={isDeleting}
-            >
-              <Trash2 className="h-3 w-3" />
-            </Button>
-          </div>
-        </div>
+        {/* Subtle hover affordance — the photo stays visible while reordering */}
+        <div className="pointer-events-none absolute inset-0 rounded-md transition group-hover:bg-black/10 group-hover:ring-2 group-hover:ring-black/10 group-hover:ring-inset" />
+        {dragHint}
+        {actionButtons}
       </div>
     );
   }
@@ -188,7 +226,10 @@ function SortableContent({
       <div
         ref={setNodeRef}
         style={style}
-        className="group bg-card relative flex aspect-square flex-col overflow-hidden rounded-md border p-3"
+        {...attributes}
+        {...listeners}
+        onClick={handleClick}
+        className="group bg-card hover:border-foreground/20 relative flex aspect-square cursor-pointer touch-none flex-col overflow-hidden rounded-md border p-3 transition active:cursor-grabbing"
       >
         <p className="text-muted-foreground line-clamp-2 shrink-0 text-[11px] leading-snug font-medium">
           {content.prompt}
@@ -199,38 +240,8 @@ function SortableContent({
               being sliced mid-line by the square's overflow clip. */}
           <div className="from-card pointer-events-none absolute inset-x-0 bottom-0 h-5 bg-gradient-to-t to-transparent" />
         </div>
-        <div className="absolute inset-0 flex items-center justify-center rounded-md bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
-          {/* Drag Handle */}
-          <button
-            {...attributes}
-            {...listeners}
-            className="absolute top-2 left-2 cursor-grab rounded bg-white/90 p-1.5 shadow-sm active:cursor-grabbing"
-          >
-            <GripVertical className="h-4 w-4" />
-          </button>
-
-          {/* Action Buttons */}
-          <div className="flex gap-1">
-            {/* Edit Button */}
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => onEdit(content)}
-            >
-              <Pencil className="h-3 w-3" />
-            </Button>
-
-            {/* Delete Button */}
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={() => onDelete(content.id)}
-              disabled={isDeleting}
-            >
-              <Trash2 className="h-3 w-3" />
-            </Button>
-          </div>
-        </div>
+        {dragHint}
+        {actionButtons}
       </div>
     );
   }
@@ -297,9 +308,11 @@ export function ComparisonColumn({
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
-  // Drag & drop sensors
+  // Drag & drop sensors. The whole tile is both the drag handle and the
+  // click-to-edit target, so a drag only starts after 8px of movement — a
+  // plain click stays a click.
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
@@ -416,17 +429,19 @@ export function ComparisonColumn({
     setLocalContentOrder(column.content.map((c) => c.id));
   };
 
+  // Send "" through (rather than coercing to undefined) — the service treats
+  // undefined as "leave unchanged", which would make these impossible to clear.
   const handleSaveBio = () => {
     updateColumnMutation.mutate({
       columnId: column.id,
-      bio: bio || undefined,
+      bio: bio.trim(),
     });
   };
 
   const handleSaveTitle = () => {
     updateColumnMutation.mutate({
       columnId: column.id,
-      title: title || undefined,
+      title: title.trim(),
     });
   };
 
@@ -443,9 +458,7 @@ export function ComparisonColumn({
       await downloadFromUrl(url, fallbackName);
       toast.success("Download ready");
     } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : "Download failed",
-      );
+      toast.error(error instanceof Error ? error.message : "Download failed");
     } finally {
       setDevDownload(null);
     }
@@ -670,173 +683,200 @@ export function ComparisonColumn({
             </TabsContent>
           </div>
 
+          {/* Roast strip — the roast entry point, surfaced as an insight under
+              the preview instead of hiding in the column menu. Once roasted it
+              collapses to a single line: the tagline IS the summary; details
+              are one tap away in the dialog. */}
+          <RoastCtaStrip
+            title={
+              column.roastStatus.roasted
+                ? (column.roastStatus.tagline ?? "Your AI roast")
+                : "Roast this profile"
+            }
+            badge={
+              column.roastStatus.roasted
+                ? column.roastStatus.tone?.toUpperCase()
+                : undefined
+            }
+            description={
+              column.roastStatus.roasted
+                ? undefined
+                : "Get photo verdicts & a sharper bio"
+            }
+            onClick={() => setRoastDialogOpen(true)}
+          />
+
           {/* Edit Section Divider — two real line segments with a gap for the
             label, so there's no background box that can stand out against the
             card surface. */}
-        <div className="text-muted-foreground flex items-center gap-3 text-xs uppercase">
-          <span className="bg-border h-px flex-1" />
-          Edit Content
-          <span className="bg-border h-px flex-1" />
-        </div>
-        {/* Content Management */}
-        <div>
-          <div className="mb-2 flex items-center justify-between">
-            <Label className="text-sm font-medium">Manage Content</Label>
-            <span className="text-muted-foreground text-xs">
-              {column.content.length}{" "}
-              {column.content.length === 1 ? "item" : "items"}
-            </span>
+          <div className="text-muted-foreground flex items-center gap-3 text-xs uppercase">
+            <span className="bg-border h-px flex-1" />
+            Edit Content
+            <span className="bg-border h-px flex-1" />
           </div>
-          {column.content.length > 0 ? (
-            <DndContext
-              sensors={sensors}
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
-            >
-              <SortableContext
-                items={localContentOrder}
-                strategy={rectSortingStrategy}
-              >
-                <div className="grid grid-cols-3 gap-2">
-                  {sortedContent.map((content, index) => (
-                    <SortableContent
-                      key={content.id}
-                      content={content}
-                      index={index}
-                      onDelete={(contentId) =>
-                        deleteContentMutation.mutate({ contentId })
-                      }
-                      onEdit={(content) => {
-                        setContentToEdit(content);
-                        setEditContentDialogOpen(true);
-                      }}
-                      isDeleting={deleteContentMutation.isPending}
-                    />
-                  ))}
-                  {/* Pad the grid with empty "add" slots up to 6 so a sparse
-                      profile still reads as a photo grid and invites more. */}
-                  {Array.from({
-                    length: Math.max(0, 6 - column.content.length),
-                  }).map((_, i) => (
-                    <button
-                      key={`placeholder-${i}`}
-                      type="button"
-                      onClick={() => setAddContentDialogOpen(true)}
-                      aria-label="Add content"
-                      className="border-muted-foreground/25 bg-muted/20 text-muted-foreground hover:border-muted-foreground/40 hover:bg-muted/40 hover:text-foreground flex aspect-square items-center justify-center rounded-md border border-dashed transition-colors"
-                    >
-                      <Plus className="h-5 w-5" />
-                    </button>
-                  ))}
-                </div>
-              </SortableContext>
-            </DndContext>
-          ) : (
-            <button
-              onClick={() => setAddContentDialogOpen(true)}
-              className="bg-muted/20 hover:bg-muted/30 flex w-full flex-col items-center justify-center gap-2 rounded-md border border-dashed py-6 transition-colors"
-            >
-              <ImageIcon className="text-muted-foreground h-6 w-6" />
-              <p className="text-muted-foreground text-sm font-medium">
-                No content yet
-              </p>
-              <p className="text-muted-foreground text-xs">
-                Click to add photos or prompts
-              </p>
-            </button>
-          )}
-
-          {/* Save / Cancel Order Buttons */}
-          {hasUnsavedOrder && column.content.length > 0 && (
-            <div className="mt-3 flex gap-2">
-              <Button
-                onClick={handleSaveOrder}
-                disabled={reorderContentMutation.isPending}
-                size="sm"
-                className="flex-1"
-              >
-                {reorderContentMutation.isPending
-                  ? "Saving..."
-                  : "Save Content Order"}
-              </Button>
-              <Button
-                onClick={handleCancelOrder}
-                disabled={reorderContentMutation.isPending}
-                size="sm"
-                variant="outline"
-              >
-                Cancel
-              </Button>
+          {/* Content Management */}
+          <div>
+            <div className="mb-2 flex items-center justify-between">
+              <Label className="text-sm font-medium">Manage Content</Label>
+              <span className="text-muted-foreground text-xs">
+                {column.content.length}{" "}
+                {column.content.length === 1 ? "item" : "items"}
+                {column.content.length > 1 && " · drag to reorder"}
+              </span>
             </div>
-          )}
-        </div>
-
-        {/* Bio */}
-        <div>
-          <Label
-            htmlFor={`bio-${column.id}`}
-            className="mb-2 block text-sm font-medium"
-          >
-            Bio
-          </Label>
-          <textarea
-            id={`bio-${column.id}`}
-            value={bio}
-            onChange={(e) => setBio(e.target.value)}
-            placeholder={defaultBio || "Enter bio for this app..."}
-            className="border-input bg-background min-h-32 w-full rounded-md border px-3 py-2 text-sm"
-          />
-          {bio !== (column.bio || "") && (
-            <Button
-              size="sm"
-              onClick={handleSaveBio}
-              disabled={updateColumnMutation.isPending}
-              className="mt-2"
-            >
-              {updateColumnMutation.isPending ? "Saving..." : "Save Bio"}
-            </Button>
-          )}
-          {!column.bio && defaultBio && (
-            <p className="text-muted-foreground mt-1 text-xs">
-              Using default bio
-            </p>
-          )}
-        </div>
-
-        {/* Title (low priority — kept at the bottom) */}
-        <div>
-          <Label
-            htmlFor={`title-${column.id}`}
-            className="mb-2 block text-sm font-medium"
-          >
-            Title
-          </Label>
-          <div className="flex gap-2">
-            <input
-              id={`title-${column.id}`}
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder={`e.g., "2023 Profile" or "Summer Edition"`}
-              className="border-input bg-background flex-1 rounded-md border px-3 py-2 text-sm"
-            />
-            {title !== (column.title || "") && (
-              <Button
-                size="sm"
-                onClick={handleSaveTitle}
-                disabled={updateColumnMutation.isPending}
+            {column.content.length > 0 ? (
+              <DndContext
+                sensors={sensors}
+                collisionDetection={closestCenter}
+                onDragEnd={handleDragEnd}
               >
-                {updateColumnMutation.isPending ? "Saving..." : "Save"}
-              </Button>
+                <SortableContext
+                  items={localContentOrder}
+                  strategy={rectSortingStrategy}
+                >
+                  <div className="grid grid-cols-3 gap-2">
+                    {sortedContent.map((content, index) => (
+                      <SortableContent
+                        key={content.id}
+                        content={content}
+                        index={index}
+                        onDelete={(contentId) =>
+                          deleteContentMutation.mutate({ contentId })
+                        }
+                        onEdit={(content) => {
+                          setContentToEdit(content);
+                          setEditContentDialogOpen(true);
+                        }}
+                        isDeleting={deleteContentMutation.isPending}
+                      />
+                    ))}
+                    {/* Pad the grid with empty "add" slots up to 6 so a sparse
+                      profile still reads as a photo grid and invites more. */}
+                    {Array.from({
+                      length: Math.max(0, 6 - column.content.length),
+                    }).map((_, i) => (
+                      <button
+                        key={`placeholder-${i}`}
+                        type="button"
+                        onClick={() => setAddContentDialogOpen(true)}
+                        aria-label="Add content"
+                        className="border-muted-foreground/25 bg-muted/20 text-muted-foreground hover:border-muted-foreground/40 hover:bg-muted/40 hover:text-foreground flex aspect-square items-center justify-center rounded-md border border-dashed transition-colors"
+                      >
+                        <Plus className="h-5 w-5" />
+                      </button>
+                    ))}
+                  </div>
+                </SortableContext>
+              </DndContext>
+            ) : (
+              <button
+                onClick={() => setAddContentDialogOpen(true)}
+                className="bg-muted/20 hover:bg-muted/30 flex w-full flex-col items-center justify-center gap-2 rounded-md border border-dashed py-6 transition-colors"
+              >
+                <ImageIcon className="text-muted-foreground h-6 w-6" />
+                <p className="text-muted-foreground text-sm font-medium">
+                  No content yet
+                </p>
+                <p className="text-muted-foreground text-xs">
+                  Click to add photos or prompts
+                </p>
+              </button>
+            )}
+
+            {/* Save / Cancel Order Buttons */}
+            {hasUnsavedOrder && column.content.length > 0 && (
+              <div className="mt-3 flex gap-2">
+                <Button
+                  onClick={handleSaveOrder}
+                  disabled={reorderContentMutation.isPending}
+                  size="sm"
+                  className="flex-1"
+                >
+                  {reorderContentMutation.isPending
+                    ? "Saving..."
+                    : "Save Content Order"}
+                </Button>
+                <Button
+                  onClick={handleCancelOrder}
+                  disabled={reorderContentMutation.isPending}
+                  size="sm"
+                  variant="outline"
+                >
+                  Cancel
+                </Button>
+              </div>
             )}
           </div>
-          {!title && (
-            <p className="text-muted-foreground mt-1 text-xs">
-              Add a title to identify this version (e.g., &quot;2023&quot;,
-              &quot;Summer Edition&quot;)
-            </p>
-          )}
-        </div>
+
+          {/* Bio */}
+          <div>
+            <Label
+              htmlFor={`bio-${column.id}`}
+              className="mb-2 block text-sm font-medium"
+            >
+              Bio
+            </Label>
+            <textarea
+              id={`bio-${column.id}`}
+              value={bio}
+              onChange={(e) => setBio(e.target.value)}
+              placeholder={defaultBio || "Enter bio for this app..."}
+              className="border-input bg-background min-h-32 w-full rounded-md border px-3 py-2 text-sm"
+            />
+            {bio !== (column.bio || "") && (
+              <Button
+                size="sm"
+                onClick={handleSaveBio}
+                disabled={updateColumnMutation.isPending}
+                className="mt-2"
+              >
+                {updateColumnMutation.isPending ? "Saving..." : "Save Bio"}
+              </Button>
+            )}
+            {!column.bio && defaultBio && (
+              <p className="text-muted-foreground mt-1 text-xs">
+                Using default bio
+              </p>
+            )}
+          </div>
+
+          {/* Column label (stored as `title` in the DB) — overrides the app
+              name wherever this column is shown. Low priority, kept at the
+              bottom. */}
+          <div>
+            <Label
+              htmlFor={`title-${column.id}`}
+              className="mb-2 block text-sm font-medium"
+            >
+              Column label
+            </Label>
+            <div className="flex gap-2">
+              <input
+                id={`title-${column.id}`}
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder={`e.g., "Playful bio" or "Variant B"`}
+                className="border-input bg-background flex-1 rounded-md border px-3 py-2 text-sm"
+              />
+              {title !== (column.title || "") && (
+                <Button
+                  size="sm"
+                  onClick={handleSaveTitle}
+                  disabled={updateColumnMutation.isPending}
+                >
+                  {updateColumnMutation.isPending ? "Saving..." : "Save"}
+                </Button>
+              )}
+            </div>
+            {!title && (
+              <p className="text-muted-foreground mt-1 text-xs">
+                Shown instead of the app name on this column, in tabs, and on
+                your shared page. Handy when comparing two versions of the same
+                app.
+              </p>
+            )}
+          </div>
         </CardContent>
       </Tabs>
 
@@ -895,6 +935,7 @@ export function ComparisonColumn({
         currentApp={
           isPromptSource(column.dataProvider) ? column.dataProvider : undefined
         }
+        onDelete={(contentId) => deleteContentMutation.mutate({ contentId })}
       />
 
       {/* Confirm deletion when the column still has content */}
