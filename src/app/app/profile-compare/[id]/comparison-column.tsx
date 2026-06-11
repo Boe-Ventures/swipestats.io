@@ -61,6 +61,7 @@ import { DeleteAlert } from "@/components/ui/alert-dialog";
 
 import { useTRPC } from "@/trpc/react";
 import type { RouterOutputs } from "@/trpc/react";
+import type { EducationLevel } from "@/server/db/schema";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AddContentDialog } from "./add-content-dialog";
 import { EditContentDialog } from "./edit-content-dialog";
@@ -85,6 +86,11 @@ interface ComparisonColumnProps {
   defaultBio?: string;
   profileName?: string;
   age?: number;
+  heightCm?: number;
+  educationLevel?: EducationLevel;
+  hometown?: string;
+  /** Opens the shared photo-library dialog (in place of navigating to /photos). */
+  onBrowseLibrary?: () => void;
   canMoveLeft?: boolean;
   canMoveRight?: boolean;
   onMove?: (direction: "left" | "right") => void;
@@ -238,6 +244,10 @@ export function ComparisonColumn({
   defaultBio,
   profileName,
   age,
+  heightCm,
+  educationLevel,
+  hometown,
+  onBrowseLibrary,
   canMoveLeft = false,
   canMoveRight = false,
   onMove,
@@ -638,6 +648,7 @@ export function ComparisonColumn({
                 providerConfig={providerConfig}
                 defaultBio={displayBio}
                 onAddContent={() => setAddContentDialogOpen(true)}
+                onBrowseLibrary={onBrowseLibrary}
                 profileName={profileName}
                 age={age}
               />
@@ -649,8 +660,12 @@ export function ComparisonColumn({
                 providerConfig={providerConfig}
                 defaultBio={displayBio}
                 onAddContent={() => setAddContentDialogOpen(true)}
+                onBrowseLibrary={onBrowseLibrary}
                 profileName={profileName}
                 age={age}
+                heightCm={heightCm}
+                educationLevel={educationLevel}
+                hometown={hometown}
               />
             </TabsContent>
           </div>

@@ -21,6 +21,9 @@ interface StackViewProps {
   providerConfig: ProviderConfig;
   defaultBio?: string;
   onAddContent?: () => void;
+  /** When set, the "Browse photo gallery" link opens the library dialog in
+   *  place instead of navigating to the standalone /photos page. */
+  onBrowseLibrary?: () => void;
   profileName?: string;
   age?: number;
   onFeedbackClick?: (contentId: string) => void;
@@ -32,6 +35,7 @@ export function StackView({
   providerConfig,
   defaultBio,
   onAddContent,
+  onBrowseLibrary,
   profileName,
   age,
   onFeedbackClick,
@@ -202,14 +206,28 @@ export function StackView({
                 <Plus className="mr-2 h-3.5 w-3.5" />
                 Add Photos
               </Button>
-              <Link
-                href="/app/profile-compare/photos"
-                onClick={(e) => e.stopPropagation()}
-                className="text-muted-foreground hover:text-foreground text-xs underline"
-              >
-                <ImageIcon className="mr-1 inline h-3 w-3" />
-                Browse photo gallery
-              </Link>
+              {onBrowseLibrary ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onBrowseLibrary();
+                  }}
+                  className="text-muted-foreground hover:text-foreground text-xs underline"
+                >
+                  <ImageIcon className="mr-1 inline h-3 w-3" />
+                  Browse photo gallery
+                </button>
+              ) : (
+                <Link
+                  href="/app/profile-compare/photos"
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-muted-foreground hover:text-foreground text-xs underline"
+                >
+                  <ImageIcon className="mr-1 inline h-3 w-3" />
+                  Browse photo gallery
+                </Link>
+              )}
             </div>
           </div>
         )}

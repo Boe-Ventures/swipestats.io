@@ -71,18 +71,13 @@ export const profileCompareRouter = createTRPCRouter({
       });
     }),
 
-  // Seed the EXISTING comparison's empty columns from uploaded Tinder photos
-  seedFromTinderMedia: protectedProcedure
-    .input(
-      z.object({
-        comparisonId: z.string(),
-        tinderId: z.string().min(1),
-      }),
-    )
+  // Import the user's uploaded Tinder photos into their shared photo library
+  // (library only — does not auto-fill comparison columns)
+  importTinderMediaToLibrary: protectedProcedure
+    .input(z.object({ tinderId: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
-      return ProfileComparisonService.seedComparisonFromTinderMedia({
+      return ProfileComparisonService.importTinderMediaToLibrary({
         userId: ctx.session.user.id,
-        comparisonId: input.comparisonId,
         tinderId: input.tinderId,
       });
     }),

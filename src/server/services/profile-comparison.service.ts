@@ -1562,56 +1562,30 @@ export async function createFromTinderMedia(data: {
 }
 
 /**
- * Seed an EXISTING comparison's empty columns from the user's uploaded Tinder
- * photos. This is the empty-state "Use my uploaded Tinder photos" path — it
- * fills the comparison the user is already on (consistent with the adjacent
- * "Upload your photos" button) instead of creating a separate one.
+ * Import the user's already-uploaded Tinder photos into their shared photo
+ * library (as `user_photo` attachments) without touching any comparison column.
+ * This backs the empty-state "Use my uploaded Tinder photos" button — like the
+ * adjacent "Upload your photos" action, it only populates the library; the user
+ * then curates each profile deliberately rather than getting the same photos
+ * auto-dumped into every column.
  */
-export async function seedComparisonFromTinderMedia(data: {
+export async function importTinderMediaToLibrary(data: {
   userId: string;
-  comparisonId: string;
   tinderId: string;
 }) {
-  // Verify comparison ownership and find which columns still need content.
-  const comparison = await db.query.profileComparisonTable.findFirst({
-    where: eq(profileComparisonTable.id, data.comparisonId),
-    with: { columns: { with: { content: { columns: { id: true } } } } },
-  });
-
-  if (comparison?.userId !== data.userId) {
-    throw new Error("Comparison not found or unauthorized");
-  }
-
+  // Ownership of the Tinder profile is verified inside the import helper.
   const photoAttachmentIds = await importTinderPhotosAsAttachments(
     data.userId,
     data.tinderId,
   );
 
-  // Seed every empty column so the whole comparison is set up at once. Skip
-  // columns that already have content so we never duplicate into a filled one.
-  const emptyColumns = comparison.columns.filter(
-    (c) => c.content.length === 0,
-  );
-  const targets = emptyColumns.length > 0 ? emptyColumns : comparison.columns;
-
-  for (const column of targets) {
-    await addPhotosToColumn({
-      columnId: column.id,
-      userId: data.userId,
-      photos: photoAttachmentIds.map((attachmentId) => ({ attachmentId })),
-    });
-  }
-
-  return {
-    seededColumns: targets.length,
-    photoCount: photoAttachmentIds.length,
-  };
+  return { photoCount: photoAttachmentIds.length };
 }
 
 export const ProfileComparisonService = {
   create: createComparison,
   createFromTinderMedia,
-  seedComparisonFromTinderMedia,
+  importTinderMediaToLibrary,
   get: getComparison,
   getPublic: getPublicComparison,
   list: listComparisons,

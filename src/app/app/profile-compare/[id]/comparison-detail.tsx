@@ -12,6 +12,7 @@ import {
   Sparkles,
   Loader2,
   Wand2,
+  Images,
 } from "lucide-react";
 import { z } from "zod";
 import Link from "next/link";
@@ -61,6 +62,7 @@ import type { RouterOutputs } from "@/trpc/react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { dataProviderEnum, educationLevelEnum } from "@/server/db/schema";
 import { ComparisonColumn } from "./comparison-column";
+import { PhotoLibraryDialog } from "./photo-library-dialog";
 import { useGalleryUpload } from "../_hooks/useGalleryUpload";
 import { useSubscription } from "@/hooks/useSubscription";
 import { useUpgrade } from "@/contexts/UpgradeContext";
@@ -110,6 +112,7 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [addColumnOpen, setAddColumnOpen] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(false);
   const [newColumnProvider, setNewColumnProvider] = useState<string>("TINDER");
 
   const form = useForm<SettingsFormValues>({
@@ -369,15 +372,19 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
   const canSeedFromTinder =
     !!seedTinderId && (seedMediaQuery.data ?? []).some((m) => m.url);
 
-  // "Use my uploaded Tinder photos" seeds THIS comparison's empty columns (no
-  // navigating off to a separate one), so it's consistent with the "Upload your
-  // photos" button beside it.
-  const seedFromTinderMutation = useMutation(
-    trpc.profileCompare.seedFromTinderMedia.mutationOptions({
-      onSuccess: () => {
-        toast.success("Added your Tinder photos");
+  // "Use my uploaded Tinder photos" imports those photos into the shared library
+  // only — like the "Upload your photos" button beside it, it doesn't auto-fill
+  // the comparison's columns. The user then adds them to each profile.
+  const importTinderMutation = useMutation(
+    trpc.profileCompare.importTinderMediaToLibrary.mutationOptions({
+      onSuccess: (res) => {
+        const n = res.photoCount;
+        toast.success(
+          `Added ${n} Tinder ${n === 1 ? "photo" : "photos"} to your library — now add them to each profile below`,
+        );
+        // Refresh the library so the per-column picker shows the imported photos.
         void queryClient.invalidateQueries(
-          trpc.profileCompare.get.queryOptions({ id: comparison.id }),
+          trpc.blob.getUserUploads.queryOptions({ limit: 100 }),
         );
       },
       onError: (error) => {
@@ -386,46 +393,25 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
     }),
   );
 
-  // Empty-state upload. Uploading to the gallery alone wouldn't clear the empty
-  // state (it keys off column content, not the library), so we upload AND seed
-  // every empty profile in one step — the comparison is then set up side by side
-  // instead of dead-ending in the library.
+  // Empty-state upload. Photos land in the user's library only — we no longer
+  // auto-distribute them into every profile column, so the user curates each
+  // profile deliberately (via the per-column "Add photos" affordance, which
+  // reads from this same library) rather than getting the same photos dumped
+  // everywhere.
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { uploadFiles, isUploading } = useGalleryUpload();
 
-  const addPhotosToColumnMutation = useMutation(
-    trpc.profileCompare.addPhotosToColumn.mutationOptions({
-      onError: (error) => {
-        toast.error(error.message || "Couldn't add your photos");
-      },
-    }),
-  );
-
-  const isSeedingPhotos = isUploading || addPhotosToColumnMutation.isPending;
+  const isSeedingPhotos = isUploading;
 
   const handleEmptyStateUpload = async (files: File[]) => {
-    if (files.length === 0 || comparison.columns.length === 0) return;
+    if (files.length === 0) return;
 
     const attachments = await uploadFiles(files, { successToast: false });
     if (attachments.length === 0) return;
 
-    const photos = attachments.map((a) => ({ attachmentId: a.id }));
-    // Seed every profile so the comparison is set up side by side in one step.
-    await Promise.all(
-      comparison.columns.map((column) =>
-        addPhotosToColumnMutation.mutateAsync({ columnId: column.id, photos }),
-      ),
-    );
-
-    await queryClient.invalidateQueries(
-      trpc.profileCompare.get.queryOptions({ id: comparison.id }),
-    );
-
     const n = attachments.length;
     toast.success(
-      `Added ${n} ${n === 1 ? "photo" : "photos"} to your ${
-        comparison.columns.length === 1 ? "profile" : "profiles"
-      }`,
+      `Added ${n} ${n === 1 ? "photo" : "photos"} to your library — now add them to each profile below`,
     );
   };
 
@@ -454,6 +440,14 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
           )}
         </div>
         <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setLibraryOpen(true)}
+          >
+            <Images className="mr-2 h-4 w-4" />
+            Photos
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -502,9 +496,8 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
               Add your photos to get started
             </EmptyTitle>
             <EmptyDescription className="text-base">
-              Upload your photos and we&apos;ll add them to each profile so you
-              can compare side by side — then reorder, caption, and tweak per
-              app.
+              Upload your photos to your library, then add the ones you want to
+              each profile below — reorder, caption, and tweak per app.
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
@@ -518,21 +511,20 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
               className="hidden"
             />
             <div className="flex flex-col items-center gap-3 sm:flex-row sm:flex-wrap sm:justify-center">
-              {/* Fastest path for returning users — seed from photos they
-                  already uploaded. Creates a separate, pre-filled comparison. */}
+              {/* Fastest path for returning users — pull the photos they already
+                  uploaded with Tinder into their library (no re-uploading). */}
               {canSeedFromTinder && seedTinderId && (
                 <Button
                   size="lg"
                   className="bg-rose-600 hover:bg-rose-500"
                   onClick={() =>
-                    seedFromTinderMutation.mutate({
-                      comparisonId: comparison.id,
+                    importTinderMutation.mutate({
                       tinderId: seedTinderId,
                     })
                   }
-                  disabled={seedFromTinderMutation.isPending}
+                  disabled={importTinderMutation.isPending}
                 >
-                  {seedFromTinderMutation.isPending ? (
+                  {importTinderMutation.isPending ? (
                     <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Adding…
@@ -590,12 +582,13 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
                 </>
               )}
             </p>
-            <Link
-              href="/app/profile-compare/photos"
+            <button
+              type="button"
+              onClick={() => setLibraryOpen(true)}
               className="text-muted-foreground hover:text-foreground text-xs underline underline-offset-2"
             >
               Or manage your photo library
-            </Link>
+            </button>
           </EmptyContent>
         </Empty>
       )}
@@ -610,6 +603,10 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
             defaultBio={comparison.defaultBio || undefined}
             profileName={comparison.profileName || undefined}
             age={comparison.age || undefined}
+            heightCm={comparison.heightCm || undefined}
+            educationLevel={comparison.educationLevel || undefined}
+            hometown={comparison.hometown || undefined}
+            onBrowseLibrary={() => setLibraryOpen(true)}
             canMoveLeft={index > 0}
             canMoveRight={index < comparison.columns.length - 1}
             onMove={(direction) => handleMoveColumn(column.id, direction)}
@@ -654,6 +651,10 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
                   defaultBio={comparison.defaultBio || undefined}
                   profileName={comparison.profileName || undefined}
                   age={comparison.age || undefined}
+                  heightCm={comparison.heightCm || undefined}
+                  educationLevel={comparison.educationLevel || undefined}
+                  hometown={comparison.hometown || undefined}
+                  onBrowseLibrary={() => setLibraryOpen(true)}
                   canMoveLeft={index > 0}
                   canMoveRight={index < comparison.columns.length - 1}
                   onMove={(direction) => handleMoveColumn(column.id, direction)}
@@ -688,6 +689,13 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
           </div>
         )}
       </div>
+
+      {/* Photo library — upload, analyze, build an AI draft, see results */}
+      <PhotoLibraryDialog
+        open={libraryOpen}
+        onOpenChange={setLibraryOpen}
+        comparisonId={comparison.id}
+      />
 
       {/* Settings Dialog */}
       <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>

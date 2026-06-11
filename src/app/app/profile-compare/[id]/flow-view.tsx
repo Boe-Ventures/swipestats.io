@@ -9,7 +9,20 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 import type { RouterOutputs } from "@/trpc/react";
+import type { EducationLevel } from "@/server/db/schema";
 import type { ProviderConfig } from "./provider-config";
+
+// Human-readable labels for the education enum. Used for the "About me" chips
+// so we don't surface raw SCREAMING_SNAKE values to viewers.
+const EDUCATION_LABELS: Record<EducationLevel, string> = {
+  HIGH_SCHOOL: "High school",
+  BACHELORS: "Bachelor's degree",
+  IN_COLLEGE: "In college",
+  IN_GRAD_SCHOOL: "In grad school",
+  MASTERS: "Master's degree",
+  TRADE_SCHOOL: "Trade school",
+  PHD: "PhD",
+};
 
 // Shared by the authed edit page and the public share page. The public column
 // has no `roastStatus`, and this view doesn't need it, so omit it from the prop.
@@ -23,8 +36,14 @@ interface FlowViewProps {
   providerConfig: ProviderConfig;
   defaultBio?: string;
   onAddContent?: () => void;
+  /** When set, the "Browse photo gallery" link opens the library dialog in
+   *  place instead of navigating to the standalone /photos page. */
+  onBrowseLibrary?: () => void;
   profileName?: string;
   age?: number;
+  heightCm?: number;
+  educationLevel?: EducationLevel;
+  hometown?: string;
   onFeedbackClick?: (contentId: string) => void;
   feedbackCounts?: Record<string, number>;
 }
@@ -34,8 +53,12 @@ export function FlowView({
   providerConfig,
   defaultBio,
   onAddContent,
+  onBrowseLibrary,
   profileName,
   age,
+  heightCm,
+  educationLevel,
+  hometown,
   onFeedbackClick,
   feedbackCounts,
 }: FlowViewProps) {
@@ -45,6 +68,17 @@ export function FlowView({
   const displayBio = column.bio || defaultBio || "";
 
   const hasContent = content.length > 0;
+
+  // "About me" chips are driven by the comparison's real profile fields — we
+  // only show the ones that are actually set, and hide the section entirely
+  // when none are.
+  const aboutMeChips = [
+    heightCm ? { emoji: "📏", label: `${heightCm} cm` } : null,
+    educationLevel
+      ? { emoji: "🎓", label: EDUCATION_LABELS[educationLevel] }
+      : null,
+    hometown ? { emoji: "📍", label: hometown } : null,
+  ].filter((chip): chip is { emoji: string; label: string } => chip !== null);
 
   // Hinge interleaves the bio between photos rather than dumping it at the end.
   // Inject it right after the second photo; if there are fewer than two photos
@@ -188,28 +222,28 @@ export function FlowView({
                   photo" to inject after, so the bio lands here instead. */}
               {bioAfterIndex === -1 && bioSection}
 
-              {/* About me Section - Hinge Style */}
-              <div className="bg-white px-4 pb-4">
-                <div className="mb-3">
-                  <h3 className="text-lg font-bold text-gray-900">About me</h3>
+              {/* About me Section - Hinge Style. Driven by the comparison's
+                  real profile fields; hidden entirely when none are set. */}
+              {aboutMeChips.length > 0 && (
+                <div className="bg-white px-4 pb-4">
+                  <div className="mb-3">
+                    <h3 className="text-lg font-bold text-gray-900">About me</h3>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {aboutMeChips.map((chip) => (
+                      <div
+                        key={chip.label}
+                        className="flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2"
+                      >
+                        <span>{chip.emoji}</span>
+                        <span className="text-sm text-gray-900">
+                          {chip.label}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  <div className="flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2">
-                    <span>📏</span>
-                    <span className="text-sm text-gray-900">194 cm</span>
-                  </div>
-                  <div className="flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2">
-                    <span>🏃</span>
-                    <span className="text-sm text-gray-900">Active</span>
-                  </div>
-                  <div className="flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2">
-                    <span>🎓</span>
-                    <span className="text-sm text-gray-900">
-                      Graduate degree
-                    </span>
-                  </div>
-                </div>
-              </div>
+              )}
             </div>
           </ScrollArea>
         ) : (
@@ -231,13 +265,24 @@ export function FlowView({
                 <Plus className="mr-2 h-3.5 w-3.5" />
                 Add Photos
               </Button>
-              <Link
-                href="/app/profile-compare/photos"
-                className="text-muted-foreground hover:text-foreground text-xs underline"
-              >
-                <ImageIcon className="mr-1 inline h-3 w-3" />
-                Browse photo gallery
-              </Link>
+              {onBrowseLibrary ? (
+                <button
+                  type="button"
+                  onClick={onBrowseLibrary}
+                  className="text-muted-foreground hover:text-foreground text-xs underline"
+                >
+                  <ImageIcon className="mr-1 inline h-3 w-3" />
+                  Browse photo gallery
+                </button>
+              ) : (
+                <Link
+                  href="/app/profile-compare/photos"
+                  className="text-muted-foreground hover:text-foreground text-xs underline"
+                >
+                  <ImageIcon className="mr-1 inline h-3 w-3" />
+                  Browse photo gallery
+                </Link>
+              )}
             </div>
           </div>
         )}
