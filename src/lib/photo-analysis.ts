@@ -57,6 +57,15 @@ export const PHOTO_TAG_LABELS: Record<PhotoTag, string> = {
   fish: "Fish",
 };
 
+/**
+ * Bump when the analysis prompt/rubric or model changes in a way that makes
+ * results (especially `score`) non-comparable across runs. Persisted with each
+ * analysis so aggregate research can group or filter by version.
+ *
+ * v2: added the 1-10 research score.
+ */
+export const PHOTO_ANALYSIS_VERSION = 2;
+
 /** The persisted analysis shape, stored under `attachment.metadata.aiAnalysis`. */
 export interface PhotoAnalysis {
   /** Short, friendly name, e.g. "Sunset beach selfie". */
@@ -65,6 +74,14 @@ export interface PhotoAnalysis {
   description: string;
   /** Every applicable tag from `PHOTO_TAGS`. */
   tags: PhotoTag[];
+  /**
+   * 1-10 strength as a dating-app photo. Research-only — collected for
+   * aggregate analysis (e.g. avg photo score vs match rate), deliberately
+   * never shown in the UI. Optional: analyses from before v2 don't have it.
+   */
+  score?: number;
+  /** `PHOTO_ANALYSIS_VERSION` at analysis time. Absent on v1 rows. */
+  version?: number;
   /** ISO timestamp of when this analysis was produced. */
   analyzedAt: string;
   /** The user's steering note, if this was a corrected re-analysis. */
@@ -93,13 +110,17 @@ export function readPhotoAnalysis(metadata: unknown): PhotoAnalysis | null {
   }
 
   const tags = Array.isArray(obj.tags)
-    ? obj.tags.filter((t): t is PhotoTag => typeof t === "string" && TAG_SET.has(t))
+    ? obj.tags.filter(
+        (t): t is PhotoTag => typeof t === "string" && TAG_SET.has(t),
+      )
     : [];
 
   return {
     name: obj.name,
     description: obj.description,
     tags,
+    score: typeof obj.score === "number" ? obj.score : undefined,
+    version: typeof obj.version === "number" ? obj.version : undefined,
     analyzedAt: typeof obj.analyzedAt === "string" ? obj.analyzedAt : "",
     steer: typeof obj.steer === "string" ? obj.steer : undefined,
   };

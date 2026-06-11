@@ -5,7 +5,11 @@ import { and, eq, isNull } from "drizzle-orm";
 import { createTRPCRouter, aiProcedure } from "../trpc";
 import { attachmentTable } from "@/server/db/schema";
 import { analyzePhoto } from "@/server/services/photo-analysis.service";
-import { METADATA_ANALYSIS_KEY, type PhotoAnalysis } from "@/lib/photo-analysis";
+import {
+  METADATA_ANALYSIS_KEY,
+  PHOTO_ANALYSIS_VERSION,
+  type PhotoAnalysis,
+} from "@/lib/photo-analysis";
 
 export const photoAnalysisRouter = createTRPCRouter({
   /**
@@ -47,6 +51,7 @@ export const photoAnalysisRouter = createTRPCRouter({
 
       const analysis: PhotoAnalysis = {
         ...result,
+        version: PHOTO_ANALYSIS_VERSION,
         analyzedAt: new Date().toISOString(),
         steer: input.steer?.trim() || undefined,
       };

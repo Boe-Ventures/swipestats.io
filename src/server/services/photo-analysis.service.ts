@@ -36,6 +36,17 @@ const photoAnalysisSchema = z.object({
     .describe(
       "Every tag from the fixed set that clearly applies to this photo. Only include a tag if it is genuinely visible; an empty list is fine when none fit.",
     ),
+  // Required here so the model always produces it — but optional on the
+  // persisted `PhotoAnalysis` type, since older stored analyses predate it.
+  // Research-only: never shown in the UI (see PHOTO_ANALYSIS_VERSION).
+  score: z
+    .number()
+    .int()
+    .min(1)
+    .max(10)
+    .describe(
+      "How strong this is AS A DATING-APP PHOTO, integer 1-10. Anchors: 2 = clearly weak (blurry, unflattering, awkward crop), 5 = a typical median dating-app photo, 7 = clearly strong (sharp, flattering light, engaging subject), 9-10 = exceptional, scroll-stopping. Use the full range — do not cluster around 6-7.",
+    ),
 });
 
 export type PhotoAnalysisResult = z.infer<typeof photoAnalysisSchema>;
@@ -70,7 +81,8 @@ Return:
   • "activity" = actively doing a sport or active hobby; "gym" = in a gym specifically.
   • "fish" = holding a fish or an angling catch.
   • "sunset" = a sunset/sunrise sky is a clear feature.
-Only include tags you can actually see. It's fine to return one tag, several, or none.${
+Only include tags you can actually see. It's fine to return one tag, several, or none.
+- "score": rate the photo 1-10 as a dating-app photo. 2 = clearly weak (blurry, unflattering, awkward crop), 5 = a typical median dating-app photo, 7 = clearly strong (sharp, flattering light, engaging subject), 9-10 = exceptional and scroll-stopping. This is internal research data the user never sees — be honest, not kind, and use the full range instead of clustering around 6-7.${
     steer?.trim()
       ? `\n\nExtra direction from the user (authoritative — trust it over your first read): ${steer.trim()}`
       : ""
