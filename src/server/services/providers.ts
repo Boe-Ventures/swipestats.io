@@ -58,11 +58,11 @@ const GUIDANCE: Record<GuidedProvider, ProviderGuidance> = {
   },
   HINGE: {
     roastVibe:
-      "Hinge brands itself 'designed to be deleted' and is prompt-and-bio heavy — the prompts are where personality lives. Roast lazy, cliché or one-word prompt answers hardest; an all-photos-no-effort Hinge profile is wasting the format.",
+      "Hinge brands itself 'designed to be deleted' and is prompt-driven — the prompts are where personality lives; there is no central bio on Hinge, so NEVER penalize a missing bio (if one is written, treat it as a bonus). Roast lazy, cliché or one-word prompt answers hardest; an all-photos-no-prompts Hinge profile is wasting the format.",
     photoGuidance:
       "Hinge interleaves photos with prompts and rewards authenticity over polish. Lead with a warm, clear solo face shot, then vary the set (full-body, social, doing-something) so each photo adds a new angle.",
     promptGuidance:
-      "Hinge is prompt-and-bio heavy — the prompts ARE the personality. Favour specific, story-driven or playfully vulnerable answers with a concrete detail someone can reply to. Avoid generic one-word answers.",
+      "Hinge is prompt-driven — the prompts ARE the personality. Favour specific, story-driven or playfully vulnerable answers with a concrete detail someone can reply to. Avoid generic one-word answers.",
   },
   BUMBLE: {
     roastVibe:
