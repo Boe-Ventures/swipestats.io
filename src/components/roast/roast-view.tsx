@@ -94,9 +94,6 @@ export function RoastView({
                     className="object-cover"
                   />
                 )}
-                <span className="absolute top-1 left-1 flex h-5 w-5 items-center justify-center rounded-full bg-black/60 text-[10px] font-bold text-white">
-                  {i + 1}
-                </span>
               </div>
               <div className="min-w-0 flex-1">
                 <Badge

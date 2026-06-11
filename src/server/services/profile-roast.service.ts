@@ -235,6 +235,8 @@ Give:
 4. Bio (or null if there's none): a "roast" of 2 sentences max; and "rewrites" = at least two concise replacement bios in distinct named styles (default "Witty" and "Sincere").
 5. "Real talk": 2-5 prioritized, actionable fixes, each a { title, optional detail, optional action }. Put the highest-impact fix first. Tag "action" when a fix is mechanical: "reorder" (photo order), "editBio", or "addPrompt".
 
+CALIBRATION (photo verdicts): judge each photo by its role in the full set, not in isolation. One or two group shots are an asset (social proof), not a flaw — don't cut a photo just for being a group shot. Reserve the group-shot roast for when groups dominate the set, the subject is genuinely hard to pick out, or Photo 1 is a group shot (the lead must be an unmistakable solo).
+
 CONSISTENCY: your "overall" and "real talk" must agree with your per-photo verdicts. Before citing a count (e.g. "five group shots"), count it against the photos you actually flagged as such — never claim more than that. Don't reference a "Photo N" that doesn't exist (there are only ${photos.length}).
 
 Reference specific details you can actually see in the photos — that's what makes it land.${
@@ -307,6 +309,8 @@ Return a fresh verdict for THIS photo only:
 - "title": a short bold zinger headline (<50 chars).
 - "body": ONE punchy sentence (~140 chars) citing a specific visible detail.
 - "keepOrCut": keep / maybe / cut.
+
+CALIBRATION: a group shot isn't a flaw by itself — it's social proof. Only hold "group photo" against it if the subject is genuinely hard to pick out.
 
 BE CONCISE — one sharp line beats three soft ones.`;
 
