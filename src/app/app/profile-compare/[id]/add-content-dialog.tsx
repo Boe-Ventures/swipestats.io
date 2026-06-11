@@ -467,6 +467,110 @@ export function AddContentDialog({
     </div>
   );
 
+  // Fixed region between the dialog header and the scrollable grid: tabs +
+  // (image) library toolbar. Lives in SimpleDialog's subHeader slot so it
+  // stays put while the grid scrolls — no sticky/z-index tricks needed.
+  const subHeader = (
+    <>
+      <div className="bg-muted grid grid-cols-2 gap-1 rounded-lg p-1">
+        <button
+          type="button"
+          onClick={() => setContentType("image")}
+          className={cn(
+            "inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-semibold transition",
+            contentType === "image"
+              ? "bg-card text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          <ImageIcon className="h-4 w-4" />
+          Photos
+        </button>
+        <button
+          type="button"
+          onClick={() => setContentType("prompt")}
+          className={cn(
+            "inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-semibold transition",
+            contentType === "prompt"
+              ? "bg-card text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          <MessageSquare className="h-4 w-4" />
+          Prompt
+        </button>
+      </div>
+
+      {/* Library toolbar (count + manage actions) */}
+      {contentType === "image" && (
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <span className="text-muted-foreground mr-auto text-sm font-semibold whitespace-nowrap">
+            <b className="text-foreground font-bold">{imagePhotos.length}</b>{" "}
+            {imagePhotos.length === 1 ? "photo" : "photos"} in your library
+          </span>
+          {analyzedCount > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={composeMutation.isPending}
+                >
+                  {composeMutation.isPending ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Wand2 className="mr-2 h-4 w-4" />
+                  )}
+                  Build with AI
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>
+                  Add an AI draft column for
+                </DropdownMenuLabel>
+                {COMPOSE_PROVIDERS.map((app) => (
+                  <DropdownMenuItem
+                    key={app.key}
+                    onClick={() => handleCompose(app.key)}
+                  >
+                    {app.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+          {unanalyzedCount > 0 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void handleAnalyzeAll()}
+              disabled={analyzingIds.size > 0}
+            >
+              {analyzingIds.size > 0 ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Sparkles className="mr-2 h-4 w-4" />
+              )}
+              Analyze {unanalyzedCount}
+            </Button>
+          )}
+          <Button
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+            disabled={isUploading}
+          >
+            {isUploading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Upload className="mr-2 h-4 w-4" />
+            )}
+            Upload
+          </Button>
+        </div>
+      )}
+    </>
+  );
+
   return (
     <>
       <SimpleDialog
@@ -480,6 +584,7 @@ export function AddContentDialog({
         onOpenChange={handleClose}
         size="lg"
         scrollable
+        subHeader={subHeader}
         footer={contentType === "image" ? imageFooter : promptFooter}
       >
         {/* Hidden file input — driven by the Upload button + upload tile. */}
@@ -491,106 +596,6 @@ export function AddContentDialog({
           multiple
           className="hidden"
         />
-
-        {/* Pinned header: tabs + (image) toolbar stay put while the grid scrolls. */}
-        <div className="bg-background sticky top-0 z-10 -mx-1 px-1 pb-3">
-          <div className="bg-muted grid grid-cols-2 gap-1 rounded-lg p-1">
-            <button
-              type="button"
-              onClick={() => setContentType("image")}
-              className={cn(
-                "inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-semibold transition",
-                contentType === "image"
-                  ? "bg-card text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              <ImageIcon className="h-4 w-4" />
-              Photos
-            </button>
-            <button
-              type="button"
-              onClick={() => setContentType("prompt")}
-              className={cn(
-                "inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-semibold transition",
-                contentType === "prompt"
-                  ? "bg-card text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              <MessageSquare className="h-4 w-4" />
-              Prompt
-            </button>
-          </div>
-
-          {/* Library toolbar (count + manage actions) */}
-          {contentType === "image" && (
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <span className="text-muted-foreground mr-auto text-sm font-semibold whitespace-nowrap">
-                <b className="text-foreground font-bold">{imagePhotos.length}</b>{" "}
-                {imagePhotos.length === 1 ? "photo" : "photos"} in your library
-              </span>
-              {analyzedCount > 0 && (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      disabled={composeMutation.isPending}
-                    >
-                      {composeMutation.isPending ? (
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      ) : (
-                        <Wand2 className="mr-2 h-4 w-4" />
-                      )}
-                      Build with AI
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>
-                      Add an AI draft column for
-                    </DropdownMenuLabel>
-                    {COMPOSE_PROVIDERS.map((app) => (
-                      <DropdownMenuItem
-                        key={app.key}
-                        onClick={() => handleCompose(app.key)}
-                      >
-                        {app.label}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              )}
-              {unanalyzedCount > 0 && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => void handleAnalyzeAll()}
-                  disabled={analyzingIds.size > 0}
-                >
-                  {analyzingIds.size > 0 ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Sparkles className="mr-2 h-4 w-4" />
-                  )}
-                  Analyze {unanalyzedCount}
-                </Button>
-              )}
-              <Button
-                size="sm"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isUploading}
-              >
-                {isUploading ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Upload className="mr-2 h-4 w-4" />
-                )}
-                Upload
-              </Button>
-            </div>
-          )}
-        </div>
 
         {/* ===== IMAGE TAB ===== */}
         {contentType === "image" &&

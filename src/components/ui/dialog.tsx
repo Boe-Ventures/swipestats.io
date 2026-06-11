@@ -340,6 +340,13 @@ type SimpleDialogProps = {
   description?: string;
   children: React.ReactNode;
   trigger?: React.ReactNode;
+  /**
+   * Fixed content rendered between the header and the (scrollable) body —
+   * e.g. tabs or a toolbar that should stay put while the body scrolls.
+   * Use this instead of `sticky` inside the body: the body's padding offsets
+   * sticky children, letting scrolled content peek through above them.
+   */
+  subHeader?: React.ReactNode;
   footer?: React.ReactNode;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
@@ -356,6 +363,7 @@ export function SimpleDialog({
   description,
   children,
   trigger,
+  subHeader,
   footer,
   open,
   onOpenChange,
@@ -373,7 +381,15 @@ export function SimpleDialog({
     >
       {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
       <DialogContent
-        className={className}
+        className={cn(
+          className,
+          // Cap the WHOLE dialog (header included) at 90dvh and let the body
+          // row shrink — capping only the body would push the total past the
+          // viewport by the header's height.
+          scrollable &&
+            footer &&
+            "max-h-[90dvh] grid-rows-[auto_minmax(0,1fr)]",
+        )}
         showCloseButton={showCloseButton}
         scrollable={scrollable && !footer} // Disable DialogContent's scrollable if we have footer (we'll handle it manually)
         size={size}
@@ -385,15 +401,26 @@ export function SimpleDialog({
 
         {/* Handle scrollable content with footer - use special layout on both desktop and mobile */}
         {scrollable && footer ? (
-          <div className="flex max-h-[90dvh] min-h-0 flex-1 flex-col">
-            <div className="flex-1 overflow-y-auto px-1 py-4">{children}</div>
+          <div className="flex min-h-0 flex-col">
+            {subHeader && <div className="px-1 pt-4 pb-3">{subHeader}</div>}
+            <div
+              className={cn(
+                "min-h-0 flex-1 overflow-y-auto px-1 py-4",
+                subHeader && "pt-0",
+              )}
+            >
+              {children}
+            </div>
             <DialogFooter className="border-t py-3">
               <div className="w-full">{footer}</div>
             </DialogFooter>
           </div>
         ) : (
           <>
-            <div className="px-1 py-4">{children}</div>
+            {subHeader && <div className="px-1 pt-4 pb-3">{subHeader}</div>}
+            <div className={cn("px-1 py-4", subHeader && "pt-0")}>
+              {children}
+            </div>
             {footer && (
               <DialogFooter className="border-t py-3">
                 <div className="w-full">{footer}</div>
