@@ -336,7 +336,7 @@ export {
 
 // SimpleDialog - A less verbose way to create dialogs
 type SimpleDialogProps = {
-  title: string;
+  title: React.ReactNode;
   description?: string;
   children: React.ReactNode;
   trigger?: React.ReactNode;

@@ -8,14 +8,26 @@ import {
   Loader2,
   Plus,
   Check,
+  CheckCheck,
   List,
+  Sparkles,
+  Wand2,
+  Upload,
 } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 
+import { cn } from "@/components/ui/lib/utils";
 import { Button } from "@/components/ui/button";
 import { SimpleDialog } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "@/components/ui/toast";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -24,6 +36,15 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { PromptSelector } from "./prompt-selector";
 import { PromptSuggestions } from "./prompt-suggestions";
 import { useGalleryUpload } from "../_hooks/useGalleryUpload";
+import { useSubscription } from "@/hooks/useSubscription";
+import { useUpgrade } from "@/contexts/UpgradeContext";
+import { readPhotoAnalysis } from "@/lib/photo-analysis";
+import { formatFileSize } from "@/lib/format";
+import {
+  COMPOSE_PROVIDERS,
+  composeProviderLabel,
+  type ComposeProvider,
+} from "../compose-providers";
 import { isPromptSource, type Prompt } from "@/lib/prompt-bank";
 
 /** A prompt already on this profile — shown for context in the Prompt tab. */
@@ -45,6 +66,11 @@ interface AddContentDialogProps {
 
 type ContentType = "image" | "prompt";
 
+/** "HINGE" → "Hinge" for the heading; the raw enum stays the picker/prompt key. */
+function titleCaseProvider(name: string) {
+  return name.charAt(0).toUpperCase() + name.slice(1).toLowerCase();
+}
+
 export function AddContentDialog({
   open,
   onOpenChange,
@@ -64,6 +90,9 @@ export function AddContentDialog({
   );
   const [photoCaption, setPhotoCaption] = useState("");
 
+  // Library management state (folded in from the standalone photo library)
+  const [analyzingIds, setAnalyzingIds] = useState<Set<string>>(new Set());
+
   // Prompt state
   const [prompt, setPrompt] = useState("");
   const [answer, setAnswer] = useState("");
@@ -75,11 +104,24 @@ export function AddContentDialog({
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const { uploadFiles, isUploading } = useGalleryUpload();
+  const { effectiveTier } = useSubscription();
+  const { openUpgradeModal } = useUpgrade();
+  const isPaid = effectiveTier === "PLUS" || effectiveTier === "ELITE";
 
-  // Fetch user's gallery photos
+  const displayApp = titleCaseProvider(appName);
+
+  // Fetch user's gallery photos (the shared library)
   const { data: galleryPhotos, isLoading: isLoadingGallery } = useQuery(
     trpc.blob.getUserUploads.queryOptions({ limit: 100 }),
   );
+
+  const imagePhotos = (galleryPhotos ?? []).filter((p) =>
+    p.mimeType.startsWith("image/"),
+  );
+  const unanalyzedCount = imagePhotos.filter(
+    (p) => !readPhotoAnalysis(p.metadata),
+  ).length;
+  const analyzedCount = imagePhotos.length - unanalyzedCount;
 
   const addPhotosMutation = useMutation(
     trpc.profileCompare.addPhotosToColumn.mutationOptions({
@@ -108,14 +150,33 @@ export function AddContentDialog({
     }),
   );
 
+  const analyzeMutation = useMutation(
+    trpc.photoAnalysis.analyze.mutationOptions(),
+  );
+
+  const composeMutation = useMutation(
+    trpc.profileCompose.compose.mutationOptions({
+      onSuccess: (res) => {
+        toast.success(
+          `Added a ${composeProviderLabel(res.provider)} draft to this comparison`,
+        );
+        void queryClient.invalidateQueries(
+          trpc.profileCompare.get.queryOptions({ id: comparisonId }),
+        );
+        onOpenChange(false);
+      },
+      onError: (error) =>
+        toast.error(error.message || "Couldn't compose a profile"),
+    }),
+  );
+
   const handleTogglePhoto = (photoId: string) => {
-    const newSelected = new Set(selectedPhotoIds);
-    if (newSelected.has(photoId)) {
-      newSelected.delete(photoId);
-    } else {
-      newSelected.add(photoId);
-    }
-    setSelectedPhotoIds(newSelected);
+    setSelectedPhotoIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(photoId)) next.delete(photoId);
+      else next.add(photoId);
+      return next;
+    });
   };
 
   const handleAddSelectedPhotos = async () => {
@@ -136,7 +197,7 @@ export function AddContentDialog({
       });
 
       toast.success(
-        `${ids.length} ${ids.length === 1 ? "photo" : "photos"} added`,
+        `${ids.length} ${ids.length === 1 ? "photo" : "photos"} added to ${displayApp}`,
       );
 
       setSelectedPhotoIds(new Set());
@@ -147,29 +208,23 @@ export function AddContentDialog({
     }
   };
 
-  // Upload one or more new photos to the gallery, then add them all to this
-  // column. The gallery itself is a shared library — newly uploaded photos also
-  // become available to every other profile.
+  // Upload new photos into the shared library. They appear in the grid and are
+  // pre-selected so the user can add them with one more tap (the library nature
+  // is preserved — they're available to every comparison too).
   const handleUploadNewPhotos = async (files: File[]) => {
     if (files.length === 0) return;
 
     const attachments = await uploadFiles(files, { successToast: false });
     if (attachments.length === 0) return;
 
-    try {
-      await addPhotosMutation.mutateAsync({
-        columnId,
-        photos: attachments.map((attachment) => ({
-          attachmentId: attachment.id,
-        })),
-      });
-      toast.success(
-        `${attachments.length} ${attachments.length === 1 ? "photo" : "photos"} added`,
-      );
-      onOpenChange(false);
-    } catch (error) {
-      console.error("Failed to add uploaded photos:", error);
-    }
+    setSelectedPhotoIds((prev) => {
+      const next = new Set(prev);
+      attachments.forEach((a) => next.add(a.id));
+      return next;
+    });
+    toast.success(
+      `${attachments.length} ${attachments.length === 1 ? "photo" : "photos"} uploaded — tap Add to put ${attachments.length === 1 ? "it" : "them"} on ${displayApp}`,
+    );
   };
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -179,10 +234,68 @@ export function AddContentDialog({
     void handleUploadNewPhotos(files);
   };
 
+  // "Analyze N" runs a bounded worker pool so we never burst a hundred vision
+  // calls at once; each card flips to "Analyzed" as it finishes.
+  const handleAnalyzeAll = async () => {
+    if (!isPaid) {
+      openUpgradeModal({ feature: "aiRoast" });
+      return;
+    }
+    const targets = imagePhotos.filter((p) => !readPhotoAnalysis(p.metadata));
+    if (targets.length === 0) return;
+
+    toast.info(
+      `Analyzing ${targets.length} ${targets.length === 1 ? "photo" : "photos"}…`,
+    );
+    setAnalyzingIds(new Set(targets.map((t) => t.id)));
+
+    const queue = [...targets];
+    const CONCURRENCY = 5;
+    let failed = 0;
+
+    const worker = async () => {
+      while (queue.length > 0) {
+        const target = queue.shift();
+        if (!target) break;
+        try {
+          await analyzeMutation.mutateAsync({ attachmentId: target.id });
+        } catch {
+          failed++;
+        } finally {
+          setAnalyzingIds((prev) => {
+            const next = new Set(prev);
+            next.delete(target.id);
+            return next;
+          });
+        }
+        void queryClient.invalidateQueries(
+          trpc.blob.getUserUploads.queryOptions({ limit: 100 }),
+        );
+      }
+    };
+
+    await Promise.all(
+      Array.from({ length: Math.min(CONCURRENCY, queue.length) }, worker),
+    );
+
+    if (failed > 0) {
+      toast.error(
+        `${failed} ${failed === 1 ? "photo" : "photos"} couldn't be analyzed`,
+      );
+    }
+  };
+
+  const handleCompose = (provider: ComposeProvider) => {
+    if (!isPaid) {
+      openUpgradeModal({ feature: "aiRoast" });
+      return;
+    }
+    composeMutation.mutate({ provider, comparisonId });
+  };
+
   const handleSelectPrompt = (selectedPrompt: Prompt) => {
     setPrompt(selectedPrompt.text);
     setSelectedPromptImageId(selectedPrompt.imageAttachmentId);
-    // Keep focus on answer input after selecting prompt
   };
 
   // Drop an AI-suggested prompt into the custom-prompt form and focus the
@@ -237,7 +350,6 @@ export function AddContentDialog({
         attachmentId: selectedPromptImageId, // Include image if prompt has one
       });
 
-      // Reset form
       setPrompt("");
       setAnswer("");
       setSelectedPromptImageId(undefined);
@@ -256,8 +368,12 @@ export function AddContentDialog({
     if (await submitPrompt()) promptInputRef.current?.focus();
   };
 
+  const clearSelection = () => {
+    setSelectedPhotoIds(new Set());
+    setPhotoCaption("");
+  };
+
   const handleClose = () => {
-    // Reset form
     setPrompt("");
     setAnswer("");
     setPhotoCaption("");
@@ -266,313 +382,411 @@ export function AddContentDialog({
     onOpenChange(false);
   };
 
+  const selectedCount = selectedPhotoIds.size;
+  const promptValid = !!prompt.trim() && !!answer.trim();
+
+  // ---- Sticky footer (changes with tab + selection) ----
+  const imageFooter = (
+    <div className="w-full">
+      {/* Caption only for a single selected photo (matches the add payload). */}
+      {selectedCount === 1 && (
+        <div className="mb-3">
+          <Label htmlFor="add-caption" className="text-xs">
+            Caption{" "}
+            <span className="text-muted-foreground font-normal">
+              (optional · shows on the card)
+            </span>
+          </Label>
+          <Input
+            id="add-caption"
+            value={photoCaption}
+            onChange={(e) => setPhotoCaption(e.target.value)}
+            placeholder="e.g., Too tall to be a hobbit"
+            className="mt-1.5"
+          />
+        </div>
+      )}
+      <div className="flex items-center gap-3">
+        {selectedCount === 0 ? (
+          <div className="text-muted-foreground flex items-center gap-2 text-xs">
+            <CheckCheck className="h-4 w-4" />
+            Tap photos to add them to {displayApp}
+          </div>
+        ) : (
+          <>
+            <span className="text-muted-foreground text-sm">
+              <b className="text-foreground font-bold">{selectedCount}</b>{" "}
+              selected
+            </span>
+            <div className="flex-1" />
+            <button
+              type="button"
+              onClick={clearSelection}
+              className="text-muted-foreground hover:text-foreground text-xs font-semibold underline underline-offset-2"
+            >
+              Clear
+            </button>
+            <Button
+              onClick={handleAddSelectedPhotos}
+              disabled={addPhotosMutation.isPending}
+              className="whitespace-nowrap"
+            >
+              {addPhotosMutation.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Plus className="mr-2 h-4 w-4" />
+              )}
+              Add {selectedCount} {selectedCount === 1 ? "photo" : "photos"}
+            </Button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+
+  const promptFooter = (
+    <div className="flex w-full items-center justify-end gap-2">
+      <Button
+        variant="outline"
+        onClick={handleAddAnotherPrompt}
+        disabled={!promptValid || addContentMutation.isPending}
+      >
+        {addContentMutation.isPending ? (
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        ) : (
+          <Plus className="mr-2 h-4 w-4" />
+        )}
+        Add &amp; add another
+      </Button>
+      <Button
+        onClick={handleAddPrompt}
+        disabled={!promptValid || addContentMutation.isPending}
+      >
+        Add prompt
+      </Button>
+    </div>
+  );
+
   return (
     <>
       <SimpleDialog
-        title={`Add Content to ${appName}`}
-        description="Add photos or prompts to your profile"
+        title={
+          <>
+            Add content to <span className="text-primary">{displayApp}</span>
+          </>
+        }
+        description="Pick from your photo library, upload new, or add a prompt."
         open={open}
         onOpenChange={handleClose}
         size="lg"
         scrollable
+        footer={contentType === "image" ? imageFooter : promptFooter}
       >
-        <Tabs
-          value={contentType}
-          onValueChange={(v) => setContentType(v as ContentType)}
-        >
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="image">
-              <ImageIcon className="mr-2 h-4 w-4" />
-              Image
-            </TabsTrigger>
-            <TabsTrigger value="prompt">
-              <MessageSquare className="mr-2 h-4 w-4" />
+        {/* Hidden file input — driven by the Upload button + upload tile. */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          onChange={handleFileInputChange}
+          accept="image/jpeg,image/png,image/webp,image/gif"
+          multiple
+          className="hidden"
+        />
+
+        {/* Pinned header: tabs + (image) toolbar stay put while the grid scrolls. */}
+        <div className="bg-background sticky top-0 z-10 -mx-1 px-1 pb-3">
+          <div className="bg-muted grid grid-cols-2 gap-1 rounded-lg p-1">
+            <button
+              type="button"
+              onClick={() => setContentType("image")}
+              className={cn(
+                "inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-semibold transition",
+                contentType === "image"
+                  ? "bg-card text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <ImageIcon className="h-4 w-4" />
+              Photos
+            </button>
+            <button
+              type="button"
+              onClick={() => setContentType("prompt")}
+              className={cn(
+                "inline-flex items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-semibold transition",
+                contentType === "prompt"
+                  ? "bg-card text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <MessageSquare className="h-4 w-4" />
               Prompt
-            </TabsTrigger>
-          </TabsList>
+            </button>
+          </div>
 
-          {/* Image Tab */}
-          <TabsContent value="image" className="space-y-4">
-            <div className="space-y-4 py-4">
-              {/* Upload New Button */}
-              <div>
-                <Label>Upload New Images</Label>
-                <p className="text-muted-foreground mt-1 text-sm">
-                  JPG, PNG, WebP, or GIF • Max 10MB
-                </p>
-
-                {/* Hidden file input */}
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  onChange={handleFileInputChange}
-                  accept="image/jpeg,image/png,image/webp,image/gif"
-                  multiple
-                  className="hidden"
-                />
-
-                <Button
-                  onClick={() => fileInputRef.current?.click()}
-                  disabled={isUploading}
-                  variant="outline"
-                  className="mt-2 w-full"
-                >
-                  {isUploading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Uploading...
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Upload New Images
-                    </>
-                  )}
-                </Button>
-              </div>
-
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background text-muted-foreground px-2">
-                    Or choose from gallery
-                  </span>
-                </div>
-              </div>
-
-              {/* Gallery Selection */}
-              <div>
-                <Label>Your Photos ({galleryPhotos?.length || 0})</Label>
-
-                {isLoadingGallery ? (
-                  <div className="mt-2 grid grid-cols-3 gap-2">
-                    {[1, 2, 3, 4, 5, 6].map((i) => (
-                      <Skeleton key={i} className="aspect-square" />
+          {/* Library toolbar (count + manage actions) */}
+          {contentType === "image" && (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className="text-muted-foreground mr-auto text-sm font-semibold whitespace-nowrap">
+                <b className="text-foreground font-bold">{imagePhotos.length}</b>{" "}
+                {imagePhotos.length === 1 ? "photo" : "photos"} in your library
+              </span>
+              {analyzedCount > 0 && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={composeMutation.isPending}
+                    >
+                      {composeMutation.isPending ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Wand2 className="mr-2 h-4 w-4" />
+                      )}
+                      Build with AI
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>
+                      Add an AI draft column for
+                    </DropdownMenuLabel>
+                    {COMPOSE_PROVIDERS.map((app) => (
+                      <DropdownMenuItem
+                        key={app.key}
+                        onClick={() => handleCompose(app.key)}
+                      >
+                        {app.label}
+                      </DropdownMenuItem>
                     ))}
-                  </div>
-                ) : !galleryPhotos || galleryPhotos.length === 0 ? (
-                  <div className="bg-muted/50 mt-2 flex flex-col items-center justify-center rounded-lg border border-dashed py-8">
-                    <ImageIcon className="text-muted-foreground mb-2 h-8 w-8" />
-                    <p className="text-muted-foreground text-sm">
-                      No photos in gallery
-                    </p>
-                    <p className="text-muted-foreground text-xs">
-                      Upload your first photo above
-                    </p>
-                  </div>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+              {unanalyzedCount > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => void handleAnalyzeAll()}
+                  disabled={analyzingIds.size > 0}
+                >
+                  {analyzingIds.size > 0 ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Sparkles className="mr-2 h-4 w-4" />
+                  )}
+                  Analyze {unanalyzedCount}
+                </Button>
+              )}
+              <Button
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+              >
+                {isUploading ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
-                  <>
-                    <div className="mt-2 grid grid-cols-3 gap-2">
-                      {galleryPhotos
-                        .filter((photo) => photo.mimeType.startsWith("image/"))
-                        .map((photo) => {
-                          const isSelected = selectedPhotoIds.has(photo.id);
-                          return (
-                            <button
-                              key={photo.id}
-                              onClick={() => handleTogglePhoto(photo.id)}
-                              className={`group relative aspect-square overflow-hidden rounded-md border-2 transition-all ${
-                                isSelected
-                                  ? "border-primary ring-primary/20 ring-2"
-                                  : "hover:border-muted-foreground/50 border-transparent"
-                              }`}
-                            >
-                              <Image
-                                src={photo.url}
-                                alt={photo.originalFilename}
-                                fill
-                                className="object-cover"
-                              />
-                              {isSelected && (
-                                <>
-                                  <div className="absolute inset-0 bg-black/20" />
-                                  <div className="bg-primary absolute top-1.5 right-1.5 flex h-6 w-6 items-center justify-center rounded-full shadow-md ring-2 ring-white">
-                                    <Check className="h-4 w-4 text-white" />
-                                  </div>
-                                </>
-                              )}
-                            </button>
-                          );
-                        })}
+                  <Upload className="mr-2 h-4 w-4" />
+                )}
+                Upload
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* ===== IMAGE TAB ===== */}
+        {contentType === "image" &&
+          (isLoadingGallery ? (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <Skeleton key={i} className="aspect-[4/5] rounded-xl" />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {/* Upload tile — first cell */}
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="border-border hover:border-primary hover:bg-primary/5 hover:text-primary text-muted-foreground group flex min-h-full flex-col items-center justify-center gap-2 rounded-xl border-[1.5px] border-dashed p-4 text-center transition"
+              >
+                <span className="bg-card grid h-9 w-9 place-items-center rounded-[11px] shadow-sm">
+                  {isUploading ? (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  ) : (
+                    <Upload className="h-5 w-5" />
+                  )}
+                </span>
+                <b className="text-foreground group-hover:text-primary text-[12.5px] font-bold whitespace-nowrap">
+                  Upload new
+                </b>
+                <span className="text-[10.5px] leading-tight">
+                  JPG, PNG, WebP · 10MB
+                </span>
+              </button>
+
+              {/* Photo cards */}
+              {imagePhotos.map((photo) => {
+                const isSelected = selectedPhotoIds.has(photo.id);
+                const analyzed = !!readPhotoAnalysis(photo.metadata);
+                const isAnalyzing = analyzingIds.has(photo.id);
+                return (
+                  <button
+                    key={photo.id}
+                    type="button"
+                    onClick={() => handleTogglePhoto(photo.id)}
+                    className={cn(
+                      "group bg-card relative flex flex-col overflow-hidden rounded-xl border-[1.5px] text-left transition hover:-translate-y-0.5 hover:shadow-md",
+                      isSelected
+                        ? "border-primary ring-primary/15 ring-[3px]"
+                        : "border-border",
+                    )}
+                  >
+                    <div className="bg-muted relative aspect-[4/5] overflow-hidden">
+                      <Image
+                        src={photo.url}
+                        alt={photo.originalFilename}
+                        fill
+                        className="object-cover transition group-hover:scale-[1.03]"
+                      />
+                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/15 via-transparent to-black/40" />
+
+                      {/* select check */}
+                      <span
+                        className={cn(
+                          "absolute top-2 right-2 z-[3] grid h-6 w-6 place-items-center rounded-full border-[1.5px] backdrop-blur transition",
+                          isSelected
+                            ? "border-primary bg-primary"
+                            : "border-white/90 bg-white/85",
+                        )}
+                      >
+                        <Check
+                          className={cn(
+                            "h-3.5 w-3.5",
+                            isSelected ? "text-white" : "text-transparent",
+                          )}
+                        />
+                      </span>
+
+                      {/* analyzed status chip */}
+                      <span className="absolute bottom-2 left-2 z-[3] inline-flex items-center gap-1.5 rounded-full bg-black/40 py-[3px] pr-2 pl-1.5 text-[10.5px] font-semibold text-white backdrop-blur">
+                        <span
+                          className={cn(
+                            "h-1.5 w-1.5 rounded-full",
+                            analyzed ? "bg-emerald-400" : "bg-amber-400",
+                          )}
+                        />
+                        {analyzed ? "Analyzed" : "Not analyzed"}
+                      </span>
+
+                      {/* analyzing overlay */}
+                      {isAnalyzing && (
+                        <div className="absolute inset-0 z-[4] grid place-items-center bg-black/50">
+                          <span className="flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1.5 text-xs font-medium text-white">
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            Analyzing…
+                          </span>
+                        </div>
+                      )}
                     </div>
 
-                    {selectedPhotoIds.size > 0 && (
-                      <>
-                        {/* Caption input - only show for single photo */}
-                        {selectedPhotoIds.size === 1 && (
-                          <div className="mt-4">
-                            <Label htmlFor="photoCaption">
-                              Caption (optional)
-                            </Label>
-                            <Input
-                              id="photoCaption"
-                              value={photoCaption}
-                              onChange={(e) => setPhotoCaption(e.target.value)}
-                              placeholder="e.g., Too tall to be a hobbit"
-                              className="mt-1"
-                            />
-                            <p className="text-muted-foreground mt-1 text-xs">
-                              Add a caption like in Tinder
-                            </p>
-                          </div>
-                        )}
-
-                        <Button
-                          onClick={handleAddSelectedPhotos}
-                          disabled={addPhotosMutation.isPending}
-                          className="mt-4 w-full"
-                        >
-                          {addPhotosMutation.isPending ? (
-                            <>
-                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                              Adding...
-                            </>
-                          ) : (
-                            <>
-                              <Plus className="mr-2 h-4 w-4" />
-                              Add {selectedPhotoIds.size}{" "}
-                              {selectedPhotoIds.size === 1 ? "Photo" : "Photos"}
-                            </>
-                          )}
-                        </Button>
-                      </>
-                    )}
-                  </>
-                )}
-              </div>
-            </div>
-          </TabsContent>
-
-          {/* Prompt Tab */}
-          <TabsContent value="prompt" className="space-y-4">
-            <div className="space-y-4 py-4">
-              {/* Your current prompts on this profile — context before adding */}
-              {existingPrompts.length > 0 && (
-                <div className="space-y-2">
-                  <Label>On this profile ({existingPrompts.length})</Label>
-                  <div className="space-y-1.5">
-                    {existingPrompts.map((p) => (
-                      <div
-                        key={p.id}
-                        className="bg-muted/30 rounded-md border px-3 py-2"
-                      >
-                        <p className="text-xs font-medium">{p.prompt}</p>
-                        {p.answer && (
-                          <p className="text-muted-foreground line-clamp-1 text-xs italic">
-                            {p.answer}
-                          </p>
-                        )}
+                    <div className="px-2.5 pt-2 pb-2.5">
+                      <div className="truncate text-[12.5px] font-semibold">
+                        {photo.originalFilename}
                       </div>
-                    ))}
-                  </div>
+                      <div className="text-muted-foreground truncate text-[11px]">
+                        {formatFileSize(photo.size)} ·{" "}
+                        {formatDistanceToNow(new Date(photo.createdAt), {
+                          addSuffix: true,
+                        })}
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          ))}
+
+        {/* ===== PROMPT TAB ===== */}
+        {contentType === "prompt" && (
+          <div className="space-y-4">
+            {/* Your current prompts on this profile — context before adding */}
+            {existingPrompts.length > 0 && (
+              <div className="space-y-2">
+                <Label>On this profile ({existingPrompts.length})</Label>
+                <div className="space-y-1.5">
+                  {existingPrompts.map((p) => (
+                    <div
+                      key={p.id}
+                      className="bg-muted/30 rounded-md border px-3 py-2"
+                    >
+                      <p className="text-xs font-medium">{p.prompt}</p>
+                      {p.answer && (
+                        <p className="text-muted-foreground line-clamp-1 text-xs italic">
+                          {p.answer}
+                        </p>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              )}
-
-              {/* AI prompt suggestions */}
-              <PromptSuggestions
-                columnId={columnId}
-                onAdd={handleAddSuggestion}
-                onUsePrompt={handleUseSuggestedPrompt}
-              />
-
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-background text-muted-foreground px-2">
-                    Or browse &amp; write your own
-                  </span>
-                </div>
               </div>
+            )}
 
-              {/* Browse Prompts Button */}
-              <div>
-                <Label>Choose a Prompt</Label>
-                <Button
-                  variant="outline"
-                  onClick={() => setPromptSelectorOpen(true)}
-                  className="mt-1 w-full"
-                >
-                  <List className="mr-2 h-4 w-4" />
-                  Browse Prompt Bank
-                </Button>
-                <p className="text-muted-foreground mt-1 text-xs">
-                  Or type your own custom prompt below
-                </p>
+            {/* AI prompt suggestions */}
+            <PromptSuggestions
+              columnId={columnId}
+              onAdd={handleAddSuggestion}
+              onUsePrompt={handleUseSuggestedPrompt}
+            />
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
               </div>
-
-              <div>
-                <Label htmlFor="prompt">Prompt</Label>
-                <Input
-                  ref={promptInputRef}
-                  id="prompt"
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="e.g., My simple pleasures"
-                  className="mt-1"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="answer">Answer</Label>
-                <textarea
-                  ref={answerInputRef}
-                  id="answer"
-                  value={answer}
-                  onChange={(e) => setAnswer(e.target.value)}
-                  placeholder="e.g., Coffee and long walks"
-                  className="border-input bg-background mt-1 min-h-24 w-full rounded-md border px-3 py-2 text-sm"
-                />
-              </div>
-
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={handleAddAnotherPrompt}
-                  disabled={
-                    !prompt.trim() ||
-                    !answer.trim() ||
-                    addContentMutation.isPending
-                  }
-                  className="flex-1"
-                >
-                  {addContentMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Adding...
-                    </>
-                  ) : (
-                    <>
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add &amp; Add Another
-                    </>
-                  )}
-                </Button>
-                <Button
-                  onClick={handleAddPrompt}
-                  disabled={
-                    !prompt.trim() ||
-                    !answer.trim() ||
-                    addContentMutation.isPending
-                  }
-                  className="flex-1"
-                >
-                  {addContentMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Adding...
-                    </>
-                  ) : (
-                    "Add & Close"
-                  )}
-                </Button>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background text-muted-foreground px-2">
+                  Or write your own
+                </span>
               </div>
             </div>
-          </TabsContent>
-        </Tabs>
+
+            {/* Browse Prompts Button */}
+            <div>
+              <Label>Choose a Prompt</Label>
+              <Button
+                variant="outline"
+                onClick={() => setPromptSelectorOpen(true)}
+                className="mt-1 w-full"
+              >
+                <List className="mr-2 h-4 w-4" />
+                Browse {displayApp} prompts
+              </Button>
+            </div>
+
+            <div>
+              <Label htmlFor="prompt">Prompt</Label>
+              <Input
+                ref={promptInputRef}
+                id="prompt"
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder="e.g., My simple pleasures"
+                className="mt-1"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="answer">Answer</Label>
+              <textarea
+                ref={answerInputRef}
+                id="answer"
+                value={answer}
+                onChange={(e) => setAnswer(e.target.value)}
+                placeholder="e.g., Coffee and long walks"
+                className="border-input bg-background mt-1 min-h-24 w-full rounded-md border px-3 py-2 text-sm"
+              />
+            </div>
+          </div>
+        )}
       </SimpleDialog>
 
       {/* Prompt Selector Dialog */}
