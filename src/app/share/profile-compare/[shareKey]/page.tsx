@@ -212,7 +212,8 @@ export default function SharedComparisonPage() {
                       value={column.id}
                       className="flex-1"
                     >
-                      {column.title || column.dataProvider}
+                      {column.title ||
+                        getProviderConfig(column.dataProvider).name}
                     </TabsTrigger>
                   ))}
                 </TabsList>

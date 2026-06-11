@@ -2,7 +2,14 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { ArrowRight, ImageOff, Layers, List, MessageCircle } from "lucide-react";
+import { useQueryState } from "nuqs";
+import {
+  ArrowRight,
+  ImageOff,
+  Layers,
+  List,
+  MessageCircle,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -10,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useTRPC, type RouterOutputs } from "@/trpc/react";
 import type { EducationLevel } from "@/server/db/schema";
 import { useQuery } from "@tanstack/react-query";
+import { readPhotoAnalysis } from "@/lib/photo-analysis";
 import type { DisplayMode } from "@/app/app/profile-compare/[id]/provider-config";
 import type { ProviderConfig } from "@/app/app/profile-compare/[id]/provider-config";
 import { StackView } from "@/app/app/profile-compare/[id]/stack-view";
@@ -49,13 +57,37 @@ export function ViewOnlyColumn({
   const [displayMode, setDisplayMode] = useState<DisplayMode>(
     providerConfig.defaultDisplayMode,
   );
-  const [feedbackDialogOpen, setFeedbackDialogOpen] = useState(false);
-  const [selectedContentId, setSelectedContentId] = useState<
-    string | undefined
-  >();
+
+  // The feedback target (a content id or this column's id) lives in the URL,
+  // so a feedback dialog is deep-linkable and survives reload. Every column
+  // shares the one param; only the column that owns the id opens its dialog.
+  const [feedbackTarget, setFeedbackTarget] = useQueryState("feedback");
 
   const hasContent = column.content.length > 0;
   const displayName = column.title || providerConfig.name;
+
+  const selectedContent = column.content.find((c) => c.id === feedbackTarget);
+  const feedbackOpen = feedbackTarget === column.id || !!selectedContent;
+
+  // Header context for the dialog — derived here because the column already
+  // owns its content; nothing needs to be threaded through Stack/Flow views.
+  const feedbackContext = useMemo(() => {
+    if (!selectedContent) return undefined;
+    const position = column.content.indexOf(selectedContent) + 1;
+    if (selectedContent.type === "photo") {
+      return {
+        imageUrl: selectedContent.attachment?.url,
+        title: `${displayName} · Photo ${position}`,
+        subtitle:
+          selectedContent.caption ??
+          readPhotoAnalysis(selectedContent.attachment?.metadata)?.name,
+      };
+    }
+    return {
+      title: `${displayName} · Prompt`,
+      subtitle: selectedContent.prompt ?? undefined,
+    };
+  }, [selectedContent, column.content, displayName]);
 
   // Get all content IDs for this column
   const contentIds = useMemo(
@@ -94,13 +126,11 @@ export function ViewOnlyColumn({
   }, [allFeedback, column.id, contentIds]);
 
   const handleFeedbackClick = (contentId: string) => {
-    setSelectedContentId(contentId);
-    setFeedbackDialogOpen(true);
+    void setFeedbackTarget(contentId);
   };
 
   const openColumnFeedback = () => {
-    setSelectedContentId(undefined);
-    setFeedbackDialogOpen(true);
+    void setFeedbackTarget(column.id);
   };
 
   return (
@@ -201,11 +231,15 @@ export function ViewOnlyColumn({
 
       {/* Feedback Dialog */}
       <FeedbackDialog
-        open={feedbackDialogOpen}
-        onOpenChange={setFeedbackDialogOpen}
-        contentId={selectedContentId}
+        open={feedbackOpen}
+        onOpenChange={(open) => {
+          if (!open) void setFeedbackTarget(null);
+        }}
+        contentId={selectedContent?.id}
         columnId={column.id}
         comparisonId={comparisonId}
+        profileName={profileName}
+        context={feedbackContext}
       />
     </div>
   );
