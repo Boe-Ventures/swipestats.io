@@ -2,11 +2,21 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Check, Plus, Image as ImageIcon, MessageCircle } from "lucide-react";
+import {
+  Check,
+  GraduationCap,
+  House,
+  Image as ImageIcon,
+  MapPin,
+  MessageCircle,
+  Plus,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { EDUCATION_LABELS } from "@/lib/format";
 
 import type { RouterOutputs } from "@/trpc/react";
+import type { EducationLevel } from "@/server/db/schema";
 import type { ProviderConfig } from "./provider-config";
 
 // Shared by the authed edit page and the public share page. The public column
@@ -26,6 +36,9 @@ interface StackViewProps {
   onBrowseLibrary?: () => void;
   profileName?: string;
   age?: number;
+  city?: string;
+  educationLevel?: EducationLevel;
+  hometown?: string;
   onFeedbackClick?: (contentId: string) => void;
   feedbackCounts?: Record<string, number>;
 }
@@ -38,6 +51,9 @@ export function StackView({
   onBrowseLibrary,
   profileName,
   age,
+  city,
+  educationLevel,
+  hometown,
   onFeedbackClick,
   feedbackCounts,
 }: StackViewProps) {
@@ -64,6 +80,19 @@ export function StackView({
 
   // Check if this is Tinder for dark theme
   const isTinder = providerConfig.name === "Tinder";
+
+  // Tinder spreads identity across the card stack: bio on the first photo,
+  // info lines (education / lives in / from) on the last. A single photo is
+  // both, so it shows everything.
+  const isFirstPhoto = currentContentIndex === 0;
+  const isLastPhoto = currentContentIndex === photos.length - 1;
+  const infoLines = [
+    educationLevel
+      ? { icon: GraduationCap, label: EDUCATION_LABELS[educationLevel] }
+      : null,
+    city ? { icon: MapPin, label: `Lives in ${city}` } : null,
+    hometown ? { icon: House, label: `From ${hometown}` } : null,
+  ].filter((line) => line !== null);
 
   return (
     <div
@@ -152,10 +181,22 @@ export function StackView({
                 </div>
               </div>
 
-              {displayBio && (
+              {displayBio && isFirstPhoto && (
                 <p className="mb-3 line-clamp-2 text-base leading-relaxed">
                   {displayBio}
                 </p>
+              )}
+
+              {/* Tinder puts job / school / location on the closing photo. */}
+              {isLastPhoto && infoLines.length > 0 && (
+                <div className="mb-3 space-y-1">
+                  {infoLines.map(({ icon: Icon, label }) => (
+                    <div key={label} className="flex items-center gap-2">
+                      <Icon className="h-4 w-4 shrink-0 opacity-80" />
+                      <span className="text-sm">{label}</span>
+                    </div>
+                  ))}
+                </div>
               )}
 
               {/* Comment button — z-20 lifts it above the full-photo

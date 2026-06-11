@@ -3,26 +3,26 @@
 import { Fragment } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Check, Plus, Image as ImageIcon, MessageCircle } from "lucide-react";
+import {
+  Cake,
+  Check,
+  Globe,
+  GraduationCap,
+  House,
+  Image as ImageIcon,
+  MapPin,
+  MessageCircle,
+  Plus,
+  Ruler,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { EDUCATION_LABELS } from "@/lib/format";
 
 import type { RouterOutputs } from "@/trpc/react";
 import type { EducationLevel } from "@/server/db/schema";
 import type { ProviderConfig } from "./provider-config";
-
-// Human-readable labels for the education enum. Used for the "About me" chips
-// so we don't surface raw SCREAMING_SNAKE values to viewers.
-const EDUCATION_LABELS: Record<EducationLevel, string> = {
-  HIGH_SCHOOL: "High school",
-  BACHELORS: "Bachelor's degree",
-  IN_COLLEGE: "In college",
-  IN_GRAD_SCHOOL: "In grad school",
-  MASTERS: "Master's degree",
-  TRADE_SCHOOL: "Trade school",
-  PHD: "PhD",
-};
 
 // Shared by the authed edit page and the public share page. The public column
 // has no `roastStatus`, and this view doesn't need it, so omit it from the prop.
@@ -44,6 +44,8 @@ interface FlowViewProps {
   heightCm?: number;
   educationLevel?: EducationLevel;
   hometown?: string;
+  city?: string;
+  nationality?: string;
   onFeedbackClick?: (contentId: string) => void;
   feedbackCounts?: Record<string, number>;
 }
@@ -59,6 +61,8 @@ export function FlowView({
   heightCm,
   educationLevel,
   hometown,
+  city,
+  nationality,
   onFeedbackClick,
   feedbackCounts,
 }: FlowViewProps) {
@@ -69,23 +73,64 @@ export function FlowView({
 
   const hasContent = content.length > 0;
 
-  // "About me" chips are driven by the comparison's real profile fields — we
-  // only show the ones that are actually set, and hide the section entirely
-  // when none are.
-  const aboutMeChips = [
-    heightCm ? { emoji: "📏", label: `${heightCm} cm` } : null,
+  // Vitals card, Hinge-style: a horizontally scrolling band of the headline
+  // numbers (age · height · location) over icon rows for the rest. Driven by
+  // the comparison's real profile fields — unset fields drop out, and the card
+  // hides entirely when nothing is set.
+  const vitalsBand = [
+    age ? { icon: Cake, label: String(age) } : null,
+    heightCm ? { icon: Ruler, label: `${heightCm} cm` } : null,
+    city ? { icon: MapPin, label: city } : null,
+  ].filter((v) => v !== null);
+  const vitalsRows = [
     educationLevel
-      ? { emoji: "🎓", label: EDUCATION_LABELS[educationLevel] }
+      ? { icon: GraduationCap, label: EDUCATION_LABELS[educationLevel] }
       : null,
-    hometown ? { emoji: "📍", label: hometown } : null,
-  ].filter((chip): chip is { emoji: string; label: string } => chip !== null);
+    hometown ? { icon: House, label: hometown } : null,
+    nationality ? { icon: Globe, label: nationality } : null,
+  ].filter((v) => v !== null);
+  const hasVitals = vitalsBand.length > 0 || vitalsRows.length > 0;
+
+  const vitalsSection = hasVitals ? (
+    <div className="px-4 pb-3">
+      <div className="rounded-2xl bg-white shadow-sm ring-1 ring-gray-200">
+        {vitalsBand.length > 0 && (
+          <div className="flex items-stretch divide-x divide-gray-200 overflow-x-auto border-b border-gray-200 px-4">
+            {vitalsBand.map(({ icon: Icon, label }) => (
+              <div
+                key={label}
+                className="flex shrink-0 items-center gap-2 px-3 py-3 first:pl-0 last:pr-0"
+              >
+                <Icon className="h-4 w-4 text-gray-500" />
+                <span className="text-sm whitespace-nowrap text-gray-900">
+                  {label}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+        {vitalsRows.length > 0 && (
+          <div className="divide-y divide-gray-100 px-4">
+            {vitalsRows.map(({ icon: Icon, label }) => (
+              <div key={label} className="flex items-center gap-3 py-2.5">
+                <Icon className="h-4 w-4 shrink-0 text-gray-500" />
+                <span className="text-sm text-gray-900">{label}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  ) : null;
 
   // Hinge interleaves the bio between photos rather than dumping it at the end.
-  // Inject it right after the second photo; if there are fewer than two photos
-  // we render it at the end instead (see fallback below).
+  // Inject the vitals card right after the first photo (where Hinge puts it)
+  // and the bio after the second; with too few photos they land at the end
+  // instead (see fallbacks below).
   const photoContentIndexes = content
     .map((item, i) => (item.type === "photo" && item.attachment ? i : -1))
     .filter((i) => i !== -1);
+  const vitalsAfterIndex = photoContentIndexes[0] ?? -1;
   const bioAfterIndex = photoContentIndexes[1] ?? -1;
 
   const bioSection = displayBio ? (
@@ -174,7 +219,9 @@ export function FlowView({
                           </div>
                         </div>
                       </div>
-                      {/* Inject the bio right after the second photo */}
+                      {/* Inject vitals after the first photo, bio after the
+                          second — the Hinge rhythm. */}
+                      {index === vitalsAfterIndex && vitalsSection}
                       {index === bioAfterIndex && bioSection}
                     </Fragment>
                   );
@@ -218,32 +265,10 @@ export function FlowView({
                 return null;
               })}
 
-              {/* Fallback: with fewer than two photos there's no "second
-                  photo" to inject after, so the bio lands here instead. */}
+              {/* Fallbacks: with too few photos there's no photo to inject
+                  after, so vitals/bio land here instead. */}
+              {vitalsAfterIndex === -1 && vitalsSection}
               {bioAfterIndex === -1 && bioSection}
-
-              {/* About me Section - Hinge Style. Driven by the comparison's
-                  real profile fields; hidden entirely when none are set. */}
-              {aboutMeChips.length > 0 && (
-                <div className="bg-white px-4 pb-4">
-                  <div className="mb-3">
-                    <h3 className="text-lg font-bold text-gray-900">About me</h3>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {aboutMeChips.map((chip) => (
-                      <div
-                        key={chip.label}
-                        className="flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2"
-                      >
-                        <span>{chip.emoji}</span>
-                        <span className="text-sm text-gray-900">
-                          {chip.label}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
           </ScrollArea>
         ) : (

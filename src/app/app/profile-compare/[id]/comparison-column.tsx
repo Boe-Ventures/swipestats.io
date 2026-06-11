@@ -91,6 +91,8 @@ interface ComparisonColumnProps {
   heightCm?: number;
   educationLevel?: EducationLevel;
   hometown?: string;
+  city?: string;
+  nationality?: string;
   /** Opens the shared photo-library dialog (in place of navigating to /photos). */
   onBrowseLibrary?: () => void;
   canMoveLeft?: boolean;
@@ -258,6 +260,8 @@ export function ComparisonColumn({
   heightCm,
   educationLevel,
   hometown,
+  city,
+  nationality,
   onBrowseLibrary,
   canMoveLeft = false,
   canMoveRight = false,
@@ -664,6 +668,9 @@ export function ComparisonColumn({
                 onBrowseLibrary={onBrowseLibrary}
                 profileName={profileName}
                 age={age}
+                city={city}
+                educationLevel={educationLevel}
+                hometown={hometown}
               />
             </TabsContent>
 
@@ -679,6 +686,8 @@ export function ComparisonColumn({
                 heightCm={heightCm}
                 educationLevel={educationLevel}
                 hometown={hometown}
+                city={city}
+                nationality={nationality}
               />
             </TabsContent>
           </div>

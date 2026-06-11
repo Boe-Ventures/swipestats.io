@@ -191,6 +191,8 @@ export default function SharedComparisonPage() {
                   heightCm={comparison.heightCm || undefined}
                   educationLevel={comparison.educationLevel || undefined}
                   hometown={comparison.hometown || undefined}
+                  city={comparison.city || undefined}
+                  nationality={comparison.nationality || undefined}
                 />
               );
             })}
@@ -232,6 +234,8 @@ export default function SharedComparisonPage() {
                         heightCm={comparison.heightCm || undefined}
                         educationLevel={comparison.educationLevel || undefined}
                         hometown={comparison.hometown || undefined}
+                        city={comparison.city || undefined}
+                        nationality={comparison.nationality || undefined}
                       />
                     </TabsContent>
                   );

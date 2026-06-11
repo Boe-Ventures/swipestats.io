@@ -43,6 +43,24 @@ const AVAILABLE_APPS = dataProviderEnum.enumValues;
 // Form validation schema
 const formSchema = z.object({
   name: z.string().max(255).optional(),
+  profileName: z.string().max(255).optional(),
+  age: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || (!isNaN(Number(val)) && Number(val) > 0),
+      "Age must be a positive number",
+    ),
+  heightCm: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || (!isNaN(Number(val)) && Number(val) > 0),
+      "Height must be a positive number",
+    ),
+  city: z.string().optional(),
+  nationality: z.string().optional(),
+  hometown: z.string().optional(),
   defaultBio: z.string().optional(),
   columns: z
     .array(z.enum(dataProviderEnum.enumValues))
@@ -66,6 +84,12 @@ export function CreateComparisonDialog({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: defaultName,
+      profileName: "",
+      age: "",
+      heightCm: "",
+      city: "",
+      nationality: "",
+      hometown: "",
       defaultBio: "",
       columns: ["TINDER", "HINGE"],
     },
@@ -122,6 +146,12 @@ export function CreateComparisonDialog({
 
     createMutation.mutate({
       name: data.name || undefined,
+      profileName: data.profileName?.trim() || undefined,
+      age: data.age ? parseInt(data.age, 10) : undefined,
+      heightCm: data.heightCm ? parseInt(data.heightCm, 10) : undefined,
+      city: data.city?.trim() || undefined,
+      nationality: data.nationality?.trim() || undefined,
+      hometown: data.hometown?.trim() || undefined,
       defaultBio: data.defaultBio || undefined,
       columns: columnsData,
     });
@@ -252,6 +282,96 @@ export function CreateComparisonDialog({
               </FormItem>
             )}
           />
+
+          {/* About you — the cross-app identity fields. Stored on the parent
+              comparison and rendered into every column's preview; all optional
+              and editable later in Settings. */}
+          <div>
+            <FormLabel className="mb-3 block">About you (optional)</FormLabel>
+            <div className="grid grid-cols-2 gap-3">
+              <FormField
+                control={form.control}
+                name="profileName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input placeholder="Your name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="age"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="Age"
+                        min={18}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="heightCm"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input type="number" placeholder="Height (cm)" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="city"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input placeholder="City" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="nationality"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input placeholder="Nationality" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="hometown"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input placeholder="Hometown" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <FormDescription className="mt-2">
+              Shared across all your app profiles — shown in the previews and on
+              your share page.
+            </FormDescription>
+          </div>
 
           {/* Default Bio */}
           <FormField

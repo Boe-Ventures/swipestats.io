@@ -39,11 +39,15 @@ export const profileCompareRouter = createTRPCRouter({
     .input(
       z.object({
         name: z.string().optional(),
+        profileName: z.string().optional(),
         defaultBio: z.string().optional(),
         age: z.number().optional(),
+        heightCm: z.number().optional(),
         city: z.string().optional(),
         state: z.string().optional(),
         country: z.string().optional(),
+        nationality: z.string().optional(),
+        hometown: z.string().optional(),
         columns: z.array(
           z.object({
             dataProvider: z.enum(dataProviderEnum.enumValues),

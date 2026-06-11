@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useQueryState } from "nuqs";
 import {
   ArrowRight,
@@ -23,6 +24,7 @@ import type { ProviderConfig } from "@/app/app/profile-compare/[id]/provider-con
 import { StackView } from "@/app/app/profile-compare/[id]/stack-view";
 import { FlowView } from "@/app/app/profile-compare/[id]/flow-view";
 import { ProviderIconChip } from "@/app/app/profile-compare/[id]/provider-icon-chip";
+import { RoastCtaStrip } from "@/components/roast/roast-cta-strip";
 import { FeedbackDialog } from "./feedback-dialog";
 
 type ComparisonColumn =
@@ -39,6 +41,8 @@ interface ViewOnlyColumnProps {
   heightCm?: number;
   educationLevel?: EducationLevel;
   hometown?: string;
+  city?: string;
+  nationality?: string;
 }
 
 export function ViewOnlyColumn({
@@ -52,11 +56,18 @@ export function ViewOnlyColumn({
   heightCm,
   educationLevel,
   hometown,
+  city,
+  nationality,
 }: ViewOnlyColumnProps) {
   const trpc = useTRPC();
+  const router = useRouter();
   const [displayMode, setDisplayMode] = useState<DisplayMode>(
     providerConfig.defaultDisplayMode,
   );
+
+  // Owner-published roast for this column (publishing the comparison and the
+  // roast are separate consent bits; this is only set when both are public).
+  const publishedRoast = column.publishedRoast;
 
   // The feedback target (a content id or this column's id) lives in the URL,
   // so a feedback dialog is deep-linkable and survives reload. Every column
@@ -176,6 +187,9 @@ export function ViewOnlyColumn({
               defaultBio={defaultBio}
               profileName={profileName}
               age={age}
+              city={city}
+              educationLevel={educationLevel}
+              hometown={hometown}
               onFeedbackClick={handleFeedbackClick}
               feedbackCounts={feedbackCounts}
             />
@@ -190,6 +204,8 @@ export function ViewOnlyColumn({
               heightCm={heightCm}
               educationLevel={educationLevel}
               hometown={hometown}
+              city={city}
+              nationality={nationality}
               onFeedbackClick={handleFeedbackClick}
               feedbackCounts={feedbackCounts}
             />
@@ -228,6 +244,19 @@ export function ViewOnlyColumn({
           <span className="text-muted-foreground ml-1">· {commentCount}</span>
         )}
       </Button>
+
+      {/* Published roast teaser — deliberately below the profile and comment
+          affordances so friends form their own take before reading the AI's. */}
+      {publishedRoast && (
+        <RoastCtaStrip
+          title="The AI roasted this profile"
+          description={publishedRoast.tagline}
+          actionLabel="Read it"
+          onClick={() =>
+            router.push(`/share/profile-roast/${publishedRoast.shareKey}`)
+          }
+        />
+      )}
 
       {/* Feedback Dialog */}
       <FeedbackDialog

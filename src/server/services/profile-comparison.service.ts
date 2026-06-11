@@ -28,11 +28,15 @@ function generateShareKey(): string {
 export async function createComparison(data: {
   userId: string;
   name?: string;
+  profileName?: string;
   defaultBio?: string;
   age?: number;
+  heightCm?: number;
   city?: string;
   state?: string;
   country?: string;
+  nationality?: string;
+  hometown?: string;
   columns: Array<{
     dataProvider: DataProvider;
     bio?: string;
@@ -47,11 +51,15 @@ export async function createComparison(data: {
       .values({
         userId: data.userId,
         name: data.name,
+        profileName: data.profileName,
         defaultBio: data.defaultBio,
         age: data.age,
+        heightCm: data.heightCm,
         city: data.city,
         state: data.state,
         country: data.country,
+        nationality: data.nationality,
+        hometown: data.hometown,
         shareKey: generateShareKey(),
       })
       .returning();
@@ -201,7 +209,42 @@ export async function getPublicComparison(shareKey: string) {
     throw new Error("Comparison not found or not public");
   }
 
-  return comparison;
+  // Surface each column's roast on the share page — but only when the owner
+  // published that roast too. Comparison-public and roast-public are separate
+  // consent bits, so an unpublished roast never leaks here.
+  const columnIds = comparison.columns.map((c) => c.id);
+  const publishedRoasts =
+    columnIds.length > 0
+      ? await db.query.aiOutputTable.findMany({
+          where: and(
+            eq(aiOutputTable.kind, "profile_roast"),
+            eq(aiOutputTable.scope, ""),
+            eq(aiOutputTable.isPublic, true),
+            inArray(aiOutputTable.columnId, columnIds),
+          ),
+          columns: { columnId: true, shareKey: true, output: true },
+        })
+      : [];
+  const roastByColumn = new Map(
+    publishedRoasts.map((row) => [row.columnId, row]),
+  );
+
+  return {
+    ...comparison,
+    columns: comparison.columns.map((column) => {
+      const roast = roastByColumn.get(column.id);
+      const overall = roast
+        ? (roast.output as ProfileRoastResult).overall
+        : null;
+      return {
+        ...column,
+        publishedRoast:
+          roast?.shareKey && overall
+            ? { shareKey: roast.shareKey, tagline: overall.tagline }
+            : null,
+      };
+    }),
+  };
 }
 
 /**

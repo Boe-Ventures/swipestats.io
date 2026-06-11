@@ -313,7 +313,7 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
         educationLevel:
           data.educationLevel === "__none__" || !data.educationLevel
             ? null
-            : (data.educationLevel as (typeof educationLevelEnum.enumValues)[number]),
+            : data.educationLevel,
         city: data.city?.trim() || null,
         state: data.state?.trim() || null,
         country: data.country?.trim() || null,
@@ -610,6 +610,8 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
             heightCm={comparison.heightCm || undefined}
             educationLevel={comparison.educationLevel || undefined}
             hometown={comparison.hometown || undefined}
+            city={comparison.city || undefined}
+            nationality={comparison.nationality || undefined}
             onBrowseLibrary={() => setLibraryOpen(true)}
             canMoveLeft={index > 0}
             canMoveRight={index < comparison.columns.length - 1}
@@ -658,6 +660,8 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
                   heightCm={comparison.heightCm || undefined}
                   educationLevel={comparison.educationLevel || undefined}
                   hometown={comparison.hometown || undefined}
+                  city={comparison.city || undefined}
+                  nationality={comparison.nationality || undefined}
                   onBrowseLibrary={() => setLibraryOpen(true)}
                   canMoveLeft={index > 0}
                   canMoveRight={index < comparison.columns.length - 1}
