@@ -1,20 +1,23 @@
 /**
- * Amplitude browser provider (client-side only).
+ * Amplitude provider (client-side only) — @amplitude/unified.
  *
- * Privacy-first posture for SwipeStats:
+ * Posture for SwipeStats (privacy-first, but Session Replay is acceptable here
+ * because users are anonymous: anon accounts + usernames, no email unless they
+ * opt in, and we already hold the underlying data in our own DB):
+ *
+ * - DEFAULT OFF for everything. Nothing initializes until the user consents,
+ *   so no Amplitude cookies/storage are created pre-consent (Method 1 in
+ *   Amplitude's privacy guide — the cleanest model to explain to auditors).
+ * - On consent we `initAll` → analytics autocapture + Session Replay together.
  * - EU data residency (`serverZone: "EU"`), matching PostHog.
  * - Identity stitching: Amplitude `deviceId` is seeded from PostHog's
- *   `distinct_id` so a user is the same person across both tools.
- * - NO Session Replay. Recording a screen full of someone's dating history is
- *   highly sensitive; we use `@amplitude/analytics-browser` (no replay) rather
- *   than `@amplitude/unified`. Revisit only behind explicit opt-in + masking.
- * - Consent-gated: never initialized until the user has consented, and we
- *   honor Global Privacy Control (GPC) as an automatic opt-out signal.
+ *   `distinct_id` so a user resolves to the same person across both tools.
+ * - Honors Global Privacy Control (GPC) as an automatic opt-out.
  * - No-ops entirely when `NEXT_PUBLIC_AMPLITUDE_API_KEY` is unset.
  *
  * This module must only ever be imported from client components.
  */
-import * as amplitude from "@amplitude/analytics-browser";
+import * as amplitude from "@amplitude/unified";
 import posthog from "posthog-js";
 
 import { env } from "@/env";
@@ -33,8 +36,9 @@ function gpcEnabled(): boolean {
 }
 
 /**
- * Initialize (once) and opt the user in. Call this only from a consent-granted
- * code path. Seeds the Amplitude deviceId from PostHog for identity stitching.
+ * Initialize (once) and opt the user in. Call ONLY from a consent-granted code
+ * path. `initAll` brings up analytics + Session Replay; deviceId is seeded from
+ * PostHog for cross-tool identity stitching.
  */
 export function enableAmplitude(): void {
   if (!amplitudeEnabled) return;
@@ -47,21 +51,30 @@ export function enableAmplitude(): void {
   }
 
   if (!initialized) {
-    amplitude.init(env.NEXT_PUBLIC_AMPLITUDE_API_KEY!, {
-      serverZone: "EU",
-      // Share PostHog's anonymous id so the two tools resolve to one person.
-      deviceId: posthog.get_distinct_id(),
-      autocapture: {
-        attribution: true,
-        pageViews: true,
-        sessions: true,
-        formInteractions: false,
-        fileDownloads: false,
-        elementInteractions: false,
-      },
-    });
     initialized = true;
-    console.info("🟢 [Amplitude] Initialized (EU)");
+    amplitude
+      .initAll(env.NEXT_PUBLIC_AMPLITUDE_API_KEY!, {
+        serverZone: "EU",
+        analytics: {
+          // Share PostHog's anonymous id so both tools resolve to one person.
+          deviceId: posthog.get_distinct_id(),
+          autocapture: {
+            attribution: true,
+            pageViews: true,
+            sessions: true,
+            formInteractions: false,
+            fileDownloads: false,
+            elementInteractions: false,
+          },
+        },
+        // Session Replay: record consented sessions. Amplitude masks inputs by
+        // default; tighten masking here if we ever surface PII on screen.
+        sessionReplay: { sampleRate: 1 },
+      })
+      .catch((error) =>
+        console.error("❌ [Amplitude] initAll failed:", error),
+      );
+    console.info("🟢 [Amplitude] Initialized (EU, analytics + replay)");
   }
 
   amplitude.setOptOut(false);
