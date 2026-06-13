@@ -76,10 +76,15 @@ Return:
 - "description": ONE factual sentence describing what's visible (setting, subject, pose, activity, lighting). Neutral.
 - "tags": every tag from this fixed set that clearly applies — ${tagList}. A few are easy to confuse, so judge them precisely:
   • "selfie" = arm's-length self-portrait; "mirror-selfie" = shot into a mirror (often phone visible).
-  • "group" = the subject with one or more other people.
+  • "duo" = exactly one other person alongside the subject; "group" = three or more people total (the subject plus two or more others). Never use both on one photo.
   • "thirst-trap" = deliberately revealing / shirtless / gym-body / posed for sex appeal.
   • "activity" = actively doing a sport or active hobby; "gym" = in a gym specifically.
   • "fish" = holding a fish or an angling catch.
+  • "crossed-arms" = the subject is posing with their arms folded/crossed across their chest.
+  • "hat" = wearing a cap or hat, especially when it shades or hides the face.
+  • "filter" = an obvious Snapchat/Instagram/beauty filter is applied (face-warping, dog ears, heavy smoothing).
+  • "alcohol" = visible drinking, alcoholic drinks in hand, or a clear bar/club/party setting.
+  • "blurred" = the photo is noticeably blurry, low-resolution, or out of focus.
   • "sunset" = a sunset/sunrise sky is a clear feature.
 Only include tags you can actually see. It's fine to return one tag, several, or none.
 - "score": rate the photo 1-10 as a dating-app photo. 2 = clearly weak (blurry, unflattering, awkward crop), 5 = a typical median dating-app photo, 7 = clearly strong (sharp, flattering light, engaging subject), 9-10 = exceptional and scroll-stopping. This is internal research data the user never sees — be honest, not kind, and use the full range instead of clustering around 6-7.${
