@@ -7,6 +7,8 @@ import { toast } from "@/components/ui/toast";
 import { useTRPC } from "@/trpc/react";
 import type { RouterOutputs } from "@/trpc/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { authClient } from "@/server/better-auth/client";
+import { userPhotoPath } from "@/lib/blob-paths";
 
 export type GalleryAttachment =
   RouterOutputs["blob"]["createAttachmentFromBlob"];
@@ -45,13 +47,18 @@ export function useGalleryUpload() {
   const [isUploading, setIsUploading] = useState(false);
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const { data: session } = authClient.useSession();
 
   const createAttachment = useMutation(
     trpc.blob.createAttachmentFromBlob.mutationOptions(),
   );
 
   const uploadOne = async (file: File): Promise<GalleryAttachment> => {
-    const result = await upload(file.name, file, {
+    const userId = session?.user?.id;
+    if (!userId) {
+      throw new Error("You must be signed in to upload photos");
+    }
+    const result = await upload(userPhotoPath(userId, file.name), file, {
       access: "public",
       handleUploadUrl: "/api/blob/client-upload",
       clientPayload: JSON.stringify({

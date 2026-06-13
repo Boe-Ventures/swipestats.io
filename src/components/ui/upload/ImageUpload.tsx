@@ -12,6 +12,7 @@ import { Card, CardContent } from "../card";
 import { toast } from "../toast";
 import { optimizeImage, shouldOptimizeImage } from "./SimpleImageOptimization";
 import { formatFileSize } from "@/lib/format";
+import { resourceBlobPath } from "@/lib/blob-paths";
 
 // Types
 export interface ImageUploadProps {
@@ -166,7 +167,10 @@ export function ImageUpload({
           alt,
         };
 
-        const result = await upload(file.name, file, {
+        const pathname = resourceType
+          ? resourceBlobPath(resourceType, resourceId ?? "misc", file.name)
+          : file.name;
+        const result = await upload(pathname, file, {
           access: "public",
           handleUploadUrl: "/api/blob/client-upload",
           clientPayload: JSON.stringify(clientPayload),
