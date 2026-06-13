@@ -10,8 +10,8 @@ import { Button } from "@/components/ui/button";
  */
 export function DirectoryCtaCard() {
   return (
-    <Card className="shadow-lg transition-shadow hover:shadow-xl">
-      <CardContent className="flex flex-col p-8">
+    <Card className="h-full shadow-lg transition-shadow hover:shadow-xl">
+      <CardContent className="flex h-full flex-col p-8">
         {/* Icon & Title */}
         <div className="mb-4 flex items-center gap-3">
           <div className="bg-muted flex h-10 w-10 items-center justify-center rounded-lg">
@@ -30,7 +30,7 @@ export function DirectoryCtaCard() {
         </p>
 
         {/* Actions */}
-        <div className="flex items-center gap-x-4">
+        <div className="mt-auto flex items-center gap-x-4 pt-2">
           <Link href="/directory">
             <Button>
               <Users className="mr-2 h-4 w-4" />

@@ -11,6 +11,8 @@ import { Button } from "../button";
 import { Card, CardContent } from "../card";
 import { toast } from "../toast";
 import { optimizeImage, shouldOptimizeImage } from "./SimpleImageOptimization";
+import { formatFileSize } from "@/lib/format";
+import { resourceBlobPath } from "@/lib/blob-paths";
 
 // Types
 export interface ImageUploadProps {
@@ -165,7 +167,10 @@ export function ImageUpload({
           alt,
         };
 
-        const result = await upload(file.name, file, {
+        const pathname = resourceType
+          ? resourceBlobPath(resourceType, resourceId ?? "misc", file.name)
+          : file.name;
+        const result = await upload(pathname, file, {
           access: "public",
           handleUploadUrl: "/api/blob/client-upload",
           clientPayload: JSON.stringify(clientPayload),
@@ -323,15 +328,6 @@ export function ImageUpload({
   const closePreview = useCallback(() => {
     setPreviewUrl(null);
   }, []);
-
-  // Format file size
-  const formatFileSize = (bytes: number): string => {
-    if (bytes === 0) return "0 Bytes";
-    const k = 1024;
-    const sizes = ["Bytes", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-  };
 
   // Get aspect ratio class
   const getAspectRatioClass = () => {

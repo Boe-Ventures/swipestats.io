@@ -31,6 +31,7 @@ import {
 import { useTRPC } from "@/trpc/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { dataProviderEnum } from "@/server/db/schema";
+import { getDefaultComparisonName } from "./_lib/default-name";
 
 interface CreateComparisonDialogProps {
   open: boolean;
@@ -42,10 +43,28 @@ const AVAILABLE_APPS = dataProviderEnum.enumValues;
 // Form validation schema
 const formSchema = z.object({
   name: z.string().max(255).optional(),
+  profileName: z.string().max(255).optional(),
+  age: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || (!isNaN(Number(val)) && Number(val) > 0),
+      "Age must be a positive number",
+    ),
+  heightCm: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || (!isNaN(Number(val)) && Number(val) > 0),
+      "Height must be a positive number",
+    ),
+  city: z.string().optional(),
+  nationality: z.string().optional(),
+  hometown: z.string().optional(),
   defaultBio: z.string().optional(),
   columns: z
     .array(z.enum(dataProviderEnum.enumValues))
-    .min(1, "Please add at least one column"),
+    .min(1, "Please add at least one profile"),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -58,10 +77,19 @@ export function CreateComparisonDialog({
   const trpc = useTRPC();
   const queryClient = useQueryClient();
 
+  const defaultName = getDefaultComparisonName();
+  const namePlaceholder = `e.g., ${defaultName}`;
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      name: "",
+      name: defaultName,
+      profileName: "",
+      age: "",
+      heightCm: "",
+      city: "",
+      nationality: "",
+      hometown: "",
       defaultBio: "",
       columns: ["TINDER", "HINGE"],
     },
@@ -118,6 +146,12 @@ export function CreateComparisonDialog({
 
     createMutation.mutate({
       name: data.name || undefined,
+      profileName: data.profileName?.trim() || undefined,
+      age: data.age ? parseInt(data.age, 10) : undefined,
+      heightCm: data.heightCm ? parseInt(data.heightCm, 10) : undefined,
+      city: data.city?.trim() || undefined,
+      nationality: data.nationality?.trim() || undefined,
+      hometown: data.hometown?.trim() || undefined,
       defaultBio: data.defaultBio || undefined,
       columns: columnsData,
     });
@@ -142,14 +176,13 @@ export function CreateComparisonDialog({
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Name (optional)</FormLabel>
+                <FormLabel>Comparison name</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder="e.g., Winter 2024 Profile"
-                    {...field}
-                    autoFocus
-                  />
+                  <Input placeholder={namePlaceholder} {...field} autoFocus />
                 </FormControl>
+                <FormDescription>
+                  Also the headline on your public share page.
+                </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
@@ -162,7 +195,7 @@ export function CreateComparisonDialog({
             render={({}) => (
               <FormItem>
                 <div className="mb-3 flex items-center justify-between">
-                  <FormLabel>Comparison Columns</FormLabel>
+                  <FormLabel>Profiles to compare</FormLabel>
                   <Button
                     type="button"
                     variant="outline"
@@ -170,7 +203,7 @@ export function CreateComparisonDialog({
                     onClick={handleAddColumn}
                   >
                     <Plus className="mr-1.5 h-3.5 w-3.5" />
-                    Add Column
+                    Add profile
                   </Button>
                 </div>
 
@@ -180,7 +213,7 @@ export function CreateComparisonDialog({
                       <div className="bg-muted/50 flex items-center justify-center rounded-lg border border-dashed py-8">
                         <div className="text-center">
                           <p className="text-muted-foreground mb-2 text-sm">
-                            No columns yet
+                            No profiles yet
                           </p>
                           <Button
                             type="button"
@@ -189,7 +222,7 @@ export function CreateComparisonDialog({
                             onClick={handleAddColumn}
                           >
                             <Plus className="mr-1.5 h-3.5 w-3.5" />
-                            Add Your First Column
+                            Add your first profile
                           </Button>
                         </div>
                       </div>
@@ -201,7 +234,7 @@ export function CreateComparisonDialog({
                             className="bg-background flex items-center gap-2 rounded-lg border p-2"
                           >
                             <Badge variant="secondary" className="min-w-[80px]">
-                              Column {index + 1}
+                              Profile {index + 1}
                             </Badge>
                             <Select
                               value={app}
@@ -242,13 +275,103 @@ export function CreateComparisonDialog({
                   </>
                 </FormControl>
                 <FormDescription>
-                  You can add multiple columns of the same app (e.g., multiple
-                  Tinder profiles)
+                  Add more than one profile from the same app to A/B test
+                  different versions (e.g., two Tinder profiles)
                 </FormDescription>
                 <FormMessage />
               </FormItem>
             )}
           />
+
+          {/* About you — the cross-app identity fields. Stored on the parent
+              comparison and rendered into every column's preview; all optional
+              and editable later in Settings. */}
+          <div>
+            <FormLabel className="mb-3 block">About you (optional)</FormLabel>
+            <div className="grid grid-cols-2 gap-3">
+              <FormField
+                control={form.control}
+                name="profileName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input placeholder="Your name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="age"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="Age"
+                        min={18}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="heightCm"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input type="number" placeholder="Height (cm)" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="city"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input placeholder="City" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="nationality"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input placeholder="Nationality" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="hometown"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <Input placeholder="Hometown" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <FormDescription className="mt-2">
+              Shared across all your app profiles — shown in the previews and on
+              your share page.
+            </FormDescription>
+          </div>
 
           {/* Default Bio */}
           <FormField

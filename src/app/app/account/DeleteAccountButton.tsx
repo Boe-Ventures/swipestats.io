@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -19,17 +18,17 @@ import { useMutation } from "@tanstack/react-query";
 import { authClient } from "@/server/better-auth/client";
 
 export function DeleteAccountButton() {
-  const router = useRouter();
   const trpc = useTRPC();
   const [isDeleting, setIsDeleting] = useState(false);
 
   const deleteAccount = useMutation(
     trpc.user.delete.mutationOptions({
       onSuccess: async () => {
-        // Sign out after successful deletion
+        // Sign out after successful deletion. Hard navigation, not
+        // router.push: it drops the whole JS heap (React Query cache
+        // included), so nothing of this account's data lingers client-side.
         await authClient.signOut();
-        router.push("/");
-        router.refresh();
+        window.location.href = "/";
       },
     }),
   );

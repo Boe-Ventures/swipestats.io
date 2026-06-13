@@ -15,6 +15,13 @@
       "when": 1770631980276,
       "tag": "0001_eager_harrier",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1780798489582,
+      "tag": "0002_burly_mongu",
+      "breakpoints": true
     }
   ]
 }

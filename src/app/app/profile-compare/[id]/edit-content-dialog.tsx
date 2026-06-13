@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import { Loader2, Pencil, List } from "lucide-react";
+import { Loader2, Pencil, List, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { SimpleDialog } from "@/components/ui/dialog";
@@ -14,7 +14,7 @@ import { useTRPC } from "@/trpc/react";
 import type { RouterOutputs } from "@/trpc/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { PromptSelector } from "./prompt-selector";
-import type { Prompt } from "@/lib/prompt-bank";
+import type { Prompt, PromptSource } from "@/lib/prompt-bank";
 
 type ContentItem =
   RouterOutputs["profileCompare"]["get"]["columns"][number]["content"][number];
@@ -24,6 +24,12 @@ interface EditContentDialogProps {
   onOpenChange: (open: boolean) => void;
   content: ContentItem | null;
   comparisonId: string;
+  currentApp?: PromptSource;
+  /**
+   * Removes this content from the profile. Also the delete path on touch,
+   * where the grid tiles' hover-only trash button doesn't exist.
+   */
+  onDelete?: (contentId: string) => void;
 }
 
 export function EditContentDialog({
@@ -31,6 +37,8 @@ export function EditContentDialog({
   onOpenChange,
   content,
   comparisonId,
+  currentApp,
+  onDelete,
 }: EditContentDialogProps) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -112,8 +120,21 @@ export function EditContentDialog({
         open={open}
         onOpenChange={handleClose}
         footer={
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={handleClose}>
+          <div className="flex items-center gap-3">
+            {onDelete && (
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  onDelete(content.id);
+                  handleClose();
+                }}
+                className="text-destructive hover:text-destructive mr-auto"
+              >
+                <Trash2 className="mr-2 h-4 w-4" />
+                Remove
+              </Button>
+            )}
+            <Button variant="outline" onClick={handleClose} className="ml-auto">
               Cancel
             </Button>
             <Button onClick={handleSave} disabled={updateMutation.isPending}>
@@ -137,12 +158,12 @@ export function EditContentDialog({
             <>
               {/* Show preview of the photo */}
               {content.attachment && (
-                <div className="relative aspect-video overflow-hidden rounded-lg">
+                <div className="bg-muted relative h-80 overflow-hidden rounded-lg">
                   <Image
                     src={content.attachment.url}
                     alt="Photo preview"
                     fill
-                    className="object-cover"
+                    className="object-contain"
                   />
                 </div>
               )}
@@ -207,6 +228,7 @@ export function EditContentDialog({
         open={promptSelectorOpen}
         onOpenChange={setPromptSelectorOpen}
         onSelect={handleSelectPrompt}
+        currentApp={currentApp}
       />
     </>
   );

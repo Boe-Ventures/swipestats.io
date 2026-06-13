@@ -1,14 +1,22 @@
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import {
+  check,
   foreignKey,
   index,
   pgEnum,
   pgTable,
   primaryKey,
+  unique,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 import { createId } from "./utils";
+// Roast payload types are inferred from canonical zod schemas in this leaf
+// module (zod-only — no import cycle, since services import FROM schema.ts).
+import type {
+  StatsRoastResult,
+  ProfileRoastResult,
+} from "@/lib/ai/roast-schemas";
 
 // ---- ENUMS --------------------------------------------------------
 
@@ -16,11 +24,12 @@ export const dataProviderEnum = pgEnum("DataProvider", [
   "TINDER",
   "HINGE",
   "BUMBLE",
-  "GRINDER",
+  "GRINDR",
   "BADOO",
   "BOO",
   "OK_CUPID",
   "FEELD",
+  "RAYA",
 ]);
 
 export const eventTypeEnum = pgEnum("EventType", [
@@ -988,6 +997,10 @@ export const attachmentTable = pgTable(
     index("attachment_resource_idx").on(table.resourceType, table.resourceId),
     index("attachment_uploaded_by_idx").on(table.uploadedBy),
     index("attachment_mime_type_idx").on(table.mimeType),
+    // Blob URLs are globally unique, so this both prevents duplicate rows for
+    // the same upload and lets createAttachmentFromBlob upsert idempotently
+    // (client-side creation + the webhook backstop can't double-insert).
+    uniqueIndex("attachment_url_key").on(table.url),
   ],
 );
 
@@ -1057,6 +1070,10 @@ export const comparisonColumnTable = pgTable(
     order: t.integer().notNull(),
     bio: t.text(),
     title: t.text(),
+    // Internal "mark as done" flag for the user. Nullable timestamp instead of
+    // a boolean so we also capture *when* the column was marked complete.
+    // null = not done, a timestamp = done.
+    completedAt: t.timestamp(),
     createdAt: t
       .timestamp()
       .$defaultFn(() => new Date())
@@ -1175,6 +1192,144 @@ export type ProfileComparisonFeedback =
 export type ProfileComparisonFeedbackInsert =
   typeof profileComparisonFeedbackTable.$inferInsert;
 
+// ---- ROAST TABLE --------------------------------------------------
+
+// ---- AI OUTPUT ----------------------------------------------------
+//
+// One table for every PERSISTED, regenerable, shareable AI artifact about a
+// subject the user owns — profile roasts today, "your year"/Wrapped-style
+// recaps later. Ephemeral AI (prompt suggestions, on-the-fly analysis) does NOT
+// belong here; it's returned to the client and never stored.
+//
+// Shape:
+//  - `kind` (plain text, validated at the edge — adding a kind needs no
+//    migration) + the subject + `scope` identify the artifact. One row per
+//    (kind, subject, scope); regenerating OVERWRITES it (a user expects one
+//    current version, not a history).
+//  - The subject is an EXCLUSIVE ARC of typed FKs: exactly one of
+//    `tinderProfileId` / `hingeProfileId` / `columnId` is set (enforced by the
+//    `ai_output_one_subject` CHECK). Each FK is `onDelete: cascade`, so deleting
+//    the subject deletes its artifacts — no app-layer prune to forget. `kind`
+//    is still the discriminant and is NOT derivable from which FK is set (a
+//    subject table can host several kinds — e.g. a future `tinder_wrapped` would
+//    also point at `tinderProfileId`).
+//  - `input` records what we fed the model (reproducibility/debugging);
+//    `output` is the rendered result. Both jsonb. Each generator owns its
+//    `output` shape and validates it with a zod schema at write time.
+//  - `version` is the output-format version. Readers compare it to the current
+//    per-kind version and offer a manual "refresh" (regenerate) for rows left
+//    behind — so the payload can evolve without DB migrations or backfills.
+//  - `shareKey`/`isPublic` are the share primitive, built once for all kinds.
+
+export type AiOutputKind = "tinder_roast" | "hinge_roast" | "profile_roast";
+
+// Re-exported so existing importers keep `import { StatsRoastResult } from
+// "@/server/db/schema"`. Definitions live in the zod leaf (imported above).
+export type { StatsRoastResult, ProfileRoastResult };
+
+/** `output` payload — shape depends on `kind`, narrowed at the edge by zod. */
+export type AiOutputPayload = StatsRoastResult | ProfileRoastResult;
+
+/** What was fed to the model, stored for reproducibility. Shape depends on kind. */
+export type AiOutputInput =
+  | {
+      dataProvider: string;
+      gender: string | null;
+      benchmarks: {
+        label: string;
+        valueLabel: string;
+        bucket: string;
+        cohortLabel: string;
+      }[];
+    }
+  | { providerKey: string; steer: string | null };
+
+export const aiOutputTable = pgTable(
+  "ai_output",
+  (t) => ({
+    id: t
+      .text()
+      .primaryKey()
+      .$defaultFn(() => createId("aio")),
+    userId: t
+      .text()
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    // `kind` is the artifact discriminant (plain text — a new kind needs no
+    // migration). NOT derivable from the FKs: a subject table can host several
+    // kinds (e.g. tinder_roast and a future tinder_wrapped both → tinderProfileId).
+    kind: t.text().$type<AiOutputKind>().notNull(),
+    // Exclusive-arc subject: exactly one of these is set (CHECK below), each
+    // cascading on delete so artifacts can't outlive their subject.
+    tinderProfileId: t
+      .text()
+      .references(() => tinderProfileTable.tinderId, { onDelete: "cascade" }),
+    hingeProfileId: t
+      .text()
+      .references(() => hingeProfileTable.hingeId, { onDelete: "cascade" }),
+    columnId: t
+      .text()
+      .references(() => comparisonColumnTable.id, { onDelete: "cascade" }),
+    // "" = the whole subject; a period like "2024" / "2024-01" for recaps. Part
+    // of the uniqueness key. NOT NULL (empty string, never NULL) so the unique
+    // index treats it as one slot — NULLs would be distinct and break overwrite.
+    scope: t.text().notNull().default(""),
+    // Voice knob, promoted out of `input` because it's read back often. Nullable
+    // (not every kind has a tone).
+    tone: t.text(),
+    model: t.text().notNull(),
+    version: t.smallint().notNull().default(1),
+    input: t.jsonb().$type<AiOutputInput>().notNull(),
+    output: t.jsonb().$type<AiOutputPayload>().notNull(),
+    // Always generated app-side, so it's NOT NULL: a row always has a share key
+    // (publishing just flips isPublic). Enforces the "a roast is shareable" invariant.
+    shareKey: t
+      .text()
+      .notNull()
+      .unique()
+      .$defaultFn(() => createId("share")),
+    isPublic: t.boolean().notNull().default(false),
+    createdAt: t
+      .timestamp()
+      .$defaultFn(() => new Date())
+      .notNull(),
+    updatedAt: t
+      .timestamp()
+      .$defaultFn(() => new Date())
+      .notNull(),
+  }),
+  (table) => [
+    // Exactly one subject FK is set — the exclusive arc.
+    check(
+      "ai_output_one_subject",
+      sql`num_nonnulls(${table.tinderProfileId}, ${table.hingeProfileId}, ${table.columnId}) = 1`,
+    ),
+    // One artifact per (kind, subject, scope) — the upsert overwrites in place.
+    // NULLS NOT DISTINCT so the two unused arc columns (always NULL for a given
+    // kind) collapse to one slot; otherwise NULL <> NULL would let duplicates in.
+    unique("ai_output_subject_key")
+      .on(
+        table.kind,
+        table.scope,
+        table.tinderProfileId,
+        table.hingeProfileId,
+        table.columnId,
+      )
+      .nullsNotDistinct(),
+    index("ai_output_user_id_idx").on(table.userId),
+    index("ai_output_share_key_idx").on(table.shareKey),
+    index("ai_output_column_id_idx").on(table.columnId),
+  ],
+);
+
+export type AiOutputRow = typeof aiOutputTable.$inferSelect;
+export type AiOutputRowInsert = typeof aiOutputTable.$inferInsert;
+
+// The `output` shape for kind="profile_roast" rows (`ProfileRoastResult`) lives
+// in `@/lib/ai/roast-schemas` and is re-exported above. Photos/prompts are keyed
+// by content id; image URLs are resolved live on read (not frozen), so the roast
+// always renders against the current profile.
+
 // ---- COHORT SYSTEM TABLES -----------------------------------------
 
 // Cohort definition - what filters constitute a cohort
@@ -1286,6 +1441,7 @@ export const userRelations = relations(userTable, ({ one, many }) => ({
   profileComparisons: many(profileComparisonTable),
   uploadedAttachments: many(attachmentTable),
   cohortDefinitions: many(cohortDefinitionTable),
+  aiOutputs: many(aiOutputTable),
 }));
 
 export const accountRelations = relations(accountTable, ({ one }) => ({
@@ -1521,6 +1677,9 @@ export const comparisonColumnRelations = relations(
     }),
     content: many(comparisonColumnContentTable),
     feedback: many(profileComparisonFeedbackTable),
+    // Roast state (roasted? + tone + when) lives in `ai_output` keyed by
+    // (kind="profile_roast", subjectId=column.id) — no FK relation, queried
+    // explicitly where the comparison is read.
   }),
 );
 
@@ -1580,5 +1739,24 @@ export const cohortStatsRelations = relations(cohortStatsTable, ({ one }) => ({
   cohort: one(cohortDefinitionTable, {
     fields: [cohortStatsTable.cohortId],
     references: [cohortDefinitionTable.id],
+  }),
+}));
+
+export const aiOutputRelations = relations(aiOutputTable, ({ one }) => ({
+  user: one(userTable, {
+    fields: [aiOutputTable.userId],
+    references: [userTable.id],
+  }),
+  tinderProfile: one(tinderProfileTable, {
+    fields: [aiOutputTable.tinderProfileId],
+    references: [tinderProfileTable.tinderId],
+  }),
+  hingeProfile: one(hingeProfileTable, {
+    fields: [aiOutputTable.hingeProfileId],
+    references: [hingeProfileTable.hingeId],
+  }),
+  column: one(comparisonColumnTable, {
+    fields: [aiOutputTable.columnId],
+    references: [comparisonColumnTable.id],
   }),
 }));

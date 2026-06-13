@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { LogOut, User, Settings } from "lucide-react";
+import { LogOut, User, Settings, Sun, Moon, Monitor } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -15,24 +14,72 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useTheme, type ThemeMode } from "@/components/ui/theme";
+import { cn } from "@/components/ui/lib/utils";
 
 import { authClient } from "@/server/better-auth/client";
 import type { Session } from "@/server/better-auth/config";
 import { useAnalytics } from "@/contexts/AnalyticsProvider";
+import { env } from "@/env";
+
+const THEME_OPTIONS: { mode: ThemeMode; label: string; icon: typeof Sun }[] = [
+  { mode: "light", label: "Light", icon: Sun },
+  { mode: "dark", label: "Dark", icon: Moon },
+  { mode: "auto", label: "System", icon: Monitor },
+];
+
+/**
+ * Dev-only theme switcher. Hidden on real production (VERCEL_ENV=production)
+ * since dark mode isn't a supported user-facing feature yet — it's exposed
+ * in local dev and preview deploys for testing.
+ */
+function ThemeSwitcher() {
+  const { themeMode, setTheme } = useTheme();
+
+  if (env.NEXT_PUBLIC_IS_PRODUCTION) return null;
+
+  return (
+    <>
+      <DropdownMenuSeparator />
+      <div className="px-2 py-1.5">
+        <div className="bg-muted flex items-center gap-0.5 rounded-md p-0.5">
+          {THEME_OPTIONS.map(({ mode, label, icon: Icon }) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => setTheme(mode)}
+              aria-pressed={themeMode === mode}
+              aria-label={label}
+              title={label}
+              className={cn(
+                "flex flex-1 items-center justify-center rounded-sm py-1 transition-colors",
+                themeMode === mode
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              <Icon className="h-4 w-4" />
+            </button>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+}
 
 interface UserDropdownProps {
   user: Session["user"];
 }
 
 export function UserDropdown({ user }: UserDropdownProps) {
-  const router = useRouter();
   const { trackEvent } = useAnalytics();
 
   const handleSignOut = async () => {
     trackEvent("sign_out_clicked", undefined);
     await authClient.signOut();
-    router.push("/");
-    router.refresh();
+    // Hard navigation, not router.push: it drops the whole JS heap (React
+    // Query cache included), so the next session can't see this one's data.
+    window.location.href = "/";
   };
 
   // Generate initials from name or email
@@ -91,6 +138,7 @@ export function UserDropdown({ user }: UserDropdownProps) {
             </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
+        <ThemeSwitcher />
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut}>
           <LogOut className="mr-2 h-4 w-4" />

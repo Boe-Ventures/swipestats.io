@@ -98,6 +98,18 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         };
       },
       onUploadCompleted: async ({ blob, tokenPayload }) => {
+        // SAFETY NET ONLY. The authoritative attachment row is written
+        // client-side by the `blob.createAttachmentFromBlob` mutation, which
+        // runs right after the upload resolves and carries the real File
+        // metadata (size/filename/mimeType). This webhook exists to recover
+        // orphaned blobs — the rare case where the client uploaded but never
+        // called the mutation (navigated away / crashed). It is also never
+        // delivered to localhost, so it must not be the primary path.
+        //
+        // The insert is therefore idempotent on the blob URL: `onConflictDoNothing`
+        // means we only create a placeholder row if the client mutation hasn't
+        // already written the real one — no double-inserts, and the client's
+        // good data is never clobbered.
         console.log(`✅ Client upload completed:`, blob.url);
         console.log(`📦 Token payload:`, tokenPayload);
 
@@ -110,16 +122,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           };
           const { userId, resourceType, resourceId } = payload;
 
-          // Create attachment record if resource info provided
+          // Create a fallback attachment record if resource info provided
           if (resourceType && resourceId && userId) {
-            console.log(
-              `📎 Creating attachment record for ${resourceType}:${resourceId}`,
-            );
-
             // Detect content type from blob metadata
             const contentType = blob.contentType || "application/octet-stream";
-            // Note: Vercel blob doesn't provide size in the result, estimate from pathname or use 0
-            const size = 0; // Will be populated by Vercel blob storage
+            // Vercel blob doesn't provide size here; the client mutation backfills it.
+            const size = 0;
 
             // Validate resource type using schema
             const resourceTypeResult = z
@@ -130,7 +138,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
               return; // Skip attachment creation but don't fail upload
             }
 
-            // Create attachment record directly in database since blob is already uploaded
+            // Idempotent insert — no-op if the client mutation already recorded this URL.
             const [attachment] = await db
               .insert(attachmentTable)
               .values({
@@ -144,12 +152,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
                 url: blob.url,
                 metadata: {
                   blobPathname: blob.pathname,
-                  uploadType: "client",
+                  uploadType: "client-webhook-fallback",
                 },
               })
+              .onConflictDoNothing({ target: attachmentTable.url })
               .returning();
 
-            console.log(`✅ Attachment record created: ${attachment?.id}`);
+            if (attachment) {
+              console.log(
+                `🛟 Orphan-recovery attachment created via webhook: ${attachment.id}`,
+              );
+            } else {
+              console.log(
+                `↩️ Attachment already recorded by client mutation — webhook no-op`,
+              );
+            }
           } else {
             console.log(
               `📄 Direct blob upload completed (no attachment record needed)`,

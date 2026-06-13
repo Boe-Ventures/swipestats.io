@@ -470,6 +470,8 @@ export async function resetTinderProfile(tinderId: string): Promise<void> {
     await tx
       .delete(profileMetaTable)
       .where(eq(profileMetaTable.tinderProfileId, tinderId));
+    // The stats roast (ai_output.tinderProfileId FK, onDelete cascade) goes when
+    // the profile row below is deleted — no explicit delete needed.
     await tx
       .delete(tinderProfileTable)
       .where(eq(tinderProfileTable.tinderId, tinderId));
