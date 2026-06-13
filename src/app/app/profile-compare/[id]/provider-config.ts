@@ -1,12 +1,27 @@
+import { Ghost, Heart, Hexagon, House, Users } from "lucide-react";
+import type { ComponentType } from "react";
+
 import type { DataProvider } from "@/server/db/schema";
+import { RayaIcon, TinderIcon } from "./brand-icons";
 
 export type DisplayMode = "stack" | "flow" | "platform";
+
+/** Accepts both lucide icons and our inline brand-icon SVG components. */
+export type ProviderIcon = ComponentType<{ className?: string }>;
 
 export interface ProviderConfig {
   name: string;
   brandColor: string;
   secondaryColor: string;
   accentColor: string;
+  /** Vector glyph (lucide or inline brand SVG), drawn white on the brand chip. */
+  icon: ProviderIcon;
+  /**
+   * Optional raster brand icon that already has an on-brand background baked in
+   * (e.g. Hinge white-on-dark, Bumble dark-on-yellow). When set, the chip
+   * renders this image full-bleed instead of `icon` on a colored background.
+   */
+  iconImage?: string;
   defaultDisplayMode: DisplayMode;
   supportedModes: DisplayMode[];
   description: string;
@@ -18,6 +33,7 @@ export const PROVIDER_CONFIGS: Record<DataProvider, ProviderConfig> = {
     brandColor: "#FF6B6B", // Tinder red/pink
     secondaryColor: "#FD297B",
     accentColor: "#FF7854",
+    icon: TinderIcon,
     defaultDisplayMode: "stack",
     supportedModes: ["stack", "flow", "platform"],
     description: "Swipe-based dating - stack view recommended",
@@ -27,6 +43,8 @@ export const PROVIDER_CONFIGS: Record<DataProvider, ProviderConfig> = {
     brandColor: "#9D4EDD", // Hinge purple
     secondaryColor: "#7209B7",
     accentColor: "#B185DB",
+    icon: House,
+    iconImage: "/images/brand/hinge.jpg",
     defaultDisplayMode: "flow",
     supportedModes: ["flow", "stack", "platform"],
     description: "Profile-based dating - flow view recommended",
@@ -36,15 +54,18 @@ export const PROVIDER_CONFIGS: Record<DataProvider, ProviderConfig> = {
     brandColor: "#FFD200", // Bumble yellow
     secondaryColor: "#FFA500",
     accentColor: "#FFE55C",
-    defaultDisplayMode: "stack",
-    supportedModes: ["stack", "flow", "platform"],
+    icon: Hexagon,
+    iconImage: "/images/brand/bumble.jpg",
+    defaultDisplayMode: "flow",
+    supportedModes: ["flow", "stack", "platform"],
     description: "Women make the first move",
   },
-  GRINDER: {
+  GRINDR: {
     name: "Grindr",
     brandColor: "#FFCE00", // Grindr yellow
     secondaryColor: "#FF9900",
     accentColor: "#FFE066",
+    icon: Heart,
     defaultDisplayMode: "stack",
     supportedModes: ["stack", "flow", "platform"],
     description: "LGBTQ+ dating app",
@@ -54,6 +75,7 @@ export const PROVIDER_CONFIGS: Record<DataProvider, ProviderConfig> = {
     brandColor: "#6F5CF8", // Badoo purple
     secondaryColor: "#5A4BD9",
     accentColor: "#8B7FFF",
+    icon: Heart,
     defaultDisplayMode: "flow",
     supportedModes: ["stack", "flow", "platform"],
     description: "Social dating network",
@@ -63,6 +85,7 @@ export const PROVIDER_CONFIGS: Record<DataProvider, ProviderConfig> = {
     brandColor: "#7C3AED", // Purple
     secondaryColor: "#6D28D9",
     accentColor: "#9F7AEA",
+    icon: Ghost,
     defaultDisplayMode: "flow",
     supportedModes: ["stack", "flow", "platform"],
     description: "Personality-based dating",
@@ -72,6 +95,7 @@ export const PROVIDER_CONFIGS: Record<DataProvider, ProviderConfig> = {
     brandColor: "#0084FF", // OkCupid blue
     secondaryColor: "#006DD9",
     accentColor: "#4DA6FF",
+    icon: Heart,
     defaultDisplayMode: "flow",
     supportedModes: ["stack", "flow", "platform"],
     description: "Question-based matching",
@@ -81,9 +105,20 @@ export const PROVIDER_CONFIGS: Record<DataProvider, ProviderConfig> = {
     brandColor: "#1A1A1A", // Feeld dark
     secondaryColor: "#2D2D2D",
     accentColor: "#404040",
+    icon: Heart,
     defaultDisplayMode: "flow",
     supportedModes: ["stack", "flow", "platform"],
     description: "Open-minded dating",
+  },
+  RAYA: {
+    name: "Raya",
+    brandColor: "#000000", // Raya black
+    secondaryColor: "#1A1A1A",
+    accentColor: "#404040",
+    icon: RayaIcon,
+    defaultDisplayMode: "stack",
+    supportedModes: ["stack", "flow", "platform"],
+    description: "Membership-based dating",
   },
 };
 
@@ -102,6 +137,7 @@ export function getProviderConfig(
     brandColor: "#6366F1", // Indigo
     secondaryColor: "#4F46E5",
     accentColor: "#818CF8",
+    icon: Users,
     defaultDisplayMode: "flow",
     supportedModes: ["flow", "stack", "platform"],
     description: "Friend-curated profile",

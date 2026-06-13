@@ -4,6 +4,8 @@ import { type Metadata } from "next";
 import { Inter, Geist_Mono } from "next/font/google";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 
+import { env } from "@/env";
+
 import { cn } from "@/components/ui/lib/utils";
 import { ThemeProvider } from "@/components/ui/theme";
 import { Toaster } from "@/components/ui/toast";
@@ -15,7 +17,10 @@ import { Analytics as VercelAnalytics } from "@vercel/analytics/next";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://www.swipestats.io"),
+  // Resolves relative + file-based (opengraph-image) URLs to absolute ones.
+  // Env-derived so preview deployments produce og:image URLs on the preview
+  // domain (prod → www.swipestats.io, branch → its VERCEL_BRANCH_URL).
+  metadataBase: new URL(env.NEXT_PUBLIC_BASE_URL),
   title: {
     template: "%s | SwipeStats",
     default: "SwipeStats - Analyze Your Dating App Data",

@@ -13,11 +13,12 @@ export const DATA_PROVIDERS: DataProvider[] = [
   "TINDER",
   "HINGE",
   "BUMBLE",
-  "GRINDER",
+  "GRINDR",
   "BADOO",
   "BOO",
   "OK_CUPID",
   "FEELD",
+  "RAYA",
 ] as const;
 
 // Gender constants

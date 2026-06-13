@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import { formatDistanceToNow } from "date-fns";
 import { MessageCircle, Send, Loader2, Trash2, Star } from "lucide-react";
 import ReactMarkdown from "react-markdown";
@@ -22,9 +23,17 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/toast";
+import { cn } from "@/components/ui/lib/utils";
 import { useTRPC } from "@/trpc/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { authClient } from "@/server/better-auth/client";
+
+/** What the feedback is about — renders the photo-aware dialog header. */
+export interface FeedbackContext {
+  title: string;
+  subtitle?: string;
+  imageUrl?: string;
+}
 
 interface FeedbackDialogProps {
   open: boolean;
@@ -32,6 +41,45 @@ interface FeedbackDialogProps {
   contentId?: string;
   columnId?: string;
   comparisonId?: string;
+  /** Whose profile this is — personalizes the empty state. */
+  profileName?: string;
+  /** The photo/prompt being discussed; omit for plain column-level feedback. */
+  context?: FeedbackContext;
+}
+
+/** 1-5 star picker; clicking the current value clears it back to "no rating". */
+function StarRating({
+  value,
+  onChange,
+}: {
+  value?: number;
+  onChange: (value?: number) => void;
+}) {
+  const [hovered, setHovered] = useState<number>();
+  const active = hovered ?? value ?? 0;
+  return (
+    <div className="flex" onMouseLeave={() => setHovered(undefined)}>
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          type="button"
+          aria-label={`Rate ${star} of 5`}
+          onMouseEnter={() => setHovered(star)}
+          onClick={() => onChange(value === star ? undefined : star)}
+          className="p-0.5 transition-transform hover:scale-110"
+        >
+          <Star
+            className={cn(
+              "h-5 w-5 transition-colors",
+              active >= star
+                ? "fill-amber-400 text-amber-400"
+                : "text-muted-foreground/40",
+            )}
+          />
+        </button>
+      ))}
+    </div>
+  );
 }
 
 export function FeedbackDialog({
@@ -40,6 +88,8 @@ export function FeedbackDialog({
   contentId,
   columnId,
   comparisonId,
+  profileName,
+  context,
 }: FeedbackDialogProps) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
@@ -48,29 +98,41 @@ export function FeedbackDialog({
 
   const { data: session } = authClient.useSession();
 
+  const feedbackQueryInput = {
+    ...(contentId ? { contentId } : {}),
+    ...(columnId && !contentId ? { columnId } : {}),
+    ...(comparisonId && !contentId && !columnId ? { comparisonId } : {}),
+  };
+
+  const feedbackQueryOptions =
+    trpc.profileCompare.getFeedback.queryOptions(feedbackQueryInput);
+
+  const invalidateFeedbackQueries = () => {
+    void queryClient.invalidateQueries({
+      queryKey: feedbackQueryOptions.queryKey,
+    });
+
+    if (comparisonId) {
+      void queryClient.invalidateQueries({
+        queryKey: trpc.profileCompare.getFeedback.queryOptions({
+          comparisonId,
+        }).queryKey,
+      });
+    }
+  };
+
   // Get feedback for this content/column
   // If contentId is provided, only query for that content (not the whole column)
-  const { data: feedback = [] } = useQuery(
-    trpc.profileCompare.getFeedback.queryOptions(
-      {
-        ...(contentId ? { contentId } : {}),
-        ...(columnId && !contentId ? { columnId } : {}),
-        ...(comparisonId && !contentId && !columnId ? { comparisonId } : {}),
-      },
-      {
-        enabled: open && (!!contentId || !!columnId || !!comparisonId),
-      },
-    ),
-  );
+  const { data: feedback = [] } = useQuery({
+    ...feedbackQueryOptions,
+    enabled: open && (!!contentId || !!columnId || !!comparisonId),
+  });
 
   // Create feedback mutation
   const createFeedback = useMutation(
     trpc.profileCompare.createFeedback.mutationOptions({
       onSuccess: () => {
-        // Invalidate all related feedback queries
-        void queryClient.invalidateQueries(
-          trpc.profileCompare.getFeedback.queryOptions({ comparisonId }),
-        );
+        invalidateFeedbackQueries();
         setComment("");
         setRating(undefined);
         toast.success("Feedback added successfully");
@@ -85,10 +147,7 @@ export function FeedbackDialog({
   const deleteFeedback = useMutation(
     trpc.profileCompare.deleteFeedback.mutationOptions({
       onSuccess: () => {
-        // Invalidate all related feedback queries
-        void queryClient.invalidateQueries(
-          trpc.profileCompare.getFeedback.queryOptions({ comparisonId }),
-        );
+        invalidateFeedbackQueries();
         toast.success("Feedback deleted successfully");
       },
       onError: (error) => {
@@ -121,9 +180,35 @@ export function FeedbackDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl" size="lg">
         <DialogHeader>
-          <DialogTitle>
-            Feedback{feedback.length > 0 ? ` (${feedback.length})` : ""}
-          </DialogTitle>
+          {context ? (
+            <div className="flex items-center gap-3 text-left">
+              {context.imageUrl && (
+                <div className="bg-muted relative h-12 w-12 shrink-0 overflow-hidden rounded-lg">
+                  <Image
+                    src={context.imageUrl}
+                    alt=""
+                    fill
+                    className="object-cover"
+                  />
+                </div>
+              )}
+              <div className="min-w-0">
+                <p className="text-primary text-[11px] font-bold tracking-widest uppercase">
+                  Feedback
+                </p>
+                <DialogTitle className="truncate">{context.title}</DialogTitle>
+                {context.subtitle && (
+                  <p className="text-muted-foreground truncate text-sm">
+                    {context.subtitle}
+                  </p>
+                )}
+              </div>
+            </div>
+          ) : (
+            <DialogTitle>
+              Feedback{feedback.length > 0 ? ` (${feedback.length})` : ""}
+            </DialogTitle>
+          )}
         </DialogHeader>
 
         {/* Feedback List */}
@@ -131,8 +216,13 @@ export function FeedbackDialog({
           {feedback.length === 0 ? (
             <div className="text-muted-foreground py-12 text-center">
               <MessageCircle className="mx-auto mb-4 h-12 w-12 opacity-50" />
-              <p className="text-base font-medium">No feedback yet</p>
-              <p className="text-sm">Be the first to add feedback!</p>
+              <p className="text-foreground text-base font-medium">
+                Be the first to weigh in
+              </p>
+              <p className="text-sm">
+                Your honest take helps {profileName || "them"} pick the right
+                photos.
+              </p>
             </div>
           ) : (
             feedback.map((item) => (
@@ -212,31 +302,19 @@ export function FeedbackDialog({
         <DialogFooter className="border-t pt-4">
           <form onSubmit={handleSubmit} className="w-full space-y-3">
             {/* Rating */}
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">Rating:</span>
-              <div className="flex gap-1">
-                {[-1, 0, 1, 2, 3, 4, 5].map((value) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() =>
-                      setRating(rating === value ? undefined : value)
-                    }
-                    className={`flex h-8 w-8 items-center justify-center rounded border transition-colors ${
-                      rating === value
-                        ? "bg-primary text-primary-foreground"
-                        : "border-input bg-background hover:bg-accent"
-                    }`}
-                  >
-                    {value === -1 ? "−" : value}
-                  </button>
-                ))}
-              </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">
+                Rate this {contentId ? "photo" : "profile"}{" "}
+                <span className="text-muted-foreground text-xs font-normal">
+                  optional
+                </span>
+              </span>
+              <StarRating value={rating} onChange={setRating} />
             </div>
 
             {/* Comment */}
             <Textarea
-              placeholder="Add a comment... (⌘/Ctrl+Enter to submit)"
+              placeholder="What's working? What would you change? Be honest..."
               value={comment}
               onChange={(e) => setComment(e.target.value)}
               onKeyDown={(e) => {
@@ -253,15 +331,11 @@ export function FeedbackDialog({
               <p className="text-muted-foreground text-xs">
                 Markdown supported
               </p>
-              <div className="flex gap-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => onOpenChange(false)}
-                >
-                  Close
-                </Button>
+              <div className="flex items-center gap-3">
+                <span className="text-muted-foreground hidden items-center gap-1 text-xs sm:flex">
+                  <kbd className="bg-muted rounded border px-1.5 py-0.5">⌘</kbd>
+                  <kbd className="bg-muted rounded border px-1.5 py-0.5">↵</kbd>
+                </span>
                 <Button
                   type="submit"
                   disabled={

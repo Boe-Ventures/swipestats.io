@@ -9,13 +9,18 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
-import { getPromptsByApp, type Prompt } from "@/lib/prompt-bank";
+import {
+  getPromptsByApp,
+  PROMPT_SOURCES,
+  type Prompt,
+  type PromptSource,
+} from "@/lib/prompt-bank";
 
 interface PromptSelectorProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSelect: (prompt: Prompt) => void;
-  currentApp?: "TINDER" | "HINGE";
+  currentApp?: PromptSource;
 }
 
 export function PromptSelector({
@@ -25,7 +30,7 @@ export function PromptSelector({
   currentApp,
 }: PromptSelectorProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedApp, setSelectedApp] = useState<"TINDER" | "HINGE">(
+  const [selectedApp, setSelectedApp] = useState<PromptSource>(
     currentApp || "TINDER",
   );
 
@@ -93,11 +98,14 @@ export function PromptSelector({
         {/* App Tabs */}
         <Tabs
           value={selectedApp}
-          onValueChange={(v) => setSelectedApp(v as "TINDER" | "HINGE")}
+          onValueChange={(v) => setSelectedApp(v as PromptSource)}
         >
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="TINDER">Tinder</TabsTrigger>
-            <TabsTrigger value="HINGE">Hinge</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-3">
+            {PROMPT_SOURCES.map((source) => (
+              <TabsTrigger key={source} value={source}>
+                {source.charAt(0) + source.slice(1).toLowerCase()}
+              </TabsTrigger>
+            ))}
           </TabsList>
 
           <TabsContent value={selectedApp} className="mt-4">

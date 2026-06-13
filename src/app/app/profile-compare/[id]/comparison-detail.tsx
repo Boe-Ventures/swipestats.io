@@ -1,7 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Copy, Eye, Share2, Settings, Plus, BarChart3 } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import {
+  Copy,
+  Eye,
+  Flame,
+  Share2,
+  Settings,
+  Plus,
+  ImagePlus,
+  Upload,
+  Sparkles,
+  Loader2,
+  Wand2,
+  Images,
+} from "lucide-react";
 import { z } from "zod";
 import Link from "next/link";
 
@@ -19,6 +32,7 @@ import {
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -36,12 +50,30 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/components/ui/toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
 
 import { useTRPC } from "@/trpc/react";
 import type { RouterOutputs } from "@/trpc/react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { dataProviderEnum, educationLevelEnum } from "@/server/db/schema";
 import { ComparisonColumn } from "./comparison-column";
+import { getProviderConfig } from "./provider-config";
+import { PhotoLibraryDialog } from "./photo-library-dialog";
+import { useGalleryUpload } from "../_hooks/useGalleryUpload";
+import { getDefaultComparisonName } from "../_lib/default-name";
+import { useSubscription } from "@/hooks/useSubscription";
+import { useUpgrade } from "@/contexts/UpgradeContext";
+import {
+  COMPOSE_PROVIDER_KEYS,
+  type ComposeProvider,
+} from "../compose-providers";
 
 type Comparison = RouterOutputs["profileCompare"]["get"];
 
@@ -52,6 +84,13 @@ interface ComparisonDetailProps {
 const settingsFormSchema = z.object({
   name: z.string().optional(),
   profileName: z.string().optional(),
+  age: z
+    .string()
+    .optional()
+    .refine(
+      (val) => !val || (!isNaN(Number(val)) && Number(val) > 0),
+      "Age must be a positive number",
+    ),
   defaultBio: z.string().optional(),
   heightCm: z
     .string()
@@ -77,6 +116,7 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [addColumnOpen, setAddColumnOpen] = useState(false);
+  const [libraryOpen, setLibraryOpen] = useState(false);
   const [newColumnProvider, setNewColumnProvider] = useState<string>("TINDER");
 
   const form = useForm<SettingsFormValues>({
@@ -84,6 +124,7 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
     defaultValues: {
       name: comparison.name || "",
       profileName: comparison.profileName || "",
+      age: comparison.age?.toString() || "",
       defaultBio: comparison.defaultBio || "",
       heightCm: comparison.heightCm?.toString() || "",
       educationLevel: comparison.educationLevel || "__none__",
@@ -102,6 +143,7 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
       form.reset({
         name: comparison.name || "",
         profileName: comparison.profileName || "",
+        age: comparison.age?.toString() || "",
         defaultBio: comparison.defaultBio || "",
         heightCm: comparison.heightCm?.toString() || "",
         educationLevel: comparison.educationLevel || "__none__",
@@ -122,7 +164,7 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
     trpc.profileCompare.addColumn.mutationOptions({
       onSuccess: () => {
         toast.success(
-          `Column added successfully! Added ${newColumnProvider.charAt(0) + newColumnProvider.slice(1).toLowerCase()} to your comparison.`,
+          `Profile added successfully! Added ${newColumnProvider.charAt(0) + newColumnProvider.slice(1).toLowerCase()} to your comparison.`,
         );
         void queryClient.invalidateQueries(
           trpc.profileCompare.get.queryOptions({ id: comparison.id }),
@@ -131,7 +173,7 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
         setNewColumnProvider("TINDER");
       },
       onError: (error) => {
-        toast.error(error.message || "Failed to add column");
+        toast.error(error.message || "Failed to add profile");
       },
     }),
   );
@@ -144,11 +186,106 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
     });
   };
 
+  // "Build with AI" in the Add Profile dialog: compose a column straight into
+  // THIS comparison (the router takes a comparisonId), so there's no redirect —
+  // the dialog closes and the new column appears. Only offered for the apps the
+  // composer supports, and gated like the rest of the AI features.
+  const { effectiveTier } = useSubscription();
+  const { openUpgradeModal } = useUpgrade();
+  const isPaid = effectiveTier === "PLUS" || effectiveTier === "ELITE";
+  const canCompose = (COMPOSE_PROVIDER_KEYS as readonly string[]).includes(
+    newColumnProvider,
+  );
+
+  const composeColumnMutation = useMutation(
+    trpc.profileCompose.compose.mutationOptions({
+      onSuccess: () => {
+        toast.success("AI profile added — tweak it however you like");
+        void queryClient.invalidateQueries(
+          trpc.profileCompare.get.queryOptions({ id: comparison.id }),
+        );
+        setAddColumnOpen(false);
+        setNewColumnProvider("TINDER");
+      },
+      onError: (error) => {
+        toast.error(error.message || "Couldn't compose a profile");
+      },
+    }),
+  );
+
+  const handleComposeColumn = () => {
+    if (!isPaid) {
+      openUpgradeModal({ feature: "aiRoast" });
+      return;
+    }
+    composeColumnMutation.mutate({
+      provider: newColumnProvider as ComposeProvider,
+      comparisonId: comparison.id,
+    });
+  };
+
+  const getQueryKey = trpc.profileCompare.get.queryOptions({
+    id: comparison.id,
+  }).queryKey;
+
+  const reorderColumnsMutation = useMutation(
+    trpc.profileCompare.reorderColumns.mutationOptions({
+      // Optimistically apply the new ordering so the columns move instantly.
+      onMutate: async ({ columnOrders }) => {
+        await queryClient.cancelQueries({ queryKey: getQueryKey });
+        const previous = queryClient.getQueryData<Comparison>(getQueryKey);
+
+        if (previous) {
+          const orderById = new Map(
+            columnOrders.map((c) => [c.id, c.order] as const),
+          );
+          const reordered = [...previous.columns]
+            .map((col) => ({ ...col, order: orderById.get(col.id) ?? col.order }))
+            .sort((a, b) => a.order - b.order);
+
+          queryClient.setQueryData<Comparison>(getQueryKey, {
+            ...previous,
+            columns: reordered,
+          });
+        }
+
+        return { previous };
+      },
+      onError: (error, _vars, context) => {
+        // Roll back to the snapshot taken in onMutate.
+        if (context?.previous) {
+          queryClient.setQueryData(getQueryKey, context.previous);
+        }
+        toast.error(error.message || "Failed to reorder columns");
+      },
+      onSettled: () => {
+        void queryClient.invalidateQueries({ queryKey: getQueryKey });
+      },
+    }),
+  );
+
+  // Swap a column with its neighbour and persist the full new ordering.
+  const handleMoveColumn = (columnId: string, direction: "left" | "right") => {
+    const cols = comparison.columns;
+    const index = cols.findIndex((c) => c.id === columnId);
+    const target = direction === "left" ? index - 1 : index + 1;
+    if (index === -1 || target < 0 || target >= cols.length) return;
+
+    const reordered = [...cols];
+    const [moved] = reordered.splice(index, 1);
+    reordered.splice(target, 0, moved!);
+
+    reorderColumnsMutation.mutate({
+      comparisonId: comparison.id,
+      columnOrders: reordered.map((c, i) => ({ id: c.id, order: i })),
+    });
+  };
+
   const updateMutation = useMutation(
     trpc.profileCompare.update.mutationOptions({
+      // Always refresh affected queries; callers add their own success toast
+      // so the message matches the action (saving settings vs publishing).
       onSuccess: () => {
-        toast.success("Settings saved successfully!");
-        setSettingsOpen(false);
         void queryClient.invalidateQueries(
           trpc.profileCompare.get.queryOptions({ id: comparison.id }),
         );
@@ -163,25 +300,34 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
   );
 
   const onSubmit = (data: SettingsFormValues) => {
-    updateMutation.mutate({
-      id: comparison.id,
-      name: data.name || undefined,
-      profileName: data.profileName || undefined,
-      defaultBio: data.defaultBio || undefined,
-      heightCm: data.heightCm ? parseInt(data.heightCm, 10) : undefined,
-      educationLevel:
-        data.educationLevel === "__none__" || !data.educationLevel
-          ? undefined
-          : (data.educationLevel as
-              | (typeof educationLevelEnum.enumValues)[number]
-              | undefined),
-      city: data.city || undefined,
-      state: data.state || undefined,
-      country: data.country || undefined,
-      nationality: data.nationality || undefined,
-      hometown: data.hometown || undefined,
-      isPublic: data.isPublic,
-    });
+    // Cleared fields are sent as null (= clear in the DB) — undefined would
+    // mean "leave unchanged", making it impossible to remove a value.
+    updateMutation.mutate(
+      {
+        id: comparison.id,
+        name: data.name?.trim() || null,
+        profileName: data.profileName?.trim() || null,
+        age: data.age ? parseInt(data.age, 10) : null,
+        defaultBio: data.defaultBio?.trim() || null,
+        heightCm: data.heightCm ? parseInt(data.heightCm, 10) : null,
+        educationLevel:
+          data.educationLevel === "__none__" || !data.educationLevel
+            ? null
+            : data.educationLevel,
+        city: data.city?.trim() || null,
+        state: data.state?.trim() || null,
+        country: data.country?.trim() || null,
+        nationality: data.nationality?.trim() || null,
+        hometown: data.hometown?.trim() || null,
+        isPublic: data.isPublic,
+      },
+      {
+        onSuccess: () => {
+          toast.success("Settings saved successfully!");
+          setSettingsOpen(false);
+        },
+      },
+    );
   };
 
   const handleCopyShareLink = () => {
@@ -190,6 +336,96 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
       void navigator.clipboard.writeText(shareUrl);
       toast.success("Share link copied to clipboard! Ready to share.");
     }
+  };
+
+  // Publish = make the comparison public so it gets a share link. After
+  // publishing we open the Share dialog so the link is immediately at hand.
+  const handlePublish = () => {
+    updateMutation.mutate(
+      { id: comparison.id, isPublic: true },
+      {
+        onSuccess: () => {
+          toast.success("Comparison is now public! Share link is ready.");
+          setShareOpen(true);
+        },
+      },
+    );
+  };
+
+  // The whole comparison is empty when it has profiles but none of them have
+  // any content yet — the cue to guide the user to upload photos first.
+  const hasNoContent =
+    comparison.columns.length > 0 &&
+    comparison.columns.every((c) => c.content.length === 0);
+
+  // Offer a one-tap path that seeds this comparison from photos the user
+  // already uploaded. Only fetched while the empty state is showing.
+  const uploadedProfilesQuery = useQuery(
+    trpc.user.getUploadedProfiles.queryOptions(undefined, {
+      enabled: hasNoContent,
+      refetchOnWindowFocus: false,
+    }),
+  );
+  const seedTinderId = uploadedProfilesQuery.data?.tinder[0]?.tinderId;
+  const seedMediaQuery = useQuery(
+    trpc.profile.getMedia.queryOptions(
+      { tinderId: seedTinderId ?? "" },
+      { enabled: hasNoContent && !!seedTinderId, refetchOnWindowFocus: false },
+    ),
+  );
+  const canSeedFromTinder =
+    !!seedTinderId && (seedMediaQuery.data ?? []).some((m) => m.url);
+
+  // "Use my uploaded Tinder photos" imports those photos into the shared library
+  // only — like the "Upload your photos" button beside it, it doesn't auto-fill
+  // the comparison's columns. The user then adds them to each profile.
+  const importTinderMutation = useMutation(
+    trpc.profileCompare.importTinderMediaToLibrary.mutationOptions({
+      onSuccess: (res) => {
+        const n = res.photoCount;
+        toast.success(
+          `Added ${n} Tinder ${n === 1 ? "photo" : "photos"} to your library — now add them to each profile below`,
+        );
+        // Refresh the library so the per-column picker shows the imported photos.
+        void queryClient.invalidateQueries(
+          trpc.blob.getUserUploads.queryOptions({ limit: 100 }),
+        );
+      },
+      onError: (error) => {
+        toast.error(error.message || "Couldn't add your photos");
+      },
+    }),
+  );
+
+  // Empty-state upload. Photos land in the user's library only — we no longer
+  // auto-distribute them into every profile column, so the user curates each
+  // profile deliberately (via the per-column "Add photos" affordance, which
+  // reads from this same library) rather than getting the same photos dumped
+  // everywhere.
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { uploadFiles, isUploading } = useGalleryUpload();
+
+  const isSeedingPhotos = isUploading;
+
+  const handleEmptyStateUpload = async (files: File[]) => {
+    if (files.length === 0) return;
+
+    const attachments = await uploadFiles(files, { successToast: false });
+    if (attachments.length === 0) return;
+
+    const n = attachments.length;
+    toast.success(
+      `Added ${n} ${n === 1 ? "photo" : "photos"} to your library — now add them to each profile below`,
+    );
+  };
+
+  const handleEmptyStateFileChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const files = Array.from(e.target.files ?? []);
+    // Reset so the same files can be picked again after a failed attempt.
+    e.target.value = "";
+    void handleEmptyStateUpload(files);
   };
 
   return (
@@ -208,12 +444,14 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
           )}
         </div>
         <div className="flex items-center gap-2">
-          <Link href={`/app/profile-compare/${comparison.id}/summary`}>
-            <Button variant="outline" size="sm">
-              <BarChart3 className="mr-2 h-4 w-4" />
-              Summary
-            </Button>
-          </Link>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setLibraryOpen(true)}
+          >
+            <Images className="mr-2 h-4 w-4" />
+            Photos
+          </Button>
           <Button
             variant="outline"
             size="sm"
@@ -230,12 +468,138 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
             <Settings className="mr-2 h-4 w-4" />
             Settings
           </Button>
+          {comparison.isPublic ? (
+            <Button size="sm" onClick={handleCopyShareLink}>
+              <Copy className="mr-2 h-4 w-4" />
+              Copy link
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              onClick={handlePublish}
+              disabled={updateMutation.isPending}
+            >
+              <Eye className="mr-2 h-4 w-4" />
+              {updateMutation.isPending ? "Publishing..." : "Publish"}
+            </Button>
+          )}
         </div>
       </div>
 
+      {/* Shared getting-started empty state — uploading photos is step 1 */}
+      {hasNoContent && (
+        <Empty className="overflow-hidden rounded-2xl border border-rose-200 bg-gradient-to-br from-rose-50 via-white to-rose-100/60 shadow-sm">
+          <EmptyHeader>
+            <EmptyMedia
+              variant="icon"
+              className="size-14 bg-rose-600 text-white shadow-lg shadow-rose-600/30 [&_svg:not([class*='size-'])]:size-7"
+            >
+              <ImagePlus />
+            </EmptyMedia>
+            <EmptyTitle className="text-2xl">
+              Add your photos to get started
+            </EmptyTitle>
+            <EmptyDescription className="text-base">
+              Upload your photos to your library, then add the ones you want to
+              each profile below — reorder, caption, and tweak per app.
+            </EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            {/* Hidden input driven by the "Upload your photos" button below. */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              onChange={handleEmptyStateFileChange}
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              multiple
+              className="hidden"
+            />
+            <div className="flex flex-col items-center gap-3 sm:flex-row sm:flex-wrap sm:justify-center">
+              {/* Fastest path for returning users — pull the photos they already
+                  uploaded with Tinder into their library (no re-uploading). */}
+              {canSeedFromTinder && seedTinderId && (
+                <Button
+                  size="lg"
+                  className="bg-rose-600 hover:bg-rose-500"
+                  onClick={() =>
+                    importTinderMutation.mutate({
+                      tinderId: seedTinderId,
+                    })
+                  }
+                  disabled={importTinderMutation.isPending}
+                >
+                  {importTinderMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Adding…
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="mr-2 h-4 w-4" />
+                      Use my uploaded Tinder photos
+                    </>
+                  )}
+                </Button>
+              )}
+              <Button
+                size="lg"
+                variant={canSeedFromTinder ? "outline" : "default"}
+                className={
+                  canSeedFromTinder ? undefined : "bg-rose-600 hover:bg-rose-500"
+                }
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isSeedingPhotos}
+              >
+                {isSeedingPhotos ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Uploading…
+                  </>
+                ) : (
+                  <>
+                    <ImagePlus className="mr-2 h-4 w-4" />
+                    Upload your photos
+                  </>
+                )}
+              </Button>
+              <Link href="https://www.swipestats.io/upload">
+                <Button size="lg" variant="outline">
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload your dating data
+                </Button>
+              </Link>
+            </div>
+            <p className="text-muted-foreground text-xs">
+              {canSeedFromTinder ? (
+                "Pulled from a profile you already uploaded — no re-uploading needed."
+              ) : (
+                <>
+                  Photos are all you need to compare. Uploading your Tinder or
+                  Hinge data is optional — it unlocks your full dating analytics
+                  and imports your photos.{" "}
+                  <Link
+                    href="https://www.swipestats.io/how-to-request-your-data"
+                    className="hover:text-foreground underline underline-offset-2"
+                  >
+                    How to request your data
+                  </Link>
+                </>
+              )}
+            </p>
+            <button
+              type="button"
+              onClick={() => setLibraryOpen(true)}
+              className="text-muted-foreground hover:text-foreground text-xs underline underline-offset-2"
+            >
+              Or manage your photo library
+            </button>
+          </EmptyContent>
+        </Empty>
+      )}
+
       {/* Desktop: Side-by-side columns */}
       <div className="hidden gap-6 lg:grid lg:grid-cols-3">
-        {comparison.columns.map((column) => (
+        {comparison.columns.map((column, index) => (
           <ComparisonColumn
             key={column.id}
             column={column}
@@ -243,19 +607,28 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
             defaultBio={comparison.defaultBio || undefined}
             profileName={comparison.profileName || undefined}
             age={comparison.age || undefined}
+            heightCm={comparison.heightCm || undefined}
+            educationLevel={comparison.educationLevel || undefined}
+            hometown={comparison.hometown || undefined}
+            city={comparison.city || undefined}
+            nationality={comparison.nationality || undefined}
+            onBrowseLibrary={() => setLibraryOpen(true)}
+            canMoveLeft={index > 0}
+            canMoveRight={index < comparison.columns.length - 1}
+            onMove={(direction) => handleMoveColumn(column.id, direction)}
           />
         ))}
-        {/* Add Column Button */}
-        <div className="border-muted-foreground/25 flex items-center justify-center rounded-lg border-2 border-dashed">
-          <Button
-            variant="ghost"
-            onClick={() => setAddColumnOpen(true)}
-            className="h-full w-full flex-col gap-2"
-          >
-            <Plus className="text-muted-foreground h-8 w-8" />
-            <span className="text-muted-foreground">Add Column</span>
-          </Button>
-        </div>
+        {/* Add Profile — the whole dashed box is the button so hover/click
+            covers the entire area. Doesn't stretch to match tall content
+            columns; stays compact, top-aligned, and visible while scrolling. */}
+        <Button
+          variant="ghost"
+          onClick={() => setAddColumnOpen(true)}
+          className="border-muted-foreground/25 hover:border-muted-foreground/40 sticky top-6 flex h-auto min-h-[28rem] w-full flex-col items-center justify-center gap-2 self-start rounded-lg border-2 border-dashed"
+        >
+          <Plus className="text-muted-foreground h-8 w-8" />
+          <span className="text-muted-foreground">Add profile</span>
+        </Button>
       </div>
 
       {/* Mobile: Tabs */}
@@ -269,14 +642,14 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
                   value={column.id}
                   className="flex-1"
                 >
-                  {column.title || column.dataProvider}
+                  {column.title || getProviderConfig(column.dataProvider).name}
                 </TabsTrigger>
               ))}
               <TabsTrigger value="add" className="flex-1">
                 <Plus className="h-4 w-4" />
               </TabsTrigger>
             </TabsList>
-            {comparison.columns.map((column) => (
+            {comparison.columns.map((column, index) => (
               <TabsContent key={column.id} value={column.id}>
                 <ComparisonColumn
                   column={column}
@@ -284,6 +657,15 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
                   defaultBio={comparison.defaultBio || undefined}
                   profileName={comparison.profileName || undefined}
                   age={comparison.age || undefined}
+                  heightCm={comparison.heightCm || undefined}
+                  educationLevel={comparison.educationLevel || undefined}
+                  hometown={comparison.hometown || undefined}
+                  city={comparison.city || undefined}
+                  nationality={comparison.nationality || undefined}
+                  onBrowseLibrary={() => setLibraryOpen(true)}
+                  canMoveLeft={index > 0}
+                  canMoveRight={index < comparison.columns.length - 1}
+                  onMove={(direction) => handleMoveColumn(column.id, direction)}
                 />
               </TabsContent>
             ))}
@@ -295,7 +677,7 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
                   className="flex-col gap-2"
                 >
                   <Plus className="text-muted-foreground h-8 w-8" />
-                  <span className="text-muted-foreground">Add Column</span>
+                  <span className="text-muted-foreground">Add profile</span>
                 </Button>
               </div>
             </TabsContent>
@@ -309,12 +691,19 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
             >
               <Plus className="text-muted-foreground h-8 w-8" />
               <span className="text-muted-foreground">
-                Add Your First Column
+                Add your first profile
               </span>
             </Button>
           </div>
         )}
       </div>
+
+      {/* Photo library — upload, analyze, build an AI draft, see results */}
+      <PhotoLibraryDialog
+        open={libraryOpen}
+        onOpenChange={setLibraryOpen}
+        comparisonId={comparison.id}
+      />
 
       {/* Settings Dialog */}
       <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
@@ -333,31 +722,54 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
                 name="name"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Comparison Name</FormLabel>
+                    <FormLabel>Comparison name</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="e.g., Winter 2024 Profile"
+                        placeholder={`e.g., ${getDefaultComparisonName()}`}
                         {...field}
                       />
                     </FormControl>
+                    <FormDescription>
+                      Also the headline on your public share page.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="profileName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Your Name</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., John" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="profileName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Your Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., John" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="age"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Age</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          placeholder="e.g., 28"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
               <FormField
                 control={form.control}
@@ -551,20 +963,22 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
           {comparison.isPublic && comparison.shareKey ? (
             <div className="space-y-4">
               <div>
-                <Label>Share Link</Label>
+                <Label className="mb-2 block">Share Link</Label>
                 <div className="flex gap-2">
                   <Input
                     readOnly
                     value={`${window.location.origin}/share/profile-compare/${comparison.shareKey}`}
                     className="flex-1"
                   />
-                  <Button onClick={handleCopyShareLink} size="sm">
+                  <Button onClick={handleCopyShareLink} size="icon">
                     <Copy className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
               <div>
-                <Label>Invite Friend to Create Version</Label>
+                <Label className="mb-2 block">
+                  Invite Friend to Create Version
+                </Label>
                 <div className="flex gap-2">
                   <Input
                     readOnly
@@ -577,7 +991,7 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
                       void navigator.clipboard.writeText(createUrl);
                       toast.success("Friend creation link copied!");
                     }}
-                    size="sm"
+                    size="icon"
                   >
                     <Copy className="h-4 w-4" />
                   </Button>
@@ -595,29 +1009,24 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
                 a share link.
               </p>
               <Button
-                onClick={() => {
-                  updateMutation.mutate(
-                    { id: comparison.id, isPublic: true },
-                    {
-                      onSuccess: () => {
-                        toast.success(
-                          "Comparison is now public! Share link is ready.",
-                        );
-                        void queryClient.invalidateQueries(
-                          trpc.profileCompare.get.queryOptions({
-                            id: comparison.id,
-                          }),
-                        );
-                      },
-                    },
-                  );
-                }}
+                onClick={handlePublish}
+                disabled={updateMutation.isPending}
               >
                 <Eye className="mr-2 h-4 w-4" />
-                Make Public
+                {updateMutation.isPending ? "Publishing..." : "Make Public"}
               </Button>
             </div>
           )}
+
+          {/* Roasts publish separately (their own shareKey + page), so neither
+              link above includes them — worth a heads-up here. */}
+          <div className="flex items-start gap-2 rounded-md border border-rose-200/70 bg-rose-50/50 p-3 dark:border-rose-900/40 dark:bg-rose-950/20">
+            <Flame className="mt-0.5 h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400" />
+            <p className="text-muted-foreground text-sm">
+              AI roasts aren&apos;t included in these links. Each profile&apos;s
+              roast has its own share link — open the roast to share it.
+            </p>
+          </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setShareOpen(false)}>
@@ -627,25 +1036,27 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
         </DialogContent>
       </Dialog>
 
-      {/* Add Column Dialog */}
+      {/* Add Profile Dialog */}
       <Dialog open={addColumnOpen} onOpenChange={setAddColumnOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Column</DialogTitle>
+            <DialogTitle>Add profile</DialogTitle>
             <DialogDescription>
-              Add a new column to compare. You can add multiple columns of the
+              Add a new profile to compare. You can add multiple profiles of the
               same app.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
             <div>
-              <Label htmlFor="provider">Dating App</Label>
+              <Label htmlFor="provider" className="mb-2 block">
+                Dating App
+              </Label>
               <Select
                 value={newColumnProvider}
                 onValueChange={setNewColumnProvider}
               >
-                <SelectTrigger id="provider">
+                <SelectTrigger id="provider" className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -656,18 +1067,53 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
                   ))}
                 </SelectContent>
               </Select>
+              {canCompose && (
+                <p className="text-muted-foreground mt-2 text-xs">
+                  Or let AI build it from your analyzed photos — it picks the
+                  best shots, orders them, and drafts a bio and prompts.
+                </p>
+              )}
             </div>
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setAddColumnOpen(false)}>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setAddColumnOpen(false)}
+              disabled={
+                addColumnMutation.isPending || composeColumnMutation.isPending
+              }
+            >
               Cancel
             </Button>
+            {canCompose && (
+              <Button
+                variant="outline"
+                onClick={handleComposeColumn}
+                disabled={
+                  composeColumnMutation.isPending || addColumnMutation.isPending
+                }
+              >
+                {composeColumnMutation.isPending ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Building…
+                  </>
+                ) : (
+                  <>
+                    <Wand2 className="mr-2 h-4 w-4" />
+                    Build with AI
+                  </>
+                )}
+              </Button>
+            )}
             <Button
               onClick={handleAddColumn}
-              disabled={addColumnMutation.isPending}
+              disabled={
+                addColumnMutation.isPending || composeColumnMutation.isPending
+              }
             >
-              {addColumnMutation.isPending ? "Adding..." : "Add Column"}
+              {addColumnMutation.isPending ? "Adding..." : "Add profile"}
             </Button>
           </DialogFooter>
         </DialogContent>

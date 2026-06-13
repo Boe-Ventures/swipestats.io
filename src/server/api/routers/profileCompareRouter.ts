@@ -39,11 +39,15 @@ export const profileCompareRouter = createTRPCRouter({
     .input(
       z.object({
         name: z.string().optional(),
+        profileName: z.string().optional(),
         defaultBio: z.string().optional(),
         age: z.number().optional(),
+        heightCm: z.number().optional(),
         city: z.string().optional(),
         state: z.string().optional(),
         country: z.string().optional(),
+        nationality: z.string().optional(),
+        hometown: z.string().optional(),
         columns: z.array(
           z.object({
             dataProvider: z.enum(dataProviderEnum.enumValues),
@@ -61,22 +65,47 @@ export const profileCompareRouter = createTRPCRouter({
       });
     }),
 
+  // Seed a NEW comparison from the user's already-uploaded Tinder photos
+  createFromTinderMedia: protectedProcedure
+    .input(z.object({ tinderId: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      return ProfileComparisonService.createFromTinderMedia({
+        userId: ctx.session.user.id,
+        tinderId: input.tinderId,
+      });
+    }),
+
+  // Import the user's uploaded Tinder photos into their shared photo library
+  // (library only — does not auto-fill comparison columns)
+  importTinderMediaToLibrary: protectedProcedure
+    .input(z.object({ tinderId: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      return ProfileComparisonService.importTinderMediaToLibrary({
+        userId: ctx.session.user.id,
+        tinderId: input.tinderId,
+      });
+    }),
+
   // Update comparison metadata
   update: protectedProcedure
     .input(
+      // null clears a field; undefined leaves it unchanged.
       z.object({
         id: z.string(),
-        name: z.string().optional(),
-        profileName: z.string().optional(),
-        defaultBio: z.string().optional(),
-        age: z.number().optional(),
-        city: z.string().optional(),
-        state: z.string().optional(),
-        country: z.string().optional(),
-        nationality: z.string().optional(),
-        hometown: z.string().optional(),
-        heightCm: z.number().optional(),
-        educationLevel: z.enum(educationLevelEnum.enumValues).optional(),
+        name: z.string().nullable().optional(),
+        profileName: z.string().nullable().optional(),
+        defaultBio: z.string().nullable().optional(),
+        age: z.number().nullable().optional(),
+        city: z.string().nullable().optional(),
+        state: z.string().nullable().optional(),
+        country: z.string().nullable().optional(),
+        nationality: z.string().nullable().optional(),
+        hometown: z.string().nullable().optional(),
+        heightCm: z.number().nullable().optional(),
+        educationLevel: z
+          .enum(educationLevelEnum.enumValues)
+          .nullable()
+          .optional(),
         isPublic: z.boolean().optional(),
       }),
     )
@@ -119,11 +148,52 @@ export const profileCompareRouter = createTRPCRouter({
         bio: z.string().optional(),
         title: z.string().optional(),
         order: z.number().optional(),
+        completed: z.boolean().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       return ProfileComparisonService.updateColumn({
         ...input,
+        userId: ctx.session.user.id,
+      });
+    }),
+
+  // Reorder columns within a comparison
+  reorderColumns: protectedProcedure
+    .input(
+      z.object({
+        comparisonId: z.string(),
+        columnOrders: z.array(
+          z.object({
+            id: z.string(),
+            order: z.number(),
+          }),
+        ),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      return ProfileComparisonService.reorderColumns({
+        ...input,
+        userId: ctx.session.user.id,
+      });
+    }),
+
+  // Remove a column (cascades to its content + feedback)
+  removeColumn: protectedProcedure
+    .input(z.object({ columnId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      return ProfileComparisonService.removeColumn({
+        columnId: input.columnId,
+        userId: ctx.session.user.id,
+      });
+    }),
+
+  // Duplicate a column + its content (fork to tweak & compare side by side)
+  duplicateColumn: protectedProcedure
+    .input(z.object({ columnId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      return ProfileComparisonService.duplicateColumn({
+        columnId: input.columnId,
         userId: ctx.session.user.id,
       });
     }),
@@ -158,6 +228,28 @@ export const profileCompareRouter = createTRPCRouter({
     )
     .mutation(async ({ ctx, input }) => {
       return ProfileComparisonService.addPhotoToColumn({
+        ...input,
+        userId: ctx.session.user.id,
+      });
+    }),
+
+  // Bulk-add gallery photos to a column (transactional, order-preserving).
+  addPhotosToColumn: protectedProcedure
+    .input(
+      z.object({
+        columnId: z.string(),
+        photos: z
+          .array(
+            z.object({
+              attachmentId: z.string(),
+              caption: z.string().optional(),
+            }),
+          )
+          .min(1),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      return ProfileComparisonService.addPhotosToColumn({
         ...input,
         userId: ctx.session.user.id,
       });
@@ -248,7 +340,7 @@ export const profileCompareRouter = createTRPCRouter({
           contentId: z.string().optional(),
           columnId: z.string().optional(),
           rating: z.number().optional(),
-          body: z.string().optional(),
+          body: z.string().max(2000).optional(),
         })
         .refine(
           (data) => data.contentId || data.columnId,
@@ -272,7 +364,7 @@ export const profileCompareRouter = createTRPCRouter({
       z.object({
         feedbackId: z.string(),
         rating: z.number().optional(),
-        body: z.string().optional(),
+        body: z.string().max(2000).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -381,6 +473,7 @@ export const profileCompareRouter = createTRPCRouter({
         shareKey: z.string(),
         columnLabel: z.string().min(1).max(100),
         photoAttachmentIds: z.array(z.string()).min(1).max(6),
+        dataProvider: z.enum(dataProviderEnum.enumValues).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {

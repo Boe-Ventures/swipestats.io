@@ -4,7 +4,9 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
+import { formatDistanceToNow } from "date-fns";
 
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -14,8 +16,10 @@ import { useQuery } from "@tanstack/react-query";
 import { authClient } from "@/server/better-auth/client";
 import { getProviderConfig } from "@/app/app/profile-compare/[id]/provider-config";
 import { ViewOnlyColumn } from "./view-only-column";
-import { FeedbackSummary } from "./feedback-summary";
+import { FeedbackTray } from "./feedback-tray";
+import { ComposeProfileCard } from "./compose-profile-card";
 import { AnonymousNamePrompt } from "./anonymous-name-prompt";
+import { ShareFooter, ShareNotFound } from "@/components/share/share-shell";
 
 export default function SharedComparisonPage() {
   const params = useParams<{ shareKey: string }>();
@@ -23,7 +27,8 @@ export default function SharedComparisonPage() {
   const [showNamePrompt, setShowNamePrompt] = useState(false);
   const trpc = useTRPC();
 
-  const { data: session } = authClient.useSession();
+  const { data: session, isPending: isSessionLoading } =
+    authClient.useSession();
   const { data: comparison, isLoading } = useQuery(
     trpc.profileCompare.getPublic.queryOptions({
       shareKey,
@@ -32,7 +37,7 @@ export default function SharedComparisonPage() {
 
   // Show name prompt on load if user has no session
   useEffect(() => {
-    if (!isLoading) {
+    if (!isLoading && !isSessionLoading) {
       if (session?.user) {
         // Close prompt if session exists
         setShowNamePrompt(false);
@@ -41,7 +46,7 @@ export default function SharedComparisonPage() {
         setShowNamePrompt(true);
       }
     }
-  }, [isLoading, session]);
+  }, [isLoading, isSessionLoading, session]);
 
   if (isLoading) {
     return (
@@ -79,21 +84,21 @@ export default function SharedComparisonPage() {
 
   if (!comparison) {
     return (
-      <div className="bg-background flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold">Comparison not found</h2>
-          <p className="text-muted-foreground mt-2">
-            This comparison may have been deleted or is no longer public.
-          </p>
-          <Link href="https://www.swipestats.io" className="mt-4 inline-block">
-            <Button>Go to SwipeStats</Button>
-          </Link>
-        </div>
-      </div>
+      <ShareNotFound
+        title="Comparison not found"
+        description="This comparison may have been deleted or is no longer public."
+      />
     );
   }
 
   const displayBio = comparison.defaultBio || "";
+
+  // Public viewers can't act on an empty profile column, so we hide them here.
+  // This is purely a render-time filter — the columns still exist, so the
+  // moment the owner adds content they reappear on the next load.
+  const visibleColumns = comparison.columns.filter(
+    (c) => c.content.length > 0,
+  );
 
   return (
     <>
@@ -116,17 +121,25 @@ export default function SharedComparisonPage() {
                     {comparison.name || "Profile Comparison"}
                   </h1>
                 </div>
-                <div className="text-muted-foreground flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
-                  <span className="flex items-center gap-1">
-                    <span className="text-xs">🔗</span>
-                    Shared via SwipeStats
-                  </span>
+                <div className="text-muted-foreground flex flex-wrap items-center gap-x-3 gap-y-2 text-sm">
                   {comparison.profileName && (
-                    <span className="flex items-center gap-1">
-                      <span className="text-xs">👤</span>
-                      {comparison.profileName}
+                    <span className="flex items-center gap-2">
+                      <Avatar className="h-6 w-6">
+                        <AvatarFallback className="bg-rose-500 text-[11px] text-white">
+                          {comparison.profileName.charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="text-foreground font-medium">
+                        {comparison.profileName}
+                      </span>
                     </span>
                   )}
+                  <span className="flex items-center gap-1">
+                    Shared via SwipeStats ·{" "}
+                    {formatDistanceToNow(new Date(comparison.createdAt), {
+                      addSuffix: true,
+                    })}
+                  </span>
                   {comparison.age && (
                     <span className="flex items-center gap-1">
                       <span className="text-xs">🎂</span>
@@ -159,64 +172,74 @@ export default function SharedComparisonPage() {
           </div>
         </header>
 
-        {/* Main Content */}
-        <main className="container mx-auto px-4 py-8">
+        {/* Main Content — extra bottom padding leaves room for the sticky tray */}
+        <main className="container mx-auto px-4 py-8 pb-28">
           {/* Desktop: Side-by-side columns */}
           <div className="hidden gap-6 md:grid-cols-2 lg:grid lg:grid-cols-4">
-            {comparison.columns.map((column) => {
+            {visibleColumns.map((column) => {
               const providerConfig = getProviderConfig(column.dataProvider);
               return (
                 <ViewOnlyColumn
                   key={column.id}
                   column={column}
+                  comparisonId={comparison.id}
+                  shareKey={shareKey}
                   providerConfig={providerConfig}
                   defaultBio={displayBio}
-                  comparisonName={comparison.name || undefined}
                   profileName={comparison.profileName || undefined}
                   age={comparison.age || undefined}
+                  heightCm={comparison.heightCm || undefined}
+                  educationLevel={comparison.educationLevel || undefined}
+                  hometown={comparison.hometown || undefined}
+                  city={comparison.city || undefined}
+                  nationality={comparison.nationality || undefined}
                 />
               );
             })}
-            {/* Feedback Summary Column */}
-            <FeedbackSummary comparison={comparison} />
+            {/* Always-present CTA to compose another version */}
+            <ComposeProfileCard
+              shareKey={shareKey}
+              profileName={comparison.profileName || undefined}
+            />
           </div>
 
           {/* Mobile: Tabs */}
           <div className="lg:hidden">
-            {comparison.columns.length > 0 ? (
-              <Tabs defaultValue={comparison.columns[0]!.id}>
+            {visibleColumns.length > 0 ? (
+              <Tabs defaultValue={visibleColumns[0]!.id}>
                 <TabsList className="w-full">
-                  {comparison.columns.map((column) => (
+                  {visibleColumns.map((column) => (
                     <TabsTrigger
                       key={column.id}
                       value={column.id}
                       className="flex-1"
                     >
-                      {column.title || column.dataProvider}
+                      {column.title ||
+                        getProviderConfig(column.dataProvider).name}
                     </TabsTrigger>
                   ))}
-                  <TabsTrigger value="feedback-summary" className="flex-1">
-                    Summary
-                  </TabsTrigger>
                 </TabsList>
-                {comparison.columns.map((column) => {
+                {visibleColumns.map((column) => {
                   const providerConfig = getProviderConfig(column.dataProvider);
                   return (
                     <TabsContent key={column.id} value={column.id}>
                       <ViewOnlyColumn
                         column={column}
+                        comparisonId={comparison.id}
+                        shareKey={shareKey}
                         providerConfig={providerConfig}
                         defaultBio={displayBio}
-                        comparisonName={comparison.name || undefined}
                         profileName={comparison.profileName || undefined}
                         age={comparison.age || undefined}
+                        heightCm={comparison.heightCm || undefined}
+                        educationLevel={comparison.educationLevel || undefined}
+                        hometown={comparison.hometown || undefined}
+                        city={comparison.city || undefined}
+                        nationality={comparison.nationality || undefined}
                       />
                     </TabsContent>
                   );
                 })}
-                <TabsContent value="feedback-summary">
-                  <FeedbackSummary comparison={comparison} />
-                </TabsContent>
               </Tabs>
             ) : (
               <div className="border-muted-foreground/25 flex items-center justify-center rounded-lg border-2 border-dashed py-12">
@@ -227,23 +250,23 @@ export default function SharedComparisonPage() {
                 </div>
               </div>
             )}
+
+            {/* Always-present CTA to compose another version */}
+            <div className="mt-6">
+              <ComposeProfileCard
+                shareKey={shareKey}
+                profileName={comparison.profileName || undefined}
+                fullWidth
+              />
+            </div>
           </div>
         </main>
 
-        {/* Footer */}
-        <footer className="border-t py-8">
-          <div className="container mx-auto px-4 text-center">
-            <p className="text-muted-foreground text-sm">
-              Created with{" "}
-              <Link
-                href="https://www.swipestats.io"
-                className="font-semibold hover:underline"
-              >
-                SwipeStats
-              </Link>
-            </p>
-          </div>
-        </footer>
+        {/* Sticky feedback tray */}
+        <FeedbackTray comparison={comparison} />
+
+        {/* Footer — extra bottom padding clears the sticky tray */}
+        <ShareFooter className="pb-28" />
       </div>
     </>
   );

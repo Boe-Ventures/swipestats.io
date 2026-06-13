@@ -9,6 +9,10 @@ import { env } from "@/env";
 import { db } from "@/server/db";
 import * as schema from "@/server/db/schema";
 import { trackServerEvent } from "@/server/services/analytics.service";
+import {
+  ANONYMOUS_SOURCES,
+  type AnonymousSource,
+} from "@/lib/analytics/analytics.types";
 import { EmailVerificationInline } from "../../../emails/EmailVerificationInline";
 import { resend } from "@/server/clients/resend.client";
 
@@ -140,11 +144,13 @@ export const auth = betterAuth({
       if (!newSession?.user) return;
 
       // Read source from custom header (passed from client via fetchOptions)
-      // This lets us track where anonymous users are coming from for analytics
+      // This lets us track where anonymous users are coming from for analytics.
+      // Validated against the shared allowlist; anything else → "direct".
       const sourceHeader = ctx.headers?.get("x-anonymous-source");
-      const source =
-        sourceHeader === "upload_flow" || sourceHeader === "comparison_view"
-          ? sourceHeader
+      const source: AnonymousSource =
+        sourceHeader &&
+        (ANONYMOUS_SOURCES as readonly string[]).includes(sourceHeader)
+          ? (sourceHeader as AnonymousSource)
           : "direct";
 
       // Track anonymous user creation with specific source
@@ -247,9 +253,15 @@ export const auth = betterAuth({
   trustedOrigins: [
     "http://localhost:3000",
     "https://swipestats-42.beta.localcan.dev",
-    "https://swipestats-4-beta.vercel.app",
+    // Trust all of THIS project's Vercel preview + per-deployment URLs. The
+    // stable branch alias is already covered via baseURL (VERCEL_BRANCH_URL),
+    // but the per-deployment hash URLs are not — this wildcard covers both.
+    // better-auth's matchesOriginPattern supports `*`; scoped to `swipestats-*`
+    // so we don't trust unrelated *.vercel.app apps. No baseURL change needed:
+    // we use email/password only (no OAuth callbacks) and cookies are host-only.
+    "https://swipestats-*.vercel.app",
 
-    // Add production domains here when deploying
+    // Production
     "https://www.swipestats.io",
   ],
   plugins: [

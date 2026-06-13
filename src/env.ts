@@ -20,6 +20,12 @@ export const env = createEnv({
     LEMON_SQUEEZY_WEBHOOK_SECRET: z.string(),
     ADMIN_TOKEN: z.string().min(32), // Require strong token (32+ chars)
     BLOB_READ_WRITE_TOKEN: z.string().optional(), // Optional for dev without Vercel Blob
+    // Required in production: the AI Roast / prompt-suggest features call
+    // Anthropic and will 500 at runtime if this is unset.
+    ANTHROPIC_API_KEY:
+      process.env.NODE_ENV === "production"
+        ? z.string()
+        : z.string().optional(),
     VERCEL_DEPLOY_HOOK_URL: z.string().url().optional(),
     // Slack webhooks
     SLACK_WEBHOOK_BOT_MESSAGES: z.string().url(),
@@ -63,6 +69,7 @@ export const env = createEnv({
     LEMON_SQUEEZY_WEBHOOK_SECRET: process.env.LEMON_SQUEEZY_WEBHOOK_SECRET,
     ADMIN_TOKEN: process.env.ADMIN_TOKEN,
     BLOB_READ_WRITE_TOKEN: process.env.BLOB_READ_WRITE_TOKEN,
+    ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,
     // Slack webhooks
     VERCEL_DEPLOY_HOOK_URL: process.env.VERCEL_DEPLOY_HOOK_URL,
     SLACK_WEBHOOK_BOT_MESSAGES: process.env.SLACK_WEBHOOK_BOT_MESSAGES,

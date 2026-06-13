@@ -2,24 +2,43 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Check, Plus, Image as ImageIcon, MessageCircle } from "lucide-react";
+import {
+  Check,
+  GraduationCap,
+  House,
+  Image as ImageIcon,
+  MapPin,
+  MessageCircle,
+  Plus,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { EDUCATION_LABELS } from "@/lib/format";
 
 import type { RouterOutputs } from "@/trpc/react";
+import type { EducationLevel } from "@/server/db/schema";
 import type { ProviderConfig } from "./provider-config";
 
-type ComparisonColumn =
-  RouterOutputs["profileCompare"]["get"]["columns"][number];
+// Shared by the authed edit page and the public share page. The public column
+// has no `roastStatus`, and this view doesn't need it, so omit it from the prop.
+type ComparisonColumn = Omit<
+  RouterOutputs["profileCompare"]["get"]["columns"][number],
+  "roastStatus"
+>;
 
 interface StackViewProps {
   column: ComparisonColumn;
   providerConfig: ProviderConfig;
   defaultBio?: string;
   onAddContent?: () => void;
+  /** When set, the "Browse photo gallery" link opens the library dialog in
+   *  place instead of navigating to the standalone /photos page. */
+  onBrowseLibrary?: () => void;
   profileName?: string;
   age?: number;
+  city?: string;
+  educationLevel?: EducationLevel;
+  hometown?: string;
   onFeedbackClick?: (contentId: string) => void;
   feedbackCounts?: Record<string, number>;
 }
@@ -29,8 +48,12 @@ export function StackView({
   providerConfig,
   defaultBio,
   onAddContent,
+  onBrowseLibrary,
   profileName,
   age,
+  city,
+  educationLevel,
+  hometown,
   onFeedbackClick,
   feedbackCounts,
 }: StackViewProps) {
@@ -57,6 +80,19 @@ export function StackView({
 
   // Check if this is Tinder for dark theme
   const isTinder = providerConfig.name === "Tinder";
+
+  // Tinder spreads identity across the card stack: bio on the first photo,
+  // info lines (education / lives in / from) on the last. A single photo is
+  // both, so it shows everything.
+  const isFirstPhoto = currentContentIndex === 0;
+  const isLastPhoto = currentContentIndex === photos.length - 1;
+  const infoLines = [
+    educationLevel
+      ? { icon: GraduationCap, label: EDUCATION_LABELS[educationLevel] }
+      : null,
+    city ? { icon: MapPin, label: `Lives in ${city}` } : null,
+    hometown ? { icon: House, label: `From ${hometown}` } : null,
+  ].filter((line) => line !== null);
 
   return (
     <div
@@ -140,29 +176,32 @@ export function StackView({
                   {profileName || "Name"}
                   {age && `, ${age}`}
                 </h2>
-                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-500">
-                  <Check className="h-4 w-4 text-white" />
+                <div className="flex h-5 w-5 items-center justify-center rounded-full bg-blue-500">
+                  <Check className="h-3 w-3 text-white" />
                 </div>
               </div>
 
-              {displayBio && (
+              {displayBio && isFirstPhoto && (
                 <p className="mb-3 line-clamp-2 text-base leading-relaxed">
                   {displayBio}
                 </p>
               )}
 
-              {/* Info pills - Tinder style */}
-              {isTinder && (
-                <div className="flex flex-wrap gap-2">
-                  <div className="flex items-center gap-1.5 rounded-full bg-white/20 px-3 py-1.5 backdrop-blur-sm">
-                    <span className="text-sm">📍</span>
-                    <span className="text-sm">Less than a mile away</span>
-                  </div>
+              {/* Tinder puts job / school / location on the closing photo. */}
+              {isLastPhoto && infoLines.length > 0 && (
+                <div className="mb-3 space-y-1">
+                  {infoLines.map(({ icon: Icon, label }) => (
+                    <div key={label} className="flex items-center gap-2">
+                      <Icon className="h-4 w-4 shrink-0 opacity-80" />
+                      <span className="text-sm">{label}</span>
+                    </div>
+                  ))}
                 </div>
               )}
 
-              {/* Provider badge and comment button */}
-              <div className="absolute right-5 bottom-3 flex items-center gap-2">
+              {/* Comment button — z-20 lifts it above the full-photo
+                  prev/next nav overlay (z-10) so it stays clickable. */}
+              <div className="absolute right-5 bottom-3 z-20 flex items-center gap-2">
                 {onFeedbackClick && currentPhoto && (
                   <Button
                     size="icon"
@@ -183,16 +222,6 @@ export function StackView({
                     ) : null}
                   </Button>
                 )}
-                <Badge
-                  variant="secondary"
-                  className="text-xs font-semibold opacity-60"
-                  style={{
-                    backgroundColor: providerConfig.brandColor,
-                    color: "white",
-                  }}
-                >
-                  {providerConfig.name}
-                </Badge>
               </div>
             </div>
           </div>
@@ -218,14 +247,28 @@ export function StackView({
                 <Plus className="mr-2 h-3.5 w-3.5" />
                 Add Photos
               </Button>
-              <Link
-                href="/app/profile-compare/photos"
-                onClick={(e) => e.stopPropagation()}
-                className="text-muted-foreground hover:text-foreground text-xs underline"
-              >
-                <ImageIcon className="mr-1 inline h-3 w-3" />
-                Browse photo gallery
-              </Link>
+              {onBrowseLibrary ? (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onBrowseLibrary();
+                  }}
+                  className="text-muted-foreground hover:text-foreground text-xs underline"
+                >
+                  <ImageIcon className="mr-1 inline h-3 w-3" />
+                  Browse photo gallery
+                </button>
+              ) : (
+                <Link
+                  href="/app/profile-compare/photos"
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-muted-foreground hover:text-foreground text-xs underline"
+                >
+                  <ImageIcon className="mr-1 inline h-3 w-3" />
+                  Browse photo gallery
+                </Link>
+              )}
             </div>
           </div>
         )}

@@ -87,12 +87,22 @@ export function AnonymousNamePrompt({
   const isLoading = isCreatingSession || updateName.isPending;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
+    // Deliberately non-dismissable: every visitor on a share page has a named
+    // session, so feedback surfaces never have to handle "unauthenticated".
+    // Close attempts (X, escape, outside click) are ignored — the only way
+    // through is submitting a name, which closes via the success path above.
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        if (next) onOpenChange(next);
+      }}
+    >
+      <DialogContent className="sm:max-w-md" showCloseButton={false}>
         <DialogHeader>
           <DialogTitle>What should we call you?</DialogTitle>
           <DialogDescription>
-            Enter your name to view and comment on this comparison.
+            Add a name to view and comment. It appears next to any feedback you
+            leave.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit}>

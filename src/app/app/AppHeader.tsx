@@ -30,11 +30,6 @@ export function AppHeader({ session }: AppHeaderProps) {
                 Dashboard
               </Button>
             </Link>
-            <Link href="/app/profile-compare">
-              <Button variant="ghost" size="sm">
-                Profile Compare
-              </Button>
-            </Link>
             <Link href="/app/profile-compare/photos">
               <Button variant="ghost" size="sm">
                 Photos

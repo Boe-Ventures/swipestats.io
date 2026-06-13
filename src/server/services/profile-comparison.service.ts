@@ -8,9 +8,13 @@ import {
   comparisonColumnContentTable,
   profileComparisonFeedbackTable,
   attachmentTable,
+  mediaTable,
+  tinderProfileTable,
   userTable,
+  aiOutputTable,
   type DataProvider,
   type educationLevelEnum,
+  type ProfileRoastResult,
 } from "../db/schema";
 
 // Generate a cryptographically secure random share key
@@ -24,11 +28,15 @@ function generateShareKey(): string {
 export async function createComparison(data: {
   userId: string;
   name?: string;
+  profileName?: string;
   defaultBio?: string;
   age?: number;
+  heightCm?: number;
   city?: string;
   state?: string;
   country?: string;
+  nationality?: string;
+  hometown?: string;
   columns: Array<{
     dataProvider: DataProvider;
     bio?: string;
@@ -43,11 +51,15 @@ export async function createComparison(data: {
       .values({
         userId: data.userId,
         name: data.name,
+        profileName: data.profileName,
         defaultBio: data.defaultBio,
         age: data.age,
+        heightCm: data.heightCm,
         city: data.city,
         state: data.state,
         country: data.country,
+        nationality: data.nationality,
+        hometown: data.hometown,
         shareKey: generateShareKey(),
       })
       .returning();
@@ -121,7 +133,52 @@ export async function getComparison(comparisonId: string, userId: string) {
     throw new Error("Comparison not found");
   }
 
-  return comparison;
+  // Roast status lives in ai_output (kind="profile_roast", columnId=column.id).
+  // Fetch just the badge metadata for these columns in one query.
+  const columnIds = comparison.columns.map((c) => c.id);
+  const roastRows = columnIds.length
+    ? await db.query.aiOutputTable.findMany({
+        where: and(
+          eq(aiOutputTable.kind, "profile_roast"),
+          inArray(aiOutputTable.columnId, columnIds),
+        ),
+        columns: {
+          columnId: true,
+          tone: true,
+          updatedAt: true,
+          output: true,
+        },
+      })
+    : [];
+  const roastBySubject = new Map(roastRows.map((r) => [r.columnId, r]));
+
+  // Derive a lightweight roast status per column (roasted? + tone + when, plus
+  // the overall tagline/headline for the roast CTA strip) so the edit page can
+  // surface it without shipping the full roast payload. Staleness was dropped
+  // in favour of on-demand re-roasting.
+  const columns = comparison.columns.map((column) => {
+    const roast = roastBySubject.get(column.id);
+    // kind="profile_roast" rows always hold a ProfileRoastResult payload.
+    const overall = roast ? (roast.output as ProfileRoastResult).overall : null;
+    const roastStatus = roast
+      ? {
+          roasted: true as const,
+          tone: roast.tone,
+          updatedAt: roast.updatedAt,
+          tagline: overall?.tagline ?? null,
+          headline: overall?.headline ?? null,
+        }
+      : {
+          roasted: false as const,
+          tone: null,
+          updatedAt: null,
+          tagline: null,
+          headline: null,
+        };
+    return { ...column, roastStatus };
+  });
+
+  return { ...comparison, columns };
 }
 
 /**
@@ -152,7 +209,42 @@ export async function getPublicComparison(shareKey: string) {
     throw new Error("Comparison not found or not public");
   }
 
-  return comparison;
+  // Surface each column's roast on the share page — but only when the owner
+  // published that roast too. Comparison-public and roast-public are separate
+  // consent bits, so an unpublished roast never leaks here.
+  const columnIds = comparison.columns.map((c) => c.id);
+  const publishedRoasts =
+    columnIds.length > 0
+      ? await db.query.aiOutputTable.findMany({
+          where: and(
+            eq(aiOutputTable.kind, "profile_roast"),
+            eq(aiOutputTable.scope, ""),
+            eq(aiOutputTable.isPublic, true),
+            inArray(aiOutputTable.columnId, columnIds),
+          ),
+          columns: { columnId: true, shareKey: true, output: true },
+        })
+      : [];
+  const roastByColumn = new Map(
+    publishedRoasts.map((row) => [row.columnId, row]),
+  );
+
+  return {
+    ...comparison,
+    columns: comparison.columns.map((column) => {
+      const roast = roastByColumn.get(column.id);
+      const overall = roast
+        ? (roast.output as ProfileRoastResult).overall
+        : null;
+      return {
+        ...column,
+        publishedRoast:
+          roast?.shareKey && overall
+            ? { shareKey: roast.shareKey, tagline: overall.tagline }
+            : null,
+      };
+    }),
+  };
 }
 
 /**
@@ -182,22 +274,23 @@ export async function listComparisons(userId: string) {
 }
 
 /**
- * Update comparison metadata
+ * Update comparison metadata. For each field, null clears it and undefined
+ * leaves it unchanged.
  */
 export async function updateComparison(data: {
   id: string;
   userId: string;
-  name?: string;
-  profileName?: string;
-  defaultBio?: string;
-  age?: number;
-  city?: string;
-  state?: string;
-  country?: string;
-  nationality?: string;
-  hometown?: string;
-  heightCm?: number;
-  educationLevel?: (typeof educationLevelEnum.enumValues)[number];
+  name?: string | null;
+  profileName?: string | null;
+  defaultBio?: string | null;
+  age?: number | null;
+  city?: string | null;
+  state?: string | null;
+  country?: string | null;
+  nationality?: string | null;
+  hometown?: string | null;
+  heightCm?: number | null;
+  educationLevel?: (typeof educationLevelEnum.enumValues)[number] | null;
   isPublic?: boolean;
 }) {
   const updateData: Record<string, unknown> = {};
@@ -237,6 +330,8 @@ export async function updateComparison(data: {
  * Delete a comparison
  */
 export async function deleteComparison(id: string, userId: string) {
+  // Deleting the comparison cascades to its columns, which cascade to their
+  // ai_output roasts (columnId FK, onDelete cascade) — nothing to prune.
   const [deleted] = await db
     .delete(profileComparisonTable)
     .where(
@@ -304,6 +399,73 @@ export async function addColumn(data: {
 }
 
 /**
+ * Duplicate a column (and all its content) into the same comparison — the
+ * "fork to tweak & compare side by side" action. Photos are shared gallery
+ * items, so we reuse the same attachment references rather than re-uploading.
+ */
+export async function duplicateColumn(data: {
+  columnId: string;
+  userId: string;
+}) {
+  const source = await db.query.comparisonColumnTable.findFirst({
+    where: eq(comparisonColumnTable.id, data.columnId),
+    with: {
+      comparison: true,
+      content: {
+        orderBy: (content, { asc }) => [asc(content.order)],
+      },
+    },
+  });
+
+  if (source?.comparison.userId !== data.userId) {
+    throw new Error("Column not found or unauthorized");
+  }
+
+  // Place the copy after the current last column.
+  const lastColumn = await db.query.comparisonColumnTable.findMany({
+    where: eq(comparisonColumnTable.comparisonId, source.comparisonId),
+    orderBy: (table, { desc }) => [desc(table.order)],
+    limit: 1,
+  });
+  const order = lastColumn.length > 0 ? lastColumn[0]!.order + 1 : 0;
+
+  // neon-http has no transaction support — withTransaction runs on the
+  // WebSocket (neon-serverless) driver, which does.
+  return await withTransaction(async (tx) => {
+    const [column] = await tx
+      .insert(comparisonColumnTable)
+      .values({
+        comparisonId: source.comparisonId,
+        dataProvider: source.dataProvider,
+        bio: source.bio,
+        title: source.title ? `${source.title} (copy)` : "Copy",
+        order,
+      })
+      .returning();
+
+    if (!column) {
+      throw new Error("Failed to duplicate column");
+    }
+
+    if (source.content.length > 0) {
+      await tx.insert(comparisonColumnContentTable).values(
+        source.content.map((c) => ({
+          columnId: column.id,
+          type: c.type,
+          attachmentId: c.attachmentId,
+          caption: c.caption,
+          prompt: c.prompt,
+          answer: c.answer,
+          order: c.order,
+        })),
+      );
+    }
+
+    return column;
+  });
+}
+
+/**
  * Update a column
  */
 export async function updateColumn(data: {
@@ -312,6 +474,7 @@ export async function updateColumn(data: {
   bio?: string;
   title?: string;
   order?: number;
+  completed?: boolean;
 }) {
   // Verify ownership
   const column = await db.query.comparisonColumnTable.findFirst({
@@ -331,6 +494,13 @@ export async function updateColumn(data: {
       bio: data.bio !== undefined ? data.bio : column.bio,
       title: data.title !== undefined ? data.title : column.title,
       order: data.order !== undefined ? data.order : column.order,
+      // Toggle completion: stamp now when marking done, clear when undone.
+      completedAt:
+        data.completed === undefined
+          ? column.completedAt
+          : data.completed
+            ? new Date()
+            : null,
     })
     .where(eq(comparisonColumnTable.id, data.columnId))
     .returning();
@@ -340,6 +510,67 @@ export async function updateColumn(data: {
   }
 
   return updated;
+}
+
+/**
+ * Reorder columns within a comparison. Takes the full desired ordering and
+ * writes each column's new `order` index in a single transaction.
+ */
+export async function reorderColumns(data: {
+  comparisonId: string;
+  userId: string;
+  columnOrders: Array<{ id: string; order: number }>;
+}) {
+  // Verify ownership of the parent comparison
+  const comparison = await db.query.profileComparisonTable.findFirst({
+    where: eq(profileComparisonTable.id, data.comparisonId),
+  });
+
+  if (comparison?.userId !== data.userId) {
+    throw new Error("Comparison not found or unauthorized");
+  }
+
+  // Only touch columns that actually belong to this comparison.
+  await withTransaction(async (tx) => {
+    for (const columnOrder of data.columnOrders) {
+      await tx
+        .update(comparisonColumnTable)
+        .set({ order: columnOrder.order })
+        .where(
+          and(
+            eq(comparisonColumnTable.id, columnOrder.id),
+            eq(comparisonColumnTable.comparisonId, data.comparisonId),
+          ),
+        );
+    }
+  });
+
+  return { success: true };
+}
+
+/**
+ * Remove a column from a comparison. Cascades to the column's content and any
+ * feedback (FKs are onDelete: "cascade"), so a single delete is sufficient.
+ */
+export async function removeColumn(data: { columnId: string; userId: string }) {
+  // Verify ownership via the parent comparison
+  const column = await db.query.comparisonColumnTable.findFirst({
+    where: eq(comparisonColumnTable.id, data.columnId),
+    with: {
+      comparison: true,
+    },
+  });
+
+  if (column?.comparison.userId !== data.userId) {
+    throw new Error("Column not found or unauthorized");
+  }
+
+  // Deleting the column cascades to its ai_output roast (columnId FK).
+  await db
+    .delete(comparisonColumnTable)
+    .where(eq(comparisonColumnTable.id, data.columnId));
+
+  return { success: true };
 }
 
 /**
@@ -405,6 +636,77 @@ export async function addPhotoToColumn(data: {
   return addContentToColumn({
     ...data,
     type: "photo",
+  });
+}
+
+/**
+ * Bulk-add gallery photos to a column in a single transaction, appended in the
+ * given array order.
+ *
+ * Prefer this over calling `addPhotoToColumn` N times in parallel: each of those
+ * reads the column's current max `order` independently, so concurrent calls all
+ * see the same value and collide on order (every photo lands at the same index,
+ * leaving the final order undefined). Here the max is read once and the inserts
+ * get sequential `order` values, so the photos keep the order they were passed.
+ */
+export async function addPhotosToColumn(data: {
+  columnId: string;
+  userId: string;
+  photos: Array<{ attachmentId: string; caption?: string }>;
+}) {
+  if (data.photos.length === 0) return [];
+
+  return withTransaction(async (tx) => {
+    // Verify column ownership and read the current max order in one query.
+    const column = await tx.query.comparisonColumnTable.findFirst({
+      where: eq(comparisonColumnTable.id, data.columnId),
+      with: {
+        comparison: true,
+        content: {
+          orderBy: (content, { desc }) => [desc(content.order)],
+          limit: 1,
+        },
+      },
+    });
+
+    if (column?.comparison.userId !== data.userId) {
+      throw new Error("Column not found or unauthorized");
+    }
+
+    // Verify every attachment belongs to this user and isn't soft-deleted, so a
+    // caller can't link someone else's blob into their column (mirrors the
+    // ownership guard in createFriendColumn).
+    const attachmentIds = data.photos.map((p) => p.attachmentId);
+    const owned = await tx.query.attachmentTable.findMany({
+      where: and(
+        inArray(attachmentTable.id, attachmentIds),
+        eq(attachmentTable.uploadedBy, data.userId),
+        isNull(attachmentTable.deletedAt),
+      ),
+      columns: { id: true },
+    });
+    const ownedIds = new Set(owned.map((a) => a.id));
+    if (data.photos.some((p) => !ownedIds.has(p.attachmentId))) {
+      throw new Error("Some photos are invalid or not yours");
+    }
+
+    const startOrder =
+      column.content.length > 0 ? column.content[0]!.order + 1 : 0;
+
+    const rows = await tx
+      .insert(comparisonColumnContentTable)
+      .values(
+        data.photos.map((photo, index) => ({
+          columnId: data.columnId,
+          type: "photo" as const,
+          attachmentId: photo.attachmentId,
+          caption: photo.caption,
+          order: startOrder + index,
+        })),
+      )
+      .returning();
+
+    return rows;
   });
 }
 
@@ -569,7 +871,9 @@ export async function createFeedback(data: {
     throw new Error("Must provide rating or comment body");
   }
 
-  // Verify the target exists and user has access
+  // Verify the target exists and belongs to a public comparison. Feedback is
+  // only ever submitted from the public share page, so a private comparison
+  // (or a guessed content/column id) must be rejected.
   if (data.contentId) {
     const content = await db.query.comparisonColumnContentTable.findFirst({
       where: eq(comparisonColumnContentTable.id, data.contentId),
@@ -584,6 +888,9 @@ export async function createFeedback(data: {
     if (!content) {
       throw new Error("Content not found");
     }
+    if (!content.column?.comparison?.isPublic) {
+      throw new Error("Comparison is not public");
+    }
   } else if (data.columnId) {
     const column = await db.query.comparisonColumnTable.findFirst({
       where: eq(comparisonColumnTable.id, data.columnId),
@@ -593,6 +900,9 @@ export async function createFeedback(data: {
     });
     if (!column) {
       throw new Error("Column not found");
+    }
+    if (!column.comparison?.isPublic) {
+      throw new Error("Comparison is not public");
     }
   }
 
@@ -854,6 +1164,12 @@ export async function getForFriendCreation(shareKey: string) {
           name: true,
         },
       },
+      columns: {
+        orderBy: (columns, { asc }) => [asc(columns.order)],
+        columns: {
+          dataProvider: true,
+        },
+      },
     },
   });
 
@@ -882,6 +1198,9 @@ export async function getForFriendCreation(shareKey: string) {
       state: comparison.state,
       country: comparison.country,
       shareKey: comparison.shareKey,
+      // The friend's version inherits the app the comparison is built around
+      // so the preview + published column match the other columns.
+      dataProvider: deriveComparisonProvider(comparison.columns),
     },
     owner: {
       id: comparison.user.id,
@@ -892,6 +1211,17 @@ export async function getForFriendCreation(shareKey: string) {
 }
 
 /**
+ * Default data provider for a friend-created column: mirror the comparison's
+ * existing columns (the first one in display order), falling back to Hinge when
+ * there are none yet. The friend can override this from the create UI.
+ */
+function deriveComparisonProvider(
+  columns: { dataProvider: DataProvider }[],
+): DataProvider {
+  return columns[0]?.dataProvider ?? "HINGE";
+}
+
+/**
  * Create a column from a friend (requires anonymous user)
  */
 export async function createFriendColumn(data: {
@@ -899,6 +1229,7 @@ export async function createFriendColumn(data: {
   userId: string;
   columnLabel: string;
   photoAttachmentIds: string[];
+  dataProvider?: DataProvider;
 }) {
   // Verify user is anonymous
   const user = await db.query.userTable.findFirst({
@@ -939,22 +1270,27 @@ export async function createFriendColumn(data: {
   }
 
   return withTransaction(async (tx) => {
-    // Get the highest order number for existing columns
+    // Get existing columns to compute order + inherit the comparison's app
     const existingColumns = await tx.query.comparisonColumnTable.findMany({
       where: eq(comparisonColumnTable.comparisonId, comparison.id),
-      orderBy: (table, { desc }) => [desc(table.order)],
-      limit: 1,
+      orderBy: (table, { asc }) => [asc(table.order)],
     });
 
     const order =
-      existingColumns.length > 0 ? existingColumns[0]!.order + 1 : 0;
+      existingColumns.length > 0
+        ? Math.max(...existingColumns.map((c) => c.order)) + 1
+        : 0;
 
-    // Create column with HINGE provider and custom label
+    // Use the friend's chosen app, falling back to the comparison's own
+    const dataProvider =
+      data.dataProvider ?? deriveComparisonProvider(existingColumns);
+
+    // Create column with the selected provider and a custom label
     const [column] = await tx
       .insert(comparisonColumnTable)
       .values({
         comparisonId: comparison.id,
-        dataProvider: "HINGE",
+        dataProvider,
         title: data.columnLabel,
         order,
       })
@@ -1183,8 +1519,126 @@ export async function getPhotoSummary(comparisonId: string, userId: string) {
 }
 
 // Service object export
+/**
+ * Bridge a user's already-uploaded Tinder photos (the `media` table) into
+ * `attachment` rows (resourceType "user_photo") by pointing at the same public
+ * URLs — no blob copy needed. The unique index on attachment.url keeps this
+ * idempotent, so it can run repeatedly without piling up duplicate gallery
+ * photos. Returns the attachment ids in media order.
+ */
+async function importTinderPhotosAsAttachments(
+  userId: string,
+  tinderId: string,
+): Promise<string[]> {
+  // 1. The profile must belong to the requesting user
+  const profile = await db.query.tinderProfileTable.findFirst({
+    where: eq(tinderProfileTable.tinderId, tinderId),
+    columns: { tinderId: true, userId: true },
+  });
+
+  if (!profile) {
+    throw new Error("Profile not found");
+  }
+  if (profile.userId !== userId) {
+    throw new Error("You can only build a comparison from your own profile");
+  }
+
+  // 2. Pull the profile's photos. We don't filter on media.type so this stays
+  // consistent with the public getMedia query that powers the CTA preview.
+  const media = await db.query.mediaTable.findMany({
+    where: eq(mediaTable.tinderProfileId, tinderId),
+    limit: 9,
+  });
+  const photos = media.filter((m) => m.url);
+
+  if (photos.length === 0) {
+    throw new Error("This profile has no photos to build a comparison from");
+  }
+
+  const urls = photos.map((m) => m.url);
+
+  // 3. Mirror each photo into a user_photo attachment (idempotent on url)
+  await db
+    .insert(attachmentTable)
+    .values(
+      photos.map((m, index) => ({
+        resourceType: "user_photo" as const,
+        resourceId: "gallery",
+        uploadedBy: userId,
+        filename: `tinder-${tinderId}-${index}`,
+        originalFilename: `tinder-photo-${index + 1}.jpg`,
+        mimeType: "image/jpeg",
+        size: 0,
+        url: m.url,
+        metadata: { source: "tinder_media", tinderId },
+      })),
+    )
+    .onConflictDoNothing({ target: attachmentTable.url });
+
+  // 4. Resolve attachment ids for those URLs, preserving the media order
+  const attachments = await db.query.attachmentTable.findMany({
+    where: and(
+      inArray(attachmentTable.url, urls),
+      isNull(attachmentTable.deletedAt),
+    ),
+  });
+  const idByUrl = new Map(attachments.map((a) => [a.url, a.id]));
+  const photoAttachmentIds = urls
+    .map((url) => idByUrl.get(url))
+    .filter((id): id is string => !!id);
+
+  if (photoAttachmentIds.length === 0) {
+    throw new Error("Failed to import photos");
+  }
+
+  return photoAttachmentIds;
+}
+
+/**
+ * Seed a brand-new comparison from a user's already-uploaded Tinder photos.
+ * Used by the dashboard / insights CTAs where there's no existing comparison.
+ */
+export async function createFromTinderMedia(data: {
+  userId: string;
+  tinderId: string;
+}) {
+  const photoAttachmentIds = await importTinderPhotosAsAttachments(
+    data.userId,
+    data.tinderId,
+  );
+
+  return createComparison({
+    userId: data.userId,
+    name: "My Tinder profile",
+    columns: [{ dataProvider: "TINDER", photoAttachmentIds }],
+  });
+}
+
+/**
+ * Import the user's already-uploaded Tinder photos into their shared photo
+ * library (as `user_photo` attachments) without touching any comparison column.
+ * This backs the empty-state "Use my uploaded Tinder photos" button — like the
+ * adjacent "Upload your photos" action, it only populates the library; the user
+ * then curates each profile deliberately rather than getting the same photos
+ * auto-dumped into every column.
+ */
+export async function importTinderMediaToLibrary(data: {
+  userId: string;
+  tinderId: string;
+}) {
+  // Ownership of the Tinder profile is verified inside the import helper.
+  const photoAttachmentIds = await importTinderPhotosAsAttachments(
+    data.userId,
+    data.tinderId,
+  );
+
+  return { photoCount: photoAttachmentIds.length };
+}
+
 export const ProfileComparisonService = {
   create: createComparison,
+  createFromTinderMedia,
+  importTinderMediaToLibrary,
   get: getComparison,
   getPublic: getPublicComparison,
   list: listComparisons,
@@ -1192,8 +1646,12 @@ export const ProfileComparisonService = {
   delete: deleteComparison,
   addColumn,
   updateColumn,
+  reorderColumns,
+  removeColumn,
+  duplicateColumn,
   addContentToColumn,
   addPhotoToColumn, // legacy
+  addPhotosToColumn,
   updateContent,
   reorderContent,
   reorderPhotos, // legacy

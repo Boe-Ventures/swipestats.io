@@ -24,10 +24,10 @@ export const TIER_FEATURES = {
     "All demographic comparisons",
     "Advanced percentile rankings",
     "The Swipe Guide",
+    "AI Profile Review & Roast",
   ],
   PLUS_COMING_SOON: [
     "Message Intelligence AI",
-    "AI Profile Review & Roast",
     "Geographic Directory Search for profile comparisons (7,000+ profiles)",
   ],
   ELITE: [

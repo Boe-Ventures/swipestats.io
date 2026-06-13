@@ -33,7 +33,7 @@ export const NEWSLETTER_TOPICS = {
    - Location: Within blog posts/content
    - ✅ **Good**: Explicit user action required
 
-3. **Coming Soon - Profile Compare** (`src/app/app/dashboard/ProfileCompareSection.tsx`, `src/app/app/profile-compare/page.tsx`)
+3. **Coming Soon - Profile Compare** (`src/app/app/dashboard/ProfileCompareSection.tsx`, `src/app/app/profile-compare/`)
    - Topic: `NEWSLETTER_TOPICS.PROFILE_COMPARE`
    - User Action: Clicks "Notify me when ready" or enters email
    - Location: Profile Compare feature pages

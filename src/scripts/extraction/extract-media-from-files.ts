@@ -26,6 +26,7 @@
 import { neon, Pool, neonConfig } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import { count } from "drizzle-orm";
+import { createHash } from "node:crypto";
 import ws from "ws";
 import * as schema from "@/server/db/schema";
 import type {
@@ -122,9 +123,7 @@ function extractDomain(url: string): string {
 }
 
 function generateTinderId(birthDate: string, createDate: string): string {
-  const crypto = require("crypto") as typeof import("crypto");
-  return crypto
-    .createHash("sha256")
+  return createHash("sha256")
     .update(birthDate + "-" + createDate)
     .digest("hex");
 }

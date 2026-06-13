@@ -17,6 +17,30 @@
 // Pattern: Track clicks (not useEffect/dialog state) to avoid duplicates
 // =====================================================
 
+// =====================================================
+// ANONYMOUS SOURCE ATTRIBUTION
+// =====================================================
+//
+// Where an anonymous (guest) session was first created. Passed from the client
+// via the `X-Anonymous-Source` header on the anonymous sign-in request, recorded
+// on the `anonymous_user_created` event, and validated server-side against this
+// allowlist (anything else falls back to "direct").
+//
+// - upload_flow / comparison_view: in-app entry points
+// - try_gateway: generic /try landing (no source param)
+// - roast_share / home_banner: external CTAs that route through /try?source=...
+// - direct: fallback when no recognized source is provided
+export const ANONYMOUS_SOURCES = [
+  "upload_flow",
+  "comparison_view",
+  "try_gateway",
+  "roast_share",
+  "home_banner",
+  "direct",
+] as const;
+
+export type AnonymousSource = (typeof ANONYMOUS_SOURCES)[number];
+
 export type ServerAnalyticsEventName =
   // ─────────────────────────────────────────────────
   // User authentication events
@@ -178,7 +202,7 @@ export type ServerEventPropertiesDefinition = {
   // Anonymous user events
   // ─────────────────────────────────────────────────
   anonymous_user_created: {
-    source: "upload_flow" | "comparison_view" | "direct";
+    source: AnonymousSource;
   };
 
   anonymous_user_converted: {
