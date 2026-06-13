@@ -175,6 +175,16 @@ export default function OgPreviewPage() {
         </p>
       </div>
 
+      <div className="mb-4">
+        <a
+          href="/admin/og-map"
+          className="inline-flex items-center gap-1 text-sm text-rose-500 hover:underline"
+        >
+          <ExternalLink className="size-3.5" />
+          OG / Meta Audit (all pages)
+        </a>
+      </div>
+
       <Tabs defaultValue="preview">
         <TabsList>
           <TabsTrigger value="preview">Preview</TabsTrigger>
