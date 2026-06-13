@@ -31,6 +31,12 @@ export const PHOTO_TAGS = [
   "car",
   "gym",
   "fish",
+  "crossed-arms",
+  "duo",
+  "hat",
+  "filter",
+  "alcohol",
+  "blurred",
 ] as const;
 
 export type PhotoTag = (typeof PHOTO_TAGS)[number];
@@ -55,6 +61,12 @@ export const PHOTO_TAG_LABELS: Record<PhotoTag, string> = {
   car: "Car",
   gym: "Gym",
   fish: "Fish",
+  "crossed-arms": "Crossed arms",
+  duo: "Duo",
+  hat: "Hat / cap",
+  filter: "Filter",
+  alcohol: "Alcohol",
+  blurred: "Blurred",
 };
 
 /**
@@ -63,8 +75,11 @@ export const PHOTO_TAG_LABELS: Record<PhotoTag, string> = {
  * analysis so aggregate research can group or filter by version.
  *
  * v2: added the 1-10 research score.
+ * v3: expanded the "pile-up feature" vocabulary — added "crossed-arms", "duo",
+ *     "hat", "filter", "alcohol", and "blurred", and split two-person shots
+ *     ("duo") out of "group" (which now means 3+ people total).
  */
-export const PHOTO_ANALYSIS_VERSION = 2;
+export const PHOTO_ANALYSIS_VERSION = 3;
 
 /** The persisted analysis shape, stored under `attachment.metadata.aiAnalysis`. */
 export interface PhotoAnalysis {
