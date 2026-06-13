@@ -6,6 +6,7 @@ import {
   MapPin,
   Globe,
   Palette,
+  ClipboardList,
 } from "lucide-react";
 import { ActionCard } from "./ActionCard";
 
@@ -39,6 +40,12 @@ export function QuickActions() {
           title="OG / Meta Audit"
           description="Audit meta tags across all pages"
           href="/admin/og-map"
+        />
+        <ActionCard
+          icon={ClipboardList}
+          title="Tracking Plan"
+          description="Analytics event catalog & destinations"
+          href="/admin/tracking-plan"
         />
         <ActionCard
           icon={Users}
