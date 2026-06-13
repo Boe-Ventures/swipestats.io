@@ -396,7 +396,7 @@ function ProviderPanel({ provider }: { provider: Provider }) {
         <div className="flex items-center gap-3.5">
           <span
             className="grid h-[52px] w-[52px] flex-none place-items-center rounded-[13px] shadow-[0_1px_2px_oklch(0.2_0.02_286/0.06),0_1px_3px_oklch(0.2_0.02_286/0.05)]"
-            style={provider.iconStyle}
+            style={{ ...provider.iconStyle, color: provider.iconColor }}
           >
             <Icon className="h-7 w-7" />
           </span>
