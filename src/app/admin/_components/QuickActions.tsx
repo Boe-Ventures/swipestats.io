@@ -48,6 +48,12 @@ export function QuickActions() {
           href="/admin/tracking-plan"
         />
         <ActionCard
+          icon={Activity}
+          title="Analytics Debug"
+          description="Fire test events, flip consent, inspect identity"
+          href="/admin/analytics"
+        />
+        <ActionCard
           icon={Users}
           title="User Management"
           description="View and manage user accounts"

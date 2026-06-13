@@ -12,6 +12,7 @@ import { adminProcedure } from "../trpc";
 import type { TRPCRouterRecord } from "@trpc/server";
 import { resetTinderProfile } from "@/server/services/profile/profile.service";
 import { BlobService } from "@/server/services/blob.service";
+import { trackServerEvent } from "@/server/services/analytics.service";
 
 export const adminRouter = {
   // Delete a Tinder profile by tinderId (admin/dev only)
@@ -551,5 +552,19 @@ export const adminRouter = {
         page: input.page,
         totalPages: Math.ceil(totalCount / input.limit),
       };
+    }),
+
+  // Fire a server-side analytics test event (admin debug harness).
+  // Routes through the normal server fan-out (PostHog + Vercel).
+  fireTestEvent: adminProcedure
+    .input(z.object({ nonce: z.string().min(1), source: z.string().min(1) }))
+    .mutation(({ ctx, input }) => {
+      const userId = ctx.session?.user?.id ?? "admin-debug";
+      trackServerEvent(userId, "admin_test_event_fired", {
+        surface: "server",
+        nonce: input.nonce,
+        source: input.source,
+      });
+      return { ok: true, userId, firedAt: new Date().toISOString() };
     }),
 } satisfies TRPCRouterRecord;

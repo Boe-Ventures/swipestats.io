@@ -54,6 +54,10 @@ export const env = createEnv({
     NEXT_PUBLIC_BASE_URL: z.string().url().default("http://localhost:3000"),
     NEXT_PUBLIC_MAPBOX_PUBLIC_API_KEY: z.string(),
     NEXT_PUBLIC_POSTHOG_KEY: z.string(),
+    // Amplitude browser SDK (publishable key). Optional: when unset the
+    // Amplitude provider no-ops. Dev/staging project key today; swap per
+    // environment for a separate prod project later.
+    NEXT_PUBLIC_AMPLITUDE_API_KEY: z.string().optional(),
   },
 
   /**
@@ -90,6 +94,7 @@ export const env = createEnv({
       process.env.NEXT_PUBLIC_MAPBOX_PUBLIC_API_KEY,
     NEXT_PUBLIC_VERCEL_ENV: process.env.NEXT_PUBLIC_VERCEL_ENV,
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
+    NEXT_PUBLIC_AMPLITUDE_API_KEY: process.env.NEXT_PUBLIC_AMPLITUDE_API_KEY,
     // True production = trust Vercel's VERCEL_ENV
     NEXT_PUBLIC_IS_PRODUCTION: process.env.VERCEL_ENV === "production",
   },

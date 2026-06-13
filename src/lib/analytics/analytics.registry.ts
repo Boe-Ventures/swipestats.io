@@ -212,11 +212,19 @@ export const SERVER_EVENT_REGISTRY = {
     status: "live",
     destinations: PH_VERCEL,
   },
+
+  // ── Admin / debug ────────────────────────────────
+  admin_test_event_fired: {
+    category: "Admin / Debug",
+    description: "Internal test event fired from the admin analytics harness.",
+    status: "live",
+    destinations: PH_VERCEL,
+  },
 } satisfies Record<ServerAnalyticsEventName, EventMeta>;
 
 // Client events flow through the consent-gated provider array in
-// AnalyticsProvider.tsx (PostHog + Vercel). Amplitude will be added here.
-const CLIENT_DEST: AnalyticsDestination[] = ["posthog", "vercel"];
+// AnalyticsProvider.tsx (PostHog + Vercel + Amplitude).
+const CLIENT_DEST: AnalyticsDestination[] = ["posthog", "vercel", "amplitude"];
 
 export const CLIENT_EVENT_REGISTRY = {
   // ── Navigation ───────────────────────────────────
@@ -387,6 +395,14 @@ export const CLIENT_EVENT_REGISTRY = {
   life_event_dialog_opened: {
     category: "Life Events",
     description: "Life-event creation dialog opened.",
+    status: "live",
+    destinations: CLIENT_DEST,
+  },
+
+  // ── Admin / debug ────────────────────────────────
+  admin_test_event_fired: {
+    category: "Admin / Debug",
+    description: "Internal test event fired from the admin analytics harness.",
     status: "live",
     destinations: CLIENT_DEST,
   },

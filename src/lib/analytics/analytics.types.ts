@@ -99,7 +99,12 @@ export type ServerAnalyticsEventName =
   // ─────────────────────────────────────────────────
   | "life_event_created" // User created a life event
   | "life_event_updated" // User updated an existing event
-  | "life_event_deleted"; // User deleted an event
+  | "life_event_deleted" // User deleted an event
+
+  // ─────────────────────────────────────────────────
+  // Admin / debug (internal — fired from the admin test harness)
+  // ─────────────────────────────────────────────────
+  | "admin_test_event_fired";
 
 export type ClientAnalyticsEventName =
   // ─────────────────────────────────────────────────
@@ -158,7 +163,12 @@ export type ClientAnalyticsEventName =
   // ─────────────────────────────────────────────────
   // Life Events (Feature engagement)
   // ─────────────────────────────────────────────────
-  | "life_event_dialog_opened";
+  | "life_event_dialog_opened"
+
+  // ─────────────────────────────────────────────────
+  // Admin / debug (internal — fired from the admin test harness)
+  // ─────────────────────────────────────────────────
+  | "admin_test_event_fired";
 
 // =====================================================
 // EVENT PROPERTIES DEFINITIONS - SERVER
@@ -395,6 +405,15 @@ export type ServerEventPropertiesDefinition = {
     hadEndDate: boolean;
     hadLocation: boolean;
   };
+
+  // ─────────────────────────────────────────────────
+  // Admin / debug
+  // ─────────────────────────────────────────────────
+  admin_test_event_fired: {
+    surface: "server" | "client";
+    nonce: string; // Unique id to locate this event in PostHog/Amplitude
+    source: string; // Where it was fired from, e.g. "admin_analytics_page"
+  };
 };
 
 // =====================================================
@@ -594,6 +613,15 @@ export type ClientEventPropertiesDefinition = {
     trigger: "card_click" | "button_click"; // What UI element was clicked
     hasExistingEvents: boolean;
     eventCount: number;
+  };
+
+  // ─────────────────────────────────────────────────
+  // Admin / debug
+  // ─────────────────────────────────────────────────
+  admin_test_event_fired: {
+    surface: "server" | "client";
+    nonce: string; // Unique id to locate this event in PostHog/Amplitude
+    source: string; // Where it was fired from, e.g. "admin_analytics_page"
   };
 };
 

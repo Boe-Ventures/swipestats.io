@@ -19,6 +19,13 @@ import type {
   ClientEventPropertiesDefinition,
 } from "@/lib/analytics/analytics.types";
 import { sanitizeForVercel } from "@/lib/analytics/analytics.utils";
+import {
+  amplitudeIdentify,
+  amplitudeReset,
+  amplitudeTrack,
+  disableAmplitude,
+  enableAmplitude,
+} from "@/lib/analytics/amplitude.client";
 import { authClient } from "@/server/better-auth/client";
 import { CookieBanner } from "@/components/analytics/CookieBanner";
 
@@ -110,6 +117,9 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
 
       // Capture initial pageview
       posthog.capture("$pageview");
+
+      // Opt the user into Amplitude (no-op without an API key / under GPC)
+      enableAmplitude();
     }
   }, [session.data, hasConsent]);
 
@@ -134,6 +144,9 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
         posthog.startSessionRecording();
         // Capture initial pageview
         posthog.capture("$pageview");
+
+        // Opt the user into Amplitude (no-op without an API key / under GPC)
+        enableAmplitude();
       } else if (storedConsent === null) {
         // No previous decision - show banner
         setShowBanner(true);
@@ -205,6 +218,22 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
           } catch (error) {
             console.error("❌ [Analytics] Vercel track failed:", error);
           }
+        },
+      },
+      // Amplitude (no-ops when NEXT_PUBLIC_AMPLITUDE_API_KEY is unset)
+      {
+        name: "Amplitude",
+        trackEvent: <T extends ClientAnalyticsEventName>(
+          eventName: T,
+          properties?: ClientEventPropertiesDefinition[T],
+        ) => {
+          amplitudeTrack(eventName, properties as Record<string, unknown>);
+        },
+        identify: (userId, traits) => {
+          amplitudeIdentify(userId, traits);
+        },
+        reset: () => {
+          amplitudeReset();
         },
       },
     ],
@@ -316,6 +345,9 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
 
     // Manually capture the initial pageview that was missed before consent
     posthog.capture("$pageview");
+
+    // Opt the user into Amplitude (no-op without an API key / under GPC)
+    enableAmplitude();
     console.info(
       "✅ [Analytics] PostHog tracking enabled, initial pageview captured",
     );
@@ -329,6 +361,7 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
     setHasConsent(false);
     setShowBanner(false);
     reset();
+    disableAmplitude(); // Opt out + clear Amplitude identity
     setEventQueue([]); // Clear any queued events
   }, [reset]);
 

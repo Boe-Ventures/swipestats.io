@@ -27,6 +27,7 @@
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.2",
+    "@amplitude/analytics-browser": "^2.44.1",
     "@anthropic-ai/sdk": "^0.74.0",
     "@auth/drizzle-adapter": "^1.7.2",
     "@calcom/atoms": "^2.3.2",
