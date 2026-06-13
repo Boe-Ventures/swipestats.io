@@ -5,6 +5,7 @@ import { CheckIcon } from "@heroicons/react/20/solid";
 import { cn } from "@/components/ui/lib/utils";
 import { useTRPC } from "@/trpc/react";
 import { useMutation } from "@tanstack/react-query";
+import { SectionHead, marketingButton } from "../_components/marketing-ui";
 
 type Tier = {
   name: string;
@@ -195,12 +196,10 @@ function TierCard({
         onClick={() => onCheckout(tier)}
         disabled={isLoading}
         className={cn(
-          "mt-6 inline-flex w-full items-center justify-center gap-2 rounded-[10px] px-[18px] py-[11px] text-[15px] font-semibold transition",
-          tier.popular
-            ? "bg-rose-600 text-white shadow-[0_1px_2px_oklch(0.5_0.2_17/0.3),0_12px_28px_oklch(0.5_0.2_17/0.22)] hover:-translate-y-px hover:bg-rose-700"
-            : tier.dark
-              ? "bg-white text-gray-900 hover:bg-gray-100"
-              : "border border-gray-300 bg-white text-gray-900 shadow-xs hover:-translate-y-px hover:border-gray-400",
+          "mt-6 w-full",
+          marketingButton({
+            variant: tier.popular ? "primary" : tier.dark ? "white" : "ghost",
+          }),
           isLoading && "cursor-wait opacity-50",
         )}
       >
@@ -246,18 +245,12 @@ export function ResearchPricingSection() {
   return (
     <section id="pricing" className="py-[88px] max-[720px]:py-[60px]">
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
-        <div className="mx-auto max-w-[680px] text-center">
-          <span className="inline-flex items-center justify-center gap-2 font-mono text-[12.5px] font-medium uppercase tracking-[0.12em] text-rose-600">
-            Pricing
-          </span>
-          <h2 className="mt-3.5 text-[clamp(30px,4vw,46px)] leading-[1.06] font-bold tracking-[-0.03em] text-gray-900">
-            Choose your dataset
-          </h2>
-          <p className="mt-[18px] text-[clamp(17px,2vw,20px)] leading-[1.6] text-gray-600">
-            For a blog, a paper, or plain curiosity — a SwipeStats dataset gets
-            you on the right track. Start free.
-          </p>
-        </div>
+        <SectionHead
+          center
+          eyebrow="Pricing"
+          title="Choose your dataset"
+          lead="For a blog, a paper, or plain curiosity — a SwipeStats dataset gets you on the right track. Start free."
+        />
 
         <div className="mt-12 grid grid-cols-1 gap-5 max-[900px]:mx-auto max-[900px]:max-w-[420px] lg:grid-cols-3">
           {topTiers.map((tier) => (

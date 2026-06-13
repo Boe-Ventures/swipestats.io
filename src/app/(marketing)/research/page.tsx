@@ -16,6 +16,12 @@ import {
   XCircleIcon,
 } from "@heroicons/react/24/solid";
 import { cn } from "@/components/ui/lib/utils";
+import {
+  Eyebrow,
+  SectionHead,
+  GridBg,
+  marketingButton,
+} from "../_components/marketing-ui";
 import { ResearchPricingSection } from "./ResearchPricingSection";
 
 export const metadata: Metadata = {
@@ -35,90 +41,7 @@ export const metadata: Metadata = {
 
 const SAMPLE_DOWNLOAD = "/downloads/swipestats-demo-dataset.jsonl.zip";
 
-/* ---------------------------------------------------------------- primitives */
-
-function Eyebrow({
-  children,
-  center,
-  noRule,
-  className,
-}: {
-  children: React.ReactNode;
-  center?: boolean;
-  noRule?: boolean;
-  className?: string;
-}) {
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-2 font-mono text-[12.5px] font-medium uppercase tracking-[0.12em] text-rose-600",
-        center && "justify-center",
-        className,
-      )}
-    >
-      {!noRule && (
-        <span className="h-px w-[18px] bg-rose-600 opacity-50" aria-hidden />
-      )}
-      {children}
-    </span>
-  );
-}
-
-function SectionHead({
-  eyebrow,
-  title,
-  lead,
-  center,
-  className,
-}: {
-  eyebrow: string;
-  title: string;
-  lead?: string;
-  center?: boolean;
-  className?: string;
-}) {
-  return (
-    <div
-      className={cn(
-        "max-w-[680px]",
-        center && "mx-auto text-center",
-        className,
-      )}
-    >
-      <Eyebrow center={center} noRule={center}>
-        {eyebrow}
-      </Eyebrow>
-      <h2 className="mt-3.5 text-[clamp(30px,4vw,46px)] leading-[1.06] font-bold tracking-[-0.03em] text-balance text-gray-900">
-        {title}
-      </h2>
-      {lead && (
-        <p className="mt-[18px] text-[clamp(17px,2vw,20px)] leading-[1.6] text-gray-600">
-          {lead}
-        </p>
-      )}
-    </div>
-  );
-}
-
-const btnBase =
-  "inline-flex items-center justify-center gap-2 rounded-[10px] text-[15px] font-semibold tracking-[-0.01em] whitespace-nowrap transition";
-const btnPrimary =
-  "bg-rose-600 text-white shadow-[0_1px_2px_oklch(0.5_0.2_17/0.3),0_12px_28px_oklch(0.5_0.2_17/0.22)] hover:-translate-y-px hover:bg-rose-700";
-const btnGhost =
-  "border border-gray-300 bg-white text-gray-900 shadow-xs hover:-translate-y-px hover:border-gray-400";
-const btnPadding = "px-[18px] py-[11px]";
-const btnLg = "px-[22px] py-[13px] text-[16px]";
-
 /* ---------------------------------------------------------------- hero */
-
-function GridBg() {
-  return (
-    <div
-      aria-hidden
-      className="pointer-events-none absolute inset-0 -z-10 opacity-70 [background-image:linear-gradient(to_right,var(--color-gray-200)_1px,transparent_1px),linear-gradient(to_bottom,var(--color-gray-200)_1px,transparent_1px)] [background-size:56px_56px] [mask-image:radial-gradient(120%_90%_at_80%_0%,#000,transparent_70%)]"
-    />
-  );
-}
 
 function TokKey({ children }: { children: React.ReactNode }) {
   return <span style={{ color: "oklch(0.78 0.13 200)" }}>{children}</span>;
@@ -180,8 +103,8 @@ function HeroDataCard() {
           <TokPunc>,</TokPunc>
           {"\n    "}
           <TokKey>{'"country"'}</TokKey>
-          <TokPunc>:</TokPunc> <TokStr>{'"Norway"'}</TokStr>
-          <TokPunc>,</TokPunc>
+          <TokPunc>:</TokPunc> <TokStr>{'"NO"'}</TokStr>
+          <TokPunc>,</TokPunc> <TokCmt>{"// Norway"}</TokCmt>
           {"\n    "}
           <TokKey>{'"educationLevel"'}</TokKey>
           <TokPunc>:</TokPunc> <TokStr>{'"BACHELORS"'}</TokStr>
@@ -213,14 +136,41 @@ function HeroDataCard() {
           <TokPunc>:</TokPunc> <TokNum>0.046</TokNum>
           <TokPunc>,</TokPunc>
           {"\n    "}
-          <TokKey>{'"ghostedCount"'}</TokKey>
-          <TokPunc>:</TokPunc> <TokNum>165</TokNum>
+          <TokKey>{'"messagesSentTotal"'}</TokKey>
+          <TokPunc>:</TokPunc> <TokNum>2914</TokNum>
           {"\n  "}
           <TokPunc>{"},"}</TokPunc>
           {"\n  "}
           <TokKey>{'"usage"'}</TokKey>
-          <TokPunc>:</TokPunc> <TokPunc>[</TokPunc>
-          <TokCmt>{"/* 412 daily records */"}</TokCmt>
+          <TokPunc>{": [{"}</TokPunc>
+          {"\n      "}
+          <TokKey>{'"dateStamp"'}</TokKey>
+          <TokPunc>:</TokPunc> <TokStr>{'"2025-07-12"'}</TokStr>
+          <TokPunc>,</TokPunc>
+          {"\n      "}
+          <TokKey>{'"appOpens"'}</TokKey>
+          <TokPunc>:</TokPunc> <TokNum>14</TokNum>
+          <TokPunc>,</TokPunc>
+          {"\n      "}
+          <TokKey>{'"swipeLikes"'}</TokKey>
+          <TokPunc>:</TokPunc> <TokNum>38</TokNum>
+          <TokPunc>,</TokPunc>
+          {"\n      "}
+          <TokKey>{'"swipePasses"'}</TokKey>
+          <TokPunc>:</TokPunc> <TokNum>91</TokNum>
+          <TokPunc>,</TokPunc>
+          {"\n      "}
+          <TokKey>{'"matches"'}</TokKey>
+          <TokPunc>:</TokPunc> <TokNum>3</TokNum>
+          <TokPunc>,</TokPunc>
+          {"\n      "}
+          <TokKey>{'"messagesSent"'}</TokKey>
+          <TokPunc>:</TokPunc> <TokNum>22</TokNum>
+          <TokPunc>,</TokPunc> <TokCmt>{"// +11 more fields"}</TokCmt>
+          {"\n    "}
+          <TokPunc>{"}, "}</TokPunc>
+          <TokCmt>{"/* +411 daily records */"}</TokCmt>
+          {"\n  "}
           <TokPunc>],</TokPunc>
           {"\n  "}
           <TokKey>{'"matches"'}</TokKey>
@@ -279,7 +229,7 @@ function HeroSection() {
             <div className="mt-8 flex flex-wrap items-center gap-3.5">
               <Link
                 href="#pricing"
-                className={cn(btnBase, btnPrimary, btnLg)}
+                className={marketingButton({ variant: "primary", size: "lg" })}
               >
                 Browse datasets
                 <ArrowRightIcon className="h-4 w-4" />
@@ -287,7 +237,7 @@ function HeroSection() {
               <Link
                 href={SAMPLE_DOWNLOAD}
                 target="_blank"
-                className={cn(btnBase, btnGhost, btnLg)}
+                className={marketingButton({ variant: "ghost", size: "lg" })}
               >
                 <ArrowDownTrayIcon className="h-4 w-4" />
                 Download free sample
@@ -587,7 +537,7 @@ function SchemaSection() {
               <Link
                 href={SAMPLE_DOWNLOAD}
                 target="_blank"
-                className={cn(btnBase, btnPrimary, btnPadding)}
+                className={marketingButton({ variant: "primary" })}
               >
                 Read the documentation
                 <ArrowRightIcon className="h-4 w-4" />
@@ -595,7 +545,7 @@ function SchemaSection() {
               <Link
                 href={SAMPLE_DOWNLOAD}
                 target="_blank"
-                className={cn(btnBase, btnGhost, btnPadding)}
+                className={marketingButton({ variant: "ghost" })}
               >
                 Explore a live profile
               </Link>
@@ -807,7 +757,7 @@ function DashboardSection() {
           <Link
             href={SAMPLE_DOWNLOAD}
             target="_blank"
-            className={cn(btnBase, btnGhost, btnLg)}
+            className={marketingButton({ variant: "ghost", size: "lg" })}
           >
             Open the interactive sample explorer
             <ArrowRightIcon className="h-4 w-4" />
@@ -1176,26 +1126,21 @@ function FinalCTASection() {
             modern dating actually works.
           </p>
           <div className="relative mt-8 flex flex-wrap gap-3.5">
-            <Link href="#pricing" className={cn(btnBase, btnPrimary, btnLg)}>
+            <Link href="#pricing" className={marketingButton({ variant: "primary", size: "lg" })}>
               Browse datasets
             </Link>
             <Link
               href={SAMPLE_DOWNLOAD}
               target="_blank"
-              className={cn(
-                btnBase,
-                btnLg,
-                "bg-white text-gray-900 hover:bg-gray-100",
-              )}
+              className={marketingButton({ variant: "white", size: "lg" })}
             >
               Download free sample
             </Link>
             <a
               href="mailto:kris@swipestats.io"
               className={cn(
-                btnBase,
-                btnLg,
-                "border border-white/20 text-white",
+                marketingButton({ variant: "bare", size: "lg" }),
+                "border border-white/20",
               )}
             >
               Talk to us

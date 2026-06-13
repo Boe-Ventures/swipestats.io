@@ -11,7 +11,7 @@ import {
   ExclamationTriangleIcon,
 } from "@heroicons/react/20/solid";
 import { cn } from "@/components/ui/lib/utils";
-import { btnBase, btnGhost, btnLg } from "./_ui";
+import { marketingButton } from "../_components/marketing-ui";
 
 /* ----------------------------------------------------------- brand icons */
 
@@ -474,7 +474,7 @@ function ProviderPanel({ provider }: { provider: Provider }) {
             href={provider.primaryCta.href}
             target="_blank"
             rel="noopener noreferrer"
-            className={cn(btnBase, btnLg)}
+            className={marketingButton({ variant: "bare", size: "lg" })}
             style={{ background: provider.accent, color: ctaInk }}
           >
             {provider.primaryCta.label}
@@ -482,7 +482,7 @@ function ProviderPanel({ provider }: { provider: Provider }) {
           </a>
           <Link
             href={provider.secondaryCta.href}
-            className={cn(btnBase, btnGhost, btnLg)}
+            className={marketingButton({ variant: "ghost", size: "lg" })}
           >
             {provider.secondaryCta.label}
           </Link>

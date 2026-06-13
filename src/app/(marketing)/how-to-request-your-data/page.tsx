@@ -17,14 +17,10 @@ import {
   Eyebrow,
   SectionHead,
   GridBg,
-  btnBase,
-  btnPrimary,
-  btnGhost,
-  btnWhite,
-  btnLg,
-} from "./_ui";
+  marketingButton,
+} from "../_components/marketing-ui";
 import { ProviderGuides } from "./ProviderGuides";
-import { ReminderForm } from "./ReminderForm";
+import { NewsletterSignup } from "../_components/NewsletterSignup";
 
 export const metadata: Metadata = {
   title: "How to Request Your Dating Data",
@@ -62,11 +58,11 @@ function HeroSection() {
             for each app.
           </p>
           <div className="mt-[30px] flex flex-wrap items-center gap-3.5">
-            <Link href="#providers" className={cn(btnBase, btnPrimary, btnLg)}>
+            <Link href="#providers" className={marketingButton({ variant: "primary", size: "lg" })}>
               Pick your app
               <ArrowRightIcon className="h-4 w-4" />
             </Link>
-            <Link href="#reminder" className={cn(btnBase, btnGhost, btnLg)}>
+            <Link href="#reminder" className={marketingButton({ variant: "ghost", size: "lg" })}>
               Remind me when it arrives
             </Link>
           </div>
@@ -194,7 +190,7 @@ function PrivacySection() {
             href="https://github.com/Boe-Ventures/swipestats.io"
             target="_blank"
             rel="noopener noreferrer"
-            className={cn(btnBase, btnGhost, "px-[18px] py-[11px]")}
+            className={marketingButton({ variant: "ghost" })}
           >
             See the code
             <ArrowTopRightOnSquareIcon className="h-4 w-4" />
@@ -285,7 +281,18 @@ function ReminderSection() {
               and upload.
             </p>
           </div>
-          <ReminderForm />
+          <NewsletterSignup
+            topic="newsletter-general"
+            autoFetch={false}
+            buttonLabel="Remind me"
+            placeholder="you@email.com"
+            formClassName="relative z-[2] flex flex-col gap-2.5 sm:flex-row sm:items-center"
+            groupClassName="flex flex-col gap-2 sm:flex-row sm:items-center"
+            inputClassName="min-w-[220px] rounded-[10px] border border-white/[0.18] bg-white/[0.07] px-4 py-3 text-[14.5px] text-white placeholder:text-gray-500 focus:border-rose-600 focus:outline-none"
+            buttonClassName={marketingButton({ variant: "primary", size: "lg" })}
+            successClassName="relative z-[2] flex items-center gap-3 rounded-[10px] border border-white/15 bg-white/[0.07] px-4 py-3 text-[14.5px] font-semibold text-white"
+            successLabel="You're on the list — we'll nudge you when it's time to upload."
+          />
         </div>
       </div>
     </section>
@@ -411,10 +418,10 @@ function FinalCtaSection() {
               insights will be waiting when the email lands.
             </p>
             <div className="mt-[30px] flex flex-wrap gap-3.5">
-              <Link href="#providers" className={cn(btnBase, btnPrimary, btnLg)}>
+              <Link href="#providers" className={marketingButton({ variant: "primary", size: "lg" })}>
                 Pick your app
               </Link>
-              <Link href={UPLOAD_HREF} className={cn(btnBase, btnWhite, btnLg)}>
+              <Link href={UPLOAD_HREF} className={marketingButton({ variant: "white", size: "lg" })}>
                 Upload your file
               </Link>
             </div>
