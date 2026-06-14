@@ -13,6 +13,7 @@ import {
   marketingButton,
 } from "@/app/(marketing)/_components/marketing-ui";
 import { NewsletterSignup } from "@/app/(marketing)/_components/NewsletterSignup";
+import { Tabs, TabPanel } from "./Tabs";
 // existing, in-production components (rendered live for the current-vs-golden diff)
 import { MarketingCtaSection } from "@/app/(marketing)/MarketingCtaSection";
 import NewsletterCTA from "@/app/(marketing)/NewsletterCTA";
@@ -176,7 +177,8 @@ export default function DesignSystemPage() {
           </p>
         </div>
 
-        <div className="mt-14 flex flex-col gap-16">
+        <Tabs className="mt-14">
+          <TabPanel id="current" label="Current · live today">
           {/* ============================ CURRENT (live today) */}
           <section>
             <SectionTitle
@@ -258,6 +260,9 @@ export default function DesignSystemPage() {
             </div>
           </section>
 
+          </TabPanel>
+
+          <TabPanel id="golden" label="Golden system">
           {/* ============================ BUTTONS */}
           <section>
             <SectionTitle
@@ -636,6 +641,9 @@ export default function DesignSystemPage() {
             </div>
           </section>
 
+          </TabPanel>
+
+          <TabPanel id="coverage" label="Coverage">
           {/* ============================ ROADMAP */}
           <section>
             <SectionTitle
@@ -694,7 +702,8 @@ export default function DesignSystemPage() {
               </table>
             </div>
           </section>
-        </div>
+          </TabPanel>
+        </Tabs>
 
         <footer className="mt-20 border-t border-gray-200 pt-8 text-[13px] text-gray-500">
           <p>
