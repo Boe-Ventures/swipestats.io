@@ -13,6 +13,13 @@ import {
   marketingButton,
 } from "@/app/(marketing)/_components/marketing-ui";
 import { NewsletterSignup } from "@/app/(marketing)/_components/NewsletterSignup";
+// existing, in-production components (rendered live for the current-vs-golden diff)
+import { MarketingCtaSection } from "@/app/(marketing)/MarketingCtaSection";
+import NewsletterCTA from "@/app/(marketing)/NewsletterCTA";
+import { StickyCtaCard } from "@/components/mdx/StickyCtaCard";
+import { CtaCard } from "@/components/mdx/CtaCard";
+import { CTA } from "@/components/mdx/CTA";
+import { NewsletterCard } from "@/components/mdx/NewsletterCard";
 
 /*
   Living design-system reference. Renders the REAL shipped components so we can
@@ -48,13 +55,12 @@ function Tag({ surface }: { surface: Surface }) {
   );
 }
 
-function Status({
-  kind,
-}: {
-  kind: "shipped" | "candidate" | "not-built";
-}) {
+type StatusKind = "current" | "shipped" | "candidate" | "not-built";
+
+function Status({ kind }: { kind: StatusKind }) {
   const map = {
-    shipped: { label: "✓ shipped", cls: "text-emerald-600" },
+    current: { label: "● live today", cls: "text-blue-600" },
+    shipped: { label: "✓ shipped (golden)", cls: "text-emerald-600" },
     candidate: { label: "📦 extract candidate", cls: "text-amber-600" },
     "not-built": { label: "✕ not built", cls: "text-gray-400" },
   } as const;
@@ -75,7 +81,7 @@ function Specimen({
 }: {
   label: string;
   surface: Surface;
-  status: "shipped" | "candidate" | "not-built";
+  status: StatusKind;
   note?: string;
   dark?: boolean;
   children: React.ReactNode;
@@ -171,6 +177,85 @@ export default function DesignSystemPage() {
         </div>
 
         <div className="mt-14 flex flex-col gap-16">
+          {/* ============================ CURRENT (live today) */}
+          <section>
+            <SectionTitle
+              n="00"
+              title="Current — live on marketing & blog today"
+              sub="The real, in-production CTA and newsletter components, rendered live. These are the status quo we're iterating away from toward the golden primitives below."
+            />
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+              <Specimen
+                label="<MarketingCtaSection>"
+                surface="marketing"
+                status="current"
+                note="src/app/(marketing)/MarketingCtaSection.tsx — home page. Hand-rolled <a> buttons, centered. Renders with its built-in pt-32."
+              >
+                <div className="relative isolate w-full">
+                  <MarketingCtaSection />
+                </div>
+              </Specimen>
+
+              <Specimen
+                label="<NewsletterCTA>"
+                surface="marketing"
+                status="current"
+                note="The full home/blog newsletter block (now backed by <NewsletterSignup>). Used on home, insights, directory & blog."
+              >
+                <div className="w-full">
+                  <NewsletterCTA />
+                </div>
+              </Specimen>
+
+              <Specimen
+                label="<StickyCtaCard>"
+                surface="blog"
+                status="current"
+                note="src/components/mdx/StickyCtaCard.tsx — blog sidebar sticky CTA (shown with default props)."
+              >
+                <div className="w-full max-w-sm">
+                  <StickyCtaCard />
+                </div>
+              </Specimen>
+
+              <Specimen
+                label="<CtaCard>"
+                surface="blog"
+                status="current"
+                note="src/components/mdx/CtaCard.tsx — in-article card CTA injected by <CtaInjector> (default props)."
+              >
+                <div className="w-full max-w-xl">
+                  <CtaCard />
+                </div>
+              </Specimen>
+
+              <Specimen
+                label="<NewsletterCard>"
+                surface="blog"
+                status="current"
+                note="src/components/mdx/NewsletterCard.tsx — in-article newsletter capture (default props)."
+              >
+                <div className="w-full max-w-xl">
+                  <NewsletterCard />
+                </div>
+              </Specimen>
+
+              <Specimen
+                label="<CTA> (inline)"
+                surface="blog"
+                status="current"
+                note="src/components/mdx/CTA.tsx — inline mid-article button."
+              >
+                <CTA label="Upload your data" href="/upload" />
+                <CTA
+                  label="How to request"
+                  href="/how-to-request-your-data"
+                  variant="secondary"
+                />
+              </Specimen>
+            </div>
+          </section>
+
           {/* ============================ BUTTONS */}
           <section>
             <SectionTitle
@@ -574,6 +659,9 @@ export default function DesignSystemPage() {
                 <tbody>
                   {(
                     [
+                      ["MarketingCtaSection (legacy)", "marketing", "current"],
+                      ["NewsletterCTA block", "marketing", "current"],
+                      ["StickyCtaCard / CtaCard / CTA / NewsletterCard", "blog", "current"],
                       ["marketingButton", "marketing", "shipped"],
                       ["Eyebrow / SectionHead / GridBg", "shared", "shipped"],
                       ["NewsletterSignup", "marketing", "shipped"],
@@ -586,7 +674,7 @@ export default function DesignSystemPage() {
                       ["CohortBadge", "app", "not-built"],
                       ["Funnel / tiles / msg bubbles", "app", "not-built"],
                       ["Blog: prose, tldr, pullstat, cta-card", "blog", "not-built"],
-                    ] as [string, Surface, "shipped" | "candidate" | "not-built"][]
+                    ] as [string, Surface, StatusKind][]
                   ).map(([name, surface, status]) => (
                     <tr key={name} className="border-t border-gray-200">
                       <td className="px-4 py-3 font-mono text-[12.5px] text-gray-900">
