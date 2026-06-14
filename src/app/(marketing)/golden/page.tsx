@@ -16,6 +16,7 @@ import {
 import { CtaBand } from "../_components/CtaBand";
 import { FaqList } from "../_components/FaqList";
 import { InsightsShowcase } from "../InsightsShowcase";
+import NewsletterCTA from "../NewsletterCTA";
 
 export const metadata: Metadata = {
   title: "Golden Home (preview)",
@@ -329,8 +330,76 @@ function Faq() {
   return (
     <section id="faq" className="py-[88px] max-[720px]:py-[60px]">
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
-        <SectionHead eyebrow="FAQ" title="The honest answers" />
-        <FaqList items={faqs} className="mt-9 max-w-[820px]" />
+        <SectionHead center eyebrow="FAQ" title="The honest answers" />
+        <FaqList items={faqs} className="mx-auto mt-9 max-w-[760px] text-left" />
+      </div>
+    </section>
+  );
+}
+
+/* ----------------------------------------------------------------- testimonials */
+
+const testimonials = [
+  {
+    body: "The activity charts completely changed how I understand my dating patterns. Seeing my swipe activity, match rates, and messaging trends over time helped me identify when I'm most successful.",
+    name: "Female, 32",
+    loc: "Berlin, Germany",
+  },
+  {
+    body: "The profile comparison tool is brilliant. I can see my Tinder and Hinge profiles side-by-side and track which one performs better. Helped me optimize both apps quickly.",
+    name: "Male, 29",
+    loc: "London, UK",
+  },
+  {
+    body: "The detailed activity charts show exactly when I get the most matches. I adjusted my active hours based on the data and saw immediate improvement.",
+    name: "Male, 26",
+    loc: "Sydney, Australia",
+  },
+];
+
+function Testimonials() {
+  return (
+    <section className="py-[88px] max-[720px]:py-[60px]">
+      <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
+        <SectionHead
+          eyebrow="Loved by daters"
+          title="What thousands have found in their data"
+        />
+        <div className="mt-12 grid grid-cols-1 gap-5 md:grid-cols-3">
+          {testimonials.map((t) => (
+            <figure
+              key={t.name}
+              className="flex flex-col rounded-2xl border border-gray-200 bg-white p-6 shadow-xs"
+            >
+              <blockquote className="flex-1 text-[14.5px] leading-[1.7] text-gray-700">
+                &ldquo;{t.body}&rdquo;
+              </blockquote>
+              <figcaption className="mt-5 flex items-center gap-3">
+                <span className="h-9 w-9 flex-none rounded-full bg-gray-200 ring-1 ring-gray-200" />
+                <span>
+                  <span className="block text-[13.5px] font-semibold text-gray-900">
+                    {t.name}
+                  </span>
+                  <span className="block text-[12.5px] text-gray-500">
+                    {t.loc}
+                  </span>
+                </span>
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ----------------------------------------------------------------- newsletter */
+
+function Newsletter() {
+  return (
+    <section className="py-[88px] max-[720px]:py-[60px]">
+      <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
+        <NewsletterCTA />
       </div>
     </section>
   );
@@ -386,8 +455,10 @@ export default function GoldenHomePage() {
       <LogoStrip />
       <HowItWorks />
       <Providers />
+      <Testimonials />
       <FounderQuote />
       <ResearchTeaser />
+      <Newsletter />
       <Faq />
       <FinalCta />
     </>
