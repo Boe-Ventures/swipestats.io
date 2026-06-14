@@ -12,6 +12,8 @@ import {
   marketingButton,
 } from "@/app/(marketing)/_components/marketing-ui";
 import { NewsletterSignup } from "@/app/(marketing)/_components/NewsletterSignup";
+import { CtaBand } from "@/app/(marketing)/_components/CtaBand";
+import { FaqList } from "@/app/(marketing)/_components/FaqList";
 import { LayoutSwitch } from "./LayoutSwitch";
 // existing, in-production components (rendered live for the current-vs-golden diff)
 import { MarketingCtaSection } from "@/app/(marketing)/MarketingCtaSection";
@@ -138,31 +140,26 @@ function SectionTitle({
 
 function GoldenCtaBand() {
   return (
-    <div className="relative w-full overflow-hidden rounded-[28px] bg-gray-950 p-12 text-gray-100 max-[720px]:p-8">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -top-[200px] -right-[140px] h-[720px] w-[720px] rounded-full blur-[10px] [background:radial-gradient(circle,oklch(0.586_0.253_17.585/0.5),transparent_65%)]"
+    <div className="w-full">
+      <CtaBand
+        eyebrow="Ready?"
+        title="See how you really date"
+        lead="Upload your export and get your insights in minutes. Free, anonymous, open source."
+        actions={
+          <>
+            <button
+              className={marketingButton({ variant: "primary", size: "lg" })}
+            >
+              Upload data
+            </button>
+            <button
+              className={marketingButton({ variant: "white", size: "lg" })}
+            >
+              How to request your data
+            </button>
+          </>
+        }
       />
-      <div className="relative max-w-[600px]">
-        <Eyebrow noRule className="text-rose-500">
-          Ready?
-        </Eyebrow>
-        <h3 className="mt-3.5 text-[clamp(30px,4vw,46px)] leading-[1.06] font-bold tracking-[-0.03em] text-balance text-white">
-          See how you really date
-        </h3>
-        <p className="mt-4 text-[17px] leading-[1.6] text-gray-400">
-          Upload your export and get your insights in minutes. Free, anonymous,
-          open source.
-        </p>
-        <div className="mt-7 flex flex-wrap gap-3.5">
-          <button className={marketingButton({ variant: "primary", size: "lg" })}>
-            Upload data
-          </button>
-          <button className={marketingButton({ variant: "white", size: "lg" })}>
-            How to request your data
-          </button>
-        </div>
-      </div>
     </div>
   );
 }
@@ -222,10 +219,10 @@ export default function DesignSystemPage() {
                 </div>
               </Specimen>
               <Specimen
-                label="Golden CTA band"
+                label="<CtaBand>"
                 surface="marketing"
-                status="candidate"
-                note="Inline in research + how-to today. Extract candidate: <MarketingCtaBand>."
+                status="golden"
+                note="src/app/(marketing)/_components/CtaBand.tsx — used on /golden; extract target for research + how-to."
               >
                 <GoldenCtaBand />
               </Specimen>
@@ -466,6 +463,27 @@ export default function DesignSystemPage() {
                 </div>
               </Specimen>
               <Specimen
+                label="<FaqList>"
+                surface="shared"
+                status="golden"
+                note="src/app/(marketing)/_components/FaqList.tsx — details accordion, used on /golden."
+              >
+                <div className="w-full">
+                  <FaqList
+                    items={[
+                      {
+                        q: "Is my data actually anonymous?",
+                        a: "Yes — identifiers are stripped in your browser before anything is uploaded.",
+                      },
+                      {
+                        q: "Does it cost anything?",
+                        a: "Uploading and seeing your insights is free.",
+                      },
+                    ]}
+                  />
+                </div>
+              </Specimen>
+              <Specimen
                 label="Cohort badge"
                 surface="app"
                 status="not-built"
@@ -518,8 +536,9 @@ export default function DesignSystemPage() {
                       ["marketingButton", "marketing", "golden"],
                       ["Eyebrow / SectionHead / GridBg", "shared", "golden"],
                       ["NewsletterSignup", "marketing", "golden"],
+                      ["CtaBand", "marketing", "golden"],
+                      ["FaqList", "shared", "golden"],
                       ["<Button> (shadcn)", "app", "golden"],
-                      ["MarketingCtaBand", "marketing", "candidate"],
                       ["StatTiles", "shared", "candidate"],
                       ["Provider / pricing cards", "marketing", "candidate"],
                       [
