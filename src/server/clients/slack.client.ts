@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { waitUntil } from "@vercel/functions";
 
 import { env, envSelect } from "@/env";
+import { SLACK_EVENTS } from "@/lib/analytics/analytics.registry";
 import type {
   ServerAnalyticsEventName,
   ServerEventPropertiesDefinition,
@@ -659,23 +660,10 @@ function sanitizeSlackText(text: string | undefined | null): string {
 // =====================================================
 
 /**
- * Events we want to send to Slack
- * Subset of all analytics events - only high-value notifications
+ * Events we want to send to Slack — the canonical list lives in
+ * analytics.registry.ts (the tracking-plan governance layer) so the catalog's
+ * Slack badge and this provider's filter can never disagree.
  */
-const SLACK_EVENTS = [
-  "tinder_profile_created",
-  "tinder_profile_updated",
-  "tinder_profile_upload_failed",
-  "hinge_profile_created",
-  "hinge_profile_updated",
-  "hinge_profile_upload_failed",
-  "subscription_activated",
-  "subscription_cancelled",
-  "billing_payment_successful", // Captures ALL payments including lifetime!
-  "billing_payment_failed",
-  "comparison_created",
-] as const;
-
 type SlackEventName = (typeof SLACK_EVENTS)[number];
 
 function isSlackEvent(event: string): event is SlackEventName {
