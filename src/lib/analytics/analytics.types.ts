@@ -78,6 +78,14 @@ export type ServerAnalyticsEventName =
   | "comparison_shared" // Comparison made public
 
   // ─────────────────────────────────────────────────
+  // Roast events (AI feature)
+  // ─────────────────────────────────────────────────
+  | "roast_generated" // Profile roast generated (vision AI, per column)
+  | "roast_published" // Profile roast made public / shared
+  | "stats_roast_generated" // Profile-level stats roast generated
+  | "stats_roast_shared" // Stats roast made public / shared
+
+  // ─────────────────────────────────────────────────
   // Monetization events (Product Outcomes)
   // Use these for revenue analysis and user journey
   // ─────────────────────────────────────────────────
@@ -164,6 +172,14 @@ export type ClientAnalyticsEventName =
   // Life Events (Feature engagement)
   // ─────────────────────────────────────────────────
   | "life_event_dialog_opened"
+
+  // ─────────────────────────────────────────────────
+  // Roast & comparison share interactions
+  // ─────────────────────────────────────────────────
+  | "roast_dialog_opened" // Roast dialog opened for a column
+  | "roast_tone_selected" // User picked a roast tone (incl. re-roast)
+  | "roast_shared_viewed" // Public profile-roast share page viewed
+  | "comparison_shared_viewed" // Public comparison share page viewed
 
   // ─────────────────────────────────────────────────
   // Admin / debug (internal — fired from the admin test harness)
@@ -323,6 +339,34 @@ export type ServerEventPropertiesDefinition = {
 
   comparison_shared: {
     comparisonId: string;
+    shareKey: string;
+  };
+
+  // ─────────────────────────────────────────────────
+  // Roast events
+  // ─────────────────────────────────────────────────
+  roast_generated: {
+    columnId: string;
+    comparisonId: string;
+    provider: string; // dating provider of the roasted column (lowercased)
+    tone: "helpful" | "mild" | "spicy";
+    photoCount: number;
+    promptCount: number;
+  };
+
+  roast_published: {
+    columnId: string;
+    shareKey: string;
+  };
+
+  stats_roast_generated: {
+    provider: "tinder" | "hinge";
+    tone: "helpful" | "mild" | "spicy";
+    regenerate: boolean; // true when forcing a fresh roast (e.g. tone change)
+  };
+
+  stats_roast_shared: {
+    roastId: string;
     shareKey: string;
   };
 
@@ -613,6 +657,33 @@ export type ClientEventPropertiesDefinition = {
     trigger: "card_click" | "button_click"; // What UI element was clicked
     hasExistingEvents: boolean;
     eventCount: number;
+  };
+
+  // ─────────────────────────────────────────────────
+  // Roast & comparison share interactions
+  // ─────────────────────────────────────────────────
+  roast_dialog_opened: {
+    columnId: string;
+    provider: string;
+    photoCount: number;
+    promptCount: number;
+  };
+
+  roast_tone_selected: {
+    columnId: string;
+    tone: "helpful" | "mild" | "spicy";
+    regenerate: boolean; // true when re-roasting with a different tone
+  };
+
+  roast_shared_viewed: {
+    shareKey: string;
+    tone: "helpful" | "mild" | "spicy";
+    viewerIsOwner: boolean;
+  };
+
+  comparison_shared_viewed: {
+    shareKey: string;
+    columnCount: number;
   };
 
   // ─────────────────────────────────────────────────

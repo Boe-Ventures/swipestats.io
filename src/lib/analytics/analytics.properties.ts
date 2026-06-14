@@ -57,6 +57,7 @@ const BILLING_PERIOD = ["monthly", "annual", "lifetime"] as const;
 const PROVIDER = ["tinder", "hinge", "bumble"] as const;
 const UPLOAD_PROVIDER = ["tinder", "hinge"] as const;
 const AUTH_SOURCE = ["conversion_modal", "signin_page", "navbar"] as const;
+const ROAST_TONE = ["helpful", "mild", "spicy"] as const;
 const UPLOAD_ERROR_TYPE = [
   "auth",
   "ownership",
@@ -260,6 +261,45 @@ export const SERVER_EVENT_PROPERTIES: EventPropertyRegistry<ServerEventPropertie
         type: "string",
         required: true,
         description: "Public share key generated when made public.",
+      },
+    },
+
+    // ── Roast ────────────────────────────────────────
+    roast_generated: {
+      columnId: { type: "string", required: true },
+      comparisonId: { type: "string", required: true },
+      provider: {
+        type: "string",
+        required: true,
+        description: "Dating provider of the roasted column.",
+      },
+      tone: { type: "enum", required: true, values: ROAST_TONE },
+      photoCount: { type: "number", required: true },
+      promptCount: { type: "number", required: true },
+    },
+    roast_published: {
+      columnId: { type: "string", required: true },
+      shareKey: {
+        type: "string",
+        required: true,
+        description: "Public share key for /share/profile-roast.",
+      },
+    },
+    stats_roast_generated: {
+      provider: { type: "enum", required: true, values: ["tinder", "hinge"] },
+      tone: { type: "enum", required: true, values: ROAST_TONE },
+      regenerate: {
+        type: "boolean",
+        required: true,
+        description: "True when forcing a fresh roast (e.g. tone change).",
+      },
+    },
+    stats_roast_shared: {
+      roastId: { type: "string", required: true },
+      shareKey: {
+        type: "string",
+        required: true,
+        description: "Public share key for /share/stats-roast.",
       },
     },
 
@@ -576,6 +616,32 @@ export const CLIENT_EVENT_PROPERTIES: EventPropertyRegistry<ClientEventPropertie
       },
       hasExistingEvents: { type: "boolean", required: true },
       eventCount: { type: "number", required: true },
+    },
+
+    // ── Roast & comparison share ─────────────────────
+    roast_dialog_opened: {
+      columnId: { type: "string", required: true },
+      provider: { type: "string", required: true },
+      photoCount: { type: "number", required: true },
+      promptCount: { type: "number", required: true },
+    },
+    roast_tone_selected: {
+      columnId: { type: "string", required: true },
+      tone: { type: "enum", required: true, values: ROAST_TONE },
+      regenerate: {
+        type: "boolean",
+        required: true,
+        description: "True when re-roasting with a different tone.",
+      },
+    },
+    roast_shared_viewed: {
+      shareKey: { type: "string", required: true },
+      tone: { type: "enum", required: true, values: ROAST_TONE },
+      viewerIsOwner: { type: "boolean", required: true },
+    },
+    comparison_shared_viewed: {
+      shareKey: { type: "string", required: true },
+      columnCount: { type: "number", required: true },
     },
 
     // ── Admin / debug ────────────────────────────────

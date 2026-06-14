@@ -13,6 +13,7 @@ import {
   userTable,
 } from "@/server/db/schema";
 import { ProfileComparisonService } from "@/server/services/profile-comparison.service";
+import { trackServerEvent } from "@/server/services/analytics.service";
 
 export const profileCompareRouter = createTRPCRouter({
   // List user's comparisons
@@ -59,10 +60,20 @@ export const profileCompareRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      return ProfileComparisonService.create({
+      const comparison = await ProfileComparisonService.create({
         userId: ctx.session.user.id,
         ...input,
       });
+
+      trackServerEvent(ctx.session.user.id, "comparison_created", {
+        comparisonId: comparison.id,
+        columnCount: input.columns.length,
+        hasCustomPhotos: input.columns.some(
+          (c) => (c.photoAttachmentIds?.length ?? 0) > 0,
+        ),
+      });
+
+      return comparison;
     }),
 
   // Seed a NEW comparison from the user's already-uploaded Tinder photos
@@ -110,10 +121,20 @@ export const profileCompareRouter = createTRPCRouter({
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      return ProfileComparisonService.update({
+      const comparison = await ProfileComparisonService.update({
         ...input,
         userId: ctx.session.user.id,
       });
+
+      // Fire when the comparison is set public (the share moment).
+      if (input.isPublic === true && comparison.shareKey) {
+        trackServerEvent(ctx.session.user.id, "comparison_shared", {
+          comparisonId: comparison.id,
+          shareKey: comparison.shareKey,
+        });
+      }
+
+      return comparison;
     }),
 
   // Delete comparison

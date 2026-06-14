@@ -67,6 +67,9 @@ export const SLACK_EVENTS = [
   "billing_payment_successful",
   "billing_payment_failed",
   "comparison_created",
+  "comparison_shared",
+  "roast_published",
+  "stats_roast_shared",
 ] as const satisfies readonly ServerAnalyticsEventName[];
 
 const SLACK_EVENT_SET = new Set<string>(SLACK_EVENTS);
@@ -148,13 +151,37 @@ export const SERVER_EVENT_REGISTRY = {
   // ── Comparison (unique feature) ──────────────────
   comparison_created: {
     category: "Comparison",
-    description: "Profile comparison created. Not yet instrumented.",
-    status: "planned",
+    description: "Profile comparison created (fired from the create mutation).",
+    status: "live",
   },
   comparison_shared: {
     category: "Comparison",
-    description: "Comparison made public via share key. Not yet instrumented.",
-    status: "planned",
+    description: "Comparison made public via share key (isPublic set true).",
+    status: "live",
+  },
+
+  // ── Roast: profile (vision AI, per column) ───────
+  roast_generated: {
+    category: "Roast (Profile)",
+    description: "Profile roast generated for a comparison column.",
+    status: "live",
+  },
+  roast_published: {
+    category: "Roast (Profile)",
+    description: "Profile roast made public for the share page.",
+    status: "live",
+  },
+
+  // ── Roast: stats (profile-level) ─────────────────
+  stats_roast_generated: {
+    category: "Roast (Stats)",
+    description: "Profile-level stats roast generated (not a cache hit).",
+    status: "live",
+  },
+  stats_roast_shared: {
+    category: "Roast (Stats)",
+    description: "Stats roast made public for the share page.",
+    status: "live",
   },
 
   // ── Monetization (outcomes) ──────────────────────
@@ -366,6 +393,28 @@ export const CLIENT_EVENT_REGISTRY = {
     category: "Life Events",
     description: "Life-event creation dialog opened.",
     status: "live",
+  },
+
+  // ── Roast & comparison share ─────────────────────
+  roast_dialog_opened: {
+    category: "Roast (Profile)",
+    description: "Roast dialog opened for a column. Not yet instrumented.",
+    status: "planned",
+  },
+  roast_tone_selected: {
+    category: "Roast (Profile)",
+    description: "User picked a roast tone (incl. re-roast). Not yet instrumented.",
+    status: "planned",
+  },
+  roast_shared_viewed: {
+    category: "Roast (Profile)",
+    description: "Public profile-roast share page viewed. Not yet instrumented.",
+    status: "planned",
+  },
+  comparison_shared_viewed: {
+    category: "Comparison",
+    description: "Public comparison share page viewed. Not yet instrumented.",
+    status: "planned",
   },
 
   // ── Admin / debug ────────────────────────────────

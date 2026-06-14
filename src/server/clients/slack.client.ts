@@ -1115,6 +1115,84 @@ export async function trackSlackEvent<T extends ServerAnalyticsEventName>(
       });
       return;
     }
+
+    // ─────────────────────────────────────────────────
+    // Comparison Shared (made public)
+    // ─────────────────────────────────────────────────
+    if (event === "comparison_shared") {
+      const props =
+        properties as ServerEventPropertiesDefinition["comparison_shared"];
+
+      const user = await db.query.userTable.findFirst({
+        where: eq(userTable.id, userId),
+        columns: { name: true },
+      });
+
+      sendEvent({
+        channel,
+        emoji: "🔗",
+        title: "Comparison Shared",
+        fields: {
+          comparisonId: props.comparisonId,
+          userName: sanitizeSlackText(user?.name) || "Unknown",
+          shareUrl: `${env.NEXT_PUBLIC_BASE_URL}/share/profile-compare/${props.shareKey}`,
+        },
+        eventName: event,
+      });
+      return;
+    }
+
+    // ─────────────────────────────────────────────────
+    // Profile Roast Shared
+    // ─────────────────────────────────────────────────
+    if (event === "roast_published") {
+      const props =
+        properties as ServerEventPropertiesDefinition["roast_published"];
+
+      const user = await db.query.userTable.findFirst({
+        where: eq(userTable.id, userId),
+        columns: { name: true },
+      });
+
+      sendEvent({
+        channel,
+        emoji: "🔥",
+        title: "Profile Roast Shared",
+        fields: {
+          columnId: props.columnId,
+          userName: sanitizeSlackText(user?.name) || "Unknown",
+          shareUrl: `${env.NEXT_PUBLIC_BASE_URL}/share/profile-roast/${props.shareKey}`,
+        },
+        eventName: event,
+      });
+      return;
+    }
+
+    // ─────────────────────────────────────────────────
+    // Stats Roast Shared
+    // ─────────────────────────────────────────────────
+    if (event === "stats_roast_shared") {
+      const props =
+        properties as ServerEventPropertiesDefinition["stats_roast_shared"];
+
+      const user = await db.query.userTable.findFirst({
+        where: eq(userTable.id, userId),
+        columns: { name: true },
+      });
+
+      sendEvent({
+        channel,
+        emoji: "🔥",
+        title: "Stats Roast Shared",
+        fields: {
+          roastId: props.roastId,
+          userName: sanitizeSlackText(user?.name) || "Unknown",
+          shareUrl: `${env.NEXT_PUBLIC_BASE_URL}/share/stats-roast/${props.shareKey}`,
+        },
+        eventName: event,
+      });
+      return;
+    }
   } catch (error) {
     // Don't let Slack failures break analytics pipeline
     console.error(
