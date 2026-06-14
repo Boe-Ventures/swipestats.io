@@ -184,7 +184,7 @@ export default function DesignSystemPage() {
               title="Current — live on marketing & blog today"
               sub="The real, in-production CTA and newsletter components, rendered live. These are the status quo we're iterating away from toward the golden primitives below."
             />
-            <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+            <div className="flex flex-col gap-5">
               <Specimen
                 label="<MarketingCtaSection>"
                 surface="marketing"
@@ -207,6 +207,7 @@ export default function DesignSystemPage() {
                 </div>
               </Specimen>
 
+              <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
               <Specimen
                 label="<StickyCtaCard>"
                 surface="blog"
@@ -253,6 +254,7 @@ export default function DesignSystemPage() {
                   variant="secondary"
                 />
               </Specimen>
+              </div>
             </div>
           </section>
 
