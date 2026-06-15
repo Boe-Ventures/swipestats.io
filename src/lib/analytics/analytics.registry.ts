@@ -91,6 +91,11 @@ export const OPERATIONAL_SERVER_EVENTS = new Set<ServerAnalyticsEventName>([
   "user_account_created",
   "user_signed_in",
   "user_signed_out",
+  // Anonymous lifecycle — fires at account creation, before any consent can
+  // exist; recording the account record is a service action (legitimate
+  // interest), so it isn't dropped for want of a not-yet-possible consent.
+  "anonymous_user_created",
+  "anonymous_user_converted",
   // Profile uploads (core service delivery + fraud/ops)
   "tinder_profile_created",
   "tinder_profile_updated",

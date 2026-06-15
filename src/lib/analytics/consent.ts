@@ -74,28 +74,9 @@ export function isAllowed(
   return preferences?.[category] === true;
 }
 
-// =====================================================
-// POLICY — how INITIAL (pre-decision) defaults are resolved
-// =====================================================
-//
-// SwipeStats uses STRICT_POLICY (GDPR opt-in everywhere). A geo-aware policy
-// (e.g. CCPA opt-out outside the EU) is a drop-in replacement for another
-// project — it would read Vercel's geo headers and return ALL_ON outside the
-// EU. The rest of the system never changes.
-
-export interface GeoHint {
-  country?: string; // ISO-3166 alpha-2, e.g. "US"
-  region?: string; // e.g. "CA"
-}
-
-export interface ConsentPolicy {
-  resolveDefaults: (geo?: GeoHint) => ConsentPreferences;
-}
-
-/** GDPR-strict everywhere: nothing non-essential until the user opts in. */
-export const STRICT_POLICY: ConsentPolicy = {
-  resolveDefaults: () => ALL_OFF,
-};
+// GDPR-strict everywhere: the initial (pre-decision) state is always ALL_OFF —
+// nothing non-essential runs until the user explicitly opts in. (No geo/opt-out
+// policy: we're GDPR-forward in every region.)
 
 // =====================================================
 // UI METADATA

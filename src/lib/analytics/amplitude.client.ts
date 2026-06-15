@@ -26,29 +26,18 @@ export const amplitudeEnabled = Boolean(env.NEXT_PUBLIC_AMPLITUDE_API_KEY);
 
 let initialized = false;
 
-/** Browser-set Global Privacy Control signal (opt-out). */
-function gpcEnabled(): boolean {
-  if (typeof navigator === "undefined") return false;
-  return (
-    (navigator as Navigator & { globalPrivacyControl?: boolean })
-      .globalPrivacyControl === true
-  );
-}
-
 /**
  * Initialize (once) and opt the user in. Call ONLY from a consent-granted code
  * path. `initAll` brings up analytics + Session Replay; deviceId is seeded from
  * PostHog for cross-tool identity stitching.
+ *
+ * GPC is honored at the consent-default layer (AnalyticsProvider): under GPC the
+ * `analytics` category defaults off and the banner is skipped, so this only runs
+ * on an explicit opt-in — which overrides the GPC default for all providers
+ * consistently (PostHog + Amplitude), rather than one honoring it and one not.
  */
 export function enableAmplitude(): void {
   if (!amplitudeEnabled) return;
-
-  // Respect Global Privacy Control even if the user clicked "accept".
-  if (gpcEnabled()) {
-    console.info("🟠 [Amplitude] GPC detected — staying opted out");
-    if (initialized) amplitude.setOptOut(true);
-    return;
-  }
 
   if (!initialized) {
     initialized = true;
