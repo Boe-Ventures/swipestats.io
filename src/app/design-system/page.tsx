@@ -14,7 +14,84 @@ import {
 import { NewsletterSignup } from "@/app/(marketing)/_components/NewsletterSignup";
 import { CtaBand } from "@/app/(marketing)/_components/CtaBand";
 import { FaqList } from "@/app/(marketing)/_components/FaqList";
+// shared shadcn foundation (the other ~85%, surfaced live)
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Switch } from "@/components/ui/switch";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { SimpleSelect } from "@/components/ui/select";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Badge } from "@/components/ui/badge";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+import {
+  InfoAlert,
+  SuccessAlert,
+  WarningAlert,
+  ErrorAlert,
+} from "@/components/ui/alert";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Empty,
+  EmptyHeader,
+  EmptyTitle,
+  EmptyDescription,
+} from "@/components/ui/empty";
+import { Progress } from "@/components/ui/progress";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { SimpleDialog } from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
+import {
+  Tooltip,
+  TooltipTrigger,
+  TooltipContent,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import {
+  Sheet,
+  SheetTrigger,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
+import {
+  Drawer,
+  DrawerTrigger,
+  DrawerContent,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerDescription,
+} from "@/components/ui/drawer";
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from "@/components/ui/accordion";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { LayoutSwitch } from "./LayoutSwitch";
+import { ToastDemo } from "./Demos";
 // existing, in-production components (rendered live for the current-vs-golden diff)
 import { MarketingCtaSection } from "@/app/(marketing)/MarketingCtaSection";
 import NewsletterCTA from "@/app/(marketing)/NewsletterCTA";
@@ -51,12 +128,18 @@ function Tag({ surface }: { surface: Surface }) {
   );
 }
 
-type StatusKind = "current" | "golden" | "candidate" | "not-built";
+type StatusKind =
+  | "current"
+  | "golden"
+  | "shadcn"
+  | "candidate"
+  | "not-built";
 
 function Status({ kind }: { kind: StatusKind }) {
   const map = {
     current: { label: "● live today", cls: "text-blue-600" },
     golden: { label: "✓ golden", cls: "text-emerald-600" },
+    shadcn: { label: "◆ shadcn", cls: "text-violet-600" },
     candidate: { label: "📦 extract candidate", cls: "text-amber-600" },
     "not-built": { label: "✕ not built", cls: "text-gray-400" },
   } as const;
@@ -501,12 +584,364 @@ export default function DesignSystemPage() {
             </LayoutSwitch>
           </section>
 
-          {/* ============================ COVERAGE */}
+          {/* ============================ FOUNDATION BANNER */}
+          <div className="rounded-2xl border border-gray-200 bg-gray-50 px-6 py-6">
+            <h2 className="text-[20px] font-bold tracking-[-0.02em] text-gray-900">
+              Shared foundation{" "}
+              <span className="font-medium text-gray-400">
+                — the shadcn library under ~85% of the app
+              </span>
+            </h2>
+            <p className="mt-1.5 max-w-[760px] text-[14px] text-gray-600">
+              These render with zero data. The golden marketing system sits on
+              top of this layer; the app surface uses it directly. Rendered live
+              from <span className="font-mono text-[13px]">src/components/ui</span>.
+            </p>
+          </div>
+
+          {/* ============================ FORMS */}
           <section>
             <SectionTitle
               n="06"
+              title="Form controls"
+              sub="The biggest category missing until now. Every control renders standalone, no data deps."
+            />
+            <LayoutSwitch defaultLayout="grid">
+              <Specimen
+                label="Text inputs"
+                surface="shared"
+                status="shadcn"
+                note="input.tsx · textarea.tsx · label.tsx"
+              >
+                <div className="flex w-full flex-col gap-3">
+                  <div>
+                    <Label htmlFor="ds-email">Email</Label>
+                    <Input
+                      id="ds-email"
+                      placeholder="you@email.com"
+                      className="mt-1.5"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="ds-msg">Message</Label>
+                    <Textarea
+                      id="ds-msg"
+                      placeholder="Type something…"
+                      className="mt-1.5"
+                    />
+                  </div>
+                  <Input disabled placeholder="Disabled input" />
+                </div>
+              </Specimen>
+              <Specimen
+                label="Toggles & choices"
+                surface="shared"
+                status="shadcn"
+                note="checkbox · switch · radio-group · toggle-group"
+              >
+                <div className="flex w-full flex-col gap-4">
+                  <label className="flex items-center gap-2.5 text-[14px] text-gray-700">
+                    <Checkbox defaultChecked /> Email me a reminder
+                  </label>
+                  <label className="flex items-center gap-2.5 text-[14px] text-gray-700">
+                    <Switch defaultChecked /> Share anonymously
+                  </label>
+                  <RadioGroup defaultValue="tinder" className="flex gap-5">
+                    <label className="flex items-center gap-2 text-[14px] text-gray-700">
+                      <RadioGroupItem value="tinder" /> Tinder
+                    </label>
+                    <label className="flex items-center gap-2 text-[14px] text-gray-700">
+                      <RadioGroupItem value="hinge" /> Hinge
+                    </label>
+                  </RadioGroup>
+                  <ToggleGroup type="single" defaultValue="week">
+                    <ToggleGroupItem value="day">Day</ToggleGroupItem>
+                    <ToggleGroupItem value="week">Week</ToggleGroupItem>
+                    <ToggleGroupItem value="month">Month</ToggleGroupItem>
+                  </ToggleGroup>
+                </div>
+              </Specimen>
+              <Specimen
+                label="Select"
+                surface="shared"
+                status="shadcn"
+                note="select.tsx (SimpleSelect)"
+              >
+                <SimpleSelect
+                  placeholder="Pick a provider"
+                  options={[
+                    { value: "tinder", label: "Tinder" },
+                    { value: "hinge", label: "Hinge" },
+                    { value: "bumble", label: "Bumble" },
+                  ]}
+                />
+              </Specimen>
+              <Specimen
+                label="Buttons — sizes & state"
+                surface="app"
+                status="shadcn"
+                note="button.tsx"
+              >
+                <Button size="sm">sm</Button>
+                <Button size="default">default</Button>
+                <Button size="lg">lg</Button>
+                <Button loading>Loading</Button>
+                <Button disabled>Disabled</Button>
+              </Specimen>
+            </LayoutSwitch>
+          </section>
+
+          {/* ============================ FEEDBACK */}
+          <section>
+            <SectionTitle
+              n="07"
+              title="Feedback & states"
+              sub="Alerts, toasts, and loading/empty states — the system's reactions, previously unrepresented."
+            />
+            <LayoutSwitch defaultLayout="grid">
+              <Specimen
+                label="Alerts"
+                surface="shared"
+                status="shadcn"
+                note="alert.tsx — Info / Success / Warning / Error helpers (+ 3 more)"
+              >
+                <div className="flex w-full flex-col gap-3">
+                  <InfoAlert>Your export is processing.</InfoAlert>
+                  <SuccessAlert>Insights are ready to view.</SuccessAlert>
+                  <WarningAlert>Bumble can take up to 30 days.</WarningAlert>
+                  <ErrorAlert>Couldn&apos;t parse the uploaded file.</ErrorAlert>
+                </div>
+              </Specimen>
+              <Specimen
+                label="Toasts (Sonner)"
+                surface="shared"
+                status="shadcn"
+                note="toast.tsx — click to fire each type"
+              >
+                <ToastDemo />
+              </Specimen>
+              <Specimen
+                label="Skeleton + Progress"
+                surface="shared"
+                status="shadcn"
+                note="skeleton.tsx · progress.tsx — loading states"
+              >
+                <div className="flex w-full flex-col gap-3">
+                  <Skeleton className="h-5 w-2/3" />
+                  <Skeleton className="h-5 w-1/2" />
+                  <Skeleton className="h-24 w-full rounded-xl" />
+                  <Progress value={62} className="mt-1" />
+                </div>
+              </Specimen>
+              <Specimen
+                label="Empty state"
+                surface="shared"
+                status="shadcn"
+                note="empty.tsx — compound empty/zero-data state"
+              >
+                <div className="w-full">
+                  <Empty>
+                    <EmptyHeader>
+                      <EmptyTitle>No profiles yet</EmptyTitle>
+                      <EmptyDescription>
+                        Upload your export to see your insights here.
+                      </EmptyDescription>
+                    </EmptyHeader>
+                  </Empty>
+                </div>
+              </Specimen>
+            </LayoutSwitch>
+          </section>
+
+          {/* ============================ OVERLAYS */}
+          <section>
+            <SectionTitle
+              n="08"
+              title="Overlays"
+              sub="Dialogs, sheets, popovers, menus — the entire interactive overlay family. Click any trigger."
+            />
+            <LayoutSwitch defaultLayout="grid">
+              <Specimen
+                label="Dialog / Sheet / Drawer"
+                surface="app"
+                status="shadcn"
+                note="dialog.tsx (SimpleDialog) · sheet.tsx · drawer.tsx"
+              >
+                <SimpleDialog
+                  title="Delete profile?"
+                  description="This permanently removes your uploaded data."
+                  trigger={<Button variant="outline">Open dialog</Button>}
+                >
+                  <p className="text-sm text-gray-600">Dialog body content.</p>
+                </SimpleDialog>
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button variant="outline">Open sheet</Button>
+                  </SheetTrigger>
+                  <SheetContent>
+                    <SheetHeader>
+                      <SheetTitle>Filters</SheetTitle>
+                      <SheetDescription>Refine the directory.</SheetDescription>
+                    </SheetHeader>
+                  </SheetContent>
+                </Sheet>
+                <Drawer>
+                  <DrawerTrigger asChild>
+                    <Button variant="outline">Open drawer</Button>
+                  </DrawerTrigger>
+                  <DrawerContent>
+                    <DrawerHeader>
+                      <DrawerTitle>Quick actions</DrawerTitle>
+                      <DrawerDescription>
+                        Mobile-friendly bottom drawer.
+                      </DrawerDescription>
+                    </DrawerHeader>
+                  </DrawerContent>
+                </Drawer>
+              </Specimen>
+              <Specimen
+                label="Popover / Tooltip / Menu"
+                surface="app"
+                status="shadcn"
+                note="popover.tsx · tooltip.tsx · dropdown-menu.tsx"
+              >
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline">Popover</Button>
+                  </PopoverTrigger>
+                  <PopoverContent>
+                    <p className="text-sm text-gray-600">Popover content.</p>
+                  </PopoverContent>
+                </Popover>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="outline">Tooltip</Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Helpful hint</TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline">Menu</Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuLabel>Account</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem>Profile</DropdownMenuItem>
+                    <DropdownMenuItem>Settings</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </Specimen>
+              <Specimen
+                label="Accordion"
+                surface="shared"
+                status="shadcn"
+                note="accordion.tsx (radix — distinct from the golden FaqList)"
+              >
+                <Accordion type="single" collapsible className="w-full">
+                  <AccordionItem value="a">
+                    <AccordionTrigger>Is my data anonymous?</AccordionTrigger>
+                    <AccordionContent>
+                      Yes, identifiers are stripped in your browser.
+                    </AccordionContent>
+                  </AccordionItem>
+                  <AccordionItem value="b">
+                    <AccordionTrigger>Does it cost anything?</AccordionTrigger>
+                    <AccordionContent>Seeing your insights is free.</AccordionContent>
+                  </AccordionItem>
+                </Accordion>
+              </Specimen>
+              <Specimen
+                label="Tabs"
+                surface="app"
+                status="shadcn"
+                note="tabs.tsx — the app's section switcher"
+              >
+                <Tabs defaultValue="overview" className="w-full">
+                  <TabsList>
+                    <TabsTrigger value="overview">Overview</TabsTrigger>
+                    <TabsTrigger value="usage">Daily usage</TabsTrigger>
+                    <TabsTrigger value="chats">Conversations</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="overview" className="pt-3 text-sm text-gray-600">
+                    Overview panel.
+                  </TabsContent>
+                  <TabsContent value="usage" className="pt-3 text-sm text-gray-600">
+                    Daily usage panel.
+                  </TabsContent>
+                  <TabsContent value="chats" className="pt-3 text-sm text-gray-600">
+                    Conversations panel.
+                  </TabsContent>
+                </Tabs>
+              </Specimen>
+            </LayoutSwitch>
+          </section>
+
+          {/* ============================ CARDS & BADGES */}
+          <section>
+            <SectionTitle
+              n="09"
+              title="Cards, badges & avatars"
+              sub="The base of almost every app surface — shown standalone for the first time."
+            />
+            <LayoutSwitch defaultLayout="grid">
+              <Specimen
+                label="Card anatomy"
+                surface="app"
+                status="shadcn"
+                note="card.tsx — Header / Title / Description / Content / Footer slots"
+              >
+                <Card className="w-full">
+                  <CardHeader>
+                    <CardTitle>Match rate</CardTitle>
+                    <CardDescription>Tinder · all time</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <span className="text-3xl font-bold tracking-tight tabular-nums">
+                      19.9%
+                    </span>
+                  </CardContent>
+                  <CardFooter>
+                    <Button size="sm" variant="outline">
+                      View details
+                    </Button>
+                  </CardFooter>
+                </Card>
+              </Specimen>
+              <Specimen
+                label="Badge variants"
+                surface="shared"
+                status="shadcn"
+                note="badge.tsx — default / secondary / destructive / outline"
+              >
+                <Badge>Default</Badge>
+                <Badge variant="secondary">Secondary</Badge>
+                <Badge variant="destructive">Destructive</Badge>
+                <Badge variant="outline">Outline</Badge>
+              </Specimen>
+              <Specimen
+                label="Avatar"
+                surface="shared"
+                status="shadcn"
+                note="avatar.tsx"
+              >
+                <Avatar>
+                  <AvatarFallback>KB</AvatarFallback>
+                </Avatar>
+                <Avatar>
+                  <AvatarFallback>SS</AvatarFallback>
+                </Avatar>
+              </Specimen>
+            </LayoutSwitch>
+          </section>
+
+          {/* ============================ COVERAGE */}
+          <section>
+            <SectionTitle
+              n="10"
               title="Coverage & extraction backlog"
-              sub="What's a real shared component vs. still inline or unbuilt — the iteration list."
+              sub="From a full sweep of 160 marketing + 49 app + 53 shadcn files (389 patterns). Shown above, vs. still-inline, vs. unbuilt."
             />
             <div className="overflow-hidden rounded-2xl border border-gray-200">
               <table className="w-full border-collapse text-[13.5px]">
@@ -538,20 +973,21 @@ export default function DesignSystemPage() {
                       ["NewsletterSignup", "marketing", "golden"],
                       ["CtaBand", "marketing", "golden"],
                       ["FaqList", "shared", "golden"],
-                      ["<Button> (shadcn)", "app", "golden"],
+                      ["Form controls (input/select/toggles)", "shared", "shadcn"],
+                      ["Feedback (alert/toast/skeleton/empty)", "shared", "shadcn"],
+                      ["Overlays (dialog/sheet/popover/menu)", "shared", "shadcn"],
+                      ["Card / Badge / Avatar", "shared", "shadcn"],
+                      ["<Button> + ButtonGroup", "app", "shadcn"],
                       ["StatTiles", "shared", "candidate"],
                       ["Provider / pricing cards", "marketing", "candidate"],
-                      [
-                        "App-mode: hero-stats, panel, app-title",
-                        "app",
-                        "not-built",
-                      ],
-                      ["CohortBadge", "app", "not-built"],
-                      [
-                        "Blog: prose, tldr, pullstat, cta-card",
-                        "blog",
-                        "not-built",
-                      ],
+                      ["Insights cards (CohortBenchmark/Percentile)", "app", "candidate"],
+                      ["File-upload / dropzone + stepper", "upload", "candidate"],
+                      ["Auth forms (sign-in/up/reset)", "app", "candidate"],
+                      ["App shell (AppHeader / sidebar)", "app", "not-built"],
+                      ["App-mode: hero-stats, cohort badge, funnel", "app", "not-built"],
+                      ["Data-viz: charts, map, percentile bars", "app", "not-built"],
+                      ["Blog: prose, tldr, pullstat", "blog", "not-built"],
+                      ["Error / 404 / dark-mode / a11y states", "shared", "not-built"],
                     ] as [string, Surface, StatusKind][]
                   ).map(([name, surface, status]) => (
                     <tr key={name} className="border-t border-gray-200">
