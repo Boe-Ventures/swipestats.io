@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { SparklesIcon, LockClosedIcon, BoltIcon } from "@heroicons/react/20/solid";
 import { Button } from "@/components/ui/button";
 import {
@@ -11,8 +12,6 @@ import {
   PanelHeader,
   Funnel,
   PercentileBars,
-  BarHistogram,
-  AreaSparkline,
   UpsellCard,
   LockedValue,
 } from "@/components/golden";
@@ -21,22 +20,6 @@ export const metadata: Metadata = {
   title: "Golden Insights (preview)",
   robots: { index: false, follow: false },
 };
-
-const AGE_BARS = [
-  { label: "18", height: "22%" },
-  { label: "21", height: "48%" },
-  { label: "24", height: "78%" },
-  { label: "27", height: "100%" },
-  { label: "30", height: "86%" },
-  { label: "33", height: "60%" },
-  { label: "36", height: "40%" },
-  { label: "39", height: "25%" },
-  { label: "42", height: "14%" },
-  { label: "45+", height: "8%", muted: true },
-];
-
-const SPARK =
-  "M0,54 L22,46 L44,34 L66,52 L88,24 L110,32 L132,16 L154,34 L176,20 L198,42 L220,30";
 
 export default function GoldenDashboardPage() {
   return (
@@ -105,31 +88,22 @@ export default function GoldenDashboardPage() {
           ]}
         />
 
-        {/* charts row */}
-        <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-2">
-          <Panel>
-            <PanelHeader title="Age distribution of matches" meta="n = 4,345" />
-            <BarHistogram bars={AGE_BARS} />
-          </Panel>
-          <Panel>
-            <PanelHeader
-              title="Daily swipe volume"
-              meta="usage[].swipesCombined"
-            />
-            <div className="pt-2">
-              <AreaSparkline
-                path={SPARK}
-                areaPath={`${SPARK} L220,64 L0,64 Z`}
-                height={120}
-                width={220}
-              />
-            </div>
-            <div className="mt-2 flex justify-between font-mono text-[11px] text-gray-400">
-              <span>Mar 2025</span>
-              <span>Feb 2026</span>
-            </div>
-          </Panel>
-        </div>
+        {/* charts: the real Recharts components, themed golden (not hand-rolled) */}
+        <Panel className="mt-5">
+          <PanelHeader title="Activity charts" meta="Recharts" />
+          <p className="text-[13.5px] leading-[1.6] text-gray-600">
+            Charts are the real, data-driven Recharts components, themed with the
+            golden{" "}
+            <code className="rounded border border-gray-200 bg-gray-100 px-1 py-0.5 font-mono text-[12px] text-gray-800">
+              GOLDEN_CHART_COLORS
+            </code>{" "}
+            palette. See the live activity chart on the{" "}
+            <Link href="/golden" className="font-semibold text-rose-600">
+              golden home
+            </Link>
+            .
+          </p>
+        </Panel>
 
         {/* funnel + compare */}
         <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-2">

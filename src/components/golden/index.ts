@@ -11,12 +11,7 @@ export {
   StatTiles,
 } from "./app";
 export { Funnel, PercentileBars } from "./data-viz";
-export {
-  GOLDEN_CHART_COLORS,
-  GOLDEN_CHART_SERIES,
-  BarHistogram,
-  AreaSparkline,
-} from "./charts";
+export { GOLDEN_CHART_COLORS, GOLDEN_CHART_SERIES } from "./charts";
 export { Prose, Tldr, PullStat } from "./blog";
 export { LockedValue, UpsellCard } from "./premium-gate";
 export { ErrorState } from "./error-state";

@@ -114,8 +114,7 @@ import {
   Tldr,
   PullStat,
   GoldenAppHeader,
-  BarHistogram,
-  AreaSparkline,
+  GOLDEN_CHART_COLORS,
   LockedValue,
   UpsellCard,
   ErrorState,
@@ -1154,29 +1153,23 @@ export default function DesignSystemPage() {
                 </div>
               </Specimen>
               <Specimen
-                label="<BarHistogram> + <AreaSparkline>"
+                label="Chart palette (GOLDEN_CHART_COLORS)"
                 surface="app"
                 status="golden"
-                note="src/components/golden/charts.tsx — golden SVG chart shapes + GOLDEN_CHART_COLORS palette. (Interactive Recharts stay in InsightsShowcase.)"
+                note="src/components/golden/charts.tsx — charts are the real data-driven Recharts (InsightsShowcase, live on /golden), themed with this palette. No hand-rolled fakes."
               >
-                <div className="grid w-full grid-cols-1 gap-6 sm:grid-cols-2">
-                  <BarHistogram
-                    bars={[
-                      { label: "18", height: "30%" },
-                      { label: "24", height: "78%" },
-                      { label: "27", height: "100%" },
-                      { label: "30", height: "70%" },
-                      { label: "36", height: "40%" },
-                      { label: "45+", height: "12%", muted: true },
-                    ]}
-                    height="120px"
-                  />
-                  <div className="self-center">
-                    <AreaSparkline
-                      path="M0,54 L22,46 L44,34 L66,52 L88,24 L110,32 L132,16 L154,34 L176,20 L198,42 L220,30"
-                      areaPath="M0,54 L22,46 L44,34 L66,52 L88,24 L110,32 L132,16 L154,34 L176,20 L198,42 L220,30 L220,64 L0,64 Z"
-                    />
-                  </div>
+                <div className="flex w-full flex-wrap gap-3">
+                  {Object.entries(GOLDEN_CHART_COLORS).map(([name, value]) => (
+                    <div key={name} className="flex items-center gap-2">
+                      <span
+                        className="h-7 w-7 rounded-md ring-1 ring-gray-900/10"
+                        style={{ background: value }}
+                      />
+                      <span className="font-mono text-[12px] text-gray-700">
+                        {name}
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </Specimen>
               <Specimen
@@ -1330,7 +1323,7 @@ export default function DesignSystemPage() {
                       ["Auth forms (sign-in/up/reset)", "app", "candidate"],
                       ["App-mode (HeroStats/CohortBadge/StatTiles/Panel)", "app", "golden"],
                       ["App shell (GoldenAppHeader / Sidebar)", "app", "golden"],
-                      ["Data-viz (Funnel/Percentile/BarHistogram/Sparkline)", "app", "golden"],
+                      ["Data-viz (Funnel / PercentileBars + chart palette)", "app", "golden"],
                       ["Premium gate (LockedValue / UpsellCard)", "app", "golden"],
                       ["Blog: Prose / Tldr / PullStat", "blog", "golden"],
                       ["ErrorState + golden 404", "shared", "golden"],
