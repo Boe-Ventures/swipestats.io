@@ -1,7 +1,9 @@
 import Link from "next/link";
 import {
   ArrowRightIcon,
+  BoltIcon,
   CheckIcon,
+  FaceFrownIcon,
   SparklesIcon,
 } from "@heroicons/react/20/solid";
 import { cn } from "@/components/ui/lib/utils";
@@ -111,6 +113,12 @@ import {
   Prose,
   Tldr,
   PullStat,
+  GoldenAppHeader,
+  BarHistogram,
+  AreaSparkline,
+  LockedValue,
+  UpsellCard,
+  ErrorState,
 } from "@/components/golden";
 import { LayoutSwitch } from "./LayoutSwitch";
 import { ToastDemo } from "./Demos";
@@ -810,6 +818,26 @@ export default function DesignSystemPage() {
                   </Empty>
                 </div>
               </Specimen>
+              <Specimen
+                label="<ErrorState> (golden)"
+                surface="shared"
+                status="golden"
+                note="src/components/golden/error-state.tsx — the golden empty/error page state. Now powers the 404 (/not-found)."
+              >
+                <div className="w-full">
+                  <ErrorState
+                    icon={<FaceFrownIcon />}
+                    eyebrow="404"
+                    title="Page not found"
+                    message="That page slipped through the cracks."
+                    actions={
+                      <Button size="sm" variant="outline">
+                        Back home
+                      </Button>
+                    }
+                  />
+                </div>
+              </Specimen>
             </LayoutSwitch>
           </section>
 
@@ -1001,7 +1029,7 @@ export default function DesignSystemPage() {
             <SectionTitle
               n="10"
               title="App-mode golden primitives"
-              sub="The app dialect, now built: big hero stat, cohort badge, stat tiles, panel, funnel. Quiet chrome, loud numbers."
+              sub="The app dialect, now built: hero stat, cohort badge, tiles, panel, funnel, the app header/sidebar shell, golden charts, and the premium gate. Quiet chrome, loud numbers."
             />
             <LayoutSwitch defaultLayout="stack">
               <Specimen
@@ -1115,7 +1143,80 @@ export default function DesignSystemPage() {
                   </Panel>
                 </div>
               </Specimen>
+              <Specimen
+                label="<GoldenAppHeader>"
+                surface="app"
+                status="golden"
+                note="src/components/golden/app-shell.tsx — the app dialect's solid chrome (also a <GoldenSidebar>). The marketing surface keeps its translucent blur header."
+              >
+                <div className="w-full overflow-hidden rounded-xl border border-gray-200">
+                  <GoldenAppHeader active="dashboard" userInitials="KB" />
+                </div>
+              </Specimen>
+              <Specimen
+                label="<BarHistogram> + <AreaSparkline>"
+                surface="app"
+                status="golden"
+                note="src/components/golden/charts.tsx — golden SVG chart shapes + GOLDEN_CHART_COLORS palette. (Interactive Recharts stay in InsightsShowcase.)"
+              >
+                <div className="grid w-full grid-cols-1 gap-6 sm:grid-cols-2">
+                  <BarHistogram
+                    bars={[
+                      { label: "18", height: "30%" },
+                      { label: "24", height: "78%" },
+                      { label: "27", height: "100%" },
+                      { label: "30", height: "70%" },
+                      { label: "36", height: "40%" },
+                      { label: "45+", height: "12%", muted: true },
+                    ]}
+                    height="120px"
+                  />
+                  <div className="self-center">
+                    <AreaSparkline
+                      path="M0,54 L22,46 L44,34 L66,52 L88,24 L110,32 L132,16 L154,34 L176,20 L198,42 L220,30"
+                      areaPath="M0,54 L22,46 L44,34 L66,52 L88,24 L110,32 L132,16 L154,34 L176,20 L198,42 L220,30 L220,64 L0,64 Z"
+                    />
+                  </div>
+                </div>
+              </Specimen>
+              <Specimen
+                label="<UpsellCard> + <LockedValue>"
+                surface="app"
+                status="golden"
+                note="src/components/golden/premium-gate.tsx — one golden gate, consolidating BlurredValue + PremiumFeatureWrapper."
+              >
+                <div className="flex w-full flex-col gap-4">
+                  <UpsellCard
+                    icon={<BoltIcon />}
+                    title="Unlock percentile rankings"
+                    description="See exactly where you land against every cohort."
+                    action={
+                      <Button size="sm" variant="outline">
+                        Upgrade
+                      </Button>
+                    }
+                  />
+                  <div className="flex items-center gap-3 text-[14px] text-gray-600">
+                    Premium stat:
+                    <LockedValue>
+                      <span className="font-mono font-semibold text-gray-900">
+                        Top 3%
+                      </span>
+                    </LockedValue>
+                  </div>
+                </div>
+              </Specimen>
             </LayoutSwitch>
+            <p className="mt-4 text-[13.5px] text-gray-500">
+              See them composed into a full screen:{" "}
+              <Link
+                href="/golden-dashboard"
+                className="font-semibold text-rose-600"
+              >
+                /golden-dashboard
+              </Link>
+              .
+            </p>
           </section>
 
           {/* ============================ BLOG-PROSE GOLDEN */}
@@ -1228,11 +1329,14 @@ export default function DesignSystemPage() {
                       ["File-upload / dropzone + stepper", "upload", "candidate"],
                       ["Auth forms (sign-in/up/reset)", "app", "candidate"],
                       ["App-mode (HeroStats/CohortBadge/StatTiles/Panel)", "app", "golden"],
-                      ["Data-viz: Funnel / PercentileBars", "app", "golden"],
+                      ["App shell (GoldenAppHeader / Sidebar)", "app", "golden"],
+                      ["Data-viz (Funnel/Percentile/BarHistogram/Sparkline)", "app", "golden"],
+                      ["Premium gate (LockedValue / UpsellCard)", "app", "golden"],
                       ["Blog: Prose / Tldr / PullStat", "blog", "golden"],
-                      ["App shell (AppHeader / sidebar)", "app", "not-built"],
-                      ["Data-viz: charts (InsightsShowcase) · Mapbox", "app", "candidate"],
-                      ["Error / 404 / dark-mode / a11y states", "shared", "not-built"],
+                      ["ErrorState + golden 404", "shared", "golden"],
+                      ["Live charts (Recharts) golden re-theme · Mapbox", "app", "candidate"],
+                      ["Dark-mode + a11y token axes", "shared", "candidate"],
+                      ["3 dashboards → 1 (stray -2/-3 deleted)", "app", "golden"],
                     ] as [string, Surface, StatusKind][]
                   ).map(([name, surface, status]) => (
                     <TableRow key={name}>
