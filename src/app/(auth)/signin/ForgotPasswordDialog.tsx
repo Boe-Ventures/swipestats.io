@@ -5,7 +5,7 @@ import { Mail, Loader2, CheckCircle2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Field, FieldLabel } from "@/components/ui/form-new";
 import { SimpleDialog } from "@/components/ui/dialog";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { authClient } from "@/server/better-auth/client";
@@ -90,8 +90,8 @@ export function ForgotPasswordDialog({
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="reset-email">Email</Label>
+            <Field>
+              <FieldLabel htmlFor="reset-email">Email</FieldLabel>
               <Input
                 id="reset-email"
                 type="email"
@@ -101,7 +101,7 @@ export function ForgotPasswordDialog({
                 required
                 disabled={isLoading}
               />
-            </div>
+            </Field>
 
             <Button
               type="submit"

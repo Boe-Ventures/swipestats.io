@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Field, FieldLabel } from "@/components/ui/form-new";
 import { generateUniqueAnonymousEmail } from "@/lib/utils/auth";
 
 interface CollapsibleEmailFieldProps {
@@ -39,13 +39,13 @@ export function CollapsibleEmailField({
   }
 
   return (
-    <div className="space-y-2">
-      <Label htmlFor="email" className="text-sm">
+    <Field>
+      <FieldLabel htmlFor="email" className="text-sm">
         Email{" "}
         <span className="text-muted-foreground text-xs">
           (for password reset)
         </span>
-      </Label>
+      </FieldLabel>
       <Input
         id="email"
         type="email"
@@ -66,6 +66,6 @@ export function CollapsibleEmailField({
         Use temporary email instead
       </button>
       {children}
-    </div>
+    </Field>
   );
 }

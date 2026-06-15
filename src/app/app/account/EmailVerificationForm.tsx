@@ -6,7 +6,7 @@ import { AlertTriangle, CheckCircle2, Mail, ShieldCheck } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Field, FieldLabel } from "@/components/ui/form-new";
 import { useTRPC } from "@/trpc/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { authClient } from "@/server/better-auth/client";
@@ -71,7 +71,7 @@ export function EmailVerificationForm() {
     <div className="space-y-4">
       {/* Current Email Status */}
       <div className="space-y-2">
-        <Label>Current Email</Label>
+        <FieldLabel>Current Email</FieldLabel>
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
           <code className="bg-muted rounded px-2 py-1 text-sm break-all">
             {user?.email}
@@ -181,10 +181,10 @@ export function EmailVerificationForm() {
           </Button>
         ) : (
           <form onSubmit={handleUpdateEmail} className="space-y-3">
-            <div className="space-y-2">
-              <Label htmlFor="new-email">
+            <Field>
+              <FieldLabel htmlFor="new-email">
                 {isAnonymousEmail ? "New Email Address" : "Update Email"}
-              </Label>
+              </FieldLabel>
               <Input
                 id="new-email"
                 type="email"
@@ -196,7 +196,7 @@ export function EmailVerificationForm() {
               <p className="text-muted-foreground text-xs">
                 You&apos;ll need to verify the new email address.
               </p>
-            </div>
+            </Field>
 
             <div className="flex gap-2">
               <Button

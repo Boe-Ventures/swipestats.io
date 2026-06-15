@@ -4,8 +4,12 @@ import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/react";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Field,
+  FieldDescription,
+  FieldLabel,
+} from "@/components/ui/form-new";
 import { toast } from "sonner";
 import { Mail, Loader2, Info } from "lucide-react";
 import { useNewsletter } from "@/hooks/useNewsletter";
@@ -192,7 +196,7 @@ export function NewsletterPreferencesForm() {
       {/* Newsletter Email Address - Show for anonymous users */}
       {isAnonymous && localStorageEmail && (
         <div className="space-y-2">
-          <Label>Newsletter Email Address</Label>
+          <FieldLabel>Newsletter Email Address</FieldLabel>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <code className="bg-muted flex-1 rounded px-2 py-1 text-sm break-all">
               {localStorageEmail}
@@ -219,7 +223,7 @@ export function NewsletterPreferencesForm() {
         {VISIBLE_TOPICS.map((topic) => {
           const info = TOPIC_INFO[topic];
           return (
-            <div key={topic} className="flex items-start gap-3">
+            <Field key={topic} orientation="horizontal" className="items-start gap-3">
               <Checkbox
                 id={topic}
                 checked={localTopics[topic] ?? false}
@@ -227,17 +231,17 @@ export function NewsletterPreferencesForm() {
                 className="mt-0.5"
               />
               <div className="flex-1 space-y-0.5">
-                <Label
+                <FieldLabel
                   htmlFor={topic}
-                  className="cursor-pointer text-sm font-medium"
+                  className="cursor-pointer"
                 >
                   {info.name}
-                </Label>
-                <p className="text-muted-foreground text-xs">
+                </FieldLabel>
+                <FieldDescription className="text-xs">
                   {info.description}
-                </p>
+                </FieldDescription>
               </div>
-            </div>
+            </Field>
           );
         })}
       </div>

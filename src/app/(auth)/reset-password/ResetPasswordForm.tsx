@@ -6,8 +6,8 @@ import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Field, FieldLabel } from "@/components/ui/form-new";
 import { authClient } from "@/server/better-auth/client";
 
 export function ResetPasswordForm() {
@@ -113,8 +113,8 @@ export function ResetPasswordForm() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="password">New Password</Label>
+        <Field>
+          <FieldLabel htmlFor="password">New Password</FieldLabel>
           <Input
             id="password"
             type="password"
@@ -126,10 +126,10 @@ export function ResetPasswordForm() {
             disabled={isLoading}
           />
           <p className="text-xs text-gray-500">At least 8 characters</p>
-        </div>
+        </Field>
 
-        <div className="space-y-2">
-          <Label htmlFor="confirmPassword">Confirm New Password</Label>
+        <Field>
+          <FieldLabel htmlFor="confirmPassword">Confirm New Password</FieldLabel>
           <Input
             id="confirmPassword"
             type="password"
@@ -140,7 +140,7 @@ export function ResetPasswordForm() {
             minLength={8}
             disabled={isLoading}
           />
-        </div>
+        </Field>
 
         <Button
           type="submit"
