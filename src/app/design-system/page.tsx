@@ -99,6 +99,19 @@ import {
   TableHead,
   TableCell,
 } from "@/components/ui/table";
+import {
+  AppPageHeader,
+  Panel,
+  PanelHeader,
+  HeroStats,
+  CohortBadge,
+  StatTiles,
+  Funnel,
+  PercentileBars,
+  Prose,
+  Tldr,
+  PullStat,
+} from "@/components/golden";
 import { LayoutSwitch } from "./LayoutSwitch";
 import { ToastDemo } from "./Demos";
 // existing, in-production components (rendered live for the current-vs-golden diff)
@@ -983,10 +996,203 @@ export default function DesignSystemPage() {
             </LayoutSwitch>
           </section>
 
-          {/* ============================ COVERAGE */}
+          {/* ============================ APP-MODE GOLDEN */}
           <section>
             <SectionTitle
               n="10"
+              title="App-mode golden primitives"
+              sub="The app dialect, now built: big hero stat, cohort badge, stat tiles, panel, funnel. Quiet chrome, loud numbers."
+            />
+            <LayoutSwitch defaultLayout="stack">
+              <Specimen
+                label="<HeroStats>"
+                surface="app"
+                status="golden"
+                note="src/components/golden/app.tsx — the page-opening headline number + supporting grid."
+              >
+                <HeroStats
+                  lead={{
+                    kicker: "Match rate · Tinder · all time",
+                    value: "19.9%",
+                    sub: "4,345 matches from 38,608 swipes",
+                  }}
+                  stats={[
+                    { k: "Total swipes", v: "38,608" },
+                    { k: "Matches", v: "4,345" },
+                    { k: "Msgs sent", v: "4,733" },
+                    { k: "Avg response", v: "1h 9m" },
+                  ]}
+                />
+              </Specimen>
+              <Specimen
+                label="<StatTiles> + <CohortBadge>"
+                surface="app"
+                status="golden"
+                note="Tile strip with up/down deltas, and the cohort standing pill (top / good / mid)."
+              >
+                <div className="flex w-full flex-col gap-4">
+                  <StatTiles
+                    items={[
+                      { k: "Total swipes", v: "38,608" },
+                      { k: "Matches", v: "4,345", d: "↑ 12% vs cohort", trend: "up" },
+                      { k: "Ghosted", v: "42%", d: "↓ worse", trend: "down" },
+                      { k: "Avg response", v: "1h 9m" },
+                    ]}
+                  />
+                  <div className="flex flex-wrap gap-2">
+                    <CohortBadge tier="top" icon={<SparklesIcon />}>
+                      Top 10% of men
+                    </CohortBadge>
+                    <CohortBadge tier="good" icon={<CheckIcon />}>
+                      Above average
+                    </CohortBadge>
+                    <CohortBadge tier="mid">Median</CohortBadge>
+                  </div>
+                </div>
+              </Specimen>
+              <Specimen
+                label="<Funnel> + <PercentileBars>"
+                surface="app"
+                status="golden"
+                note="src/components/golden/data-viz.tsx — the dating funnel + how-you-compare bars. (Full charts stay in InsightsShowcase / Recharts.)"
+              >
+                <div className="grid w-full grid-cols-1 gap-6 md:grid-cols-2">
+                  <Funnel
+                    steps={[
+                      { label: "Swiped right", value: "21,875", width: "100%" },
+                      { label: "Matches", value: "4,345", width: "62%", drop: "−80% drop-off" },
+                      { label: "Chats", value: "1,265", width: "32%", drop: "−71%" },
+                      {
+                        label: "No reply",
+                        value: "3,080",
+                        width: "20%",
+                        color: "var(--color-gray-400)",
+                      },
+                    ]}
+                  />
+                  <PercentileBars
+                    rows={[
+                      { name: "Women", width: "89%", value: "28.7%" },
+                      {
+                        name: "Non-binary",
+                        width: "32%",
+                        value: "9.4%",
+                        color: "oklch(0.55 0.16 295)",
+                      },
+                      {
+                        name: "Men",
+                        width: "14%",
+                        value: "4.6%",
+                        color: "oklch(0.62 0.1 200)",
+                      },
+                    ]}
+                  />
+                </div>
+              </Specimen>
+              <Specimen
+                label="<AppPageHeader> + <Panel>"
+                surface="app"
+                status="golden"
+                note="The app type scale (mono kicker + functional title) and the panel/card chrome."
+              >
+                <div className="flex w-full flex-col gap-4">
+                  <AppPageHeader
+                    kicker="Dashboard · Tinder"
+                    title="Your insights"
+                    sub="How you really swipe, match, and message."
+                    actions={
+                      <Button size="sm" variant="outline">
+                        Share
+                      </Button>
+                    }
+                  />
+                  <Panel>
+                    <PanelHeader title="Conversation outcomes" meta="386 chats" />
+                    <p className="text-[13px] text-gray-500">
+                      Panel chrome: title + mono meta, neutral surface, subtle
+                      border.
+                    </p>
+                  </Panel>
+                </div>
+              </Specimen>
+            </LayoutSwitch>
+          </section>
+
+          {/* ============================ BLOG-PROSE GOLDEN */}
+          <section>
+            <SectionTitle
+              n="11"
+              title="Blog-prose golden primitives"
+              sub="Editorial mode: the prose scale plus the inline callouts (TL;DR, pull-stat)."
+            />
+            <LayoutSwitch defaultLayout="grid">
+              <Specimen
+                label="<Prose>"
+                surface="blog"
+                status="golden"
+                note="src/components/golden/blog.tsx — wraps MDX/article body with the golden type scale."
+              >
+                <Prose>
+                  <h2>What the data actually says</h2>
+                  <p>
+                    Across <strong>7,000+ profiles</strong>, the median match
+                    rate tells a clear story.{" "}
+                    <a href="#ds-prose">See the dataset</a>.
+                  </p>
+                  <ul>
+                    <li>Women match roughly 6× more often than men</li>
+                    <li>Response time predicts conversation length</li>
+                  </ul>
+                  <h3>By the numbers</h3>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Gender</th>
+                        <th>Match rate</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>Women</td>
+                        <td>28.7%</td>
+                      </tr>
+                      <tr>
+                        <td>Men</td>
+                        <td>4.6%</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </Prose>
+              </Specimen>
+              <Specimen
+                label="<Tldr> + <PullStat>"
+                surface="blog"
+                status="golden"
+                note="The rose TL;DR callout and the left-border pull-stat for in-article emphasis."
+              >
+                <div className="flex w-full flex-col gap-6">
+                  <Tldr
+                    items={[
+                      "Real behavior, not self-reports",
+                      <>
+                        Women match <strong>6×</strong> more often than men
+                      </>,
+                      "Response time is the strongest signal",
+                    ]}
+                  />
+                  <PullStat
+                    value="965k+"
+                    label="YouTube views generated from the dataset"
+                  />
+                </div>
+              </Specimen>
+            </LayoutSwitch>
+          </section>
+
+          {/* ============================ COVERAGE */}
+          <section>
+            <SectionTitle
+              n="12"
               title="Coverage & extraction backlog"
               sub="From a full sweep of 160 marketing + 49 app + 53 shadcn files (389 patterns). This table is itself rendered on the shadcn <Table> primitive (dogfooding)."
             />
@@ -1021,10 +1227,11 @@ export default function DesignSystemPage() {
                       ["Insights cards (CohortBenchmark/Percentile)", "app", "candidate"],
                       ["File-upload / dropzone + stepper", "upload", "candidate"],
                       ["Auth forms (sign-in/up/reset)", "app", "candidate"],
+                      ["App-mode (HeroStats/CohortBadge/StatTiles/Panel)", "app", "golden"],
+                      ["Data-viz: Funnel / PercentileBars", "app", "golden"],
+                      ["Blog: Prose / Tldr / PullStat", "blog", "golden"],
                       ["App shell (AppHeader / sidebar)", "app", "not-built"],
-                      ["App-mode: hero-stats, cohort badge, funnel", "app", "not-built"],
-                      ["Data-viz: charts, map, percentile bars", "app", "not-built"],
-                      ["Blog: prose, tldr, pullstat", "blog", "not-built"],
+                      ["Data-viz: charts (InsightsShowcase) · Mapbox", "app", "candidate"],
                       ["Error / 404 / dark-mode / a11y states", "shared", "not-built"],
                     ] as [string, Surface, StatusKind][]
                   ).map(([name, surface, status]) => (
