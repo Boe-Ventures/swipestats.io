@@ -74,6 +74,43 @@ export const SLACK_EVENTS = [
 
 const SLACK_EVENT_SET = new Set<string>(SLACK_EVENTS);
 
+// =====================================================
+// CONSENT POLICY (server-side gating)
+// =====================================================
+//
+// Server events split by lawful basis. OPERATIONAL events run under legitimate
+// interest — they're necessary to deliver the service, bill, secure, or alert
+// operators — so they fire even without `analytics` consent (still IP-dropped).
+// Everything NOT in this set is behavioral product analytics and is skipped
+// when the user hasn't consented to the `analytics` category. Move an event
+// between the two by editing this one list.
+
+export const OPERATIONAL_SERVER_EVENTS = new Set<ServerAnalyticsEventName>([
+  // Auth / account lifecycle
+  "user_signed_up",
+  "user_account_created",
+  "user_signed_in",
+  "user_signed_out",
+  // Profile uploads (core service delivery + fraud/ops)
+  "tinder_profile_created",
+  "tinder_profile_updated",
+  "tinder_profile_upload_failed",
+  "hinge_profile_created",
+  "hinge_profile_updated",
+  "hinge_profile_merged",
+  "hinge_profile_upload_failed",
+  // Monetization / billing (financial record)
+  "subscription_trial_started",
+  "subscription_activated",
+  "subscription_cancelled",
+  "billing_checkout_created",
+  "billing_payment_successful",
+  "billing_payment_failed",
+  "billing_subscription_updated",
+  // Internal
+  "admin_test_event_fired",
+]);
+
 export const SERVER_EVENT_REGISTRY = {
   // ── Auth ─────────────────────────────────────────
   user_signed_up: {

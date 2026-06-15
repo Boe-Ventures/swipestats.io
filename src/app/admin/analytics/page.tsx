@@ -1,20 +1,23 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import posthog from "posthog-js";
 import {
   Activity,
+  Database,
   LogIn,
   LogOut,
   RefreshCw,
   Send,
   Server,
+  ShieldCheck,
   UserPlus,
 } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { Button, ButtonLink } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { useAnalytics } from "@/contexts/AnalyticsProvider";
 import { authClient } from "@/server/better-auth/client";
 import { useTRPC } from "@/trpc/react";
@@ -22,8 +25,21 @@ import {
   amplitudeEnabled,
   getAmplitudeIds,
 } from "@/lib/analytics/amplitude.client";
+import {
+  ALL_OFF,
+  CONSENT_CATEGORY_META,
+  type ConsentCategory,
+  type ConsentPreferences,
+  type ConsentRecord,
+} from "@/lib/analytics/consent";
+import {
+  getStoredConsent,
+  isGpcEnabled,
+} from "@/lib/analytics/consent.storage";
 
 interface DebugSnapshot {
+  consent: ConsentRecord | null;
+  gpc: boolean;
   posthogDistinctId: string | null;
   amplitude: ReturnType<typeof getAmplitudeIds>;
 }
@@ -36,6 +52,8 @@ function readSnapshot(): DebugSnapshot {
     posthogDistinctId = null;
   }
   return {
+    consent: getStoredConsent(),
+    gpc: isGpcEnabled(),
     posthogDistinctId,
     amplitude: getAmplitudeIds(),
   };
@@ -74,11 +92,18 @@ function Section({
   );
 }
 
+function consentValue(prefs: ConsentPreferences | null, cat: ConsentCategory) {
+  if (cat === "essential") return "✅ on";
+  if (prefs === null) return "⏳ undecided";
+  return prefs[cat] ? "✅ on" : "🚫 off";
+}
+
 export default function AdminAnalyticsPage() {
   const {
     hasConsent,
     preferences,
     trackEvent,
+    setConsent,
     acceptAll,
     rejectNonEssential,
     reShowConsentBanner,
@@ -101,11 +126,19 @@ export default function AdminAnalyticsPage() {
   const fireServerEvent = useMutation(
     trpc.admin.fireTestEvent.mutationOptions({
       onSuccess: (data) => {
-        setServerResult(
-          `✅ fired (userId: ${data.userId}, at ${data.firedAt})`,
-        );
+        setServerResult(`✅ fired (userId: ${data.userId}, at ${data.firedAt})`);
       },
       onError: (error) => setServerResult(`❌ ${error.message}`),
+    }),
+  );
+
+  // DB-backed consent (durable, server-readable mirror).
+  const dbConsentQuery = useQuery(
+    trpc.consent.get.queryOptions(undefined, { enabled: false }),
+  );
+  const writeDbConsent = useMutation(
+    trpc.consent.set.mutationOptions({
+      onSuccess: () => void dbConsentQuery.refetch(),
     }),
   );
 
@@ -125,6 +158,13 @@ export default function AdminAnalyticsPage() {
     fireServerEvent.mutate({ nonce, source: "admin_analytics_page" });
   };
 
+  // --- consent controls (live: setConsent applies to the provider, no reload) ---
+  const current = preferences ?? ALL_OFF;
+  const toggleCategory = (cat: ConsentCategory, checked: boolean) => {
+    setConsent({ ...current, [cat]: checked });
+    setTimeout(refresh, 50);
+  };
+
   // --- auth quick actions ---
   const signOut = async () => {
     await authClient.signOut();
@@ -137,6 +177,13 @@ export default function AdminAnalyticsPage() {
   };
 
   const user = session.data?.user;
+  const isFullUser = !!user && !user.isAnonymous;
+  const isAnon = !!user && !!user.isAnonymous;
+  const authState = isFullUser
+    ? "logged in"
+    : isAnon
+      ? "anonymous session"
+      : "logged out";
 
   return (
     <div className="space-y-6">
@@ -146,12 +193,16 @@ export default function AdminAnalyticsPage() {
             Analytics Debug Harness
           </h1>
           <p className="mt-2 text-gray-600">
-            Fire test events, flip consent, and inspect identity across PostHog,
-            Vercel, and Amplitude. See the{" "}
+            Fire test events, manage granular consent, and inspect identity
+            across PostHog, Vercel, and Amplitude. See the{" "}
             <a href="/admin/tracking-plan" className="text-blue-600 underline">
               tracking plan
             </a>{" "}
-            for the full event catalog.
+            for the catalog, or the{" "}
+            <a href="/cookies" className="text-blue-600 underline">
+              cookies page
+            </a>{" "}
+            for the user-facing UI.
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={refresh}>
@@ -167,30 +218,38 @@ export default function AdminAnalyticsPage() {
           ) : (
             <div className="divide-y divide-gray-100">
               <Row
-                label="Analytics consent"
-                value={hasConsent ? "✅ granted" : "🚫 off"}
-              />
-              {preferences ? (
-                (["functional", "analytics", "advertising"] as const).map(
-                  (cat) => (
-                    <Row
-                      key={cat}
-                      label={cat}
-                      value={preferences[cat] ? "✅ on" : "—"}
-                    />
-                  ),
-                )
-              ) : (
-                <Row label="decision" value="undecided (banner shown)" />
-              )}
-              <Row
-                label="user"
+                label="decision"
                 value={
-                  user
-                    ? `${user.id}${user.isAnonymous ? " (anon)" : ""}`
-                    : "logged out"
+                  preferences === null
+                    ? "⏳ undecided (banner shows)"
+                    : "✅ decided"
                 }
               />
+              {CONSENT_CATEGORY_META.map((cat) => (
+                <Row
+                  key={cat.key}
+                  label={`consent · ${cat.key}`}
+                  value={consentValue(preferences, cat.key)}
+                />
+              ))}
+              <Row
+                label="analytics on (back-compat)"
+                value={hasConsent ? "✅ yes" : "🚫 no"}
+              />
+              <Row
+                label="Global Privacy Control"
+                value={snapshot.gpc ? "⚠️ enabled (forces off)" : "not set"}
+              />
+              <Row
+                label="decidedAt"
+                value={
+                  snapshot.consent
+                    ? new Date(snapshot.consent.decidedAt).toLocaleString()
+                    : null
+                }
+              />
+              <Row label="auth" value={authState} />
+              <Row label="user" value={user ? user.id : "logged out"} />
               <Row label="user email" value={user?.email ?? null} />
               <Row
                 label="PostHog distinct_id"
@@ -222,8 +281,9 @@ export default function AdminAnalyticsPage() {
         <Section title="Test events" icon={Send}>
           <p className="text-sm text-gray-600">
             Fires <code className="text-xs">admin_test_event_fired</code>. Client
-            goes through the consent-gated provider array; server goes through
-            the fan-out service.
+            goes through the consent-gated provider array (needs{" "}
+            <code className="text-xs">analytics</code> consent); server goes
+            through the fan-out service. Only the client event reaches Amplitude.
           </p>
           <div className="flex flex-wrap gap-2">
             <Button onClick={fireClientEvent} disabled={!hasConsent}>
@@ -239,7 +299,8 @@ export default function AdminAnalyticsPage() {
           </div>
           {!hasConsent && (
             <p className="text-xs text-amber-600">
-              Client event is queued (not sent) until consent is granted.
+              Client event is queued (not sent) until{" "}
+              <code>analytics</code> consent is granted below.
             </p>
           )}
           {lastClientNonce && (
@@ -248,16 +309,54 @@ export default function AdminAnalyticsPage() {
           {serverResult && <Row label="server" value={serverResult} />}
         </Section>
 
-        {/* Consent controls */}
-        <Section title="Consent" icon={Activity}>
+        {/* Granular consent */}
+        <Section title="Consent (granular)" icon={ShieldCheck}>
           <p className="text-sm text-gray-600">
-            Granular per-category consent (localStorage{" "}
-            <code className="text-xs">swipestats_consent</code> until the DB
-            column lands). These call the provider directly — no reload.
+            Per-category — written to localStorage via the consent core and
+            applied to the provider array live (no reload). Essential is always
+            on.
           </p>
-          <div className="flex flex-wrap gap-2">
-            <Button onClick={acceptAll}>Accept all</Button>
-            <Button variant="destructive" onClick={rejectNonEssential}>
+          <div className="divide-y divide-gray-100">
+            {CONSENT_CATEGORY_META.map((cat) => (
+              <div
+                key={cat.key}
+                className="flex items-start justify-between gap-3 py-2.5"
+              >
+                <div>
+                  <div className="text-sm font-medium text-gray-900">
+                    {cat.label}
+                    {cat.locked && (
+                      <span className="ml-1 text-xs font-normal text-gray-400">
+                        (always on)
+                      </span>
+                    )}
+                  </div>
+                  <div className="text-xs text-gray-500">{cat.description}</div>
+                </div>
+                <Switch
+                  checked={cat.key === "essential" ? true : current[cat.key]}
+                  disabled={cat.locked}
+                  onCheckedChange={(checked) => toggleCategory(cat.key, checked)}
+                />
+              </div>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2 pt-1">
+            <Button
+              onClick={() => {
+                acceptAll();
+                setTimeout(refresh, 50);
+              }}
+            >
+              Accept all
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                rejectNonEssential();
+                setTimeout(refresh, 50);
+              }}
+            >
               Reject non-essential
             </Button>
             <Button variant="outline" onClick={reShowConsentBanner}>
@@ -271,11 +370,26 @@ export default function AdminAnalyticsPage() {
 
         {/* Auth quick actions */}
         <Section title="Auth quick actions" icon={UserPlus}>
+          <p className="text-sm text-gray-600">
+            Current: <span className="font-medium">{authState}</span>. Actions
+            adapt to the session.
+          </p>
           <div className="flex flex-wrap gap-2">
-            <ButtonLink href="/signin" variant="outline">
-              <LogIn className="mr-1 h-3 w-3" /> Sign in
-            </ButtonLink>
-            <Button variant="outline" onClick={signInAnonymous}>
+            {isFullUser ? (
+              <Button variant="outline" disabled>
+                <LogIn className="mr-1 h-3 w-3" /> Signed in
+              </Button>
+            ) : (
+              <ButtonLink href="/signin" variant="outline">
+                <LogIn className="mr-1 h-3 w-3" />{" "}
+                {isAnon ? "Upgrade / sign in" : "Sign in"}
+              </ButtonLink>
+            )}
+            <Button
+              variant="outline"
+              onClick={signInAnonymous}
+              disabled={!!user}
+            >
               <UserPlus className="mr-1 h-3 w-3" /> Create anon session
             </Button>
             <Button variant="outline" onClick={signOut} disabled={!user}>
@@ -284,23 +398,63 @@ export default function AdminAnalyticsPage() {
           </div>
         </Section>
 
-        {/* DB-backed consent (planned) */}
-        <Section title="DB-backed consent (planned)" icon={Server}>
+        {/* DB-backed consent */}
+        <Section title="DB-backed consent" icon={Database}>
           <p className="text-sm text-gray-600">
-            Durable, cross-device consent will live on a{" "}
-            <code className="text-xs">user.consentPreferences</code> jsonb
-            (category map + version + timestamp), synced with localStorage on
-            login so the server can gate events too. Requires a schema migration
-            — not wired yet.
+            Durable, cross-device consent on{" "}
+            <code className="text-xs">user.analyticsConsent</code> (preferences +
+            version + timestamp). Server-side event gating reads this. Requires a
+            logged-in user.
           </p>
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" disabled>
-              Read DB consent
+            <Button
+              variant="outline"
+              onClick={() => void dbConsentQuery.refetch()}
+              disabled={!user || dbConsentQuery.isFetching}
+            >
+              {dbConsentQuery.isFetching ? "Reading…" : "Read DB consent"}
             </Button>
-            <Button variant="outline" disabled>
-              Write DB consent
+            <Button
+              variant="outline"
+              onClick={() => writeDbConsent.mutate({ preferences: current })}
+              disabled={!user || writeDbConsent.isPending}
+            >
+              {writeDbConsent.isPending ? "Writing…" : "Write DB consent"}
             </Button>
           </div>
+          {!user && (
+            <p className="text-xs text-amber-600">
+              Sign in (or create an anon session) to read/write DB consent.
+            </p>
+          )}
+          {dbConsentQuery.isFetched && (
+            <div className="divide-y divide-gray-100 pt-1">
+              {dbConsentQuery.data ? (
+                <>
+                  {CONSENT_CATEGORY_META.map((cat) => (
+                    <Row
+                      key={cat.key}
+                      label={`db · ${cat.key}`}
+                      value={
+                        dbConsentQuery.data!.preferences[cat.key] ? "✅" : "🚫"
+                      }
+                    />
+                  ))}
+                  <Row
+                    label="db decidedAt"
+                    value={new Date(
+                      dbConsentQuery.data.decidedAt,
+                    ).toLocaleString()}
+                  />
+                </>
+              ) : (
+                <Row label="db record" value="none yet" />
+              )}
+            </div>
+          )}
+          {writeDbConsent.isError && (
+            <p className="text-xs text-red-600">{writeDbConsent.error.message}</p>
+          )}
         </Section>
       </div>
     </div>

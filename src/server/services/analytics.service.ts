@@ -9,7 +9,29 @@ import type {
 import { sanitizeForVercel } from "@/lib/analytics/analytics.utils";
 import { trackPosthogServerEvent } from "@/server/clients/posthog.client";
 import { trackSlackEvent } from "@/server/clients/slack.client";
+import { OPERATIONAL_SERVER_EVENTS } from "@/lib/analytics/analytics.registry";
+import type { ConsentRecord } from "@/lib/analytics/consent";
+import { db } from "@/server/db";
+import { userTable } from "@/server/db/schema";
+import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
+
+/**
+ * Read the user's durable analytics consent (mirror of their localStorage
+ * decision). Returns null if undecided, unknown, or the column isn't migrated
+ * yet — all treated as "no analytics consent on record".
+ */
+async function loadConsent(userId: string): Promise<ConsentRecord | null> {
+  try {
+    const user = await db.query.userTable.findFirst({
+      where: eq(userTable.id, userId),
+      columns: { analyticsConsent: true },
+    });
+    return user?.analyticsConsent ?? null;
+  } catch {
+    return null;
+  }
+}
 
 // =====================================================
 // PROVIDER INTERFACE
@@ -91,9 +113,25 @@ export function trackServerEvent<T extends ServerAnalyticsEventName>(
 
   waitUntil(
     (async () => {
-      // Auto-extract IP for PostHog GeoIP if not provided
-      const ip = meta?.ip ?? ipAddress({ headers: await headers() });
-      const enrichedMeta = ip ? { ...meta, ip } : meta;
+      // Respect the user's stored analytics consent (durable DB mirror).
+      const consent = await loadConsent(userId);
+      const analyticsAllowed = consent?.preferences.analytics === true;
+      const operational = OPERATIONAL_SERVER_EVENTS.has(event);
+
+      // Behavioral analytics needs consent; operational events run under
+      // legitimate interest. Drop behavioral events when consent is absent.
+      if (!operational && !analyticsAllowed) return;
+
+      // IP (PostHog GeoIP) is personal data — only forward it with consent,
+      // and strip any caller-provided IP when consent is absent.
+      const ip = analyticsAllowed
+        ? (meta?.ip ?? ipAddress({ headers: await headers() }))
+        : undefined;
+      const enrichedMeta: AnalyticsMetadata | undefined = meta
+        ? { ...meta, ip }
+        : ip
+          ? { ip }
+          : undefined;
 
       for (const provider of serverAnalyticsProviders) {
         if (provider.trackServerEvent) {

@@ -11,7 +11,10 @@ import {
   useState,
 } from "react";
 import { track as vercelTrack } from "@vercel/analytics";
+import { useMutation } from "@tanstack/react-query";
 import posthog from "posthog-js";
+
+import { useTRPC } from "@/trpc/react";
 
 import type {
   AnalyticsMetadata,
@@ -152,7 +155,13 @@ export const useAnalytics = () => {
 
 export function AnalyticsProvider({ children }: { children: ReactNode }) {
   const session = authClient.useSession();
+  const trpc = useTRPC();
   const lastIdentifiedUserId = useRef<string | null>(null);
+
+  // Mirror the local decision into the DB (user.analyticsConsent) so the server
+  // can gate events too. Fire-and-forget; failures are non-fatal.
+  const syncConsentToDb = useMutation(trpc.consent.set.mutationOptions());
+  const lastSyncedRef = useRef<string | null>(null);
 
   // null = the user has not decided yet (nothing fires, banner shown).
   const [preferences, setPreferences] = useState<ConsentPreferences | null>(
@@ -320,13 +329,23 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
     if (analyticsOn && session.data?.user) identifyUser();
   }, [analyticsOn, session.data, identifyUser]);
 
+  // ── Sync the decision to the DB on login / change (cross-device) ─────
+  useEffect(() => {
+    const user = session.data?.user;
+    if (!user || preferences === null) return;
+    const key = `${user.id}:${JSON.stringify(preferences)}`;
+    if (lastSyncedRef.current === key) return;
+    lastSyncedRef.current = key;
+    syncConsentToDb.mutate({ preferences });
+  }, [session.data, preferences, syncConsentToDb]);
+
   // ── Consent mutations ─────────────────────────────────────────────────
   const setConsent = useCallback(
     (partial: Partial<ConsentPreferences>) => {
       const record = setStoredConsent(partial);
       setPreferences(record.preferences);
       setShowBanner(false);
-      // TODO(server unit): sync record → user.consentPreferences on next request.
+      // The sync effect mirrors this to user.analyticsConsent when logged in.
     },
     [],
   );
