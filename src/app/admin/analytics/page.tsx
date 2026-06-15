@@ -24,8 +24,6 @@ import {
 } from "@/lib/analytics/amplitude.client";
 
 interface DebugSnapshot {
-  cookieConsent: string | null;
-  cookieConsentTimestamp: string | null;
   posthogDistinctId: string | null;
   amplitude: ReturnType<typeof getAmplitudeIds>;
 }
@@ -38,8 +36,6 @@ function readSnapshot(): DebugSnapshot {
     posthogDistinctId = null;
   }
   return {
-    cookieConsent: localStorage.getItem("cookieConsent"),
-    cookieConsentTimestamp: localStorage.getItem("cookieConsentTimestamp"),
     posthogDistinctId,
     amplitude: getAmplitudeIds(),
   };
@@ -79,7 +75,14 @@ function Section({
 }
 
 export default function AdminAnalyticsPage() {
-  const { hasConsent, trackEvent, reShowConsentBanner } = useAnalytics();
+  const {
+    hasConsent,
+    preferences,
+    trackEvent,
+    acceptAll,
+    rejectNonEssential,
+    reShowConsentBanner,
+  } = useAnalytics();
   const session = authClient.useSession();
   const trpc = useTRPC();
 
@@ -120,18 +123,6 @@ export default function AdminAnalyticsPage() {
     const nonce = crypto.randomUUID();
     setServerResult(`⏳ firing (nonce: ${nonce})…`);
     fireServerEvent.mutate({ nonce, source: "admin_analytics_page" });
-  };
-
-  // --- consent controls (debug: write localStorage + reload) ---
-  const setConsent = (value: "true" | "false") => {
-    localStorage.setItem("cookieConsent", value);
-    localStorage.setItem("cookieConsentTimestamp", Date.now().toString());
-    window.location.reload();
-  };
-  const clearConsent = () => {
-    localStorage.removeItem("cookieConsent");
-    localStorage.removeItem("cookieConsentTimestamp");
-    window.location.reload();
   };
 
   // --- auth quick actions ---
@@ -176,23 +167,22 @@ export default function AdminAnalyticsPage() {
           ) : (
             <div className="divide-y divide-gray-100">
               <Row
-                label="Consent (context)"
-                value={hasConsent ? "✅ granted" : "🚫 none"}
+                label="Analytics consent"
+                value={hasConsent ? "✅ granted" : "🚫 off"}
               />
-              <Row
-                label="cookieConsent (localStorage)"
-                value={snapshot.cookieConsent}
-              />
-              <Row
-                label="consent timestamp"
-                value={
-                  snapshot.cookieConsentTimestamp
-                    ? new Date(
-                        Number(snapshot.cookieConsentTimestamp),
-                      ).toLocaleString()
-                    : null
-                }
-              />
+              {preferences ? (
+                (["functional", "analytics", "advertising"] as const).map(
+                  (cat) => (
+                    <Row
+                      key={cat}
+                      label={cat}
+                      value={preferences[cat] ? "✅ on" : "—"}
+                    />
+                  ),
+                )
+              ) : (
+                <Row label="decision" value="undecided (banner shown)" />
+              )}
               <Row
                 label="user"
                 value={
@@ -259,22 +249,23 @@ export default function AdminAnalyticsPage() {
         </Section>
 
         {/* Consent controls */}
-        <Section title="Consent (localStorage)" icon={Activity}>
+        <Section title="Consent" icon={Activity}>
           <p className="text-sm text-gray-600">
-            Today the source of truth is localStorage. Changing it reloads the
-            page so the provider re-reads consent.
+            Granular per-category consent (localStorage{" "}
+            <code className="text-xs">swipestats_consent</code> until the DB
+            column lands). These call the provider directly — no reload.
           </p>
           <div className="flex flex-wrap gap-2">
-            <Button onClick={() => setConsent("true")}>Grant</Button>
-            <Button variant="destructive" onClick={() => setConsent("false")}>
-              Decline
-            </Button>
-            <Button variant="outline" onClick={clearConsent}>
-              Clear
+            <Button onClick={acceptAll}>Accept all</Button>
+            <Button variant="destructive" onClick={rejectNonEssential}>
+              Reject non-essential
             </Button>
             <Button variant="outline" onClick={reShowConsentBanner}>
               Re-show banner
             </Button>
+            <ButtonLink href="/cookies" variant="outline">
+              Open /cookies
+            </ButtonLink>
           </div>
         </Section>
 
@@ -297,9 +288,10 @@ export default function AdminAnalyticsPage() {
         <Section title="DB-backed consent (planned)" icon={Server}>
           <p className="text-sm text-gray-600">
             Durable, cross-device consent will live on a{" "}
-            <code className="text-xs">user.analyticsConsent</code> column
-            (value + version + timestamp), synced with localStorage on login.
-            Requires a schema migration — not wired yet.
+            <code className="text-xs">user.consentPreferences</code> jsonb
+            (category map + version + timestamp), synced with localStorage on
+            login so the server can gate events too. Requires a schema migration
+            — not wired yet.
           </p>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" disabled>

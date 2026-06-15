@@ -21,6 +21,11 @@ posthog.init(env.NEXT_PUBLIC_POSTHOG_KEY, {
   capture_pageview: false,
   capture_pageleave: false,
   disable_session_recording: true,
+  // Replay (only active after `analytics` consent) masks all inputs so we never
+  // capture what users type, even while they view their own dating data.
+  session_recording: {
+    maskAllInputs: true,
+  },
   loaded: (ph) => {
     if (env.NEXT_PUBLIC_VERCEL_ENV !== "production") {
       ph.debug();

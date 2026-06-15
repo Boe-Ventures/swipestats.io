@@ -26,6 +26,20 @@ import {
   disableAmplitude,
   enableAmplitude,
 } from "@/lib/analytics/amplitude.client";
+import {
+  ALL_OFF,
+  ALL_ON,
+  isAllowed,
+  type ConsentCategory,
+  type ConsentPreferences,
+} from "@/lib/analytics/consent";
+import {
+  clearStoredConsent,
+  getStoredConsent,
+  isConsentStale,
+  isGpcEnabled,
+  setStoredConsent,
+} from "@/lib/analytics/consent.storage";
 import { authClient } from "@/server/better-auth/client";
 import { CookieBanner } from "@/components/analytics/CookieBanner";
 
@@ -40,7 +54,10 @@ interface QueuedEvent {
 }
 
 interface AnalyticsContextType {
+  /** Back-compat: true when the `analytics` category is allowed. */
   hasConsent: boolean;
+  /** Full per-category preferences, or null until the user has decided. */
+  preferences: ConsentPreferences | null;
   trackEvent: <T extends ClientAnalyticsEventName>(
     eventName: T,
     properties?: ClientEventPropertiesDefinition[T],
@@ -48,11 +65,17 @@ interface AnalyticsContextType {
   ) => void;
   identifyUser: () => void;
   reset: () => void;
+  /** Persist an explicit decision (essential is always forced on). */
+  setConsent: (preferences: Partial<ConsentPreferences>) => void;
+  acceptAll: () => void;
+  rejectNonEssential: () => void;
   reShowConsentBanner: () => void;
 }
 
 interface ClientAnalyticsProvider {
   name: string;
+  /** Which consent category gates this provider. */
+  category: ConsentCategory;
   trackEvent: <T extends ClientAnalyticsEventName>(
     eventName: T,
     properties?: ClientEventPropertiesDefinition[T],
@@ -60,6 +83,51 @@ interface ClientAnalyticsProvider {
   ) => void;
   identify?: (userId: string, traits: Record<string, unknown>) => void;
   reset?: () => void;
+}
+
+// =====================================================
+// SIDE-EFFECTS — enable/disable the analytics-category tools
+// =====================================================
+//
+// PostHog is pre-initialized (tracking off) in instrumentation-client.ts.
+// Session replay + Amplitude follow the `analytics` category.
+
+function applyAnalyticsState(allowed: boolean): void {
+  if (allowed) {
+    posthog.set_config({
+      autocapture: false, // manual events only
+      capture_pageview: "history_change",
+      capture_pageleave: true,
+      disable_session_recording: false,
+    });
+    try {
+      posthog.startSessionRecording();
+    } catch {
+      /* no-op */
+    }
+    // Capture the initial pageview that was suppressed pre-consent.
+    posthog.capture("$pageview");
+    enableAmplitude();
+    console.info("🟢 [Analytics] analytics category enabled");
+  } else {
+    posthog.set_config({
+      capture_pageview: false,
+      capture_pageleave: false,
+      disable_session_recording: true,
+    });
+    try {
+      posthog.stopSessionRecording();
+    } catch {
+      /* no-op */
+    }
+    try {
+      posthog.reset();
+    } catch {
+      /* no-op */
+    }
+    disableAmplitude(); // opt out + clear Amplitude identity
+    console.info("🔇 [Analytics] analytics category disabled");
+  }
 }
 
 // =====================================================
@@ -86,101 +154,55 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
   const session = authClient.useSession();
   const lastIdentifiedUserId = useRef<string | null>(null);
 
-  const [hasConsent, setHasConsent] = useState(false);
+  // null = the user has not decided yet (nothing fires, banner shown).
+  const [preferences, setPreferences] = useState<ConsentPreferences | null>(
+    null,
+  );
   const [showBanner, setShowBanner] = useState(false);
   const [eventQueue, setEventQueue] = useState<QueuedEvent[]>([]);
 
-  // PostHog is already initialized in instrumentation-client.ts
-  // No need to re-initialize here
+  const decided = preferences !== null;
+  const analyticsOn = isAllowed(preferences, "analytics");
 
-  // Auto-consent for ANY user who signs up (anonymous or full)
+  // ── Resolve the initial state on mount (localStorage + GPC) ──────────
   useEffect(() => {
-    if (session.data?.user && !hasConsent) {
-      console.info("🔐 [Analytics] Auto-consent for user:", {
-        isAnonymous: session.data.user.isAnonymous,
-      });
-      localStorage.setItem("cookieConsent", "true");
-      localStorage.setItem("cookieConsentTimestamp", Date.now().toString());
-      setHasConsent(true);
+    const gpc = isGpcEnabled();
+    const stored = getStoredConsent();
+
+    if (stored && !isConsentStale(stored)) {
+      // Honor GPC as an override even over a stored "granted".
+      const prefs = gpc
+        ? { ...stored.preferences, analytics: false, advertising: false }
+        : stored.preferences;
+      setPreferences(prefs);
       setShowBanner(false);
-
-      // Enable PostHog tracking WITHOUT autocapture
-      posthog.set_config({
-        autocapture: false, // KEEP OFF - manual events only
-        capture_pageview: "history_change",
-        capture_pageleave: true,
-        disable_session_recording: false,
-      });
-
-      // Start session replay for ALL users (anonymous and full)
-      posthog.startSessionRecording();
-
-      // Capture initial pageview
-      posthog.capture("$pageview");
-
-      // Opt the user into Amplitude (no-op without an API key / under GPC)
-      enableAmplitude();
+    } else if (gpc) {
+      // GPC is a valid opt-out signal — respect it, skip the banner.
+      setPreferences(ALL_OFF);
+      setShowBanner(false);
+    } else {
+      // Undecided — show the banner; nothing fires until they choose.
+      setPreferences(null);
+      setShowBanner(true);
     }
-  }, [session.data, hasConsent]);
+    // Run once on mount.
+  }, []);
 
-  // Check stored consent on mount
+  // ── Apply analytics on/off when the decision changes ─────────────────
+  const appliedRef = useRef<boolean | null>(null);
   useEffect(() => {
-    if (!hasConsent && !session.isPending) {
-      const storedConsent = localStorage?.getItem("cookieConsent");
-      const consentTimestamp = localStorage?.getItem("cookieConsentTimestamp");
+    if (preferences === null) return; // undecided → nothing on
+    if (appliedRef.current === analyticsOn) return;
+    appliedRef.current = analyticsOn;
+    applyAnalyticsState(analyticsOn);
+  }, [preferences, analyticsOn]);
 
-      if (storedConsent === "true") {
-        setHasConsent(true);
-        setShowBanner(false);
-
-        // Enable PostHog tracking if user previously consented
-        posthog.set_config({
-          autocapture: false, // KEEP OFF - manual events only
-          capture_pageview: "history_change",
-          capture_pageleave: true,
-          disable_session_recording: false,
-        });
-        // Start session replay
-        posthog.startSessionRecording();
-        // Capture initial pageview
-        posthog.capture("$pageview");
-
-        // Opt the user into Amplitude (no-op without an API key / under GPC)
-        enableAmplitude();
-      } else if (storedConsent === null) {
-        // No previous decision - show banner
-        setShowBanner(true);
-      } else if (storedConsent === "false") {
-        // User previously declined - check if 7 days have passed
-        const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-        const now = Date.now();
-        const declineTime = consentTimestamp
-          ? parseInt(consentTimestamp, 10)
-          : 0;
-
-        if (now - declineTime > ONE_WEEK_MS) {
-          // Re-show banner after 1 week
-          console.debug(
-            "🔵 [Analytics] Re-showing banner after 1 week since decline",
-          );
-          setShowBanner(true);
-          localStorage.removeItem("cookieConsent");
-          localStorage.removeItem("cookieConsentTimestamp");
-        } else {
-          // Still within the week - respect their decline
-          setHasConsent(false);
-          setShowBanner(false);
-        }
-      }
-    }
-  }, [hasConsent, session.isPending]);
-
-  // Analytics providers array
+  // ── Providers (each tagged with the category that gates it) ──────────
   const providers: ClientAnalyticsProvider[] = useMemo(
     () => [
-      // PostHog
       {
         name: "PostHog",
+        category: "analytics",
         trackEvent: <T extends ClientAnalyticsEventName>(
           eventName: T,
           properties?: ClientEventPropertiesDefinition[T],
@@ -206,9 +228,9 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
           }
         },
       },
-      // Vercel Analytics
       {
         name: "Vercel",
+        category: "analytics",
         trackEvent: <T extends ClientAnalyticsEventName>(
           eventName: T,
           properties?: ClientEventPropertiesDefinition[T],
@@ -220,9 +242,9 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
           }
         },
       },
-      // Amplitude (no-ops when NEXT_PUBLIC_AMPLITUDE_API_KEY is unset)
       {
         name: "Amplitude",
+        category: "analytics",
         trackEvent: <T extends ClientAnalyticsEventName>(
           eventName: T,
           properties?: ClientEventPropertiesDefinition[T],
@@ -240,155 +262,106 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  // Track event function
+  // ── Track ────────────────────────────────────────────────────────────
   const trackEvent = useCallback(
     <T extends ClientAnalyticsEventName>(
       eventName: T,
       properties?: ClientEventPropertiesDefinition[T],
       meta?: AnalyticsMetadata,
     ): void => {
-      if (!hasConsent) {
-        // Queue event for later
+      if (!decided) {
+        // Buffer until the user makes a choice, then replay to allowed providers.
         setEventQueue((prev) => [...prev, { eventName, properties, meta }]);
-        console.log("📦 [Analytics] Event queued:", eventName);
         return;
       }
-
-      console.log("🔵 [Analytics] Client event:", { eventName, properties });
-      providers.forEach((provider) =>
-        provider.trackEvent(eventName, properties, meta),
-      );
+      providers.forEach((provider) => {
+        if (isAllowed(preferences, provider.category)) {
+          provider.trackEvent(eventName, properties, meta);
+        }
+      });
     },
-    [hasConsent, providers],
+    [decided, preferences, providers],
   );
 
-  // Identify user function
+  // ── Identify ──────────────────────────────────────────────────────────
   const identifyUser = useCallback(() => {
-    if (!hasConsent || !session.data?.user) return;
-
+    if (!analyticsOn || !session.data?.user) return;
     const userId = session.data.user.id;
-
-    // Skip if already identified
     if (lastIdentifiedUserId.current === userId) return;
 
     const user = session.data.user;
-
-    console.log("🔵 [Analytics] Identifying user:", userId);
     providers.forEach((provider) => {
-      if (provider.identify) {
+      if (isAllowed(preferences, provider.category) && provider.identify) {
         provider.identify(userId, user);
       }
     });
-
     lastIdentifiedUserId.current = userId;
-  }, [hasConsent, session.data, providers]);
+  }, [analyticsOn, preferences, session.data, providers]);
 
-  // Reset analytics
+  // ── Reset ─────────────────────────────────────────────────────────────
   const reset = useCallback(() => {
-    console.log("🔵 [Analytics] Resetting all providers");
-    providers.forEach((provider) => {
-      if (provider.reset) {
-        provider.reset();
-      }
-    });
+    providers.forEach((provider) => provider.reset?.());
     lastIdentifiedUserId.current = null;
     setEventQueue([]);
   }, [providers]);
 
-  // Flush queued events when consent is given
+  // ── Flush the buffer once a decision exists ──────────────────────────
   useEffect(() => {
-    if (hasConsent && eventQueue.length > 0) {
-      console.info(
-        `📤 [Analytics] Flushing ${eventQueue.length} queued events`,
+    if (decided && eventQueue.length > 0) {
+      eventQueue.forEach((event) =>
+        trackEvent(event.eventName, event.properties, event.meta),
       );
-      eventQueue.forEach((event, index) => {
-        console.debug(
-          `📤 [${index + 1}/${eventQueue.length}] Replaying queued event: ${event.eventName}`,
-        );
-        trackEvent(event.eventName, event.properties, event.meta);
-      });
       setEventQueue([]);
-      console.info("✅ [Analytics] Event queue flushed successfully");
     }
-  }, [hasConsent, eventQueue, trackEvent]);
+  }, [decided, eventQueue, trackEvent]);
 
-  // Initialize analytics system when consent is given
+  // ── Identify the logged-in user once analytics is allowed ────────────
   useEffect(() => {
-    if (hasConsent) {
-      console.info("🚀 [Analytics] Analytics system initialized with consent");
+    if (analyticsOn && session.data?.user) identifyUser();
+  }, [analyticsOn, session.data, identifyUser]);
 
-      // Identify user if logged in
-      if (session.data?.user) {
-        identifyUser();
-      }
-    }
-  }, [hasConsent, session.data, identifyUser]);
+  // ── Consent mutations ─────────────────────────────────────────────────
+  const setConsent = useCallback(
+    (partial: Partial<ConsentPreferences>) => {
+      const record = setStoredConsent(partial);
+      setPreferences(record.preferences);
+      setShowBanner(false);
+      // TODO(server unit): sync record → user.consentPreferences on next request.
+    },
+    [],
+  );
 
-  // Handle consent acceptance
-  const handleAccept = useCallback(() => {
-    console.info("✅ [Analytics] Cookie consent accepted");
-    localStorage.setItem("cookieConsent", "true");
-    localStorage.setItem("cookieConsentTimestamp", Date.now().toString());
-    setHasConsent(true);
-    setShowBanner(false);
+  const acceptAll = useCallback(() => setConsent(ALL_ON), [setConsent]);
+  const rejectNonEssential = useCallback(
+    () => setConsent(ALL_OFF),
+    [setConsent],
+  );
 
-    // Enable PostHog tracking features now that consent is given
-    posthog.set_config({
-      autocapture: false, // KEEP OFF - manual events only
-      capture_pageview: "history_change", // Track pageviews on navigation
-      capture_pageleave: true,
-      disable_session_recording: false,
-    });
-
-    // Start session replay
-    posthog.startSessionRecording();
-
-    // Manually capture the initial pageview that was missed before consent
-    posthog.capture("$pageview");
-
-    // Opt the user into Amplitude (no-op without an API key / under GPC)
-    enableAmplitude();
-    console.info(
-      "✅ [Analytics] PostHog tracking enabled, initial pageview captured",
-    );
-  }, []);
-
-  // Handle consent decline
-  const handleDecline = useCallback(() => {
-    console.info("❌ [Analytics] Cookie consent declined");
-    localStorage.setItem("cookieConsent", "false");
-    localStorage.setItem("cookieConsentTimestamp", Date.now().toString());
-    setHasConsent(false);
-    setShowBanner(false);
-    reset();
-    disableAmplitude(); // Opt out + clear Amplitude identity
-    setEventQueue([]); // Clear any queued events
-  }, [reset]);
-
-  // Allow users to re-show the consent banner
   const reShowConsentBanner = useCallback(() => {
-    console.info("🔵 [Analytics] Re-showing consent banner");
-    localStorage.removeItem("cookieConsent");
-    localStorage.removeItem("cookieConsentTimestamp");
-    setHasConsent(false);
+    clearStoredConsent();
+    setPreferences(null);
     setShowBanner(true);
   }, []);
 
   return (
     <AnalyticsContext.Provider
       value={{
-        hasConsent,
+        hasConsent: analyticsOn,
+        preferences,
         trackEvent,
         identifyUser,
         reset,
+        setConsent,
+        acceptAll,
+        rejectNonEssential,
         reShowConsentBanner,
       }}
     >
       {children}
       <CookieBanner
         isOpen={showBanner}
-        onAccept={handleAccept}
-        onDecline={handleDecline}
+        onAcceptAll={acceptAll}
+        onRejectAll={rejectNonEssential}
       />
     </AnalyticsContext.Provider>
   );
