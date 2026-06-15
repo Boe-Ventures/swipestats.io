@@ -23,6 +23,7 @@ import {
   marketingButton,
 } from "../_components/marketing-ui";
 import { CtaBand } from "../_components/CtaBand";
+import { InsightsShowcase } from "../InsightsShowcase";
 import { ResearchPricingSection } from "./ResearchPricingSection";
 
 export const metadata: Metadata = {
@@ -583,25 +584,6 @@ function SchemaSection() {
 
 /* ---------------------------------------------------------------- dashboard */
 
-const ageBars = [
-  { x: "18", h: "22%" },
-  { x: "21", h: "48%" },
-  { x: "24", h: "78%" },
-  { x: "27", h: "100%" },
-  { x: "30", h: "86%" },
-  { x: "33", h: "60%" },
-  { x: "36", h: "40%" },
-  { x: "39", h: "25%" },
-  { x: "42", h: "14%" },
-  { x: "45+", h: "8%", muted: true },
-];
-
-const matchRates = [
-  { name: "Women", w: "89%", val: "28.7%", color: "var(--color-rose-600)" },
-  { name: "Non-binary", w: "32%", val: "9.4%", color: "oklch(0.55 0.16 295)" },
-  { name: "Men", w: "14%", val: "4.6%", color: "oklch(0.62 0.1 200)" },
-];
-
 function DashboardSection() {
   return (
     <section className="py-[88px] max-[720px]:py-[60px]">
@@ -609,148 +591,12 @@ function DashboardSection() {
         <SectionHead
           eyebrow="See it before you buy"
           title="A glimpse of what's inside"
-          lead="A few aggregates from the demo dataset. The full sample explorer lets you walk a single real (anonymized) profile end to end."
+          lead="One real, anonymized profile from the demo dataset, rendered exactly as it ships. Walk a single row end to end before you buy."
         />
 
-        <div className="mt-11 grid grid-cols-1 gap-5 lg:grid-cols-[1.3fr_1fr]">
-          <div className="rounded-2xl border border-gray-200 bg-white p-[22px] shadow-[0_1px_2px_oklch(0.2_0.02_286/0.05)]">
-            <div className="mb-[18px] flex items-baseline justify-between">
-              <span className="text-[14px] font-bold text-gray-900">
-                Age distribution
-              </span>
-              <span className="font-mono text-[11px] text-gray-500">
-                n = 7,214
-              </span>
-            </div>
-            <div className="flex h-[180px] items-end gap-[5px]">
-              {ageBars.map((b) => (
-                <div
-                  key={b.x}
-                  className="flex min-w-0 flex-1 flex-col items-center gap-2"
-                >
-                  <div className="flex h-full w-full items-end">
-                    <div
-                      style={{ height: b.h }}
-                      className={cn(
-                        "w-full rounded-t-[4px] rounded-b-[2px]",
-                        b.muted
-                          ? "bg-gray-200"
-                          : "bg-gradient-to-b from-rose-600 to-rose-700",
-                      )}
-                    />
-                  </div>
-                  <span className="font-mono text-[11px] whitespace-nowrap text-gray-500">
-                    {b.x}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-gray-200 bg-white p-[22px] shadow-[0_1px_2px_oklch(0.2_0.02_286/0.05)]">
-            <div className="mb-[18px] flex items-baseline justify-between">
-              <span className="text-[14px] font-bold text-gray-900">
-                Median match rate
-              </span>
-              <span className="font-mono text-[11px] text-gray-500">
-                matches / likes
-              </span>
-            </div>
-            <div className="mt-1">
-              {matchRates.map((m, i) => (
-                <div
-                  key={m.name}
-                  className={cn(
-                    "grid grid-cols-[120px_1fr_auto] items-center gap-3.5 py-[9px]",
-                    i > 0 && "border-t border-gray-200",
-                  )}
-                >
-                  <span className="text-[13.5px] font-semibold text-gray-800">
-                    {m.name}
-                  </span>
-                  <div className="h-2.5 overflow-hidden rounded-full bg-gray-100">
-                    <div
-                      className="h-full rounded-full"
-                      style={{ width: m.w, background: m.color }}
-                    />
-                  </div>
-                  <span className="font-mono text-[13px] font-semibold tabular-nums text-gray-900">
-                    {m.val}
-                  </span>
-                </div>
-              ))}
-            </div>
-            <div className="my-[18px] h-px bg-gray-200" />
-            <div className="grid grid-cols-2 gap-5">
-              <div className="rounded-xl border border-gray-200 px-6 py-[22px]">
-                <div className="font-mono text-[11.5px] uppercase tracking-[0.06em] text-gray-500">
-                  Avg response
-                </div>
-                <div className="mt-2 text-[26px] font-bold tracking-[-0.03em] tabular-nums text-gray-900">
-                  1h 9m
-                </div>
-              </div>
-              <div className="rounded-xl border border-gray-200 px-6 py-[22px]">
-                <div className="font-mono text-[11.5px] uppercase tracking-[0.06em] text-gray-500">
-                  Ghosted
-                </div>
-                <div className="mt-2 text-[26px] font-bold tracking-[-0.03em] tabular-nums text-gray-900">
-                  42
-                  <span className="text-[0.5em] font-semibold text-gray-400">
-                    %
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-5 rounded-2xl border border-gray-200 bg-white p-[22px] shadow-[0_1px_2px_oklch(0.2_0.02_286/0.05)]">
-          <div className="mb-[18px] flex items-baseline justify-between">
-            <span className="text-[14px] font-bold text-gray-900">
-              Daily swipe volume: one profile, 12 months
-            </span>
-            <span className="font-mono text-[11px] text-gray-500">
-              usage[].swipesCombined
-            </span>
-          </div>
-          <svg
-            viewBox="0 0 920 200"
-            preserveAspectRatio="none"
-            className="block h-[200px] w-full"
-            aria-hidden
-          >
-            <defs>
-              <linearGradient id="research-area" x1="0" y1="0" x2="0" y2="1">
-                <stop
-                  offset="0%"
-                  stopColor="oklch(0.586 0.253 17.585 / 0.28)"
-                />
-                <stop offset="100%" stopColor="oklch(0.586 0.253 17.585 / 0)" />
-              </linearGradient>
-            </defs>
-            <g stroke="var(--color-gray-200)" strokeWidth="1">
-              <line x1="0" y1="50" x2="920" y2="50" />
-              <line x1="0" y1="100" x2="920" y2="100" />
-              <line x1="0" y1="150" x2="920" y2="150" />
-            </g>
-            <path
-              d="M0,150 L40,138 L80,120 L120,150 L160,95 L200,110 L240,60 L280,80 L320,40 L360,70 L400,55 L440,100 L480,130 L520,150 L560,120 L600,90 L640,70 L680,110 L720,85 L760,50 L800,75 L840,95 L880,130 L920,140 L920,200 L0,200 Z"
-              fill="url(#research-area)"
-            />
-            <path
-              d="M0,150 L40,138 L80,120 L120,150 L160,95 L200,110 L240,60 L280,80 L320,40 L360,70 L400,55 L440,100 L480,130 L520,150 L560,120 L600,90 L640,70 L680,110 L720,85 L760,50 L800,75 L840,95 L880,130 L920,140"
-              fill="none"
-              stroke="var(--color-rose-600)"
-              strokeWidth="2.5"
-              strokeLinejoin="round"
-              strokeLinecap="round"
-            />
-          </svg>
-          <div className="mt-2.5 flex justify-between">
-            <span className="font-mono text-[11px] text-gray-400">Mar 2025</span>
-            <span className="font-mono text-[11px] text-gray-400">Feb 2026</span>
-          </div>
+        {/* the real, data-driven insights (same charts that ship), on the demo profile */}
+        <div className="mt-11">
+          <InsightsShowcase />
         </div>
 
         <div className="mt-8 text-center">
@@ -759,7 +605,7 @@ function DashboardSection() {
             target="_blank"
             className={marketingButton({ variant: "ghost", size: "lg" })}
           >
-            Open the interactive sample explorer
+            Download the free sample profile
             <ArrowRightIcon className="h-4 w-4" />
           </Link>
         </div>
