@@ -1,5 +1,6 @@
+import Link from "next/link";
 import { Check } from "lucide-react";
-import { ButtonLink } from "@/components/ui/button";
+import { marketingButton } from "@/app/(marketing)/_components/marketing-ui";
 
 interface Feature {
   label: string;
@@ -31,14 +32,14 @@ export function StickyCtaCard({
   ],
 }: StickyCtaCardProps) {
   return (
-    <div className="rounded-xl border border-rose-200/60 bg-linear-to-r from-white via-gray-50 to-white p-6 shadow-lg">
+    <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
       {/* Title */}
-      <h3 className="text-lg font-bold text-gray-900">{title}</h3>
+      <h3 className="text-lg font-bold tracking-[-0.02em] text-gray-900">
+        {title}
+      </h3>
 
       {/* Description */}
-      <p className="mt-3 text-sm leading-relaxed text-gray-600">
-        {description}
-      </p>
+      <p className="mt-3 text-sm leading-relaxed text-gray-600">{description}</p>
 
       {/* Trust badge */}
       <div className="mt-4 flex items-center gap-2 text-xs font-medium text-rose-600">
@@ -54,22 +55,19 @@ export function StickyCtaCard({
 
       {/* CTA Buttons */}
       <div className="mt-6 space-y-2">
-        <ButtonLink
+        <Link
           href={primaryButtonHref}
-          size="lg"
-          className="w-full font-bold"
+          className={`w-full ${marketingButton({ variant: "primary", size: "lg" })}`}
         >
           {primaryButtonText}
-        </ButtonLink>
+        </Link>
 
-        <ButtonLink
+        <Link
           href={secondaryButtonHref}
-          variant="outline"
-          size="lg"
-          className="w-full"
+          className={`w-full ${marketingButton({ variant: "ghost", size: "lg" })}`}
         >
           {secondaryButtonText}
-        </ButtonLink>
+        </Link>
       </div>
 
       {/* Features list */}

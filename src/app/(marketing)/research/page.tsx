@@ -27,14 +27,14 @@ import { ResearchPricingSection } from "./ResearchPricingSection";
 export const metadata: Metadata = {
   title: "Research Datasets",
   description:
-    "Anonymized, consent-based behavior from 7,000+ real dating-app users — swipes, matches, and messages. Ready to analyze, publish, and cite.",
+    "Anonymized, consent-based behavior from 7,000+ real dating-app users: swipes, matches, and messages. Ready to analyze, publish, and cite.",
   alternates: {
     canonical: "/research",
   },
   openGraph: {
     title: "Research Datasets | SwipeStats",
     description:
-      "Anonymized, consent-based behavior from 7,000+ real dating-app users — swipes, matches, and messages. Ready to analyze, publish, and cite.",
+      "Anonymized, consent-based behavior from 7,000+ real dating-app users: swipes, matches, and messages. Ready to analyze, publish, and cite.",
     url: "/research",
   },
 };
@@ -222,9 +222,8 @@ function HeroSection() {
               Anonymized, consent-based behavior from{" "}
               <strong className="font-semibold text-gray-900">
                 7,000+ real dating-app users
-              </strong>{" "}
-              — swipes, matches, and messages. Ready to analyze, publish, and
-              cite. Not a survey.
+              </strong>: swipes, matches, and messages. Ready to analyze,
+              publish, and cite. Not a survey.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3.5">
               <Link
@@ -307,7 +306,7 @@ function ValueSection() {
     {
       icon: ChartPieIcon,
       title: "Observed, not claimed",
-      body: "Actual swipes, matches, and messages with timestamps — not what people say they do on a questionnaire.",
+      body: "Actual swipes, matches, and messages with timestamps, not what people say they do on a questionnaire.",
     },
     {
       icon: ShieldCheckIcon,
@@ -317,7 +316,7 @@ function ValueSection() {
     {
       icon: DocumentDuplicateIcon,
       title: "Rich, computed data model",
-      body: "Five linked objects per profile, plus pre-computed metrics like match rate, response time, and ghosting — ready to analyze.",
+      body: "Five linked objects per profile, plus pre-computed metrics like match rate, response time, and ghosting. Ready to analyze.",
     },
     {
       icon: ClockIcon,
@@ -345,7 +344,7 @@ function ValueSection() {
         <SectionHead
           eyebrow="Why it's different"
           title="Real behavior, not self-reports"
-          lead="Dating apps don't share user data, and surveys can't capture what people actually do. SwipeStats is built from users' own GDPR exports — the ground truth of how people swipe, match, and talk."
+          lead="Dating apps don't share user data, and surveys can't capture what people actually do. SwipeStats is built from users' own GDPR exports: the ground truth of how people swipe, match, and talk."
         />
 
         <div className="mt-14 grid grid-cols-1 gap-x-14 gap-y-7 md:grid-cols-2">
@@ -453,7 +452,7 @@ function SchemaSection() {
         <SectionHead
           eyebrow="The data model"
           title="Five linked objects in every profile"
-          lead="Each line of the JSONL file is one user. Raw profile fields, geography, pre-computed stats, daily activity, and every conversation — all keyed together."
+          lead="Each line of the JSONL file is one user. Raw profile fields, geography, pre-computed stats, daily activity, and every conversation. All keyed together."
         />
 
         <div className="mt-9 grid grid-cols-2 gap-3 md:grid-cols-5">
@@ -481,7 +480,7 @@ function SchemaSection() {
           <div className="rounded-2xl border border-gray-200 bg-white p-[22px] shadow-[0_1px_2px_oklch(0.2_0.02_286/0.05)]">
             <div className="mb-[18px] flex items-baseline justify-between">
               <span className="text-[14px] font-bold text-gray-900">
-                Sample rows — <span className="font-mono text-gray-500">meta</span>
+                Sample rows: <span className="font-mono text-gray-500">meta</span>
               </span>
               <span className="font-mono text-[11px] text-gray-500">
                 5 of 7,214
@@ -531,7 +530,7 @@ function SchemaSection() {
             <p className="text-[15px] leading-[1.7] text-gray-600">
               Everything is documented. The full data dictionary defines all 70+
               variables, their types, nullability, and how each metric is
-              computed — with notes on PII redaction and data quality.
+              computed, with notes on PII redaction and data quality.
             </p>
             <div className="mt-[22px] flex flex-wrap gap-3">
               <Link
@@ -708,7 +707,7 @@ function DashboardSection() {
         <div className="mt-5 rounded-2xl border border-gray-200 bg-white p-[22px] shadow-[0_1px_2px_oklch(0.2_0.02_286/0.05)]">
           <div className="mb-[18px] flex items-baseline justify-between">
             <span className="text-[14px] font-bold text-gray-900">
-              Daily swipe volume — one profile, 12 months
+              Daily swipe volume: one profile, 12 months
             </span>
             <span className="font-mono text-[11px] text-gray-500">
               usage[].swipesCombined
@@ -774,10 +773,10 @@ function UseCasesSection() {
   const cases = [
     {
       rose: true,
-      note: "[ video thumbnail — 1.5M views ]",
+      note: "[ video thumbnail, 1.5M views ]",
       role: "Creators & YouTubers",
       title: "Content that actually resonates",
-      body: "One creator turned our dataset into two videos on dating-app trends — nearly 1.5M combined views. The data is the hook.",
+      body: "One creator turned our dataset into two videos on dating-app trends. Nearly 1.5M combined views. The data is the hook.",
       links: [
         {
           href: "https://www.youtube.com/watch?v=02Ss76rFInw",
@@ -807,7 +806,7 @@ function UseCasesSection() {
       note: "[ data-story header image ]",
       role: "Data journalists & writers",
       title: "Data-driven stories that get read",
-      body: "Writers have analyzed hundreds of profiles — including messages — to surface patterns no survey could reveal.",
+      body: "Writers have analyzed hundreds of profiles, including messages, to surface patterns no survey could reveal.",
       links: [
         {
           href: "https://medium.com/data-science/i-analyzed-hundreds-of-users-tinder-data-including-messages-so-you-dont-have-to-14c6dc4a5fdd",
@@ -1055,11 +1054,11 @@ function FAQSection() {
     },
     {
       q: "What format is the data in?",
-      a: "JSONL — one JSON object per line, one line per profile. It imports cleanly into Python, R, pandas, or any tool you prefer. A full data dictionary defining every field ships with each download.",
+      a: "JSONL: one JSON object per line, one line per profile. It imports cleanly into Python, R, pandas, or any tool you prefer. A full data dictionary defining every field ships with each download.",
     },
     {
       q: "Can I use this for commercial projects?",
-      a: "Yes — the Standard tier and above include full commercial-use rights. Blog posts, YouTube videos, paid research, or any commercial purpose are covered. Check your tier for specifics.",
+      a: "Yes. The Standard tier and above include full commercial-use rights. Blog posts, YouTube videos, paid research, or any commercial purpose are covered. Check your tier for specifics.",
     },
     {
       q: "Can I publish research using this data?",

@@ -249,7 +249,7 @@ export function ResearchPricingSection() {
           center
           eyebrow="Pricing"
           title="Choose your dataset"
-          lead="For a blog, a paper, or plain curiosity — a SwipeStats dataset gets you on the right track. Start free."
+          lead="For a blog, a paper, or plain curiosity, a SwipeStats dataset gets you on the right track. Start free."
         />
 
         <div className="mt-12 grid grid-cols-1 gap-5 max-[900px]:mx-auto max-[900px]:max-w-[420px] lg:grid-cols-3">

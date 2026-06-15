@@ -1,4 +1,5 @@
-import { ButtonLink } from "@/components/ui/button";
+import Link from "next/link";
+import { marketingButton } from "@/app/(marketing)/_components/marketing-ui";
 
 interface Feature {
   label: string;
@@ -22,15 +23,18 @@ const COMPARISON_ROWS = [
 
 function ComparisonTable() {
   return (
-    <div aria-hidden="true" className="overflow-hidden rounded-xl border border-rose-200 bg-white text-sm shadow-sm">
+    <div
+      aria-hidden="true"
+      className="overflow-hidden rounded-xl border border-gray-200 bg-white text-sm shadow-sm"
+    >
       {/* Header */}
-      <div className="grid grid-cols-3 border-b border-rose-100 bg-rose-50 px-5 py-3 text-xs font-semibold tracking-wider uppercase">
+      <div className="grid grid-cols-3 border-b border-gray-200 bg-gray-50 px-5 py-3 text-xs font-semibold tracking-wider uppercase">
         <span />
         <span className="text-center text-gray-500">Avg</span>
         <span className="text-center text-rose-600">You</span>
       </div>
       {/* Rows */}
-      <div className="divide-y divide-rose-100">
+      <div className="divide-y divide-gray-100">
         {COMPARISON_ROWS.map((row) => (
           <div key={row.label} className="grid grid-cols-3 items-center px-5 py-3.5">
             <span className="text-gray-600">{row.label}</span>
@@ -54,24 +58,23 @@ export function CtaCard({
   buttonHref = "/upload",
 }: CtaCardProps) {
   return (
-    <section className="not-prose relative my-8 overflow-hidden rounded-xl border border-gray-200 bg-white shadow-lg transition-shadow hover:shadow-xl">
-      <div className="relative z-10 flex flex-col gap-6 p-6 sm:flex-row sm:items-center sm:gap-8 sm:p-8">
+    <section className="not-prose relative my-8 overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-md sm:rounded-3xl">
+      <div className="flex flex-col gap-6 p-6 sm:flex-row sm:items-center sm:gap-8 sm:p-8">
         {/* Left: Copy + CTA */}
         <div className="flex-1">
-          <h2 className="text-[1.75rem] leading-[110%] font-bold tracking-tight text-gray-900">
+          <h2 className="text-[1.75rem] leading-[110%] font-bold tracking-[-0.02em] text-gray-900">
             {title}
           </h2>
-          <p className="mt-2.5 text-lg leading-[160%] text-gray-700">
+          <p className="mt-2.5 text-lg leading-[160%] text-gray-600">
             {description}
           </p>
           <div className="mt-5">
-            <ButtonLink
+            <Link
               href={buttonHref}
-              size="lg"
-              className="h-12 px-8 text-base"
+              className={marketingButton({ variant: "primary", size: "lg" })}
             >
               {buttonText}
-            </ButtonLink>
+            </Link>
           </div>
         </div>
 
@@ -79,14 +82,6 @@ export function CtaCard({
         <div className="hidden sm:block sm:w-72">
           <ComparisonTable />
         </div>
-      </div>
-
-      {/* Subtle gradient blob */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute right-0 bottom-0 z-0 translate-x-[40%] translate-y-[43%] rotate-12 select-none"
-      >
-        <div className="size-[38rem] rounded-full bg-linear-to-br from-[#ff4694] to-[#E11D48] opacity-20 blur-3xl" />
       </div>
     </section>
   );

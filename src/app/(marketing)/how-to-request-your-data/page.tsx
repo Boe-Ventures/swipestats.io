@@ -25,14 +25,14 @@ import { NewsletterSignup } from "../_components/NewsletterSignup";
 export const metadata: Metadata = {
   title: "How to Request Your Dating Data",
   description:
-    "Step-by-step guides to download your data from Tinder, Hinge, and Bumble — then turn it into personal insights with SwipeStats.",
+    "Step-by-step guides to download your data from Tinder, Hinge, and Bumble. Then turn it into personal insights with SwipeStats.",
   alternates: {
     canonical: "/how-to-request-your-data",
   },
   openGraph: {
     title: "How to Request Your Dating Data | SwipeStats",
     description:
-      "Step-by-step guides to download your data from Tinder, Hinge, and Bumble — then turn it into personal insights with SwipeStats.",
+      "Step-by-step guides to download your data from Tinder, Hinge, and Bumble. Then turn it into personal insights with SwipeStats.",
     url: "/how-to-request-your-data",
   },
 };
@@ -52,7 +52,7 @@ function HeroSection() {
             How to request your dating data
           </h1>
           <p className="mt-5 text-[clamp(17px,2vw,20px)] leading-[1.6] text-gray-600">
-            It&apos;s easy — but not instant. You log into your app, ask for your
+            It&apos;s easy, but not instant. You log into your app, ask for your
             data export, and wait for an email. Once it lands, upload the file to
             SwipeStats to unlock your personal insights. Here&apos;s exactly how,
             for each app.
@@ -180,7 +180,7 @@ function PrivacySection() {
               Your name never reaches our servers
             </h3>
             <p className="mt-[7px] max-w-[640px] text-[14.5px] leading-[1.6] text-gray-700">
-              Direct identifiers — name, email, phone, username — are stripped{" "}
+              Direct identifiers (name, email, phone, username) are stripped{" "}
               <strong>in your browser</strong> before anything is uploaded. Your
               profile is linked to a hashed anonymous ID, not your real identity.
               We&apos;re open source, so you can verify exactly how it works.
@@ -208,7 +208,7 @@ function AfterSection() {
     {
       icon: ChartPieIcon,
       title: "Your personal insights",
-      body: "Swipe patterns, match rate, response times, and how you stack up against everyone else — visualized.",
+      body: "Swipe patterns, match rate, response times, and how you stack up against everyone else. Visualized.",
       link: { label: "See a demo dashboard →", href: "/demo" },
     },
     {
@@ -276,7 +276,7 @@ function ReminderSection() {
               Get a reminder when to upload
             </h3>
             <p className="mt-2.5 max-w-[440px] text-[14.5px] text-gray-400">
-              Data requests take a day or two — and Bumble up to a month. Leave
+              Data requests take a day or two, and Bumble up to a month. Leave
               your email and we&apos;ll nudge you when it&apos;s time to come back
               and upload.
             </p>
@@ -291,7 +291,7 @@ function ReminderSection() {
             inputClassName="min-w-[220px] rounded-[10px] border border-white/[0.18] bg-white/[0.07] px-4 py-3 text-[14.5px] text-white placeholder:text-gray-500 focus:border-rose-600 focus:outline-none"
             buttonClassName={marketingButton({ variant: "primary", size: "lg" })}
             successClassName="relative z-[2] flex items-center gap-3 rounded-[10px] border border-white/15 bg-white/[0.07] px-4 py-3 text-[14.5px] font-semibold text-white"
-            successLabel="You're on the list — we'll nudge you when it's time to upload."
+            successLabel="You're on the list. We'll nudge you when it's time to upload."
           />
         </div>
       </div>
@@ -309,13 +309,13 @@ const faqs: { q: string; a: React.ReactNode; open?: boolean }[] = [
   },
   {
     q: "Is it safe to upload my data to SwipeStats?",
-    a: "Yes. Direct identifiers — your name, email, phone, and username — are stripped in your browser before anything is sent to us. Your profile is linked to a hashed anonymous ID, never your real identity. We're fully open source, so you can audit exactly what happens.",
+    a: "Yes. Direct identifiers (your name, email, phone, and username) are stripped in your browser before anything is sent to us. Your profile is linked to a hashed anonymous ID, never your real identity. We're fully open source, so you can audit exactly what happens.",
   },
   {
     q: "What file format will I receive?",
     a: (
       <>
-        Each app sends a data export — Tinder delivers a{" "}
+        Each app sends a data export: Tinder delivers a{" "}
         <code className="rounded-[5px] border border-gray-200 bg-gray-100 px-1.5 py-px font-mono text-[12.5px] text-gray-800">
           tinder.json
         </code>{" "}
@@ -326,12 +326,12 @@ const faqs: { q: string; a: React.ReactNode; open?: boolean }[] = [
     ),
   },
   {
-    q: "I deleted my account — can I still get my data?",
+    q: "I deleted my account. Can I still get my data?",
     a: "Often yes. Tinder lets you request data through its contact form even after deletion. Bumble, however, may not be able to retrieve data for profiles deleted more than 28 days ago. Request as soon as possible to be safe.",
   },
   {
     q: "Which apps does SwipeStats support?",
-    a: "Tinder and Hinge are fully supported today. Bumble support is coming soon — join the waitlist above and we'll notify you the moment it's ready. Want another app? Let us know and we'll prioritize it.",
+    a: "Tinder and Hinge are fully supported today. Bumble support is coming soon. Join the waitlist above and we'll notify you the moment it's ready. Want another app? Let us know and we'll prioritize it.",
   },
   {
     q: "Does it cost anything?",

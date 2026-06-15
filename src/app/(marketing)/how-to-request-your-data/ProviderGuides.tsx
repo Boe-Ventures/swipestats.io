@@ -145,14 +145,14 @@ const providers: Provider[] = [
       },
       {
         title: "Upload it to SwipeStats",
-        desc: "Come back here and drop the file in. Your insights generate instantly — no waiting.",
+        desc: "Come back here and drop the file in. Your insights generate instantly. No waiting.",
       },
     ],
     primaryCta: {
       label: "Request from Tinder",
       href: "https://account.gotinder.com/data",
     },
-    secondaryCta: { label: "I have my file — upload", href: UPLOAD_HREF },
+    secondaryCta: { label: "I have my file: upload", href: UPLOAD_HREF },
     note: (
       <>
         <strong>Deleted your account?</strong> You can still request your data
@@ -235,7 +235,7 @@ const providers: Provider[] = [
       label: "Hinge's official guide",
       href: "https://hingeapp.zendesk.com/hc/en-us/articles/360004792234-Data-Requests",
     },
-    secondaryCta: { label: "I have my file — upload", href: UPLOAD_HREF },
+    secondaryCta: { label: "I have my file: upload", href: UPLOAD_HREF },
     phone: {
       app: "Hinge · Account",
       cta: "Download My Data",
@@ -288,7 +288,7 @@ const providers: Provider[] = [
         desc: "Provide the email or phone number tied to your Bumble account so they can match the request.",
       },
       {
-        title: "Wait — this one is slow",
+        title: "Wait, this one is slow",
         desc: (
           <>
             Processing can take <strong>up to 30 days</strong>. We recommend
@@ -301,8 +301,8 @@ const providers: Provider[] = [
         desc: (
           <>
             Once you receive your export, bring it here.{" "}
-            <strong>Bumble support is coming soon</strong> — join the waitlist
-            to be notified.
+            <strong>Bumble support is coming soon</strong>. Join the waitlist to
+            be notified.
           </>
         ),
       },
