@@ -29,7 +29,7 @@ export const metadata: Metadata = {
 const HOW_TO = "/how-to-request-your-data";
 const UPLOAD = "/upload";
 
-/** Soft rose radial glow — the warm accent from the original home, dialed down. */
+/** Soft rose radial glow. The warm accent from the original home, dialed down. */
 function RoseGlow({ className }: { className?: string }) {
   return (
     <div
@@ -145,7 +145,7 @@ function HowItWorks() {
   const steps = [
     {
       title: "Request your data",
-      body: "Ask Tinder or Hinge for your export — it arrives by email in a day or two.",
+      body: "Ask Tinder or Hinge for your export. It arrives by email in a day or two.",
     },
     {
       title: "Upload anonymously",
@@ -153,7 +153,7 @@ function HowItWorks() {
     },
     {
       title: "See your insights",
-      body: "Match rate, response times, ghosting, and your cohort standing — visualized.",
+      body: "Match rate, response times, ghosting, and your cohort standing, all visualized.",
     },
     {
       title: "Compare & share",
@@ -170,7 +170,7 @@ function HowItWorks() {
         <SectionHead
           eyebrow="How it works"
           title="100% anonymous, in four steps"
-          lead="Your data file never hits a server with your name on it — identifiers are stripped in your browser before anything is uploaded."
+          lead="Your data file never hits a server with your name on it. Identifiers are stripped in your browser before anything is uploaded."
         />
         <div className="mt-13 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {steps.map((s, i) => (
@@ -335,11 +335,11 @@ function ResearchTeaser() {
 const faqs = [
   {
     q: "Is my data actually anonymous?",
-    a: "Yes. Your name, email, phone, and username are stripped in your browser before anything is uploaded. Your profile is linked to a hashed anonymous ID — never your real identity. We're fully open source, so you can verify it yourself.",
+    a: "Yes. Your name, email, phone, and username are stripped in your browser before anything is uploaded. Your profile is linked to a hashed anonymous ID, never your real identity. We're fully open source, so you can verify it yourself.",
   },
   {
     q: "How do I get my data from Tinder or Hinge?",
-    a: "Request a copy of your data from the app — it arrives by email in 24–48 hours. We have a step-by-step guide for each app.",
+    a: "Request a copy of your data from the app. It arrives by email in 24–48 hours. We have a step-by-step guide for each app.",
   },
   {
     q: "Does it cost anything?",
@@ -641,7 +641,7 @@ export default function GoldenHomePage() {
       {/* preview banner */}
       <div className="border-b border-amber-200 bg-amber-50 px-6 py-2 text-center text-[12.5px] font-medium text-amber-800">
         <LockClosedIcon className="mr-1 inline h-3.5 w-3.5" />
-        Golden Home — preview only (noindex). The live home is unchanged.{" "}
+        Golden Home · preview only (noindex). The live home is unchanged.{" "}
         <Link href="/design-system" className="font-semibold underline">
           /design-system
         </Link>

@@ -5,7 +5,8 @@ import {
   SparklesIcon,
 } from "@heroicons/react/20/solid";
 import { cn } from "@/components/ui/lib/utils";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
+import { SmartLink } from "@/components/ui/smart-link";
 import {
   Eyebrow,
   SectionHead,
@@ -305,7 +306,7 @@ export default function DesignSystemPage() {
                 label="<CtaBand>"
                 surface="marketing"
                 status="golden"
-                note="src/app/(marketing)/_components/CtaBand.tsx — used on /golden; extract target for research + how-to."
+                note="src/app/(marketing)/_components/CtaBand.tsx · used on /golden; extract target for research + how-to."
               >
                 <GoldenCtaBand />
               </Specimen>
@@ -324,35 +325,52 @@ export default function DesignSystemPage() {
                 label="NewsletterCTA block"
                 surface="marketing"
                 status="current"
-                note="The full home/blog block — now backed by <NewsletterSignup>."
+                note="The full home/blog block · now backed by <NewsletterSignup>."
               >
                 <div className="w-full">
                   <NewsletterCTA />
                 </div>
               </Specimen>
               <Specimen
-                label="NewsletterSignup · inline band"
+                label="Golden newsletter block"
                 surface="marketing"
                 status="golden"
-                dark
-                note="The /how-to reminder-band preset of the same shared component."
+                note="The full golden band (eyebrow → heading → copy → shared NewsletterSignup) · the like-for-like replacement for the block on the left."
               >
-                <div className="w-full">
-                  <NewsletterSignup
-                    topic="newsletter-general"
-                    autoFetch={false}
-                    buttonLabel="Remind me"
-                    placeholder="you@email.com"
-                    formClassName="flex flex-col gap-2.5 sm:flex-row sm:items-center"
-                    groupClassName="flex flex-col gap-2 sm:flex-row sm:items-center"
-                    inputClassName="min-w-[220px] rounded-[10px] border border-white/[0.18] bg-white/[0.07] px-4 py-3 text-[14.5px] text-white placeholder:text-gray-500 focus:border-rose-600 focus:outline-none"
-                    buttonClassName={marketingButton({
-                      variant: "primary",
-                      size: "lg",
-                    })}
-                    successClassName="flex items-center gap-3 rounded-[10px] border border-white/15 bg-white/[0.07] px-4 py-3 text-[14.5px] font-semibold text-white"
-                    successLabel="You're on the list."
+                <div className="relative w-full overflow-hidden rounded-3xl bg-gray-950 p-10 text-white max-[720px]:p-7">
+                  <div
+                    aria-hidden
+                    className="pointer-events-none absolute -top-[180px] -right-[120px] h-[600px] w-[600px] rounded-full blur-[10px] [background:radial-gradient(circle,oklch(0.586_0.253_17.585/0.5),transparent_65%)]"
                   />
+                  <div className="relative grid grid-cols-1 items-center gap-7 md:grid-cols-[1fr_auto]">
+                    <div>
+                      <Eyebrow noRule className="text-rose-500">
+                        Don&apos;t lose track
+                      </Eyebrow>
+                      <h3 className="mt-3 text-[24px] font-bold tracking-[-0.02em] text-white">
+                        Get a reminder when to upload
+                      </h3>
+                      <p className="mt-2.5 max-w-[440px] text-[14.5px] text-gray-400">
+                        Data requests take a day or two. Leave your email and
+                        we&apos;ll nudge you when it&apos;s time to upload.
+                      </p>
+                    </div>
+                    <NewsletterSignup
+                      topic="newsletter-general"
+                      autoFetch={false}
+                      buttonLabel="Remind me"
+                      placeholder="you@email.com"
+                      formClassName="flex flex-col gap-2.5 sm:flex-row sm:items-center"
+                      groupClassName="flex flex-col gap-2 sm:flex-row sm:items-center"
+                      inputClassName="min-w-[220px] rounded-[10px] border border-white/[0.18] bg-white/[0.07] px-4 py-3 text-[14.5px] text-white placeholder:text-gray-500 focus:border-rose-600 focus:outline-none"
+                      buttonClassName={marketingButton({
+                        variant: "primary",
+                        size: "lg",
+                      })}
+                      successClassName="flex items-center gap-3 rounded-[10px] border border-white/15 bg-white/[0.07] px-4 py-3 text-[14.5px] font-semibold text-white"
+                      successLabel="You're on the list."
+                    />
+                  </div>
                 </div>
               </Specimen>
             </LayoutSwitch>
@@ -381,7 +399,7 @@ export default function DesignSystemPage() {
                 label="Golden · marketingButton"
                 surface="marketing"
                 status="golden"
-                note="src/app/(marketing)/_components/marketing-ui.tsx — primary · ghost · white · bare × default · lg"
+                note="src/app/(marketing)/_components/marketing-ui.tsx · primary · ghost · white · bare × default · lg"
               >
                 <button className={marketingButton({ variant: "primary" })}>
                   Primary
@@ -419,13 +437,34 @@ export default function DesignSystemPage() {
                 label="App · <Button> (shadcn)"
                 surface="app"
                 status="golden"
-                note="src/components/ui/button.tsx — the app surface keeps this; default · secondary · outline · ghost · destructive · link"
+                note="src/components/ui/button.tsx · the app surface keeps this; default · secondary · outline · ghost · destructive · link"
               >
                 <Button>Default</Button>
                 <Button variant="secondary">Secondary</Button>
                 <Button variant="outline">Outline</Button>
                 <Button variant="ghost">Ghost</Button>
                 <Button variant="destructive">Destructive</Button>
+              </Specimen>
+              <Specimen
+                label="Links & loading · the canonical pattern"
+                surface="shared"
+                status="golden"
+                note="ButtonLink = link styled as a button (icon+text safe). Button loading renders <Spinner>. asChild merges styles onto any element. SmartLink = inline text link."
+              >
+                <ButtonLink href="/upload" size="sm">
+                  <ArrowRightIcon className="h-4 w-4" />
+                  ButtonLink
+                </ButtonLink>
+                <Button size="sm" loading>
+                  Loading
+                </Button>
+                <Button asChild size="sm" variant="outline">
+                  <a href="#ds-links">asChild &lt;a&gt;</a>
+                </Button>
+                <span className="text-sm text-gray-600">
+                  Inline <SmartLink href="/privacy">SmartLink</SmartLink> in
+                  copy.
+                </span>
               </Specimen>
             </LayoutSwitch>
           </section>
@@ -435,14 +474,14 @@ export default function DesignSystemPage() {
             <SectionTitle
               n="04"
               title="Blog CTA family"
-              sub="Four separate in-article CTA components today, no golden equivalent yet — a strong consolidation target onto the marketing primitives."
+              sub="Four separate in-article CTA components today, with no golden equivalent yet. A strong consolidation target onto the marketing primitives."
             />
             <LayoutSwitch defaultLayout="grid">
               <Specimen
                 label="StickyCtaCard"
                 surface="blog"
                 status="current"
-                note="src/components/mdx/StickyCtaCard.tsx — sidebar sticky CTA"
+                note="src/components/mdx/StickyCtaCard.tsx · sidebar sticky CTA"
               >
                 <div className="w-full max-w-sm">
                   <StickyCtaCard />
@@ -452,7 +491,7 @@ export default function DesignSystemPage() {
                 label="CtaCard"
                 surface="blog"
                 status="current"
-                note="src/components/mdx/CtaCard.tsx — in-article card (CtaInjector)"
+                note="src/components/mdx/CtaCard.tsx · in-article card (CtaInjector)"
               >
                 <div className="w-full max-w-xl">
                   <CtaCard />
@@ -462,7 +501,7 @@ export default function DesignSystemPage() {
                 label="NewsletterCard"
                 surface="blog"
                 status="current"
-                note="src/components/mdx/NewsletterCard.tsx — in-article capture"
+                note="src/components/mdx/NewsletterCard.tsx · in-article capture"
               >
                 <div className="w-full max-w-xl">
                   <NewsletterCard />
@@ -472,7 +511,7 @@ export default function DesignSystemPage() {
                 label="CTA (inline)"
                 surface="blog"
                 status="current"
-                note="src/components/mdx/CTA.tsx — inline mid-article button (gradient)"
+                note="src/components/mdx/CTA.tsx · inline mid-article button (gradient)"
               >
                 <CTA label="Upload your data" href="/upload" />
                 <CTA
@@ -489,7 +528,7 @@ export default function DesignSystemPage() {
             <SectionTitle
               n="05"
               title="Golden primitives"
-              sub="The shared vocabulary — no legacy counterpart, these are the building blocks. Loud in marketing, quiet in the app."
+              sub="The shared vocabulary, with no legacy counterpart. These are the building blocks: loud in marketing, quiet in the app."
             />
             <LayoutSwitch defaultLayout="grid">
               <Specimen
@@ -549,14 +588,14 @@ export default function DesignSystemPage() {
                 label="<FaqList>"
                 surface="shared"
                 status="golden"
-                note="src/app/(marketing)/_components/FaqList.tsx — details accordion, used on /golden."
+                note="src/app/(marketing)/_components/FaqList.tsx · details accordion, used on /golden."
               >
                 <div className="w-full">
                   <FaqList
                     items={[
                       {
                         q: "Is my data actually anonymous?",
-                        a: "Yes — identifiers are stripped in your browser before anything is uploaded.",
+                        a: "Yes · identifiers are stripped in your browser before anything is uploaded.",
                       },
                       {
                         q: "Does it cost anything?",
@@ -589,7 +628,7 @@ export default function DesignSystemPage() {
             <h2 className="text-[20px] font-bold tracking-[-0.02em] text-gray-900">
               Shared foundation{" "}
               <span className="font-medium text-gray-400">
-                — the shadcn library under ~85% of the app
+                · the shadcn library under ~85% of the app
               </span>
             </h2>
             <p className="mt-1.5 max-w-[760px] text-[14px] text-gray-600">
@@ -677,7 +716,7 @@ export default function DesignSystemPage() {
                 />
               </Specimen>
               <Specimen
-                label="Buttons — sizes & state"
+                label="Buttons · sizes & state"
                 surface="app"
                 status="shadcn"
                 note="button.tsx"
@@ -696,14 +735,14 @@ export default function DesignSystemPage() {
             <SectionTitle
               n="07"
               title="Feedback & states"
-              sub="Alerts, toasts, and loading/empty states — the system's reactions, previously unrepresented."
+              sub="Alerts, toasts, and loading/empty states: the system's reactions, previously unrepresented."
             />
             <LayoutSwitch defaultLayout="grid">
               <Specimen
                 label="Alerts"
                 surface="shared"
                 status="shadcn"
-                note="alert.tsx — Info / Success / Warning / Error helpers (+ 3 more)"
+                note="alert.tsx · Info / Success / Warning / Error helpers (+ 3 more)"
               >
                 <div className="flex w-full flex-col gap-3">
                   <InfoAlert>Your export is processing.</InfoAlert>
@@ -716,7 +755,7 @@ export default function DesignSystemPage() {
                 label="Toasts (Sonner)"
                 surface="shared"
                 status="shadcn"
-                note="toast.tsx — click to fire each type"
+                note="toast.tsx · click to fire each type"
               >
                 <ToastDemo />
               </Specimen>
@@ -724,7 +763,7 @@ export default function DesignSystemPage() {
                 label="Skeleton + Progress"
                 surface="shared"
                 status="shadcn"
-                note="skeleton.tsx · progress.tsx — loading states"
+                note="skeleton.tsx · progress.tsx · loading states"
               >
                 <div className="flex w-full flex-col gap-3">
                   <Skeleton className="h-5 w-2/3" />
@@ -737,7 +776,7 @@ export default function DesignSystemPage() {
                 label="Empty state"
                 surface="shared"
                 status="shadcn"
-                note="empty.tsx — compound empty/zero-data state"
+                note="empty.tsx · compound empty/zero-data state"
               >
                 <div className="w-full">
                   <Empty>
@@ -758,7 +797,7 @@ export default function DesignSystemPage() {
             <SectionTitle
               n="08"
               title="Overlays"
-              sub="Dialogs, sheets, popovers, menus — the entire interactive overlay family. Click any trigger."
+              sub="Dialogs, sheets, popovers, and menus: the entire interactive overlay family. Click any trigger."
             />
             <LayoutSwitch defaultLayout="grid">
               <Specimen
@@ -837,7 +876,7 @@ export default function DesignSystemPage() {
                 label="Accordion"
                 surface="shared"
                 status="shadcn"
-                note="accordion.tsx (radix — distinct from the golden FaqList)"
+                note="accordion.tsx (radix · distinct from the golden FaqList)"
               >
                 <Accordion type="single" collapsible className="w-full">
                   <AccordionItem value="a">
@@ -856,7 +895,7 @@ export default function DesignSystemPage() {
                 label="Tabs"
                 surface="app"
                 status="shadcn"
-                note="tabs.tsx — the app's section switcher"
+                note="tabs.tsx · the app's section switcher"
               >
                 <Tabs defaultValue="overview" className="w-full">
                   <TabsList>
@@ -883,14 +922,14 @@ export default function DesignSystemPage() {
             <SectionTitle
               n="09"
               title="Cards, badges & avatars"
-              sub="The base of almost every app surface — shown standalone for the first time."
+              sub="The base of almost every app surface, shown standalone for the first time."
             />
             <LayoutSwitch defaultLayout="grid">
               <Specimen
                 label="Card anatomy"
                 surface="app"
                 status="shadcn"
-                note="card.tsx — Header / Title / Description / Content / Footer slots"
+                note="card.tsx · Header / Title / Description / Content / Footer slots"
               >
                 <Card className="w-full">
                   <CardHeader>
@@ -913,7 +952,7 @@ export default function DesignSystemPage() {
                 label="Badge variants"
                 surface="shared"
                 status="shadcn"
-                note="badge.tsx — default / secondary / destructive / outline"
+                note="badge.tsx · default / secondary / destructive / outline"
               >
                 <Badge>Default</Badge>
                 <Badge variant="secondary">Secondary</Badge>

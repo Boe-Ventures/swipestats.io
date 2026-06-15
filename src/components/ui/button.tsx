@@ -5,6 +5,7 @@ import { Slot } from "@radix-ui/react-slot";
 import { cva } from "class-variance-authority";
 
 import { cn } from "./lib/utils";
+import { Spinner } from "./spinner";
 
 const buttonVariants = cva(
   "focus-visible:border-ring focus-visible:ring-ring/50 aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive inline-flex shrink-0 cursor-pointer items-center justify-center gap-2 rounded-md text-sm font-medium whitespace-nowrap transition-all outline-none focus-visible:ring-[3px] disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
@@ -25,9 +26,11 @@ const buttonVariants = cva(
       },
       size: {
         default: "h-9 px-4 py-2 has-[>svg]:px-3",
+        xs: "h-7 gap-1 rounded-md px-2.5 text-xs has-[>svg]:px-2",
         sm: "h-8 gap-1.5 rounded-md px-3 has-[>svg]:px-2.5",
         lg: "h-10 rounded-md px-6 has-[>svg]:px-4",
         icon: "size-9",
+        "icon-xs": "size-7",
         "icon-sm": "size-8",
         "icon-lg": "size-10",
       },
@@ -39,98 +42,34 @@ const buttonVariants = cva(
   },
 );
 
-// Simple spinner component
-const Spinner = ({ className, ...props }: React.ComponentProps<"svg">) => (
-  <svg
-    className={cn("animate-spin", className)}
-    xmlns="http://www.w3.org/2000/svg"
-    fill="none"
-    viewBox="0 0 24 24"
-    {...props}
-  >
-    <circle
-      className="opacity-25"
-      cx="12"
-      cy="12"
-      r="10"
-      stroke="currentColor"
-      strokeWidth="4"
-    />
-    <path
-      className="opacity-75"
-      fill="currentColor"
-      d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-    />
-  </svg>
-);
-
 /**
- * Button component with support for loading states and polymorphic rendering via asChild.
+ * Button — the action primitive (shadcn spec, Radix `Slot` for composition).
  *
- * @param variant - Visual style variant: default, destructive, outline, secondary, ghost, link
- * @param size - Size variant: default, sm, lg, icon, icon-sm, icon-lg
- * @param asChild - When true, delegates rendering to child component (requires single child)
- * @param loading - Shows spinner and disables button (incompatible with asChild)
+ * Pick the right tool:
+ * - **Action** (onClick, submit): `<Button>` — supports `loading`.
+ * - **Link styled as a button**: prefer `<ButtonLink href>` (a real `<Link>`,
+ *   safe with icons + text). `<Button asChild>` also works for any element.
+ * - **Inline text link**: `<SmartLink href>` from `./smart-link`.
+ *
+ * `asChild` merges the button styles onto a single child element via Radix
+ * `Slot` (the shadcn way). It is crash-safe — the child may contain icons and
+ * text. For a loading state on a slotted child, compose `<Spinner />` yourself.
  *
  * @example
- * // ✅ Basic usage
- * <Button variant="outline">Click me</Button>
+ * // Action with loading state (Spinner is rendered for you)
+ * <Button loading={isSaving}>Save</Button>
  *
  * @example
- * // ✅ With icon
+ * // Icon + text
  * <Button variant="outline" size="sm">
- *   <IconGitBranch />
- *   New Branch
+ *   <GitBranchIcon /> New branch
  * </Button>
  *
  * @example
- * // ✅ Icon-only button
- * <Button variant="outline" size="icon" aria-label="Submit">
- *   <ArrowUpIcon />
- * </Button>
- *
- * @example
- * // ✅ With loading state
- * <Button loading={true} disabled>Saving...</Button>
- *
- * @example
- * // ✅ asChild with single child (simple text)
+ * // Render another element as a button
  * <Button asChild variant="outline">
  *   <Link href="/login">Login</Link>
  * </Button>
- *
- * @example
- * // ❌ WRONG - asChild with multiple children
- * // This will throw: "React.Children.only expected to receive a single React element child"
- * <Button asChild variant="outline">
- *   <Link href="/path">
- *     <Icon />
- *     <span>Text</span>
- *   </Link>
- * </Button>
- *
- * @example
- * // ✅ CORRECT - Use ButtonLink instead for links with multiple children
- * <ButtonLink href="/path" variant="outline">
- *   <Icon />
- *   <span>Text</span>
- * </ButtonLink>
- *
- * @example
- * // ✅ CORRECT - Or wrap children in a fragment
- * <Button asChild variant="outline">
- *   <Link href="/path">
- *     <>
- *       <Icon />
- *       <span>Text</span>
- *     </>
- *   </Link>
- * </Button>
- *
- * @remarks
- * - The `loading` prop automatically adds a spinner and is disabled when `asChild` is true
- * - When using `asChild`, the child component must accept className and other button props
- * - For Next.js Link components with multiple children, use ButtonLink instead
  */
 function Button({
   className,
@@ -146,50 +85,42 @@ function Button({
     asChild?: boolean;
     loading?: boolean;
   }) {
-  const Comp = asChild ? Slot : "button";
+  const classes = cn(buttonVariants({ variant, size, className }));
+
+  // asChild: hand the button styles to a single child via Slot. Pass ONLY the
+  // child (no spinner sibling) so it never trips Slot's single-child rule.
+  if (asChild) {
+    return (
+      <Slot data-slot="button" className={classes} {...props}>
+        {children}
+      </Slot>
+    );
+  }
 
   return (
-    <Comp
+    <button
       data-slot="button"
-      className={cn(buttonVariants({ variant, size, className }))}
+      className={classes}
       disabled={disabled || loading}
       {...props}
     >
-      {!asChild && loading && <Spinner className="size-4" />}
+      {loading && <Spinner data-icon="inline-start" />}
       {children}
-    </Comp>
+    </button>
   );
 }
 
 /**
- * Button-styled Next.js Link component.
+ * ButtonLink — a Next.js `<Link>` styled as a button.
  *
- * Use this component when you need a link that looks like a button,
- * especially when the link contains multiple children (icon + text).
- * This is the recommended alternative to using Button with asChild
- * when you have multiple child elements.
- *
- * @param variant - Visual style variant: default, destructive, outline, secondary, ghost, link
- * @param size - Size variant: default, sm, lg, icon, icon-sm, icon-lg
- * @param href - Next.js Link href prop
+ * The ergonomic, crash-safe way to render a link that looks like a button
+ * (handles icons + text). Equivalent to `<Button asChild><Link/></Button>`
+ * without the single-child caveat. Does not support `loading` (links navigate).
  *
  * @example
- * // ✅ Link with icon and text
  * <ButtonLink href="/dashboard" variant="outline" size="sm">
- *   <HomeIcon />
- *   <span>Dashboard</span>
+ *   <HomeIcon /> Dashboard
  * </ButtonLink>
- *
- * @example
- * // ✅ Simple link button
- * <ButtonLink href="/login" variant="default">
- *   Login
- * </ButtonLink>
- *
- * @remarks
- * - Accepts all Next.js Link props (href, prefetch, replace, etc.)
- * - Does not support the loading prop (use Button for that)
- * - Automatically handles button styling with proper gap spacing for icons
  */
 function ButtonLink({
   className,
@@ -200,6 +131,7 @@ function ButtonLink({
 }: React.ComponentProps<typeof Link> & VariantProps<typeof buttonVariants>) {
   return (
     <Link
+      data-slot="button-link"
       className={cn(buttonVariants({ variant, size, className }))}
       {...props}
     >
