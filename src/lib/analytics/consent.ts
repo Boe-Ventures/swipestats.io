@@ -53,6 +53,17 @@ export const ALL_ON: ConsentPreferences = {
   advertising: true,
 };
 
+/**
+ * Read a consent value off a loosely-typed source (e.g. `session.user`).
+ *
+ * Better Auth's `json` additionalFields infer a broken TS type (#5900) even
+ * though the runtime value is the stored `ConsentRecord`. This isolates that
+ * single cast so no caller has to repeat it.
+ */
+export function readConsent(value: unknown): ConsentRecord | null {
+  return (value as ConsentRecord | null | undefined) ?? null;
+}
+
 /** Force `essential` true and default any missing category to false. */
 export function normalizeConsent(
   partial?: Partial<ConsentPreferences> | null,

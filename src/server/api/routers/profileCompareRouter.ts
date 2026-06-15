@@ -65,13 +65,18 @@ export const profileCompareRouter = createTRPCRouter({
         ...input,
       });
 
-      trackServerEvent(ctx.session.user.id, "comparison_created", {
-        comparisonId: comparison.id,
-        columnCount: input.columns.length,
-        hasCustomPhotos: input.columns.some(
-          (c) => (c.photoAttachmentIds?.length ?? 0) > 0,
-        ),
-      });
+      trackServerEvent(
+        ctx.session.user.id,
+        "comparison_created",
+        {
+          comparisonId: comparison.id,
+          columnCount: input.columns.length,
+          hasCustomPhotos: input.columns.some(
+            (c) => (c.photoAttachmentIds?.length ?? 0) > 0,
+          ),
+        },
+        { consent: ctx.analyticsConsent },
+      );
 
       return comparison;
     }),
@@ -128,10 +133,15 @@ export const profileCompareRouter = createTRPCRouter({
 
       // Fire when the comparison is set public (the share moment).
       if (input.isPublic === true && comparison.shareKey) {
-        trackServerEvent(ctx.session.user.id, "comparison_shared", {
-          comparisonId: comparison.id,
-          shareKey: comparison.shareKey,
-        });
+        trackServerEvent(
+          ctx.session.user.id,
+          "comparison_shared",
+          {
+            comparisonId: comparison.id,
+            shareKey: comparison.shareKey,
+          },
+          { consent: ctx.analyticsConsent },
+        );
       }
 
       return comparison;

@@ -126,6 +126,15 @@ export const auth = betterAuth({
         type: "string",
         required: false,
       },
+      // Granular analytics consent (jsonb mirror of the cookie choice) — rides
+      // the per-request session so procedures read it without an extra query.
+      // input:false — only consentRouter writes it. (Read via readConsent(),
+      // which isolates the better-auth json-inference cast — #5900.)
+      analyticsConsent: {
+        type: "json",
+        required: false,
+        input: false,
+      },
       // add more?
     },
   },

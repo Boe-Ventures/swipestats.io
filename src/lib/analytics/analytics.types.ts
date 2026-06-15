@@ -1,3 +1,5 @@
+import type { ConsentRecord } from "./consent";
+
 // =====================================================
 // EVENT NAME DEFINITIONS
 // =====================================================
@@ -729,6 +731,9 @@ export interface AnalyticsMetadata {
   // no groups in swipestats yet
   ip?: string; // Client IP for PostHog GeoIP (auto-extracted if not provided)
   isAnonymous?: boolean; // Skip certain providers (like email) for anonymous users
+  // Server-only: the user's consent, passed from `ctx.analyticsConsent` so
+  // trackServerEvent skips its DB lookup. Omit (undefined) → it loads it.
+  consent?: ConsentRecord | null;
 }
 
 export interface UserTraits {

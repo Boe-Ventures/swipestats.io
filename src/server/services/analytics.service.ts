@@ -113,13 +113,22 @@ export function trackServerEvent<T extends ServerAnalyticsEventName>(
 
   waitUntil(
     (async () => {
-      // Respect the user's stored analytics consent (durable DB mirror).
-      const consent = await loadConsent(userId);
-      const analyticsAllowed = consent?.preferences.analytics === true;
       const operational = OPERATIONAL_SERVER_EVENTS.has(event);
 
+      // Consent: prefer what the request context passed (ctx.analyticsConsent);
+      // otherwise load it — but only for BEHAVIORAL events, which actually gate
+      // on it. Operational events fire regardless, so they skip the lookup and
+      // default to no IP (the privacy-safe choice when consent is unknown).
+      const consent =
+        meta?.consent !== undefined
+          ? meta.consent
+          : operational
+            ? null
+            : await loadConsent(userId);
+      const analyticsAllowed = consent?.preferences.analytics === true;
+
       // Behavioral analytics needs consent; operational events run under
-      // legitimate interest. Drop behavioral events when consent is absent.
+      // legitimate interest.
       if (!operational && !analyticsAllowed) return;
 
       // IP (PostHog GeoIP) is personal data — only forward it with consent,

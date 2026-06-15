@@ -24,13 +24,7 @@ const consentPreferencesSchema = z.object({
  */
 export const consentRouter = createTRPCRouter({
   /** The current user's stored consent record, or null if undecided. */
-  get: protectedProcedure.query(async ({ ctx }) => {
-    const user = await ctx.db.query.userTable.findFirst({
-      where: eq(userTable.id, ctx.session.user.id),
-      columns: { analyticsConsent: true },
-    });
-    return user?.analyticsConsent ?? null;
-  }),
+  get: protectedProcedure.query(({ ctx }) => ctx.analyticsConsent),
 
   /** Persist a decision (essential always forced on); stamps version + time. */
   set: protectedProcedure
