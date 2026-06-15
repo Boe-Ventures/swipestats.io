@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import { useAnalytics } from "@/contexts/AnalyticsProvider";
 import { authClient } from "@/server/better-auth/client";
 import { useTRPC } from "@/trpc/react";
@@ -281,11 +281,9 @@ export default function AdminAnalyticsPage() {
         {/* Auth quick actions */}
         <Section title="Auth quick actions" icon={UserPlus}>
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" asChild>
-              <a href="/signin">
-                <LogIn className="mr-1 h-3 w-3" /> Sign in
-              </a>
-            </Button>
+            <ButtonLink href="/signin" variant="outline">
+              <LogIn className="mr-1 h-3 w-3" /> Sign in
+            </ButtonLink>
             <Button variant="outline" onClick={signInAnonymous}>
               <UserPlus className="mr-1 h-3 w-3" /> Create anon session
             </Button>
