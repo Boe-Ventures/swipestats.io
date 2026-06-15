@@ -22,6 +22,7 @@ import {
   GridBg,
   marketingButton,
 } from "../_components/marketing-ui";
+import { CtaBand } from "../_components/CtaBand";
 import { ResearchPricingSection } from "./ResearchPricingSection";
 
 export const metadata: Metadata = {
@@ -1109,43 +1110,37 @@ function FinalCTASection() {
   return (
     <section className="py-[88px] max-[720px]:py-[60px]">
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
-        <div className="relative overflow-hidden rounded-[28px] bg-gray-950 p-16 text-gray-100 max-[720px]:px-7 max-[720px]:py-10">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -top-[200px] -right-[160px] h-[720px] w-[720px] rounded-full blur-[10px] [background:radial-gradient(circle,oklch(0.586_0.253_17.585/0.5),transparent_65%)]"
-          />
-          <Eyebrow noRule className="relative text-rose-500">
-            Get started
-          </Eyebrow>
-          <h2 className="relative mt-3.5 max-w-[620px] text-[clamp(30px,4vw,46px)] leading-[1.06] font-bold tracking-[-0.03em] text-balance text-white">
-            Start exploring real dating data today
-          </h2>
-          <p className="relative mt-[18px] max-w-[600px] text-[clamp(17px,2vw,20px)] leading-[1.6] text-gray-400">
-            Join the researchers, creators, and data enthusiasts uncovering how
-            modern dating actually works.
-          </p>
-          <div className="relative mt-8 flex flex-wrap gap-3.5">
-            <Link href="#pricing" className={marketingButton({ variant: "primary", size: "lg" })}>
-              Browse datasets
-            </Link>
-            <Link
-              href={SAMPLE_DOWNLOAD}
-              target="_blank"
-              className={marketingButton({ variant: "white", size: "lg" })}
-            >
-              Download free sample
-            </Link>
-            <a
-              href="mailto:kris@swipestats.io"
-              className={cn(
-                marketingButton({ variant: "bare", size: "lg" }),
-                "border border-white/20",
-              )}
-            >
-              Talk to us
-            </a>
-          </div>
-        </div>
+        <CtaBand
+          eyebrow="Get started"
+          title="Start exploring real dating data today"
+          lead="Join the researchers, creators, and data enthusiasts uncovering how modern dating actually works."
+          actions={
+            <>
+              <Link
+                href="#pricing"
+                className={marketingButton({ variant: "primary", size: "lg" })}
+              >
+                Browse datasets
+              </Link>
+              <Link
+                href={SAMPLE_DOWNLOAD}
+                target="_blank"
+                className={marketingButton({ variant: "white", size: "lg" })}
+              >
+                Download free sample
+              </Link>
+              <a
+                href="mailto:kris@swipestats.io"
+                className={cn(
+                  marketingButton({ variant: "bare", size: "lg" }),
+                  "border border-white/20",
+                )}
+              >
+                Talk to us
+              </a>
+            </>
+          }
+        />
       </div>
     </section>
   );

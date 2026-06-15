@@ -91,6 +91,14 @@ import {
   AccordionContent,
 } from "@/components/ui/accordion";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import {
+  Table,
+  TableHeader,
+  TableBody,
+  TableRow,
+  TableHead,
+  TableCell,
+} from "@/components/ui/table";
 import { LayoutSwitch } from "./LayoutSwitch";
 import { ToastDemo } from "./Demos";
 // existing, in-production components (rendered live for the current-vs-golden diff)
@@ -474,13 +482,13 @@ export default function DesignSystemPage() {
             <SectionTitle
               n="04"
               title="Blog CTA family"
-              sub="Four separate in-article CTA components today, with no golden equivalent yet. A strong consolidation target onto the marketing primitives."
+              sub="Consolidated onto the golden system: flat rose marketingButton, gray neutrals, and the shared NewsletterSignup. Same public props, golden styling."
             />
             <LayoutSwitch defaultLayout="grid">
               <Specimen
                 label="StickyCtaCard"
                 surface="blog"
-                status="current"
+                status="golden"
                 note="src/components/mdx/StickyCtaCard.tsx · sidebar sticky CTA"
               >
                 <div className="w-full max-w-sm">
@@ -490,7 +498,7 @@ export default function DesignSystemPage() {
               <Specimen
                 label="CtaCard"
                 surface="blog"
-                status="current"
+                status="golden"
                 note="src/components/mdx/CtaCard.tsx · in-article card (CtaInjector)"
               >
                 <div className="w-full max-w-xl">
@@ -500,8 +508,8 @@ export default function DesignSystemPage() {
               <Specimen
                 label="NewsletterCard"
                 surface="blog"
-                status="current"
-                note="src/components/mdx/NewsletterCard.tsx · in-article capture"
+                status="golden"
+                note="src/components/mdx/NewsletterCard.tsx · now renders the shared NewsletterSignup"
               >
                 <div className="w-full max-w-xl">
                   <NewsletterCard />
@@ -510,8 +518,8 @@ export default function DesignSystemPage() {
               <Specimen
                 label="CTA (inline)"
                 surface="blog"
-                status="current"
-                note="src/components/mdx/CTA.tsx · inline mid-article button (gradient)"
+                status="golden"
+                note="src/components/mdx/CTA.tsx · inline mid-article button"
               >
                 <CTA label="Upload your data" href="/upload" />
                 <CTA
@@ -980,43 +988,34 @@ export default function DesignSystemPage() {
             <SectionTitle
               n="10"
               title="Coverage & extraction backlog"
-              sub="From a full sweep of 160 marketing + 49 app + 53 shadcn files (389 patterns). Shown above, vs. still-inline, vs. unbuilt."
+              sub="From a full sweep of 160 marketing + 49 app + 53 shadcn files (389 patterns). This table is itself rendered on the shadcn <Table> primitive (dogfooding)."
             />
             <div className="overflow-hidden rounded-2xl border border-gray-200">
-              <table className="w-full border-collapse text-[13.5px]">
-                <thead>
-                  <tr className="bg-gray-50 text-left">
-                    <th className="px-4 py-3 font-semibold text-gray-900">
-                      Component
-                    </th>
-                    <th className="px-4 py-3 font-semibold text-gray-900">
-                      Surface
-                    </th>
-                    <th className="px-4 py-3 font-semibold text-gray-900">
-                      Status
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Component</TableHead>
+                    <TableHead>Surface</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
                   {(
                     [
                       ["MarketingCtaSection (legacy)", "marketing", "current"],
                       ["NewsletterCTA block", "marketing", "current"],
-                      [
-                        "StickyCtaCard / CtaCard / CTA / NewsletterCard",
-                        "blog",
-                        "current",
-                      ],
                       ["marketingButton", "marketing", "golden"],
+                      ["Spinner + Button (shadcn spec)", "shared", "golden"],
                       ["Eyebrow / SectionHead / GridBg", "shared", "golden"],
                       ["NewsletterSignup", "marketing", "golden"],
-                      ["CtaBand", "marketing", "golden"],
+                      ["CtaBand (research + how-to + golden)", "marketing", "golden"],
                       ["FaqList", "shared", "golden"],
+                      ["Blog CTAs (Sticky/Cta/CTA/Newsletter)", "blog", "golden"],
+                      ["Compare dialogs → Field/Controller", "app", "golden"],
                       ["Form controls (input/select/toggles)", "shared", "shadcn"],
                       ["Feedback (alert/toast/skeleton/empty)", "shared", "shadcn"],
                       ["Overlays (dialog/sheet/popover/menu)", "shared", "shadcn"],
                       ["Card / Badge / Avatar", "shared", "shadcn"],
-                      ["<Button> + ButtonGroup", "app", "shadcn"],
                       ["StatTiles", "shared", "candidate"],
                       ["Provider / pricing cards", "marketing", "candidate"],
                       ["Insights cards (CohortBenchmark/Percentile)", "app", "candidate"],
@@ -1029,20 +1028,20 @@ export default function DesignSystemPage() {
                       ["Error / 404 / dark-mode / a11y states", "shared", "not-built"],
                     ] as [string, Surface, StatusKind][]
                   ).map(([name, surface, status]) => (
-                    <tr key={name} className="border-t border-gray-200">
-                      <td className="px-4 py-3 font-mono text-[12.5px] text-gray-900">
+                    <TableRow key={name}>
+                      <TableCell className="font-mono text-[12.5px] text-gray-900">
                         {name}
-                      </td>
-                      <td className="px-4 py-3">
+                      </TableCell>
+                      <TableCell>
                         <Tag surface={surface} />
-                      </td>
-                      <td className="px-4 py-3">
+                      </TableCell>
+                      <TableCell>
                         <Status kind={status} />
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
+                </TableBody>
+              </Table>
             </div>
           </section>
         </div>

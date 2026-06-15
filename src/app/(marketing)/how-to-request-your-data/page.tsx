@@ -19,6 +19,7 @@ import {
   GridBg,
   marketingButton,
 } from "../_components/marketing-ui";
+import { CtaBand } from "../_components/CtaBand";
 import { ProviderGuides } from "./ProviderGuides";
 import { NewsletterSignup } from "../_components/NewsletterSignup";
 
@@ -401,32 +402,28 @@ function FinalCtaSection() {
   return (
     <section className="pb-[88px] max-[720px]:pb-[60px]">
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
-        <div className="relative overflow-hidden rounded-[28px] bg-gray-950 p-14 text-gray-100 max-[720px]:p-8">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -bottom-[240px] -left-[120px] h-[720px] w-[720px] rounded-full blur-[10px] [background:radial-gradient(circle,oklch(0.586_0.253_17.585/0.5),transparent_65%)]"
-          />
-          <div className="relative max-w-[600px]">
-            <Eyebrow noRule className="text-rose-500">
-              Ready?
-            </Eyebrow>
-            <h2 className="mt-3.5 text-[clamp(30px,4vw,46px)] leading-[1.06] font-bold tracking-[-0.03em] text-balance text-white">
-              Request your data now, upload in a few days
-            </h2>
-            <p className="mt-4 text-[clamp(17px,2vw,20px)] leading-[1.6] text-gray-400">
-              The clock starts when you ask. Kick off your request today and your
-              insights will be waiting when the email lands.
-            </p>
-            <div className="mt-[30px] flex flex-wrap gap-3.5">
-              <Link href="#providers" className={marketingButton({ variant: "primary", size: "lg" })}>
+        <CtaBand
+          glow="bottom-left"
+          eyebrow="Ready?"
+          title="Request your data now, upload in a few days"
+          lead="The clock starts when you ask. Kick off your request today and your insights will be waiting when the email lands."
+          actions={
+            <>
+              <Link
+                href="#providers"
+                className={marketingButton({ variant: "primary", size: "lg" })}
+              >
                 Pick your app
               </Link>
-              <Link href={UPLOAD_HREF} className={marketingButton({ variant: "white", size: "lg" })}>
+              <Link
+                href={UPLOAD_HREF}
+                className={marketingButton({ variant: "white", size: "lg" })}
+              >
                 Upload your file
               </Link>
-            </div>
-          </div>
-        </div>
+            </>
+          }
+        />
       </div>
     </section>
   );
