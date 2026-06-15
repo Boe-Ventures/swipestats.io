@@ -72,24 +72,19 @@ export const CookieBanner = ({
         </CardHeader>
         <CardContent className="space-y-2">
           <CardDescription className="text-sm">{description}</CardDescription>
-          <div className="flex gap-3 text-xs">
-            <a
-              href="/cookies"
-              className="text-primary underline underline-offset-4 hover:no-underline"
-            >
-              Customize
-            </a>
-            <a
-              href="/privacy"
-              className="text-muted-foreground underline underline-offset-4 hover:no-underline"
-            >
-              Privacy policy
-            </a>
-          </div>
+          <a
+            href="/privacy"
+            className="text-muted-foreground text-xs underline underline-offset-4 hover:no-underline"
+          >
+            Privacy policy
+          </a>
         </CardContent>
         <CardFooter className="flex flex-col gap-2 pt-2">
+          {/* "Reject all" and "Accept all" are equally easy — same size, same
+              row, one click each. Accept is colored as the recommended action
+              (the accepted reading of "equal weight"); reject is never hidden
+              or made harder. */}
           <div className="flex w-full gap-2">
-            {/* Equal prominence: same variant, size, and width. */}
             <Button
               onClick={handleRejectAll}
               variant="outline"
@@ -97,11 +92,7 @@ export const CookieBanner = ({
             >
               Reject all
             </Button>
-            <Button
-              onClick={handleAcceptAll}
-              variant="outline"
-              className="flex-1"
-            >
+            <Button onClick={handleAcceptAll} className="flex-1">
               Accept all
             </Button>
           </div>
