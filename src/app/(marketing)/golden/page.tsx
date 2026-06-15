@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import {
   ArrowDownTrayIcon,
   ArrowUpTrayIcon,
+  CheckIcon,
   LockClosedIcon,
   StarIcon,
 } from "@heroicons/react/20/solid";
 import { cn } from "@/components/ui/lib/utils";
+import { posts } from "../BlogSection";
 import {
   Eyebrow,
   SectionHead,
@@ -26,12 +29,26 @@ export const metadata: Metadata = {
 const HOW_TO = "/how-to-request-your-data";
 const UPLOAD = "/upload";
 
+/** Soft rose radial glow — the warm accent from the original home, dialed down. */
+function RoseGlow({ className }: { className?: string }) {
+  return (
+    <div
+      aria-hidden
+      className={cn(
+        "pointer-events-none absolute -z-10 rounded-full blur-3xl [background:radial-gradient(circle,oklch(0.72_0.17_15/0.16),transparent_70%)]",
+        className,
+      )}
+    />
+  );
+}
+
 /* ----------------------------------------------------------------- hero */
 
 function Hero() {
   return (
     <section className="relative overflow-hidden pt-16 pb-2">
       <GridBg />
+      <RoseGlow className="top-[-160px] left-1/2 h-[560px] w-[680px] -translate-x-1/2" />
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
         <div className="mx-auto max-w-[820px] text-center">
           <Eyebrow noRule center>
@@ -144,8 +161,12 @@ function HowItWorks() {
     },
   ];
   return (
-    <section id="how-it-works" className="py-[88px] max-[720px]:py-[60px]">
-      <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
+    <section
+      id="how-it-works"
+      className="relative overflow-hidden py-[88px] max-[720px]:py-[60px]"
+    >
+      <RoseGlow className="top-[40px] left-[-160px] h-[440px] w-[440px]" />
+      <div className="relative mx-auto max-w-[1216px] px-6 lg:px-8">
         <SectionHead
           eyebrow="How it works"
           title="100% anonymous, in four steps"
@@ -328,8 +349,12 @@ const faqs = [
 
 function Faq() {
   return (
-    <section id="faq" className="py-[88px] max-[720px]:py-[60px]">
-      <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
+    <section
+      id="faq"
+      className="relative overflow-hidden py-[88px] max-[720px]:py-[60px]"
+    >
+      <RoseGlow className="right-[-140px] bottom-[-120px] h-[460px] w-[460px]" />
+      <div className="relative mx-auto max-w-[1216px] px-6 lg:px-8">
         <SectionHead center eyebrow="FAQ" title="The honest answers" />
         <FaqList items={faqs} className="mx-auto mt-9 max-w-[760px] text-left" />
       </div>
@@ -361,33 +386,203 @@ function Testimonials() {
   return (
     <section className="py-[88px] max-[720px]:py-[60px]">
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
+        <div className="relative overflow-hidden rounded-3xl border border-gray-200 bg-gray-50 p-8 sm:p-12">
+          <RoseGlow className="top-[-140px] right-[-100px] h-[460px] w-[460px]" />
+          <div className="relative">
+            <SectionHead
+              eyebrow="Loved by daters"
+              title="What thousands have found in their data"
+            />
+            <div className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-3">
+              {testimonials.map((t) => (
+                <figure
+                  key={t.name}
+                  className="flex flex-col rounded-2xl border border-gray-200 bg-white p-6 shadow-xs"
+                >
+                  <blockquote className="flex-1 text-[14.5px] leading-[1.7] text-gray-700">
+                    &ldquo;{t.body}&rdquo;
+                  </blockquote>
+                  <figcaption className="mt-5 flex items-center gap-3">
+                    <span className="h-9 w-9 flex-none rounded-full bg-gray-200 ring-1 ring-gray-200" />
+                    <span>
+                      <span className="block text-[13.5px] font-semibold text-gray-900">
+                        {t.name}
+                      </span>
+                      <span className="block text-[12.5px] text-gray-500">
+                        {t.loc}
+                      </span>
+                    </span>
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ----------------------------------------------------------------- press */
+
+function Press() {
+  return (
+    <section className="border-b border-gray-200 bg-gray-50 py-[88px] max-[720px]:py-[60px]">
+      <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
         <SectionHead
-          eyebrow="Loved by daters"
-          title="What thousands have found in their data"
+          eyebrow="In the press"
+          title="The data the world wrote about"
+          lead="Journalists, researchers, and creators have turned SwipeStats data into stories read by hundreds of thousands."
         />
         <div className="mt-12 grid grid-cols-1 gap-5 md:grid-cols-3">
-          {testimonials.map((t) => (
-            <figure
-              key={t.name}
-              className="flex flex-col rounded-2xl border border-gray-200 bg-white p-6 shadow-xs"
+          {posts.slice(0, 3).map((post) => (
+            <a
+              key={post.id}
+              href={post.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group flex flex-col overflow-hidden rounded-3xl border border-gray-200 bg-white transition hover:-translate-y-0.5 hover:shadow-[0_2px_6px_oklch(0.2_0.02_286/0.05),0_12px_28px_oklch(0.2_0.02_286/0.08)]"
             >
-              <blockquote className="flex-1 text-[14.5px] leading-[1.7] text-gray-700">
-                &ldquo;{t.body}&rdquo;
-              </blockquote>
-              <figcaption className="mt-5 flex items-center gap-3">
-                <span className="h-9 w-9 flex-none rounded-full bg-gray-200 ring-1 ring-gray-200" />
-                <span>
-                  <span className="block text-[13.5px] font-semibold text-gray-900">
-                    {t.name}
-                  </span>
-                  <span className="block text-[12.5px] text-gray-500">
-                    {t.loc}
-                  </span>
+              <div className="relative h-44 overflow-hidden border-b border-gray-200 bg-gray-100">
+                <Image
+                  src={post.imageUrl}
+                  alt={post.title}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                  className="object-cover transition group-hover:scale-[1.03]"
+                />
+              </div>
+              <div className="flex flex-1 flex-col p-6">
+                <span className="font-mono text-[11px] tracking-[0.05em] text-rose-600 uppercase">
+                  {post.category.title}
                 </span>
-              </figcaption>
-            </figure>
+                <h3 className="mt-2.5 text-[16.5px] leading-[1.3] font-bold tracking-[-0.01em] text-gray-900">
+                  {post.title}
+                </h3>
+                <div className="mt-auto flex items-center gap-2 pt-5 text-[12.5px] text-gray-500">
+                  <span className="font-medium text-gray-700">
+                    {post.author.name}
+                  </span>
+                  <span className="h-[3px] w-[3px] rounded-full bg-gray-300" />
+                  <span>{post.readTime}</span>
+                </div>
+              </div>
+            </a>
           ))}
         </div>
+      </div>
+    </section>
+  );
+}
+
+/* ----------------------------------------------------------------- pricing */
+
+const pricingTiers = [
+  {
+    name: "Small Sample",
+    price: "$15",
+    desc: "Get started",
+    features: ["10 profiles", "Perfect to test the data model"],
+    popular: false,
+  },
+  {
+    name: "Full package",
+    price: "$50",
+    desc: "Scale your analysis, plus future datasets",
+    features: [
+      "1,000 anonymous profiles",
+      "Access to future datasets",
+      "Analyze at scale",
+      "Direct support",
+    ],
+    popular: true,
+  },
+  {
+    name: "University / Enterprise",
+    price: "$1,500",
+    desc: "Dedicated support & infrastructure",
+    features: [
+      "4k+ profiles",
+      "Licence to distribute to students",
+      "Direct support",
+    ],
+    popular: false,
+  },
+];
+
+function Pricing() {
+  return (
+    <section className="py-[88px] max-[720px]:py-[60px]">
+      <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
+        <SectionHead
+          center
+          eyebrow="Pricing"
+          title="Get your own dataset"
+        />
+        <div className="mt-12 grid grid-cols-1 gap-5 lg:grid-cols-3">
+          {pricingTiers.map((tier) => (
+            <div
+              key={tier.name}
+              className={cn(
+                "flex flex-col rounded-3xl border p-7",
+                tier.popular
+                  ? "border-2 border-rose-600 shadow-[0_2px_6px_oklch(0.2_0.02_286/0.05),0_12px_28px_oklch(0.2_0.02_286/0.08)]"
+                  : "border-gray-200",
+              )}
+            >
+              <div className="flex items-center justify-between gap-2.5">
+                <span
+                  className={cn(
+                    "text-[17px] font-bold",
+                    tier.popular && "text-rose-600",
+                  )}
+                >
+                  {tier.name}
+                </span>
+                {tier.popular && (
+                  <span className="inline-flex items-center rounded-full border border-rose-600/20 bg-rose-50 px-3 py-1 text-[13px] font-semibold text-rose-700">
+                    Most popular
+                  </span>
+                )}
+              </div>
+              <p className="mt-2 min-h-[38px] text-[13.5px] text-gray-500">
+                {tier.desc}
+              </p>
+              <div className="mt-[18px] text-[38px] font-bold tracking-[-0.03em] tabular-nums text-gray-900">
+                {tier.price}
+              </div>
+              <ul className="mt-5 flex flex-1 flex-col gap-[11px]">
+                {tier.features.map((f) => (
+                  <li
+                    key={f}
+                    className="flex gap-2.5 text-[14px] text-gray-700"
+                  >
+                    <CheckIcon className="mt-px h-[18px] w-[18px] flex-none text-rose-600" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href="/research#pricing"
+                className={cn(
+                  "mt-6 w-full",
+                  marketingButton({
+                    variant: tier.popular ? "primary" : "ghost",
+                  }),
+                )}
+              >
+                {tier.price === "$1,500" ? "Contact us" : "Buy dataset"}
+              </Link>
+            </div>
+          ))}
+        </div>
+        <p className="mt-6 text-center text-[13px] text-gray-500">
+          Checkout lives on the{" "}
+          <Link href="/research" className="font-semibold text-rose-600">
+            research page
+          </Link>
+          .
+        </p>
       </div>
     </section>
   );
@@ -453,11 +648,13 @@ export default function GoldenHomePage() {
       </div>
       <Hero />
       <LogoStrip />
+      <Press />
       <HowItWorks />
       <Providers />
       <Testimonials />
       <FounderQuote />
       <ResearchTeaser />
+      <Pricing />
       <Newsletter />
       <Faq />
       <FinalCta />
