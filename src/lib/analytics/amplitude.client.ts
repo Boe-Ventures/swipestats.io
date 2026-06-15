@@ -10,15 +10,13 @@
  *   Amplitude's privacy guide — the cleanest model to explain to auditors).
  * - On consent we `initAll` → analytics autocapture + Session Replay together.
  * - EU data residency (`serverZone: "EU"`), matching PostHog.
- * - Identity stitching: Amplitude `deviceId` is seeded from PostHog's
- *   `distinct_id` so a user resolves to the same person across both tools.
- * - Honors Global Privacy Control (GPC) as an automatic opt-out.
+ * - Honors Global Privacy Control (GPC) — handled at the consent-default layer
+ *   (AnalyticsProvider), so this module only runs on an explicit opt-in.
  * - No-ops entirely when `NEXT_PUBLIC_AMPLITUDE_API_KEY` is unset.
  *
  * This module must only ever be imported from client components.
  */
 import * as amplitude from "@amplitude/unified";
-import posthog from "posthog-js";
 
 import { env } from "@/env";
 
@@ -45,8 +43,6 @@ export function enableAmplitude(): void {
       .initAll(env.NEXT_PUBLIC_AMPLITUDE_API_KEY!, {
         serverZone: "EU",
         analytics: {
-          // Share PostHog's anonymous id so both tools resolve to one person.
-          deviceId: posthog.get_distinct_id(),
           autocapture: {
             attribution: true,
             pageViews: true,
