@@ -12,6 +12,7 @@ import {
   sanitizeForVercel,
 } from "@/lib/analytics/analytics.utils";
 import {
+  aliasUser,
   identifyUser,
   trackPosthogServerEvent,
 } from "@/server/clients/posthog.client";
@@ -60,6 +61,11 @@ interface ServerAnalyticsProvider {
     userId: string,
     traits: UserTraits,
   ) => Promise<unknown> | void;
+  /** Merge an anonymous user's history into the real user (PostHog only). */
+  aliasServerUser?: (
+    anonymousUserId: string,
+    newUserId: string,
+  ) => Promise<unknown> | void;
 }
 
 // =====================================================
@@ -72,6 +78,8 @@ const serverAnalyticsProviders: ServerAnalyticsProvider[] = [
     trackServerEvent: trackPosthogServerEvent,
     identifyServerUser: (userId, traits) =>
       identifyUser({ distinctId: userId, properties: omitNullish(traits) }),
+    aliasServerUser: (anonymousUserId, newUserId) =>
+      aliasUser({ anonymousId: anonymousUserId, userId: newUserId }),
   },
   {
     id: "vercel",
@@ -208,6 +216,30 @@ export function identifyServerUser(userId: string, traits: UserTraits): void {
 
       for (const provider of serverAnalyticsProviders) {
         await provider.identifyServerUser?.(userId, traits);
+      }
+    })(),
+  );
+}
+
+/**
+ * Merge an anonymous user's analytics history into the real user on conversion
+ * (PostHog alias). Gated on the ANON user's consent — they're the one whose
+ * tracked history we're merging; without their analytics consent there's
+ * nothing to merge anyway. Fire-and-forget via waitUntil.
+ */
+export function aliasServerUser(
+  anonymousUserId: string,
+  newUserId: string,
+): void {
+  console.log("🟢 [Analytics] Server alias:", { anonymousUserId, newUserId });
+
+  waitUntil(
+    (async () => {
+      const consent = await loadConsent(anonymousUserId);
+      if (consent?.preferences.analytics !== true) return;
+
+      for (const provider of serverAnalyticsProviders) {
+        await provider.aliasServerUser?.(anonymousUserId, newUserId);
       }
     })(),
   );
