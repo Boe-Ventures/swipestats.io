@@ -20,6 +20,7 @@ import type {
   AnalyticsMetadata,
   ClientAnalyticsEventName,
   ClientEventPropertiesDefinition,
+  UserTraits,
 } from "@/lib/analytics/analytics.types";
 import { sanitizeForVercel } from "@/lib/analytics/analytics.utils";
 import {
@@ -89,6 +90,12 @@ interface ClientAnalyticsProvider {
     meta?: AnalyticsMetadata,
   ) => void;
   identify?: (userId: string, traits: Record<string, unknown>) => void;
+  /** No-op today — SwipeStats has no org/group concept (cf. homi's groups). */
+  group?: (
+    groupType: string,
+    groupId: string,
+    traits?: Record<string, unknown>,
+  ) => void;
   reset?: () => void;
 }
 
@@ -297,10 +304,21 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
     const userId = session.data.user.id;
     if (lastIdentifiedUserId.current === userId) return;
 
-    const user = session.data.user;
+    // Send only the curated UserTraits — not the raw user object (which would
+    // leak every Better Auth field into analytics person profiles).
+    // Only the fields the client session actually carries. tier/city/country
+    // live on the server user (not inferred client-side) — they'd need a
+    // server-side identify, which we don't have yet.
+    const u = session.data.user;
+    const traits: UserTraits = {
+      email: u.email ?? undefined,
+      name: u.name ?? undefined,
+      username: u.username ?? undefined,
+      isAnonymous: u.isAnonymous ?? undefined,
+    };
     providers.forEach((provider) => {
       if (isAllowed(preferences, provider.category) && provider.identify) {
-        provider.identify(userId, user);
+        provider.identify(userId, traits);
       }
     });
     lastIdentifiedUserId.current = userId;
