@@ -283,7 +283,9 @@ export default function AdminAnalyticsPage() {
             Fires <code className="text-xs">admin_test_event_fired</code>. Client
             goes through the consent-gated provider array (needs{" "}
             <code className="text-xs">analytics</code> consent); server goes
-            through the fan-out service. Only the client event reaches Amplitude.
+            through the fan-out service. Both reach Amplitude now — client via the
+            browser SDK, server via the Node adapter (server is operational, so it
+            fires regardless of consent).
           </p>
           <div className="flex flex-wrap gap-2">
             <Button onClick={fireClientEvent} disabled={!hasConsent}>
