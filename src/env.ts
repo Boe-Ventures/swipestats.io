@@ -33,6 +33,10 @@ export const env = createEnv({
     SLACK_WEBHOOK_BOT_DEVELOPER: z.string().url(),
     SLACK_WEBHOOK_SALES: z.string().url(),
     SLACK_WEBHOOK_RICH_MESSAGE_TEST: z.string().url(),
+    // Amplitude SECRET key (server-only — never expose to the client).
+    // Pairs with NEXT_PUBLIC_AMPLITUDE_API_KEY for Basic Auth on the
+    // Amplitude Taxonomy API. Optional: taxonomy tooling no-ops when unset.
+    AMPLITUDE_SECRET_KEY: z.string().optional(),
   },
 
   /**
@@ -54,6 +58,10 @@ export const env = createEnv({
     NEXT_PUBLIC_BASE_URL: z.string().url().default("http://localhost:3000"),
     NEXT_PUBLIC_MAPBOX_PUBLIC_API_KEY: z.string(),
     NEXT_PUBLIC_POSTHOG_KEY: z.string(),
+    // Amplitude browser SDK (publishable key). Optional: when unset the
+    // Amplitude provider no-ops. Dev/staging project key today; swap per
+    // environment for a separate prod project later.
+    NEXT_PUBLIC_AMPLITUDE_API_KEY: z.string().optional(),
   },
 
   /**
@@ -78,6 +86,7 @@ export const env = createEnv({
     SLACK_WEBHOOK_SALES: process.env.SLACK_WEBHOOK_SALES,
     SLACK_WEBHOOK_RICH_MESSAGE_TEST:
       process.env.SLACK_WEBHOOK_RICH_MESSAGE_TEST,
+    AMPLITUDE_SECRET_KEY: process.env.AMPLITUDE_SECRET_KEY,
     // Priority: explicit override > true production > branch URL > localhost default
     NEXT_PUBLIC_BASE_URL:
       process.env.NEXT_PUBLIC_BASE_URL ??
@@ -90,6 +99,7 @@ export const env = createEnv({
       process.env.NEXT_PUBLIC_MAPBOX_PUBLIC_API_KEY,
     NEXT_PUBLIC_VERCEL_ENV: process.env.NEXT_PUBLIC_VERCEL_ENV,
     NEXT_PUBLIC_POSTHOG_KEY: process.env.NEXT_PUBLIC_POSTHOG_KEY,
+    NEXT_PUBLIC_AMPLITUDE_API_KEY: process.env.NEXT_PUBLIC_AMPLITUDE_API_KEY,
     // True production = trust Vercel's VERCEL_ENV
     NEXT_PUBLIC_IS_PRODUCTION: process.env.VERCEL_ENV === "production",
   },

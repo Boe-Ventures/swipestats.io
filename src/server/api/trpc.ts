@@ -16,6 +16,7 @@ import { db } from "@/server/db";
 import { eq } from "drizzle-orm";
 import { tinderProfileTable, userTable } from "@/server/db/schema";
 import { canAccessFeature } from "@/server/services/gating.service";
+import { readConsent } from "@/lib/analytics/consent";
 import { env } from "@/env";
 
 /**
@@ -37,6 +38,9 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
   return {
     db,
     session,
+    // Consent rides the session (additionalFields) — resolved once per request,
+    // so procedures pass it to trackServerEvent instead of re-querying.
+    analyticsConsent: readConsent(session?.user?.analyticsConsent),
     ...opts,
   };
 };

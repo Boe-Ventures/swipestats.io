@@ -4,7 +4,7 @@ import * as React from "react";
 import { Cookie } from "lucide-react";
 
 import { cn } from "@/components/ui/lib/utils";
-import { Button } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -17,41 +17,42 @@ import { useAnalytics } from "@/contexts/AnalyticsProvider";
 
 interface CookieBannerProps {
   isOpen: boolean;
-  onAccept: () => void;
-  onDecline: () => void;
+  onAcceptAll: () => void;
+  onRejectAll: () => void;
   description?: string;
-  learnMoreHref?: string;
   className?: string;
 }
 
+/**
+ * First-layer consent banner. "Accept all" and "Reject all" are rendered with
+ * identical prominence (same variant, size, and width) — GDPR requires
+ * rejecting to be as easy as accepting. "Customize" links to /cookies for
+ * per-category control.
+ */
 export const CookieBanner = ({
   isOpen,
-  onAccept,
-  onDecline,
-  description = "We use cookies to improve your experience and analyze site usage. By continuing, you accept our use of cookies.",
-  learnMoreHref = "/privacy",
+  onAcceptAll,
+  onRejectAll,
+  description = "We use cookies for analytics and to improve SwipeStats. Choose what you're comfortable with — you can change this anytime.",
   className,
 }: CookieBannerProps) => {
   const [isAnimatingOut, setIsAnimatingOut] = React.useState(false);
 
-  const handleAccept = React.useCallback(() => {
+  const handleAcceptAll = React.useCallback(() => {
     setIsAnimatingOut(true);
-    onAccept();
-  }, [onAccept]);
+    onAcceptAll();
+  }, [onAcceptAll]);
 
-  const handleDecline = React.useCallback(() => {
+  const handleRejectAll = React.useCallback(() => {
     setIsAnimatingOut(true);
-    onDecline();
-  }, [onDecline]);
+    onRejectAll();
+  }, [onRejectAll]);
 
   // Reset animation state when reopened
   React.useEffect(() => {
-    if (isOpen) {
-      setIsAnimatingOut(false);
-    }
+    if (isOpen) setIsAnimatingOut(false);
   }, [isOpen]);
 
-  // Don't render if not open and not animating
   if (!isOpen && !isAnimatingOut) return null;
 
   return (
@@ -71,35 +72,40 @@ export const CookieBanner = ({
         </CardHeader>
         <CardContent className="space-y-2">
           <CardDescription className="text-sm">{description}</CardDescription>
-          <p className="text-muted-foreground text-xs">
-            By clicking <span className="font-medium">&quot;Accept&quot;</span>,
-            you agree to our use of cookies.
-          </p>
           <a
-            href={learnMoreHref}
-            className="text-primary text-xs underline underline-offset-4 hover:no-underline"
+            href="/privacy"
+            className="text-muted-foreground text-xs underline underline-offset-4 hover:no-underline"
           >
-            Learn more
+            Privacy policy
           </a>
         </CardContent>
-        <CardFooter className="flex gap-2 pt-2">
-          <Button
-            onClick={handleDecline}
-            variant="secondary"
-            className="flex-1"
-          >
-            Decline
-          </Button>
-          <Button onClick={handleAccept} className="flex-1">
-            Accept
-          </Button>
+        <CardFooter className="flex flex-col gap-2 pt-2">
+          {/* "Reject all" and "Accept all" are equally easy — same size, same
+              row, one click each. Accept is colored as the recommended action
+              (the accepted reading of "equal weight"); reject is never hidden
+              or made harder. */}
+          <div className="flex w-full gap-2">
+            <Button
+              onClick={handleRejectAll}
+              variant="outline"
+              className="flex-1"
+            >
+              Reject all
+            </Button>
+            <Button onClick={handleAcceptAll} className="flex-1">
+              Accept all
+            </Button>
+          </div>
+          <ButtonLink href="/cookies" variant="ghost" className="w-full">
+            Customize preferences
+          </ButtonLink>
         </CardFooter>
       </Card>
     </div>
   );
 };
 
-// Component to re-show consent banner for users who previously declined
+// Link that re-opens the first-layer banner (e.g. from a footer).
 interface CookiePreferencesLinkProps {
   children?: React.ReactNode;
   className?: string;

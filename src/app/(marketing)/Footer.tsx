@@ -11,6 +11,7 @@ const footerNavigation = {
     { name: "About", href: "/#about" },
     { name: "Privacy", href: "/privacy" },
     { name: "Terms of Service", href: "/tos" },
+    { name: "Cookie preferences", href: "/cookies" },
   ],
   social: [
     {

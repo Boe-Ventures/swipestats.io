@@ -4,6 +4,9 @@ import {
   Activity,
   Image as ImageIcon,
   MapPin,
+  Globe,
+  Palette,
+  ClipboardList,
 } from "lucide-react";
 import { ActionCard } from "./ActionCard";
 
@@ -25,6 +28,30 @@ export function QuickActions() {
           title="Geography Review"
           description="Review profiles by location"
           href="/admin/geography-review"
+        />
+        <ActionCard
+          icon={Palette}
+          title="OG Image Preview"
+          description="Preview and iterate on OG images"
+          href="/admin/og-preview"
+        />
+        <ActionCard
+          icon={Globe}
+          title="OG / Meta Audit"
+          description="Audit meta tags across all pages"
+          href="/admin/og-map"
+        />
+        <ActionCard
+          icon={ClipboardList}
+          title="Tracking Plan"
+          description="Analytics event catalog & destinations"
+          href="/admin/tracking-plan"
+        />
+        <ActionCard
+          icon={Activity}
+          title="Analytics Debug"
+          description="Fire test events, flip consent, inspect identity"
+          href="/admin/analytics"
         />
         <ActionCard
           icon={Users}

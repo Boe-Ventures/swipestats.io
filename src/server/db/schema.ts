@@ -17,6 +17,7 @@ import type {
   StatsRoastResult,
   ProfileRoastResult,
 } from "@/lib/ai/roast-schemas";
+import type { ConsentRecord } from "@/lib/analytics/consent";
 
 // ---- ENUMS --------------------------------------------------------
 
@@ -175,6 +176,9 @@ export const userTable = pgTable("user", (t) => ({
   country: t.text(),
   region: t.text(), // state/province (e.g., "California", "Bavaria")
   continent: t.text(), // "North America", "Europe", "Asia", etc.
+  // Granular analytics consent — durable, server-readable mirror of the
+  // localStorage decision (synced on login). Null = no decision made yet.
+  analyticsConsent: t.jsonb().$type<ConsentRecord>(),
   languages: t.jsonb().$type<LanguageCode[]>().default([]).notNull(), // aggregated from match-level analysis
   firstStartedWithDatingApps: t.timestamp(),
   happinessHistory: t.jsonb().default([]).notNull(),
