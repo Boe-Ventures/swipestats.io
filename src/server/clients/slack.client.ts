@@ -2,6 +2,7 @@ import { eq } from "drizzle-orm";
 import { waitUntil } from "@vercel/functions";
 
 import { env, envSelect } from "@/env";
+import { SLACK_EVENTS } from "@/lib/analytics/analytics.registry";
 import type {
   ServerAnalyticsEventName,
   ServerEventPropertiesDefinition,
@@ -659,23 +660,10 @@ function sanitizeSlackText(text: string | undefined | null): string {
 // =====================================================
 
 /**
- * Events we want to send to Slack
- * Subset of all analytics events - only high-value notifications
+ * Events we want to send to Slack — the canonical list lives in
+ * analytics.registry.ts (the tracking-plan governance layer) so the catalog's
+ * Slack badge and this provider's filter can never disagree.
  */
-const SLACK_EVENTS = [
-  "tinder_profile_created",
-  "tinder_profile_updated",
-  "tinder_profile_upload_failed",
-  "hinge_profile_created",
-  "hinge_profile_updated",
-  "hinge_profile_upload_failed",
-  "subscription_activated",
-  "subscription_cancelled",
-  "billing_payment_successful", // Captures ALL payments including lifetime!
-  "billing_payment_failed",
-  "comparison_created",
-] as const;
-
 type SlackEventName = (typeof SLACK_EVENTS)[number];
 
 function isSlackEvent(event: string): event is SlackEventName {
@@ -1122,6 +1110,84 @@ export async function trackSlackEvent<T extends ServerAnalyticsEventName>(
           hasCustomPhotos: props.hasCustomPhotos,
           userName: sanitizeSlackText(user?.name) || "Unknown",
           comparisonUrl: `https://www.swipestats.io/compare/${props.comparisonId}`,
+        },
+        eventName: event,
+      });
+      return;
+    }
+
+    // ─────────────────────────────────────────────────
+    // Comparison Shared (made public)
+    // ─────────────────────────────────────────────────
+    if (event === "comparison_shared") {
+      const props =
+        properties as ServerEventPropertiesDefinition["comparison_shared"];
+
+      const user = await db.query.userTable.findFirst({
+        where: eq(userTable.id, userId),
+        columns: { name: true },
+      });
+
+      sendEvent({
+        channel,
+        emoji: "🔗",
+        title: "Comparison Shared",
+        fields: {
+          comparisonId: props.comparisonId,
+          userName: sanitizeSlackText(user?.name) || "Unknown",
+          shareUrl: `${env.NEXT_PUBLIC_BASE_URL}/share/profile-compare/${props.shareKey}`,
+        },
+        eventName: event,
+      });
+      return;
+    }
+
+    // ─────────────────────────────────────────────────
+    // Profile Roast Shared
+    // ─────────────────────────────────────────────────
+    if (event === "roast_published") {
+      const props =
+        properties as ServerEventPropertiesDefinition["roast_published"];
+
+      const user = await db.query.userTable.findFirst({
+        where: eq(userTable.id, userId),
+        columns: { name: true },
+      });
+
+      sendEvent({
+        channel,
+        emoji: "🔥",
+        title: "Profile Roast Shared",
+        fields: {
+          columnId: props.columnId,
+          userName: sanitizeSlackText(user?.name) || "Unknown",
+          shareUrl: `${env.NEXT_PUBLIC_BASE_URL}/share/profile-roast/${props.shareKey}`,
+        },
+        eventName: event,
+      });
+      return;
+    }
+
+    // ─────────────────────────────────────────────────
+    // Stats Roast Shared
+    // ─────────────────────────────────────────────────
+    if (event === "stats_roast_shared") {
+      const props =
+        properties as ServerEventPropertiesDefinition["stats_roast_shared"];
+
+      const user = await db.query.userTable.findFirst({
+        where: eq(userTable.id, userId),
+        columns: { name: true },
+      });
+
+      sendEvent({
+        channel,
+        emoji: "🔥",
+        title: "Stats Roast Shared",
+        fields: {
+          roastId: props.roastId,
+          userName: sanitizeSlackText(user?.name) || "Unknown",
+          shareUrl: `${env.NEXT_PUBLIC_BASE_URL}/share/stats-roast/${props.shareKey}`,
         },
         eventName: event,
       });

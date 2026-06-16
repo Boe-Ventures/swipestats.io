@@ -28,6 +28,7 @@ import {
   type RoastTone,
 } from "@/server/services/profile-roast.service";
 import { getProviderMeta } from "@/server/services/providers";
+import { trackServerEvent } from "@/server/services/analytics.service";
 import {
   upsertAiOutput,
   AI_OUTPUT_VERSION,
@@ -261,6 +262,17 @@ export const roastRouter = {
         output,
       });
 
+      trackServerEvent(
+        userId,
+        "stats_roast_generated",
+        {
+          provider: providerKey === "TINDER" ? "tinder" : "hinge",
+          tone,
+          regenerate,
+        },
+        { consent: ctx.analyticsConsent },
+      );
+
       return mapStatsRoast(row);
     }),
 
@@ -351,6 +363,19 @@ export const roastRouter = {
         .where(eq(aiOutputTable.id, input.roastId))
         .returning();
 
+      // Fire only on the transition to public (row was fetched pre-update).
+      if (!row.isPublic && updated?.shareKey) {
+        trackServerEvent(
+          userId,
+          "stats_roast_shared",
+          {
+            roastId: input.roastId,
+            shareKey: updated.shareKey,
+          },
+          { consent: ctx.analyticsConsent },
+        );
+      }
+
       return { shareKey: updated?.shareKey };
     }),
 
@@ -386,6 +411,18 @@ export const roastRouter = {
           .update(aiOutputTable)
           .set({ isPublic: true })
           .where(eq(aiOutputTable.id, row.id));
+
+        if (row.shareKey) {
+          trackServerEvent(
+            userId,
+            "roast_published",
+            {
+              columnId: input.columnId,
+              shareKey: row.shareKey,
+            },
+            { consent: ctx.analyticsConsent },
+          );
+        }
       }
       return { shareKey: row.shareKey };
     }),
@@ -572,6 +609,20 @@ export const roastRouter = {
         input: inputSnapshot,
         output: result,
       });
+
+      trackServerEvent(
+        userId,
+        "roast_generated",
+        {
+          columnId: input.columnId,
+          comparisonId: column.comparison.id,
+          provider: column.dataProvider.toLowerCase(),
+          tone: input.tone,
+          photoCount: photoItems.length,
+          promptCount: promptItems.length,
+        },
+        { consent: ctx.analyticsConsent },
+      );
 
       return {
         tone: input.tone,

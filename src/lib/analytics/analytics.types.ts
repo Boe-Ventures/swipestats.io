@@ -1,3 +1,5 @@
+import type { ConsentRecord } from "./consent";
+
 // =====================================================
 // EVENT NAME DEFINITIONS
 // =====================================================
@@ -78,6 +80,14 @@ export type ServerAnalyticsEventName =
   | "comparison_shared" // Comparison made public
 
   // ─────────────────────────────────────────────────
+  // Roast events (AI feature)
+  // ─────────────────────────────────────────────────
+  | "roast_generated" // Profile roast generated (vision AI, per column)
+  | "roast_published" // Profile roast made public / shared
+  | "stats_roast_generated" // Profile-level stats roast generated
+  | "stats_roast_shared" // Stats roast made public / shared
+
+  // ─────────────────────────────────────────────────
   // Monetization events (Product Outcomes)
   // Use these for revenue analysis and user journey
   // ─────────────────────────────────────────────────
@@ -99,7 +109,12 @@ export type ServerAnalyticsEventName =
   // ─────────────────────────────────────────────────
   | "life_event_created" // User created a life event
   | "life_event_updated" // User updated an existing event
-  | "life_event_deleted"; // User deleted an event
+  | "life_event_deleted" // User deleted an event
+
+  // ─────────────────────────────────────────────────
+  // Admin / debug (internal — fired from the admin test harness)
+  // ─────────────────────────────────────────────────
+  | "admin_test_event_fired";
 
 export type ClientAnalyticsEventName =
   // ─────────────────────────────────────────────────
@@ -158,7 +173,20 @@ export type ClientAnalyticsEventName =
   // ─────────────────────────────────────────────────
   // Life Events (Feature engagement)
   // ─────────────────────────────────────────────────
-  | "life_event_dialog_opened";
+  | "life_event_dialog_opened"
+
+  // ─────────────────────────────────────────────────
+  // Roast & comparison share interactions
+  // ─────────────────────────────────────────────────
+  | "roast_dialog_opened" // Roast dialog opened for a column
+  | "roast_tone_selected" // User picked a roast tone (incl. re-roast)
+  | "roast_shared_viewed" // Public profile-roast share page viewed
+  | "comparison_shared_viewed" // Public comparison share page viewed
+
+  // ─────────────────────────────────────────────────
+  // Admin / debug (internal — fired from the admin test harness)
+  // ─────────────────────────────────────────────────
+  | "admin_test_event_fired";
 
 // =====================================================
 // EVENT PROPERTIES DEFINITIONS - SERVER
@@ -317,6 +345,34 @@ export type ServerEventPropertiesDefinition = {
   };
 
   // ─────────────────────────────────────────────────
+  // Roast events
+  // ─────────────────────────────────────────────────
+  roast_generated: {
+    columnId: string;
+    comparisonId: string;
+    provider: string; // dating provider of the roasted column (lowercased)
+    tone: "helpful" | "mild" | "spicy";
+    photoCount: number;
+    promptCount: number;
+  };
+
+  roast_published: {
+    columnId: string;
+    shareKey: string;
+  };
+
+  stats_roast_generated: {
+    provider: "tinder" | "hinge";
+    tone: "helpful" | "mild" | "spicy";
+    regenerate: boolean; // true when forcing a fresh roast (e.g. tone change)
+  };
+
+  stats_roast_shared: {
+    roastId: string;
+    shareKey: string;
+  };
+
+  // ─────────────────────────────────────────────────
   // Monetization events (Product Outcomes)
   // ─────────────────────────────────────────────────
   subscription_trial_started: {
@@ -394,6 +450,15 @@ export type ServerEventPropertiesDefinition = {
     eventType: string;
     hadEndDate: boolean;
     hadLocation: boolean;
+  };
+
+  // ─────────────────────────────────────────────────
+  // Admin / debug
+  // ─────────────────────────────────────────────────
+  admin_test_event_fired: {
+    surface: "server" | "client";
+    nonce: string; // Unique id to locate this event in PostHog/Amplitude
+    source: string; // Where it was fired from, e.g. "admin_analytics_page"
   };
 };
 
@@ -595,6 +660,42 @@ export type ClientEventPropertiesDefinition = {
     hasExistingEvents: boolean;
     eventCount: number;
   };
+
+  // ─────────────────────────────────────────────────
+  // Roast & comparison share interactions
+  // ─────────────────────────────────────────────────
+  roast_dialog_opened: {
+    columnId: string;
+    provider: string;
+    photoCount: number;
+    promptCount: number;
+  };
+
+  roast_tone_selected: {
+    columnId: string;
+    tone: "helpful" | "mild" | "spicy";
+    regenerate: boolean; // true when re-roasting with a different tone
+  };
+
+  roast_shared_viewed: {
+    shareKey: string;
+    tone: "helpful" | "mild" | "spicy";
+    viewerIsOwner: boolean;
+  };
+
+  comparison_shared_viewed: {
+    shareKey: string;
+    columnCount: number;
+  };
+
+  // ─────────────────────────────────────────────────
+  // Admin / debug
+  // ─────────────────────────────────────────────────
+  admin_test_event_fired: {
+    surface: "server" | "client";
+    nonce: string; // Unique id to locate this event in PostHog/Amplitude
+    source: string; // Where it was fired from, e.g. "admin_analytics_page"
+  };
 };
 
 // =====================================================
@@ -630,6 +731,9 @@ export interface AnalyticsMetadata {
   // no groups in swipestats yet
   ip?: string; // Client IP for PostHog GeoIP (auto-extracted if not provided)
   isAnonymous?: boolean; // Skip certain providers (like email) for anonymous users
+  // Server-only: the user's consent, passed from `ctx.analyticsConsent` so
+  // trackServerEvent skips its DB lookup. Omit (undefined) → it loads it.
+  consent?: ConsentRecord | null;
 }
 
 export interface UserTraits {

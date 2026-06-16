@@ -629,14 +629,9 @@ export default function PrivacyPage() {
           </thead>
           <tbody>
             <tr>
-              <td>Strictly necessary</td>
+              <td>Essential</td>
               <td>Site functionality, security, keeping you logged in</td>
               <td>No</td>
-            </tr>
-            <tr>
-              <td>Analytics</td>
-              <td>Understanding how people use the site</td>
-              <td>Yes</td>
             </tr>
             <tr>
               <td>Functional</td>
@@ -644,8 +639,16 @@ export default function PrivacyPage() {
               <td>Yes</td>
             </tr>
             <tr>
-              <td>Marketing</td>
-              <td>Measuring ad effectiveness (if applicable)</td>
+              <td>Analytics</td>
+              <td>
+                Understanding how the product is used, including session replays
+                (PostHog, Amplitude, Vercel)
+              </td>
+              <td>Yes</td>
+            </tr>
+            <tr>
+              <td>Advertising</td>
+              <td>Third-party / cross-site ad pixels — we run none today</td>
               <td>Yes</td>
             </tr>
           </tbody>
@@ -653,34 +656,45 @@ export default function PrivacyPage() {
 
         <h3>How does consent work?</h3>
         <p>
-          <strong>If you&apos;re just browsing:</strong> We ask for explicit
-          consent before setting non-essential cookies.
+          Nothing non-essential runs until you choose. The first time you visit,
+          a banner lets you <strong>Accept all</strong>,{" "}
+          <strong>Reject all</strong>, or pick category by category — and we
+          don&apos;t set analytics, functional, or advertising cookies before
+          you do.
         </p>
         <p>
-          <strong>If you create an account</strong> (including anonymous
-          accounts): Analytics tracking is enabled under legitimate interest
-          (GDPR Art. 6(1)(f)) to improve service quality, prevent fraud, and
-          guide feature development.
+          Operational records — creating your account, processing a payment,
+          keeping the service secure — run under legitimate interest (GDPR Art.
+          6(1)(f)) and don&apos;t rely on cookies.
         </p>
+
+        <h3>Session replays</h3>
         <p>
-          <strong>Session replays:</strong> We use session replays (via PostHog)
-          to debug issues and improve the experience. These are enabled for all
-          account holders. You can request deletion of your recordings anytime.
+          We use session replays (PostHog and Amplitude) to see where the
+          product is confusing and fix it. They run <strong>only</strong> if you
+          allow the Analytics category, and we mask all form inputs so we never
+          capture what you type. You can turn them off anytime.
         </p>
 
         <h3>How can I manage cookies?</h3>
         <ul>
-          <li>Through our website cookie settings (if available)</li>
           <li>
-            Through your browser settings — most browsers let you block or
-            delete cookies
+            Anytime via{" "}
+            <SmartLink href="/cookies">Cookie preferences</SmartLink> — change or
+            withdraw any category.
+          </li>
+          <li>
+            Through your browser settings — most browsers let you block or delete
+            cookies.
           </li>
         </ul>
 
-        <h3>Do you respond to &quot;Do Not Track&quot; signals?</h3>
+        <h3>Do you respond to privacy signals?</h3>
         <p>
-          Currently no, as there&apos;s no industry standard. We&apos;ll update
-          this if a standard is adopted.
+          Yes — we honor <strong>Global Privacy Control</strong> (GPC) as an
+          automatic opt-out from analytics and advertising. (&quot;Do Not
+          Track&quot; never got an agreed standard; GPC did, so we respect that
+          one.)
         </p>
 
         <h2>11. How do you keep my data safe?</h2>

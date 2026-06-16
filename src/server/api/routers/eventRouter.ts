@@ -86,11 +86,16 @@ export const eventRouter = {
       }
 
       // Track analytics event
-      trackServerEvent(ctx.session.user.id, "life_event_created", {
-        eventType: input.type,
-        hasEndDate: !!input.endDate,
-        hasLocation: !!input.locationId,
-      });
+      trackServerEvent(
+        ctx.session.user.id,
+        "life_event_created",
+        {
+          eventType: input.type,
+          hasEndDate: !!input.endDate,
+          hasLocation: !!input.locationId,
+        },
+        { consent: ctx.analyticsConsent },
+      );
 
       return newEvent;
     }),
@@ -151,17 +156,22 @@ export const eventRouter = {
       }
 
       // Track analytics event
-      trackServerEvent(ctx.session.user.id, "life_event_updated", {
-        eventType: updatedEvent.type,
-        previousEventType:
-          updates.type && existingEvent.type !== updatedEvent.type
-            ? existingEvent.type
-            : undefined,
-        changedEndDate:
-          updates.endDate !== undefined &&
-          existingEvent.endDate !== finalEndDate,
-        changedLocation: updates.locationId !== undefined,
-      });
+      trackServerEvent(
+        ctx.session.user.id,
+        "life_event_updated",
+        {
+          eventType: updatedEvent.type,
+          previousEventType:
+            updates.type && existingEvent.type !== updatedEvent.type
+              ? existingEvent.type
+              : undefined,
+          changedEndDate:
+            updates.endDate !== undefined &&
+            existingEvent.endDate !== finalEndDate,
+          changedLocation: updates.locationId !== undefined,
+        },
+        { consent: ctx.analyticsConsent },
+      );
 
       return updatedEvent;
     }),
@@ -190,11 +200,16 @@ export const eventRouter = {
       }
 
       // Track analytics event before deletion
-      trackServerEvent(ctx.session.user.id, "life_event_deleted", {
-        eventType: existingEvent.type,
-        hadEndDate: !!existingEvent.endDate,
-        hadLocation: !!existingEvent.locationId,
-      });
+      trackServerEvent(
+        ctx.session.user.id,
+        "life_event_deleted",
+        {
+          eventType: existingEvent.type,
+          hadEndDate: !!existingEvent.endDate,
+          hadLocation: !!existingEvent.locationId,
+        },
+        { consent: ctx.analyticsConsent },
+      );
 
       await ctx.db.delete(eventTable).where(eq(eventTable.id, input.id));
 
