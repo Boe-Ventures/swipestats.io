@@ -79,6 +79,10 @@ interface ClientAnalyticsProvider {
   name: string;
   /** Which consent category gates this provider. */
   category: ConsentCategory;
+  /** Bring the provider up when its category becomes allowed (init / opt-in). */
+  enable?: () => void;
+  /** Tear it down when its category is disallowed (opt-out + clear identity). */
+  disable?: () => void;
   trackEvent: <T extends ClientAnalyticsEventName>(
     eventName: T,
     properties?: ClientEventPropertiesDefinition[T],
@@ -86,51 +90,6 @@ interface ClientAnalyticsProvider {
   ) => void;
   identify?: (userId: string, traits: Record<string, unknown>) => void;
   reset?: () => void;
-}
-
-// =====================================================
-// SIDE-EFFECTS — enable/disable the analytics-category tools
-// =====================================================
-//
-// PostHog is pre-initialized (tracking off) in instrumentation-client.ts.
-// Session replay + Amplitude follow the `analytics` category.
-
-function applyAnalyticsState(allowed: boolean): void {
-  if (allowed) {
-    posthog.set_config({
-      autocapture: false, // manual events only
-      capture_pageview: "history_change",
-      capture_pageleave: true,
-      disable_session_recording: false,
-    });
-    try {
-      posthog.startSessionRecording();
-    } catch {
-      /* no-op */
-    }
-    // Capture the initial pageview that was suppressed pre-consent.
-    posthog.capture("$pageview");
-    enableAmplitude();
-    console.info("🟢 [Analytics] analytics category enabled");
-  } else {
-    posthog.set_config({
-      capture_pageview: false,
-      capture_pageleave: false,
-      disable_session_recording: true,
-    });
-    try {
-      posthog.stopSessionRecording();
-    } catch {
-      /* no-op */
-    }
-    try {
-      posthog.reset();
-    } catch {
-      /* no-op */
-    }
-    disableAmplitude(); // opt out + clear Amplitude identity
-    console.info("🔇 [Analytics] analytics category disabled");
-  }
 }
 
 // =====================================================
@@ -197,21 +156,44 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
     // Run once on mount.
   }, []);
 
-  // ── Apply analytics on/off when the decision changes ─────────────────
-  const appliedRef = useRef<boolean | null>(null);
-  useEffect(() => {
-    if (preferences === null) return; // undecided → nothing on
-    if (appliedRef.current === analyticsOn) return;
-    appliedRef.current = analyticsOn;
-    applyAnalyticsState(analyticsOn);
-  }, [preferences, analyticsOn]);
-
   // ── Providers (each tagged with the category that gates it) ──────────
   const providers: ClientAnalyticsProvider[] = useMemo(
     () => [
       {
         name: "PostHog",
         category: "analytics",
+        enable: () => {
+          posthog.set_config({
+            autocapture: false, // manual events only
+            capture_pageview: "history_change",
+            capture_pageleave: true,
+            disable_session_recording: false,
+          });
+          try {
+            posthog.startSessionRecording();
+          } catch {
+            /* no-op */
+          }
+          // Capture the initial pageview suppressed pre-consent.
+          posthog.capture("$pageview");
+        },
+        disable: () => {
+          posthog.set_config({
+            capture_pageview: false,
+            capture_pageleave: false,
+            disable_session_recording: true,
+          });
+          try {
+            posthog.stopSessionRecording();
+          } catch {
+            /* no-op */
+          }
+          try {
+            posthog.reset();
+          } catch {
+            /* no-op */
+          }
+        },
         trackEvent: <T extends ClientAnalyticsEventName>(
           eventName: T,
           properties?: ClientEventPropertiesDefinition[T],
@@ -254,6 +236,8 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
       {
         name: "Amplitude",
         category: "analytics",
+        enable: () => enableAmplitude(),
+        disable: () => disableAmplitude(),
         trackEvent: <T extends ClientAnalyticsEventName>(
           eventName: T,
           properties?: ClientEventPropertiesDefinition[T],
@@ -270,6 +254,21 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
     ],
     [],
   );
+
+  // ── Bring each provider up/down as its category flips ────────────────
+  // The whole lifecycle now goes through the provider list — no PostHog- or
+  // Amplitude-specific code here.
+  const appliedRef = useRef<Map<string, boolean>>(new Map());
+  useEffect(() => {
+    if (preferences === null) return; // undecided → nothing on
+    for (const provider of providers) {
+      const allowed = isAllowed(preferences, provider.category);
+      if (appliedRef.current.get(provider.name) === allowed) continue;
+      appliedRef.current.set(provider.name, allowed);
+      if (allowed) provider.enable?.();
+      else provider.disable?.();
+    }
+  }, [preferences, providers]);
 
   // ── Track ────────────────────────────────────────────────────────────
   const trackEvent = useCallback(
