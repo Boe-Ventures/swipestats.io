@@ -228,6 +228,14 @@ export function TinderUploadPage({ isUpdate, isDebug }: TinderUploadPageProps) {
                   ).toLocaleDateString()}
                 </p>
               )}
+              {uploadContext.userProfile && (
+                <a
+                  href={`/insights/tinder/${uploadContext.userProfile.tinderId}`}
+                  className="mt-2 inline-block text-xs font-semibold text-green-800 underline underline-offset-4 hover:no-underline"
+                >
+                  Already uploaded? View your insights instead →
+                </a>
+              )}
             </div>
           )}
 
