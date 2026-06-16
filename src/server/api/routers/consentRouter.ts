@@ -8,6 +8,7 @@ import {
   normalizeConsent,
   type ConsentRecord,
 } from "@/lib/analytics/consent";
+import { identifyServerUser } from "@/server/services/analytics.service";
 
 const consentPreferencesSchema = z.object({
   essential: z.boolean(),
@@ -40,6 +41,35 @@ export const consentRouter = createTRPCRouter({
         .update(userTable)
         .set({ analyticsConsent: record })
         .where(eq(userTable.id, ctx.session.user.id));
+
+      // On grant, set the user's traits in analytics — server-side, so this is
+      // where tier/city/country (absent from the client session) reach PostHog
+      // + Amplitude. Gated on consent inside identifyServerUser.
+      if (record.preferences.analytics) {
+        const u = await ctx.db.query.userTable.findFirst({
+          where: eq(userTable.id, ctx.session.user.id),
+          columns: {
+            email: true,
+            name: true,
+            username: true,
+            isAnonymous: true,
+            swipestatsTier: true,
+            city: true,
+            country: true,
+          },
+        });
+        if (u) {
+          identifyServerUser(ctx.session.user.id, {
+            email: u.email ?? undefined,
+            name: u.name ?? undefined,
+            username: u.username ?? undefined,
+            isAnonymous: u.isAnonymous ?? undefined,
+            swipestatsTier: u.swipestatsTier ?? undefined,
+            city: u.city ?? undefined,
+            country: u.country ?? undefined,
+          });
+        }
+      }
 
       return record;
     }),

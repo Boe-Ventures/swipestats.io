@@ -6,6 +6,7 @@
       "name": "swipestats",
       "dependencies": {
         "@ai-sdk/anthropic": "^3.0.2",
+        "@amplitude/analytics-node": "^1.5.60",
         "@amplitude/unified": "^1.1.16",
         "@anthropic-ai/sdk": "^0.74.0",
         "@auth/drizzle-adapter": "^1.7.2",
@@ -148,6 +149,8 @@
     "@amplitude/analytics-connector": ["@amplitude/analytics-connector@1.6.4", "", {}, "sha512-SpIv0IQMNIq6SH3UqFGiaZyGSc7PBZwRdq7lvP0pBxW8i4Ny+8zwI0pV+VMfMHQwWY3wdIbWw5WQphNjpdq1/Q=="],
 
     "@amplitude/analytics-core": ["@amplitude/analytics-core@2.50.0", "", { "dependencies": { "@amplitude/analytics-connector": "^1.6.4", "@types/zen-observable": "0.8.3", "safe-json-stringify": "1.2.0", "tslib": "^2.4.1", "zen-observable": "0.10.0" } }, "sha512-d8/U5aAHAs6XcpvQYpStxBxMxSwjDajZ0f6wMSwPCfxDGEWqcFaYuRKauh+vrn89D6gWcKi1VZ/tKCyhVby9sg=="],
+
+    "@amplitude/analytics-node": ["@amplitude/analytics-node@1.5.60", "", { "dependencies": { "@amplitude/analytics-core": "2.50.0", "tslib": "^2.4.1" } }, "sha512-/1H4TR8kEvFYGWtu04dSoCywOf8yRE0dmil7Sy4iNPJDuQ9b6DWSDED2DOUuk8lBDDZ1AgQA24m3yssH0UrDkw=="],
 
     "@amplitude/analytics-types": ["@amplitude/analytics-types@1.4.0", "", {}, "sha512-RiMPHBqdrJ8ktTqG+Wzj2htnN/PCG9jGZG0SXtTFnWwVvcAJYbYm55/nrP1TTyrx1OlLhvF2VG3lVUP/xGAU8w=="],
 

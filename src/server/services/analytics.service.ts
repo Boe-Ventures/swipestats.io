@@ -5,10 +5,21 @@ import type {
   AnalyticsMetadata,
   ServerAnalyticsEventName,
   ServerEventPropertiesDefinition,
+  UserTraits,
 } from "@/lib/analytics/analytics.types";
-import { sanitizeForVercel } from "@/lib/analytics/analytics.utils";
-import { trackPosthogServerEvent } from "@/server/clients/posthog.client";
+import {
+  omitNullish,
+  sanitizeForVercel,
+} from "@/lib/analytics/analytics.utils";
+import {
+  identifyUser,
+  trackPosthogServerEvent,
+} from "@/server/clients/posthog.client";
 import { trackSlackEvent } from "@/server/clients/slack.client";
+import {
+  identifyAmplitudeServerUser,
+  trackAmplitudeServerEvent,
+} from "@/server/clients/amplitude.server";
 import { OPERATIONAL_SERVER_EVENTS } from "@/lib/analytics/analytics.registry";
 import type { ConsentRecord } from "@/lib/analytics/consent";
 import { db } from "@/server/db";
@@ -45,6 +56,10 @@ interface ServerAnalyticsProvider {
     properties: ServerEventPropertiesDefinition[T],
     meta?: AnalyticsMetadata,
   ) => Promise<unknown> | void;
+  identifyServerUser?: (
+    userId: string,
+    traits: UserTraits,
+  ) => Promise<unknown> | void;
 }
 
 // =====================================================
@@ -55,6 +70,8 @@ const serverAnalyticsProviders: ServerAnalyticsProvider[] = [
   {
     id: "posthog",
     trackServerEvent: trackPosthogServerEvent,
+    identifyServerUser: (userId, traits) =>
+      identifyUser({ distinctId: userId, properties: omitNullish(traits) }),
   },
   {
     id: "vercel",
@@ -75,6 +92,23 @@ const serverAnalyticsProviders: ServerAnalyticsProvider[] = [
         console.error("❌ [Vercel] Server track error:", error);
       }
     },
+  },
+  {
+    id: "amplitude",
+    trackServerEvent: <T extends ServerAnalyticsEventName>(
+      userId: string,
+      event: T,
+      properties: ServerEventPropertiesDefinition[T],
+      meta?: AnalyticsMetadata,
+    ) =>
+      trackAmplitudeServerEvent(
+        userId,
+        event,
+        properties as Record<string, unknown>,
+        meta?.ip,
+      ),
+    identifyServerUser: (userId, traits) =>
+      identifyAmplitudeServerUser(userId, traits),
   },
   {
     id: "slack",
@@ -151,6 +185,29 @@ export function trackServerEvent<T extends ServerAnalyticsEventName>(
             enrichedMeta,
           );
         }
+      }
+    })(),
+  );
+}
+
+/**
+ * Set the user's traits across analytics providers (PostHog + Amplitude).
+ *
+ * Gated strictly on `analytics` consent — identifying is pure analytics, so it
+ * never runs under legitimate interest (unlike operational events). This is
+ * where server-only traits (tier, city, country) reach analytics — the client
+ * session doesn't carry them. Fire-and-forget via waitUntil.
+ */
+export function identifyServerUser(userId: string, traits: UserTraits): void {
+  console.log("🟢 [Analytics] Server identify:", { userId });
+
+  waitUntil(
+    (async () => {
+      const consent = await loadConsent(userId);
+      if (consent?.preferences.analytics !== true) return;
+
+      for (const provider of serverAnalyticsProviders) {
+        await provider.identifyServerUser?.(userId, traits);
       }
     })(),
   );

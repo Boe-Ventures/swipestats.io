@@ -17,7 +17,7 @@
 //
 // DESTINATIONS ARE DERIVED, NOT AUTHORED:
 //   - every client event → PostHog + Vercel + Amplitude
-//   - every server event → PostHog + Vercel, plus Slack iff it is in
+//   - every server event → PostHog + Vercel + Amplitude, plus Slack iff it is in
 //     SLACK_EVENTS (the single source of truth, also consumed by the Slack
 //     provider in slack.client.ts).
 // So the catalog can never claim a Slack badge that the pipeline won't honor.
@@ -481,7 +481,7 @@ export interface TrackingPlanEntry extends EventMeta {
 
 /** Derive destinations from surface + Slack routing policy. */
 function serverDestinations(name: string): AnalyticsDestination[] {
-  const base: AnalyticsDestination[] = ["posthog", "vercel"];
+  const base: AnalyticsDestination[] = ["posthog", "vercel", "amplitude"];
   return SLACK_EVENT_SET.has(name) ? [...base, "slack"] : base;
 }
 
