@@ -92,10 +92,10 @@ function Hero() {
 
         {/* the real, richer insights showcase, framed as the live demo */}
         <div className="mt-12">
-          <div className="mx-auto max-w-[1120px] rounded-3xl border border-gray-200 bg-gray-50 p-2.5 shadow-[0_10px_30px_oklch(0.2_0.02_286/0.1),0_30px_60px_oklch(0.2_0.02_286/0.12)] sm:p-3.5">
-            <p className="mb-3 flex items-center justify-center gap-2 text-[12.5px] font-medium text-gray-500">
+          <div className="mx-auto max-w-[1120px] overflow-hidden rounded-3xl border border-gray-200 bg-gray-50 p-2.5 shadow-[0_10px_30px_oklch(0.2_0.02_286/0.1),0_30px_60px_oklch(0.2_0.02_286/0.12)] sm:p-3.5">
+            <p className="mb-3 flex items-center justify-center gap-2 text-[12.5px] font-semibold text-gray-600">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              Live interactive demo of exactly what you get inside
+              Real demo, real data. Click through an anonymized profile yourself.
             </p>
             <InsightsShowcase />
           </div>
@@ -198,78 +198,6 @@ function HowItWorks() {
   );
 }
 
-/* ----------------------------------------------------------------- providers */
-
-function Providers() {
-  const provs = [
-    {
-      name: "Tinder",
-      badge: "Supported",
-      supported: true,
-      body: "The easiest export. Request it and get your tinder.json by email in 24–48 hours.",
-      href: HOW_TO,
-      cta: "How to request",
-    },
-    {
-      name: "Hinge",
-      badge: "Supported",
-      supported: true,
-      body: "Request it inside the app under Account settings. Arrives within 24–48 hours.",
-      href: HOW_TO,
-      cta: "How to request",
-    },
-    {
-      name: "Bumble",
-      badge: "Coming soon",
-      supported: false,
-      body: "Support is on the way. Join the waitlist and we'll notify you the moment it's ready.",
-      href: HOW_TO,
-      cta: "Join the waitlist",
-    },
-  ];
-  return (
-    <section className="border-y border-gray-200 bg-gray-50 py-[88px] max-[720px]:py-[60px]">
-      <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
-        <SectionHead eyebrow="Get your data" title="Works with the apps you use" />
-        <div className="mt-12 grid grid-cols-1 gap-[18px] md:grid-cols-3">
-          {provs.map((p) => (
-            <div
-              key={p.name}
-              className="rounded-3xl border border-gray-200 bg-white p-6"
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-[17px] font-bold text-gray-900">
-                  {p.name}
-                </span>
-                <span
-                  className={cn(
-                    "rounded-md border px-2 py-0.5 font-mono text-[10.5px]",
-                    p.supported
-                      ? "border-rose-600/20 bg-rose-50 text-rose-700"
-                      : "border-gray-200 bg-gray-100 text-gray-600",
-                  )}
-                >
-                  {p.badge}
-                </span>
-              </div>
-              <p className="mt-3 text-[13.5px] leading-[1.6] text-gray-600">
-                {p.body}
-              </p>
-              <Link
-                href={p.href}
-                className="mt-4 inline-flex items-center gap-1.5 text-[14px] font-semibold text-gray-900 hover:text-rose-600"
-              >
-                {p.cta}
-                <span className="text-rose-600">→</span>
-              </Link>
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 /* ----------------------------------------------------------------- research teaser */
 
 function ResearchTeaser() {
@@ -354,67 +282,6 @@ function Faq() {
       <div className="relative mx-auto max-w-[1216px] px-6 lg:px-8">
         <SectionHead center eyebrow="FAQ" title="The honest answers" />
         <FaqList items={faqs} className="mx-auto mt-9 max-w-[760px] text-left" />
-      </div>
-    </section>
-  );
-}
-
-/* ----------------------------------------------------------------- testimonials */
-
-const testimonials = [
-  {
-    body: "The activity charts completely changed how I understand my dating patterns. Seeing my swipe activity, match rates, and messaging trends over time helped me identify when I'm most successful.",
-    name: "Female, 32",
-    loc: "Berlin, Germany",
-  },
-  {
-    body: "The profile comparison tool is brilliant. I can see my Tinder and Hinge profiles side-by-side and track which one performs better. Helped me optimize both apps quickly.",
-    name: "Male, 29",
-    loc: "London, UK",
-  },
-  {
-    body: "The detailed activity charts show exactly when I get the most matches. I adjusted my active hours based on the data and saw immediate improvement.",
-    name: "Male, 26",
-    loc: "Sydney, Australia",
-  },
-];
-
-function Testimonials() {
-  return (
-    <section className="py-[88px] max-[720px]:py-[60px]">
-      <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
-        <div className="relative overflow-hidden rounded-3xl border border-gray-200 bg-gray-50 p-8 sm:p-12">
-          <RoseGlow className="top-[-140px] right-[-100px] h-[460px] w-[460px]" />
-          <div className="relative">
-            <SectionHead
-              eyebrow="Loved by daters"
-              title="What thousands have found in their data"
-            />
-            <div className="mt-10 grid grid-cols-1 gap-5 md:grid-cols-3">
-              {testimonials.map((t) => (
-                <figure
-                  key={t.name}
-                  className="flex flex-col rounded-2xl border border-gray-200 bg-white p-6 shadow-xs"
-                >
-                  <blockquote className="flex-1 text-[14.5px] leading-[1.7] text-gray-700">
-                    &ldquo;{t.body}&rdquo;
-                  </blockquote>
-                  <figcaption className="mt-5 flex items-center gap-3">
-                    <span className="h-9 w-9 flex-none rounded-full bg-gray-200 ring-1 ring-gray-200" />
-                    <span>
-                      <span className="block text-[13.5px] font-semibold text-gray-900">
-                        {t.name}
-                      </span>
-                      <span className="block text-[12.5px] text-gray-500">
-                        {t.loc}
-                      </span>
-                    </span>
-                  </figcaption>
-                </figure>
-              ))}
-            </div>
-          </div>
-        </div>
       </div>
     </section>
   );
@@ -933,9 +800,7 @@ export default function GoldenHomePage() {
       <Press />
       <HowItWorks />
       <DataRequestBand />
-      <Providers />
       <TestimonialsMasonry />
-      <Testimonials />
       <AboutImage />
       <ResearchTeaser />
       <Pricing />
