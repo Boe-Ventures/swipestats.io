@@ -92,7 +92,7 @@ function Hero() {
 
         {/* the real, richer insights showcase, framed as the live demo */}
         <div className="mt-12">
-          <div className="mx-auto max-w-[1120px] overflow-hidden rounded-3xl border border-gray-200 bg-gray-50 p-2.5 shadow-[0_10px_30px_oklch(0.2_0.02_286/0.1),0_30px_60px_oklch(0.2_0.02_286/0.12)] sm:p-3.5">
+          <div className="mx-auto max-w-[1120px] rounded-3xl border border-gray-200 bg-gray-50 p-2.5 shadow-[0_10px_30px_oklch(0.2_0.02_286/0.1),0_30px_60px_oklch(0.2_0.02_286/0.12)] sm:p-3.5">
             <p className="mb-3 flex items-center justify-center gap-2 text-[12.5px] font-semibold text-gray-600">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
               Real demo, real data. Click through an anonymized profile yourself.
@@ -169,7 +169,7 @@ function HowItWorks() {
   return (
     <section
       id="how-it-works"
-      className="relative overflow-hidden py-[88px] max-[720px]:py-[60px]"
+      className="relative overflow-x-clip py-[88px] max-[720px]:py-[60px]"
     >
       <RoseGlow className="top-[40px] left-[-160px] h-[440px] w-[440px]" />
       <div className="relative mx-auto max-w-[1216px] px-6 lg:px-8">
@@ -277,7 +277,7 @@ function Faq() {
   return (
     <section
       id="faq"
-      className="relative overflow-hidden py-[88px] max-[720px]:py-[60px]"
+      className="relative overflow-x-clip py-[88px] max-[720px]:py-[60px]"
     >
       <RoseGlow className="right-[-140px] bottom-[-120px] h-[460px] w-[460px]" />
       <div className="relative mx-auto max-w-[1216px] px-6 lg:px-8">
@@ -618,7 +618,7 @@ function DataRequestBand() {
           {dataRequestProviders.map((p) => (
             <div
               key={p.name}
-              className="flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_10px_30px_oklch(0.2_0.02_286/0.1),0_30px_60px_oklch(0.2_0.02_286/0.12)]"
+              className="flex flex-col rounded-2xl border border-gray-200 bg-white shadow-[0_10px_30px_oklch(0.2_0.02_286/0.1),0_30px_60px_oklch(0.2_0.02_286/0.12)]"
             >
               <div className="relative flex-1 px-7 pt-14 pb-7">
                 <span
@@ -634,7 +634,7 @@ function DataRequestBand() {
                   {p.desc}
                 </p>
               </div>
-              <div className="border-t border-gray-200 bg-gray-50 px-7 py-4">
+              <div className="rounded-b-2xl border-t border-gray-200 bg-gray-50 px-7 py-4">
                 <a
                   href={p.href}
                   target="_blank"
@@ -694,7 +694,7 @@ const masonryTestimonials = [
 
 function TestimonialsMasonry() {
   return (
-    <section className="relative overflow-hidden py-[88px] max-[720px]:py-[60px]">
+    <section className="relative overflow-x-clip py-[88px] max-[720px]:py-[60px]">
       <RoseGlow className="top-[-120px] left-[-160px] h-[520px] w-[520px]" />
       <RoseGlow className="right-[-180px] bottom-[-140px] h-[480px] w-[480px]" />
       <div className="relative mx-auto max-w-[1216px] px-6 lg:px-8">
