@@ -29,6 +29,13 @@ import { createHingeProfileMeta } from "./hinge-meta.service";
  */
 export type HingeProfileResult = {
   profile: HingeProfile;
+  /**
+   * True when an additive re-upload added no new matches, messages, or
+   * interactions — i.e. the same export uploaded again. The router uses this to
+   * suppress the no-op `hinge_profile_updated` event. Undefined for
+   * creates/merges (always real).
+   */
+  isNoOp?: boolean;
   metrics: {
     processingTimeMs: number;
     matchCount: number;

@@ -29,6 +29,12 @@ import { createUsageRecords } from "./usage.service";
  */
 export type TinderProfileResult = {
   profile: TinderProfile;
+  /**
+   * True when an additive re-upload added no new matches or messages — i.e. the
+   * same export uploaded again. The router uses this to suppress the no-op
+   * `tinder_profile_updated` event. Undefined for creates/merges (always real).
+   */
+  isNoOp?: boolean;
   metrics: {
     processingTimeMs: number;
     matchCount: number;

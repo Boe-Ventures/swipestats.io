@@ -350,6 +350,11 @@ export async function additiveUpdateHingeProfile(data: {
       interactionCount: interactionsToInsert.length,
       photoCount: newMediaInput.length,
       promptCount: promptsInput.length,
+      // Same export re-uploaded: nothing new merged in.
+      isNoOp:
+        matchesToInsert.length === 0 &&
+        messagesToInsert.length === 0 &&
+        interactionsToInsert.length === 0,
     };
   });
 
@@ -361,6 +366,7 @@ export async function additiveUpdateHingeProfile(data: {
 
   return {
     profile: result.profile,
+    isNoOp: result.isNoOp,
     metrics: {
       processingTimeMs: totalTime,
       matchCount: result.matchCount,
