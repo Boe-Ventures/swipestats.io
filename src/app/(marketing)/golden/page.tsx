@@ -199,39 +199,6 @@ function HowItWorks() {
   );
 }
 
-/* ----------------------------------------------------------------- research teaser */
-
-function ResearchTeaser() {
-  return (
-    <section className="border-y border-gray-200 bg-gray-50 py-[88px] max-[720px]:py-[60px]">
-      <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
-        <div className="grid grid-cols-1 items-center gap-8 md:grid-cols-[1fr_auto]">
-          <div>
-            <Eyebrow>For researchers &amp; creators</Eyebrow>
-            <h2 className="mt-3.5 text-[clamp(30px,4vw,46px)] leading-[1.06] font-bold tracking-[-0.03em] text-balance text-gray-900">
-              7,000+ anonymized profiles, ready to analyze
-            </h2>
-            <p className="mt-4 max-w-[560px] text-[clamp(17px,2vw,20px)] leading-[1.6] text-gray-600">
-              The same data, aggregated and anonymized into a licensable dataset
-              for research, journalism, and content. Used by University of
-              Chicago, APA, and creators with 965k+ views.
-            </p>
-          </div>
-          <Link
-            href="/research"
-            className={cn(
-              marketingButton({ variant: "primary", size: "lg" }),
-              "whitespace-nowrap",
-            )}
-          >
-            Explore research →
-          </Link>
-        </div>
-      </div>
-    </section>
-  );
-}
-
 /* ----------------------------------------------------------------- faq */
 
 const faqs = [
@@ -341,7 +308,7 @@ function Press() {
   );
 }
 
-/* ----------------------------------------------------------------- pricing */
+/* ------------------------------------------------- research (teaser + pricing) */
 
 const pricingTiers = [
   {
@@ -376,22 +343,41 @@ const pricingTiers = [
   },
 ];
 
-function Pricing() {
+function Research() {
   return (
-    <section className="py-[88px] max-[720px]:py-[60px]">
+    <section className="border-y border-gray-200 bg-gray-50 py-[88px] max-[720px]:py-[60px]">
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
-        <SectionHead
-          center
-          eyebrow="Pricing"
-          title="Get your own dataset"
-          lead="Whether it's for a blog, a research paper, or plain curiosity, a dataset from SwipeStats gets you on the right track."
-        />
-        <div className="mt-12 grid grid-cols-1 gap-5 lg:grid-cols-3">
+        {/* researcher hand-off header (genuine two-column split → left-aligned) */}
+        <div className="grid grid-cols-1 items-center gap-8 md:grid-cols-[1fr_auto]">
+          <div>
+            <Eyebrow>For researchers &amp; creators</Eyebrow>
+            <h2 className="mt-3.5 text-[clamp(30px,4vw,46px)] leading-[1.06] font-bold tracking-[-0.03em] text-balance text-gray-900">
+              7,000+ anonymized profiles, ready to analyze
+            </h2>
+            <p className="mt-4 max-w-[560px] text-[clamp(17px,2vw,20px)] leading-[1.6] text-gray-600">
+              The same data, aggregated and anonymized into a licensable dataset
+              for research, journalism, and content. Used by University of
+              Chicago, APA, and creators with 965k+ views.
+            </p>
+          </div>
+          <Link
+            href="/research"
+            className={cn(
+              marketingButton({ variant: "primary", size: "lg" }),
+              "whitespace-nowrap",
+            )}
+          >
+            Explore research →
+          </Link>
+        </div>
+
+        {/* dataset packages, folded in beneath the teaser */}
+        <div className="mt-14 grid grid-cols-1 gap-5 lg:grid-cols-3">
           {pricingTiers.map((tier) => (
             <div
               key={tier.name}
               className={cn(
-                "flex flex-col rounded-3xl border p-7",
+                "flex flex-col rounded-3xl border bg-white p-7",
                 tier.popular
                   ? "border-2 border-rose-600 shadow-[0_2px_6px_oklch(0.2_0.02_286/0.05),0_12px_28px_oklch(0.2_0.02_286/0.08)]"
                   : "border-gray-200",
@@ -443,7 +429,7 @@ function Pricing() {
             </div>
           ))}
         </div>
-        <div className="mt-8 flex flex-col items-center justify-between gap-4 rounded-2xl border border-gray-200 bg-gray-50 px-7 py-5 text-center sm:flex-row sm:text-left">
+        <div className="mt-8 flex flex-col items-center justify-between gap-4 rounded-2xl border border-gray-200 bg-white px-7 py-5 text-center sm:flex-row sm:text-left">
           <div>
             <div className="text-[15px] font-bold text-gray-900">
               Curious about the data model?
@@ -799,14 +785,13 @@ export default function GoldenHomePage() {
       </div>
       <Hero />
       <LogoStrip />
-      <Press />
       <HowItWorks />
       <DataRequestBand />
-      <TestimonialsMasonry />
-      <AboutImage />
-      <ResearchTeaser />
-      <Pricing />
       <Newsletter />
+      <TestimonialsMasonry />
+      <Press />
+      <AboutImage />
+      <Research />
       <Faq />
       <FinalCta />
     </>
