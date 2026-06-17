@@ -594,9 +594,15 @@ function DashboardSection() {
           lead="One real, anonymized profile from the demo dataset, rendered exactly as it ships. Walk a single row end to end before you buy."
         />
 
-        {/* the real, data-driven insights (same charts that ship), on the demo profile */}
+        {/* the real, data-driven insights (same charts that ship), framed as the live demo */}
         <div className="mt-11">
-          <InsightsShowcase />
+          <div className="rounded-3xl border border-gray-200 bg-gray-50 p-2.5 shadow-[0_10px_30px_oklch(0.2_0.02_286/0.1),0_30px_60px_oklch(0.2_0.02_286/0.12)] sm:p-3.5">
+            <p className="mb-3 flex items-center justify-center gap-2 text-[12.5px] font-medium text-gray-500">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              Live interactive demo of a single anonymized profile
+            </p>
+            <InsightsShowcase />
+          </div>
         </div>
 
         <div className="mt-8 text-center">

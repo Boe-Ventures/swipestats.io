@@ -90,9 +90,15 @@ function Hero() {
           </div>
         </div>
 
-        {/* the real, richer insights showcase */}
+        {/* the real, richer insights showcase, framed as the live demo */}
         <div className="mt-12">
-          <InsightsShowcase />
+          <div className="mx-auto max-w-[1120px] rounded-3xl border border-gray-200 bg-gray-50 p-2.5 shadow-[0_10px_30px_oklch(0.2_0.02_286/0.1),0_30px_60px_oklch(0.2_0.02_286/0.12)] sm:p-3.5">
+            <p className="mb-3 flex items-center justify-center gap-2 text-[12.5px] font-medium text-gray-500">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              Live interactive demo of exactly what you get inside
+            </p>
+            <InsightsShowcase />
+          </div>
         </div>
 
         <div className="mt-8 text-center">
@@ -264,39 +270,6 @@ function Providers() {
   );
 }
 
-/* ----------------------------------------------------------------- quote */
-
-function FounderQuote() {
-  return (
-    <section className="py-[88px] max-[720px]:py-[60px]">
-      <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
-        <figure className="relative overflow-hidden rounded-[28px] bg-gray-950 p-16 max-[720px]:p-8">
-          <div
-            aria-hidden
-            className="pointer-events-none absolute -top-[200px] -left-[140px] h-[720px] w-[720px] rounded-full blur-[10px] [background:radial-gradient(circle,oklch(0.586_0.253_17.585/0.5),transparent_65%)]"
-          />
-          <div className="relative">
-            <Eyebrow noRule className="text-rose-500">
-              Since 2019
-            </Eyebrow>
-            <blockquote className="mt-4 max-w-[760px] text-[clamp(20px,2.6vw,28px)] leading-[1.4] font-semibold tracking-[-0.02em] text-white">
-              &quot;It started as a weekend project born out of curiosity and a
-              love for data. I never imagined it would reach thousands of people
-              worldwide. The impact has been beyond anything I anticipated.&quot;
-            </blockquote>
-            <figcaption className="mt-6">
-              <div className="font-bold text-white">Kristian Elset Bø</div>
-              <div className="mt-0.5 text-[14px] text-gray-400">
-                Founder of SwipeStats.io
-              </div>
-            </figcaption>
-          </div>
-        </figure>
-      </div>
-    </section>
-  );
-}
-
 /* ----------------------------------------------------------------- research teaser */
 
 function ResearchTeaser() {
@@ -338,8 +311,32 @@ const faqs = [
     a: "Yes. Your name, email, phone, and username are stripped in your browser before anything is uploaded. Your profile is linked to a hashed anonymous ID, never your real identity. We're fully open source, so you can verify it yourself.",
   },
   {
+    q: "What kind of insights can I gain?",
+    a: "Your swipe patterns, match rates, response times, ghosting, and exactly how you compare to thousands of others, across your whole dating history. Real behavior, not self-reported guesses.",
+  },
+  {
     q: "How do I get my data from Tinder or Hinge?",
     a: "Request a copy of your data from the app. It arrives by email in 24–48 hours. We have a step-by-step guide for each app.",
+  },
+  {
+    q: "How long does it take to get my data?",
+    a: "Usually within 24–48 hours of requesting. Bumble can take up to 30 days. Request it now and leave your email so we can remind you when it lands.",
+  },
+  {
+    q: "How much of my history can I see?",
+    a: "Your entire active history, even if you started back in 2012 when Tinder first launched.",
+  },
+  {
+    q: "Can I use the data for research or an article?",
+    a: "Yes. Anonymized, aggregated datasets are available for research, journalism, and content. Researchers at the University of Chicago, the APA, and creators with 965k+ views already have.",
+  },
+  {
+    q: "Does it work with Bumble or other apps?",
+    a: "Tinder and Hinge are fully supported today. Bumble support is coming soon, join the waitlist and we'll notify you the moment it's ready.",
+  },
+  {
+    q: "Can I upload new data later?",
+    a: "Anytime. Every time you upload, you can compare against your own previous data and watch how your dating life changes over time.",
   },
   {
     q: "Does it cost anything?",
@@ -722,7 +719,7 @@ function DataRequestBand() {
     <section className="pt-[88px] max-[720px]:pt-[60px]">
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
         {/* dark rose-glow band */}
-        <div className="relative overflow-hidden rounded-[28px] bg-gray-950 px-6 pt-16 pb-40 text-center max-[720px]:pb-36">
+        <div className="relative overflow-hidden rounded-[28px] bg-gray-950 px-6 pt-20 pb-44 text-center max-[720px]:pb-40">
           <RoseGlow className="top-[-160px] left-1/2 h-[520px] w-[680px] -translate-x-1/2" />
           <div className="relative">
             <Eyebrow noRule center className="text-rose-500">
@@ -739,7 +736,7 @@ function DataRequestBand() {
             <div className="mt-7 flex justify-center">
               <Link
                 href="#newsletter"
-                className={marketingButton({ variant: "white", size: "lg" })}
+                className={marketingButton({ variant: "primary", size: "lg" })}
               >
                 Get a reminder
               </Link>
@@ -748,7 +745,7 @@ function DataRequestBand() {
         </div>
 
         {/* provider cards overlapping the band */}
-        <div className="relative z-10 -mt-28 grid grid-cols-1 gap-6 px-2 md:grid-cols-3 max-[720px]:-mt-24">
+        <div className="relative z-10 -mt-32 grid grid-cols-1 gap-6 px-2 md:grid-cols-3 max-[720px]:-mt-28">
           {dataRequestProviders.map((p) => (
             <div
               key={p.name}
@@ -828,8 +825,10 @@ const masonryTestimonials = [
 
 function TestimonialsMasonry() {
   return (
-    <section className="py-[88px] max-[720px]:py-[60px]">
-      <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
+    <section className="relative overflow-hidden py-[88px] max-[720px]:py-[60px]">
+      <RoseGlow className="top-[-120px] left-[-160px] h-[520px] w-[520px]" />
+      <RoseGlow className="right-[-180px] bottom-[-140px] h-[480px] w-[480px]" />
+      <div className="relative mx-auto max-w-[1216px] px-6 lg:px-8">
         <SectionHead
           center
           eyebrow="Testimonials"
@@ -938,7 +937,6 @@ export default function GoldenHomePage() {
       <TestimonialsMasonry />
       <Testimonials />
       <AboutImage />
-      <FounderQuote />
       <ResearchTeaser />
       <Pricing />
       <Newsletter />
