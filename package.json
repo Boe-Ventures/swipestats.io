@@ -23,7 +23,8 @@
     "typecheck": "velite build && tsc --noEmit",
     "velite:build": "velite build",
     "velite:dev": "velite --watch",
-    "email:dev": "email dev"
+    "email:dev": "email dev",
+    "amplitude:sync-taxonomy": "bun src/scripts/sync-amplitude-taxonomy.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.2",
