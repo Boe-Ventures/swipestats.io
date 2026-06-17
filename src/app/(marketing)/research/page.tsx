@@ -344,6 +344,7 @@ function ValueSection() {
     <section className="py-[88px] max-[720px]:py-[60px]">
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
         <SectionHead
+          center
           eyebrow="Why it's different"
           title="Real behavior, not self-reports"
           lead="Dating apps don't share user data, and surveys can't capture what people actually do. SwipeStats is built from users' own GDPR exports: the ground truth of how people swipe, match, and talk."
@@ -452,6 +453,7 @@ function SchemaSection() {
     >
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
         <SectionHead
+          center
           eyebrow="The data model"
           title="Five linked objects in every profile"
           lead="Each line of the JSONL file is one user. Raw profile fields, geography, pre-computed stats, daily activity, and every conversation. All keyed together."
@@ -589,6 +591,7 @@ function DashboardSection() {
     <section className="py-[88px] max-[720px]:py-[60px]">
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
         <SectionHead
+          center
           eyebrow="See it before you buy"
           title="A glimpse of what's inside"
           lead="One real, anonymized profile from the demo dataset, rendered exactly as it ships. Walk a single row end to end before you buy."
@@ -681,6 +684,7 @@ function UseCasesSection() {
     <section className="border-y border-gray-200 bg-gray-50 py-[88px] max-[720px]:py-[60px]">
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
         <SectionHead
+          center
           eyebrow="Use cases"
           title="From viral videos to peer-reviewed research"
         />
@@ -873,6 +877,7 @@ function HowItWorksSection() {
     <section className="py-[88px] max-[720px]:py-[60px]">
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
         <SectionHead
+          center
           eyebrow="How it works"
           title="From checkout to analysis in minutes"
         />
@@ -933,7 +938,7 @@ function FAQSection() {
       className="border-t border-gray-200 bg-gray-50 py-[88px] max-[720px]:py-[60px]"
     >
       <div className="mx-auto max-w-[880px] px-6 lg:px-8">
-        <SectionHead eyebrow="FAQ" title="Questions, answered" />
+        <SectionHead center eyebrow="FAQ" title="Questions, answered" />
         <div className="mt-10 border-t border-gray-200">
           {faqs.map((f) => (
             <details

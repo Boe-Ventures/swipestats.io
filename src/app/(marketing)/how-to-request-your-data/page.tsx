@@ -228,7 +228,7 @@ function AfterSection() {
   return (
     <section className="border-y border-gray-200 bg-gray-50 py-[88px] max-[720px]:py-[60px]">
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
-        <SectionHead eyebrow="After you upload" title="What your data unlocks" />
+        <SectionHead center eyebrow="After you upload" title="What your data unlocks" />
         <div className="mt-11 grid grid-cols-1 gap-5 md:grid-cols-3">
           {cards.map((c) => (
             <div
