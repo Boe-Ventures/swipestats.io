@@ -365,6 +365,7 @@ export async function absorbProfileIntoNew(data: {
 
     return {
       profile: insertedProfile,
+      matchCount: matchesInput.length,
       messageCount: messagesInput.length,
       photoCount: photosInput.length,
       usageDays: newUsage.length,
@@ -379,15 +380,13 @@ export async function absorbProfileIntoNew(data: {
     `⏱️  Total time: ${totalTime}ms (${(totalTime / 1000).toFixed(2)}s)\n`,
   );
 
-  const usageMatchTotal = Object.values(
-    anonymizedTinderJson.Usage.matches,
-  ).reduce((sum, v) => sum + v, 0);
-
   return {
     profile: profile.profile,
     metrics: {
       processingTimeMs: totalTime,
-      matchCount: usageMatchTotal,
+      // Deltas: a merge absorbs a whole other account, so this is all the data
+      // it brought in.
+      matchCount: profile.matchCount,
       messageCount: profile.messageCount,
       photoCount: profile.photoCount,
       usageDays: profile.usageDays,
@@ -546,8 +545,11 @@ export async function additiveUpdateProfile(data: {
 
     return {
       profile: updatedProfile,
+      matchCount: matchesToInsert.length,
       messageCount: messagesToInsert.length,
       usageDays: newUsage.length,
+      // Same export re-uploaded: nothing new merged in.
+      isNoOp: matchesToInsert.length === 0 && messagesToInsert.length === 0,
     };
   });
 
@@ -557,19 +559,17 @@ export async function additiveUpdateProfile(data: {
     `⏱️  Total time: ${totalTime}ms (${(totalTime / 1000).toFixed(2)}s)\n`,
   );
 
-  const usageMatchTotal = Object.values(
-    anonymizedTinderJson.Usage.matches,
-  ).reduce((sum, v) => sum + v, 0);
-
   return {
     profile: profile.profile,
+    isNoOp: profile.isNoOp,
     metrics: {
       processingTimeMs: totalTime,
-      matchCount: usageMatchTotal,
+      // Deltas: what THIS upload added (an update reports the change, not totals).
+      matchCount: profile.matchCount,
       messageCount: profile.messageCount,
       photoCount: 0, // Additive updates don't add photos
       usageDays: profile.usageDays,
-      hasPhotos: false, // Not tracked in additive updates
+      hasPhotos: false, // No new photos in additive updates
       jsonSizeMB: parseFloat(jsonSizeMB),
     },
   };

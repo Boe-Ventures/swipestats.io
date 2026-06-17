@@ -155,9 +155,21 @@ export const SERVER_EVENT_PROPERTIES: EventPropertyRegistry<ServerEventPropertie
     },
     tinder_profile_updated: {
       tinderId: { type: "string", required: true },
-      matchCount: { type: "number", required: true },
-      messageCount: { type: "number", required: true },
-      photoCount: { type: "number", required: true },
+      matchCount: {
+        type: "number",
+        required: true,
+        description: "Delta: new matches added by this upload (0 = none new).",
+      },
+      messageCount: {
+        type: "number",
+        required: true,
+        description: "Delta: new messages added by this upload.",
+      },
+      photoCount: {
+        type: "number",
+        required: true,
+        description: "Delta: new photos (always 0 — additive updates skip photos).",
+      },
       usageDays: { type: "number", required: true },
       hasPhotos: { type: "boolean", required: true },
       processingTimeMs: { type: "number", required: true },
@@ -201,11 +213,27 @@ export const SERVER_EVENT_PROPERTIES: EventPropertyRegistry<ServerEventPropertie
     },
     hinge_profile_updated: {
       hingeId: { type: "string", required: true },
-      matchCount: { type: "number", required: true },
-      messageCount: { type: "number", required: true },
-      photoCount: { type: "number", required: true },
+      matchCount: {
+        type: "number",
+        required: true,
+        description: "Delta: new matches added by this upload (0 = none new).",
+      },
+      messageCount: {
+        type: "number",
+        required: true,
+        description: "Delta: new messages added by this upload.",
+      },
+      photoCount: {
+        type: "number",
+        required: true,
+        description: "Delta: new photos added by this upload.",
+      },
       promptCount: { type: "number", required: true },
-      interactionCount: { type: "number", required: true },
+      interactionCount: {
+        type: "number",
+        required: true,
+        description: "Delta: new interactions added by this upload.",
+      },
       hasPhotos: { type: "boolean", required: true },
       processingTimeMs: { type: "number", required: true },
       jsonSizeMB: { type: "number", required: true },
