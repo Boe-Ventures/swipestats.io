@@ -518,6 +518,7 @@ function Pricing() {
           center
           eyebrow="Pricing"
           title="Get your own dataset"
+          lead="Whether it's for a blog, a research paper, or plain curiosity, a dataset from SwipeStats gets you on the right track."
         />
         <div className="mt-12 grid grid-cols-1 gap-5 lg:grid-cols-3">
           {pricingTiers.map((tier) => (
@@ -576,13 +577,34 @@ function Pricing() {
             </div>
           ))}
         </div>
-        <p className="mt-6 text-center text-[13px] text-gray-500">
-          Checkout lives on the{" "}
-          <Link href="/research" className="font-semibold text-rose-600">
-            research page
-          </Link>
-          .
-        </p>
+        <div className="mt-8 flex flex-col items-center justify-between gap-4 rounded-2xl border border-gray-200 bg-gray-50 px-7 py-5 text-center sm:flex-row sm:text-left">
+          <div>
+            <div className="text-[15px] font-bold text-gray-900">
+              Curious about the data model?
+            </div>
+            <div className="mt-1 text-[13.5px] text-gray-600">
+              Download one demo profile for free, or explore the open-source
+              code.
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-4">
+            <Link
+              href="/downloads/swipestats-demo-dataset.jsonl.zip"
+              target="_blank"
+              className={marketingButton({ variant: "ghost" })}
+            >
+              Download demo profile
+            </Link>
+            <a
+              href="https://github.com/Boe-Ventures/swipestats.io"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[14px] font-semibold text-rose-600 hover:text-rose-700"
+            >
+              Explore the code →
+            </a>
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -635,6 +657,267 @@ function FinalCta() {
   );
 }
 
+/* ----------------------------------------------------------------- data request band */
+
+const TINDER_GRAD =
+  "linear-gradient(135deg, oklch(0.68 0.18 35), oklch(0.63 0.21 18))";
+const HINGE_COLOR = "oklch(0.5 0.18 295)";
+const BUMBLE_COLOR = "oklch(0.78 0.16 85)";
+
+function TinderMark({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 -0.06 35 40.3" fill="currentColor" className={className}>
+      <path d="M10.5 16.25c-.06 0-.1 0-.14-.04-1.36-1.8-1.7-4.9-1.78-6.08-.02-.23-.28-.35-.48-.24C3.9 12.24 0 17.82 0 23.2c0 9.27 6.43 17.04 17.5 17.04 10.37 0 17.5-8 17.5-17.03C35 11.4 26.57 3.58 19.06.04c-.2-.1-.42.07-.4.28.98 6.37-.36 13.28-8.17 15.95z" />
+    </svg>
+  );
+}
+function BumbleMark({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 2500 2500" fill="currentColor" className={className}>
+      <path d="m2278.8 1314-458 791c-19.5 33.7-55.7 56.2-97.7 56.2h-915.5c-42 0-78.1-22.5-97.7-56.6l-458.9-790.6c-20.2-34.9-20.2-77.9 0-112.8l458-791c19.5-33.2 56.2-56.2 97.7-56.2h917c42 0 78.1 22.9 97.7 56.6l457.5 790.5c20.2 34.9 20.2 78-.1 112.9zm-1153.8 447.2h280.8c62.3 0 112.8-50.5 112.8-112.8s-50.5-112.8-112.8-112.8h-280.8c-62.3 0-112.8 50.5-112.8 112.8s50.5 112.8 112.8 112.8zm392.1-1004.4h-503.4c-62.4 0-113 50.6-113 113s50.6 113 113 113h503.4c62.4 0 113-50.6 113-113s-50.6-113-113-113zm204.6 389.2h-913.1c-62.4 0-113 50.6-113 113s50.6 113 113 113h913.1c62.4 0 113-50.6 113-113s-50.6-113-113-113z" />
+    </svg>
+  );
+}
+function HingeMark({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="-300.4 530 263.8 243.5"
+      fill="currentColor"
+      className={className}
+    >
+      <path d="M-36.6,620.1c-17.4,37.4-46.6,47.7-79.5,47.7h-2.9v105.7h-41.4V667.8h-50.6c-31.4,0-47.5,10.6-47.9,44.7v61h-41.5V530h41.4 v112.3c13.8-10.4,32.5-16.6,56.6-16.6h41.9V530h41.4v95.7c20.7,0,37-0.4,49.5-20.4L-36.6,620.1z" />
+    </svg>
+  );
+}
+
+const dataRequestProviders = [
+  {
+    name: "Tinder",
+    href: "https://www.help.tinder.com/hc/en-us/articles/115005626726-How-do-I-request-a-copy-of-my-personal-data",
+    desc: "Easy. Follow the instructions to request your data, wait 1–3 days, and you'll get a link to download your tinder.json. Then come back here.",
+    Mark: TinderMark,
+    badge: { background: TINDER_GRAD },
+    ink: "#fff",
+  },
+  {
+    name: "Bumble",
+    href: "https://bumble.com/en/help/how-can-i-request-my-data-or-retrieve-past-conversations",
+    desc: "A bit more manual and slower. After you submit the request it can take up to 30 days before you hear back.",
+    Mark: BumbleMark,
+    badge: { background: BUMBLE_COLOR },
+    ink: "#5c4300",
+  },
+  {
+    name: "Hinge",
+    href: "https://hingeapp.zendesk.com/hc/en-us/articles/360004792234-Data-Requests",
+    desc: "Started inside the app under Account settings. All the steps are in their help article, linked here.",
+    Mark: HingeMark,
+    badge: { background: HINGE_COLOR },
+    ink: "#fff",
+  },
+];
+
+function DataRequestBand() {
+  return (
+    <section className="pt-[88px] max-[720px]:pt-[60px]">
+      <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
+        {/* dark rose-glow band */}
+        <div className="relative overflow-hidden rounded-[28px] bg-gray-950 px-6 pt-16 pb-40 text-center max-[720px]:pb-36">
+          <RoseGlow className="top-[-160px] left-1/2 h-[520px] w-[680px] -translate-x-1/2" />
+          <div className="relative">
+            <Eyebrow noRule center className="text-rose-500">
+              Get your data
+            </Eyebrow>
+            <h2 className="mx-auto mt-3.5 max-w-[620px] text-[clamp(30px,4vw,46px)] leading-[1.06] font-bold tracking-[-0.03em] text-balance text-white">
+              How to request your data
+            </h2>
+            <p className="mx-auto mt-4 max-w-[560px] text-[clamp(17px,2vw,20px)] leading-[1.6] text-gray-400">
+              Requesting your data is easy, but not automatic. You log into your
+              app, fill out a quick form, and wait up to 24 hours. Here&apos;s
+              where to start for each app.
+            </p>
+            <div className="mt-7 flex justify-center">
+              <Link
+                href="#newsletter"
+                className={marketingButton({ variant: "white", size: "lg" })}
+              >
+                Get a reminder
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* provider cards overlapping the band */}
+        <div className="relative z-10 -mt-28 grid grid-cols-1 gap-6 px-2 md:grid-cols-3 max-[720px]:-mt-24">
+          {dataRequestProviders.map((p) => (
+            <div
+              key={p.name}
+              className="flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-[0_10px_30px_oklch(0.2_0.02_286/0.1),0_30px_60px_oklch(0.2_0.02_286/0.12)]"
+            >
+              <div className="relative flex-1 px-7 pt-14 pb-7">
+                <span
+                  className="absolute -top-7 grid h-14 w-14 place-items-center rounded-2xl shadow-[0_6px_16px_oklch(0.2_0.02_286/0.22)]"
+                  style={{ ...p.badge, color: p.ink }}
+                >
+                  <p.Mark className="h-7 w-7" />
+                </span>
+                <h3 className="text-[19px] font-bold tracking-[-0.02em] text-gray-900">
+                  {p.name}
+                </h3>
+                <p className="mt-3 text-[14px] leading-[1.6] text-gray-600">
+                  {p.desc}
+                </p>
+              </div>
+              <div className="border-t border-gray-200 bg-gray-50 px-7 py-4">
+                <a
+                  href={p.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[14px] font-semibold text-rose-600 hover:text-rose-700"
+                >
+                  Start here →
+                </a>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ----------------------------------------------------------------- testimonials masonry */
+
+const masonryTestimonials = [
+  {
+    body: "The activity charts completely changed how I understand my dating patterns. Being able to see my swipe activity, match rates, and messaging trends over time helped me identify when I'm most successful. The profile directory is a game-changer for comparing yourself to others.",
+    name: "Female, 32",
+    loc: "Berlin, Germany",
+  },
+  {
+    body: "The profile comparison tool is brilliant. I can see my Tinder and Hinge profiles side-by-side and track which one performs better. Helped me optimize both apps quickly.",
+    name: "Male, 29",
+    loc: "London, UK",
+  },
+  {
+    body: "Browsing the profile directory gave me so many ideas for improving my own profile. Seeing real data from others helped me understand what actually works.",
+    name: "Female, 28",
+    loc: "New York, USA",
+  },
+  {
+    body: "The detailed activity charts show exactly when I get the most matches. I adjusted my active hours based on the data and saw immediate improvement.",
+    name: "Male, 26",
+    loc: "Sydney, Australia",
+  },
+  {
+    body: "Comparing my stats to the profile directory benchmarks helped me set realistic goals. Now I can see where I stand and what to improve.",
+    name: "Male, 31",
+    loc: "Tirana, Albania",
+  },
+  {
+    body: "The insights dashboard breaks down everything: swipe rates, match rates, messaging patterns. Finally I understand what's working and what's not. The time-based analysis is incredibly valuable.",
+    name: "Male, 28",
+    loc: "São Paulo, Brazil",
+  },
+  {
+    body: "Love the profile comparison feature. Tested different photo orders across apps and could see which setup got more matches. Made optimization so much easier.",
+    name: "Female, 25",
+    loc: "Cape Town, South Africa",
+  },
+];
+
+function TestimonialsMasonry() {
+  return (
+    <section className="py-[88px] max-[720px]:py-[60px]">
+      <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
+        <SectionHead
+          center
+          eyebrow="Testimonials"
+          title="Worked with thousands of amazing people"
+        />
+        <div className="mt-12 gap-5 sm:columns-2 lg:columns-3 [&>figure]:mb-5 [&>figure]:break-inside-avoid">
+          {masonryTestimonials.map((t) => (
+            <figure
+              key={t.loc}
+              className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs"
+            >
+              <blockquote className="text-[14.5px] leading-[1.7] text-gray-700">
+                &ldquo;{t.body}&rdquo;
+              </blockquote>
+              <figcaption className="mt-5 flex items-center gap-3">
+                <span className="h-9 w-9 flex-none rounded-full bg-gray-200 ring-1 ring-gray-200" />
+                <span>
+                  <span className="block text-[13.5px] font-semibold text-gray-900">
+                    {t.name}
+                  </span>
+                  <span className="block text-[12.5px] text-gray-500">
+                    {t.loc}
+                  </span>
+                </span>
+              </figcaption>
+            </figure>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ----------------------------------------------------------------- about (image card) */
+
+function AboutImage() {
+  return (
+    <section className="py-[88px] max-[720px]:py-[60px]">
+      <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
+        <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-14">
+          {/* founder image + quote card */}
+          <figure className="relative flex min-h-[440px] flex-col justify-end overflow-hidden rounded-3xl bg-gray-950 p-10 shadow-[0_10px_30px_oklch(0.2_0.02_286/0.1),0_30px_60px_oklch(0.2_0.02_286/0.12)]">
+            <Image
+              src="/images/marketing/founder2.png"
+              alt="Kristian, founder of SwipeStats"
+              fill
+              sizes="(max-width: 1024px) 100vw, 50vw"
+              className="object-cover opacity-45 saturate-[0.75]"
+            />
+            <RoseGlow className="bottom-[-160px] left-[-120px] h-[420px] w-[420px]" />
+            <figure className="relative">
+              <blockquote className="text-[clamp(18px,2.2vw,24px)] leading-[1.4] font-semibold tracking-[-0.01em] text-white">
+                &ldquo;It started as a weekend project born out of curiosity and a
+                love for data. I never imagined it would reach thousands of
+                people worldwide.&rdquo;
+              </blockquote>
+              <figcaption className="mt-5">
+                <div className="font-bold text-white">Kristian Elset Bø</div>
+                <div className="mt-0.5 text-[14px] text-gray-400">
+                  Founder of SwipeStats.io
+                </div>
+              </figcaption>
+            </figure>
+          </figure>
+
+          {/* about copy */}
+          <div>
+            <Eyebrow>About SwipeStats</Eyebrow>
+            <h2 className="mt-3.5 text-[clamp(30px,4vw,46px)] leading-[1.06] font-bold tracking-[-0.03em] text-balance text-gray-900">
+              Empowering insight through data
+            </h2>
+            <p className="mt-5 text-[clamp(17px,2vw,20px)] leading-[1.6] text-gray-600">
+              We believe in the power of data to reveal insights and inspire
+              improvement. SwipeStats lets you visualize and understand your own
+              dating trends, and compare them with demographics worldwide.
+            </p>
+            <p className="mt-4 text-[16px] leading-[1.7] text-gray-600">
+              It&apos;s fully open source, built on transparency and community.
+              Anyone can inspect the code, contribute, and help shape the future
+              of data-driven dating insights.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export default function GoldenHomePage() {
   return (
     <>
@@ -650,8 +933,11 @@ export default function GoldenHomePage() {
       <LogoStrip />
       <Press />
       <HowItWorks />
+      <DataRequestBand />
       <Providers />
+      <TestimonialsMasonry />
       <Testimonials />
+      <AboutImage />
       <FounderQuote />
       <ResearchTeaser />
       <Pricing />
