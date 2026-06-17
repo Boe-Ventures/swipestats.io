@@ -174,13 +174,14 @@ function HowItWorks() {
       <RoseGlow className="top-[40px] left-[-160px] h-[440px] w-[440px]" />
       <div className="relative mx-auto max-w-[1216px] px-6 lg:px-8">
         <SectionHead
+          center
           eyebrow="How it works"
           title="100% anonymous, in four steps"
           lead="Your data file never hits a server with your name on it. Identifiers are stripped in your browser before anything is uploaded."
         />
         <div className="mt-13 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {steps.map((s, i) => (
-            <div key={s.title}>
+            <div key={s.title} className="flex flex-col items-center text-center">
               <div className="grid h-[46px] w-[46px] place-items-center rounded-xl border border-rose-600/15 bg-rose-50 font-mono text-[17px] font-semibold text-rose-600">
                 {i + 1}
               </div>
@@ -294,6 +295,7 @@ function Press() {
     <section className="border-b border-gray-200 bg-gray-50 py-[88px] max-[720px]:py-[60px]">
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
         <SectionHead
+          center
           eyebrow="In the press"
           title="The data the world wrote about"
           lead="Journalists, researchers, and creators have turned SwipeStats data into stories read by hundreds of thousands."
