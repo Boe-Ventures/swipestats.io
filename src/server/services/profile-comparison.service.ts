@@ -273,6 +273,286 @@ export async function listComparisons(userId: string) {
   return comparisons;
 }
 
+// ---- ADMIN (read-only, unscoped) ----------------------------------
+//
+// The admin profile-compare inspector needs to read ANY user's comparison,
+// so these mirror getComparison/listComparisons but drop the userId ownership
+// filter. They live behind `adminProcedure` and never mutate.
+
+/**
+ * Admin: list every comparison across all users with lightweight aggregates.
+ *
+ * Supports a visibility filter (all/public/private) and a few sort orders.
+ * The per-comparison aggregates (column/photo/prompt/feedback counts, the set
+ * of providers, a thumbnail) are folded in-memory over the matching set — fine
+ * at admin scale and far simpler than correlated-subquery SQL. Only the page's
+ * thumbnails are resolved, to avoid loading every blob URL.
+ */
+export async function listComparisonsForAdmin(params: {
+  page: number;
+  limit: number;
+  visibility: "all" | "public" | "private";
+  sort: "recent" | "feedback" | "columns";
+}) {
+  const { page, limit, visibility, sort } = params;
+
+  const visibilityWhere =
+    visibility === "public"
+      ? eq(profileComparisonTable.isPublic, true)
+      : visibility === "private"
+        ? eq(profileComparisonTable.isPublic, false)
+        : undefined;
+
+  // 1. Every matching comparison (one lightweight row each + owner identity).
+  const comparisons = await db.query.profileComparisonTable.findMany({
+    where: visibilityWhere,
+    columns: {
+      id: true,
+      name: true,
+      profileName: true,
+      isPublic: true,
+      shareKey: true,
+      createdAt: true,
+      updatedAt: true,
+      userId: true,
+    },
+    with: {
+      user: {
+        columns: {
+          id: true,
+          name: true,
+          email: true,
+          username: true,
+          isAnonymous: true,
+        },
+      },
+    },
+  });
+
+  const totalCount = comparisons.length;
+  if (totalCount === 0) {
+    return { comparisons: [], totalCount: 0, totalPages: 0, page };
+  }
+
+  const comparisonIds = comparisons.map((c) => c.id);
+
+  // 2. Columns → column count + providers, plus a columnId → comparisonId map.
+  const columns = await db.query.comparisonColumnTable.findMany({
+    where: inArray(comparisonColumnTable.comparisonId, comparisonIds),
+    columns: { id: true, comparisonId: true, dataProvider: true },
+  });
+  const columnToComparison = new Map(
+    columns.map((c) => [c.id, c.comparisonId]),
+  );
+  const columnIds = columns.map((c) => c.id);
+
+  // 3. Content → photo/prompt counts, plus a contentId → comparisonId map.
+  const content = columnIds.length
+    ? await db.query.comparisonColumnContentTable.findMany({
+        where: inArray(comparisonColumnContentTable.columnId, columnIds),
+        columns: { id: true, columnId: true, type: true },
+      })
+    : [];
+  const contentToComparison = new Map(
+    content.map((c) => [c.id, columnToComparison.get(c.columnId)]),
+  );
+
+  // 4. Feedback (non-deleted) → feedback count. Polymorphic: column- OR
+  //    content-targeted, so resolve each row back to its comparison.
+  const contentIds = content.map((c) => c.id);
+  const fbConditions = [];
+  if (columnIds.length)
+    fbConditions.push(
+      inArray(profileComparisonFeedbackTable.columnId, columnIds),
+    );
+  if (contentIds.length)
+    fbConditions.push(
+      inArray(profileComparisonFeedbackTable.contentId, contentIds),
+    );
+  const feedback = fbConditions.length
+    ? await db.query.profileComparisonFeedbackTable.findMany({
+        where: and(
+          or(...fbConditions),
+          isNull(profileComparisonFeedbackTable.deletedAt),
+        ),
+        columns: { columnId: true, contentId: true },
+      })
+    : [];
+
+  // 5. Fold aggregates per comparison.
+  type Agg = {
+    columnCount: number;
+    photoCount: number;
+    promptCount: number;
+    feedbackCount: number;
+    providers: string[];
+  };
+  const emptyAgg = (): Agg => ({
+    columnCount: 0,
+    photoCount: 0,
+    promptCount: 0,
+    feedbackCount: 0,
+    providers: [],
+  });
+  const agg = new Map<string, Agg>(comparisonIds.map((id) => [id, emptyAgg()]));
+  for (const col of columns) {
+    const a = agg.get(col.comparisonId);
+    if (!a) continue;
+    a.columnCount += 1;
+    if (!a.providers.includes(col.dataProvider))
+      a.providers.push(col.dataProvider);
+  }
+  for (const item of content) {
+    const cid = columnToComparison.get(item.columnId);
+    const a = cid ? agg.get(cid) : undefined;
+    if (!a) continue;
+    if (item.type === "photo") a.photoCount += 1;
+    else if (item.type === "prompt") a.promptCount += 1;
+  }
+  for (const fb of feedback) {
+    const cid = fb.columnId
+      ? columnToComparison.get(fb.columnId)
+      : fb.contentId
+        ? contentToComparison.get(fb.contentId)
+        : undefined;
+    const a = cid ? agg.get(cid) : undefined;
+    if (a) a.feedbackCount += 1;
+  }
+
+  // 6. Merge, sort, paginate.
+  const merged = comparisons.map((c) => ({
+    ...c,
+    ...(agg.get(c.id) ?? emptyAgg()),
+  }));
+  merged.sort((a, b) => {
+    if (sort === "feedback") return b.feedbackCount - a.feedbackCount;
+    if (sort === "columns") return b.columnCount - a.columnCount;
+    return b.updatedAt.getTime() - a.updatedAt.getTime();
+  });
+
+  const totalPages = Math.ceil(totalCount / limit);
+  const start = (page - 1) * limit;
+  const pageItems = merged.slice(start, start + limit);
+
+  // 7. Resolve a thumbnail (first photo's blob URL) for the page only.
+  const pageIds = pageItems.map((c) => c.id);
+  const thumbByComparison = new Map<string, string>();
+  if (pageIds.length) {
+    const pageColumns = await db.query.comparisonColumnTable.findMany({
+      where: inArray(comparisonColumnTable.comparisonId, pageIds),
+      columns: { id: true, comparisonId: true, order: true },
+      orderBy: (t, { asc }) => [asc(t.order)],
+      with: {
+        content: {
+          where: eq(comparisonColumnContentTable.type, "photo"),
+          columns: { id: true, order: true },
+          orderBy: (t, { asc }) => [asc(t.order)],
+          with: { attachment: { columns: { url: true } } },
+        },
+      },
+    });
+    for (const col of pageColumns) {
+      if (thumbByComparison.has(col.comparisonId)) continue;
+      const firstPhoto = col.content.find((ct) => ct.attachment?.url);
+      if (firstPhoto?.attachment?.url) {
+        thumbByComparison.set(col.comparisonId, firstPhoto.attachment.url);
+      }
+    }
+  }
+
+  return {
+    comparisons: pageItems.map((c) => ({
+      ...c,
+      thumbnailUrl: thumbByComparison.get(c.id) ?? null,
+    })),
+    totalCount,
+    totalPages,
+    page,
+  };
+}
+
+/**
+ * Admin: get a single comparison by id WITHOUT the owner scope. Mirrors
+ * getComparison but additionally surfaces the owner, the full roast payload
+ * per column (incl. whether it was published), and all non-deleted feedback,
+ * so an admin can inspect everything that was shared.
+ */
+export async function getComparisonForAdmin(comparisonId: string) {
+  const comparison = await db.query.profileComparisonTable.findFirst({
+    where: eq(profileComparisonTable.id, comparisonId),
+    with: {
+      user: {
+        columns: {
+          id: true,
+          name: true,
+          email: true,
+          username: true,
+          isAnonymous: true,
+          swipestatsTier: true,
+        },
+      },
+      columns: {
+        orderBy: (columns, { asc }) => [asc(columns.order)],
+        with: {
+          content: {
+            orderBy: (content, { asc }) => [asc(content.order)],
+            with: { attachment: true },
+          },
+        },
+      },
+    },
+  });
+
+  if (!comparison) {
+    throw new Error("Comparison not found");
+  }
+
+  // Roast state per column lives in ai_output (kind="profile_roast", columnId).
+  // Same shape as getComparison, but we also keep `isPublic` so the admin can
+  // see whether the owner published the roast on the share page.
+  const columnIds = comparison.columns.map((c) => c.id);
+  const roastRows = columnIds.length
+    ? await db.query.aiOutputTable.findMany({
+        where: and(
+          eq(aiOutputTable.kind, "profile_roast"),
+          inArray(aiOutputTable.columnId, columnIds),
+        ),
+        columns: {
+          columnId: true,
+          tone: true,
+          isPublic: true,
+          updatedAt: true,
+          output: true,
+        },
+      })
+    : [];
+  const roastByColumn = new Map(roastRows.map((r) => [r.columnId, r]));
+
+  const columns = comparison.columns.map((column) => {
+    const roast = roastByColumn.get(column.id);
+    const overall = roast ? (roast.output as ProfileRoastResult).overall : null;
+    return {
+      ...column,
+      roast: roast
+        ? {
+            tone: roast.tone,
+            isPublic: roast.isPublic,
+            updatedAt: roast.updatedAt,
+            tagline: overall?.tagline ?? null,
+            headline: overall?.headline ?? null,
+            verdict: overall?.verdict ?? null,
+          }
+        : null,
+    };
+  });
+
+  // All non-deleted feedback for this comparison (column- or content-targeted),
+  // reusing the existing polymorphic aggregator.
+  const feedback = await getFeedbackForComparison(comparisonId);
+
+  return { ...comparison, columns, feedback };
+}
+
 /**
  * Update comparison metadata. For each field, null clears it and undefined
  * leaves it unchanged.

@@ -1,18 +1,25 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { and, eq, inArray, isNotNull, desc, count } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, isNull, desc, count } from "drizzle-orm";
 import {
   tinderProfileTable,
   hingeProfileTable,
   mediaTable,
   originalAnonymizedFileTable,
   userTable,
+  profileComparisonTable,
+  profileComparisonFeedbackTable,
+  aiOutputTable,
 } from "@/server/db/schema";
 import { adminProcedure } from "../trpc";
 import type { TRPCRouterRecord } from "@trpc/server";
 import { resetTinderProfile } from "@/server/services/profile/profile.service";
 import { BlobService } from "@/server/services/blob.service";
 import { trackServerEvent } from "@/server/services/analytics.service";
+import {
+  listComparisonsForAdmin,
+  getComparisonForAdmin,
+} from "@/server/services/profile-comparison.service";
 
 export const adminRouter = {
   // Delete a Tinder profile by tinderId (admin/dev only)
@@ -567,4 +574,52 @@ export const adminRouter = {
       });
       return { ok: true, userId, firedAt: new Date().toISOString() };
     }),
+
+  // ---- PROFILE COMPARE (read-only inspector) ----------------------
+  // Cross-user overview of everything people have built/shared in the
+  // profile-compare feature. View-only — no mutations.
+
+  // Header totals for the inspector landing page.
+  comparisonStats: adminProcedure.query(async ({ ctx }) => {
+    const [total, publicTotal, feedbackTotal, roastTotal] = await Promise.all([
+      ctx.db.select({ count: count() }).from(profileComparisonTable),
+      ctx.db
+        .select({ count: count() })
+        .from(profileComparisonTable)
+        .where(eq(profileComparisonTable.isPublic, true)),
+      ctx.db
+        .select({ count: count() })
+        .from(profileComparisonFeedbackTable)
+        .where(isNull(profileComparisonFeedbackTable.deletedAt)),
+      ctx.db
+        .select({ count: count() })
+        .from(aiOutputTable)
+        .where(eq(aiOutputTable.kind, "profile_roast")),
+    ]);
+
+    return {
+      totalComparisons: total[0]?.count ?? 0,
+      publicComparisons: publicTotal[0]?.count ?? 0,
+      totalFeedback: feedbackTotal[0]?.count ?? 0,
+      totalRoasts: roastTotal[0]?.count ?? 0,
+    };
+  }),
+
+  // Paginated, filterable list of all comparisons across users.
+  listComparisons: adminProcedure
+    .input(
+      z.object({
+        page: z.number().int().min(1).default(1),
+        limit: z.number().int().min(1).max(100).default(20),
+        visibility: z.enum(["all", "public", "private"]).default("all"),
+        sort: z.enum(["recent", "feedback", "columns"]).default("recent"),
+      }),
+    )
+    .query(({ input }) => listComparisonsForAdmin(input)),
+
+  // Full inspector payload for a single comparison (owner, columns, content,
+  // roasts, feedback).
+  getComparison: adminProcedure
+    .input(z.object({ id: z.string().min(1) }))
+    .query(({ input }) => getComparisonForAdmin(input.id)),
 } satisfies TRPCRouterRecord;
