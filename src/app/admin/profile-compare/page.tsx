@@ -17,11 +17,7 @@ import {
 } from "lucide-react";
 import { useTRPC } from "@/trpc/react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -30,6 +26,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 type Visibility = "all" | "public" | "private";
 type Sort = "recent" | "feedback" | "columns";
@@ -149,94 +151,131 @@ export default function AdminProfileComparePage() {
               const globalIndex = (data.page - 1) * limit + idx;
               return (
                 <Card key={c.id} className="transition-shadow hover:shadow-md">
-                  <CardContent className="flex items-center gap-4 p-4">
-                    <span className="w-6 shrink-0 text-sm font-medium text-gray-400">
-                      #{globalIndex + 1}
-                    </span>
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-4">
+                      <span className="w-6 shrink-0 text-sm font-medium text-gray-400">
+                        #{globalIndex + 1}
+                      </span>
 
-                    {/* Thumbnail */}
-                    <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md border bg-gray-100">
-                      {c.thumbnailUrl ? (
-                        <Image
-                          src={c.thumbnailUrl}
-                          alt="Thumbnail"
-                          fill
-                          className="object-cover"
-                          sizes="64px"
-                        />
-                      ) : (
-                        <div className="flex h-full items-center justify-center">
-                          <ImageIcon className="h-5 w-5 text-gray-300" />
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Main info */}
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Link
-                          href={`/admin/profile-compare/${c.id}`}
-                          className="truncate font-semibold text-gray-900 hover:underline"
-                        >
-                          {c.name ?? c.profileName ?? "Untitled comparison"}
-                        </Link>
-                        {c.isPublic ? (
-                          <Badge variant="default">Public</Badge>
+                      {/* Thumbnail */}
+                      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md border bg-gray-100">
+                        {c.thumbnailUrl ? (
+                          <Image
+                            src={c.thumbnailUrl}
+                            alt="Thumbnail"
+                            fill
+                            className="object-cover"
+                            sizes="64px"
+                          />
                         ) : (
-                          <Badge variant="secondary">Private</Badge>
+                          <div className="flex h-full items-center justify-center">
+                            <ImageIcon className="h-5 w-5 text-gray-300" />
+                          </div>
                         )}
-                        {c.providers.map((p) => (
-                          <Badge key={p} variant="outline" className="text-xs">
-                            {p}
-                          </Badge>
-                        ))}
                       </div>
-                      <p className="mt-0.5 truncate text-xs text-gray-500">
-                        {ownerLabel(c.user)} · updated {formatDate(c.updatedAt)}
-                      </p>
-                      <div className="mt-1 flex items-center gap-4 text-xs text-gray-500">
-                        <span className="flex items-center gap-1">
-                          <Columns3 className="h-3 w-3" />
-                          {c.columnCount}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <ImageIcon className="h-3 w-3" />
-                          {c.photoCount}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Quote className="h-3 w-3" />
-                          {c.promptCount}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <MessageSquare className="h-3 w-3" />
-                          {c.feedbackCount}
-                        </span>
-                      </div>
-                    </div>
 
-                    {/* Actions */}
-                    <div className="flex shrink-0 items-center gap-2">
-                      {c.isPublic && c.shareKey && (
-                        <Link
-                          href={`/share/profile-compare/${c.shareKey}`}
-                          target="_blank"
-                        >
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 gap-1 text-xs"
+                      {/* Main info */}
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Link
+                            href={`/admin/profile-compare/${c.id}`}
+                            className="truncate font-semibold text-gray-900 hover:underline"
                           >
-                            <ExternalLink className="h-3 w-3" />
-                            Live
+                            {c.name ?? c.profileName ?? "Untitled comparison"}
+                          </Link>
+                          {c.isPublic ? (
+                            <Badge variant="default">Public</Badge>
+                          ) : (
+                            <Badge variant="secondary">Private</Badge>
+                          )}
+                          {c.providers.map((p) => (
+                            <Badge
+                              key={p}
+                              variant="outline"
+                              className="text-xs"
+                            >
+                              {p}
+                            </Badge>
+                          ))}
+                        </div>
+                        <p className="mt-0.5 truncate text-xs text-gray-500">
+                          {ownerLabel(c.user)} · updated{" "}
+                          {formatDate(c.updatedAt)}
+                        </p>
+                        <div className="mt-1 flex items-center gap-4 text-xs text-gray-500">
+                          <span className="flex items-center gap-1">
+                            <Columns3 className="h-3 w-3" />
+                            {c.columnCount}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <ImageIcon className="h-3 w-3" />
+                            {c.photoCount}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Quote className="h-3 w-3" />
+                            {c.promptCount}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <MessageSquare className="h-3 w-3" />
+                            {c.feedbackCount}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Actions */}
+                      <div className="flex shrink-0 items-center gap-2">
+                        {c.isPublic && c.shareKey && (
+                          <Link
+                            href={`/share/profile-compare/${c.shareKey}`}
+                            target="_blank"
+                          >
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-7 gap-1 text-xs"
+                            >
+                              <ExternalLink className="h-3 w-3" />
+                              Live
+                            </Button>
+                          </Link>
+                        )}
+                        <Link href={`/admin/profile-compare/${c.id}`}>
+                          <Button variant="outline" size="sm" className="h-7">
+                            Inspect
                           </Button>
                         </Link>
-                      )}
-                      <Link href={`/admin/profile-compare/${c.id}`}>
-                        <Button variant="outline" size="sm" className="h-7">
-                          Inspect
-                        </Button>
-                      </Link>
+                      </div>
                     </div>
+
+                    {c.photos.length > 0 && (
+                      <Accordion type="single" collapsible>
+                        <AccordionItem value="photos" className="border-b-0">
+                          <AccordionTrigger className="py-2 text-xs font-normal text-gray-500 hover:no-underline">
+                            Show all {c.photos.length} photo
+                            {c.photos.length === 1 ? "" : "s"}
+                          </AccordionTrigger>
+                          <AccordionContent>
+                            <div className="flex flex-wrap gap-1 pl-10">
+                              {c.photos.map((p, i) => (
+                                <div
+                                  key={i}
+                                  className="relative h-11 w-11 overflow-hidden rounded border bg-gray-100"
+                                  title={p.caption ?? undefined}
+                                >
+                                  <Image
+                                    src={p.url}
+                                    alt={p.caption ?? `Photo ${i + 1}`}
+                                    fill
+                                    className="object-cover"
+                                    sizes="44px"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      </Accordion>
+                    )}
                   </CardContent>
                 </Card>
               );

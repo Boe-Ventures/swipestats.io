@@ -434,37 +434,50 @@ export async function listComparisonsForAdmin(params: {
   const start = (page - 1) * limit;
   const pageItems = merged.slice(start, start + limit);
 
-  // 7. Resolve a thumbnail (first photo's blob URL) for the page only.
+  // 7. Resolve every photo (ordered by column → content order) for the page
+  //    only. The list UI shows a micro grid per comparison and uses the first
+  //    photo as the thumbnail.
   const pageIds = pageItems.map((c) => c.id);
-  const thumbByComparison = new Map<string, string>();
+  const photosByComparison = new Map<
+    string,
+    Array<{ url: string; caption: string | null }>
+  >();
   if (pageIds.length) {
     const pageColumns = await db.query.comparisonColumnTable.findMany({
       where: inArray(comparisonColumnTable.comparisonId, pageIds),
-      columns: { id: true, comparisonId: true, order: true },
+      columns: { comparisonId: true, order: true },
       orderBy: (t, { asc }) => [asc(t.order)],
       with: {
         content: {
           where: eq(comparisonColumnContentTable.type, "photo"),
-          columns: { id: true, order: true },
+          columns: { caption: true, order: true },
           orderBy: (t, { asc }) => [asc(t.order)],
           with: { attachment: { columns: { url: true } } },
         },
       },
     });
+    // findMany sorts columns by `order` globally; for any single comparison its
+    // columns still appear in ascending order, so appending preserves layout.
     for (const col of pageColumns) {
-      if (thumbByComparison.has(col.comparisonId)) continue;
-      const firstPhoto = col.content.find((ct) => ct.attachment?.url);
-      if (firstPhoto?.attachment?.url) {
-        thumbByComparison.set(col.comparisonId, firstPhoto.attachment.url);
+      const list = photosByComparison.get(col.comparisonId) ?? [];
+      for (const ct of col.content) {
+        if (ct.attachment?.url) {
+          list.push({ url: ct.attachment.url, caption: ct.caption });
+        }
       }
+      photosByComparison.set(col.comparisonId, list);
     }
   }
 
   return {
-    comparisons: pageItems.map((c) => ({
-      ...c,
-      thumbnailUrl: thumbByComparison.get(c.id) ?? null,
-    })),
+    comparisons: pageItems.map((c) => {
+      const photos = photosByComparison.get(c.id) ?? [];
+      return {
+        ...c,
+        photos,
+        thumbnailUrl: photos[0]?.url ?? null,
+      };
+    }),
     totalCount,
     totalPages,
     page,
