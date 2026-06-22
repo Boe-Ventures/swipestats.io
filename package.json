@@ -18,6 +18,7 @@
     "format:write": "prettier --write \"**/*.{ts,tsx,js,jsx,mdx,json}\" --cache",
     "lint": "eslint . --cache",
     "lint:fix": "eslint . --fix --cache",
+    "ls:overview": "bun run src/scripts/lemonsqueezy/overview.ts",
     "preview": "next build && next start",
     "start": "next start",
     "typecheck": "velite build && tsc --noEmit",
