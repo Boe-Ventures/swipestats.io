@@ -18,6 +18,10 @@ export const env = createEnv({
     RESEND_API_KEY: z.string().optional(),
     LEMON_SQUEEZY_API_KEY: z.string(),
     LEMON_SQUEEZY_WEBHOOK_SECRET: z.string(),
+    // Polar (subscriptions). Optional during the LemonSqueezy → Polar migration.
+    // Server (sandbox vs production) is derived from NEXT_PUBLIC_IS_PRODUCTION.
+    POLAR_ACCESS_TOKEN: z.string().optional(),
+    POLAR_WEBHOOK_SECRET: z.string().optional(),
     ADMIN_TOKEN: z.string().min(32), // Require strong token (32+ chars)
     BLOB_READ_WRITE_TOKEN: z.string().optional(), // Optional for dev without Vercel Blob
     // Required in production: the AI Roast / prompt-suggest features call
@@ -67,6 +71,8 @@ export const env = createEnv({
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     LEMON_SQUEEZY_API_KEY: process.env.LEMON_SQUEEZY_API_KEY,
     LEMON_SQUEEZY_WEBHOOK_SECRET: process.env.LEMON_SQUEEZY_WEBHOOK_SECRET,
+    POLAR_ACCESS_TOKEN: process.env.POLAR_ACCESS_TOKEN,
+    POLAR_WEBHOOK_SECRET: process.env.POLAR_WEBHOOK_SECRET,
     ADMIN_TOKEN: process.env.ADMIN_TOKEN,
     BLOB_READ_WRITE_TOKEN: process.env.BLOB_READ_WRITE_TOKEN,
     ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY,

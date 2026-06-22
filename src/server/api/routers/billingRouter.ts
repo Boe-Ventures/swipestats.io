@@ -10,7 +10,8 @@ import {
 import {
   createUpgradeCheckout,
   getSubscriptionDetails,
-} from "@/server/services/lemonSqueezy.service";
+  getCustomerPortalUrl,
+} from "@/server/services/polar.service";
 import { paidTierSchema, billingPeriodSchema } from "@/lib/validators";
 
 import { protectedProcedure } from "../trpc";
@@ -70,14 +71,10 @@ export const billingRouter = {
       return { portalUrl: null };
     }
 
-    // Fetch subscription details which includes pre-signed portal URL
-    const subscriptionDetails = await getSubscriptionDetails(
-      user.subscriptionProviderId,
-    );
+    // Polar customer portal is keyed by our user id (externalCustomerId)
+    const portalUrl = await getCustomerPortalUrl(ctx.session.user.id);
 
-    return {
-      portalUrl: subscriptionDetails?.customerPortalUrl ?? null,
-    };
+    return { portalUrl };
   }),
 
   // Get full subscription status including LemonSqueezy details
