@@ -18,6 +18,10 @@ import type {
   ProfileRoastResult,
 } from "@/lib/ai/roast-schemas";
 import type { ConsentRecord } from "@/lib/analytics/consent";
+import type {
+  HingeThreadOrigin,
+  HingeThreadState,
+} from "@/lib/interfaces/HingeDataJSON";
 
 // ---- ENUMS --------------------------------------------------------
 
@@ -507,6 +511,8 @@ export type HingeProfileInsert = typeof hingeProfileTable.$inferInsert;
 export const hingeInteractionTable = pgTable("hinge_interaction", (t) => ({
   id: t.text().primaryKey(),
   type: hingeInteractionTypeEnum().notNull(),
+  threadOrigin: t.text().$type<HingeThreadOrigin>(),
+  threadState: t.text().$type<HingeThreadState>(),
   timestamp: t.timestamp().notNull(),
   timestampRaw: t.text().notNull(),
   comment: t.text(), // Only for LIKE_SENT

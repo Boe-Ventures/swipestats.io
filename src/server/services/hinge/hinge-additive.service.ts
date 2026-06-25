@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import type { AnonymizedHingeDataJSON } from "@/lib/interfaces/HingeDataJSON";
 import { withTransaction, type TransactionClient } from "@/server/db";
@@ -141,6 +141,60 @@ function filterNewHingeInteractions(
   );
 }
 
+async function backfillExistingHingeClassifications(
+  tx: TransactionClient,
+  hingeId: string,
+  existingMatchesByMatchedAt: Map<number, string>,
+  existingInteractionTimestamps: Set<number>,
+  matchesInput: MatchInsert[],
+  interactionsInput: HingeInteractionInsert[],
+): Promise<{ matchCount: number; interactionCount: number }> {
+  let matchCount = 0;
+  let interactionCount = 0;
+
+  for (const match of matchesInput) {
+    if (!match.matchedAt) continue;
+
+    const existingMatchId = existingMatchesByMatchedAt.get(
+      match.matchedAt.getTime(),
+    );
+    if (!existingMatchId) continue;
+
+    await tx
+      .update(matchTable)
+      .set({
+        like: match.like,
+        likedAt: match.likedAt,
+        weMet: match.weMet,
+      })
+      .where(eq(matchTable.id, existingMatchId));
+    matchCount++;
+  }
+
+  for (const interaction of interactionsInput) {
+    if (!existingInteractionTimestamps.has(interaction.timestamp.getTime())) {
+      continue;
+    }
+
+    await tx
+      .update(hingeInteractionTable)
+      .set({
+        threadOrigin: interaction.threadOrigin,
+        threadState: interaction.threadState,
+      })
+      .where(
+        and(
+          eq(hingeInteractionTable.hingeProfileId, hingeId),
+          eq(hingeInteractionTable.type, interaction.type),
+          eq(hingeInteractionTable.timestamp, interaction.timestamp),
+        ),
+      );
+    interactionCount++;
+  }
+
+  return { matchCount, interactionCount };
+}
+
 /**
  * Same-account additive: Merge new data into existing Hinge profile
  * Used when user uploads newer export of same hingeId
@@ -213,8 +267,13 @@ export async function additiveUpdateHingeProfile(data: {
     // Fetch existing match timestamps for deduplication
     const existingMatches = await tx.query.matchTable.findMany({
       where: eq(matchTable.hingeProfileId, data.hingeId),
-      columns: { matchedAt: true },
+      columns: { id: true, matchedAt: true },
     });
+    const existingMatchesByMatchedAt = new Map(
+      existingMatches
+        .filter((m) => m.matchedAt)
+        .map((m) => [m.matchedAt!.getTime(), m.id]),
+    );
     const existingMatchTimestamps = new Set(
       existingMatches
         .map((m) => m.matchedAt?.getTime())
@@ -274,6 +333,19 @@ export async function additiveUpdateHingeProfile(data: {
     }
     console.log(
       `   ✓ Interactions merged: ${interactionsToInsert.length} new (${Date.now() - interactionStart}ms)`,
+    );
+
+    const backfillStart = Date.now();
+    const backfilled = await backfillExistingHingeClassifications(
+      tx,
+      data.hingeId,
+      existingMatchesByMatchedAt,
+      existingInteractionTimestamps,
+      matchesInput,
+      interactionsInput,
+    );
+    console.log(
+      `   ✓ Existing rows classified: ${backfilled.matchCount} matches, ${backfilled.interactionCount} interactions (${Date.now() - backfillStart}ms)`,
     );
 
     // 4. Replace prompts (current profile state)

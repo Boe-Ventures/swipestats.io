@@ -29,6 +29,13 @@
       "when": 1781503993260,
       "tag": "0003_giant_malcolm_colcord",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1782418749231,
+      "tag": "0004_rich_orphan",
+      "breakpoints": true
     }
   ]
 }

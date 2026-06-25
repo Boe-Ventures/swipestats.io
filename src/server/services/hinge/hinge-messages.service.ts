@@ -7,6 +7,7 @@ import type {
   HingeInteractionInsert,
 } from "@/server/db/schema";
 import { createId } from "@/server/db/utils";
+import { classifyHingeThread } from "@/lib/utils/classifyHingeThread";
 
 /**
  * Get the earliest timestamp from a conversation thread
@@ -91,6 +92,7 @@ export function createHingeMessagesAndMatches(
           ? thread.match[0]
           : undefined;
       const hasBlock = Array.isArray(thread.block) && thread.block.length > 0;
+      const classification = classifyHingeThread(thread);
 
       let matchId: string | null = null;
 
@@ -106,6 +108,8 @@ export function createHingeMessagesAndMatches(
         interactionsInput.push({
           id: createId("hint"),
           type: "LIKE_SENT",
+          threadOrigin: classification.origin,
+          threadState: classification.state,
           timestamp: new Date(likeEntry.timestamp),
           timestampRaw: likeEntry.timestamp,
           comment: likeComment ?? null,
@@ -124,6 +128,7 @@ export function createHingeMessagesAndMatches(
         const firstMessageAt = getEarliestTimestamp(thread);
         const lastMessageAt = getLatestTimestamp(thread);
         const weMetData = thread.we_met?.[0];
+        const firstLikeReaction = likeEntry?.like?.[0];
 
         matchesInput.push({
           id: matchId,
@@ -144,9 +149,14 @@ export function createHingeMessagesAndMatches(
           weMet: weMetData
             ? { did_meet_subject: weMetData.did_meet_subject }
             : null,
-          like: null, // Not storing like data in match table anymore
+          like: likeEntry
+            ? {
+                timestamp: likeEntry.timestamp,
+                comment: firstLikeReaction?.comment ?? null,
+              }
+            : null,
           match: { timestamp: matchEntry.timestamp },
-          likedAt: null,
+          likedAt: likeEntry ? new Date(likeEntry.timestamp) : null,
           matchedAt: new Date(matchEntry.timestamp),
         });
 
@@ -154,6 +164,8 @@ export function createHingeMessagesAndMatches(
         interactionsInput.push({
           id: createId("hint"),
           type: "MATCH",
+          threadOrigin: classification.origin,
+          threadState: classification.state,
           timestamp: new Date(matchEntry.timestamp),
           timestampRaw: matchEntry.timestamp,
           comment: null,
@@ -242,6 +254,8 @@ export function createHingeMessagesAndMatches(
           interactionsInput.push({
             id: createId("hint"),
             type: "MESSAGE_SENT",
+            threadOrigin: classification.origin,
+            threadState: classification.state,
             timestamp: new Date(chat.timestamp),
             timestampRaw: chat.timestamp,
             comment: null,
@@ -261,6 +275,8 @@ export function createHingeMessagesAndMatches(
           interactionsInput.push({
             id: createId("hint"),
             type: interactionType,
+            threadOrigin: classification.origin,
+            threadState: classification.state,
             timestamp: new Date(block.timestamp),
             timestampRaw: block.timestamp,
             comment: null,
@@ -311,7 +327,9 @@ export function createHingeMessagesAndMatches(
     `      - ${matchesWithMessages} matches with messages (avg ${avgMessagesPerMatch} msgs/match)`,
   );
   console.log(`      - ${matchesWithoutMessages} matches with no messages`);
-  console.log(`      - ${messageSentInteractionsCount} MESSAGE_SENT interactions`);
+  console.log(
+    `      - ${messageSentInteractionsCount} MESSAGE_SENT interactions`,
+  );
   console.log(`      - ${totalMessages} message records`);
   console.log(`      - ${rejectsCount} REJECT interactions`);
   console.log(`      - ${unmatchesCount} UNMATCH interactions`);

@@ -25,6 +25,10 @@ function parseBooleanString(value: string | undefined): boolean {
   return value === "Yes" || value === "yes" || value === "true";
 }
 
+function isNonEmptyString(value: string | undefined): value is string {
+  return typeof value === "string" && value.length > 0;
+}
+
 /**
  * Derive birth date from age and signup time
  * This is an approximation since we don't have exact birth date
@@ -70,13 +74,15 @@ export function transformHingeJsonToProfile(
   // Aggregate device information
   const devices = user.devices ?? [];
   const devicePlatforms = [
-    ...new Set(devices.map((d) => d.device_platform).filter(Boolean)),
+    ...new Set(devices.map((d) => d.device_platform).filter(isNonEmptyString)),
   ];
   const deviceOsVersions = [
-    ...new Set(devices.map((d) => d.device_os_versions).filter(Boolean)),
+    ...new Set(
+      devices.map((d) => d.device_os_versions).filter(isNonEmptyString),
+    ),
   ];
   const appVersions = [
-    ...new Set(devices.map((d) => d.app_version).filter(Boolean)),
+    ...new Set(devices.map((d) => d.app_version).filter(isNonEmptyString)),
   ];
 
   return {
@@ -120,8 +126,8 @@ export function transformHingeJsonToProfile(
     instagramDisplayed: profile.instagram_displayed ?? false,
     datingIntention: profile.dating_intention ?? "",
     datingIntentionDisplayed: profile.dating_intention_displayed ?? false,
-    languagesSpoken: "", // Not in current data structure
-    languagesSpokenDisplayed: false,
+    languagesSpoken: profile.languages_spoken ?? "",
+    languagesSpokenDisplayed: profile.languages_spoken_displayed ?? false,
     relationshipType: profile.relationship_types ?? "",
     relationshipTypeDisplayed: profile.relationship_type_displayed ?? false,
     selfieVerified: profile.selfie_verified ?? false,

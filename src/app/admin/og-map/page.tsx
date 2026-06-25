@@ -107,7 +107,7 @@ function parseMeta(
 
 function groupPath(path: string): string {
   if (path === "/") return "Marketing";
-  const seg = path.split("/").filter(Boolean)[0] ?? "";
+  const seg = path.split("/").find(Boolean) ?? "";
   if (seg === "blog") return "Blog";
   if (seg === "upload") return "Upload";
   if (seg === "app") return "App";
