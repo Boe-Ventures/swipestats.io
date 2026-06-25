@@ -54,8 +54,9 @@ import { GranularitySelector } from "../../../../tinder/[tinderId]/_components/c
 import { AddEventDialog } from "@/app/app/events/AddEventDialog";
 import {
   aggregateHingeData,
-  filterMatchesByDateRange,
   calculatePreviousPeriod,
+  filterHingeInteractionsByDateRange,
+  filterMatchesByDateRange,
   type TimeGranularity,
   type AggregatedHingeData,
 } from "@/lib/utils/aggregateHingeData";
@@ -126,7 +127,7 @@ const chartConfig = {
     color: "hsl(270, 70%, 60%)",
   },
   rejects: {
-    label: "Rejects",
+    label: "Removes",
     color: "hsl(0, 70%, 50%)",
   },
   messagesSent: {
@@ -262,34 +263,54 @@ export function MasterHingeActivityChart() {
 
   // Aggregate current period data
   const currentData = React.useMemo(() => {
-    if (!matches.length) return [];
+    if (!matches.length && !interactions.length) return [];
 
     const toDate = dateRange?.to ?? dateRange?.from ?? new Date();
     const fromDate = dateRange?.from ?? new Date(0);
 
-    const filtered = dateRange?.from
+    const filteredMatches = dateRange?.from
       ? filterMatchesByDateRange(matches, fromDate, toDate)
       : matches;
+    const filteredInteractions = dateRange?.from
+      ? filterHingeInteractionsByDateRange(interactions, fromDate, toDate)
+      : interactions;
 
-    return aggregateHingeData(filtered, interactions, granularity);
+    return aggregateHingeData(
+      filteredMatches,
+      filteredInteractions,
+      granularity,
+    );
   }, [matches, interactions, granularity, dateRange]);
 
   // Aggregate previous period data
   const previousData = React.useMemo(() => {
-    if (!showPreviousPeriod || !dateRange?.from || !matches.length) {
+    if (
+      !showPreviousPeriod ||
+      !dateRange?.from ||
+      (!matches.length && !interactions.length)
+    ) {
       return [];
     }
 
     const toDate = dateRange.to ?? dateRange.from;
     const previousPeriod = calculatePreviousPeriod(dateRange.from, toDate);
 
-    const filtered = filterMatchesByDateRange(
+    const filteredMatches = filterMatchesByDateRange(
       matches,
       previousPeriod.from,
       previousPeriod.to,
     );
+    const filteredInteractions = filterHingeInteractionsByDateRange(
+      interactions,
+      previousPeriod.from,
+      previousPeriod.to,
+    );
 
-    return aggregateHingeData(filtered, interactions, granularity);
+    return aggregateHingeData(
+      filteredMatches,
+      filteredInteractions,
+      granularity,
+    );
   }, [matches, interactions, granularity, dateRange, showPreviousPeriod]);
 
   // Helper to convert event date to period display format
@@ -560,7 +581,7 @@ export function MasterHingeActivityChart() {
     return mappedEvents;
   }, [events, chartData, dateToPeriodKey, granularity, parsePeriodDisplay]);
 
-  if (!matches?.length) {
+  if (!matches?.length && !interactions.length) {
     return (
       <Card className="shadow-lg">
         <CardHeader>
@@ -582,7 +603,7 @@ export function MasterHingeActivityChart() {
               </CardTitle>
               <CardDescription>
                 {granularity.charAt(0).toUpperCase() + granularity.slice(1)}{" "}
-                matches, likes, and messages
+                matches, likes, removes, and messages
               </CardDescription>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">

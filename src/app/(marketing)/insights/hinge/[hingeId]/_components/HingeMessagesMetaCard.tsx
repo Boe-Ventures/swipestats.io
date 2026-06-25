@@ -12,10 +12,10 @@ import {
   MessagesSquare,
   MessageCircle,
   Send,
-  Inbox,
   Ghost,
   TrendingUp,
 } from "lucide-react";
+import { getHingeLifecycleStats } from "@/lib/utils/hingeLifecycleStats";
 
 interface MetricRowProps {
   icon: typeof MessagesSquare;
@@ -44,23 +44,26 @@ function MetricRow({ icon: Icon, label, value, description }: MetricRowProps) {
 }
 
 export function HingeMessagesMetaCard() {
-  const { meta } = useHingeInsights();
+  const { profile, meta, interactions } = useHingeInsights();
 
-  if (!meta) return null;
+  if (!meta || !profile) return null;
+
+  const lifecycle = getHingeLifecycleStats(interactions, profile.matches);
 
   // Calculate derived metrics
   const avgMessagesPerConvo =
-    meta.conversationsWithMessages > 0
+    lifecycle.conversationsWithUserMessages > 0
       ? (
-          (meta.messagesSentTotal + meta.messagesReceivedTotal) /
-          meta.conversationsWithMessages
+          lifecycle.messagesSent / lifecycle.conversationsWithUserMessages
         ).toFixed(1)
       : "0";
 
-  const ghostedCount = meta.conversationCount - meta.conversationsWithMessages;
-  const ghostRate =
-    meta.conversationCount > 0
-      ? ((ghostedCount / meta.conversationCount) * 100).toFixed(0)
+  const noSentMessagesRate =
+    lifecycle.totalMatches > 0
+      ? (
+          (lifecycle.matchesWithoutUserMessages / lifecycle.totalMatches) *
+          100
+        ).toFixed(0)
       : "0";
 
   return (
@@ -77,33 +80,27 @@ export function HingeMessagesMetaCard() {
         <div className="space-y-0">
           <MetricRow
             icon={MessagesSquare}
-            label="Total conversations"
-            value={meta.conversationCount}
-            description="From all your matches"
+            label="Mutual matches"
+            value={lifecycle.totalMatches}
+            description="Threads with a Hinge match event"
           />
           <MetricRow
             icon={MessageCircle}
-            label="Conversations with messages"
-            value={meta.conversationsWithMessages}
-            description={`${avgMessagesPerConvo} messages per conversation on average`}
+            label="Matches you messaged"
+            value={lifecycle.conversationsWithUserMessages}
+            description={`${avgMessagesPerConvo} sent messages per messaged match`}
           />
           <MetricRow
             icon={Ghost}
-            label="Ghosted after match"
-            value={ghostedCount}
-            description={`${ghostRate}% of matches never messaged`}
+            label="No sent messages"
+            value={lifecycle.matchesWithoutUserMessages}
+            description={`${noSentMessagesRate}% of matches have no outgoing messages in the export`}
           />
           <MetricRow
             icon={Send}
             label="Messages sent"
-            value={meta.messagesSentTotal.toLocaleString()}
-            description="Total messages you sent"
-          />
-          <MetricRow
-            icon={Inbox}
-            label="Messages received"
-            value={meta.messagesReceivedTotal.toLocaleString()}
-            description="Total messages you received"
+            value={lifecycle.messagesSent.toLocaleString()}
+            description="Hinge exports outgoing messages only"
           />
           {meta.medianMessagesPerConversation !== null &&
             meta.medianMessagesPerConversation !== undefined && (

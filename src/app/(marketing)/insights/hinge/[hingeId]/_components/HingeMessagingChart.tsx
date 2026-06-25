@@ -22,16 +22,11 @@ const chartConfig = {
     label: "Messages Sent",
     color: "hsl(270, 70%, 60%)", // Purple for Hinge
   },
-  messagesReceived: {
-    label: "Messages Received",
-    color: "hsl(330, 75%, 55%)", // Pink for Hinge
-  },
 } satisfies ChartConfig;
 
 interface MessageDataPoint {
   date: string;
   messagesSent: number;
-  messagesReceived: number;
   timestamp: number;
 }
 
@@ -42,7 +37,7 @@ export function HingeMessagingChart() {
   const aggregatedData = useMemo(() => {
     if (!profile?.matches) return [];
 
-    const dataMap = new Map<string, { sent: number; received: number }>();
+    const dataMap = new Map<string, { sent: number }>();
 
     // Process all messages - messages are nested inside matches
     profile.matches.forEach((match) => {
@@ -68,17 +63,11 @@ export function HingeMessagingChart() {
         }
 
         if (!dataMap.has(key)) {
-          dataMap.set(key, { sent: 0, received: 0 });
+          dataMap.set(key, { sent: 0 });
         }
 
         const data = dataMap.get(key)!;
-        if (message.to === 0) {
-          // Message sent by user
-          data.sent++;
-        } else {
-          // Message received
-          data.received++;
-        }
+        data.sent++;
       });
     });
 
@@ -87,7 +76,6 @@ export function HingeMessagingChart() {
       .map(([date, counts]) => ({
         date,
         messagesSent: counts.sent,
-        messagesReceived: counts.received,
         timestamp: new Date(date).getTime(),
       }))
       .sort((a, b) => a.timestamp - b.timestamp);
@@ -117,10 +105,6 @@ export function HingeMessagingChart() {
   };
 
   const totalSent = aggregatedData.reduce((sum, d) => sum + d.messagesSent, 0);
-  const totalReceived = aggregatedData.reduce(
-    (sum, d) => sum + d.messagesReceived,
-    0,
-  );
 
   if (aggregatedData.length === 0) {
     return (
@@ -128,7 +112,7 @@ export function HingeMessagingChart() {
         <CardHeader>
           <CardTitle>Messaging Activity</CardTitle>
           <CardDescription>
-            Messages sent and received over time
+            Outgoing messages over time
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -145,9 +129,7 @@ export function HingeMessagingChart() {
       <CardHeader className="flex flex-col items-stretch space-y-0 border-b p-0 sm:flex-row">
         <div className="flex flex-1 flex-col justify-center gap-1 px-6 py-5 sm:py-6">
           <CardTitle>Messaging Activity</CardTitle>
-          <CardDescription>
-            Messages sent and received over time
-          </CardDescription>
+          <CardDescription>Outgoing messages over time</CardDescription>
         </div>
         <div className="flex">
           {(["day", "week", "month"] as const).map((key) => (
@@ -215,7 +197,7 @@ export function HingeMessagingChart() {
                           {formatXAxis(data.date)}
                         </span>
                       </div>
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-4">
                         <div className="flex flex-col">
                           <span className="text-muted-foreground text-[0.70rem] uppercase">
                             Sent
@@ -224,28 +206,11 @@ export function HingeMessagingChart() {
                             {data.messagesSent}
                           </span>
                         </div>
-                        <div className="flex flex-col">
-                          <span className="text-muted-foreground text-[0.70rem] uppercase">
-                            Received
-                          </span>
-                          <span className="font-bold text-pink-600">
-                            {data.messagesReceived}
-                          </span>
-                        </div>
                       </div>
                     </div>
                   </div>
                 );
               }}
-            />
-            <Area
-              dataKey="messagesReceived"
-              type="monotone"
-              fill="hsl(330, 75%, 55%)"
-              fillOpacity={0.2}
-              stroke="hsl(330, 75%, 55%)"
-              strokeWidth={2}
-              stackId="a"
             />
             <Area
               dataKey="messagesSent"
@@ -260,17 +225,11 @@ export function HingeMessagingChart() {
         </ChartContainer>
 
         {/* Summary Stats */}
-        <div className="mt-4 grid grid-cols-2 gap-4 border-t pt-4">
+        <div className="mt-4 grid gap-4 border-t pt-4">
           <div className="text-center">
             <p className="text-muted-foreground text-xs">Total Sent</p>
             <p className="text-lg font-semibold">
               {totalSent.toLocaleString()}
-            </p>
-          </div>
-          <div className="text-center">
-            <p className="text-muted-foreground text-xs">Total Received</p>
-            <p className="text-lg font-semibold">
-              {totalReceived.toLocaleString()}
             </p>
           </div>
         </div>

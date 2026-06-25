@@ -89,6 +89,8 @@ function combineHingeDataParts(dataParts: unknown[]): FullHingeDataJSON {
     Subscriptions: [],
   };
 
+  // Only recognized core files are merged. Unknown sidecars are ignored because
+  // some Hinge exports include selfie audit images or extra prompt metadata.
   for (const part of dataParts) {
     if (isUserFile(part)) {
       combined.User = part;
@@ -104,19 +106,16 @@ function combineHingeDataParts(dataParts: unknown[]): FullHingeDataJSON {
       if (Array.isArray(part)) {
         combined.Subscriptions = part;
       }
-    } else {
-      // Fallback: try to merge any unrecognized structure
-      if (typeof part === "object" && part !== null) {
-        for (const [key, value] of Object.entries(part)) {
-          if (!combined[key as keyof FullHingeDataJSON]) {
-            (combined as Record<string, unknown>)[key] = value;
-          }
-        }
-      }
     }
   }
 
   return combined as FullHingeDataJSON;
+}
+
+function getLocationCountry(
+  location: UserData["location"],
+): string | undefined {
+  return location?.country ?? location?.country_short;
 }
 
 /**
@@ -215,7 +214,8 @@ export async function extractHingeData(
           phone_country_code: hingeJson.User.identity.phone_country_code,
           phone_country_calling_code:
             hingeJson.User.identity.phone_country_calling_code,
-          instagram_authorized: hingeJson.User.identity.instagram_authorized,
+          instagram_authorized:
+            hingeJson.User.identity.instagram_authorized ?? false,
           has_email: !!hingeJson.User.identity.email,
           has_phone: !!hingeJson.User.identity.phone_number,
           has_phone_carrier: !!hingeJson.User.identity.phone_carrier,
@@ -228,7 +228,7 @@ export async function extractHingeData(
           omit(device, ["device_id", "user_agent"]),
         ),
         location: hingeJson.User.location
-          ? { country: hingeJson.User.location.country }
+          ? { country: getLocationCountry(hingeJson.User.location) }
           : undefined,
         profile: {
           ...omit(hingeJson.User.profile, ["first_name", "last_name"]),
