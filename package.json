@@ -18,12 +18,14 @@
     "format:write": "prettier --write \"**/*.{ts,tsx,js,jsx,mdx,json}\" --cache",
     "lint": "eslint . --cache",
     "lint:fix": "eslint . --fix --cache",
+    "ls:overview": "bun run src/scripts/lemonsqueezy/overview.ts",
     "preview": "next build && next start",
     "start": "next start",
     "typecheck": "velite build && tsc --noEmit",
     "velite:build": "velite build",
     "velite:dev": "velite --watch",
-    "email:dev": "email dev"
+    "email:dev": "email dev",
+    "amplitude:sync-taxonomy": "bun src/scripts/sync-amplitude-taxonomy.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.2",
@@ -100,7 +102,7 @@
     "next": "^16.0.7",
     "nuqs": "^2.4.3",
     "postgres": "^3.4.4",
-    "posthog-js": "^1.353.0",
+    "posthog-js": "^1.392.0",
     "posthog-node": "^5.25.0",
     "react": "19.2.3",
     "react-day-picker": "^9.13.0",

@@ -78,7 +78,9 @@ export function TinderSubmitButton({
   );
 
   const handleSubmit = async () => {
-    if (!canSubmit) return;
+    // The button is already disabled while loading; this guards the function
+    // itself against a same-frame double-fire before the disabled state applies.
+    if (!canSubmit || isLoading) return;
 
     // Track submit click
     const photoCount = Array.isArray(payload.anonymizedTinderJson.Photos)

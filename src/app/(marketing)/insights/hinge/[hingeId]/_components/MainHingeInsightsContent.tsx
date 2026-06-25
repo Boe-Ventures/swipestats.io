@@ -9,6 +9,7 @@ import { ConversationStats } from "./ConversationStats";
 import { MasterHingeActivityChart } from "./charts/MasterHingeActivityChart";
 import { HingeInsightsSkeleton } from "./LoadingSkeletons";
 import { HingeMessagesMetaCard } from "./HingeMessagesMetaCard";
+import { HingeDatingFunnel } from "./HingeDatingFunnel";
 import { DataRequestCTA } from "../../../_shared/DataRequestCTA";
 import { DirectoryCtaCard } from "../../../_shared/DirectoryCtaCard";
 import NewsletterCTA from "../../../../NewsletterCTA";
@@ -76,6 +77,8 @@ export function MainHingeInsightsContent() {
 
         {/* Activity Chart - Full Width */}
         <MasterHingeActivityChart />
+
+        <HingeDatingFunnel />
 
         {/* Profile Overview and Conversation Stats */}
         <div className="grid gap-8 lg:grid-cols-2">

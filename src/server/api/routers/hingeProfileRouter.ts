@@ -334,19 +334,23 @@ export const hingeProfileRouter = {
           country: input.country,
         });
 
-        trackServerEvent(ctx.session.user.id, "hinge_profile_updated", {
-          hingeId: input.hingeId,
-          matchCount: result.metrics.matchCount,
-          messageCount: result.metrics.messageCount,
-          photoCount: result.metrics.photoCount,
-          promptCount: result.metrics.promptCount,
-          interactionCount: result.metrics.interactionCount,
-          hasPhotos: result.metrics.hasPhotos,
-          processingTimeMs: result.metrics.processingTimeMs,
-          jsonSizeMB: result.metrics.jsonSizeMB,
-          consentPhotos: input.consentPhotos ?? true,
-          consentWork: input.consentWork ?? true,
-        });
+        // Skip the event when the same export was re-uploaded (nothing new
+        // merged in) — otherwise it reads as a noisy "0 new" update.
+        if (!result.isNoOp) {
+          trackServerEvent(ctx.session.user.id, "hinge_profile_updated", {
+            hingeId: input.hingeId,
+            matchCount: result.metrics.matchCount,
+            messageCount: result.metrics.messageCount,
+            photoCount: result.metrics.photoCount,
+            promptCount: result.metrics.promptCount,
+            interactionCount: result.metrics.interactionCount,
+            hasPhotos: result.metrics.hasPhotos,
+            processingTimeMs: result.metrics.processingTimeMs,
+            jsonSizeMB: result.metrics.jsonSizeMB,
+            consentPhotos: input.consentPhotos ?? true,
+            consentWork: input.consentWork ?? true,
+          });
+        }
 
         return result.profile;
       } catch (error) {
@@ -600,20 +604,23 @@ export const hingeProfileRouter = {
           country: input.country,
         });
 
-        // Track success with rich metrics
-        trackServerEvent(ctx.session.user.id, "hinge_profile_updated", {
-          hingeId: input.hingeId,
-          matchCount: result.metrics.matchCount,
-          messageCount: result.metrics.messageCount,
-          photoCount: result.metrics.photoCount,
-          promptCount: result.metrics.promptCount,
-          interactionCount: result.metrics.interactionCount,
-          hasPhotos: result.metrics.hasPhotos,
-          processingTimeMs: result.metrics.processingTimeMs,
-          jsonSizeMB: result.metrics.jsonSizeMB,
-          consentPhotos: true,
-          consentWork: true,
-        });
+        // Track success with rich metrics — skip when the same export was
+        // re-uploaded (nothing new merged in) to avoid a noisy "0 new" update.
+        if (!result.isNoOp) {
+          trackServerEvent(ctx.session.user.id, "hinge_profile_updated", {
+            hingeId: input.hingeId,
+            matchCount: result.metrics.matchCount,
+            messageCount: result.metrics.messageCount,
+            photoCount: result.metrics.photoCount,
+            promptCount: result.metrics.promptCount,
+            interactionCount: result.metrics.interactionCount,
+            hasPhotos: result.metrics.hasPhotos,
+            processingTimeMs: result.metrics.processingTimeMs,
+            jsonSizeMB: result.metrics.jsonSizeMB,
+            consentPhotos: true,
+            consentWork: true,
+          });
+        }
 
         return result.profile;
       } catch (error) {

@@ -184,6 +184,13 @@ export function createHingeProfileMeta(
 
   // Count matches
   const totalMatches = matches.length;
+  const matchInteractions = interactions.filter((i) => i.type === "MATCH");
+  const hasClassifiedMatchOrigins = matchInteractions.some(
+    (i) => i.threadOrigin != null,
+  );
+  const outboundLikeMatches = matchInteractions.filter(
+    (i) => i.threadOrigin === "OUTBOUND_LIKE",
+  ).length;
 
   // GDPR data only contains YOUR messages - all are outgoing (to: 1)
   const totalMessagesSent = matches.reduce((sum, match) => {
@@ -191,7 +198,10 @@ export function createHingeProfileMeta(
   }, 0);
 
   // Calculate rates (simplified)
-  const matchRate = getRatio(totalMatches, totalLikesSent);
+  const matchRate = getRatio(
+    hasClassifiedMatchOrigins ? outboundLikeMatches : totalMatches,
+    totalLikesSent,
+  );
   const likeRate = 1.0; // Hinge: all interactions are likes (no passes in GDPR data)
   const swipesPerDay = totalLikesSent / daysInPeriod;
 

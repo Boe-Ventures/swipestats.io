@@ -2,9 +2,10 @@
 
 import { Card } from "@/components/ui/card";
 import { useHingeInsights } from "../HingeInsightsProvider";
+import { getHingeLifecycleStats } from "@/lib/utils/hingeLifecycleStats";
 
 export function ConversationStats() {
-  const { profile, meta } = useHingeInsights();
+  const { profile, meta, interactions } = useHingeInsights();
 
   if (!profile || !meta) {
     return (
@@ -15,39 +16,35 @@ export function ConversationStats() {
     );
   }
 
-  // Calculate average messages per conversation from available data
-  const totalMessages =
-    (meta.messagesSentTotal ?? 0) + (meta.messagesReceivedTotal ?? 0);
+  const lifecycle = getHingeLifecycleStats(interactions, profile.matches);
   const avgMessagesPerConvo =
-    meta.conversationsWithMessages > 0
-      ? (totalMessages / meta.conversationsWithMessages).toFixed(1)
+    lifecycle.conversationsWithUserMessages > 0
+      ? (
+          lifecycle.messagesSent / lifecycle.conversationsWithUserMessages
+        ).toFixed(1)
       : "0";
 
   const conversationStats = [
     {
-      label: "Total Conversations",
-      value: meta.conversationCount.toString(),
+      label: "Mutual Matches",
+      value: lifecycle.totalMatches.toString(),
     },
     {
-      label: "Conversations with Messages",
-      value: meta.conversationsWithMessages.toString(),
+      label: "Matches You Messaged",
+      value: lifecycle.conversationsWithUserMessages.toString(),
     },
     {
-      label: "Ghosted After Match",
-      value: meta.ghostedCount.toString(),
-      subValue: "No messages exchanged",
+      label: "Matches with No Sent Messages",
+      value: lifecycle.matchesWithoutUserMessages.toString(),
+      subValue: "Hinge exports your outgoing messages only",
     },
     {
-      label: "Average Messages per Conversation",
+      label: "Average Sent Messages per Messaged Match",
       value: avgMessagesPerConvo,
     },
     {
       label: "Messages Sent",
-      value: (meta.messagesSentTotal ?? 0).toString(),
-    },
-    {
-      label: "Messages Received",
-      value: (meta.messagesReceivedTotal ?? 0).toString(),
+      value: lifecycle.messagesSent.toString(),
     },
   ];
 

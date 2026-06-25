@@ -176,11 +176,14 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
             capture_pageleave: true,
             disable_session_recording: false,
           });
-          try {
-            posthog.startSessionRecording();
-          } catch {
-            /* no-op */
-          }
+          // Don't force-start recording here: a manual startSessionRecording()
+          // overrides PostHog's server-side URL triggers and would record every
+          // consented visitor (incl. blog/marketing bounces). Instead we only
+          // enable the recorder and let the URL-trigger config (Project Settings
+          // → Session Replay) start it when the user reaches a product page
+          // (/app, /upload, /insights, /share). The in-memory buffer still
+          // captures how they arrived (e.g. blog → upload), and the trigger
+          // list stays editable from the dashboard with no deploy.
           // Capture the initial pageview suppressed pre-consent.
           posthog.capture("$pageview");
         },

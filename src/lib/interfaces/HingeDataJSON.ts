@@ -32,6 +32,24 @@ export interface SwipestatsHingeProfilePayload {
   anonymizedHingeJson: AnonymizedHingeDataJSON;
 }
 
+export const HINGE_THREAD_ORIGINS = [
+  "OUTBOUND_LIKE",
+  "INBOUND_LIKE",
+  "UNKNOWN_REMOVE",
+  "UNKNOWN",
+] as const;
+export type HingeThreadOrigin = (typeof HINGE_THREAD_ORIGINS)[number];
+
+export const HINGE_THREAD_STATES = [
+  "PENDING",
+  "MATCHED",
+  "MESSAGED",
+  "REMOVED",
+  "UNMATCHED",
+  "UNKNOWN",
+] as const;
+export type HingeThreadState = (typeof HINGE_THREAD_STATES)[number];
+
 // ============================================================================
 // Individual Hinge Export File Interfaces (based on actual data structure)
 // ============================================================================
@@ -91,8 +109,8 @@ export interface Preferences {
 
 export interface Identity {
   email: string;
-  fbid: string;
-  instagram_authorized: boolean;
+  fbid?: string;
+  instagram_authorized?: boolean;
   phone_number: string;
   phone_country_code?: string;
   phone_country_calling_code?: string;
@@ -103,8 +121,8 @@ export interface Identity {
 
 export interface Account {
   signup_time: string; // ISO timestamp
-  last_pause_time: string;
-  last_unpause_time: string;
+  last_pause_time?: string;
+  last_unpause_time?: string;
   last_seen: string;
   device_platform: string;
   device_os: string;
@@ -119,29 +137,38 @@ export interface Install {
   idfa: string;
   idfv: string;
   adid?: string; // Android Advertising ID
-  network_name: string;
+  network_name?: string;
   user_agent?: string;
   install_time: string; // ISO timestamp
 }
 
 export interface Device {
-  device_id: string;
-  device_os: string;
-  device_model: string;
-  device_platform: string;
-  app_version: string;
-  user_agent: string;
-  install_time: string; // ISO timestamp
-  device_os_versions: string; // Actual field name in Hinge exports
+  device_id?: string;
+  device_os?: string;
+  device_model?: string;
+  device_platform?: string;
+  app_version?: string;
+  user_agent?: string;
+  ip_address?: string;
+  install_time?: string; // ISO timestamp
+  device_os_versions?: string; // Actual field name in Hinge exports
 }
 
 export interface Location {
-  ip_address: string;
-  city: string;
-  region: string;
-  country: string;
-  lat: number;
-  lon: number;
+  ip_address?: string;
+  city?: string;
+  region?: string;
+  country?: string;
+  lat?: number;
+  lon?: number;
+  country_short?: string;
+  admin_area_1?: string;
+  admin_area_1_short?: string;
+  admin_area_2?: string;
+  neighborhood?: string;
+  postal_code?: string;
+  latitude?: number;
+  longitude?: number;
 }
 
 export interface Profile {
@@ -189,12 +216,14 @@ export interface Profile {
   politics: string;
   politics_displayed: boolean;
 
-  instagram_displayed: boolean;
+  instagram_displayed?: boolean;
   dating_intention_displayed: boolean;
   dating_intention: string;
 
   relationship_type_displayed: boolean;
   relationship_types: string;
+  languages_spoken?: string;
+  languages_spoken_displayed?: boolean;
   selfie_verified: boolean;
 }
 
@@ -261,6 +290,7 @@ export interface BlockEntry {
 export interface WeMetEntry {
   timestamp: string;
   did_meet_subject: string; // usually "Yes" | "No" but keep open-ended
+  was_my_type?: string;
 }
 
 /** Voice note message */
@@ -291,6 +321,32 @@ export interface HingeMedia {
   url: string;
   type: string; // e.g., "photo", "video"
   prompt?: string | null; // Caption or prompt text
+  from_social_media?: boolean;
+}
+
+export interface HingeSelfieVerificationExport {
+  status?: { status?: string; created_at?: string }[];
+  consent?: { created_at?: string }[];
+  audit_trail_image?: {
+    image_received_at?: string;
+    image?: string[];
+  }[];
+}
+
+export interface HingeConvoStarter {
+  id: number;
+  prompt?: string;
+  answer?: string;
+  convo_starters_text?: string;
+  photo_url?: string;
+  updated_ts: string;
+}
+
+export interface HingePromptFeedback {
+  id: number;
+  timestamp: string;
+  hinge_prompt?: string;
+  hinge_prompt_answer?: string;
 }
 
 export type HingeMatchesFileExport = Conversations;
@@ -310,6 +366,9 @@ export type HingeDataFilePart =
   | Conversations // matches.json
   | PromptEntryList // prompts.json
   | HingeMedia[] // media.json
+  | HingeSelfieVerificationExport // selfie_verification.json, not stored
+  | HingeConvoStarter[] // convo_starters.json, not stored
+  | HingePromptFeedback[] // prompt_feedback.json, not stored
   | unknown[]; // Other array-based files
 
 // ============================================================================

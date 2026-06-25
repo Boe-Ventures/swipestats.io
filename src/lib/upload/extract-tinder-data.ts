@@ -231,6 +231,10 @@ export async function extractTinderData(
           "phone_id",
           // Additional PII in new format (2025+)
           "authIds", // Authentication IDs
+          // Third-party PII in 2026+ exports (Duo/Matchmaker feature)
+          "duo_groups", // Contains partner_uid — another user's Tinder id
+          "invites_received", // Contains share_id referencing invites between users
+          "invites_sent",
         ]),
         instagram: !!tinderJson.User.instagram,
         spotify: getSpotifyConnectionStatus(tinderJson.User.spotify),

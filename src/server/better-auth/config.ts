@@ -8,7 +8,10 @@ import { render } from "@react-email/components";
 import { env } from "@/env";
 import { db } from "@/server/db";
 import * as schema from "@/server/db/schema";
-import { trackServerEvent } from "@/server/services/analytics.service";
+import {
+  aliasServerUser,
+  trackServerEvent,
+} from "@/server/services/analytics.service";
 import {
   ANONYMOUS_SOURCES,
   type AnonymousSource,
@@ -314,6 +317,10 @@ export const auth = betterAuth({
             (conversionTime.getTime() - anonCreatedAt.getTime()) /
               (1000 * 60 * 60 * 24),
           );
+
+          // Merge the anonymous user's analytics history into the new account
+          // (PostHog alias) so their pre-signup funnel attributes to them.
+          aliasServerUser(anonymousUser.user.id, newUser.user.id);
 
           // Track the conversion event
           trackServerEvent(newUser.user.id, "anonymous_user_converted", {

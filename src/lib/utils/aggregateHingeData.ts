@@ -21,7 +21,7 @@ export type AggregatedHingeData = {
 
 type DateEvent = {
   date: Date;
-  type: "match" | "like" | "reject" | "messageSent";
+  type: "match" | "like" | "remove" | "messageSent";
   matchId?: string;
 };
 
@@ -49,7 +49,7 @@ export function aggregateHingeData(
       case "REJECT":
         events.push({
           date: new Date(interaction.timestamp),
-          type: "reject",
+          type: "remove",
         });
         break;
       case "MATCH":
@@ -65,7 +65,12 @@ export function aggregateHingeData(
           type: "messageSent",
         });
         break;
-      // UNMATCH not currently visualized
+      case "UNMATCH":
+        events.push({
+          date: new Date(interaction.timestamp),
+          type: "remove",
+        });
+        break;
     }
   });
 
@@ -269,7 +274,7 @@ function aggregateEvents(
         case "like":
           acc.likes++;
           break;
-        case "reject":
+        case "remove":
           acc.rejects++;
           break;
         case "messageSent":
@@ -335,6 +340,23 @@ export function filterMatchesByDateRange(
     if (!match.matchedAt) return false;
     const matchDate = new Date(match.matchedAt);
     return matchDate >= fromTime && matchDate <= toTime;
+  });
+}
+
+export function filterHingeInteractionsByDateRange(
+  interactions: HingeInteraction[],
+  from: Date,
+  to: Date,
+): HingeInteraction[] {
+  const fromTime = new Date(from);
+  fromTime.setHours(0, 0, 0, 0);
+
+  const toTime = new Date(to);
+  toTime.setHours(23, 59, 59, 999);
+
+  return interactions.filter((interaction) => {
+    const timestamp = new Date(interaction.timestamp).getTime();
+    return timestamp >= fromTime.getTime() && timestamp <= toTime.getTime();
   });
 }
 

@@ -43,9 +43,7 @@ export function ProfileOverview({ className }: { className?: string }) {
   const genderDisplay = getGenderDisplay(profile.gender);
   const age = profile.ageAtUpload;
 
-  // Calculate total messages
-  const totalMessages =
-    (meta?.messagesSentTotal ?? 0) + (meta?.messagesReceivedTotal ?? 0);
+  const totalMessages = meta?.messagesSentTotal ?? 0;
 
   return (
     <Card

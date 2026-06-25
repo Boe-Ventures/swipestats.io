@@ -411,18 +411,22 @@ export const profileRouter = {
           country: input.country,
         });
 
-        trackServerEvent(ctx.session.user.id, "tinder_profile_updated", {
-          tinderId: input.tinderId,
-          matchCount: result.metrics.matchCount,
-          messageCount: result.metrics.messageCount,
-          photoCount: result.metrics.photoCount,
-          usageDays: result.metrics.usageDays,
-          hasPhotos: result.metrics.hasPhotos,
-          processingTimeMs: result.metrics.processingTimeMs,
-          jsonSizeMB: result.metrics.jsonSizeMB,
-          consentPhotos: input.consentPhotos ?? true,
-          consentWork: input.consentWork ?? true,
-        });
+        // Skip the event when the same export was re-uploaded (nothing new
+        // merged in) — otherwise it reads as a noisy "0 new" update.
+        if (!result.isNoOp) {
+          trackServerEvent(ctx.session.user.id, "tinder_profile_updated", {
+            tinderId: input.tinderId,
+            matchCount: result.metrics.matchCount,
+            messageCount: result.metrics.messageCount,
+            photoCount: result.metrics.photoCount,
+            usageDays: result.metrics.usageDays,
+            hasPhotos: result.metrics.hasPhotos,
+            processingTimeMs: result.metrics.processingTimeMs,
+            jsonSizeMB: result.metrics.jsonSizeMB,
+            consentPhotos: input.consentPhotos ?? true,
+            consentWork: input.consentWork ?? true,
+          });
+        }
 
         return result.profile;
       } catch (error) {

@@ -7,6 +7,7 @@ import {
   Globe,
   Palette,
   ClipboardList,
+  Columns3,
 } from "lucide-react";
 import { ActionCard } from "./ActionCard";
 
@@ -17,6 +18,12 @@ export function QuickActions() {
         Quick Actions
       </h2>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        <ActionCard
+          icon={Columns3}
+          title="Profile Compare"
+          description="Inspect shared profile comparisons"
+          href="/admin/profile-compare"
+        />
         <ActionCard
           icon={ImageIcon}
           title="Media Review"

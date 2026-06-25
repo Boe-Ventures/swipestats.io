@@ -100,17 +100,17 @@ interface TinderUserBase {
 
   interests?: Interest[];
   ip_address: string;
-  is_traveling: boolean;
+  is_traveling?: boolean; // Absent in 2026+ exports
   jobs?: Job[];
 
   pos: Pos;
   schools?: School[];
-  travel_location_info: TravelLocationInfo[];
+  travel_location_info?: TravelLocationInfo[]; // Absent in 2026+ exports
   client_registration_info?: {
     platform: "ios" | "android" | string;
     app_version: number;
   };
-  travel_pos: TravelPos;
+  travel_pos?: TravelPos; // Absent in 2026+ exports
 
   college: unknown[];
   user_interests?: string[]; //  "Fashion","Grab a drink","Cooking","Brunch","Wine"
@@ -136,6 +136,26 @@ interface TinderUserBase {
   user_contents?: unknown[];
   user_message_consents?: unknown[];
   authIds?: unknown[];
+
+  // New fields in 2026+ exports
+  bio_suppression?: boolean;
+  plus_subscription?: string; // e.g. "plus_subscription_0035_1m"
+  // "Modes" feature (Music Mode, Astrology Mode) — deeply nested settings/engagement
+  modes?: { modes?: Record<string, unknown> } & Record<string, unknown>;
+  // "Duo"/Matchmaker feature. NOTE: partner_uid is a foreign Tinder user id (third-party PII) — stripped during anonymization
+  duo_groups?: {
+    group_id: string;
+    partner_uid: string;
+    created_at: string;
+  }[];
+  // Matchmaker invites. NOTE: contains share_id referencing invites between users — stripped during anonymization
+  invites_received?: {
+    state: string;
+    share_id: string;
+    created_at?: string;
+    updated_at?: string;
+  }[];
+  invites_sent?: unknown[];
 }
 
 interface Descriptor {
