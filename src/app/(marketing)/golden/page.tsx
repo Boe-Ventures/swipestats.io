@@ -46,7 +46,7 @@ function RoseGlow({ className }: { className?: string }) {
 
 function Hero() {
   return (
-    <section className="relative overflow-hidden pt-16 pb-2">
+    <section className="relative overflow-x-clip pt-16 pb-12">
       <GridBg />
       <RoseGlow className="top-[-160px] left-1/2 h-[560px] w-[680px] -translate-x-1/2" />
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
@@ -92,10 +92,11 @@ function Hero() {
 
         {/* the real, richer insights showcase, framed as the live demo */}
         <div className="mt-12">
-          <div className="mx-auto max-w-[1120px] rounded-3xl border border-gray-200 bg-gray-50 p-4 shadow-[0_10px_30px_oklch(0.2_0.02_286/0.1),0_30px_60px_oklch(0.2_0.02_286/0.12)] [&_[data-slot=card]]:border-gray-200/70 [&_[data-slot=card]]:shadow-none! sm:p-6">
+          <div className="mx-auto max-w-[1120px] rounded-3xl border border-gray-200 bg-gray-50 p-4 shadow-[0_8px_24px_oklch(0.2_0.02_286/0.08),0_18px_44px_oklch(0.2_0.02_286/0.1)] sm:p-6 [&_[data-slot=card]]:border-gray-200/70 [&_[data-slot=card]]:shadow-none!">
             <p className="mb-3 flex items-center justify-center gap-2 text-[12.5px] font-semibold text-gray-600">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              Real demo, real data. Click through an anonymized profile yourself.
+              Real demo, real data. Click through an anonymized profile
+              yourself.
             </p>
             <InsightsShowcase />
           </div>
@@ -181,7 +182,10 @@ function HowItWorks() {
         />
         <div className="mt-13 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {steps.map((s, i) => (
-            <div key={s.title} className="flex flex-col items-center text-center">
+            <div
+              key={s.title}
+              className="flex flex-col items-center text-center"
+            >
               <div className="grid h-[46px] w-[46px] place-items-center rounded-xl border border-rose-600/15 bg-rose-50 font-mono text-[17px] font-semibold text-rose-600">
                 {i + 1}
               </div>
@@ -249,7 +253,10 @@ function Faq() {
       <RoseGlow className="right-[-140px] bottom-[-120px] h-[460px] w-[460px]" />
       <div className="relative mx-auto max-w-[1216px] px-6 lg:px-8">
         <SectionHead center eyebrow="FAQ" title="The honest answers" />
-        <FaqList items={faqs} className="mx-auto mt-9 max-w-[760px] text-left" />
+        <FaqList
+          items={faqs}
+          className="mx-auto mt-9 max-w-[760px] text-left"
+        />
       </div>
     </section>
   );
@@ -401,7 +408,7 @@ function Research() {
               <p className="mt-2 min-h-[38px] text-[13.5px] text-gray-500">
                 {tier.desc}
               </p>
-              <div className="mt-[18px] text-[38px] font-bold tracking-[-0.03em] tabular-nums text-gray-900">
+              <div className="mt-[18px] text-[38px] font-bold tracking-[-0.03em] text-gray-900 tabular-nums">
                 {tier.price}
               </div>
               <ul className="mt-5 flex flex-1 flex-col gap-[11px]">
@@ -483,9 +490,9 @@ function FinalCta() {
         <CtaBand
           center
           glow="bottom-left"
-          eyebrow="Ready?"
-          title="See how you really date"
-          lead="Upload your export and get your insights in minutes. Free, anonymous, open source."
+          eyebrow="Ready to explore?"
+          title="Upload your data today"
+          lead="Turn your Tinder or Hinge export into clear insights in minutes. Free, anonymous, open source."
           actions={
             <>
               <Link
@@ -513,8 +520,6 @@ function FinalCta() {
 
 const TINDER_GRAD =
   "linear-gradient(135deg, oklch(0.68 0.18 35), oklch(0.63 0.21 18))";
-const HINGE_COLOR = "oklch(0.5 0.18 295)";
-const BUMBLE_COLOR = "oklch(0.78 0.16 85)";
 
 function TinderMark({ className }: { className?: string }) {
   return (
@@ -523,27 +528,27 @@ function TinderMark({ className }: { className?: string }) {
     </svg>
   );
 }
-function BumbleMark({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 2500 2500" fill="currentColor" className={className}>
-      <path d="m2278.8 1314-458 791c-19.5 33.7-55.7 56.2-97.7 56.2h-915.5c-42 0-78.1-22.5-97.7-56.6l-458.9-790.6c-20.2-34.9-20.2-77.9 0-112.8l458-791c19.5-33.2 56.2-56.2 97.7-56.2h917c42 0 78.1 22.9 97.7 56.6l457.5 790.5c20.2 34.9 20.2 78-.1 112.9zm-1153.8 447.2h280.8c62.3 0 112.8-50.5 112.8-112.8s-50.5-112.8-112.8-112.8h-280.8c-62.3 0-112.8 50.5-112.8 112.8s50.5 112.8 112.8 112.8zm392.1-1004.4h-503.4c-62.4 0-113 50.6-113 113s50.6 113 113 113h503.4c62.4 0 113-50.6 113-113s-50.6-113-113-113zm204.6 389.2h-913.1c-62.4 0-113 50.6-113 113s50.6 113 113 113h913.1c62.4 0 113-50.6 113-113s-50.6-113-113-113z" />
-    </svg>
-  );
-}
-function HingeMark({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="-300.4 530 263.8 243.5"
-      fill="currentColor"
-      className={className}
-    >
-      <path d="M-36.6,620.1c-17.4,37.4-46.6,47.7-79.5,47.7h-2.9v105.7h-41.4V667.8h-50.6c-31.4,0-47.5,10.6-47.9,44.7v61h-41.5V530h41.4 v112.3c13.8-10.4,32.5-16.6,56.6-16.6h41.9V530h41.4v95.7c20.7,0,37-0.4,49.5-20.4L-36.6,620.1z" />
-    </svg>
-  );
-}
 
-const dataRequestProviders = [
+type DataRequestProvider = {
+  name: string;
+  href: string;
+  desc: string;
+} & (
+  | {
+      kind: "mark";
+      Mark: typeof TinderMark;
+      badge: { background: string };
+      ink: string;
+    }
+  | {
+      kind: "image";
+      iconImage: string;
+    }
+);
+
+const dataRequestProviders: DataRequestProvider[] = [
   {
+    kind: "mark",
     name: "Tinder",
     href: "https://www.help.tinder.com/hc/en-us/articles/115005626726-How-do-I-request-a-copy-of-my-personal-data",
     desc: "Easy. Follow the instructions to request your data, wait 1–3 days, and you'll get a link to download your tinder.json. Then come back here.",
@@ -552,20 +557,18 @@ const dataRequestProviders = [
     ink: "#fff",
   },
   {
+    kind: "image",
     name: "Bumble",
     href: "https://bumble.com/en/help/how-can-i-request-my-data-or-retrieve-past-conversations",
     desc: "A bit more manual and slower. After you submit the request it can take up to 30 days before you hear back.",
-    Mark: BumbleMark,
-    badge: { background: BUMBLE_COLOR },
-    ink: "#5c4300",
+    iconImage: "/images/brand/bumble.jpg",
   },
   {
+    kind: "image",
     name: "Hinge",
     href: "https://hingeapp.zendesk.com/hc/en-us/articles/360004792234-Data-Requests",
     desc: "Started inside the app under Account settings. All the steps are in their help article, linked here.",
-    Mark: HingeMark,
-    badge: { background: HINGE_COLOR },
-    ink: "#fff",
+    iconImage: "/images/brand/hinge.jpg",
   },
 ];
 
@@ -600,7 +603,7 @@ function DataRequestBand() {
         </div>
 
         {/* provider cards overlapping the band */}
-        <div className="relative z-10 -mt-32 grid grid-cols-1 gap-6 px-2 md:grid-cols-3 max-[720px]:-mt-28">
+        <div className="relative z-10 -mt-32 grid grid-cols-1 gap-6 px-2 max-[720px]:-mt-28 md:grid-cols-3">
           {dataRequestProviders.map((p) => (
             <div
               key={p.name}
@@ -608,10 +611,22 @@ function DataRequestBand() {
             >
               <div className="relative flex-1 px-7 pt-14 pb-7">
                 <span
-                  className="absolute -top-7 grid h-14 w-14 place-items-center rounded-2xl shadow-[0_6px_16px_oklch(0.2_0.02_286/0.22)]"
-                  style={{ ...p.badge, color: p.ink }}
+                  className="absolute -top-7 grid h-14 w-14 place-items-center overflow-hidden rounded-2xl shadow-[0_6px_16px_oklch(0.2_0.02_286/0.22)]"
+                  style={
+                    p.kind === "mark" ? { ...p.badge, color: p.ink } : undefined
+                  }
                 >
-                  <p.Mark className="h-7 w-7" />
+                  {p.kind === "image" ? (
+                    <Image
+                      src={p.iconImage}
+                      alt={`${p.name} logo`}
+                      fill
+                      sizes="56px"
+                      className="object-cover"
+                    />
+                  ) : (
+                    <p.Mark className="h-7 w-7" />
+                  )}
                 </span>
                 <h3 className="text-[19px] font-bold tracking-[-0.02em] text-gray-900">
                   {p.name}
@@ -645,36 +660,43 @@ const masonryTestimonials = [
     body: "The activity charts completely changed how I understand my dating patterns. Being able to see my swipe activity, match rates, and messaging trends over time helped me identify when I'm most successful. The profile directory is a game-changer for comparing yourself to others.",
     name: "Female, 32",
     loc: "Berlin, Germany",
+    image: "/images/marketing/testimonials/f37.jpeg",
   },
   {
     body: "The profile comparison tool is brilliant. I can see my Tinder and Hinge profiles side-by-side and track which one performs better. Helped me optimize both apps quickly.",
     name: "Male, 29",
     loc: "London, UK",
+    image: "/images/marketing/testimonials/m29.jpeg",
   },
   {
     body: "Browsing the profile directory gave me so many ideas for improving my own profile. Seeing real data from others helped me understand what actually works.",
     name: "Female, 28",
     loc: "New York, USA",
+    image: "/images/marketing/testimonials/f34.jpeg",
   },
   {
     body: "The detailed activity charts show exactly when I get the most matches. I adjusted my active hours based on the data and saw immediate improvement.",
     name: "Male, 26",
     loc: "Sydney, Australia",
+    image: "/images/marketing/testimonials/m26.jpeg",
   },
   {
     body: "Comparing my stats to the profile directory benchmarks helped me set realistic goals. Now I can see where I stand and what to improve.",
     name: "Male, 31",
     loc: "Tirana, Albania",
+    image: "/images/marketing/testimonials/m37.jpeg",
   },
   {
     body: "The insights dashboard breaks down everything: swipe rates, match rates, messaging patterns. Finally I understand what's working and what's not. The time-based analysis is incredibly valuable.",
     name: "Male, 28",
     loc: "São Paulo, Brazil",
+    image: "/images/marketing/testimonials/m32.jpeg",
   },
   {
     body: "Love the profile comparison feature. Tested different photo orders across apps and could see which setup got more matches. Made optimization so much easier.",
     name: "Female, 25",
     loc: "Cape Town, South Africa",
+    image: "/images/marketing/testimonials/f25.jpeg",
   },
 ];
 
@@ -699,7 +721,13 @@ function TestimonialsMasonry() {
                 &ldquo;{t.body}&rdquo;
               </blockquote>
               <figcaption className="mt-5 flex items-center gap-3">
-                <span className="h-9 w-9 flex-none rounded-full bg-gray-200 ring-1 ring-gray-200" />
+                <Image
+                  src={t.image}
+                  alt={t.name}
+                  width={36}
+                  height={36}
+                  className="h-9 w-9 flex-none rounded-full bg-gray-100 object-cover ring-1 ring-gray-200"
+                />
                 <span>
                   <span className="block text-[13.5px] font-semibold text-gray-900">
                     {t.name}
@@ -731,13 +759,14 @@ function AboutImage() {
               alt="Kristian, founder of SwipeStats"
               fill
               sizes="(max-width: 1024px) 100vw, 50vw"
-              className="object-cover opacity-45 saturate-[0.75]"
+              className="scale-105 object-cover opacity-35 blur-[2px] saturate-[0.65]"
             />
+            <div className="absolute inset-0 bg-linear-to-t from-gray-950/90 via-gray-950/60 to-gray-950/30" />
             <RoseGlow className="bottom-[-160px] left-[-120px] h-[420px] w-[420px]" />
             <figure className="relative">
               <blockquote className="text-[clamp(18px,2.2vw,24px)] leading-[1.4] font-semibold tracking-[-0.01em] text-white">
-                &ldquo;It started as a weekend project born out of curiosity and a
-                love for data. I never imagined it would reach thousands of
+                &ldquo;It started as a weekend project born out of curiosity and
+                a love for data. I never imagined it would reach thousands of
                 people worldwide.&rdquo;
               </blockquote>
               <figcaption className="mt-5">

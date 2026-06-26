@@ -20,6 +20,7 @@ import {
   marketingButton,
 } from "../_components/marketing-ui";
 import { CtaBand } from "../_components/CtaBand";
+import { FaqList } from "../_components/FaqList";
 import { ProviderGuides } from "./ProviderGuides";
 import { NewsletterSignup } from "../_components/NewsletterSignup";
 
@@ -54,16 +55,22 @@ function HeroSection() {
           </h1>
           <p className="mt-5 text-[clamp(17px,2vw,20px)] leading-[1.6] text-gray-600">
             It&apos;s easy, but not instant. You log into your app, ask for your
-            data export, and wait for an email. Once it lands, upload the file to
-            SwipeStats to unlock your personal insights. Here&apos;s exactly how,
-            for each app.
+            data export, and wait for an email. Once it lands, upload the file
+            to SwipeStats to unlock your personal insights. Here&apos;s exactly
+            how, for each app.
           </p>
           <div className="mt-[30px] flex flex-wrap items-center gap-3.5">
-            <Link href="#providers" className={marketingButton({ variant: "primary", size: "lg" })}>
+            <Link
+              href="#providers"
+              className={marketingButton({ variant: "primary", size: "lg" })}
+            >
               Pick your app
               <ArrowRightIcon className="h-4 w-4" />
             </Link>
-            <Link href="#reminder" className={marketingButton({ variant: "ghost", size: "lg" })}>
+            <Link
+              href="#reminder"
+              className={marketingButton({ variant: "ghost", size: "lg" })}
+            >
               Remind me when it arrives
             </Link>
           </div>
@@ -183,8 +190,9 @@ function PrivacySection() {
             <p className="mt-[7px] max-w-[640px] text-[14.5px] leading-[1.6] text-gray-700">
               Direct identifiers (name, email, phone, username) are stripped{" "}
               <strong>in your browser</strong> before anything is uploaded. Your
-              profile is linked to a hashed anonymous ID, not your real identity.
-              We&apos;re open source, so you can verify exactly how it works.
+              profile is linked to a hashed anonymous ID, not your real
+              identity. We&apos;re open source, so you can verify exactly how it
+              works.
             </p>
           </div>
           <a
@@ -228,7 +236,11 @@ function AfterSection() {
   return (
     <section className="border-y border-gray-200 bg-gray-50 py-[88px] max-[720px]:py-[60px]">
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
-        <SectionHead center eyebrow="After you upload" title="What your data unlocks" />
+        <SectionHead
+          center
+          eyebrow="After you upload"
+          title="What your data unlocks"
+        />
         <div className="mt-11 grid grid-cols-1 gap-5 md:grid-cols-3">
           {cards.map((c) => (
             <div
@@ -278,8 +290,8 @@ function ReminderSection() {
             </h3>
             <p className="mt-2.5 max-w-[440px] text-[14.5px] text-gray-400">
               Data requests take a day or two, and Bumble up to a month. Leave
-              your email and we&apos;ll nudge you when it&apos;s time to come back
-              and upload.
+              your email and we&apos;ll nudge you when it&apos;s time to come
+              back and upload.
             </p>
           </div>
           <NewsletterSignup
@@ -290,7 +302,10 @@ function ReminderSection() {
             formClassName="relative z-[2] flex flex-col gap-2.5 sm:flex-row sm:items-center"
             groupClassName="flex flex-col gap-2 sm:flex-row sm:items-center"
             inputClassName="min-w-[220px] rounded-[10px] border border-white/[0.18] bg-white/[0.07] px-4 py-3 text-[14.5px] text-white placeholder:text-gray-500 focus:border-rose-600 focus:outline-none"
-            buttonClassName={marketingButton({ variant: "primary", size: "lg" })}
+            buttonClassName={marketingButton({
+              variant: "primary",
+              size: "lg",
+            })}
             successClassName="relative z-[2] flex items-center gap-3 rounded-[10px] border border-white/15 bg-white/[0.07] px-4 py-3 text-[14.5px] font-semibold text-white"
             successLabel="You're on the list. We'll nudge you when it's time to upload."
           />
@@ -354,45 +369,20 @@ function FaqSection() {
   return (
     <section
       id="faq"
-      className="border-t border-gray-200 bg-gray-50 py-[88px] max-[720px]:py-[60px]"
+      className="relative overflow-x-clip py-[88px] max-[720px]:py-[60px]"
     >
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
-        <SectionHead eyebrow="FAQ" title="Requesting your data, explained" />
-        <div className="mt-9 max-w-[860px] border-t border-gray-200">
-          {faqs.map((f) => (
-            <details
-              key={f.q}
-              open={f.open}
-              className="group border-b border-gray-200"
-            >
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-5 py-[22px] text-[16.5px] font-semibold text-gray-900 [&::-webkit-details-marker]:hidden">
-                {f.q}
-                <PlusChevron />
-              </summary>
-              <div className="max-w-[760px] pb-6 text-[14.5px] leading-[1.7] text-gray-600">
-                {f.a}
-              </div>
-            </details>
-          ))}
-        </div>
+        <SectionHead
+          center
+          eyebrow="FAQ"
+          title="Requesting your data, explained"
+        />
+        <FaqList
+          items={faqs}
+          className="mx-auto mt-9 max-w-[760px] text-left"
+        />
       </div>
     </section>
-  );
-}
-
-function PlusChevron() {
-  return (
-    <svg
-      className="h-[22px] w-[22px] flex-none text-rose-600 transition-transform group-open:rotate-45"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      aria-hidden
-    >
-      <path d="M12 5v14M5 12h14" />
-    </svg>
   );
 }
 
@@ -403,10 +393,11 @@ function FinalCtaSection() {
     <section className="pb-[88px] max-[720px]:pb-[60px]">
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
         <CtaBand
+          center
           glow="bottom-left"
-          eyebrow="Ready?"
-          title="Request your data now, upload in a few days"
-          lead="The clock starts when you ask. Kick off your request today and your insights will be waiting when the email lands."
+          eyebrow="Ready to explore?"
+          title="Upload your data today"
+          lead="Request your export now, then come back when the email lands. Your insights generate in minutes."
           actions={
             <>
               <Link
@@ -419,7 +410,7 @@ function FinalCtaSection() {
                 href={UPLOAD_HREF}
                 className={marketingButton({ variant: "white", size: "lg" })}
               >
-                Upload your file
+                Upload data
               </Link>
             </>
           }

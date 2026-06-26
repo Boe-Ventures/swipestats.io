@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowTopRightOnSquareIcon,
@@ -73,6 +74,7 @@ type Provider = {
   name: string;
   tabMeta: string;
   icon: ({ className }: { className?: string }) => React.JSX.Element;
+  iconImage?: string;
   iconStyle: React.CSSProperties;
   iconColor: string;
   tabActiveBg: string;
@@ -182,6 +184,7 @@ const providers: Provider[] = [
     name: "Hinge",
     tabMeta: "IN-APP · 24–48h",
     icon: HingeIcon,
+    iconImage: "/images/brand/hinge.jpg",
     iconStyle: { background: HINGE },
     iconColor: "#fff",
     tabActiveBg: "oklch(0.96 0.03 295)",
@@ -249,6 +252,7 @@ const providers: Provider[] = [
     name: "Bumble",
     tabMeta: "SLOWER · up to 30d",
     icon: BumbleIcon,
+    iconImage: "/images/brand/bumble.jpg",
     iconStyle: { background: BUMBLE },
     iconColor: BUMBLE_INK,
     tabActiveBg: "oklch(0.97 0.04 90)",
@@ -328,6 +332,51 @@ const providers: Provider[] = [
   },
 ];
 
+/* ----------------------------------------------------------- app icon */
+
+function ProviderIconTile({
+  provider,
+  className,
+  iconClassName,
+}: {
+  provider: Provider;
+  className?: string;
+  iconClassName?: string;
+}) {
+  const Icon = provider.icon;
+
+  if (provider.iconImage) {
+    return (
+      <span
+        className={cn(
+          "relative flex-none overflow-hidden shadow-[0_1px_2px_oklch(0.2_0.02_286/0.06),0_1px_3px_oklch(0.2_0.02_286/0.05)]",
+          className,
+        )}
+      >
+        <Image
+          src={provider.iconImage}
+          alt={`${provider.name} logo`}
+          fill
+          sizes="52px"
+          className="object-cover"
+        />
+      </span>
+    );
+  }
+
+  return (
+    <span
+      className={cn(
+        "grid flex-none place-items-center shadow-[0_1px_2px_oklch(0.2_0.02_286/0.06),0_1px_3px_oklch(0.2_0.02_286/0.05)]",
+        className,
+      )}
+      style={{ ...provider.iconStyle, color: provider.iconColor }}
+    >
+      <Icon className={iconClassName} />
+    </span>
+  );
+}
+
 /* ----------------------------------------------------------- phone mockup */
 
 function Phone({ provider }: { provider: Provider }) {
@@ -388,18 +437,16 @@ function Phone({ provider }: { provider: Provider }) {
 /* ----------------------------------------------------------- panel */
 
 function ProviderPanel({ provider }: { provider: Provider }) {
-  const Icon = provider.icon;
   const ctaInk = provider.id === "bumble" ? "#5c4300" : "#fff";
   return (
     <div className="mt-6 grid grid-cols-1 items-start gap-9 lg:grid-cols-[1.25fr_0.75fr]">
       <div>
         <div className="flex items-center gap-3.5">
-          <span
-            className="grid h-[52px] w-[52px] flex-none place-items-center rounded-[13px] shadow-[0_1px_2px_oklch(0.2_0.02_286/0.06),0_1px_3px_oklch(0.2_0.02_286/0.05)]"
-            style={{ ...provider.iconStyle, color: provider.iconColor }}
-          >
-            <Icon className="h-7 w-7" />
-          </span>
+          <ProviderIconTile
+            provider={provider}
+            className="h-[52px] w-[52px] rounded-[13px]"
+            iconClassName="h-7 w-7"
+          />
           <div>
             <h2 className="text-[26px] font-bold tracking-[-0.02em] text-gray-900">
               {provider.name}
@@ -445,7 +492,10 @@ function ProviderPanel({ provider }: { provider: Provider }) {
           {provider.steps.map((step, i) => {
             const last = i === provider.steps.length - 1;
             return (
-              <li key={step.title} className="relative pl-[52px] pb-[22px] last:pb-0">
+              <li
+                key={step.title}
+                className="relative pb-[22px] pl-[52px] last:pb-0"
+              >
                 {!last && (
                   <span className="absolute top-9 bottom-1 left-[17px] w-[1.5px] bg-gray-200" />
                 )}
@@ -508,7 +558,6 @@ export function ProviderGuides() {
     <div>
       <div className="flex flex-wrap gap-2.5" role="tablist">
         {providers.map((p) => {
-          const Icon = p.icon;
           const isActive = p.id === active;
           return (
             <button
@@ -524,12 +573,11 @@ export function ProviderGuides() {
               )}
               style={isActive ? { background: p.tabActiveBg } : undefined}
             >
-              <span
-                className="grid h-[30px] w-[30px] flex-none place-items-center rounded-lg"
-                style={{ ...p.iconStyle, color: p.iconColor }}
-              >
-                <Icon className="h-[17px] w-[17px]" />
-              </span>
+              <ProviderIconTile
+                provider={p}
+                className="h-[30px] w-[30px] rounded-lg"
+                iconClassName="h-[17px] w-[17px]"
+              />
               <span className="text-left">
                 <span className="block text-[15px] font-bold text-gray-900">
                   {p.name}
