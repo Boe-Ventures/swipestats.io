@@ -47,7 +47,7 @@ function BumbleIcon({ className }: { className?: string }) {
 const TINDER = "oklch(0.63 0.21 18)";
 const TINDER_GRAD =
   "linear-gradient(135deg, oklch(0.68 0.18 35), oklch(0.63 0.21 18))";
-const HINGE = "oklch(0.5 0.18 295)";
+const HINGE = "oklch(0.18 0.01 286)";
 const BUMBLE = "oklch(0.78 0.16 85)";
 const BUMBLE_INK = "#6b4e00";
 
@@ -187,7 +187,7 @@ const providers: Provider[] = [
     iconImage: "/images/brand/hinge.jpg",
     iconStyle: { background: HINGE },
     iconColor: "#fff",
-    tabActiveBg: "oklch(0.96 0.03 295)",
+    tabActiveBg: "oklch(0.96 0.004 286)",
     accent: HINGE,
     numberInk: "#fff",
     sub: "Requested inside the app, in Account settings.",
