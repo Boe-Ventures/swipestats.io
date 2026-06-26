@@ -98,8 +98,8 @@ export default function GoldenDashboardPage() {
               GOLDEN_CHART_COLORS
             </code>{" "}
             palette. See the live activity chart on the{" "}
-            <Link href="/golden" className="font-semibold text-rose-600">
-              golden home
+            <Link href="/" className="font-semibold text-rose-600">
+              home page
             </Link>
             .
           </p>
