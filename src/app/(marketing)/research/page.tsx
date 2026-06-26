@@ -4,10 +4,16 @@ import {
   AcademicCapIcon,
   ArrowRightIcon,
   ArrowDownTrayIcon,
+  ChartBarIcon,
   ChartPieIcon,
   CheckIcon,
   ClockIcon,
+  CodeBracketSquareIcon,
   DocumentDuplicateIcon,
+  DocumentTextIcon,
+  NewspaperIcon,
+  PlayCircleIcon,
+  PresentationChartLineIcon,
   ShieldCheckIcon,
   UsersIcon,
   VideoCameraIcon,
@@ -191,10 +197,10 @@ function HeroDataCard() {
           { k: "Messages", v: "1.1M" },
         ].map((s) => (
           <div key={s.k} className="bg-white px-4 py-3.5">
-            <div className="font-mono text-[10.5px] uppercase tracking-[0.05em] text-gray-500">
+            <div className="font-mono text-[10.5px] tracking-[0.05em] text-gray-500 uppercase">
               {s.k}
             </div>
-            <div className="mt-[3px] text-[21px] font-bold tracking-[-0.02em] tabular-nums text-gray-900">
+            <div className="mt-[3px] text-[21px] font-bold tracking-[-0.02em] text-gray-900 tabular-nums">
               {s.v}
             </div>
           </div>
@@ -212,7 +218,7 @@ function HeroSection() {
         <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
           <div>
             <Eyebrow noRule>
-              <span className="inline-flex items-center gap-2 rounded-full border border-rose-600/20 bg-rose-50 px-3 py-1.5 text-[13px] font-semibold normal-case tracking-normal text-rose-700">
+              <span className="inline-flex items-center gap-2 rounded-full border border-rose-600/20 bg-rose-50 px-3 py-1.5 text-[13px] font-semibold tracking-normal text-rose-700 normal-case">
                 Trusted by researchers
               </span>
               <span className="text-gray-500">University of Chicago · APA</span>
@@ -224,8 +230,9 @@ function HeroSection() {
               Anonymized, consent-based behavior from{" "}
               <strong className="font-semibold text-gray-900">
                 7,000+ real dating-app users
-              </strong>: swipes, matches, and messages. Ready to analyze,
-              publish, and cite. Not a survey.
+              </strong>
+              : swipes, matches, and messages. Ready to analyze, publish, and
+              cite. Not a survey.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3.5">
               <Link
@@ -253,7 +260,7 @@ function HeroSection() {
                 <div key={t.l} className="flex items-center gap-7">
                   {i > 0 && <div className="h-[34px] w-px bg-gray-200" />}
                   <div className="flex flex-col gap-0.5">
-                    <span className="text-[22px] font-bold tracking-[-0.02em] tabular-nums text-gray-900">
+                    <span className="text-[22px] font-bold tracking-[-0.02em] text-gray-900 tabular-nums">
                       {t.n}
                     </span>
                     <span className="text-[12.5px] text-gray-500">{t.l}</span>
@@ -282,7 +289,7 @@ function LogoStrip() {
   return (
     <section className="border-y border-gray-200 bg-gray-50 py-14">
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
-        <p className="mb-7 text-center font-mono text-[12px] uppercase tracking-[0.08em] text-gray-500">
+        <p className="mb-7 text-center font-mono text-[12px] tracking-[0.08em] text-gray-500 uppercase">
           Used by researchers, journalists &amp; creators worldwide
         </p>
         <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-3.5">
@@ -370,7 +377,7 @@ function ValueSection() {
 
         <div className="mt-11 grid grid-cols-1 gap-5 md:grid-cols-2">
           <div className="rounded-2xl border border-gray-200 bg-gray-50 p-6">
-            <h4 className="font-mono text-[13px] uppercase tracking-[0.06em] text-gray-500">
+            <h4 className="font-mono text-[13px] tracking-[0.06em] text-gray-500 uppercase">
               Typical survey data
             </h4>
             <ul className="mt-4 flex flex-col gap-3">
@@ -386,7 +393,7 @@ function ValueSection() {
             </ul>
           </div>
           <div className="rounded-2xl border border-rose-600/30 bg-white p-6 shadow-[0_1px_2px_oklch(0.2_0.02_286/0.06),0_1px_3px_oklch(0.2_0.02_286/0.05)]">
-            <h4 className="font-mono text-[13px] uppercase tracking-[0.06em] text-rose-600">
+            <h4 className="font-mono text-[13px] tracking-[0.06em] text-rose-600 uppercase">
               SwipeStats datasets
             </h4>
             <ul className="mt-4 flex flex-col gap-3">
@@ -484,7 +491,8 @@ function SchemaSection() {
           <div className="rounded-2xl border border-gray-200 bg-white p-[22px] shadow-[0_1px_2px_oklch(0.2_0.02_286/0.05)]">
             <div className="mb-[18px] flex items-baseline justify-between">
               <span className="text-[14px] font-bold text-gray-900">
-                Sample rows: <span className="font-mono text-gray-500">meta</span>
+                Sample rows:{" "}
+                <span className="font-mono text-gray-500">meta</span>
               </span>
               <span className="font-mono text-[11px] text-gray-500">
                 5 of 7,214
@@ -498,7 +506,7 @@ function SchemaSection() {
                       <th
                         key={h}
                         className={cn(
-                          "border-b border-gray-200 bg-gray-50 px-4 py-3 font-mono text-[12px] font-medium uppercase tracking-[0.04em] text-gray-500",
+                          "border-b border-gray-200 bg-gray-50 px-4 py-3 font-mono text-[12px] font-medium tracking-[0.04em] text-gray-500 uppercase",
                           i === 0 ? "text-left" : "text-right",
                         )}
                       >
@@ -518,7 +526,7 @@ function SchemaSection() {
                           "border-b border-gray-200 px-4 py-3",
                           ci === 0
                             ? "font-mono text-[13px] font-medium text-gray-900"
-                            : "text-right font-mono tabular-nums text-gray-700",
+                            : "text-right font-mono text-gray-700 tabular-nums",
                         )}
                       >
                         {c}
@@ -555,7 +563,7 @@ function SchemaSection() {
             </div>
             <div className="mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-gray-200 bg-gray-200">
               <div className="bg-white px-6 py-[22px]">
-                <div className="font-mono text-[11.5px] uppercase tracking-[0.06em] text-gray-500">
+                <div className="font-mono text-[11.5px] tracking-[0.06em] text-gray-500 uppercase">
                   Format
                 </div>
                 <div className="mt-2 text-[24px] font-bold tracking-[-0.03em] text-gray-900">
@@ -566,10 +574,10 @@ function SchemaSection() {
                 </div>
               </div>
               <div className="bg-white px-6 py-[22px]">
-                <div className="font-mono text-[11.5px] uppercase tracking-[0.06em] text-gray-500">
+                <div className="font-mono text-[11.5px] tracking-[0.06em] text-gray-500 uppercase">
                   Per profile
                 </div>
-                <div className="mt-2 text-[24px] font-bold tracking-[-0.03em] tabular-nums text-gray-900">
+                <div className="mt-2 text-[24px] font-bold tracking-[-0.03em] text-gray-900 tabular-nums">
                   70+
                 </div>
                 <div className="mt-2 text-[13px] text-gray-500">
@@ -599,7 +607,7 @@ function DashboardSection() {
 
         {/* the real, data-driven insights (same charts that ship), framed as the live demo */}
         <div className="mt-11">
-          <div className="rounded-3xl border border-gray-200 bg-gray-50 p-4 shadow-[0_10px_30px_oklch(0.2_0.02_286/0.1),0_30px_60px_oklch(0.2_0.02_286/0.12)] [&_[data-slot=card]]:border-gray-200/70 [&_[data-slot=card]]:shadow-none! sm:p-6">
+          <div className="rounded-3xl border border-gray-200 bg-gray-50 p-4 shadow-[0_10px_30px_oklch(0.2_0.02_286/0.1),0_30px_60px_oklch(0.2_0.02_286/0.12)] sm:p-6 [&_[data-slot=card]]:border-gray-200/70 [&_[data-slot=card]]:shadow-none!">
             <p className="mb-3 flex items-center justify-center gap-2 text-[12.5px] font-semibold text-gray-600">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
               The exact dashboard a buyer gets. Click through one real row.
@@ -625,11 +633,173 @@ function DashboardSection() {
 
 /* ---------------------------------------------------------------- use cases */
 
+type UseCaseVisualKind = "creator" | "research" | "journalism" | "portfolio";
+
+function MiniBars({
+  values,
+  tone = "rose",
+}: {
+  values: number[];
+  tone?: "rose" | "teal" | "amber";
+}) {
+  const tones = {
+    rose: "bg-rose-500",
+    teal: "bg-teal-500",
+    amber: "bg-amber-500",
+  };
+
+  return (
+    <div className="flex h-16 items-end gap-1.5">
+      {values.map((value, index) => (
+        <span
+          key={`${value}-${index}`}
+          className={cn("w-full rounded-t-[5px]", tones[tone])}
+          style={{ height: `${value}%` }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function UseCaseVisual({ kind }: { kind: UseCaseVisualKind }) {
+  if (kind === "creator") {
+    return (
+      <div className="relative h-[188px] overflow-hidden border-b border-gray-200 bg-gray-950 p-5 text-white">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_22%_18%,rgba(244,63,94,0.38),transparent_34%),radial-gradient(circle_at_78%_20%,rgba(20,184,166,0.22),transparent_30%)]" />
+        <div className="relative flex h-full flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 font-mono text-[11px] text-white/75">
+              <PlayCircleIcon className="h-4 w-4 text-rose-300" />
+              video analysis
+            </span>
+            <span className="font-mono text-[11px] text-white/45">
+              +1.5M views
+            </span>
+          </div>
+          <div className="grid grid-cols-[minmax(0,1fr)_112px] items-end gap-4 sm:grid-cols-[1fr_128px] sm:gap-6">
+            <div className="min-w-0">
+              <div className="text-[44px] leading-none font-bold tracking-[-0.04em] tabular-nums">
+                1.5M
+              </div>
+              <div className="mt-2 text-[13px] font-medium text-white/65">
+                views from dating-app data stories
+              </div>
+            </div>
+            <MiniBars values={[24, 42, 35, 58, 74, 61, 88]} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (kind === "research") {
+    return (
+      <div className="relative h-[188px] overflow-hidden border-b border-gray-200 bg-white p-5">
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(244,63,94,0.05)_0_25%,transparent_25%_50%,rgba(20,184,166,0.06)_50%_75%,transparent_75%)] bg-[length:28px_28px]" />
+        <div className="relative grid h-full grid-cols-[minmax(0,1fr)_112px] gap-4 sm:grid-cols-[1fr_150px] sm:gap-5">
+          <div className="flex min-w-0 flex-col justify-between rounded-[14px] border border-gray-200 bg-white p-3 shadow-[0_1px_2px_oklch(0.2_0.02_286/0.04)] sm:p-4">
+            <div className="flex min-w-0 items-center gap-2">
+              <DocumentTextIcon className="h-5 w-5 text-rose-600" />
+              <span className="truncate font-mono text-[11px] tracking-[0.06em] text-gray-500 uppercase">
+                manuscript figure
+              </span>
+            </div>
+            <div>
+              <div className="h-2.5 w-5/6 rounded-full bg-gray-900" />
+              <div className="mt-2 h-2 w-full rounded-full bg-gray-200" />
+              <div className="mt-2 h-2 w-4/5 rounded-full bg-gray-200" />
+            </div>
+            <span className="font-mono text-[11px] text-rose-600">
+              n = 7,214 profiles
+            </span>
+          </div>
+          <div className="self-end">
+            <div className="mb-2 flex items-center gap-2 text-[12px] font-semibold text-gray-500">
+              <PresentationChartLineIcon className="h-4 w-4" />
+              effect size
+            </div>
+            <MiniBars values={[36, 51, 44, 67, 72, 58]} tone="teal" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (kind === "journalism") {
+    return (
+      <div className="relative h-[188px] overflow-hidden border-b border-gray-200 bg-gray-50 p-5">
+        <div className="absolute right-6 bottom-5 left-6 h-px bg-gray-200" />
+        <div className="relative grid h-full grid-cols-[minmax(0,1fr)_108px] gap-4 sm:grid-cols-[1fr_132px] sm:gap-5">
+          <div className="flex min-w-0 flex-col justify-between">
+            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1 font-mono text-[11px] text-gray-500">
+              <NewspaperIcon className="h-4 w-4 text-rose-600" />
+              data story
+            </span>
+            <div>
+              <div className="text-[26px] leading-[1.05] font-bold tracking-[-0.03em] text-gray-900">
+                The patterns surveys miss
+              </div>
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {["swipes", "matches", "messages"].map((label) => (
+                  <span
+                    key={label}
+                    className="rounded-[8px] border border-gray-200 bg-white px-2 py-1.5 font-mono text-[10.5px] whitespace-nowrap text-gray-500"
+                  >
+                    {label}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="relative flex items-end justify-center">
+            <ChartBarIcon className="absolute top-2 right-1 h-5 w-5 text-amber-500" />
+            <MiniBars values={[32, 48, 64, 38, 82]} tone="amber" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative h-[188px] overflow-hidden border-b border-gray-200 bg-gray-950 p-5 text-white">
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[length:22px_22px]" />
+      <div className="relative grid h-full grid-cols-[minmax(0,1fr)_108px] gap-4 sm:grid-cols-[1fr_138px] sm:gap-5">
+        <div className="flex min-w-0 flex-col justify-between">
+          <span className="inline-flex w-fit items-center gap-2 rounded-full bg-white/10 px-3 py-1 font-mono text-[11px] text-white/70">
+            <CodeBracketSquareIcon className="h-4 w-4 text-teal-300" />
+            notebook.ipynb
+          </span>
+          <div className="font-mono text-[12px] leading-[1.7] text-white/70">
+            <div className="truncate">
+              <span className="text-teal-300">df</span>
+              <span className="text-white/35">.</span>groupby(
+              <span className="text-amber-300">&quot;age&quot;</span>)
+            </div>
+            <div className="truncate">
+              .agg(
+              <span className="text-rose-300">&quot;matchRate&quot;</span>)
+            </div>
+            <div className="truncate text-white/35">
+              # portfolio-ready dataset
+            </div>
+          </div>
+        </div>
+        <div className="self-end rounded-[14px] border border-white/10 bg-white/[0.06] p-3">
+          <div className="mb-3 flex items-center justify-between">
+            <ChartPieIcon className="h-5 w-5 text-rose-300" />
+            <span className="font-mono text-[10px] text-white/40">run 12</span>
+          </div>
+          <MiniBars values={[40, 58, 45, 76, 64, 86]} tone="rose" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function UseCasesSection() {
   const cases = [
     {
-      rose: true,
-      note: "[ video thumbnail, 1.5M views ]",
+      visual: "creator" as const,
       role: "Creators & YouTubers",
       title: "Content that actually resonates",
       body: "One creator turned our dataset into two videos on dating-app trends. Nearly 1.5M combined views. The data is the hook.",
@@ -645,8 +815,7 @@ function UseCasesSection() {
       ],
     },
     {
-      rose: false,
-      note: "[ figure / paper preview ]",
+      visual: "research" as const,
       role: "Researchers & academics",
       title: "Publish credible, real-world research",
       body: "University of Chicago and others have used SwipeStats for studies on modern dating. Thousands of profiles, statistical power.",
@@ -658,8 +827,7 @@ function UseCasesSection() {
       ],
     },
     {
-      rose: false,
-      note: "[ data-story header image ]",
+      visual: "journalism" as const,
       role: "Data journalists & writers",
       title: "Data-driven stories that get read",
       body: "Writers have analyzed hundreds of profiles, including messages, to surface patterns no survey could reveal.",
@@ -671,8 +839,7 @@ function UseCasesSection() {
       ],
     },
     {
-      rose: true,
-      note: "[ portfolio notebook preview ]",
+      visual: "portfolio" as const,
       role: "Data scientists & hobbyists",
       title: "Build a portfolio on unique data",
       body: "Practice analysis and visualization on a domain everyone relates to. A standout portfolio project with a real, rich dataset.",
@@ -694,21 +861,9 @@ function UseCasesSection() {
               key={c.title}
               className="flex flex-col overflow-hidden rounded-3xl border border-gray-200 bg-white transition hover:-translate-y-0.5 hover:shadow-[0_2px_6px_oklch(0.2_0.02_286/0.05),0_12px_28px_oklch(0.2_0.02_286/0.08)]"
             >
-              <div className="relative grid h-[168px] place-items-center border-b border-gray-200">
-                <div
-                  className={cn(
-                    "absolute inset-0",
-                    c.rose
-                      ? "[background-image:repeating-linear-gradient(135deg,var(--color-rose-100)_0_12px,var(--color-rose-50)_12px_24px)]"
-                      : "[background-image:repeating-linear-gradient(135deg,var(--color-gray-100)_0_12px,var(--color-gray-50)_12px_24px)]",
-                  )}
-                />
-                <span className="absolute bottom-2.5 left-3 rounded-[5px] bg-white/70 px-[7px] py-0.5 font-mono text-[10.5px] text-gray-400">
-                  {c.note}
-                </span>
-              </div>
+              <UseCaseVisual kind={c.visual} />
               <div className="flex flex-1 flex-col p-6">
-                <span className="font-mono text-[11.5px] uppercase tracking-[0.06em] text-rose-600">
+                <span className="font-mono text-[11.5px] tracking-[0.06em] text-rose-600 uppercase">
                   {c.role}
                 </span>
                 <h3 className="mt-2.5 text-[19px] font-bold tracking-[-0.02em] text-gray-900">
