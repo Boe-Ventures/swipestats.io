@@ -1,976 +1,1160 @@
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import {
   AcademicCapIcon,
-  CheckIcon,
+  ArrowRightIcon,
+  ArrowDownTrayIcon,
   ChartBarIcon,
+  ChartPieIcon,
+  CheckIcon,
   ClockIcon,
+  CodeBracketSquareIcon,
+  DocumentDuplicateIcon,
   DocumentTextIcon,
+  NewspaperIcon,
+  PlayCircleIcon,
+  PresentationChartLineIcon,
   ShieldCheckIcon,
-  UserGroupIcon,
+  UsersIcon,
   VideoCameraIcon,
-} from "@heroicons/react/20/solid";
-// import { cn } from "@/components/ui/lib/utils";
+  DocumentArrowUpIcon,
+  PlusIcon,
+  XCircleIcon,
+} from "@heroicons/react/24/solid";
+import { cn } from "@/components/ui/lib/utils";
+import {
+  Eyebrow,
+  SectionHead,
+  GridBg,
+  marketingButton,
+} from "../_components/marketing-ui";
+import { CtaBand } from "../_components/CtaBand";
+import { InsightsShowcase } from "../InsightsShowcase";
 import { ResearchPricingSection } from "./ResearchPricingSection";
 
 export const metadata: Metadata = {
   title: "Research Datasets",
   description:
-    "Access anonymized datasets from thousands of dating app users. Real behavior data for research, journalism, and content creation.",
+    "Anonymized, consent-based behavior from 7,000+ real dating-app users: swipes, matches, and messages. Ready to analyze, publish, and cite.",
   alternates: {
     canonical: "/research",
   },
   openGraph: {
     title: "Research Datasets | SwipeStats",
     description:
-      "Access anonymized datasets from thousands of dating app users. Real behavior data for research, journalism, and content creation.",
+      "Anonymized, consent-based behavior from 7,000+ real dating-app users: swipes, matches, and messages. Ready to analyze, publish, and cite.",
     url: "/research",
   },
 };
 
+const SAMPLE_DOWNLOAD = "/downloads/swipestats-demo-dataset.jsonl.zip";
+
+/* ---------------------------------------------------------------- hero */
+
+function TokKey({ children }: { children: React.ReactNode }) {
+  return <span style={{ color: "oklch(0.78 0.13 200)" }}>{children}</span>;
+}
+function TokStr({ children }: { children: React.ReactNode }) {
+  return <span style={{ color: "oklch(0.8 0.13 145)" }}>{children}</span>;
+}
+function TokNum({ children }: { children: React.ReactNode }) {
+  return <span style={{ color: "oklch(0.8 0.14 70)" }}>{children}</span>;
+}
+function TokBool({ children }: { children: React.ReactNode }) {
+  return <span style={{ color: "oklch(0.74 0.18 17)" }}>{children}</span>;
+}
+function TokPunc({ children }: { children: React.ReactNode }) {
+  return <span style={{ color: "oklch(0.6 0.01 286)" }}>{children}</span>;
+}
+function TokCmt({ children }: { children: React.ReactNode }) {
+  return (
+    <span style={{ color: "oklch(0.52 0.01 286)", fontStyle: "italic" }}>
+      {children}
+    </span>
+  );
+}
+
+function HeroDataCard() {
+  return (
+    <div className="relative">
+      <span className="absolute -top-4 right-[18px] z-[5] inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 font-mono text-[11px] font-semibold text-gray-700 shadow-[0_2px_6px_oklch(0.2_0.02_286/0.05),0_12px_28px_oklch(0.2_0.02_286/0.08)]">
+        research-2026-02-23.jsonl
+      </span>
+
+      <div className="overflow-hidden rounded-t-2xl bg-gray-950 shadow-[0_10px_30px_oklch(0.2_0.02_286/0.1),0_30px_60px_oklch(0.2_0.02_286/0.12)]">
+        <div className="flex items-center gap-2 border-b border-white/10 px-4 py-[13px]">
+          <span className="h-[11px] w-[11px] rounded-full bg-[#ff5f57]" />
+          <span className="h-[11px] w-[11px] rounded-full bg-[#febc2e]" />
+          <span className="h-[11px] w-[11px] rounded-full bg-[#28c840]" />
+          <span className="ml-2.5 font-mono text-[12.5px] text-gray-400">
+            profile · line 1 of 7,214
+          </span>
+          <span className="ml-auto rounded-md bg-white/[0.06] px-2.5 py-[3px] font-mono text-[11px] text-gray-500">
+            JSONL
+          </span>
+        </div>
+        <pre
+          style={{ tabSize: 2 }}
+          className="m-0 overflow-x-auto px-[22px] py-5 font-mono text-[13px] leading-[1.75] text-gray-300"
+        >
+          <TokPunc>{"{"}</TokPunc>
+          {"\n  "}
+          <TokKey>{'"profile"'}</TokKey>
+          <TokPunc>{": {"}</TokPunc>
+          {"\n    "}
+          <TokKey>{'"gender"'}</TokKey>
+          <TokPunc>:</TokPunc> <TokStr>{'"MALE"'}</TokStr>
+          <TokPunc>,</TokPunc>
+          {"\n    "}
+          <TokKey>{'"ageAtUpload"'}</TokKey>
+          <TokPunc>:</TokPunc> <TokNum>27</TokNum>
+          <TokPunc>,</TokPunc>
+          {"\n    "}
+          <TokKey>{'"country"'}</TokKey>
+          <TokPunc>:</TokPunc> <TokStr>{'"NO"'}</TokStr>
+          <TokPunc>,</TokPunc> <TokCmt>{"// Norway"}</TokCmt>
+          {"\n    "}
+          <TokKey>{'"educationLevel"'}</TokKey>
+          <TokPunc>:</TokPunc> <TokStr>{'"BACHELORS"'}</TokStr>
+          <TokPunc>,</TokPunc>
+          {"\n    "}
+          <TokKey>{'"userInterests"'}</TokKey>
+          <TokPunc>:</TokPunc> <TokPunc>[</TokPunc>
+          <TokStr>{'"Travel"'}</TokStr>
+          <TokPunc>,</TokPunc> <TokStr>{'"Climbing"'}</TokStr>
+          <TokPunc>],</TokPunc>
+          {"\n    "}
+          <TokKey>{'"instagramConnected"'}</TokKey>
+          <TokPunc>:</TokPunc> <TokBool>true</TokBool>
+          {"\n  "}
+          <TokPunc>{"},"}</TokPunc>
+          {"\n  "}
+          <TokKey>{'"meta"'}</TokKey>
+          <TokPunc>{": {"}</TokPunc>
+          {"\n    "}
+          <TokKey>{'"swipeLikesTotal"'}</TokKey>
+          <TokPunc>:</TokPunc> <TokNum>8432</TokNum>
+          <TokPunc>,</TokPunc>
+          {"\n    "}
+          <TokKey>{'"matchesTotal"'}</TokKey>
+          <TokPunc>:</TokPunc> <TokNum>386</TokNum>
+          <TokPunc>,</TokPunc>
+          {"\n    "}
+          <TokKey>{'"matchRate"'}</TokKey>
+          <TokPunc>:</TokPunc> <TokNum>0.046</TokNum>
+          <TokPunc>,</TokPunc>
+          {"\n    "}
+          <TokKey>{'"messagesSentTotal"'}</TokKey>
+          <TokPunc>:</TokPunc> <TokNum>2914</TokNum>
+          {"\n  "}
+          <TokPunc>{"},"}</TokPunc>
+          {"\n  "}
+          <TokKey>{'"usage"'}</TokKey>
+          <TokPunc>{": [{"}</TokPunc>
+          {"\n      "}
+          <TokKey>{'"dateStamp"'}</TokKey>
+          <TokPunc>:</TokPunc> <TokStr>{'"2025-07-12"'}</TokStr>
+          <TokPunc>,</TokPunc>
+          {"\n      "}
+          <TokKey>{'"appOpens"'}</TokKey>
+          <TokPunc>:</TokPunc> <TokNum>14</TokNum>
+          <TokPunc>,</TokPunc>
+          {"\n      "}
+          <TokKey>{'"swipeLikes"'}</TokKey>
+          <TokPunc>:</TokPunc> <TokNum>38</TokNum>
+          <TokPunc>,</TokPunc>
+          {"\n      "}
+          <TokKey>{'"swipePasses"'}</TokKey>
+          <TokPunc>:</TokPunc> <TokNum>91</TokNum>
+          <TokPunc>,</TokPunc>
+          {"\n      "}
+          <TokKey>{'"matches"'}</TokKey>
+          <TokPunc>:</TokPunc> <TokNum>3</TokNum>
+          <TokPunc>,</TokPunc>
+          {"\n      "}
+          <TokKey>{'"messagesSent"'}</TokKey>
+          <TokPunc>:</TokPunc> <TokNum>22</TokNum>
+          <TokPunc>,</TokPunc> <TokCmt>{"// +11 more fields"}</TokCmt>
+          {"\n    "}
+          <TokPunc>{"}, "}</TokPunc>
+          <TokCmt>{"/* +411 daily records */"}</TokCmt>
+          {"\n  "}
+          <TokPunc>],</TokPunc>
+          {"\n  "}
+          <TokKey>{'"matches"'}</TokKey>
+          <TokPunc>:</TokPunc> <TokPunc>[</TokPunc>
+          <TokCmt>{"/* 386 conversations */"}</TokCmt>
+          <TokPunc>]</TokPunc>
+          {"\n"}
+          <TokPunc>{"}"}</TokPunc>
+        </pre>
+      </div>
+
+      <div className="grid grid-cols-3 gap-px overflow-hidden rounded-b-2xl border border-t-0 border-gray-200 bg-gray-200">
+        {[
+          { k: "Profiles", v: "7,214" },
+          { k: "Daily records", v: "2.4M" },
+          { k: "Messages", v: "1.1M" },
+        ].map((s) => (
+          <div key={s.k} className="bg-white px-4 py-3.5">
+            <div className="font-mono text-[10.5px] tracking-[0.05em] text-gray-500 uppercase">
+              {s.k}
+            </div>
+            <div className="mt-[3px] text-[21px] font-bold tracking-[-0.02em] text-gray-900 tabular-nums">
+              {s.v}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function HeroSection() {
   return (
-    <div className="relative isolate overflow-hidden bg-white">
-      <svg
-        aria-hidden="true"
-        className="absolute inset-0 -z-10 size-full mask-[radial-gradient(100%_100%_at_top_right,white,transparent)] stroke-gray-200"
-      >
-        <defs>
-          <pattern
-            x="50%"
-            y={-1}
-            id="research-pattern"
-            width={200}
-            height={200}
-            patternUnits="userSpaceOnUse"
-          >
-            <path d="M.5 200V.5H200" fill="none" />
-          </pattern>
-        </defs>
-        <rect
-          fill="url(#research-pattern)"
-          width="100%"
-          height="100%"
-          strokeWidth={0}
-        />
-      </svg>
-      <div className="mx-auto max-w-7xl px-6 pt-10 pb-24 sm:pb-32 lg:flex lg:px-8 lg:py-40">
-        <div className="mx-auto max-w-2xl lg:mx-0 lg:shrink-0 lg:pt-8">
-          <div className="mt-24 sm:mt-32 lg:mt-16">
-            <div className="inline-flex space-x-6">
-              <span className="rounded-full bg-rose-600/10 px-3 py-1 text-sm/6 font-semibold text-rose-600 ring-1 ring-rose-600/20 ring-inset">
+    <section className="relative overflow-hidden pt-14 pb-6">
+      <GridBg />
+      <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
+        <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
+          <div>
+            <Eyebrow noRule>
+              <span className="inline-flex items-center gap-2 rounded-full border border-rose-600/20 bg-rose-50 px-3 py-1.5 text-[13px] font-semibold tracking-normal text-rose-700 normal-case">
                 Trusted by researchers
               </span>
-              <span className="inline-flex items-center space-x-2 text-sm/6 font-medium text-gray-600">
-                <span>University of Chicago</span>
+              <span className="text-gray-500">University of Chicago · APA</span>
+            </Eyebrow>
+            <h1 className="mt-[22px] text-[clamp(40px,6vw,68px)] leading-[1.02] font-bold tracking-[-0.035em] text-balance text-gray-900">
+              The dating data that&apos;s almost impossible to get.
+            </h1>
+            <p className="mt-[22px] max-w-[540px] text-[clamp(17px,2vw,20px)] leading-[1.6] text-gray-600">
+              Anonymized, consent-based behavior from{" "}
+              <strong className="font-semibold text-gray-900">
+                7,000+ real dating-app users
+              </strong>
+              : swipes, matches, and messages. Ready to analyze, publish, and
+              cite. Not a survey.
+            </p>
+            <div className="mt-8 flex flex-wrap items-center gap-3.5">
+              <Link
+                href="#pricing"
+                className={marketingButton({ variant: "primary", size: "lg" })}
+              >
+                Browse datasets
+                <ArrowRightIcon className="h-4 w-4" />
+              </Link>
+              <Link
+                href={SAMPLE_DOWNLOAD}
+                target="_blank"
+                className={marketingButton({ variant: "ghost", size: "lg" })}
+              >
+                <ArrowDownTrayIcon className="h-4 w-4" />
+                Download free sample
+              </Link>
+            </div>
+            <div className="mt-10 flex flex-wrap items-center gap-7">
+              {[
+                { n: "7,000+", l: "profiles analyzed" },
+                { n: "965k+", l: "YouTube views from our data" },
+                { n: "50+", l: "research citations" },
+              ].map((t, i) => (
+                <div key={t.l} className="flex items-center gap-7">
+                  {i > 0 && <div className="h-[34px] w-px bg-gray-200" />}
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[22px] font-bold tracking-[-0.02em] text-gray-900 tabular-nums">
+                      {t.n}
+                    </span>
+                    <span className="text-[12.5px] text-gray-500">{t.l}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <HeroDataCard />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------------------------------------------------------------- logo strip */
+
+function LogoStrip() {
+  const logos = [
+    { icon: AcademicCapIcon, label: "University of Chicago" },
+    { icon: VideoCameraIcon, label: "YouTube creators" },
+    { icon: DocumentArrowUpIcon, label: "Data journalists" },
+    { icon: UsersIcon, label: "Data scientists" },
+  ];
+  return (
+    <section className="border-y border-gray-200 bg-gray-50 py-14">
+      <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
+        <p className="mb-7 text-center font-mono text-[12px] tracking-[0.08em] text-gray-500 uppercase">
+          Used by researchers, journalists &amp; creators worldwide
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-3.5">
+          {logos.map((l) => (
+            <span
+              key={l.label}
+              className="flex items-center gap-2.5 text-[15px] font-semibold text-gray-500"
+            >
+              <l.icon className="h-[22px] w-[22px] text-gray-400" />
+              {l.label}
+            </span>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------------------------------------------------------------- value props */
+
+function ValueSection() {
+  const valueProps = [
+    {
+      icon: ChartPieIcon,
+      title: "Observed, not claimed",
+      body: "Actual swipes, matches, and messages with timestamps, not what people say they do on a questionnaire.",
+    },
+    {
+      icon: ShieldCheckIcon,
+      title: "Anonymized & consent-based",
+      body: "No names or contact info. PII in bios and messages is LLM-redacted. Every profile was voluntarily uploaded by its owner.",
+    },
+    {
+      icon: DocumentDuplicateIcon,
+      title: "Rich, computed data model",
+      body: "Five linked objects per profile, plus pre-computed metrics like match rate, response time, and ghosting. Ready to analyze.",
+    },
+    {
+      icon: ClockIcon,
+      title: "Continuously refreshed",
+      body: "New profiles arrive every week as users upload their exports. Fresh tiers ship the most recent activity available.",
+    },
+  ];
+
+  const surveyBad = [
+    "Self-reported and memory-biased",
+    "Small N, expensive to field",
+    "No longitudinal behavior over time",
+    "Can't see real messages",
+  ];
+  const surveyGood = [
+    "Logged behavior, straight from the source",
+    "7,000+ profiles, growing weekly",
+    "Day-by-day usage spanning years",
+    "Anonymized message-level text",
+  ];
+
+  return (
+    <section className="py-[88px] max-[720px]:py-[60px]">
+      <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
+        <SectionHead
+          center
+          eyebrow="Why it's different"
+          title="Real behavior, not self-reports"
+          lead="Dating apps don't share user data, and surveys can't capture what people actually do. SwipeStats is built from users' own GDPR exports: the ground truth of how people swipe, match, and talk."
+        />
+
+        <div className="mt-14 grid grid-cols-1 gap-x-14 gap-y-7 md:grid-cols-2">
+          {valueProps.map((p) => (
+            <div key={p.title} className="flex gap-4">
+              <div className="grid h-11 w-11 flex-none place-items-center rounded-[11px] border border-rose-600/15 bg-rose-50 text-rose-600">
+                <p.icon className="h-[22px] w-[22px]" />
+              </div>
+              <div>
+                <h3 className="text-[17px] font-bold tracking-[-0.02em] text-gray-900">
+                  {p.title}
+                </h3>
+                <p className="mt-1.5 text-[14.5px] leading-[1.6] text-gray-600">
+                  {p.body}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-11 grid grid-cols-1 gap-5 md:grid-cols-2">
+          <div className="rounded-2xl border border-gray-200 bg-gray-50 p-6">
+            <h4 className="font-mono text-[13px] tracking-[0.06em] text-gray-500 uppercase">
+              Typical survey data
+            </h4>
+            <ul className="mt-4 flex flex-col gap-3">
+              {surveyBad.map((t) => (
+                <li
+                  key={t}
+                  className="flex items-start gap-2.5 text-[14.5px] text-gray-700"
+                >
+                  <XCircleIcon className="mt-px h-[18px] w-[18px] flex-none text-gray-400" />
+                  {t}
+                </li>
+              ))}
+            </ul>
+          </div>
+          <div className="rounded-2xl border border-rose-600/30 bg-white p-6 shadow-[0_1px_2px_oklch(0.2_0.02_286/0.06),0_1px_3px_oklch(0.2_0.02_286/0.05)]">
+            <h4 className="font-mono text-[13px] tracking-[0.06em] text-rose-600 uppercase">
+              SwipeStats datasets
+            </h4>
+            <ul className="mt-4 flex flex-col gap-3">
+              {surveyGood.map((t) => (
+                <li
+                  key={t}
+                  className="flex items-start gap-2.5 text-[14.5px] text-gray-700"
+                >
+                  <CheckIcon className="mt-px h-[18px] w-[18px] flex-none text-rose-600" />
+                  {t}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ---------------------------------------------------------------- schema */
+
+function SchemaSection() {
+  const keys = [
+    {
+      name: "profile",
+      cnt: "28 fields",
+      body: "Demographics, bio, interests, education, search filters.",
+    },
+    {
+      name: "user",
+      cnt: "6 fields",
+      body: "Resolved geography, languages, and timezone.",
+    },
+    {
+      name: "meta",
+      cnt: "24 metrics",
+      body: "Pre-computed match rate, response time, ghosting & more.",
+    },
+    {
+      name: "usage[]",
+      cnt: "15 / day",
+      body: "One record per active day: swipes, matches, messages.",
+    },
+    {
+      name: "matches[]",
+      cnt: "+ messages",
+      body: "Every conversation with message-level, redacted text.",
+    },
+  ];
+
+  const rows = [
+    ["MALE", "27", "0.41", "0.046", "165"],
+    ["FEMALE", "24", "0.18", "0.312", "88"],
+    ["MALE", "31", "0.63", "0.029", "241"],
+    ["FEMALE", "29", "0.22", "0.287", "112"],
+    ["OTHER", "26", "0.34", "0.094", "73"],
+  ];
+
+  return (
+    <section
+      id="schema"
+      className="border-y border-gray-200 bg-gray-50 py-[88px] max-[720px]:py-[60px]"
+    >
+      <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
+        <SectionHead
+          center
+          eyebrow="The data model"
+          title="Five linked objects in every profile"
+          lead="Each line of the JSONL file is one user. Raw profile fields, geography, pre-computed stats, daily activity, and every conversation. All keyed together."
+        />
+
+        <div className="mt-9 grid grid-cols-2 gap-3 md:grid-cols-5">
+          {keys.map((k) => (
+            <div
+              key={k.name}
+              className="rounded-xl border border-gray-200 bg-white p-4"
+            >
+              <div className="flex items-center justify-between">
+                <span className="font-mono text-[14px] font-semibold text-gray-900">
+                  {k.name}
+                </span>
+                <span className="rounded-[5px] bg-rose-50 px-[7px] py-0.5 font-mono text-[11px] text-rose-600">
+                  {k.cnt}
+                </span>
+              </div>
+              <p className="mt-2 text-[12.5px] leading-[1.5] text-gray-500">
+                {k.body}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-10 grid grid-cols-1 items-start gap-8 lg:grid-cols-2">
+          <div className="rounded-2xl border border-gray-200 bg-white p-[22px] shadow-[0_1px_2px_oklch(0.2_0.02_286/0.05)]">
+            <div className="mb-[18px] flex items-baseline justify-between">
+              <span className="text-[14px] font-bold text-gray-900">
+                Sample rows:{" "}
+                <span className="font-mono text-gray-500">meta</span>
+              </span>
+              <span className="font-mono text-[11px] text-gray-500">
+                5 of 7,214
               </span>
             </div>
+            <table className="w-full border-collapse text-[14px]">
+              <thead>
+                <tr>
+                  {["gender", "age", "likeRate", "matchRate", "ghosted"].map(
+                    (h, i) => (
+                      <th
+                        key={h}
+                        className={cn(
+                          "border-b border-gray-200 bg-gray-50 px-4 py-3 font-mono text-[12px] font-medium tracking-[0.04em] text-gray-500 uppercase",
+                          i === 0 ? "text-left" : "text-right",
+                        )}
+                      >
+                        {h}
+                      </th>
+                    ),
+                  )}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r, ri) => (
+                  <tr key={ri} className="hover:bg-gray-50">
+                    {r.map((c, ci) => (
+                      <td
+                        key={ci}
+                        className={cn(
+                          "border-b border-gray-200 px-4 py-3",
+                          ci === 0
+                            ? "font-mono text-[13px] font-medium text-gray-900"
+                            : "text-right font-mono text-gray-700 tabular-nums",
+                        )}
+                      >
+                        {c}
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
-          <h1 className="mt-10 text-5xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-7xl">
-            Real Dating App Data for Research, Journalism, and Content Creation
-          </h1>
-          <p className="mt-8 text-lg font-medium text-pretty text-gray-700 sm:text-xl/8">
-            Access anonymized datasets from thousands of dating app users. Ready
-            to analyze, publish, and share.
-          </p>
-          <div className="mt-10 flex items-center gap-x-6">
-            <Link
-              href="/downloads/swipestats-demo-dataset.jsonl.zip"
-              target="_blank"
-              className="rounded-md bg-rose-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-xs transition-colors hover:bg-rose-500 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600"
-            >
-              Download Free Sample
-            </Link>
-            <Link
-              href="#pricing"
-              className="text-sm/6 font-semibold text-gray-900 transition-colors hover:text-rose-600"
-            >
-              Browse Datasets <span aria-hidden="true">→</span>
-            </Link>
-          </div>
-        </div>
-        <div className="mx-auto mt-16 flex max-w-2xl sm:mt-24 lg:mt-0 lg:mr-0 lg:ml-10 lg:max-w-none lg:flex-none xl:ml-32">
-          <div className="max-w-3xl flex-none sm:max-w-5xl lg:max-w-none">
-            <div className="-m-2 rounded-xl bg-gray-900/5 p-2 ring-1 ring-gray-900/10 ring-inset lg:-m-4 lg:rounded-2xl lg:p-4">
-              <Image
-                alt="SwipeStats Research Data Visualization"
-                src="/images/marketing/TinderInsights.png"
-                width={2432}
-                height={1442}
-                className="w-304 rounded-md bg-white shadow-xl ring-1 ring-gray-900/10"
-              />
+
+          <div>
+            <p className="text-[15px] leading-[1.7] text-gray-600">
+              Everything is documented. The full data dictionary defines all 70+
+              variables, their types, nullability, and how each metric is
+              computed, with notes on PII redaction and data quality.
+            </p>
+            <div className="mt-[22px] flex flex-wrap gap-3">
+              <Link
+                href={SAMPLE_DOWNLOAD}
+                target="_blank"
+                className={marketingButton({ variant: "primary" })}
+              >
+                Read the documentation
+                <ArrowRightIcon className="h-4 w-4" />
+              </Link>
+              <Link
+                href={SAMPLE_DOWNLOAD}
+                target="_blank"
+                className={marketingButton({ variant: "ghost" })}
+              >
+                Explore a live profile
+              </Link>
+            </div>
+            <div className="mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-gray-200 bg-gray-200">
+              <div className="bg-white px-6 py-[22px]">
+                <div className="font-mono text-[11.5px] tracking-[0.06em] text-gray-500 uppercase">
+                  Format
+                </div>
+                <div className="mt-2 text-[24px] font-bold tracking-[-0.03em] text-gray-900">
+                  JSONL
+                </div>
+                <div className="mt-2 text-[13px] text-gray-500">
+                  Python · R · pandas ready
+                </div>
+              </div>
+              <div className="bg-white px-6 py-[22px]">
+                <div className="font-mono text-[11.5px] tracking-[0.06em] text-gray-500 uppercase">
+                  Per profile
+                </div>
+                <div className="mt-2 text-[24px] font-bold tracking-[-0.03em] text-gray-900 tabular-nums">
+                  70+
+                </div>
+                <div className="mt-2 text-[13px] text-gray-500">
+                  documented variables
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 }
 
-function SocialProofSection() {
-  const stats = [
-    { value: "965k+", label: "YouTube video views" },
-    { value: "1000+", label: "Profiles analyzed" },
-    { value: "50+", label: "Research citations" },
-  ];
+/* ---------------------------------------------------------------- dashboard */
 
+function DashboardSection() {
   return (
-    <div className="bg-white py-24 sm:py-32">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="mx-auto max-w-2xl lg:mx-0">
-          <h2 className="text-base/7 font-semibold text-rose-600">
-            As Used By
-          </h2>
-          <p className="mt-2 text-3xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-4xl">
-            Trusted by researchers and creators worldwide
-          </p>
-        </div>
-        <div className="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-8 sm:mt-20 lg:mx-0 lg:max-w-none lg:grid-cols-4">
-          <div className="flex flex-col items-center justify-center rounded-2xl bg-gray-50 p-8">
-            <AcademicCapIcon className="h-12 w-12 text-rose-600" />
-            <p className="mt-4 text-center text-sm font-semibold text-gray-900">
-              University of Chicago
+    <section className="py-[88px] max-[720px]:py-[60px]">
+      <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
+        <SectionHead
+          center
+          eyebrow="See it before you buy"
+          title="A glimpse of what's inside"
+          lead="One real, anonymized profile from the demo dataset, rendered exactly as it ships. Walk a single row end to end before you buy."
+        />
+
+        {/* the real, data-driven insights (same charts that ship), framed as the live demo */}
+        <div className="mt-11">
+          <div className="rounded-3xl border border-gray-200 bg-gray-50 p-4 shadow-[0_10px_30px_oklch(0.2_0.02_286/0.1),0_30px_60px_oklch(0.2_0.02_286/0.12)] sm:p-6 [&_[data-slot=card]]:border-gray-200/70 [&_[data-slot=card]]:shadow-none!">
+            <p className="mb-3 flex items-center justify-center gap-2 text-[12.5px] font-semibold text-gray-600">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              The exact dashboard a buyer gets. Click through one real row.
             </p>
-          </div>
-          <div className="flex flex-col items-center justify-center rounded-2xl bg-gray-50 p-8">
-            <VideoCameraIcon className="h-12 w-12 text-rose-600" />
-            <p className="mt-4 text-center text-sm font-semibold text-gray-900">
-              YouTube Creators
-            </p>
-          </div>
-          <div className="flex flex-col items-center justify-center rounded-2xl bg-gray-50 p-8">
-            <DocumentTextIcon className="h-12 w-12 text-rose-600" />
-            <p className="mt-4 text-center text-sm font-semibold text-gray-900">
-              Data Journalists
-            </p>
-          </div>
-          <div className="flex flex-col items-center justify-center rounded-2xl bg-gray-50 p-8">
-            <UserGroupIcon className="h-12 w-12 text-rose-600" />
-            <p className="mt-4 text-center text-sm font-semibold text-gray-900">
-              Content Creators
-            </p>
+            <InsightsShowcase />
           </div>
         </div>
-        <dl className="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-8 sm:grid-cols-3 lg:mx-0 lg:max-w-none">
-          {stats.map((stat) => (
-            <div
-              key={stat.label}
-              className="flex flex-col gap-y-3 border-l border-gray-900/10 pl-6"
-            >
-              <dt className="text-sm/6 text-gray-600">{stat.label}</dt>
-              <dd className="order-first text-3xl font-semibold tracking-tight text-gray-900">
-                {stat.value}
-              </dd>
-            </div>
-          ))}
-        </dl>
+
+        <div className="mt-8 text-center">
+          <Link
+            href={SAMPLE_DOWNLOAD}
+            target="_blank"
+            className={marketingButton({ variant: "ghost", size: "lg" })}
+          >
+            Download the free sample profile
+            <ArrowRightIcon className="h-4 w-4" />
+          </Link>
+        </div>
       </div>
+    </section>
+  );
+}
+
+/* ---------------------------------------------------------------- use cases */
+
+type UseCaseVisualKind = "creator" | "research" | "journalism" | "portfolio";
+
+function MiniBars({
+  values,
+  tone = "rose",
+}: {
+  values: number[];
+  tone?: "rose" | "teal" | "amber";
+}) {
+  const tones = {
+    rose: "bg-rose-500",
+    teal: "bg-teal-500",
+    amber: "bg-amber-500",
+  };
+
+  return (
+    <div className="flex h-16 items-end gap-1.5">
+      {values.map((value, index) => (
+        <span
+          key={`${value}-${index}`}
+          className={cn("w-full rounded-t-[5px]", tones[tone])}
+          style={{ height: `${value}%` }}
+        />
+      ))}
     </div>
   );
 }
 
-function ValuePropositionSection() {
-  const benefits = [
-    {
-      name: "Real behavior, not surveys",
-      description:
-        "Actual swipes, matches, and messages from real users—not self-reported survey data that may be biased or inaccurate.",
-      icon: ChartBarIcon,
-    },
-    {
-      name: "Anonymized and ethical",
-      description:
-        "No personal information, fully consent-based collection. All data is ethically sourced and privacy-compliant.",
-      icon: ShieldCheckIcon,
-    },
-    {
-      name: "Rich data model",
-      description:
-        "Messaging patterns, match rates, demographics, and more. Everything you need for comprehensive analysis.",
-      icon: DocumentTextIcon,
-    },
-    {
-      name: "Regularly updated",
-      description:
-        "Fresh profiles added continuously at an increasing rate. Stay current with the latest dating trends.",
-      icon: ClockIcon,
-    },
-  ];
+function UseCaseVisual({ kind }: { kind: UseCaseVisualKind }) {
+  if (kind === "creator") {
+    return (
+      <div className="relative h-[188px] overflow-hidden border-b border-gray-200 bg-gray-950 p-5 text-white">
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_22%_18%,rgba(244,63,94,0.38),transparent_34%),radial-gradient(circle_at_78%_20%,rgba(20,184,166,0.22),transparent_30%)]" />
+        <div className="relative flex h-full flex-col justify-between">
+          <div className="flex items-center justify-between">
+            <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3 py-1 font-mono text-[11px] text-white/75">
+              <PlayCircleIcon className="h-4 w-4 text-rose-300" />
+              video analysis
+            </span>
+            <span className="font-mono text-[11px] text-white/45">
+              +1.5M views
+            </span>
+          </div>
+          <div className="grid grid-cols-[minmax(0,1fr)_112px] items-end gap-4 sm:grid-cols-[1fr_128px] sm:gap-6">
+            <div className="min-w-0">
+              <div className="text-[44px] leading-none font-bold tracking-[-0.04em] tabular-nums">
+                1.5M
+              </div>
+              <div className="mt-2 text-[13px] font-medium text-white/65">
+                views from dating-app data stories
+              </div>
+            </div>
+            <MiniBars values={[24, 42, 35, 58, 74, 61, 88]} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (kind === "research") {
+    return (
+      <div className="relative h-[188px] overflow-hidden border-b border-gray-200 bg-white p-5">
+        <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(244,63,94,0.05)_0_25%,transparent_25%_50%,rgba(20,184,166,0.06)_50%_75%,transparent_75%)] bg-[length:28px_28px]" />
+        <div className="relative grid h-full grid-cols-[minmax(0,1fr)_112px] gap-4 sm:grid-cols-[1fr_150px] sm:gap-5">
+          <div className="flex min-w-0 flex-col justify-between rounded-[14px] border border-gray-200 bg-white p-3 shadow-[0_1px_2px_oklch(0.2_0.02_286/0.04)] sm:p-4">
+            <div className="flex min-w-0 items-center gap-2">
+              <DocumentTextIcon className="h-5 w-5 text-rose-600" />
+              <span className="truncate font-mono text-[11px] tracking-[0.06em] text-gray-500 uppercase">
+                manuscript figure
+              </span>
+            </div>
+            <div>
+              <div className="h-2.5 w-5/6 rounded-full bg-gray-900" />
+              <div className="mt-2 h-2 w-full rounded-full bg-gray-200" />
+              <div className="mt-2 h-2 w-4/5 rounded-full bg-gray-200" />
+            </div>
+            <span className="font-mono text-[11px] text-rose-600">
+              n = 7,214 profiles
+            </span>
+          </div>
+          <div className="self-end">
+            <div className="mb-2 flex items-center gap-2 text-[12px] font-semibold text-gray-500">
+              <PresentationChartLineIcon className="h-4 w-4" />
+              effect size
+            </div>
+            <MiniBars values={[36, 51, 44, 67, 72, 58]} tone="teal" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (kind === "journalism") {
+    return (
+      <div className="relative h-[188px] overflow-hidden border-b border-gray-200 bg-gray-50 p-5">
+        <div className="absolute right-6 bottom-5 left-6 h-px bg-gray-200" />
+        <div className="relative grid h-full grid-cols-[minmax(0,1fr)_108px] gap-4 sm:grid-cols-[1fr_132px] sm:gap-5">
+          <div className="flex min-w-0 flex-col justify-between">
+            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1 font-mono text-[11px] text-gray-500">
+              <NewspaperIcon className="h-4 w-4 text-rose-600" />
+              data story
+            </span>
+            <div>
+              <div className="text-[26px] leading-[1.05] font-bold tracking-[-0.03em] text-gray-900">
+                The patterns surveys miss
+              </div>
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {["swipes", "matches", "messages"].map((label) => (
+                  <span
+                    key={label}
+                    className="rounded-[8px] border border-gray-200 bg-white px-2 py-1.5 font-mono text-[10.5px] whitespace-nowrap text-gray-500"
+                  >
+                    {label}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+          <div className="relative flex items-end justify-center">
+            <ChartBarIcon className="absolute top-2 right-1 h-5 w-5 text-amber-500" />
+            <MiniBars values={[32, 48, 64, 38, 82]} tone="amber" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-white py-24 sm:py-32">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="mx-auto max-w-2xl lg:mx-0">
-          <h2 className="text-base/7 font-semibold text-rose-600">
-            Unique Dataset
-          </h2>
-          <p className="mt-2 text-4xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-5xl">
-            The Data That&apos;s Almost Impossible to Get is Now Available to
-            Researchers
-          </p>
-          <p className="mt-6 text-lg/8 text-gray-700">
-            Getting real dating app data is nearly impossible. Dating apps
-            rarely share user behavior, and surveys can&apos;t capture actual
-            patterns. Our datasets give you authentic, anonymized data from real
-            dating app users—ethically sourced and ready to analyze.
-          </p>
-        </div>
-        <dl className="mx-auto mt-16 grid max-w-2xl grid-cols-1 gap-8 text-base/7 text-gray-600 sm:grid-cols-2 lg:mx-0 lg:max-w-none lg:gap-x-16">
-          {benefits.map((benefit) => (
-            <div key={benefit.name} className="relative pl-9">
-              <dt className="inline font-semibold text-gray-900">
-                <benefit.icon
-                  aria-hidden="true"
-                  className="absolute top-1 left-1 size-5 text-rose-600"
-                />
-                {benefit.name}
-              </dt>{" "}
-              <dd className="inline">{benefit.description}</dd>
+    <div className="relative h-[188px] overflow-hidden border-b border-gray-200 bg-gray-950 p-5 text-white">
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[length:22px_22px]" />
+      <div className="relative grid h-full grid-cols-[minmax(0,1fr)_108px] gap-4 sm:grid-cols-[1fr_138px] sm:gap-5">
+        <div className="flex min-w-0 flex-col justify-between">
+          <span className="inline-flex w-fit items-center gap-2 rounded-full bg-white/10 px-3 py-1 font-mono text-[11px] text-white/70">
+            <CodeBracketSquareIcon className="h-4 w-4 text-teal-300" />
+            notebook.ipynb
+          </span>
+          <div className="font-mono text-[12px] leading-[1.7] text-white/70">
+            <div className="truncate">
+              <span className="text-teal-300">df</span>
+              <span className="text-white/35">.</span>groupby(
+              <span className="text-amber-300">&quot;age&quot;</span>)
             </div>
-          ))}
-        </dl>
+            <div className="truncate">
+              .agg(
+              <span className="text-rose-300">&quot;matchRate&quot;</span>)
+            </div>
+            <div className="truncate text-white/35">
+              # portfolio-ready dataset
+            </div>
+          </div>
+        </div>
+        <div className="self-end rounded-[14px] border border-white/10 bg-white/[0.06] p-3">
+          <div className="mb-3 flex items-center justify-between">
+            <ChartPieIcon className="h-5 w-5 text-rose-300" />
+            <span className="font-mono text-[10px] text-white/40">run 12</span>
+          </div>
+          <MiniBars values={[40, 58, 45, 76, 64, 86]} tone="rose" />
+        </div>
       </div>
     </div>
   );
 }
 
 function UseCasesSection() {
-  return (
-    <div className="bg-white py-24 sm:py-32">
-      <div className="mx-auto max-w-2xl px-6 lg:max-w-7xl lg:px-8">
-        <h2 className="text-base/7 font-semibold text-rose-600">Use Cases</h2>
-        <p className="mt-2 max-w-lg text-4xl font-semibold tracking-tight text-pretty text-gray-950 sm:text-5xl">
-          From Viral Videos to Academic Research
-        </p>
-        <div className="mt-10 grid grid-cols-1 gap-4 sm:mt-16 lg:grid-cols-6 lg:grid-rows-2">
-          {/* Content Creators */}
-          <div className="relative lg:col-span-3">
-            <div className="absolute inset-0 rounded-lg bg-white max-lg:rounded-t-4xl lg:rounded-tl-4xl" />
-            <div className="relative flex h-full flex-col overflow-hidden rounded-[calc(var(--radius-lg)+1px)] max-lg:rounded-t-[calc(2rem+1px)] lg:rounded-tl-[calc(2rem+1px)]">
-              <Image
-                alt="Content creator analyzing dating data"
-                src="/placeholder.svg"
-                className="h-80 object-cover object-top"
-                width={600}
-                height={320}
-              />
-              <div className="p-10 pt-4">
-                <h3 className="text-sm/4 font-semibold text-rose-600">
-                  Content Creators & YouTubers
-                </h3>
-                <p className="mt-2 text-lg font-medium tracking-tight text-gray-950">
-                  Create viral content that resonates
-                </p>
-                <p className="mt-2 max-w-lg text-sm/6 text-gray-600">
-                  One YouTuber used our data to create two videos analyzing
-                  dating app trends generating nearly 1.5 million combined
-                  views. Our datasets give you the foundation for compelling
-                  stories.
-                </p>
-                <div className="mt-4 space-y-2">
-                  <a
-                    href="https://www.youtube.com/watch?v=02Ss76rFInw"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block text-sm text-rose-600 hover:text-rose-500"
-                  >
-                    Watch: &quot;The Truth About Dating Apps Statistics&quot; →
-                  </a>
-                  <a
-                    href="https://www.youtube.com/watch?v=3pvkgUc9Zbc"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block text-sm text-rose-600 hover:text-rose-500"
-                  >
-                    Watch: &quot;Dating App Data Analysis&quot; →
-                  </a>
-                </div>
-              </div>
-            </div>
-            <div className="pointer-events-none absolute inset-0 rounded-lg shadow-sm outline outline-black/5 max-lg:rounded-t-4xl lg:rounded-tl-4xl" />
-          </div>
-
-          {/* Researchers */}
-          <div className="relative lg:col-span-3">
-            <div className="absolute inset-0 rounded-lg bg-white lg:rounded-tr-4xl" />
-            <div className="relative flex h-full flex-col overflow-hidden rounded-[calc(var(--radius-lg)+1px)] lg:rounded-tr-[calc(2rem+1px)]">
-              <Image
-                alt="Academic research with dating data"
-                src="/placeholder.svg"
-                width={600}
-                height={320}
-                className="h-80 object-cover object-left lg:object-right"
-              />
-              <div className="p-10 pt-4">
-                <h3 className="text-sm/4 font-semibold text-rose-600">
-                  Researchers & Academics
-                </h3>
-                <p className="mt-2 text-lg font-medium tracking-tight text-gray-950">
-                  Publish credible research with real-world data
-                </p>
-                <p className="mt-2 max-w-lg text-sm/6 text-gray-600">
-                  Universities like University of Chicago use our datasets for
-                  academic studies on modern dating behavior. Get access to
-                  thousands of profiles for statistical significance.
-                </p>
-                <div className="mt-4">
-                  <a
-                    href="https://psycnet.apa.org/record/2025-41529-001"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block text-sm text-rose-600 hover:text-rose-500"
-                  >
-                    Read: &quot;Shortcuts to insincerity&quot; research paper →
-                  </a>
-                </div>
-              </div>
-            </div>
-            <div className="pointer-events-none absolute inset-0 rounded-lg shadow-sm outline outline-black/5 lg:rounded-tr-4xl" />
-          </div>
-
-          {/* Data Journalists */}
-          <div className="relative lg:col-span-3">
-            <div className="absolute inset-0 rounded-lg bg-white lg:rounded-bl-4xl" />
-            <div className="relative flex h-full flex-col overflow-hidden rounded-[calc(var(--radius-lg)+1px)] lg:rounded-bl-[calc(2rem+1px)]">
-              <Image
-                alt="Data journalism article"
-                src="/placeholder.svg"
-                width={600}
-                height={320}
-                className="h-80 object-cover"
-              />
-              <div className="p-10 pt-4">
-                <h3 className="text-sm/4 font-semibold text-rose-600">
-                  Data Journalists & Writers
-                </h3>
-                <p className="mt-2 text-lg font-medium tracking-tight text-gray-950">
-                  Tell data-driven stories that get read
-                </p>
-                <p className="mt-2 max-w-lg text-sm/6 text-gray-600">
-                  Writers have used our datasets to publish viral articles
-                  analyzing hundreds of dating profiles and uncovering
-                  surprising patterns.
-                </p>
-                <div className="mt-4">
-                  <a
-                    href="https://medium.com/data-science/i-analyzed-hundreds-of-users-tinder-data-including-messages-so-you-dont-have-to-14c6dc4a5fdd"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block text-sm text-rose-600 hover:text-rose-500"
-                  >
-                    Read: &quot;I analyzed hundreds of users&apos; Tinder
-                    data&quot; →
-                  </a>
-                </div>
-              </div>
-            </div>
-            <div className="pointer-events-none absolute inset-0 rounded-lg shadow-sm outline outline-black/5 lg:rounded-bl-4xl" />
-          </div>
-
-          {/* Data Scientists */}
-          <div className="relative lg:col-span-3">
-            <div className="absolute inset-0 rounded-lg bg-white max-lg:rounded-b-4xl lg:rounded-br-4xl" />
-            <div className="relative flex h-full flex-col overflow-hidden rounded-[calc(var(--radius-lg)+1px)] max-lg:rounded-b-[calc(2rem+1px)] lg:rounded-br-[calc(2rem+1px)]">
-              <Image
-                alt="Data science portfolio project"
-                src="/placeholder.svg"
-                width={600}
-                height={320}
-                className="h-80 object-cover"
-              />
-              <div className="p-10 pt-4">
-                <h3 className="text-sm/4 font-semibold text-rose-600">
-                  Data Scientists & Hobbyists
-                </h3>
-                <p className="mt-2 text-lg font-medium tracking-tight text-gray-950">
-                  Build your portfolio with unique datasets
-                </p>
-                <p className="mt-2 max-w-lg text-sm/6 text-gray-600">
-                  Practice analysis, create visualizations, and showcase real
-                  insights from a fascinating domain that everyone can relate
-                  to. Perfect for portfolio projects.
-                </p>
-              </div>
-            </div>
-            <div className="pointer-events-none absolute inset-0 rounded-lg shadow-sm outline outline-black/5 max-lg:rounded-b-4xl lg:rounded-br-4xl" />
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function DataDetailsSection() {
-  const dataPoints = [
-    "Match rates and swipe behavior – See who swipes right and who gets matched",
-    "Messaging patterns – First message timing, response rates, conversation length",
-    "Demographics – Age, gender, location (anonymized)",
-    "Usage patterns – App activity, time of day usage, session length",
-    "Profile data – Photo counts, bio length, profile completeness",
+  const cases = [
+    {
+      visual: "creator" as const,
+      role: "Creators & YouTubers",
+      title: "Content that actually resonates",
+      body: "One creator turned our dataset into two videos on dating-app trends. Nearly 1.5M combined views. The data is the hook.",
+      links: [
+        {
+          href: "https://www.youtube.com/watch?v=02Ss76rFInw",
+          label: '"The Truth About Dating Apps" →',
+        },
+        {
+          href: "https://www.youtube.com/watch?v=3pvkgUc9Zbc",
+          label: '"Dating App Data Analysis" →',
+        },
+      ],
+    },
+    {
+      visual: "research" as const,
+      role: "Researchers & academics",
+      title: "Publish credible, real-world research",
+      body: "University of Chicago and others have used SwipeStats for studies on modern dating. Thousands of profiles, statistical power.",
+      links: [
+        {
+          href: "https://psycnet.apa.org/record/2025-41529-001",
+          label: 'APA: "Shortcuts to insincerity" →',
+        },
+      ],
+    },
+    {
+      visual: "journalism" as const,
+      role: "Data journalists & writers",
+      title: "Data-driven stories that get read",
+      body: "Writers have analyzed hundreds of profiles, including messages, to surface patterns no survey could reveal.",
+      links: [
+        {
+          href: "https://medium.com/data-science/i-analyzed-hundreds-of-users-tinder-data-including-messages-so-you-dont-have-to-14c6dc4a5fdd",
+          label: '"I analyzed hundreds of users\' Tinder data" →',
+        },
+      ],
+    },
+    {
+      visual: "portfolio" as const,
+      role: "Data scientists & hobbyists",
+      title: "Build a portfolio on unique data",
+      body: "Practice analysis and visualization on a domain everyone relates to. A standout portfolio project with a real, rich dataset.",
+      links: [{ href: SAMPLE_DOWNLOAD, label: "See the data structure →" }],
+    },
   ];
 
   return (
-    <div className="bg-white py-24 sm:py-32">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="mx-auto max-w-2xl lg:mx-0">
-          <h2 className="text-base/7 font-semibold text-rose-600">
-            Dataset Contents
-          </h2>
-          <p className="mt-2 text-4xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-5xl">
-            Everything You Need to Start Analyzing
-          </p>
-          <p className="mt-6 text-lg/8 text-gray-700">
-            Each dataset includes comprehensive, anonymized profiles with:
-          </p>
-        </div>
-        <ul className="mx-auto mt-10 max-w-2xl space-y-4 text-base/7 text-gray-600 lg:mx-0 lg:max-w-none">
-          {dataPoints.map((point) => (
-            <li key={point} className="flex gap-x-3">
-              <CheckIcon
-                className="h-7 w-5 flex-none text-rose-600"
-                aria-hidden="true"
-              />
-              <span>{point}</span>
-            </li>
+    <section className="border-y border-gray-200 bg-gray-50 py-[88px] max-[720px]:py-[60px]">
+      <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
+        <SectionHead
+          center
+          eyebrow="Use cases"
+          title="From viral videos to peer-reviewed research"
+        />
+        <div className="mt-12 grid grid-cols-1 gap-5 md:grid-cols-2">
+          {cases.map((c) => (
+            <article
+              key={c.title}
+              className="flex flex-col overflow-hidden rounded-3xl border border-gray-200 bg-white transition hover:-translate-y-0.5 hover:shadow-[0_2px_6px_oklch(0.2_0.02_286/0.05),0_12px_28px_oklch(0.2_0.02_286/0.08)]"
+            >
+              <UseCaseVisual kind={c.visual} />
+              <div className="flex flex-1 flex-col p-6">
+                <span className="font-mono text-[11.5px] tracking-[0.06em] text-rose-600 uppercase">
+                  {c.role}
+                </span>
+                <h3 className="mt-2.5 text-[19px] font-bold tracking-[-0.02em] text-gray-900">
+                  {c.title}
+                </h3>
+                <p className="mt-2.5 flex-1 text-[14.5px] leading-[1.6] text-gray-600">
+                  {c.body}
+                </p>
+                <div className="mt-4 flex flex-col gap-2">
+                  {c.links.map((l) => (
+                    <a
+                      key={l.href + l.label}
+                      href={l.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[13.5px] font-semibold text-rose-600 hover:text-rose-700"
+                    >
+                      {l.label}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </article>
           ))}
-        </ul>
-        <div className="mt-10">
-          <div className="relative isolate overflow-hidden rounded-2xl bg-gray-900 p-8 shadow-2xl sm:p-12">
-            <svg
-              viewBox="0 0 1024 1024"
-              aria-hidden="true"
-              className="absolute top-1/2 left-1/2 -z-10 size-256 -translate-x-1/2 -translate-y-1/2 mask-[radial-gradient(closest-side,white,transparent)]"
-            >
-              <circle
-                r={512}
-                cx={512}
-                cy={512}
-                fill="url(#data-details-gradient)"
-                fillOpacity="0.7"
-              />
-              <defs>
-                <radialGradient id="data-details-gradient">
-                  <stop stopColor="#E11D48" />
-                  <stop offset={1} stopColor="#BE123C" />
-                </radialGradient>
-              </defs>
-            </svg>
-            <h3 className="text-lg font-semibold text-white">
-              Not Sure What the Data Looks Like?
-            </h3>
-            <p className="mt-2 text-sm text-gray-300">
-              Download a free sample profile to explore the data structure and
-              see what&apos;s included.
-            </p>
-            <Link
-              href="/downloads/swipestats-demo-dataset.jsonl.zip"
-              target="_blank"
-              className="mt-4 inline-block rounded-md bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-900 shadow-xs hover:bg-gray-100"
-            >
-              Download Free Sample Profile
-            </Link>
-          </div>
         </div>
       </div>
-    </div>
+    </section>
   );
 }
 
+/* ---------------------------------------------------------------- comparison */
+
 function ComparisonTableSection() {
+  const cols = [
+    "Free sample",
+    "Starter",
+    "Standard",
+    "Fresh",
+    "Premium",
+    "Academic",
+  ];
+  const popIdx = 3;
+  const rows: { label: string; cells: (string | boolean)[]; mono?: boolean }[] =
+    [
+      {
+        label: "Price",
+        mono: true,
+        cells: ["$0", "$15", "$50", "$150", "$300", "$1,500+"],
+      },
+      {
+        label: "Profiles",
+        mono: true,
+        cells: ["1", "10", "1,000", "1,000", "3,000", "5,000+"],
+      },
+      {
+        label: "Price / profile",
+        mono: true,
+        cells: ["$0", "$1.50", "$0.05", "$0.15", "$0.10", "$0.30"],
+      },
+      {
+        label: "Data recency",
+        cells: ["Sample", "Mixed", "Mixed", "Newest", "Newest", "By request"],
+      },
+      {
+        label: "Email support",
+        cells: [false, true, true, "Priority", "Priority", "Priority"],
+      },
+      {
+        label: "Commercial use",
+        cells: [false, false, true, true, true, true],
+      },
+      {
+        label: "Publication rights",
+        cells: [false, false, true, true, true, true],
+      },
+      {
+        label: "Student distribution",
+        cells: [false, false, false, false, false, true],
+      },
+    ];
+
+  const cell = (c: string | boolean) => {
+    if (c === true) return <span className="font-bold text-rose-600">✓</span>;
+    if (c === false) return <span className="text-gray-300">—</span>;
+    if (c === "Priority")
+      return <span className="font-bold text-rose-600">Priority</span>;
+    return c;
+  };
+
   return (
-    <div className="bg-white py-24 sm:py-32">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="mx-auto max-w-4xl text-center">
-          <h2 className="text-base/7 font-semibold text-rose-600">
-            Feature Comparison
-          </h2>
-          <p className="mt-2 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
-            Compare All Plans
-          </p>
-        </div>
-        <div className="mt-16 overflow-x-auto rounded-2xl ring-1 ring-gray-900/10">
-          <table className="w-full text-left">
-            <thead className="border-b border-gray-200 bg-gray-50">
+    <section className="border-y border-gray-200 bg-gray-50 py-[88px] max-[720px]:py-[60px]">
+      <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
+        <SectionHead
+          center
+          eyebrow="Compare"
+          title="Every plan, side by side"
+        />
+        <div className="mt-11 overflow-x-auto rounded-2xl border border-gray-200">
+          <table className="w-full min-w-[860px] border-collapse text-[13.5px]">
+            <thead>
               <tr>
-                <th className="px-6 py-3 text-sm font-semibold text-gray-900">
-                  Features
+                <th className="sticky left-0 border-b border-gray-200 bg-gray-50 px-[18px] py-3.5 text-left text-[12px] font-bold text-gray-900">
+                  Feature
                 </th>
-                <th className="px-6 py-3 text-center text-sm font-semibold text-gray-900">
-                  Free Sample
-                </th>
-                <th className="px-6 py-3 text-center text-sm font-semibold text-gray-900">
-                  Starter Pack
-                </th>
-                <th className="px-6 py-3 text-center text-sm font-semibold text-gray-900">
-                  Standard Dataset
-                </th>
-                <th className="px-6 py-3 text-center text-sm font-semibold text-gray-900">
-                  Fresh Dataset
-                </th>
-                <th className="px-6 py-3 text-center text-sm font-semibold text-gray-900">
-                  Premium Dataset
-                </th>
-                <th className="px-6 py-3 text-center text-sm font-semibold text-gray-900">
-                  Academic License
-                </th>
+                {cols.map((c, i) => (
+                  <th
+                    key={c}
+                    className={cn(
+                      "border-b border-gray-200 bg-gray-50 px-[18px] py-3.5 text-center text-[12px] font-bold whitespace-nowrap",
+                      i === popIdx ? "text-rose-600" : "text-gray-900",
+                    )}
+                  >
+                    {c}
+                  </th>
+                ))}
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200 bg-white">
-              <tr>
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                  Price
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  $0
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  $15
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  $50
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  $150
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  $300
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  From $1,500
-                </td>
-              </tr>
-              <tr>
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                  Number of profiles
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  1
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  10
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  1,000
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  1,000
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  3,000
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  5,000+
-                </td>
-              </tr>
-              <tr>
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                  Price per profile
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  $0
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  $1.50
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  $0.05
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  $0.15
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  $0.10
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  From $0.30
-                </td>
-              </tr>
-              <tr>
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                  Data recency
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  Sample
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  Mixed
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  Mixed
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  Most recent
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  Most recent
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  By request
-                </td>
-              </tr>
-              <tr>
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                  Email support
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  ❌
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  ✅
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  ✅
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  ✅ Priority
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  ✅ Priority
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  ✅ Priority
-                </td>
-              </tr>
-              <tr>
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                  Monthly support
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  ❌
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  ❌
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  ❌
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  ❌
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  ❌
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  ✅
-                </td>
-              </tr>
-              <tr>
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                  Personal use
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  ✅
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  ✅
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  ✅
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  ✅
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  ✅
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  ✅
-                </td>
-              </tr>
-              <tr>
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                  Commercial use
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  ❌
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  ❌
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  ✅
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  ✅
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  ✅
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  ✅
-                </td>
-              </tr>
-              <tr>
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                  Publication rights
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  ❌
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  ❌
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  ✅
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  ✅
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  ✅
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  ✅
-                </td>
-              </tr>
-              <tr>
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                  Student distribution rights
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  ❌
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  ❌
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  ❌
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  ❌
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  ❌
-                </td>
-                <td className="px-6 py-4 text-center text-sm text-gray-600">
-                  ✅
-                </td>
-              </tr>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.label} className="group">
+                  <td className="sticky left-0 border-b border-gray-200 bg-white px-[18px] py-3.5 text-left font-semibold whitespace-nowrap text-gray-900 group-hover:bg-gray-50">
+                    {r.label}
+                  </td>
+                  {r.cells.map((c, i) => (
+                    <td
+                      key={i}
+                      className={cn(
+                        "border-b border-gray-200 px-[18px] py-3.5 text-center whitespace-nowrap text-gray-700 group-hover:bg-gray-50",
+                        r.mono && "font-mono tabular-nums",
+                      )}
+                    >
+                      {cell(c)}
+                    </td>
+                  ))}
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
       </div>
-    </div>
+    </section>
   );
 }
+
+/* ---------------------------------------------------------------- how it works */
 
 function HowItWorksSection() {
   const steps = [
     {
-      name: "Choose Your Dataset",
-      description:
-        "Select the package that fits your project needs and budget. Not sure? Start with the free sample.",
+      n: 1,
+      title: "Choose your dataset",
+      body: "Pick the package that fits your project and budget. Not sure? Start with the free sample profile.",
     },
     {
-      name: "Instant Download",
-      description:
-        "Most datasets are available for immediate download. Academic licenses are processed within 24 hours.",
+      n: 2,
+      title: "Instant download",
+      body: "Most datasets download immediately with a license key. Academic licenses are processed within 24 hours.",
     },
     {
-      name: "Start Analyzing",
-      description:
-        "Use the data in your research, articles, videos, or projects. Full documentation and data model guide included.",
+      n: 3,
+      title: "Start analyzing",
+      body: "Load the JSONL into Python, R, or pandas. The full data dictionary ships with every download.",
     },
   ];
-
   return (
-    <div className="bg-white py-24 sm:py-32">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="mx-auto max-w-2xl lg:mx-0">
-          <h2 className="text-base/7 font-semibold text-rose-600">
-            How It Works
-          </h2>
-          <p className="mt-2 text-4xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-5xl">
-            Get Started in Minutes
-          </p>
-        </div>
-        <div className="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-none">
-          <dl className="grid max-w-xl grid-cols-1 gap-x-8 gap-y-16 lg:max-w-none lg:grid-cols-3">
-            {steps.map((step, index) => (
-              <div key={step.name} className="flex flex-col">
-                <dt className="text-base/7 font-semibold text-gray-900">
-                  <div className="mb-6 flex h-10 w-10 items-center justify-center rounded-lg bg-rose-600">
-                    <span className="text-lg font-bold text-white">
-                      {index + 1}
-                    </span>
-                  </div>
-                  {step.name}
-                </dt>
-                <dd className="mt-1 flex flex-auto flex-col text-base/7 text-gray-600">
-                  <p className="flex-auto">{step.description}</p>
-                </dd>
+    <section className="py-[88px] max-[720px]:py-[60px]">
+      <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
+        <SectionHead
+          center
+          eyebrow="How it works"
+          title="From checkout to analysis in minutes"
+        />
+        <div className="mt-12 grid grid-cols-1 gap-7 md:grid-cols-3">
+          {steps.map((s) => (
+            <div key={s.n}>
+              <div className="grid h-10 w-10 place-items-center rounded-[11px] bg-rose-600 font-mono font-bold text-white">
+                {s.n}
               </div>
-            ))}
-          </dl>
+              <h3 className="mt-[18px] text-[17px] font-bold tracking-[-0.02em] text-gray-900">
+                {s.title}
+              </h3>
+              <p className="mt-2 text-[14.5px] leading-[1.6] text-gray-600">
+                {s.body}
+              </p>
+            </div>
+          ))}
         </div>
       </div>
-    </div>
+    </section>
   );
 }
 
-function ResearchFAQSection() {
+/* ---------------------------------------------------------------- faq */
+
+function FAQSection() {
   const faqs = [
     {
-      question: "Is this data ethical and legal?",
-      answer:
-        "Yes. All data is fully anonymized and collected with explicit user consent through our platform. No personal information, names, contact details, or identifying information is included. We take privacy seriously and comply with all data protection regulations.",
+      q: "Is this data ethical and legal?",
+      a: "Yes. Every profile is voluntarily uploaded by its owner via their official GDPR data export, and fully anonymized. No names or contact details are included, and PII in bios and messages is LLM-redacted. We comply with applicable data-protection regulations.",
+      open: true,
     },
     {
-      question: "What format is the data in?",
-      answer:
-        "The data is provided in JSON format with comprehensive documentation. It's easy to import into Python, R, Excel, or any analysis tool you prefer. We include a data dictionary explaining each field.",
+      q: "What format is the data in?",
+      a: "JSONL: one JSON object per line, one line per profile. It imports cleanly into Python, R, pandas, or any tool you prefer. A full data dictionary defining every field ships with each download.",
     },
     {
-      question: "Can I use this for commercial projects?",
-      answer:
-        "Yes! Standard Dataset and above include full commercial use rights. You can use the data for blog posts, YouTube videos, paid research, or any commercial purpose. Just check your specific tier for details.",
+      q: "Can I use this for commercial projects?",
+      a: "Yes. The Standard tier and above include full commercial-use rights. Blog posts, YouTube videos, paid research, or any commercial purpose are covered. Check your tier for specifics.",
     },
     {
-      question: "Can I publish research using this data?",
-      answer:
-        "Absolutely. Standard tier and above include publication rights. We only ask that you credit SwipeStats as your data source. Many researchers and journalists have already published using our datasets.",
+      q: "Can I publish research using this data?",
+      a: "Absolutely. Standard tier and above include publication rights; we just ask that you cite SwipeStats as your data source. Researchers and journalists already have. See the documentation for the recommended citation format.",
     },
     {
-      question: "What if I need different data specifications?",
-      answer:
-        "Contact us directly for custom datasets or specific requirements. Academic License holders can request particular timeframes, demographics, or data points. We're here to help you get what you need.",
+      q: "How recent is the data?",
+      a: "Starter and Standard mix timeframes. Fresh and Premium ship the most recent profiles available. Academic licenses can request specific periods. New data is added continuously as users upload their exports.",
     },
     {
-      question: "How recent is the data?",
-      answer:
-        "Standard & Starter tiers include mixed timeframes (profiles from various periods). Fresh & Premium tiers include the most recent profiles available. Academic License holders can request specific time periods. Fresh data is added continuously as new users upload their dating app data to our platform.",
-    },
-    {
-      question: "Is there support if I have questions?",
-      answer:
-        "Yes! All paid tiers include email support. Premium and Academic tiers get priority support. Academic License includes ongoing monthly support for the duration of your project.",
-    },
-    {
-      question: "What about refunds?",
-      answer:
-        "If you're not satisfied with your dataset, contact us within 7 days for a full refund. We want you to be happy with your purchase.",
-    },
-    {
-      question: "How do I cite this data in my research?",
-      answer:
-        'We provide standard citation formats with your dataset download. Generally: "SwipeStats.io Dating App Dataset, [Year], [Number of Profiles]"',
-    },
-    {
-      question: "Can students access this data?",
-      answer:
-        "Individual students can purchase personal-use tiers. Universities and professors should consider the Academic License, which includes rights to distribute the dataset to students for educational purposes.",
+      q: "How do I cite this in research?",
+      a: 'We provide a standard citation with every download. Generally: "SwipeStats.io Dating App Dataset, [Year], [Number of Profiles]". The documentation page has APA and BibTeX formats ready to copy.',
     },
   ];
 
   return (
-    <div className="bg-white py-24 sm:py-32">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="mx-auto max-w-4xl">
-          <h2 className="text-2xl font-bold tracking-tight text-gray-900">
-            Frequently Asked Questions
-          </h2>
-          <dl className="mt-10 space-y-8 divide-y divide-gray-900/10">
-            {faqs.map((faq) => (
-              <div
-                key={faq.question}
-                className="pt-8 lg:grid lg:grid-cols-12 lg:gap-8"
-              >
-                <dt className="text-base font-semibold text-gray-900 lg:col-span-5">
-                  {faq.question}
-                </dt>
-                <dd className="mt-4 lg:col-span-7 lg:mt-0">
-                  <p className="text-base text-gray-600">{faq.answer}</p>
-                </dd>
+    <section
+      id="faq"
+      className="border-t border-gray-200 bg-gray-50 py-[88px] max-[720px]:py-[60px]"
+    >
+      <div className="mx-auto max-w-[880px] px-6 lg:px-8">
+        <SectionHead center eyebrow="FAQ" title="Questions, answered" />
+        <div className="mt-10 border-t border-gray-200">
+          {faqs.map((f) => (
+            <details
+              key={f.q}
+              open={f.open}
+              className="group border-b border-gray-200"
+            >
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-5 py-[22px] text-[16.5px] font-semibold text-gray-900 [&::-webkit-details-marker]:hidden">
+                {f.q}
+                <PlusIcon className="h-[22px] w-[22px] flex-none text-rose-600 transition-transform group-open:rotate-45" />
+              </summary>
+              <div className="max-w-[760px] pb-6 text-[14.5px] leading-[1.7] text-gray-600">
+                {f.a}
               </div>
-            ))}
-          </dl>
+            </details>
+          ))}
         </div>
       </div>
-    </div>
+    </section>
   );
 }
+
+/* ---------------------------------------------------------------- final cta */
 
 function FinalCTASection() {
   return (
-    <div className="bg-white">
-      <div className="mx-auto max-w-7xl py-24 sm:px-6 sm:py-32 lg:px-8">
-        <div className="relative isolate overflow-hidden bg-gray-900 px-6 pt-16 shadow-2xl sm:rounded-3xl sm:px-16 md:pt-24 lg:flex lg:gap-x-20 lg:px-24 lg:pt-0">
-          <svg
-            viewBox="0 0 1024 1024"
-            aria-hidden="true"
-            className="absolute top-1/2 left-1/2 -z-10 size-256 -translate-y-1/2 mask-[radial-gradient(closest-side,white,transparent)] sm:left-full sm:-ml-80 lg:left-1/2 lg:ml-0 lg:-translate-x-1/2 lg:translate-y-0"
-          >
-            <circle
-              r={512}
-              cx={512}
-              cy={512}
-              fill="url(#cta-gradient)"
-              fillOpacity="0.7"
-            />
-            <defs>
-              <radialGradient id="cta-gradient">
-                <stop stopColor="#E11D48" />
-                <stop offset={1} stopColor="#BE123C" />
-              </radialGradient>
-            </defs>
-          </svg>
-          <div className="mx-auto max-w-md text-center lg:mx-0 lg:flex-auto lg:py-32 lg:text-left">
-            <h2 className="text-3xl font-semibold tracking-tight text-balance text-white sm:text-4xl">
-              Start Exploring Real Dating Data Today
-            </h2>
-            <p className="mt-6 text-lg/8 text-pretty text-gray-300">
-              Join researchers, content creators, and data enthusiasts who are
-              uncovering insights about modern dating.
-            </p>
-            <div className="mt-10 flex items-center justify-center gap-x-6 lg:justify-start">
-              <Link
-                href="/downloads/swipestats-demo-dataset.jsonl.zip"
-                target="_blank"
-                className="rounded-md bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-900 shadow-xs hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-              >
-                Download Free Sample
-              </Link>
+    <section className="py-[88px] max-[720px]:py-[60px]">
+      <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
+        <CtaBand
+          eyebrow="Get started"
+          title="Start exploring real dating data today"
+          lead="Join the researchers, creators, and data enthusiasts uncovering how modern dating actually works."
+          actions={
+            <>
               <Link
                 href="#pricing"
-                className="text-sm/6 font-semibold text-white hover:text-gray-100"
+                className={marketingButton({ variant: "primary", size: "lg" })}
               >
-                Browse Datasets
-                <span aria-hidden="true">→</span>
+                Browse datasets
               </Link>
-            </div>
-          </div>
-          <div className="relative mt-16 h-80 lg:mt-8">
-            <Image
-              alt="SwipeStats Research Platform"
-              src="/placeholder.svg"
-              width={1824}
-              height={1080}
-              className="absolute top-0 left-0 w-228 max-w-none rounded-md bg-white/5 ring-1 ring-white/10"
-            />
-          </div>
-        </div>
+              <Link
+                href={SAMPLE_DOWNLOAD}
+                target="_blank"
+                className={marketingButton({ variant: "white", size: "lg" })}
+              >
+                Download free sample
+              </Link>
+              <a
+                href="mailto:kris@swipestats.io"
+                className={cn(
+                  marketingButton({ variant: "bare", size: "lg" }),
+                  "border border-white/20",
+                )}
+              >
+                Talk to us
+              </a>
+            </>
+          }
+        />
       </div>
-      <div className="mx-auto max-w-7xl px-6 pb-24 lg:px-8">
-        <div className="mx-auto max-w-2xl text-center">
-          <h3 className="text-2xl font-bold tracking-tight text-gray-900">
-            Questions?
-          </h3>
-          <p className="mt-4 text-lg text-gray-600">
-            Have a specific research need or question about our datasets?
-            We&apos;re here to help.
-          </p>
-          <div className="mt-6">
-            <a
-              href="mailto:kris@swipestats.io"
-              className="inline-flex items-center rounded-md bg-rose-600 px-3.5 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-rose-500"
-            >
-              Contact Us
-            </a>
-          </div>
-        </div>
-      </div>
-    </div>
+    </section>
   );
 }
 
@@ -978,14 +1162,15 @@ export default function ResearchPage() {
   return (
     <>
       <HeroSection />
-      <SocialProofSection />
-      <ValuePropositionSection />
+      <LogoStrip />
+      <ValueSection />
+      <SchemaSection />
+      <DashboardSection />
       <UseCasesSection />
-      <DataDetailsSection />
       <ResearchPricingSection />
       <ComparisonTableSection />
       <HowItWorksSection />
-      <ResearchFAQSection />
+      <FAQSection />
       <FinalCTASection />
     </>
   );

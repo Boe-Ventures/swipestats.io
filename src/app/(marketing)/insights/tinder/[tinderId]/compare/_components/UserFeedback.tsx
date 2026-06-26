@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Form } from "@/components/ui/form";
+import { FormProvider } from "@/components/ui/form-new";
 import { StarRatingFormField } from "@/components/ui/formFields/RadioGroupFormField";
 import { TagGroupFormField } from "@/components/ui/formFields/TagGroupFormField";
 import { useLocalStorage } from "@/components/ui/hooks/use-local-storage";
@@ -111,7 +111,7 @@ export function UserFeedback({ tinderId }: { tinderId: string }) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Form {...form}>
+        <FormProvider {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="">
             <div className="mb-4 grid gap-4">
               <StarRatingFormField
@@ -138,7 +138,7 @@ export function UserFeedback({ tinderId }: { tinderId: string }) {
               <Button loading={isSubmitting}>Submit Feedback</Button>
             </div>
           </form>
-        </Form>
+        </FormProvider>
       </CardContent>
     </Card>
   );

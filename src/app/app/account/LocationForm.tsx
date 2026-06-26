@@ -1,20 +1,19 @@
 "use client";
 
 import { useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+  Controller,
+  useForm,
+  zodResolver,
+  Field,
+  FieldLabel,
+  FieldDescription,
+  FieldError,
+} from "@/components/ui/form-new";
 import {
   Card,
   CardAction,
@@ -114,82 +113,84 @@ export function LocationForm() {
         </CardAction>
       </CardHeader>
       <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            {/* Timezone */}
-            <FormField
-              control={form.control}
-              name="timeZone"
-              render={({ field }) => (
-                <FormItem>
-                  ok
-                  <FormLabel>Timezone</FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="e.g., America/New_York, Europe/London"
-                    />
-                  </FormControl>
-                  <p className="text-muted-foreground text-xs">
-                    Use IANA timezone format (e.g., America/New_York,
-                    Europe/London)
-                  </p>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* City */}
-            <FormField
-              control={form.control}
-              name="city"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>City</FormLabel>
-                  <FormControl>
-                    <Input {...field} placeholder="e.g., Oslo, New York" />
-                  </FormControl>
-                  <p className="text-muted-foreground text-xs">
-                    City name in English
-                  </p>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            {/* Country - Use existing CountrySelect component */}
-            <CountrySelect
-              control={form.control}
-              name="country"
-              label="Country"
-              placeholder="Select a country..."
-            />
-
-            {/* Continent - Read-only display */}
-            <div className="space-y-2">
-              <Label>Continent</Label>
-              <Input value={continent || ""} disabled className="bg-muted" />
-              <p className="text-muted-foreground text-xs">
-                Auto-derived from country
-              </p>
-            </div>
-
-            <Button type="submit" disabled={updateLocation.isPending}>
-              {updateLocation.isPending ? "Saving..." : "Save Changes"}
-            </Button>
-
-            {updateLocation.isSuccess && (
-              <p className="text-sm text-green-600">
-                Location updated successfully!
-              </p>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          {/* Timezone */}
+          <Controller
+            control={form.control}
+            name="timeZone"
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel htmlFor={field.name}>Timezone</FieldLabel>
+                <Input
+                  {...field}
+                  id={field.name}
+                  aria-invalid={fieldState.invalid}
+                  placeholder="e.g., America/New_York, Europe/London"
+                />
+                <FieldDescription>
+                  Use IANA timezone format (e.g., America/New_York,
+                  Europe/London)
+                </FieldDescription>
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </Field>
             )}
-            {updateLocation.isError && (
-              <p className="text-destructive text-sm">
-                Error: {updateLocation.error.message}
-              </p>
+          />
+
+          {/* City */}
+          <Controller
+            control={form.control}
+            name="city"
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel htmlFor={field.name}>City</FieldLabel>
+                <Input
+                  {...field}
+                  id={field.name}
+                  aria-invalid={fieldState.invalid}
+                  placeholder="e.g., Oslo, New York"
+                />
+                <FieldDescription>City name in English</FieldDescription>
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </Field>
             )}
-          </form>
-        </Form>
+          />
+
+          {/* Country - Use existing CountrySelect component */}
+          <CountrySelect
+            control={form.control}
+            name="country"
+            label="Country"
+            placeholder="Select a country..."
+          />
+
+          {/* Continent - Read-only display */}
+          <div className="space-y-2">
+            <Label>Continent</Label>
+            <Input value={continent || ""} disabled className="bg-muted" />
+            <p className="text-muted-foreground text-xs">
+              Auto-derived from country
+            </p>
+          </div>
+
+          <Button type="submit" disabled={updateLocation.isPending}>
+            {updateLocation.isPending ? "Saving..." : "Save Changes"}
+          </Button>
+
+          {updateLocation.isSuccess && (
+            <p className="text-sm text-green-600">
+              Location updated successfully!
+            </p>
+          )}
+          {updateLocation.isError && (
+            <p className="text-destructive text-sm">
+              Error: {updateLocation.error.message}
+            </p>
+          )}
+        </form>
       </CardContent>
     </Card>
   );

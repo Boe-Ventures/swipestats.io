@@ -5,87 +5,209 @@ import { CheckIcon } from "@heroicons/react/20/solid";
 import { cn } from "@/components/ui/lib/utils";
 import { useTRPC } from "@/trpc/react";
 import { useMutation } from "@tanstack/react-query";
+import { SectionHead, marketingButton } from "../_components/marketing-ui";
 
-const tiers = [
+type Tier = {
+  name: string;
+  id: string;
+  apiTier: "STARTER" | "STANDARD" | "FRESH" | "PREMIUM" | null;
+  price: string;
+  description: string;
+  features: string[];
+  badge?: { label: string; variant: "rose" | "gray" | "pill" };
+  popular?: boolean;
+  dark?: boolean;
+  cta: string;
+  twoCol?: boolean;
+};
+
+const tiers: Tier[] = [
   {
     name: "Starter Pack",
     id: "starter",
-    apiTier: "STARTER" as const,
+    apiTier: "STARTER",
     price: "$15",
-    description: "Test your hypothesis with real data",
+    description: "Test your hypothesis with real data.",
     features: [
       "10 profiles",
       "Email support",
       "Personal use",
       "Great for small projects",
     ],
-    mostPopular: false,
+    cta: "Buy dataset",
   },
   {
-    name: "Standard Dataset",
+    name: "Standard",
     id: "standard",
-    apiTier: "STANDARD" as const,
+    apiTier: "STANDARD",
     price: "$50",
-    description: "The go-to choice for content creators and researchers",
+    description: "The go-to for creators and researchers.",
+    badge: { label: "Best value", variant: "rose" },
     features: [
       "1,000 profiles",
-      "Email support",
-      "Commercial use ✓",
-      "Publication rights ✓",
-      "Mixed data recency",
-      "Best price per profile ($0.05)",
+      "Commercial use",
+      "Publication rights",
+      "$0.05 / profile",
     ],
-    mostPopular: false,
+    cta: "Buy dataset",
   },
   {
-    name: "Fresh Dataset",
+    name: "Fresh",
     id: "fresh",
-    apiTier: "FRESH" as const,
+    apiTier: "FRESH",
     price: "$150",
-    description: "Get the most recent data available",
+    description: "The most recent data available.",
+    badge: { label: "Most popular", variant: "pill" },
+    popular: true,
     features: [
-      "1,000 profiles (most recent)",
-      "Priority email support",
-      "Commercial use ✓",
-      "Publication rights ✓",
+      "1,000 newest profiles",
+      "Priority support",
+      "Commercial + publication",
       "Latest dating trends",
-      "Current market insights",
     ],
-    mostPopular: true,
+    cta: "Buy dataset",
   },
   {
-    name: "Premium Dataset",
+    name: "Premium",
     id: "premium",
-    apiTier: "PREMIUM" as const,
+    apiTier: "PREMIUM",
     price: "$300",
-    description: "Serious research with comprehensive data",
+    description: "Serious research with statistical significance.",
+    badge: { label: "3,000 profiles", variant: "gray" },
+    twoCol: true,
     features: [
-      "3,000 profiles (most recent)",
-      "Priority email support",
-      "Commercial use ✓",
-      "Publication rights ✓",
-      "Statistical significance",
+      "3,000 newest profiles",
+      "Priority support",
       "Deep market analysis",
+      "Commercial + publication",
     ],
-    mostPopular: false,
+    cta: "Buy dataset",
   },
   {
     name: "Academic License",
     id: "academic",
     apiTier: null,
     price: "From $1,500",
-    description: "For universities and institutional research",
+    description: "For universities and institutional research.",
+    badge: { label: "Institutions", variant: "gray" },
+    dark: true,
+    twoCol: true,
     features: [
       "5,000+ profiles",
       "Custom data requests",
-      "Priority support",
+      "Student distribution rights",
       "Monthly ongoing support",
-      "Student distribution rights ✓",
-      "Custom timeframes available",
     ],
-    mostPopular: false,
+    cta: "Contact us",
   },
 ];
+
+function Badge({ badge }: { badge: NonNullable<Tier["badge"]> }) {
+  if (badge.variant === "pill") {
+    return (
+      <span className="inline-flex items-center gap-2 rounded-full border border-rose-600/20 bg-rose-50 px-3 py-1.5 text-[13px] font-semibold leading-none text-rose-700">
+        {badge.label}
+      </span>
+    );
+  }
+  return (
+    <span
+      className={cn(
+        "rounded-md border px-2 py-1 font-mono text-[11px] font-medium uppercase tracking-[0.04em] whitespace-nowrap",
+        badge.variant === "rose"
+          ? "border-rose-600/20 bg-rose-50 text-rose-700"
+          : "border-gray-200 bg-gray-100 text-gray-600",
+      )}
+    >
+      {badge.label}
+    </span>
+  );
+}
+
+function TierCard({
+  tier,
+  loadingTier,
+  onCheckout,
+}: {
+  tier: Tier;
+  loadingTier: string | null;
+  onCheckout: (tier: Tier) => void;
+}) {
+  const isLoading = loadingTier === tier.id;
+
+  return (
+    <div
+      className={cn(
+        "flex flex-col rounded-3xl border p-7",
+        tier.popular
+          ? "border-2 border-rose-600 shadow-[0_2px_6px_oklch(0.2_0.02_286/0.05),0_12px_28px_oklch(0.2_0.02_286/0.08)]"
+          : "border-gray-200",
+        tier.dark
+          ? "border-gray-950 bg-gray-950 text-white"
+          : "bg-white text-gray-900",
+      )}
+    >
+      <div className="flex items-center justify-between gap-2.5">
+        <span
+          className={cn(
+            "text-[17px] font-bold",
+            tier.popular && "text-rose-600",
+          )}
+        >
+          {tier.name}
+        </span>
+        {tier.badge ? <Badge badge={tier.badge} /> : null}
+      </div>
+
+      <p
+        className={cn(
+          "mt-2 min-h-[38px] text-[13.5px]",
+          tier.dark ? "text-gray-400" : "text-gray-500",
+        )}
+      >
+        {tier.description}
+      </p>
+
+      <div className="mt-[18px] text-[38px] font-bold tracking-[-0.03em] tabular-nums">
+        {tier.price}
+      </div>
+
+      <ul
+        className={cn(
+          "mt-5 flex-1",
+          tier.twoCol ? "grid grid-cols-2 gap-[11px]" : "flex flex-col gap-[11px]",
+        )}
+      >
+        {tier.features.map((feature) => (
+          <li
+            key={feature}
+            className={cn(
+              "flex gap-2.5 text-[14px]",
+              tier.dark ? "text-gray-300" : "text-gray-700",
+            )}
+          >
+            <CheckIcon className="mt-px h-[18px] w-[18px] flex-none text-rose-600" />
+            {feature}
+          </li>
+        ))}
+      </ul>
+
+      <button
+        onClick={() => onCheckout(tier)}
+        disabled={isLoading}
+        className={cn(
+          "mt-6 w-full",
+          marketingButton({
+            variant: tier.popular ? "primary" : tier.dark ? "white" : "ghost",
+          }),
+          isLoading && "cursor-wait opacity-50",
+        )}
+      >
+        {isLoading ? "Loading…" : tier.cta}
+      </button>
+    </div>
+  );
+}
 
 export function ResearchPricingSection() {
   const [loadingTier, setLoadingTier] = useState<string | null>(null);
@@ -104,7 +226,7 @@ export function ResearchPricingSection() {
     }),
   );
 
-  const handleCheckout = (tier: (typeof tiers)[number]) => {
+  const handleCheckout = (tier: Tier) => {
     if (tier.id === "academic") {
       window.location.href =
         "mailto:kris@swipestats.io?subject=Academic%20License%20Inquiry";
@@ -117,144 +239,41 @@ export function ResearchPricingSection() {
     createCheckout.mutate({ tier: tier.apiTier });
   };
 
+  const topTiers = tiers.slice(0, 3);
+  const bottomTiers = tiers.slice(3);
+
   return (
-    <div id="pricing" className="bg-white py-24 sm:py-32">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8">
-        <div className="mx-auto max-w-4xl text-center">
-          <h2 className="text-base/7 font-semibold text-rose-600">Pricing</h2>
-          <p className="mt-2 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
-            Choose Your Dataset
-          </p>
-        </div>
-        <p className="mx-auto mt-6 max-w-2xl text-center text-lg/8 text-gray-600">
-          Whether it&apos;s for a blog, a research paper, or plain curiosity, a
-          dataset from SwipeStats will get you on the right track.
-        </p>
-        <div className="isolate mx-auto mt-16 grid max-w-md grid-cols-1 gap-8 lg:mx-0 lg:max-w-none lg:grid-cols-3">
-          {tiers.slice(0, 3).map((tier) => (
-            <div
+    <section id="pricing" className="py-[88px] max-[720px]:py-[60px]">
+      <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
+        <SectionHead
+          center
+          eyebrow="Pricing"
+          title="Choose your dataset"
+          lead="For a blog, a paper, or plain curiosity, a SwipeStats dataset gets you on the right track. Start free."
+        />
+
+        <div className="mt-12 grid grid-cols-1 gap-5 max-[900px]:mx-auto max-[900px]:max-w-[420px] lg:grid-cols-3">
+          {topTiers.map((tier) => (
+            <TierCard
               key={tier.id}
-              className={cn(
-                tier.mostPopular
-                  ? "ring-2 ring-rose-600"
-                  : "ring-1 ring-gray-200",
-                "flex flex-col justify-between rounded-3xl bg-white p-8 xl:p-10",
-              )}
-            >
-              <div>
-                <div className="flex items-center justify-between gap-x-4">
-                  <h3
-                    id={tier.id}
-                    className={cn(
-                      tier.mostPopular ? "text-rose-600" : "text-gray-900",
-                      "text-lg/8 font-semibold",
-                    )}
-                  >
-                    {tier.name}
-                  </h3>
-                  {tier.mostPopular ? (
-                    <p className="rounded-full bg-rose-600/10 px-2.5 py-1 text-xs/5 font-semibold text-rose-600">
-                      Most popular
-                    </p>
-                  ) : null}
-                </div>
-                <p className="mt-4 text-sm/6 text-gray-600">
-                  {tier.description}
-                </p>
-                <p className="mt-6 flex items-baseline gap-x-1">
-                  <span className="text-4xl font-bold tracking-tight text-gray-900">
-                    {tier.price}
-                  </span>
-                </p>
-                <ul
-                  role="list"
-                  className="mt-8 space-y-3 text-sm/6 text-gray-600"
-                >
-                  {tier.features.map((feature) => (
-                    <li key={feature} className="flex gap-x-3">
-                      <CheckIcon
-                        className="h-6 w-5 flex-none text-rose-600"
-                        aria-hidden="true"
-                      />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <button
-                onClick={() => handleCheckout(tier)}
-                disabled={loadingTier === tier.id}
-                aria-describedby={tier.id}
-                className={cn(
-                  tier.mostPopular
-                    ? "bg-rose-600 text-white shadow-sm hover:bg-rose-500"
-                    : "text-rose-600 ring-1 ring-rose-200 ring-inset hover:ring-rose-300",
-                  "mt-8 block rounded-md px-3 py-2 text-center text-sm/6 font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600",
-                  loadingTier === tier.id && "cursor-wait opacity-50",
-                )}
-              >
-                {loadingTier === tier.id ? "Loading..." : "Buy dataset"}
-              </button>
-            </div>
+              tier={tier}
+              loadingTier={loadingTier}
+              onCheckout={handleCheckout}
+            />
           ))}
         </div>
-        <div className="isolate mx-auto mt-8 grid max-w-md grid-cols-1 gap-8 lg:mx-0 lg:max-w-none lg:grid-cols-2">
-          {tiers.slice(3).map((tier) => (
-            <div
+
+        <div className="mt-5 grid grid-cols-1 gap-5 max-[900px]:mx-auto max-[900px]:max-w-[420px] lg:grid-cols-2">
+          {bottomTiers.map((tier) => (
+            <TierCard
               key={tier.id}
-              className="flex flex-col justify-between rounded-3xl bg-white p-8 ring-1 ring-gray-200 xl:p-10"
-            >
-              <div>
-                <div className="flex items-center justify-between gap-x-4">
-                  <h3
-                    id={tier.id}
-                    className="text-lg/8 font-semibold text-gray-900"
-                  >
-                    {tier.name}
-                  </h3>
-                </div>
-                <p className="mt-4 text-sm/6 text-gray-600">
-                  {tier.description}
-                </p>
-                <p className="mt-6 flex items-baseline gap-x-1">
-                  <span className="text-4xl font-bold tracking-tight text-gray-900">
-                    {tier.price}
-                  </span>
-                </p>
-                <ul
-                  role="list"
-                  className="mt-8 space-y-3 text-sm/6 text-gray-600"
-                >
-                  {tier.features.map((feature) => (
-                    <li key={feature} className="flex gap-x-3">
-                      <CheckIcon
-                        className="h-6 w-5 flex-none text-rose-600"
-                        aria-hidden="true"
-                      />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <button
-                onClick={() => handleCheckout(tier)}
-                disabled={loadingTier === tier.id}
-                aria-describedby={tier.id}
-                className={cn(
-                  "mt-8 block rounded-md px-3 py-2 text-center text-sm/6 font-semibold text-rose-600 ring-1 ring-rose-200 ring-inset hover:ring-rose-300 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600",
-                  loadingTier === tier.id && "cursor-wait opacity-50",
-                )}
-              >
-                {loadingTier === tier.id
-                  ? "Loading..."
-                  : tier.id === "academic"
-                    ? "Contact Us"
-                    : "Buy dataset"}
-              </button>
-            </div>
+              tier={tier}
+              loadingTier={loadingTier}
+              onCheckout={handleCheckout}
+            />
           ))}
         </div>
       </div>
-    </div>
+    </section>
   );
 }

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Panel } from "@/components/golden";
 import {
   Dialog,
   DialogContent,
@@ -80,40 +80,44 @@ export function ProfileCompareSection() {
 
   return (
     <>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="space-y-5">
+        <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">
-              Your Profile Comparisons
+            <div className="font-mono text-[11px] font-medium tracking-[0.07em] text-gray-500 uppercase">
+              Compose
+            </div>
+            <h2 className="mt-1 text-[26px] font-bold tracking-[-0.03em] text-gray-900">
+              Profile comparisons
             </h2>
-            <p className="text-muted-foreground mt-2 text-lg">
-              Compare your dating profiles side-by-side
+            <p className="mt-1 text-[14px] text-gray-600">
+              A/B test photos, prompts, bios, and app profiles side by side.
             </p>
           </div>
           <Button onClick={() => setCreateDialogOpen(true)}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Comparison
+            <Plus className="h-4 w-4" />
+            New comparison
           </Button>
         </div>
 
         {!comparisons || comparisons.length === 0 ? (
-          <Card className="border-dashed border-gray-300 bg-white shadow-sm">
-            <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-              <div className="bg-muted mb-4 flex h-16 w-16 items-center justify-center rounded-full">
-                <Plus className="text-muted-foreground h-8 w-8" />
+          <Panel className="border-dashed bg-white p-0">
+            <div className="flex min-h-[280px] flex-col items-center justify-center px-6 py-12 text-center">
+              <div className="mb-4 grid h-14 w-14 place-items-center rounded-full border border-gray-200 bg-gray-50">
+                <Plus className="h-7 w-7 text-gray-500" />
               </div>
-              <h3 className="mb-2 text-lg font-semibold">No comparisons yet</h3>
-              <p className="text-muted-foreground mb-6 max-w-sm text-sm">
-                Create your first profile comparison to see how your dating app
-                profiles stack up against each other. Compare photos, bios, and
-                more side-by-side.
+              <h3 className="text-[17px] font-bold tracking-[-0.01em] text-gray-900">
+                No comparisons yet
+              </h3>
+              <p className="mt-2 mb-6 max-w-[390px] text-[13.5px] leading-6 text-gray-600">
+                Create your first comparison to see how your dating app profiles
+                stack up. Compare photos, bios, prompts, and more side by side.
               </p>
               <Button onClick={() => setCreateDialogOpen(true)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Create Your First Comparison
+                <Plus className="h-4 w-4" />
+                Create first comparison
               </Button>
-            </CardContent>
-          </Card>
+            </div>
+          </Panel>
         ) : (
           <div className="space-y-4">
             {comparisons.map((comparison) => (
@@ -147,7 +151,10 @@ export function ProfileCompareSection() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setDeleteDialogOpen(false)}
+            >
               Cancel
             </Button>
             <Button

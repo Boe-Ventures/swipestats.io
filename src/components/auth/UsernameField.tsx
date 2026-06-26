@@ -1,6 +1,6 @@
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Field, FieldLabel } from "@/components/ui/form-new";
 
 interface UsernameFieldProps {
   username: string;
@@ -18,8 +18,8 @@ export function UsernameField({
   isAvailable,
 }: UsernameFieldProps) {
   return (
-    <div className="space-y-2">
-      <Label htmlFor="username" className="flex items-center gap-2">
+    <Field>
+      <FieldLabel htmlFor="username" className="flex items-center gap-2">
         Username
         {isChecking && (
           <span className="text-muted-foreground flex items-center gap-1 text-xs">
@@ -39,7 +39,7 @@ export function UsernameField({
             Available!
           </span>
         )}
-      </Label>
+      </FieldLabel>
       <Input
         id="username"
         type="text"
@@ -61,6 +61,6 @@ export function UsernameField({
               : ""
         }
       />
-    </div>
+    </Field>
   );
 }

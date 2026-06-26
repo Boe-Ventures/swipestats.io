@@ -30,16 +30,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  Form,
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
+  Controller,
+  FormProvider,
   useForm,
   zodResolver,
-} from "@/components/ui/form";
+  Field,
+  FieldLabel,
+  FieldDescription,
+  FieldError,
+} from "@/components/ui/form-new";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -715,114 +714,130 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
             </DialogDescription>
           </DialogHeader>
 
-          <Form {...form}>
+          <FormProvider {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <FormField
+              <Controller
                 control={form.control}
                 name="name"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Comparison name</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder={`e.g., ${getDefaultComparisonName()}`}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormDescription>
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor={field.name}>Comparison name</FieldLabel>
+                    <Input
+                      placeholder={`e.g., ${getDefaultComparisonName()}`}
+                      {...field}
+                      id={field.name}
+                      aria-invalid={fieldState.invalid}
+                    />
+                    <FieldDescription>
                       Also the headline on your public share page.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
+                    </FieldDescription>
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
                 )}
               />
 
               <div className="grid grid-cols-2 gap-4">
-                <FormField
+                <Controller
                   control={form.control}
                   name="profileName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Your Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., John" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor={field.name}>Your Name</FieldLabel>
+                      <Input
+                        placeholder="e.g., John"
+                        {...field}
+                        id={field.name}
+                        aria-invalid={fieldState.invalid}
+                      />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
                   )}
                 />
 
-                <FormField
+                <Controller
                   control={form.control}
                   name="age"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Age</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="e.g., 28"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor={field.name}>Age</FieldLabel>
+                      <Input
+                        type="number"
+                        placeholder="e.g., 28"
+                        {...field}
+                        id={field.name}
+                        aria-invalid={fieldState.invalid}
+                      />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
                   )}
                 />
               </div>
 
-              <FormField
+              <Controller
                 control={form.control}
                 name="defaultBio"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Default Bio</FormLabel>
-                    <FormControl>
-                      <textarea
-                        placeholder="Bio that applies to all apps (can be overridden per app)"
-                        className="border-input bg-background min-h-24 w-full rounded-md border px-3 py-2 text-sm"
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor={field.name}>Default Bio</FieldLabel>
+                    <textarea
+                      placeholder="Bio that applies to all apps (can be overridden per app)"
+                      className="border-input bg-background min-h-24 w-full rounded-md border px-3 py-2 text-sm"
+                      {...field}
+                      id={field.name}
+                      aria-invalid={fieldState.invalid}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
                 )}
               />
 
               <div className="grid grid-cols-2 gap-4">
-                <FormField
+                <Controller
                   control={form.control}
                   name="heightCm"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Height (cm)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="e.g., 180"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor={field.name}>Height (cm)</FieldLabel>
+                      <Input
+                        type="number"
+                        placeholder="e.g., 180"
+                        {...field}
+                        id={field.name}
+                        aria-invalid={fieldState.invalid}
+                      />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
                   )}
                 />
 
-                <FormField
+                <Controller
                   control={form.control}
                   name="educationLevel"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Education Level</FormLabel>
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor={field.name}>
+                        Education Level
+                      </FieldLabel>
                       <Select
                         onValueChange={field.onChange}
                         value={field.value}
                       >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select..." />
-                          </SelectTrigger>
-                        </FormControl>
+                        <SelectTrigger
+                          id={field.name}
+                          aria-invalid={fieldState.invalid}
+                        >
+                          <SelectValue placeholder="Select..." />
+                        </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="__none__">None</SelectItem>
                           {educationLevelEnum.enumValues.map((level) => (
@@ -832,102 +847,139 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
                           ))}
                         </SelectContent>
                       </Select>
-                      <FormMessage />
-                    </FormItem>
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
                   )}
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <FormField
+                <Controller
                   control={form.control}
                   name="city"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Current City</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., Oslo" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor={field.name}>Current City</FieldLabel>
+                      <Input
+                        placeholder="e.g., Oslo"
+                        {...field}
+                        id={field.name}
+                        aria-invalid={fieldState.invalid}
+                      />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
                   )}
                 />
 
-                <FormField
+                <Controller
                   control={form.control}
                   name="state"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>State/Province</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., Oslo County" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor={field.name}>
+                        State/Province
+                      </FieldLabel>
+                      <Input
+                        placeholder="e.g., Oslo County"
+                        {...field}
+                        id={field.name}
+                        aria-invalid={fieldState.invalid}
+                      />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
                   )}
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <FormField
+                <Controller
                   control={form.control}
                   name="country"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Current Country</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., Norway" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor={field.name}>
+                        Current Country
+                      </FieldLabel>
+                      <Input
+                        placeholder="e.g., Norway"
+                        {...field}
+                        id={field.name}
+                        aria-invalid={fieldState.invalid}
+                      />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
                   )}
                 />
 
-                <FormField
+                <Controller
                   control={form.control}
                   name="nationality"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nationality</FormLabel>
-                      <FormControl>
-                        <Input placeholder="e.g., Norwegian" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                  render={({ field, fieldState }) => (
+                    <Field data-invalid={fieldState.invalid}>
+                      <FieldLabel htmlFor={field.name}>Nationality</FieldLabel>
+                      <Input
+                        placeholder="e.g., Norwegian"
+                        {...field}
+                        id={field.name}
+                        aria-invalid={fieldState.invalid}
+                      />
+                      {fieldState.invalid && (
+                        <FieldError errors={[fieldState.error]} />
+                      )}
+                    </Field>
                   )}
                 />
               </div>
 
-              <FormField
+              <Controller
                 control={form.control}
                 name="hometown"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Hometown</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Oslo, Norway" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <FieldLabel htmlFor={field.name}>Hometown</FieldLabel>
+                    <Input
+                      placeholder="e.g., Oslo, Norway"
+                      {...field}
+                      id={field.name}
+                      aria-invalid={fieldState.invalid}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
                 )}
               />
 
-              <FormField
+              <Controller
                 control={form.control}
                 name="isPublic"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center gap-2 space-y-0">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <FormLabel className="mt-0">
+                render={({ field, fieldState }) => (
+                  <Field
+                    orientation="horizontal"
+                    data-invalid={fieldState.invalid}
+                    className="flex flex-row items-center gap-2 space-y-0"
+                  >
+                    <Checkbox
+                      id={field.name}
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      aria-invalid={fieldState.invalid}
+                    />
+                    <FieldLabel htmlFor={field.name} className="mt-0">
                       Make this comparison public
-                    </FormLabel>
-                    <FormMessage />
-                  </FormItem>
+                    </FieldLabel>
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
                 )}
               />
 
@@ -944,7 +996,7 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
                 </Button>
               </DialogFooter>
             </form>
-          </Form>
+          </FormProvider>
         </DialogContent>
       </Dialog>
 

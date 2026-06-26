@@ -17,16 +17,15 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/toast";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
+  Controller,
+  FormProvider,
   useForm,
   zodResolver,
-  FormDescription,
-} from "@/components/ui/form";
+  Field,
+  FieldLabel,
+  FieldDescription,
+  FieldError,
+} from "@/components/ui/form-new";
 
 import { useTRPC } from "@/trpc/react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -168,34 +167,42 @@ export function CreateComparisonDialog({
       }}
       size="default"
     >
-      <Form {...form}>
+      <FormProvider {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           {/* Name */}
-          <FormField
+          <Controller
             control={form.control}
             name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Comparison name</FormLabel>
-                <FormControl>
-                  <Input placeholder={namePlaceholder} {...field} autoFocus />
-                </FormControl>
-                <FormDescription>
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel htmlFor={field.name}>Comparison name</FieldLabel>
+                <Input
+                  placeholder={namePlaceholder}
+                  {...field}
+                  id={field.name}
+                  aria-invalid={fieldState.invalid}
+                  autoFocus
+                />
+                <FieldDescription>
                   Also the headline on your public share page.
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
+                </FieldDescription>
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </Field>
             )}
           />
 
           {/* Comparison Columns */}
-          <FormField
+          <Controller
             control={form.control}
             name="columns"
-            render={({}) => (
-              <FormItem>
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
                 <div className="mb-3 flex items-center justify-between">
-                  <FormLabel>Profiles to compare</FormLabel>
+                  <FieldLabel htmlFor={field.name}>
+                    Profiles to compare
+                  </FieldLabel>
                   <Button
                     type="button"
                     variant="outline"
@@ -207,79 +214,79 @@ export function CreateComparisonDialog({
                   </Button>
                 </div>
 
-                <FormControl>
-                  <>
-                    {columns.length === 0 ? (
-                      <div className="bg-muted/50 flex items-center justify-center rounded-lg border border-dashed py-8">
-                        <div className="text-center">
-                          <p className="text-muted-foreground mb-2 text-sm">
-                            No profiles yet
-                          </p>
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={handleAddColumn}
-                          >
-                            <Plus className="mr-1.5 h-3.5 w-3.5" />
-                            Add your first profile
-                          </Button>
-                        </div>
+                <>
+                  {columns.length === 0 ? (
+                    <div className="bg-muted/50 flex items-center justify-center rounded-lg border border-dashed py-8">
+                      <div className="text-center">
+                        <p className="text-muted-foreground mb-2 text-sm">
+                          No profiles yet
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={handleAddColumn}
+                        >
+                          <Plus className="mr-1.5 h-3.5 w-3.5" />
+                          Add your first profile
+                        </Button>
                       </div>
-                    ) : (
-                      <div className="space-y-2">
-                        {columns.map((app, index) => (
-                          <div
-                            key={index}
-                            className="bg-background flex items-center gap-2 rounded-lg border p-2"
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {columns.map((app, index) => (
+                        <div
+                          key={index}
+                          className="bg-background flex items-center gap-2 rounded-lg border p-2"
+                        >
+                          <Badge variant="secondary" className="min-w-[80px]">
+                            Profile {index + 1}
+                          </Badge>
+                          <Select
+                            value={app}
+                            onValueChange={(value) =>
+                              handleChangeColumn(index, value)
+                            }
                           >
-                            <Badge variant="secondary" className="min-w-[80px]">
-                              Profile {index + 1}
-                            </Badge>
-                            <Select
-                              value={app}
-                              onValueChange={(value) =>
-                                handleChangeColumn(index, value)
-                              }
+                            <SelectTrigger className="flex-1">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {AVAILABLE_APPS.map((availableApp) => (
+                                <SelectItem
+                                  key={availableApp}
+                                  value={availableApp}
+                                >
+                                  {availableApp.charAt(0) +
+                                    availableApp.slice(1).toLowerCase()}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {columns.length > 1 && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleRemoveColumn(index)}
+                              className="text-destructive hover:text-destructive"
                             >
-                              <SelectTrigger className="flex-1">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {AVAILABLE_APPS.map((availableApp) => (
-                                  <SelectItem
-                                    key={availableApp}
-                                    value={availableApp}
-                                  >
-                                    {availableApp.charAt(0) +
-                                      availableApp.slice(1).toLowerCase()}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            {columns.length > 1 && (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleRemoveColumn(index)}
-                                className="text-destructive hover:text-destructive"
-                              >
-                                <X className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </>
-                </FormControl>
-                <FormDescription>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </>
+                <FieldDescription>
                   Add more than one profile from the same app to A/B test
                   different versions (e.g., two Tinder profiles)
-                </FormDescription>
-                <FormMessage />
-              </FormItem>
+                </FieldDescription>
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </Field>
             )}
           />
 
@@ -287,108 +294,140 @@ export function CreateComparisonDialog({
               comparison and rendered into every column's preview; all optional
               and editable later in Settings. */}
           <div>
-            <FormLabel className="mb-3 block">About you (optional)</FormLabel>
+            <FieldLabel className="mb-3 block">About you (optional)</FieldLabel>
             <div className="grid grid-cols-2 gap-3">
-              <FormField
+              <Controller
                 control={form.control}
                 name="profileName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input placeholder="Your name" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <Input
+                      placeholder="Your name"
+                      {...field}
+                      id={field.name}
+                      aria-invalid={fieldState.invalid}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
                 )}
               />
-              <FormField
+              <Controller
                 control={form.control}
                 name="age"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="Age"
-                        min={18}
-                        {...field}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <Input
+                      type="number"
+                      placeholder="Age"
+                      min={18}
+                      {...field}
+                      id={field.name}
+                      aria-invalid={fieldState.invalid}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
                 )}
               />
-              <FormField
+              <Controller
                 control={form.control}
                 name="heightCm"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input type="number" placeholder="Height (cm)" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <Input
+                      type="number"
+                      placeholder="Height (cm)"
+                      {...field}
+                      id={field.name}
+                      aria-invalid={fieldState.invalid}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
                 )}
               />
-              <FormField
+              <Controller
                 control={form.control}
                 name="city"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input placeholder="City" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <Input
+                      placeholder="City"
+                      {...field}
+                      id={field.name}
+                      aria-invalid={fieldState.invalid}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
                 )}
               />
-              <FormField
+              <Controller
                 control={form.control}
                 name="nationality"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input placeholder="Nationality" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <Input
+                      placeholder="Nationality"
+                      {...field}
+                      id={field.name}
+                      aria-invalid={fieldState.invalid}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
                 )}
               />
-              <FormField
+              <Controller
                 control={form.control}
                 name="hometown"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormControl>
-                      <Input placeholder="Hometown" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
+                render={({ field, fieldState }) => (
+                  <Field data-invalid={fieldState.invalid}>
+                    <Input
+                      placeholder="Hometown"
+                      {...field}
+                      id={field.name}
+                      aria-invalid={fieldState.invalid}
+                    />
+                    {fieldState.invalid && (
+                      <FieldError errors={[fieldState.error]} />
+                    )}
+                  </Field>
                 )}
               />
             </div>
-            <FormDescription className="mt-2">
+            <FieldDescription className="mt-2">
               Shared across all your app profiles — shown in the previews and on
               your share page.
-            </FormDescription>
+            </FieldDescription>
           </div>
 
           {/* Default Bio */}
-          <FormField
+          <Controller
             control={form.control}
             name="defaultBio"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Default Bio (optional)</FormLabel>
-                <FormControl>
-                  <textarea
-                    placeholder="A bio that applies to all apps (you can customize per app later)"
-                    className="border-input bg-background min-h-24 w-full rounded-md border px-3 py-2 text-sm"
-                    {...field}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel htmlFor={field.name}>
+                  Default Bio (optional)
+                </FieldLabel>
+                <textarea
+                  placeholder="A bio that applies to all apps (you can customize per app later)"
+                  className="border-input bg-background min-h-24 w-full rounded-md border px-3 py-2 text-sm"
+                  {...field}
+                  id={field.name}
+                  aria-invalid={fieldState.invalid}
+                />
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </Field>
             )}
           />
 
@@ -410,7 +449,7 @@ export function CreateComparisonDialog({
             </Button>
           </div>
         </form>
-      </Form>
+      </FormProvider>
     </SimpleDialog>
   );
 }

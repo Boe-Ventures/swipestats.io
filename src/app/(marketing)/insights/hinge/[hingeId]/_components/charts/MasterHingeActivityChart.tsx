@@ -47,7 +47,11 @@ import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Form, FormField, FormItem, FormControl } from "@/components/ui/form";
+import {
+  Controller,
+  FormProvider,
+  Field,
+} from "@/components/ui/form-new";
 import type { DateRange } from "react-day-picker";
 import { useHingeInsights } from "../../HingeInsightsProvider";
 import { GranularitySelector } from "../../../../tinder/[tinderId]/_components/charts/GranularitySelector";
@@ -607,7 +611,7 @@ export function MasterHingeActivityChart() {
               </CardDescription>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-              <Form {...form}>
+              <FormProvider {...form}>
                 <div className="flex flex-wrap items-center gap-2">
                   {/* Add Event Button (only when not readonly) */}
                   {!readonly && (
@@ -623,36 +627,36 @@ export function MasterHingeActivityChart() {
                   )}
 
                   {/* Granularity */}
-                  <FormField
+                  <Controller
                     control={form.control}
                     name="granularity"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <GranularitySelector
-                            value={field.value}
-                            onChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
+                    render={({ field, fieldState }) => (
+                      <Field data-invalid={fieldState.invalid}>
+                        <GranularitySelector
+                          value={field.value}
+                          onChange={field.onChange}
+                        />
+                      </Field>
                     )}
                   />
 
                   {/* Time Range */}
-                  <FormField
+                  <Controller
                     control={form.control}
                     name="timeRange"
-                    render={({ field }) => (
-                      <FormItem>
+                    render={({ field, fieldState }) => (
+                      <Field data-invalid={fieldState.invalid}>
                         <Select
                           value={field.value}
                           onValueChange={field.onChange}
                         >
-                          <FormControl>
-                            <SelectTrigger className="w-[140px]">
-                              <SelectValue placeholder="Select range" />
-                            </SelectTrigger>
-                          </FormControl>
+                          <SelectTrigger
+                            id={field.name}
+                            aria-invalid={fieldState.invalid}
+                            className="w-[140px]"
+                          >
+                            <SelectValue placeholder="Select range" />
+                          </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="7d">Last 7 days</SelectItem>
                             <SelectItem value="30d">Last 30 days</SelectItem>
@@ -662,33 +666,33 @@ export function MasterHingeActivityChart() {
                             <SelectItem value="custom">Custom range</SelectItem>
                           </SelectContent>
                         </Select>
-                      </FormItem>
+                      </Field>
                     )}
                   />
 
                   {/* Custom Date Range - Only visible when custom is selected */}
                   {timeRange === "custom" && (
-                    <FormField
+                    <Controller
                       control={form.control}
                       name="dateRange"
-                      render={({ field }) => (
-                        <FormItem>
+                      render={({ field, fieldState }) => (
+                        <Field data-invalid={fieldState.invalid}>
                           <Popover>
                             <PopoverTrigger asChild>
-                              <FormControl>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  className={cn(
-                                    "w-[240px] justify-start pl-3 text-left font-normal",
-                                    !field.value?.from &&
-                                      "text-muted-foreground",
-                                  )}
-                                >
-                                  {formatDateRange(field.value)}
-                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                </Button>
-                              </FormControl>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                id={field.name}
+                                aria-invalid={fieldState.invalid}
+                                className={cn(
+                                  "w-[240px] justify-start pl-3 text-left font-normal",
+                                  !field.value?.from &&
+                                    "text-muted-foreground",
+                                )}
+                              >
+                                {formatDateRange(field.value)}
+                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
                             </PopoverTrigger>
                             <PopoverContent
                               className="w-auto p-0"
@@ -704,39 +708,36 @@ export function MasterHingeActivityChart() {
                               />
                             </PopoverContent>
                           </Popover>
-                        </FormItem>
+                        </Field>
                       )}
                     />
                   )}
                 </div>
-              </Form>
+              </FormProvider>
             </div>
           </div>
 
           {/* Previous Period Toggle */}
           {dateRange?.from && (
-            <Form {...form}>
-              <FormField
+            <FormProvider {...form}>
+              <Controller
                 control={form.control}
                 name="showPreviousPeriod"
-                render={({ field }) => (
-                  <FormItem>
-                    <div className="flex items-center gap-2">
-                      <FormControl>
-                        <Switch
-                          checked={field.value}
-                          onCheckedChange={field.onChange}
-                          id="show-previous"
-                        />
-                      </FormControl>
-                      <Label htmlFor="show-previous" className="cursor-pointer">
-                        Compare with previous period
-                      </Label>
-                    </div>
-                  </FormItem>
+                render={({ field, fieldState }) => (
+                  <Field orientation="horizontal" data-invalid={fieldState.invalid}>
+                    <Switch
+                      id={field.name}
+                      checked={field.value}
+                      onCheckedChange={field.onChange}
+                      aria-invalid={fieldState.invalid}
+                    />
+                    <Label htmlFor={field.name} className="cursor-pointer">
+                      Compare with previous period
+                    </Label>
+                  </Field>
                 )}
               />
-            </Form>
+            </FormProvider>
           )}
 
           {/* Metric Toggle Pills */}

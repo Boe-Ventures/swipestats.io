@@ -43,15 +43,16 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "@/components/ui/toast";
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
+  Controller,
+  FormProvider,
   useForm,
   zodResolver,
-} from "@/components/ui/form";
+} from "@/components/ui/form-new";
+import {
+  Field,
+  FieldLabel,
+  FieldError,
+} from "@/components/ui/form-new";
 import { DatePickerField } from "@/components/ui/form-inputs/DatePickerField";
 import { RadioGroupCardsField } from "@/components/ui/form-inputs/RadioGroupCardsField";
 import {
@@ -533,7 +534,7 @@ export function AddEventDialog({
                 <h3 className="mb-4 text-sm font-semibold">
                   {editingEvent ? "Edit Event" : "Add New Event"}
                 </h3>
-                <Form {...form}>
+                <FormProvider {...form}>
                   <form
                     onSubmit={form.handleSubmit(onSubmit)}
                     className="space-y-6"
@@ -582,20 +583,20 @@ export function AddEventDialog({
                     </div>
 
                     {/* Event Name */}
-                    <FormField
+                    <Controller
                       control={form.control}
                       name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Event Name</FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="e.g., Trip to Colombia"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
+                      render={({ field, fieldState }) => (
+                        <Field data-invalid={fieldState.invalid}>
+                          <FieldLabel htmlFor={field.name}>Event Name</FieldLabel>
+                          <Input
+                            placeholder="e.g., Trip to Colombia"
+                            {...field}
+                            id={field.name}
+                            aria-invalid={fieldState.invalid}
+                          />
+                          {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                        </Field>
                       )}
                     />
 
@@ -612,23 +613,27 @@ export function AddEventDialog({
                     />
 
                     {/* End Date Toggle & Input */}
-                    <FormField
+                    <Controller
                       control={form.control}
                       name="hasEndDate"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-start space-y-0 space-x-3">
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
+                      render={({ field, fieldState }) => (
+                        <Field
+                          orientation="horizontal"
+                          data-invalid={fieldState.invalid}
+                          className="flex flex-row items-start space-y-0 space-x-3"
+                        >
+                          <Checkbox
+                            id={field.name}
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            aria-invalid={fieldState.invalid}
+                          />
                           <div className="space-y-1 leading-none">
-                            <FormLabel className="cursor-pointer font-normal">
+                            <FieldLabel htmlFor={field.name} className="cursor-pointer font-normal">
                               This event has an end date
-                            </FormLabel>
+                            </FieldLabel>
                           </div>
-                        </FormItem>
+                        </Field>
                       )}
                     />
 
@@ -679,7 +684,7 @@ export function AddEventDialog({
                       </Button>
                     </div>
                   </form>
-                </Form>
+                </FormProvider>
               </div>
             </>
           )}

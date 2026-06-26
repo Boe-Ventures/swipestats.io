@@ -13,7 +13,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Field, FieldLabel } from "@/components/ui/form-new";
 import { toast } from "@/components/ui/toast";
 
 import { useTRPC } from "@/trpc/react";
@@ -107,8 +107,8 @@ export function AnonymousNamePrompt({
         </DialogHeader>
         <form onSubmit={handleSubmit}>
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
+            <Field>
+              <FieldLabel htmlFor="name">Name</FieldLabel>
               <Input
                 id="name"
                 value={name}
@@ -118,7 +118,7 @@ export function AnonymousNamePrompt({
                 autoFocus
                 maxLength={100}
               />
-            </div>
+            </Field>
           </div>
           <DialogFooter>
             <Button
