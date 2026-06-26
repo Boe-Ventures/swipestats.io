@@ -1,14 +1,25 @@
 import Link from "next/link";
 import type { UseMutationResult } from "@tanstack/react-query";
 import { DevDeleteButton } from "./DevDeleteButton";
-import { env } from "@/env";
 
 // Simplified types to avoid complex tRPC type gymnastics
 interface UploadContext {
   userProfile?: { tinderId?: string; hingeId?: string } | null;
-  targetProfile?: { tinderId?: string; hingeId?: string } | null;
+  targetProfile?: {
+    tinderId?: string;
+    hingeId?: string;
+    userId?: string | null;
+    user?: { isAnonymous: boolean | null } | null;
+  } | null;
   scenario: string;
   identityMismatch: boolean;
+  identityComparison?: {
+    oldBirthDate: string;
+    newBirthDate: string;
+    ageDifferenceYears: number;
+    confidence: "low";
+    reason: string;
+  } | null;
 }
 
 // Discriminated union for props
@@ -37,19 +48,15 @@ type DevAdminPanelProps =
 export function DevAdminPanel(props: DevAdminPanelProps) {
   const { provider, uploadContext, deleteProfileMutation } = props;
 
-  // TEMPORARY DEBUG LOGGING
-  console.log("🐛 DevAdminPanel Debug:", {
-    NEXT_PUBLIC_IS_PRODUCTION: env.NEXT_PUBLIC_IS_PRODUCTION,
-    NEXT_PUBLIC_VERCEL_ENV: env.NEXT_PUBLIC_VERCEL_ENV,
-    NEXT_PUBLIC_BASE_URL: env.NEXT_PUBLIC_BASE_URL,
-    showDevTools: !env.NEXT_PUBLIC_IS_PRODUCTION,
-    shouldBeHidden: env.NEXT_PUBLIC_IS_PRODUCTION,
-  });
-
   // Extract provider-specific values using type narrowing
   const profileIdField = provider === "tinder" ? "tinderId" : "hingeId";
   const userProfileId = uploadContext.userProfile?.[profileIdField];
   const targetProfileId = uploadContext.targetProfile?.[profileIdField];
+  const targetOwner = uploadContext.targetProfile?.userId
+    ? uploadContext.targetProfile.user?.isAnonymous
+      ? "anonymous user"
+      : "signed-in user"
+    : "unclaimed";
 
   // Helper to check if scenario matches (accounting for different field names)
   const isScenario = (scenario: string) => {
@@ -64,29 +71,8 @@ export function DevAdminPanel(props: DevAdminPanelProps) {
   return (
     <div className="mt-6 rounded-lg border-2 border-red-300 bg-red-50 p-4">
       <h3 className="mb-2 text-sm font-semibold text-red-900">
-        🛠️ Dev Admin Tools
+        Dev Admin Tools
       </h3>
-
-      {/* DEBUG INFO - TEMPORARY */}
-      <div className="mb-3 rounded border-2 border-yellow-500 bg-yellow-100 p-3">
-        <p className="mb-2 text-xs font-bold text-yellow-900">
-          🐛 DEBUG ENV INFO (Remove after checking):
-        </p>
-        <div className="space-y-1 font-mono text-[10px] text-yellow-800">
-          <p>
-            NEXT_PUBLIC_IS_PRODUCTION: {String(env.NEXT_PUBLIC_IS_PRODUCTION)}
-          </p>
-          <p>
-            NEXT_PUBLIC_VERCEL_ENV: {env.NEXT_PUBLIC_VERCEL_ENV ?? "undefined"}
-          </p>
-          <p>NEXT_PUBLIC_BASE_URL: {env.NEXT_PUBLIC_BASE_URL}</p>
-          <p>showDevTools would be: {String(!env.NEXT_PUBLIC_IS_PRODUCTION)}</p>
-          <p className="mt-2 text-yellow-900">
-            If showDevTools is &quot;true&quot; above, this panel should be
-            hidden!
-          </p>
-        </div>
-      </div>
 
       {/* Scenario Information */}
       <div className="mb-3 text-xs text-red-700">
@@ -99,10 +85,33 @@ export function DevAdminPanel(props: DevAdminPanelProps) {
             Target profile: {targetProfileId.slice(0, 12)}...
           </p>
         )}
+        {targetProfileId && <p className="mt-1">Target owner: {targetOwner}</p>}
         {uploadContext.identityMismatch && (
           <p className="mt-1 font-semibold text-red-800">
             ⚠️ Identity Mismatch Detected
           </p>
+        )}
+        {uploadContext.identityComparison && (
+          <div className="mt-3 rounded border border-red-200 bg-white/70 p-3">
+            <p className="font-semibold text-red-900">Derived age comparison</p>
+            <div className="mt-1 space-y-1 font-mono text-[10px] text-red-800">
+              <p>
+                Existing derived birth date:{" "}
+                {uploadContext.identityComparison.oldBirthDate.slice(0, 10)}
+              </p>
+              <p>
+                Upload derived birth date:{" "}
+                {uploadContext.identityComparison.newBirthDate.slice(0, 10)}
+              </p>
+              <p>
+                Difference:{" "}
+                {uploadContext.identityComparison.ageDifferenceYears} years
+              </p>
+            </div>
+            <p className="mt-2 text-xs text-red-700">
+              {uploadContext.identityComparison.reason}
+            </p>
+          </div>
         )}
       </div>
 
