@@ -104,9 +104,11 @@ function Hero() {
           <div className="mt-6 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-[13.5px] font-medium text-gray-600">
             <span>Free to upload</span>
             <span className="h-1 w-1 rounded-full bg-gray-300" />
-            <span>Anonymous by default</span>
+            <span>100% anonymous</span>
             <span className="h-1 w-1 rounded-full bg-gray-300" />
             <span>No account required</span>
+            <span className="h-1 w-1 rounded-full bg-gray-300" />
+            <span>Open source</span>
           </div>
         </div>
 
