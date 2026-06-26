@@ -17,7 +17,6 @@ import {
 } from "./_components/marketing-ui";
 import { CtaBand } from "./_components/CtaBand";
 import { FaqList } from "./_components/FaqList";
-import { HeroAppWord } from "./_components/HeroAppWord";
 import { InsightsShowcase } from "./InsightsShowcase";
 import NewsletterCTA from "./NewsletterCTA";
 
@@ -77,10 +76,12 @@ function Hero() {
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
         <div className="mx-auto max-w-[820px] text-center">
           <Eyebrow noRule center>
-            See how you stack up
+            Tinder · Hinge · Bumble
           </Eyebrow>
+          {/* Backup: render <HeroHeadlineRotating /> here for the rotating
+              Tinder/Hinge/Bumble typewriter variant (_components/HeroHeadlineRotating). */}
           <h1 className="mt-5 text-[clamp(40px,6vw,68px)] leading-[1.02] font-bold tracking-[-0.035em] text-balance text-gray-900">
-            Your <HeroAppWord /> data, finally visualized.
+            Your dating data, finally visualized.
           </h1>
           <p className="mx-auto mt-[22px] max-w-[600px] text-[clamp(17px,2vw,20px)] leading-[1.6] text-gray-600">
             Every swipe, match, and message, turned into charts and ranked
