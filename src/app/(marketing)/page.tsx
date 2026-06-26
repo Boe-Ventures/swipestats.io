@@ -5,7 +5,6 @@ import {
   ArrowDownTrayIcon,
   ArrowUpTrayIcon,
   CheckIcon,
-  StarIcon,
 } from "@heroicons/react/20/solid";
 import { cn } from "@/components/ui/lib/utils";
 import { posts } from "./BlogSection";
@@ -42,7 +41,7 @@ const organizationJsonLd = {
   url: "https://www.swipestats.io",
   logo: "https://www.swipestats.io/icon.png",
   description:
-    "Dating app analytics platform. Upload your Tinder or Hinge data and get insights on match rates, swipe patterns, and percentile rankings from 7,000+ real profiles.",
+    "Dating app analytics platform. Upload your Tinder or Hinge data and get insights on match rates, swipe patterns, and percentile rankings from 10,000+ anonymous profiles.",
   foundingDate: "2019",
   sameAs: [
     "https://www.instagram.com/swipestats.io",
@@ -85,7 +84,7 @@ function Hero() {
           </h1>
           <p className="mx-auto mt-[22px] max-w-[600px] text-[clamp(17px,2vw,20px)] leading-[1.6] text-gray-600">
             Every swipe, match, and message, turned into charts and ranked
-            against 7,000+ real profiles.
+            against 10,000+ anonymous profiles.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3.5">
             <Link
@@ -102,16 +101,12 @@ function Hero() {
               How to request your data →
             </Link>
           </div>
-          <div className="mt-6 inline-flex items-center gap-3 text-[13.5px] text-gray-600">
-            <span className="flex gap-0.5 text-amber-400">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <StarIcon key={i} className="h-4 w-4" />
-              ))}
-            </span>
-            <span>
-              <strong className="text-gray-900">Rated 5 stars</strong> by over{" "}
-              <span className="font-semibold text-rose-600">4,000 users</span>
-            </span>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-[13.5px] font-medium text-gray-600">
+            <span>Free to upload</span>
+            <span className="h-1 w-1 rounded-full bg-gray-300" />
+            <span>Anonymous by default</span>
+            <span className="h-1 w-1 rounded-full bg-gray-300" />
+            <span>No account required</span>
           </div>
         </div>
 
@@ -384,7 +379,7 @@ function Research() {
           <div>
             <Eyebrow>For researchers &amp; creators</Eyebrow>
             <h2 className="mt-3.5 text-[clamp(30px,4vw,46px)] leading-[1.06] font-bold tracking-[-0.03em] text-balance text-gray-900">
-              7,000+ anonymized profiles, ready to analyze
+              10,000+ anonymized profiles, ready to analyze
             </h2>
             <p className="mt-4 max-w-[560px] text-[clamp(17px,2vw,20px)] leading-[1.6] text-gray-600">
               The same data, aggregated and anonymized into a licensable dataset
