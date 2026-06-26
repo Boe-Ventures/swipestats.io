@@ -175,15 +175,20 @@ export const hingeProfileRouter = {
       let scenario:
         | "new_profile"
         | "same_hingeId"
+        | "can_claim"
         | "different_hingeId"
         | "owned_by_other";
 
       if (!userProfile && !targetProfile) {
         scenario = "new_profile"; // First upload, hingeId doesn't exist
       } else if (!userProfile && targetProfile) {
-        scenario = targetProfile.userId ? "owned_by_other" : "new_profile"; // Profile exists but not ours
+        scenario = targetProfile.user?.isAnonymous
+          ? "can_claim"
+          : "owned_by_other"; // Profile exists but not ours
       } else if (userProfile && input.hingeId === userProfile.hingeId) {
         scenario = "same_hingeId"; // Additive update
+      } else if (userProfile && targetProfile) {
+        scenario = "owned_by_other"; // Target ID already exists under another profile
       } else if (
         userProfile &&
         input.hingeId &&
@@ -194,10 +199,17 @@ export const hingeProfileRouter = {
         scenario = "new_profile";
       }
 
-      // Identity mismatch detection for cross-account merges
-      // Hinge birthDate is derived from age at signup (approximation to Jan 1st)
-      // Using 1-year threshold same as Tinder
-      let identityMismatch = false;
+      // Hinge only exports age, not exact birth date. Keep the comparison as
+      // debug context, but do not block merges on this approximation.
+      const identityMismatch = false;
+      let identityComparison: {
+        oldBirthDate: string;
+        newBirthDate: string;
+        ageDifferenceYears: number;
+        confidence: "low";
+        reason: string;
+      } | null = null;
+
       if (scenario === "different_hingeId" && userProfile && input.birthDate) {
         const oldBirthDate = userProfile.birthDate;
         const newBirthDate = new Date(input.birthDate);
@@ -205,8 +217,14 @@ export const hingeProfileRouter = {
           differenceInYears(oldBirthDate, newBirthDate),
         );
 
-        // If ages differ by more than 1 year, it's likely different people
-        identityMismatch = ageDifferenceYears > 1;
+        identityComparison = {
+          oldBirthDate: oldBirthDate.toISOString(),
+          newBirthDate: newBirthDate.toISOString(),
+          ageDifferenceYears,
+          confidence: "low",
+          reason:
+            "Hinge exports age, not exact birth date, so this is only a derived-age diagnostic.",
+        };
       }
 
       return {
@@ -214,6 +232,7 @@ export const hingeProfileRouter = {
         targetProfile,
         scenario,
         identityMismatch,
+        identityComparison,
       };
     }),
 
@@ -361,9 +380,7 @@ export const hingeProfileRouter = {
           hingeId: input.hingeId,
           errorType: "unknown",
           errorMessage:
-            error instanceof Error
-              ? error.message
-              : "Unknown error",
+            error instanceof Error ? error.message : "Unknown error",
         });
         throw error;
       }
@@ -473,9 +490,7 @@ export const hingeProfileRouter = {
           hingeId: input.hingeId,
           errorType: "unknown",
           errorMessage:
-            error instanceof Error
-              ? error.message
-              : "Unknown error",
+            error instanceof Error ? error.message : "Unknown error",
         });
         throw error;
       }
@@ -546,9 +561,7 @@ export const hingeProfileRouter = {
           hingeId: input.hingeId,
           errorType: "unknown",
           errorMessage:
-            error instanceof Error
-              ? error.message
-              : "Unknown error",
+            error instanceof Error ? error.message : "Unknown error",
         });
         throw error;
       }
@@ -631,9 +644,7 @@ export const hingeProfileRouter = {
           hingeId: input.hingeId,
           errorType: "unknown",
           errorMessage:
-            error instanceof Error
-              ? error.message
-              : "Unknown error",
+            error instanceof Error ? error.message : "Unknown error",
         });
         throw error;
       }

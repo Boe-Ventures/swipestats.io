@@ -166,17 +166,21 @@ export function isValidHingeJson(
   }
 }
 
+function normalizeHingeSignupTime(signupTime: string): string {
+  return signupTime.trim().replace("T", " ").replace(/Z$/, "");
+}
+
 /**
- * Create a unique SwipeStats profile ID from birth date equivalent and account creation
+ * Create a stable SwipeStats Hinge profile ID for repeat exports.
+ *
+ * Hinge exports do not expose a native account ID. Signup time is the most
+ * stable account-scoped value we have: it survives repeat exports, but changes
+ * when someone deletes and recreates their Hinge account.
  */
-async function createSwipestatsProfileId(
-  birthDateEquivalent: string,
-  createDateEquivalent: string,
-): Promise<string> {
-  const profileId = await createSHA256Hash(
-    birthDateEquivalent + "-" + createDateEquivalent,
+async function createSwipestatsProfileId(signupTime: string): Promise<string> {
+  return createSHA256Hash(
+    `hinge-profile:v2:${normalizeHingeSignupTime(signupTime)}`,
   );
-  return profileId;
 }
 
 /**
@@ -238,13 +242,8 @@ export async function extractHingeData(
       } as AnonymizedHingeUser,
     };
 
-    // Use signup_time as create_date equivalent and age for birth_date equivalent
-    const createDateEquivalent = anonymizedHingeJson.User.account.signup_time;
-    const birthDateEquivalent = anonymizedHingeJson.User.profile.age.toString();
-
     const profileId = await createSwipestatsProfileId(
-      birthDateEquivalent,
-      createDateEquivalent,
+      anonymizedHingeJson.User.account.signup_time,
     );
 
     const swipestatsHingeProfilePayload: SwipestatsHingeProfilePayload = {
