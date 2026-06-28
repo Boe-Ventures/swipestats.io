@@ -17,6 +17,9 @@ import NewsletterCTA from "../../NewsletterCTA";
 
 export const dynamic = "force-static";
 
+const homiLandingUrl =
+  "https://www.homi.so/?utm_source=swipestats&utm_medium=blog_author&utm_campaign=creator_crosspromo";
+
 export function generateStaticParams() {
   // Only generate static paths for published posts
   return posts
@@ -28,6 +31,24 @@ export function generateStaticParams() {
 
 function getPostBySlug(slug: string) {
   return posts.find((post) => post.slug === slug);
+}
+
+function BoeVenturesNote() {
+  return (
+    <p className="mt-6 text-center text-sm/6 text-gray-600">
+      Also from Kristian:{" "}
+      <a
+        href={homiLandingUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="font-semibold text-gray-900 hover:text-rose-600"
+      >
+        Homi
+      </a>{" "}
+      is Kristian&apos;s AI workspace for organizing home searches with your
+      partner, family, or agent.
+    </p>
+  );
 }
 
 export async function generateMetadata({
@@ -188,7 +209,9 @@ export default async function BlogPostPage({
                   .filter((p) => p.slug !== meta.slug && p.isPublished)
                   .filter(
                     (p) =>
-                      (p.category && meta.category && p.category === meta.category) ||
+                      (p.category &&
+                        meta.category &&
+                        p.category === meta.category) ||
                       p.tags.some((tag) => meta.tags.includes(tag)),
                   )}
               />
@@ -270,6 +293,7 @@ export default async function BlogPostPage({
                   </Link>
                 </div>
               </div>
+              <BoeVenturesNote />
             </div>
           </div>
         </div>
@@ -278,7 +302,6 @@ export default async function BlogPostPage({
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <NewsletterCTA />
         </div>
-
       </div>
     );
   }
@@ -344,7 +367,9 @@ export default async function BlogPostPage({
                     .filter((p) => p.slug !== meta.slug && p.isPublished)
                     .filter(
                       (p) =>
-                        (p.category && meta.category && p.category === meta.category) ||
+                        (p.category &&
+                          meta.category &&
+                          p.category === meta.category) ||
                         p.tags.some((tag) => meta.tags.includes(tag)),
                     )}
                 />
@@ -435,6 +460,7 @@ export default async function BlogPostPage({
                 </Link>
               </div>
             </div>
+            <BoeVenturesNote />
           </div>
         </div>
       </div>

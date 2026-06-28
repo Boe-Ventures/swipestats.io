@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
+import { Figtree } from "next/font/google";
 import {
   ArrowDownTrayIcon,
   ArrowUpTrayIcon,
@@ -51,6 +52,16 @@ const organizationJsonLd = {
 
 const HOW_TO = "/how-to-request-your-data";
 const UPLOAD = "/upload";
+const HOMI_LANDING =
+  "https://www.homi.so/?utm_source=swipestats&utm_medium=homepage_about&utm_campaign=creator_crosspromo";
+const HOMI_STORY =
+  "https://www.homi.so/blog/leaving-billion-dollar-startup-for-homi?utm_source=swipestats&utm_medium=homepage_about&utm_campaign=creator_crosspromo";
+
+const homiFigtree = Figtree({
+  subsets: ["latin"],
+  display: "swap",
+  preload: false,
+});
 
 /** Soft rose radial glow. The warm accent from the original home, dialed down. */
 function RoseGlow({ className }: { className?: string }) {
@@ -374,7 +385,7 @@ const pricingTiers = [
 
 function Research() {
   return (
-    <section className="border-y border-gray-200 bg-gray-50 py-[88px] max-[720px]:py-[60px]">
+    <section className="py-[88px] max-[720px]:py-[60px]">
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
         {/* researcher hand-off header (genuine two-column split → left-aligned) */}
         <div className="grid grid-cols-1 items-center gap-8 md:grid-cols-[1fr_auto]">
@@ -771,7 +782,7 @@ function TestimonialsMasonry() {
 
 function AboutImage() {
   return (
-    <section className="py-[88px] max-[720px]:py-[60px]">
+    <section className="border-y border-gray-200 bg-gray-50 py-[88px] max-[720px]:py-[60px]">
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
         <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-14">
           {/* founder image + quote card */}
@@ -818,6 +829,82 @@ function AboutImage() {
             </p>
           </div>
         </div>
+        <div
+          className={cn(
+            homiFigtree.className,
+            "relative mt-10 overflow-hidden rounded-[28px] border border-[#B8D9FF] bg-[#F7FBFF] p-5 shadow-[0_16px_42px_oklch(0.45_0.13_255/0.16)] sm:p-6 lg:p-7",
+          )}
+        >
+          <div className="absolute inset-0 bg-[linear-gradient(120deg,#EAF4FF_0%,#FFFFFF_42%,#F3F9FF_100%)]" />
+          <div className="relative grid gap-7 lg:grid-cols-[minmax(0,1fr)_430px] lg:items-center">
+            <div className="max-w-[640px]">
+              <div className="inline-flex items-center gap-3 rounded-full border border-[#CFE3FF] bg-white px-3 py-2 shadow-sm">
+                <Image
+                  src="/images/cross-promo/homi-logo.svg"
+                  alt=""
+                  width={28}
+                  height={28}
+                  className="h-7 w-7"
+                />
+                <span className="text-[13px] font-semibold text-[#2C7FFF]">
+                  Also from Kristian
+                </span>
+              </div>
+              <h3 className="mt-5 max-w-[620px] text-[clamp(30px,4vw,44px)] leading-[1.05] font-semibold text-balance text-[#102A43]">
+                House hunting, but with a memory.
+              </h3>
+              <p className="mt-4 max-w-[600px] text-[16px] leading-[1.75] text-[#365B7D]">
+                If SwipeStats helps you make sense of dating data, Homi does the
+                same for the next chaotic shared decision: finding a place to
+                live. Kristian built it for saving listings, comparing
+                tradeoffs, and keeping everyone&apos;s notes in one calm
+                workspace.
+              </p>
+              <div className="mt-5 flex flex-wrap gap-2 text-[12px] font-semibold text-[#184B7A]">
+                <span className="rounded-full bg-white px-3 py-1.5 ring-1 ring-[#CFE3FF]">
+                  saved listings
+                </span>
+                <span className="rounded-full bg-white px-3 py-1.5 ring-1 ring-[#CFE3FF]">
+                  family notes
+                </span>
+                <span className="rounded-full bg-white px-3 py-1.5 ring-1 ring-[#CFE3FF]">
+                  agent context
+                </span>
+              </div>
+              <div className="mt-7 flex flex-wrap items-center gap-3">
+                <a
+                  href={HOMI_LANDING}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 rounded-[10px] bg-[#2C7FFF] px-[18px] py-[11px] text-[15px] font-semibold whitespace-nowrap text-white shadow-[0_10px_24px_rgb(44_127_255/0.28)] transition hover:-translate-y-px hover:bg-[#1766DA]"
+                >
+                  Visit Homi →
+                </a>
+                <a
+                  href={HOMI_STORY}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center rounded-[10px] border border-[#B8D9FF] bg-white px-[18px] py-[11px] text-[15px] font-semibold whitespace-nowrap text-[#184B7A] shadow-sm transition hover:-translate-y-px hover:border-[#7AB7FF]"
+                >
+                  Read the founder story →
+                </a>
+              </div>
+            </div>
+
+            <div className="relative overflow-hidden rounded-[22px] border border-[#CFE3FF] bg-white p-2 shadow-[0_14px_34px_rgb(16_42_67/0.12)]">
+              <Image
+                src="/images/cross-promo/homi-collections.webp"
+                alt="Homi collections workspace preview"
+                width={1600}
+                height={1000}
+                className="aspect-[16/10] w-full rounded-[16px] object-cover object-left-top"
+              />
+              <div className="absolute right-5 bottom-5 rounded-full border border-[#CFE3FF] bg-white/95 px-3 py-1.5 text-[12px] font-semibold text-[#2C7FFF] shadow-sm backdrop-blur">
+                Built for buying, renting, and deciding together
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
   );
@@ -837,8 +924,8 @@ export default function HomePage() {
       <Newsletter />
       <TestimonialsMasonry />
       <Press />
-      <AboutImage />
       <Research />
+      <AboutImage />
       <Faq />
       <FinalCta />
     </>
