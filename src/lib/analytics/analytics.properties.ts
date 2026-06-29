@@ -58,12 +58,7 @@ const PROVIDER = ["tinder", "hinge", "bumble"] as const;
 const UPLOAD_PROVIDER = ["tinder", "hinge"] as const;
 const AUTH_SOURCE = ["conversion_modal", "signin_page", "navbar"] as const;
 const ROAST_TONE = ["helpful", "mild", "spicy"] as const;
-const UPLOAD_ERROR_TYPE = [
-  "auth",
-  "ownership",
-  "database",
-  "unknown",
-] as const;
+const UPLOAD_ERROR_TYPE = ["auth", "ownership", "database", "unknown"] as const;
 
 // =====================================================
 // SERVER EVENT PROPERTIES
@@ -126,7 +121,8 @@ export const SERVER_EVENT_PROPERTIES: EventPropertyRegistry<ServerEventPropertie
       hadProfile: {
         type: "boolean",
         required: true,
-        description: "Whether the guest had uploaded a profile before converting.",
+        description:
+          "Whether the guest had uploaded a profile before converting.",
       },
       daysSinceCreation: {
         type: "number",
@@ -168,7 +164,8 @@ export const SERVER_EVENT_PROPERTIES: EventPropertyRegistry<ServerEventPropertie
       photoCount: {
         type: "number",
         required: true,
-        description: "Delta: new photos (always 0 — additive updates skip photos).",
+        description:
+          "Delta: new photos (always 0 — additive updates skip photos).",
       },
       usageDays: { type: "number", required: true },
       hasPhotos: { type: "boolean", required: true },
@@ -266,6 +263,16 @@ export const SERVER_EVENT_PROPERTIES: EventPropertyRegistry<ServerEventPropertie
       },
       errorType: { type: "enum", required: true, values: UPLOAD_ERROR_TYPE },
       errorMessage: { type: "string", required: true },
+      errorCode: { type: "string", required: false },
+      errorConstraint: { type: "string", required: false },
+      errorTable: { type: "string", required: false },
+      errorColumn: { type: "string", required: false },
+      errorDetail: { type: "string", required: false },
+      blobUrl: {
+        type: "string",
+        required: false,
+        description: "Uploaded blob URL if the upload made it to storage.",
+      },
       jsonSizeMB: { type: "number", required: false },
     },
 
@@ -520,7 +527,11 @@ export const CLIENT_EVENT_PROPERTIES: EventPropertyRegistry<ClientEventPropertie
     upload_file_processing_started: {
       provider: { type: "enum", required: true, values: UPLOAD_PROVIDER },
       fileSize: { type: "number", required: true },
-      fileType: { type: "string", required: true, description: '".zip" or ".json"' },
+      fileType: {
+        type: "string",
+        required: true,
+        description: '".zip" or ".json"',
+      },
     },
     upload_file_read_failed: {
       provider: { type: "enum", required: true, values: UPLOAD_PROVIDER },
@@ -555,13 +566,41 @@ export const CLIENT_EVENT_PROPERTIES: EventPropertyRegistry<ClientEventPropertie
         required: true,
         description: "Always present, 0 if no consent.",
       },
-      hasPhotos: { type: "boolean", required: true, description: "Actual data presence." },
-      hasPhotosConsent: { type: "boolean", required: true, description: "User consent state." },
-      usageDays: { type: "number", required: false, description: "Tinder only." },
-      hasWork: { type: "boolean", required: false, description: "Tinder only." },
-      hasWorkConsent: { type: "boolean", required: false, description: "Tinder only." },
-      promptCount: { type: "number", required: false, description: "Hinge only." },
-      hasUnknownGender: { type: "boolean", required: false, description: "Tinder only." },
+      hasPhotos: {
+        type: "boolean",
+        required: true,
+        description: "Actual data presence.",
+      },
+      hasPhotosConsent: {
+        type: "boolean",
+        required: true,
+        description: "User consent state.",
+      },
+      usageDays: {
+        type: "number",
+        required: false,
+        description: "Tinder only.",
+      },
+      hasWork: {
+        type: "boolean",
+        required: false,
+        description: "Tinder only.",
+      },
+      hasWorkConsent: {
+        type: "boolean",
+        required: false,
+        description: "Tinder only.",
+      },
+      promptCount: {
+        type: "number",
+        required: false,
+        description: "Hinge only.",
+      },
+      hasUnknownGender: {
+        type: "boolean",
+        required: false,
+        description: "Tinder only.",
+      },
     },
     upload_consent_photos_toggled: {
       provider: { type: "enum", required: true, values: UPLOAD_PROVIDER },
@@ -576,7 +615,11 @@ export const CLIENT_EVENT_PROPERTIES: EventPropertyRegistry<ClientEventPropertie
       consentGiven: { type: "boolean", required: true },
     },
     upload_gender_corrected: {
-      tinderId: { type: "string", required: false, description: "Tinder only." },
+      tinderId: {
+        type: "string",
+        required: false,
+        description: "Tinder only.",
+      },
       hadUnknownGender: { type: "boolean", required: true },
       hadUnknownInterestedIn: { type: "boolean", required: true },
       hadUnknownGenderFilter: { type: "boolean", required: true },
@@ -588,10 +631,22 @@ export const CLIENT_EVENT_PROPERTIES: EventPropertyRegistry<ClientEventPropertie
       photoCount: { type: "number", required: true },
       hasPhotos: { type: "boolean", required: true },
       hasPhotosConsent: { type: "boolean", required: true },
-      hasWork: { type: "boolean", required: false, description: "Tinder only." },
-      hasWorkConsent: { type: "boolean", required: false, description: "Tinder only." },
+      hasWork: {
+        type: "boolean",
+        required: false,
+        description: "Tinder only.",
+      },
+      hasWorkConsent: {
+        type: "boolean",
+        required: false,
+        description: "Tinder only.",
+      },
       matchCount: { type: "number", required: true },
-      scenario: { type: "string", required: false, description: "Upload scenario context." },
+      scenario: {
+        type: "string",
+        required: false,
+        description: "Upload scenario context.",
+      },
     },
 
     // ── Insights ─────────────────────────────────────
@@ -607,7 +662,11 @@ export const CLIENT_EVENT_PROPERTIES: EventPropertyRegistry<ClientEventPropertie
         required: true,
         values: ["feature_gate", "pricing_page", "settings", "banner"],
       },
-      currentTier: { type: "enum", required: true, values: ["FREE", "PLUS", "ELITE"] },
+      currentTier: {
+        type: "enum",
+        required: true,
+        values: ["FREE", "PLUS", "ELITE"],
+      },
       blockedFeature: { type: "string", required: false },
     },
     upgrade_modal_dismissed: {
@@ -636,7 +695,11 @@ export const CLIENT_EVENT_PROPERTIES: EventPropertyRegistry<ClientEventPropertie
 
     // ── Life events ──────────────────────────────────
     life_event_dialog_opened: {
-      source: { type: "enum", required: true, values: ["dashboard", "insights_page"] },
+      source: {
+        type: "enum",
+        required: true,
+        values: ["dashboard", "insights_page"],
+      },
       trigger: {
         type: "enum",
         required: true,

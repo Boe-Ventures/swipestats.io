@@ -327,6 +327,12 @@ export type ServerEventPropertiesDefinition = {
     hingeId?: string; // Optional - might fail before ID is known
     errorType: "auth" | "ownership" | "database" | "unknown";
     errorMessage: string;
+    errorCode?: string;
+    errorConstraint?: string;
+    errorTable?: string;
+    errorColumn?: string;
+    errorDetail?: string;
+    blobUrl?: string;
     jsonSizeMB?: number;
   };
 
