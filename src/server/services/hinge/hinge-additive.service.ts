@@ -87,65 +87,82 @@ async function recomputeHingeProfileMetaInTx(
   });
 }
 
-/**
- * Filter out matches that already exist by their matchId (nanoid)
- * For Hinge, matches don't have a stable external ID like Tinder's tinderMatchId,
- * so we use timestamp-based deduplication.
- */
-function filterNewHingeMatches(
-  existingMatchTimestamps: Set<number>,
+type ExistingMatchByMatchedAt = Map<number, string>;
+
+function getMessageKey(
+  message: Pick<MessageInsert, "matchId" | "sentDate">,
+): string {
+  return `${message.matchId}:${message.sentDate.getTime()}`;
+}
+
+function getInteractionKey(
+  interaction: Pick<HingeInteractionInsert, "type" | "timestamp">,
+): string {
+  return `${interaction.type}:${interaction.timestamp.getTime()}`;
+}
+
+function prepareHingeAdditiveRows(
+  existingMatchesByMatchedAt: ExistingMatchByMatchedAt,
+  existingMessageKeys: Set<string>,
+  existingInteractionKeys: Set<string>,
   newMatches: MatchInsert[],
   newMessages: MessageInsert[],
+  newInteractions: HingeInteractionInsert[],
 ): {
   matchesToInsert: MatchInsert[];
   messagesToInsert: MessageInsert[];
+  interactionsToInsert: HingeInteractionInsert[];
+  remappedInteractionsInput: HingeInteractionInsert[];
 } {
-  // Group messages by their match's ID for quick lookup
-  const messagesByMatchId = new Map<string, MessageInsert[]>();
-  for (const message of newMessages) {
-    const messages = messagesByMatchId.get(message.matchId) || [];
-    messages.push(message);
-    messagesByMatchId.set(message.matchId, messages);
-  }
-
   const matchesToInsert: MatchInsert[] = [];
-  const messagesToInsert: MessageInsert[] = [];
+  const generatedToDbMatchId = new Map<string, string>();
 
   for (const match of newMatches) {
-    // Skip if this match already exists (by matchedAt timestamp)
-    if (
-      match.matchedAt &&
-      existingMatchTimestamps.has(match.matchedAt.getTime())
-    ) {
+    const existingMatchId = match.matchedAt
+      ? existingMatchesByMatchedAt.get(match.matchedAt.getTime())
+      : undefined;
+
+    if (existingMatchId) {
+      generatedToDbMatchId.set(match.id, existingMatchId);
       continue;
     }
 
-    // New match - include it and all its messages
     matchesToInsert.push(match);
-    const matchMessages = messagesByMatchId.get(match.id) || [];
-    messagesToInsert.push(...matchMessages);
   }
 
-  return { matchesToInsert, messagesToInsert };
-}
+  const remapMatchId = (matchId: string | null | undefined) =>
+    matchId ? (generatedToDbMatchId.get(matchId) ?? matchId) : matchId;
 
-/**
- * Filter out interactions that already exist by timestamp
- */
-function filterNewHingeInteractions(
-  existingTimestamps: Set<number>,
-  newInteractions: HingeInteractionInsert[],
-): HingeInteractionInsert[] {
-  return newInteractions.filter(
-    (interaction) => !existingTimestamps.has(interaction.timestamp.getTime()),
+  const remappedMessagesInput = newMessages.map((message) => ({
+    ...message,
+    matchId: remapMatchId(message.matchId)!,
+  }));
+  const messagesToInsert = remappedMessagesInput.filter(
+    (message) => !existingMessageKeys.has(getMessageKey(message)),
   );
+
+  const remappedInteractionsInput = newInteractions.map((interaction) => ({
+    ...interaction,
+    matchId: remapMatchId(interaction.matchId) ?? null,
+  }));
+  const interactionsToInsert = remappedInteractionsInput.filter(
+    (interaction) =>
+      !existingInteractionKeys.has(getInteractionKey(interaction)),
+  );
+
+  return {
+    matchesToInsert,
+    messagesToInsert,
+    interactionsToInsert,
+    remappedInteractionsInput,
+  };
 }
 
 async function backfillExistingHingeClassifications(
   tx: TransactionClient,
   hingeId: string,
-  existingMatchesByMatchedAt: Map<number, string>,
-  existingInteractionTimestamps: Set<number>,
+  existingMatchesByMatchedAt: ExistingMatchByMatchedAt,
+  existingInteractionKeys: Set<string>,
   matchesInput: MatchInsert[],
   interactionsInput: HingeInteractionInsert[],
 ): Promise<{ matchCount: number; interactionCount: number }> {
@@ -172,13 +189,14 @@ async function backfillExistingHingeClassifications(
   }
 
   for (const interaction of interactionsInput) {
-    if (!existingInteractionTimestamps.has(interaction.timestamp.getTime())) {
+    if (!existingInteractionKeys.has(getInteractionKey(interaction))) {
       continue;
     }
 
     await tx
       .update(hingeInteractionTable)
       .set({
+        matchId: interaction.matchId ?? null,
         threadOrigin: interaction.threadOrigin,
         threadState: interaction.threadState,
       })
@@ -274,17 +292,34 @@ export async function additiveUpdateHingeProfile(data: {
         .filter((m) => m.matchedAt)
         .map((m) => [m.matchedAt!.getTime(), m.id]),
     );
-    const existingMatchTimestamps = new Set(
-      existingMatches
-        .map((m) => m.matchedAt?.getTime())
-        .filter((t): t is number => t !== undefined),
+    const existingMessages = await tx.query.messageTable.findMany({
+      where: eq(messageTable.hingeProfileId, data.hingeId),
+      columns: { matchId: true, sentDate: true },
+    });
+    const existingMessageKeys = new Set(
+      existingMessages.map((message) => getMessageKey(message)),
     );
 
-    // Filter to only new matches
-    const { matchesToInsert, messagesToInsert } = filterNewHingeMatches(
-      existingMatchTimestamps,
+    const existingInteractions = await tx.query.hingeInteractionTable.findMany({
+      where: eq(hingeInteractionTable.hingeProfileId, data.hingeId),
+      columns: { type: true, timestamp: true },
+    });
+    const existingInteractionKeys = new Set(
+      existingInteractions.map((interaction) => getInteractionKey(interaction)),
+    );
+
+    const {
+      matchesToInsert,
+      messagesToInsert,
+      interactionsToInsert,
+      remappedInteractionsInput,
+    } = prepareHingeAdditiveRows(
+      existingMatchesByMatchedAt,
+      existingMessageKeys,
+      existingInteractionKeys,
       matchesInput,
       messagesInput,
+      interactionsInput,
     );
 
     // Insert new matches in batches
@@ -311,19 +346,6 @@ export async function additiveUpdateHingeProfile(data: {
 
     // 3. Process new interactions (additive - historical events)
     const interactionStart = Date.now();
-    const existingInteractions = await tx.query.hingeInteractionTable.findMany({
-      where: eq(hingeInteractionTable.hingeProfileId, data.hingeId),
-      columns: { timestamp: true },
-    });
-    const existingInteractionTimestamps = new Set(
-      existingInteractions.map((i) => i.timestamp.getTime()),
-    );
-
-    const interactionsToInsert = filterNewHingeInteractions(
-      existingInteractionTimestamps,
-      interactionsInput,
-    );
-
     if (interactionsToInsert.length > 0) {
       const BATCH_SIZE = 1000;
       for (let i = 0; i < interactionsToInsert.length; i += BATCH_SIZE) {
@@ -340,9 +362,9 @@ export async function additiveUpdateHingeProfile(data: {
       tx,
       data.hingeId,
       existingMatchesByMatchedAt,
-      existingInteractionTimestamps,
+      existingInteractionKeys,
       matchesInput,
-      interactionsInput,
+      remappedInteractionsInput,
     );
     console.log(
       `   ✓ Existing rows classified: ${backfilled.matchCount} matches, ${backfilled.interactionCount} interactions (${Date.now() - backfillStart}ms)`,

@@ -518,7 +518,7 @@ export function sendError(params: {
   channel: SlackChannel;
   title: string;
   error: string | Error;
-  context?: Record<string, string | number>;
+  context?: Record<string, string | number | undefined>;
   logUrl?: string;
   imageUrls?: string[];
 }): void {
@@ -529,7 +529,12 @@ export function sendError(params: {
   const contextParts: string[] = [ENV_LABEL];
   if (context) {
     contextParts.push(
-      ...Object.entries(context).map(([k, v]) => `${k}: \`${v}\``),
+      ...Object.entries(context)
+        .filter((entry): entry is [string, string | number] => {
+          const value = entry[1];
+          return value !== undefined && value !== "";
+        })
+        .map(([k, v]) => `${k}: \`${v}\``),
     );
   }
   contextParts.push(new Date().toISOString());
@@ -947,6 +952,12 @@ export async function trackSlackEvent<T extends ServerAnalyticsEventName>(
           userName: sanitizeSlackText(user?.name) || "Unknown",
           hingeId: props.hingeId ?? "unknown",
           errorType: props.errorType,
+          errorCode: props.errorCode,
+          constraint: sanitizeSlackText(props.errorConstraint),
+          table: sanitizeSlackText(props.errorTable),
+          column: sanitizeSlackText(props.errorColumn),
+          detail: sanitizeSlackText(props.errorDetail),
+          blobUrl: props.blobUrl,
           jsonSizeMB: props.jsonSizeMB ?? 0,
         },
       });
