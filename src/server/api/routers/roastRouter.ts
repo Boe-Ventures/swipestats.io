@@ -42,6 +42,12 @@ import { readPhotoAnalysis } from "@/lib/photo-analysis";
 import { getCohortStats } from "@/server/services/cohort/cohort.service";
 import { ProfileComparisonService } from "@/server/services/profile-comparison.service";
 import { env } from "@/env";
+import {
+  DEFAULT_PROFILE_ROAST_LENS,
+  PROFILE_ROAST_LENS_KEYS,
+  profileRoastLensScope,
+  type ProfileRoastLensKey,
+} from "@/lib/ai/profile-roast-lenses";
 
 /** A stored row is outdated when its format predates the current version. The
  * version lives in `ai-output.service` (shared with the upsert writer). */
@@ -97,6 +103,14 @@ const RANK: Record<"keep" | "maybe" | "cut", number> = {
   maybe: 1,
   cut: 2,
 };
+
+const profileRoastLensSchema = z
+  .enum(PROFILE_ROAST_LENS_KEYS)
+  .default(DEFAULT_PROFILE_ROAST_LENS);
+
+function profileRoastScope(lens: ProfileRoastLensKey): string {
+  return profileRoastLensScope(lens);
+}
 
 type RoastContentItem = {
   id: string;
@@ -389,14 +403,20 @@ export const roastRouter = {
    * tool for the owner and has its own share flow.
    */
   publishProfileRoast: protectedProcedure
-    .input(z.object({ columnId: z.string() }))
+    .input(
+      z.object({
+        columnId: z.string(),
+        lens: profileRoastLensSchema,
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
+      const scope = profileRoastScope(input.lens);
       const row = await ctx.db.query.aiOutputTable.findFirst({
         where: and(
           eq(aiOutputTable.kind, "profile_roast"),
           eq(aiOutputTable.columnId, input.columnId),
-          eq(aiOutputTable.scope, ""),
+          eq(aiOutputTable.scope, scope),
           eq(aiOutputTable.userId, userId),
         ),
       });
@@ -510,10 +530,12 @@ export const roastRouter = {
         columnId: z.string(),
         tone: z.enum(ROAST_TONES),
         steer: z.string().max(500).optional(),
+        lens: profileRoastLensSchema,
       }),
     )
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
+      const scope = profileRoastScope(input.lens);
 
       // Fetch the owned column with its ordered content + attachments + parent
       // comparison (for the fallback bio).
@@ -561,6 +583,7 @@ export const roastRouter = {
         providerKey: column.dataProvider,
         tone: input.tone,
         steer: input.steer,
+        lens: input.lens,
         photos: photoItems.map((p) => ({
           url: p.url,
           caption: p.caption,
@@ -596,6 +619,7 @@ export const roastRouter = {
       const inputSnapshot = {
         providerKey: column.dataProvider,
         steer: input.steer ?? null,
+        lens: input.lens,
       };
 
       // One roast per profile — overwrite on regeneration.
@@ -604,6 +628,7 @@ export const roastRouter = {
         userId,
         kind: "profile_roast",
         subjectId: input.columnId,
+        scope,
         tone: input.tone,
         model: ROAST_MODEL,
         input: inputSnapshot,
@@ -644,10 +669,12 @@ export const roastRouter = {
         columnId: z.string(),
         contentId: z.string(),
         steer: z.string().trim().min(1).max(500),
+        lens: profileRoastLensSchema,
       }),
     )
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
+      const scope = profileRoastScope(input.lens);
 
       const column = await loadOwnedColumnWithContent(
         ctx.db,
@@ -660,7 +687,7 @@ export const roastRouter = {
         where: and(
           eq(aiOutputTable.kind, "profile_roast"),
           eq(aiOutputTable.columnId, input.columnId),
-          eq(aiOutputTable.scope, ""),
+          eq(aiOutputTable.scope, scope),
         ),
       });
       if (!row) {
@@ -746,9 +773,15 @@ export const roastRouter = {
    * live. Re-roast on demand to refresh after profile changes.
    */
   getProfileRoast: protectedProcedure
-    .input(z.object({ columnId: z.string() }))
+    .input(
+      z.object({
+        columnId: z.string(),
+        lens: profileRoastLensSchema,
+      }),
+    )
     .query(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
+      const scope = profileRoastScope(input.lens);
 
       const column = await loadOwnedColumnWithContent(
         ctx.db,
@@ -760,7 +793,7 @@ export const roastRouter = {
         where: and(
           eq(aiOutputTable.kind, "profile_roast"),
           eq(aiOutputTable.columnId, input.columnId),
-          eq(aiOutputTable.scope, ""),
+          eq(aiOutputTable.scope, scope),
         ),
       });
       if (!row) return null;
@@ -790,10 +823,12 @@ export const roastRouter = {
         columnId: z.string(),
         mode: z.enum(["inPlace", "newVersion"]),
         rewriteIndex: z.number().int().min(0).optional(),
+        lens: profileRoastLensSchema,
       }),
     )
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
+      const scope = profileRoastScope(input.lens);
 
       // Source column (ordered content) + ownership + saved roast.
       const source = await loadOwnedColumnWithContent(
@@ -806,7 +841,7 @@ export const roastRouter = {
         where: and(
           eq(aiOutputTable.kind, "profile_roast"),
           eq(aiOutputTable.columnId, input.columnId),
-          eq(aiOutputTable.scope, ""),
+          eq(aiOutputTable.scope, scope),
         ),
       });
       if (!roastRow) {
@@ -889,7 +924,12 @@ export const roastRouter = {
    * non-production and to the owning user.
    */
   deleteProfileRoast: protectedProcedure
-    .input(z.object({ columnId: z.string() }))
+    .input(
+      z.object({
+        columnId: z.string(),
+        lens: profileRoastLensSchema,
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       if (env.NODE_ENV === "production") {
         throw new TRPCError({
@@ -899,6 +939,7 @@ export const roastRouter = {
       }
 
       const userId = ctx.session.user.id;
+      const scope = profileRoastScope(input.lens);
 
       // Ownership check via the column's parent comparison.
       await loadOwnedColumnLight(ctx.db, input.columnId, userId);
@@ -909,6 +950,7 @@ export const roastRouter = {
           and(
             eq(aiOutputTable.kind, "profile_roast"),
             eq(aiOutputTable.columnId, input.columnId),
+            eq(aiOutputTable.scope, scope),
           ),
         );
 

@@ -52,6 +52,12 @@ import {
   type LoadingStep,
 } from "@/components/roast/roast-loading-theater";
 import { KEEP_CUT_STYLES, SECTION_HEADER } from "@/components/roast/roast-view";
+import {
+  DEFAULT_PROFILE_ROAST_LENS,
+  PROFILE_ROAST_LENSES,
+  PROFILE_ROAST_LENS_KEYS,
+  type ProfileRoastLensKey,
+} from "@/lib/ai/profile-roast-lenses";
 
 type Roast = NonNullable<RouterOutputs["roast"]["getProfileRoast"]>;
 type RoastPhoto = Roast["photos"][number];
@@ -104,6 +110,9 @@ export function RoastProfileDialog({
   // When re-roasting, swap the result for the tone picker again (no top pill
   // row). Reset whenever the dialog (re)opens so it never opens mid-pick.
   const [pickingTone, setPickingTone] = useState(false);
+  const [selectedLens, setSelectedLens] = useState<ProfileRoastLensKey>(
+    DEFAULT_PROFILE_ROAST_LENS,
+  );
   useEffect(() => {
     if (open) setPickingTone(false);
   }, [open]);
@@ -114,7 +123,7 @@ export function RoastProfileDialog({
   };
 
   const roastQueryOptions = trpc.roast.getProfileRoast.queryOptions(
-    { columnId },
+    { columnId, lens: selectedLens },
     { enabled: open, refetchOnWindowFocus: false },
   );
   const roastQuery = useQuery(roastQueryOptions);
@@ -156,11 +165,19 @@ export function RoastProfileDialog({
     }),
   );
 
-  const roast: Roast | null = roastMutation.data ?? roastQuery.data ?? null;
-  const activeTone = roastMutation.variables?.tone ?? roast?.tone;
+  const mutationLens =
+    roastMutation.variables?.lens ?? DEFAULT_PROFILE_ROAST_LENS;
+  const mutationBelongsToSelectedLens = mutationLens === selectedLens;
+  const roast: Roast | null =
+    (mutationBelongsToSelectedLens ? roastMutation.data : null) ??
+    roastQuery.data ??
+    null;
+  const activeTone =
+    (mutationBelongsToSelectedLens ? roastMutation.variables?.tone : null) ??
+    roast?.tone;
   const reRoastTone = (activeTone ?? "mild") as Tone;
-  const isGenerating = roastMutation.isPending;
-  const isLoadingExisting = roastQuery.isLoading && !roastMutation.data;
+  const isGenerating = roastMutation.isPending && mutationBelongsToSelectedLens;
+  const isLoadingExisting = roastQuery.isLoading && !roast;
 
   // Pre-flight gate: the backend needs at least one photo or prompt to roast,
   // so when there's nothing yet we guide instead of letting a tone click fail.
@@ -190,7 +207,7 @@ export function RoastProfileDialog({
     }
     // A full re-roast replaces every verdict, so drop any per-photo corrections.
     setPhotoOverrides({});
-    roastMutation.mutate({ columnId, tone });
+    roastMutation.mutate({ columnId, tone, lens: selectedLens });
   };
 
   // Publish the roast (idempotent) and copy its public share link.
@@ -204,7 +221,10 @@ export function RoastProfileDialog({
   // Sharing a roast shares the roasted profile (verdicts, photos, preview) —
   // never the parent comparison, which stays the owner's internal view.
   const handleShare = async () => {
-    const { shareKey } = await publishMutation.mutateAsync({ columnId });
+    const { shareKey } = await publishMutation.mutateAsync({
+      columnId,
+      lens: selectedLens,
+    });
     if (!shareKey) return;
     const url = `${window.location.origin}/share/profile-roast/${shareKey}`;
     await navigator.clipboard.writeText(url);
@@ -226,6 +246,17 @@ export function RoastProfileDialog({
             Roast {displayName}
           </DialogTitle>
         </DialogHeader>
+
+        {!notEnoughToRoast && (
+          <LensSwitch
+            selected={selectedLens}
+            onSelect={(lens) => {
+              setSelectedLens(lens);
+              setPickingTone(false);
+              setPhotoOverrides({});
+            }}
+          />
+        )}
 
         {/* Upgrade — free user, no roast: surface the paywall, not an error */}
         {showUpgrade && (
@@ -279,7 +310,11 @@ export function RoastProfileDialog({
               isSharing={publishMutation.isPending}
               onDeleteRoast={
                 isDev
-                  ? () => deleteRoastMutation.mutate({ columnId })
+                  ? () =>
+                      deleteRoastMutation.mutate({
+                        columnId,
+                        lens: selectedLens,
+                      })
                   : undefined
               }
               isDeleting={deleteRoastMutation.isPending}
@@ -293,6 +328,7 @@ export function RoastProfileDialog({
                     : p,
                 )}
                 columnId={columnId}
+                lens={selectedLens}
                 onReplacePhoto={handleReplacePhoto}
               />
             )}
@@ -319,6 +355,7 @@ export function RoastProfileDialog({
             <ApplyCard
               columnId={columnId}
               comparisonId={comparisonId}
+              lens={selectedLens}
               rewriteIndex={roast.bio ? rewriteIndex : undefined}
               onApplied={() => onOpenChange(false)}
             />
@@ -326,6 +363,43 @@ export function RoastProfileDialog({
         )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+function LensSwitch({
+  selected,
+  onSelect,
+}: {
+  selected: ProfileRoastLensKey;
+  onSelect: (lens: ProfileRoastLensKey) => void;
+}) {
+  return (
+    <div className="grid gap-2 sm:grid-cols-2">
+      {PROFILE_ROAST_LENS_KEYS.map((key) => {
+        const lens = PROFILE_ROAST_LENSES[key];
+        const active = key === selected;
+        return (
+          <button
+            key={key}
+            type="button"
+            onClick={() => onSelect(key)}
+            className={cn(
+              "rounded-xl border p-3 text-left transition-colors",
+              active
+                ? "border-rose-300 bg-rose-50 text-rose-950 dark:border-rose-900/70 dark:bg-rose-950/30 dark:text-rose-50"
+                : "hover:bg-muted/60",
+            )}
+          >
+            <span className="block text-sm font-semibold">
+              {lens.shortLabel}
+            </span>
+            <span className="text-muted-foreground mt-0.5 block text-xs leading-snug">
+              {lens.blurb}
+            </span>
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -653,10 +727,12 @@ function HeroCard({
 function PhotoVerdicts({
   photos,
   columnId,
+  lens,
   onReplacePhoto,
 }: {
   photos: RoastPhoto[];
   columnId: string;
+  lens: ProfileRoastLensKey;
   onReplacePhoto: (photo: RoastPhoto) => void;
 }) {
   const counts = { keep: 0, maybe: 0, cut: 0 };
@@ -684,6 +760,7 @@ function PhotoVerdicts({
           photo={p}
           index={i}
           columnId={columnId}
+          lens={lens}
           onReplace={onReplacePhoto}
         />
       ))}
@@ -695,11 +772,13 @@ function PhotoVerdict({
   photo,
   index,
   columnId,
+  lens,
   onReplace,
 }: {
   photo: RoastPhoto;
   index: number;
   columnId: string;
+  lens: ProfileRoastLensKey;
   onReplace: (photo: RoastPhoto) => void;
 }) {
   const trpc = useTRPC();
@@ -736,6 +815,7 @@ function PhotoVerdict({
       columnId,
       contentId: photo.contentId,
       steer: steer.trim(),
+      lens,
     });
   };
 
@@ -1008,11 +1088,13 @@ function RoastUpgradeCard({ onUpgrade }: { onUpgrade: () => void }) {
 function ApplyCard({
   columnId,
   comparisonId,
+  lens,
   rewriteIndex,
   onApplied,
 }: {
   columnId: string;
   comparisonId: string;
+  lens: ProfileRoastLensKey;
   rewriteIndex?: number;
   onApplied: () => void;
 }) {
@@ -1049,7 +1131,7 @@ function ApplyCard({
           className="flex-1 bg-rose-600 text-white hover:bg-rose-500"
           disabled={apply.isPending}
           onClick={() =>
-            apply.mutate({ columnId, mode: "newVersion", rewriteIndex })
+            apply.mutate({ columnId, mode: "newVersion", rewriteIndex, lens })
           }
         >
           {apply.isPending && apply.variables?.mode === "newVersion" ? (
@@ -1064,7 +1146,7 @@ function ApplyCard({
           className="flex-1"
           disabled={apply.isPending}
           onClick={() =>
-            apply.mutate({ columnId, mode: "inPlace", rewriteIndex })
+            apply.mutate({ columnId, mode: "inPlace", rewriteIndex, lens })
           }
         >
           Update this profile

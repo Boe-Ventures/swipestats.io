@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Banner } from "@/components/ui/banner";
 
-const DISMISS_KEY = "swipestats:profile-previews-banner-dismissed";
+const DISMISS_KEY = "swipestats:profile-previews-banner-dismissed:v2";
 
 /**
  * Homepage announcement for the Profile Comparisons (profile-compare) feature.
@@ -24,6 +24,7 @@ export function ProfilePreviewsBanner() {
     <Banner
       title="Profile Comparisons"
       message="Put your dating photos and prompts side by side and get real ratings and feedback from friends."
+      badge="New"
       ctaText="Try it free"
       ctaHref="/try?source=home_banner"
       showDismiss

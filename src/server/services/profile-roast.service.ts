@@ -3,6 +3,11 @@ import { AI_MODELS } from "@/lib/ai/models";
 import { generateStructured } from "@/lib/ai/generate-structured";
 import { ROAST_TONES, TONE_PERSONA, type RoastTone } from "./roast-tone";
 import { getProviderMeta } from "./providers";
+import {
+  DEFAULT_PROFILE_ROAST_LENS,
+  type ProfileRoastLensKey,
+} from "@/lib/ai/profile-roast-lenses";
+import { profileRoastLensPrompt } from "./profile-roast-lenses";
 
 // Re-exported so existing importers (e.g. roastRouter) keep their import path.
 export { ROAST_TONES, type RoastTone };
@@ -46,6 +51,8 @@ export interface ProfileRoastInput {
   bio?: string;
   /** Optional free-text steer, e.g. "go harder on the sunsets" or "be kinder about the bio". */
   steer?: string;
+  /** Optional rubric lens, e.g. a creator checklist. */
+  lens?: ProfileRoastLensKey;
 }
 
 /**
@@ -110,9 +117,7 @@ const profileRoastSchema = z.object({
   prompts: z
     .array(
       z.object({
-        index: z
-          .number()
-          .describe("1-based whole-number index of the prompt"),
+        index: z.number().describe("1-based whole-number index of the prompt"),
         roast: z
           .string()
           .describe(
@@ -178,9 +183,18 @@ export type ProfileRoast = z.infer<typeof profileRoastSchema>;
 export async function roastProfile(
   input: ProfileRoastInput,
 ): Promise<ProfileRoast> {
-  const { providerKey, tone, photos, prompts, bio, steer } = input;
+  const {
+    providerKey,
+    tone,
+    photos,
+    prompts,
+    bio,
+    steer,
+    lens = DEFAULT_PROFILE_ROAST_LENS,
+  } = input;
 
   const { name: provider, roastVibe: vibe } = getProviderMeta(providerKey);
+  const lensPrompt = profileRoastLensPrompt(lens);
 
   const promptLines =
     prompts.length > 0
@@ -218,6 +232,7 @@ You're reviewing someone's ${provider} dating profile.
 
 About ${provider}: ${vibe}
 Weight your roast accordingly — judge this profile by what actually matters on ${provider}.
+${lensPrompt ? `\n${lensPrompt}\n` : ""}
 
 ${photos.length} photo(s) are attached below, in order, labeled Photo 1 through Photo ${photos.length}. Reference each photo by its number.
 ${tagSection}

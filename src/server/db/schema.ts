@@ -22,6 +22,7 @@ import type {
   HingeThreadOrigin,
   HingeThreadState,
 } from "@/lib/interfaces/HingeDataJSON";
+import type { ProfileRoastLensKey } from "@/lib/ai/profile-roast-lenses";
 
 // ---- ENUMS --------------------------------------------------------
 
@@ -1252,7 +1253,11 @@ export type AiOutputInput =
         cohortLabel: string;
       }[];
     }
-  | { providerKey: string; steer: string | null };
+  | {
+      providerKey: string;
+      steer: string | null;
+      lens?: ProfileRoastLensKey;
+    };
 
 export const aiOutputTable = pgTable(
   "ai_output",
