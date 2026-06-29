@@ -239,7 +239,10 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
             columnOrders.map((c) => [c.id, c.order] as const),
           );
           const reordered = [...previous.columns]
-            .map((col) => ({ ...col, order: orderById.get(col.id) ?? col.order }))
+            .map((col) => ({
+              ...col,
+              order: orderById.get(col.id) ?? col.order,
+            }))
             .sort((a, b) => a.order - b.order);
 
           queryClient.setQueryData<Comparison>(getQueryKey, {
@@ -396,26 +399,50 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
     }),
   );
 
-  // Empty-state upload. Photos land in the user's library only — we no longer
-  // auto-distribute them into every profile column, so the user curates each
-  // profile deliberately (via the per-column "Add photos" affordance, which
-  // reads from this same library) rather than getting the same photos dumped
-  // everywhere.
+  // Empty-state upload is the "get started" path, so uploaded photos should be
+  // visible immediately. The shared library is still the source of truth; this
+  // just seeds each currently-empty profile column with the new attachment rows.
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { uploadFiles, isUploading } = useGalleryUpload();
+  const addUploadedPhotosMutation = useMutation(
+    trpc.profileCompare.addPhotosToColumn.mutationOptions({
+      onError: (error) => {
+        toast.error(error.message || "Couldn't add your photos to profiles");
+      },
+    }),
+  );
 
-  const isSeedingPhotos = isUploading;
+  const isSeedingPhotos = isUploading || addUploadedPhotosMutation.isPending;
 
   const handleEmptyStateUpload = async (files: File[]) => {
     if (files.length === 0) return;
 
-    const attachments = await uploadFiles(files, { successToast: false });
-    if (attachments.length === 0) return;
+    try {
+      const attachments = await uploadFiles(files, { successToast: false });
+      if (attachments.length === 0) return;
 
-    const n = attachments.length;
-    toast.success(
-      `Added ${n} ${n === 1 ? "photo" : "photos"} to your library — now add them to each profile below`,
-    );
+      const photos = attachments.map((attachment) => ({
+        attachmentId: attachment.id,
+      }));
+
+      for (const column of comparison.columns) {
+        await addUploadedPhotosMutation.mutateAsync({
+          columnId: column.id,
+          photos,
+        });
+      }
+
+      void queryClient.invalidateQueries(
+        trpc.profileCompare.get.queryOptions({ id: comparison.id }),
+      );
+
+      const n = attachments.length;
+      toast.success(
+        `Added ${n} ${n === 1 ? "photo" : "photos"} to each profile`,
+      );
+    } catch (error) {
+      console.error("Failed to seed uploaded photos:", error);
+    }
   };
 
   const handleEmptyStateFileChange = (
@@ -544,7 +571,9 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
                 size="lg"
                 variant={canSeedFromTinder ? "outline" : "default"}
                 className={
-                  canSeedFromTinder ? undefined : "bg-rose-600 hover:bg-rose-500"
+                  canSeedFromTinder
+                    ? undefined
+                    : "bg-rose-600 hover:bg-rose-500"
                 }
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isSeedingPhotos}
@@ -721,7 +750,9 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
                 name="name"
                 render={({ field, fieldState }) => (
                   <Field data-invalid={fieldState.invalid}>
-                    <FieldLabel htmlFor={field.name}>Comparison name</FieldLabel>
+                    <FieldLabel htmlFor={field.name}>
+                      Comparison name
+                    </FieldLabel>
                     <Input
                       placeholder={`e.g., ${getDefaultComparisonName()}`}
                       {...field}

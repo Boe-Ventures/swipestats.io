@@ -7,7 +7,7 @@ import { useController } from "react-hook-form";
 
 import type { ComboboxOption } from "../compound/combobox";
 import { Combobox } from "../compound/combobox";
-import { FormControl, FormItem, FormLabel, FormMessage } from "../form";
+import { Field, FieldError, FieldLabel } from "../form-new";
 
 export type {
   CountrySlug,
@@ -149,10 +149,7 @@ export function CountrySelect<
   whitelist = [],
   blacklist = [],
 }: CountrySelectProps<TFieldValues, TName>) {
-  const {
-    field,
-    fieldState: { error: _error },
-  } = useController({
+  const { field, fieldState } = useController({
     name,
     control,
     rules: required ? { required: `${label} is required` } : undefined,
@@ -175,27 +172,25 @@ export function CountrySelect<
   }, [filteredCountries]);
 
   return (
-    <FormItem className={className}>
+    <Field className={className} data-invalid={fieldState.invalid}>
       {label && (
-        <FormLabel>
+        <FieldLabel>
           {label}
           {required && <span className="text-destructive ml-1">*</span>}
-        </FormLabel>
+        </FieldLabel>
       )}
-      <FormControl>
-        <Combobox
-          options={countryOptions}
-          value={field.value}
-          onValueChange={field.onChange}
-          placeholder={placeholder}
-          searchPlaceholder="Search countries..."
-          emptyText="No country found."
-          disabled={disabled}
-          className="w-full"
-        />
-      </FormControl>
-      <FormMessage />
-    </FormItem>
+      <Combobox
+        options={countryOptions}
+        value={field.value}
+        onValueChange={field.onChange}
+        placeholder={placeholder}
+        searchPlaceholder="Search countries..."
+        emptyText="No country found."
+        disabled={disabled}
+        className="w-full"
+      />
+      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+    </Field>
   );
 }
 
@@ -232,10 +227,7 @@ export function RegionSelect<
   whitelist = [],
   blacklist = [],
 }: RegionSelectProps<TFieldValues, TName>) {
-  const {
-    field,
-    fieldState: { error: _error },
-  } = useController({
+  const { field, fieldState } = useController({
     name,
     control,
     rules: required ? { required: `${label} is required` } : undefined,
@@ -266,27 +258,25 @@ export function RegionSelect<
   }, [regions]);
 
   return (
-    <FormItem className={className}>
+    <Field className={className} data-invalid={fieldState.invalid}>
       {label && (
-        <FormLabel>
+        <FieldLabel>
           {label}
           {required && <span className="text-destructive ml-1">*</span>}
-        </FormLabel>
+        </FieldLabel>
       )}
-      <FormControl>
-        <Combobox
-          options={regionOptions}
-          value={field.value}
-          onValueChange={field.onChange}
-          placeholder={placeholder}
-          searchPlaceholder="Search regions..."
-          emptyText="No region found."
-          disabled={disabled}
-          className="w-full"
-        />
-      </FormControl>
-      <FormMessage />
-    </FormItem>
+      <Combobox
+        options={regionOptions}
+        value={field.value}
+        onValueChange={field.onChange}
+        placeholder={placeholder}
+        searchPlaceholder="Search regions..."
+        emptyText="No region found."
+        disabled={disabled}
+        className="w-full"
+      />
+      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+    </Field>
   );
 }
 
