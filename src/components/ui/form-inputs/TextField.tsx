@@ -4,13 +4,12 @@ import type * as React from "react";
 import type { Control, FieldPath, FieldValues } from "react-hook-form";
 
 import {
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "../form";
+  Controller,
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from "../form-new";
 import { Input } from "../input";
 import { Textarea } from "../textarea";
 
@@ -48,37 +47,39 @@ export function TextField<
   rows = 3,
 }: TextFieldProps<TFieldValues, TName>) {
   return (
-    <FormField
+    <Controller
       control={control}
       name={name}
-      render={({ field }) => (
-        <FormItem className={className}>
+      render={({ field, fieldState }) => (
+        <Field className={className} data-invalid={fieldState.invalid}>
           {label && (
-            <FormLabel>
+            <FieldLabel htmlFor={field.name}>
               {label}
               {required && <span className="text-destructive ml-1">*</span>}
-            </FormLabel>
+            </FieldLabel>
           )}
-          <FormControl>
-            {multiline ? (
-              <Textarea
-                rows={rows}
-                placeholder={placeholder}
-                disabled={disabled}
-                {...field}
-              />
-            ) : (
-              <Input
-                type={type}
-                placeholder={placeholder}
-                disabled={disabled}
-                {...field}
-              />
-            )}
-          </FormControl>
-          {description && <FormDescription>{description}</FormDescription>}
-          <FormMessage />
-        </FormItem>
+          {multiline ? (
+            <Textarea
+              {...field}
+              id={field.name}
+              rows={rows}
+              placeholder={placeholder}
+              disabled={disabled}
+              aria-invalid={fieldState.invalid}
+            />
+          ) : (
+            <Input
+              {...field}
+              id={field.name}
+              type={type}
+              placeholder={placeholder}
+              disabled={disabled}
+              aria-invalid={fieldState.invalid}
+            />
+          )}
+          {description && <FieldDescription>{description}</FieldDescription>}
+          {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+        </Field>
       )}
     />
   );

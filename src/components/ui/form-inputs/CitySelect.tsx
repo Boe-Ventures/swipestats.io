@@ -6,7 +6,7 @@ import { useController } from "react-hook-form";
 
 import type { ComboboxOption } from "../compound/combobox";
 import { Combobox } from "../compound/combobox";
-import { FormControl, FormItem, FormLabel, FormMessage } from "../form";
+import { Field, FieldError, FieldLabel } from "../form-new";
 
 // Import type from shared location to avoid duplication
 export interface MajorCity {
@@ -60,10 +60,7 @@ export function CitySelect<
   required = false,
   onCitySelect,
 }: CitySelectProps<TFieldValues, TName>) {
-  const {
-    field,
-    fieldState: { error: _error },
-  } = useController({
+  const { field, fieldState } = useController({
     name,
     control,
     rules: required ? { required: `${label} is required` } : undefined,
@@ -100,32 +97,30 @@ export function CitySelect<
   }, [cities, field.value]);
 
   return (
-    <FormItem className={className}>
+    <Field className={className} data-invalid={fieldState.invalid}>
       {label && (
-        <FormLabel>
+        <FieldLabel>
           {label}
           {required && <span className="text-destructive ml-1">*</span>}
-        </FormLabel>
+        </FieldLabel>
       )}
-      <FormControl>
-        <Combobox
-          options={cityOptions}
-          value={field.value}
-          onValueChange={handleValueChange}
-          placeholder={placeholder}
-          searchPlaceholder="Search cities..."
-          emptyText="No city found."
-          disabled={disabled}
-          className="w-full"
-        />
-      </FormControl>
+      <Combobox
+        options={cityOptions}
+        value={field.value}
+        onValueChange={handleValueChange}
+        placeholder={placeholder}
+        searchPlaceholder="Search cities..."
+        emptyText="No city found."
+        disabled={disabled}
+        className="w-full"
+      />
       {selectedCity && (
         <div className="text-muted-foreground mt-1 text-xs">
           {selectedCity.region}, {selectedCity.countryName} •{" "}
           {selectedCity.currency.toUpperCase()}
         </div>
       )}
-      <FormMessage />
-    </FormItem>
+      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+    </Field>
   );
 }
