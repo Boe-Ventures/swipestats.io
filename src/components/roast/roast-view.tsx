@@ -2,10 +2,15 @@
 
 import type { ReactNode } from "react";
 import Image from "next/image";
-import { CircleDot } from "lucide-react";
+import { CircleDot, ExternalLink } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/components/ui/lib/utils";
+import {
+  DEFAULT_PROFILE_ROAST_LENS,
+  PROFILE_ROAST_LENSES,
+  type ProfileRoastLensKey,
+} from "@/lib/ai/profile-roast-lenses";
 
 /** keep / maybe / cut → badge colour. Shared so the dialog + share page agree. */
 export const KEEP_CUT_STYLES: Record<string, string> = {
@@ -24,6 +29,7 @@ export const SECTION_HEADER =
  * caller's richer object satisfies it.
  */
 export interface RoastViewData {
+  lens?: ProfileRoastLensKey;
   overall: { tagline: string; headline: string; verdict: string };
   photos: {
     contentId: string | null;
@@ -61,10 +67,59 @@ export function RoastView({
   /** Optional slot below the roast (e.g. the share page's "roast yours" CTA). */
   footer?: ReactNode;
 }) {
+  const lens =
+    PROFILE_ROAST_LENSES[data.lens ?? DEFAULT_PROFILE_ROAST_LENS] ??
+    PROFILE_ROAST_LENSES[DEFAULT_PROFILE_ROAST_LENS];
+
   return (
     <div className="space-y-6">
       {/* Hero */}
       <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800 p-5 text-white sm:p-6">
+        <div className="mb-4 flex items-center gap-2">
+          <span className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/10 text-xs font-bold">
+            {lens.imageSrc ? (
+              <Image
+                src={lens.imageSrc}
+                alt=""
+                fill
+                sizes="32px"
+                className="object-cover"
+              />
+            ) : (
+              lens.avatar
+            )}
+          </span>
+          <div className="min-w-0">
+            <p className="text-[11px] font-semibold tracking-widest text-zinc-400 uppercase">
+              Rubric by
+            </p>
+            <p className="truncate text-sm font-semibold">
+              {lens.profileUrl ? (
+                <a
+                  href={lens.profileUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex max-w-full items-center gap-1 hover:text-zinc-200"
+                >
+                  <span className="truncate">
+                    {lens.creatorName}
+                    {lens.handle ? (
+                      <span className="text-zinc-400"> · {lens.handle}</span>
+                    ) : null}
+                  </span>
+                  <ExternalLink className="h-3 w-3 shrink-0 text-zinc-400" />
+                </a>
+              ) : (
+                <>
+                  {lens.creatorName}
+                  {lens.handle ? (
+                    <span className="text-zinc-400"> · {lens.handle}</span>
+                  ) : null}
+                </>
+              )}
+            </p>
+          </div>
+        </div>
         <div className="space-y-3">
           <Badge
             variant="secondary"
@@ -138,7 +193,9 @@ export function RoastView({
               </p>
               {p.rewrite && (
                 <div className="rounded-lg border border-rose-200 bg-rose-50/50 p-2.5 dark:border-rose-900/40 dark:bg-rose-950/20">
-                  <span className="text-sm font-semibold">Try this instead</span>
+                  <span className="text-sm font-semibold">
+                    Try this instead
+                  </span>
                   <p className="mt-1 text-sm leading-relaxed italic">
                     &ldquo;{p.rewrite}&rdquo;
                   </p>

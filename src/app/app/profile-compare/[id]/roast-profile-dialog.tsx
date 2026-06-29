@@ -21,6 +21,7 @@ import {
   Search,
   Trash2,
   Share2,
+  ExternalLink,
 } from "lucide-react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
@@ -41,7 +42,6 @@ import {
   EmptyHeader,
   EmptyTitle,
 } from "@/components/ui/empty";
-import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/toast";
 import { cn } from "@/components/ui/lib/utils";
 import { useSubscription } from "@/hooks/useSubscription";
@@ -61,6 +61,10 @@ import {
 
 type Roast = NonNullable<RouterOutputs["roast"]["getProfileRoast"]>;
 type RoastPhoto = Roast["photos"][number];
+type ProfileRoastLens = (typeof PROFILE_ROAST_LENSES)[ProfileRoastLensKey];
+
+const CREATOR_LENS_TONE: Tone = "mild";
+const ROAST_STAGE_CLASS = "min-h-[300px]";
 
 interface RoastProfileDialogProps {
   columnId: string;
@@ -113,6 +117,7 @@ export function RoastProfileDialog({
   const [selectedLens, setSelectedLens] = useState<ProfileRoastLensKey>(
     DEFAULT_PROFILE_ROAST_LENS,
   );
+  const isCreatorLens = selectedLens !== DEFAULT_PROFILE_ROAST_LENS;
   useEffect(() => {
     if (open) setPickingTone(false);
   }, [open]);
@@ -274,9 +279,9 @@ export function RoastProfileDialog({
           />
         )}
 
-        {/* Tone picker — shown when there's no roast yet (idle) OR the user hit
-            "Re-roast" on an existing one. Picking a tone runs the roast. */}
-        {(isIdle || pickingTone) &&
+        {/* Default roast owns heat. Creator lenses are their own voice/rubric. */}
+        {!isCreatorLens &&
+          (isIdle || pickingTone) &&
           !showUpgrade &&
           !isGenerating &&
           !isLoadingExisting &&
@@ -287,6 +292,22 @@ export function RoastProfileDialog({
               onPick={(tone) => {
                 setPickingTone(false);
                 runRoast(tone);
+              }}
+            />
+          )}
+
+        {isCreatorLens &&
+          (isIdle || pickingTone) &&
+          !showUpgrade &&
+          !isGenerating &&
+          !isLoadingExisting &&
+          !notEnoughToRoast && (
+            <CreatorLensIdleState
+              lens={selectedLens}
+              isBusy={isGenerating}
+              onRun={() => {
+                setPickingTone(false);
+                runRoast(CREATOR_LENS_TONE);
               }}
             />
           )}
@@ -304,8 +325,15 @@ export function RoastProfileDialog({
           <div className="min-w-0 space-y-6">
             <HeroCard
               overall={roast.overall}
+              lens={selectedLens}
               isGenerating={isGenerating}
-              onReRoast={() => setPickingTone(true)}
+              onReRoast={() => {
+                if (isCreatorLens) {
+                  runRoast(CREATOR_LENS_TONE);
+                  return;
+                }
+                setPickingTone(true);
+              }}
               onShare={() => void handleShare()}
               isSharing={publishMutation.isPending}
               onDeleteRoast={
@@ -374,39 +402,102 @@ function LensSwitch({
   onSelect: (lens: ProfileRoastLensKey) => void;
 }) {
   return (
-    <div className="grid gap-2 sm:grid-cols-2">
-      {PROFILE_ROAST_LENS_KEYS.map((key) => {
-        const lens = PROFILE_ROAST_LENSES[key];
-        const active = key === selected;
-        return (
-          <button
-            key={key}
-            type="button"
-            onClick={() => onSelect(key)}
-            className={cn(
-              "rounded-xl border p-3 text-left transition-colors",
-              active
-                ? "border-rose-300 bg-rose-50 text-rose-950 dark:border-rose-900/70 dark:bg-rose-950/30 dark:text-rose-50"
-                : "hover:bg-muted/60",
-            )}
-          >
-            <span className="block text-sm font-semibold">
-              {lens.shortLabel}
-            </span>
-            <span className="text-muted-foreground mt-0.5 block text-xs leading-snug">
-              {lens.blurb}
-            </span>
-          </button>
-        );
-      })}
-    </div>
+    <section>
+      <div className="-mx-1 flex snap-x gap-2 overflow-x-auto px-1 pb-1">
+        {PROFILE_ROAST_LENS_KEYS.map((key) => {
+          const lens = PROFILE_ROAST_LENSES[key];
+          const active = key === selected;
+          return (
+            <div
+              key={key}
+              className={cn(
+                "flex min-h-48 w-[244px] shrink-0 snap-start flex-col rounded-xl border p-3 transition-colors sm:w-[260px]",
+                active
+                  ? "border-rose-300 bg-rose-50 text-rose-950 shadow-sm dark:border-rose-900/70 dark:bg-rose-950/30 dark:text-rose-50"
+                  : "bg-background hover:bg-muted/60",
+              )}
+            >
+              <button
+                type="button"
+                aria-pressed={active}
+                onClick={() => onSelect(key)}
+                className="focus-visible:ring-ring -m-1 flex flex-1 flex-col rounded-lg p-1 text-left focus-visible:ring-2 focus-visible:outline-none"
+              >
+                <span className="flex items-start gap-2">
+                  <LensAvatar lens={lens} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold">
+                      {lens.creatorName}
+                    </span>
+                    <span className="text-muted-foreground block truncate text-xs">
+                      {lens.handle ?? lens.label}
+                    </span>
+                  </span>
+                  {active && (
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-rose-500" />
+                  )}
+                </span>
+
+                <span className="mt-3 block text-xs leading-snug">
+                  {lens.promise}
+                </span>
+                <span className="text-muted-foreground mt-2 block text-xs leading-snug">
+                  {lens.bestFor}
+                </span>
+
+                <span className="mt-3 flex flex-wrap gap-1">
+                  {lens.tags.slice(0, 3).map((tag) => (
+                    <span
+                      key={tag}
+                      className="bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-[11px] font-medium"
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </span>
+              </button>
+
+              {lens.profileUrl && (
+                <a
+                  href={lens.profileUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-muted-foreground hover:text-foreground mt-3 inline-flex w-fit items-center gap-1 text-xs font-medium transition-colors"
+                >
+                  {lens.handle ? "View profile" : "Visit site"}
+                  <ExternalLink className="h-3 w-3" />
+                </a>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function LensAvatar({ lens }: { lens: ProfileRoastLens }) {
+  return (
+    <span className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-violet-500/15 text-xs font-bold text-violet-700 dark:text-violet-200">
+      {lens.imageSrc ? (
+        <Image
+          src={lens.imageSrc}
+          alt=""
+          fill
+          sizes="44px"
+          className="object-cover"
+        />
+      ) : (
+        lens.avatar
+      )}
+    </span>
   );
 }
 
 /* ---------------------------------------------------------------- *
  * Loading — the wait is the entertainment: dark hero matching the
- * result, a pulsing flame, rotating tone-aware status lines, a
- * sequential analysis tracker, and a skeleton so the reveal doesn't jump.
+ * result, a pulsing flame, rotating tone-aware status lines, and a
+ * sequential analysis tracker.
  * ---------------------------------------------------------------- */
 
 const LOADING_LINES: Record<Tone, string[]> = {
@@ -464,22 +555,7 @@ function RoastLoadingState({
       steps={LOADING_STEPS}
       // Pace the tracker to a realistic roast (~15s to reach the verdict).
       stepIntervalMs={5000}
-      skeleton={
-        // mirrors the photo-verdict rows so the reveal lands with no jump
-        <div className="space-y-3">
-          <Skeleton className="h-3 w-28" />
-          {[0, 1].map((i) => (
-            <div key={i} className="flex gap-3 rounded-xl border p-3">
-              <Skeleton className="h-20 w-16 shrink-0 rounded-lg" />
-              <div className="flex-1 space-y-2 pt-1">
-                <Skeleton className="h-3 w-1/3" />
-                <Skeleton className="h-3 w-5/6" />
-                <Skeleton className="h-3 w-4/6" />
-              </div>
-            </div>
-          ))}
-        </div>
-      }
+      cardClassName={cn(ROAST_STAGE_CLASS, "flex flex-col justify-center")}
     />
   );
 }
@@ -532,6 +608,70 @@ function RoastIdleState({
             </button>
           ))}
         </div>
+      </EmptyContent>
+    </Empty>
+  );
+}
+
+function CreatorLensIdleState({
+  lens,
+  isBusy,
+  onRun,
+}: {
+  lens: ProfileRoastLensKey;
+  isBusy: boolean;
+  onRun: () => void;
+}) {
+  const lensMeta = PROFILE_ROAST_LENSES[lens];
+
+  return (
+    <Empty
+      className={cn(
+        ROAST_STAGE_CLASS,
+        "justify-start border-0 px-0 pt-10 pb-6 md:px-0 md:pt-10 md:pb-6",
+      )}
+    >
+      <EmptyHeader>
+        <div className="relative mx-auto mb-2 grid h-14 w-14 place-items-center rounded-2xl bg-gradient-to-br from-violet-400 to-rose-600 shadow-lg shadow-rose-500/30">
+          {lensMeta.imageSrc ? (
+            <Image
+              src={lensMeta.imageSrc}
+              alt=""
+              fill
+              sizes="56px"
+              className="rounded-2xl object-cover"
+            />
+          ) : (
+            <span className="text-sm font-bold text-white">
+              {lensMeta.avatar}
+            </span>
+          )}
+          <span className="absolute inset-0 animate-ping rounded-2xl ring-2 ring-rose-400/50" />
+        </div>
+        <EmptyTitle>{lensMeta.shortLabel} roast</EmptyTitle>
+        <EmptyDescription>
+          Run this profile through {lensMeta.creatorName}&apos;s rubric. The
+          creator lens is the angle.
+        </EmptyDescription>
+      </EmptyHeader>
+      <EmptyContent>
+        <Button
+          disabled={isBusy}
+          onClick={onRun}
+          className="bg-rose-600 text-white hover:bg-rose-500"
+        >
+          {isBusy ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Roasting…
+            </>
+          ) : (
+            <>
+              <Sparkles className="mr-2 h-4 w-4" />
+              Run {lensMeta.shortLabel} roast
+            </>
+          )}
+        </Button>
       </EmptyContent>
     </Empty>
   );
@@ -650,6 +790,7 @@ function RequirementRow({
 
 function HeroCard({
   overall,
+  lens,
   isGenerating,
   onReRoast,
   onShare,
@@ -658,6 +799,7 @@ function HeroCard({
   isDeleting,
 }: {
   overall: Roast["overall"];
+  lens: ProfileRoastLensKey;
   isGenerating: boolean;
   onReRoast: () => void;
   /** Publishes the roast (verdicts + photos + profile preview) and copies the link. */
@@ -667,8 +809,44 @@ function HeroCard({
   onDeleteRoast?: () => void;
   isDeleting?: boolean;
 }) {
+  const lensMeta = PROFILE_ROAST_LENSES[lens];
+  const isCreatorLens = lens !== DEFAULT_PROFILE_ROAST_LENS;
+
   return (
     <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800 p-5 text-white sm:p-6">
+      <div className="mb-4 flex items-center gap-2">
+        <HeroLensAvatar lens={lensMeta} />
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold tracking-widest text-zinc-400 uppercase">
+            Rubric by
+          </p>
+          <p className="truncate text-sm font-semibold">
+            {lensMeta.profileUrl ? (
+              <a
+                href={lensMeta.profileUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex max-w-full items-center gap-1 hover:text-zinc-200"
+              >
+                <span className="truncate">
+                  {lensMeta.creatorName}
+                  {lensMeta.handle ? (
+                    <span className="text-zinc-400"> · {lensMeta.handle}</span>
+                  ) : null}
+                </span>
+                <ExternalLink className="h-3 w-3 shrink-0 text-zinc-400" />
+              </a>
+            ) : (
+              <>
+                {lensMeta.creatorName}
+                {lensMeta.handle ? (
+                  <span className="text-zinc-400"> · {lensMeta.handle}</span>
+                ) : null}
+              </>
+            )}
+          </p>
+        </div>
+      </div>
       <div className="space-y-3 text-center sm:text-left">
         <Badge
           variant="secondary"
@@ -690,7 +868,7 @@ function HeroCard({
           onClick={onReRoast}
         >
           <RefreshCw className="mr-1.5 h-4 w-4" />
-          Re-roast
+          {isCreatorLens ? "Run again" : "Re-roast"}
         </Button>
         <Button
           size="sm"
@@ -721,6 +899,24 @@ function HeroCard({
         )}
       </div>
     </div>
+  );
+}
+
+function HeroLensAvatar({ lens }: { lens: ProfileRoastLens }) {
+  return (
+    <span className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/10 text-xs font-bold">
+      {lens.imageSrc ? (
+        <Image
+          src={lens.imageSrc}
+          alt=""
+          fill
+          sizes="32px"
+          className="object-cover"
+        />
+      ) : (
+        lens.avatar
+      )}
+    </span>
   );
 }
 

@@ -45,6 +45,7 @@ import { env } from "@/env";
 import {
   DEFAULT_PROFILE_ROAST_LENS,
   PROFILE_ROAST_LENS_KEYS,
+  profileRoastLensFromScope,
   profileRoastLensScope,
   type ProfileRoastLensKey,
 } from "@/lib/ai/profile-roast-lenses";
@@ -491,6 +492,7 @@ export const roastRouter = {
       // (column since deleted) renders verdicts with text-only photo cards.
       if (!column) {
         return {
+          lens: profileRoastLensFromScope(row.scope),
           tone: row.tone,
           updatedAt: row.updatedAt,
           providerKey: null,
@@ -507,6 +509,7 @@ export const roastRouter = {
       const effectiveBio = column.bio ?? comparison.defaultBio ?? null;
 
       return {
+        lens: profileRoastLensFromScope(row.scope),
         tone: row.tone,
         updatedAt: row.updatedAt,
         providerKey: column.dataProvider,
@@ -650,6 +653,7 @@ export const roastRouter = {
       );
 
       return {
+        lens: input.lens,
         tone: input.tone,
         updatedAt: row.updatedAt,
         // A freshly generated roast is always the current format.
@@ -802,6 +806,7 @@ export const roastRouter = {
       const effectiveBio = column.bio ?? column.comparison.defaultBio ?? null;
 
       return {
+        lens: profileRoastLensFromScope(row.scope),
         tone: row.tone,
         updatedAt: row.updatedAt,
         // Older-format roast → UI can nudge a re-roast instead of rendering stale.

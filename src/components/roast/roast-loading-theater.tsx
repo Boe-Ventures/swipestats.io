@@ -25,6 +25,7 @@ export function RoastLoadingTheater({
   lineIntervalMs = 2600,
   stepIntervalMs = 5000,
   skeleton,
+  cardClassName,
 }: {
   /** Rotating status copy (cycled while `active`). */
   lines: readonly string[];
@@ -41,6 +42,7 @@ export function RoastLoadingTheater({
   stepIntervalMs?: number;
   /** Skeleton preview under the hero so the reveal lands without a jump. */
   skeleton?: ReactNode;
+  cardClassName?: string;
 }) {
   const [lineIdx, setLineIdx] = useState(0);
   const [step, setStep] = useState(0);
@@ -65,7 +67,12 @@ export function RoastLoadingTheater({
 
   return (
     <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800 px-6 py-10 text-center">
+      <div
+        className={cn(
+          "relative overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800 px-6 py-10 text-center",
+          cardClassName,
+        )}
+      >
         {/* ambient glow */}
         <div
           aria-hidden
