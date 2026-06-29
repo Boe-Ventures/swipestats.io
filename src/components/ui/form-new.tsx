@@ -12,6 +12,11 @@
  * - Proper aria-invalid and data-invalid attributes
  * - More flexible and composable
  *
+ * Future architecture note: React Hook Form remains the app standard after the
+ * migration. If forms get complex enough to revisit the foundation, evaluate
+ * Formisch + Valibot for a schema-first model before doing another broad
+ * migration.
+ *
  * @example Basic Input Field
  * ```tsx
  * <Controller
