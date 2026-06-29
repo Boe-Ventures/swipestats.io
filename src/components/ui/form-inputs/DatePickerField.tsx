@@ -14,13 +14,12 @@ import { Popover, PopoverContent, PopoverTrigger } from "../popover";
 
 import { cn } from "../lib/utils";
 import {
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "../form";
+  Controller,
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from "../form-new";
 
 interface DatePickerFieldProps<
   TFieldValues extends FieldValues = FieldValues,
@@ -58,36 +57,38 @@ export function DatePickerField<
   toYear,
 }: DatePickerFieldProps<TFieldValues, TName>) {
   return (
-    <FormField
+    <Controller
       control={control}
       name={name}
-      render={({ field }) => (
-        <FormItem className={cn("flex flex-col", className)}>
+      render={({ field, fieldState }) => (
+        <Field
+          className={cn("flex flex-col", className)}
+          data-invalid={fieldState.invalid}
+        >
           {label && (
-            <FormLabel>
+            <FieldLabel>
               {label}
               {required && <span className="text-destructive ml-1">*</span>}
-            </FormLabel>
+            </FieldLabel>
           )}
           <Popover>
             <PopoverTrigger asChild>
-              <FormControl>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-between pl-3 text-left font-normal",
-                    !field.value && "text-muted-foreground",
-                  )}
-                  disabled={disabled}
-                >
-                  {field.value ? (
-                    format(field.value, "PPP")
-                  ) : (
-                    <span>{placeholder}</span>
-                  )}
-                  <CalendarIcon className="h-4 w-4 opacity-50" />
-                </Button>
-              </FormControl>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full justify-between pl-3 text-left font-normal",
+                  !field.value && "text-muted-foreground",
+                )}
+                disabled={disabled}
+                aria-invalid={fieldState.invalid}
+              >
+                {field.value ? (
+                  format(field.value, "PPP")
+                ) : (
+                  <span>{placeholder}</span>
+                )}
+                <CalendarIcon className="h-4 w-4 opacity-50" />
+              </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
               <Calendar
@@ -102,9 +103,9 @@ export function DatePickerField<
               />
             </PopoverContent>
           </Popover>
-          {description && <FormDescription>{description}</FormDescription>}
-          <FormMessage />
-        </FormItem>
+          {description && <FieldDescription>{description}</FieldDescription>}
+          {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+        </Field>
       )}
     />
   );
@@ -130,6 +131,7 @@ interface NaturalDatePickerFieldProps<
 // Internal component to handle the natural date picker logic
 interface NaturalDatePickerInputProps {
   field: {
+    name?: string;
     value: Date | undefined;
     onChange: (value: Date | undefined) => void;
   };
@@ -186,21 +188,20 @@ function NaturalDatePickerInput({
 
   return (
     <div className="relative flex gap-2">
-      <FormControl>
-        <Input
-          value={inputValue}
-          placeholder={placeholder}
-          className="bg-background pr-10"
-          disabled={disabled}
-          onChange={handleInputChange}
-          onKeyDown={(e) => {
-            if (e.key === "ArrowDown") {
-              e.preventDefault();
-              setOpen(true);
-            }
-          }}
-        />
-      </FormControl>
+      <Input
+        id={field.name}
+        value={inputValue}
+        placeholder={placeholder}
+        className="bg-background pr-10"
+        disabled={disabled}
+        onChange={handleInputChange}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowDown") {
+            e.preventDefault();
+            setOpen(true);
+          }
+        }}
+      />
       <Popover open={open} onOpenChange={setOpen}>
         <PopoverTrigger asChild>
           <Button
@@ -246,16 +247,16 @@ export function NaturalDatePickerField<
   toYear,
 }: NaturalDatePickerFieldProps<TFieldValues, TName>) {
   return (
-    <FormField
+    <Controller
       control={control}
       name={name}
-      render={({ field }) => (
-        <FormItem className={className}>
+      render={({ field, fieldState }) => (
+        <Field className={className} data-invalid={fieldState.invalid}>
           {label && (
-            <FormLabel>
+            <FieldLabel htmlFor={field.name}>
               {label}
               {required && <span className="text-destructive ml-1">*</span>}
-            </FormLabel>
+            </FieldLabel>
           )}
           <NaturalDatePickerInput
             field={field}
@@ -265,9 +266,9 @@ export function NaturalDatePickerField<
             fromYear={fromYear}
             toYear={toYear}
           />
-          {description && <FormDescription>{description}</FormDescription>}
-          <FormMessage />
-        </FormItem>
+          {description && <FieldDescription>{description}</FieldDescription>}
+          {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+        </Field>
       )}
     />
   );

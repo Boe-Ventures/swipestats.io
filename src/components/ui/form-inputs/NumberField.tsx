@@ -4,13 +4,7 @@ import type * as React from "react";
 import type { Control, FieldPath, FieldValues } from "react-hook-form";
 import { useController } from "react-hook-form";
 
-import {
-  FormControl,
-  FormDescription,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "../form";
+import { Field, FieldDescription, FieldError, FieldLabel } from "../form-new";
 import { Input } from "../input";
 
 interface NumberFieldProps<
@@ -52,10 +46,7 @@ export function NumberField<
   currency,
   thousandSeparator = true,
 }: NumberFieldProps<TFieldValues, TName>) {
-  const {
-    field,
-    fieldState: { error: _error },
-  } = useController({
+  const { field, fieldState } = useController({
     name,
     control,
     rules: {
@@ -118,37 +109,37 @@ export function NumberField<
   const displayValue = formatNumber(field.value);
 
   return (
-    <FormItem className={className}>
+    <Field className={className} data-invalid={fieldState.invalid}>
       {label && (
-        <FormLabel>
+        <FieldLabel htmlFor={field.name}>
           {label}
           {required && <span className="text-destructive ml-1">*</span>}
-        </FormLabel>
+        </FieldLabel>
       )}
-      <FormControl>
-        <div className="relative">
-          {currency && (
-            <div className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 -translate-y-1/2">
-              {currency}
-            </div>
-          )}
-          <Input
-            type="text"
-            inputMode="numeric"
-            placeholder={placeholder}
-            disabled={disabled}
-            defaultValue={displayValue}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            min={min}
-            max={max}
-            step={step}
-            className={currency ? "pl-8" : undefined}
-          />
-        </div>
-      </FormControl>
-      {description && <FormDescription>{description}</FormDescription>}
-      <FormMessage />
-    </FormItem>
+      <div className="relative">
+        {currency && (
+          <div className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 -translate-y-1/2">
+            {currency}
+          </div>
+        )}
+        <Input
+          id={field.name}
+          type="text"
+          inputMode="numeric"
+          placeholder={placeholder}
+          disabled={disabled}
+          defaultValue={displayValue}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          min={min}
+          max={max}
+          step={step}
+          className={currency ? "pl-8" : undefined}
+          aria-invalid={fieldState.invalid}
+        />
+      </div>
+      {description && <FieldDescription>{description}</FieldDescription>}
+      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+    </Field>
   );
 }
