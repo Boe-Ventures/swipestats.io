@@ -35,6 +35,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { NewOldLogo } from "@/components/ui/NewOldLogo";
 import {
   Empty,
   EmptyContent,
@@ -477,6 +478,14 @@ function LensSwitch({
 }
 
 function LensAvatar({ lens }: { lens: ProfileRoastLens }) {
+  if (lens.scope === "") {
+    return (
+      <span className="bg-primary text-primary-foreground flex h-11 w-11 shrink-0 items-center justify-center rounded-xl shadow-sm">
+        <NewOldLogo className="h-7 w-7" />
+      </span>
+    );
+  }
+
   return (
     <span className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-violet-500/15 text-xs font-bold text-violet-700 dark:text-violet-200">
       {lens.imageSrc ? (
@@ -903,6 +912,14 @@ function HeroCard({
 }
 
 function HeroLensAvatar({ lens }: { lens: ProfileRoastLens }) {
+  if (lens.scope === "") {
+    return (
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white">
+        <NewOldLogo className="h-5 w-5" />
+      </span>
+    );
+  }
+
   return (
     <span className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/10 text-xs font-bold">
       {lens.imageSrc ? (

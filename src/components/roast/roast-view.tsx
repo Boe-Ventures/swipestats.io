@@ -6,6 +6,7 @@ import { CircleDot, ExternalLink } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/components/ui/lib/utils";
+import { NewOldLogo } from "@/components/ui/NewOldLogo";
 import {
   DEFAULT_PROFILE_ROAST_LENS,
   PROFILE_ROAST_LENSES,
@@ -76,8 +77,15 @@ export function RoastView({
       {/* Hero */}
       <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800 p-5 text-white sm:p-6">
         <div className="mb-4 flex items-center gap-2">
-          <span className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-white/10 text-xs font-bold">
-            {lens.imageSrc ? (
+          <span
+            className={cn(
+              "relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden bg-white/10 text-xs font-bold",
+              lens.scope === "" ? "rounded-lg" : "rounded-full",
+            )}
+          >
+            {lens.scope === "" ? (
+              <NewOldLogo className="h-5 w-5" />
+            ) : lens.imageSrc ? (
               <Image
                 src={lens.imageSrc}
                 alt=""
