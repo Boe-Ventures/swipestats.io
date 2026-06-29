@@ -1,4 +1,6 @@
 import { Resend } from "resend";
+import { render } from "@react-email/components";
+
 import { env } from "@/env";
 import { type TopicKey } from "./resend.constants";
 
@@ -66,6 +68,34 @@ function getTopicKeys(ids: string[]): TopicKey[] {
  * Initialized directly on module load for consistency with other service clients
  */
 export const resend = new Resend(env.RESEND_API_KEY);
+
+export async function sendEmailPreferencesEmail(
+  email: string,
+  preferencesUrl: string,
+) {
+  try {
+    const { default: EmailPreferencesInline } = await import(
+      "../../../emails/EmailPreferencesInline"
+    );
+    const html = await render(EmailPreferencesInline({ preferencesUrl }));
+    const response = await resend.emails.send({
+      from: "SwipeStats <noreply@mail.swipestats.io>",
+      to: email,
+      subject: "Manage your email preferences",
+      html,
+    });
+
+    if (response.error) {
+      console.error("[Resend] Failed to send preferences email:", response.error);
+      return null;
+    }
+
+    return { id: response.data.id };
+  } catch (error) {
+    console.error("[Resend] Error sending preferences email:", error);
+    return null;
+  }
+}
 
 /**
  * Create or update a contact in Resend

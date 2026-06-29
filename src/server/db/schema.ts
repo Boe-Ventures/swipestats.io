@@ -119,6 +119,11 @@ export const datasetExportStatusEnum = pgEnum("DatasetExportStatus", [
   "FAILED",
 ]);
 
+export const appTokenPurposeEnum = pgEnum("app_token_purpose", [
+  "email_preferences",
+  "unsubscribe",
+]);
+
 // Export TypeScript types
 export type DataProvider = (typeof dataProviderEnum.enumValues)[number];
 export type EventType = (typeof eventTypeEnum.enumValues)[number];
@@ -133,6 +138,7 @@ export type HingeInteractionType =
 export type DatasetTier = (typeof datasetTierEnum.enumValues)[number];
 export type DatasetExportStatus =
   (typeof datasetExportStatusEnum.enumValues)[number];
+export type AppTokenPurpose = (typeof appTokenPurposeEnum.enumValues)[number];
 
 /** ISO 639-1 two-letter language code, e.g. "en", "no", "es" */
 export type LanguageCode = string;
@@ -232,6 +238,42 @@ export const sessionTable = pgTable(
 
 export type Session = typeof sessionTable.$inferSelect;
 export type SessionInsert = typeof sessionTable.$inferInsert;
+
+export const appTokenTable = pgTable(
+  "app_token",
+  (t) => ({
+    id: t
+      .text()
+      .primaryKey()
+      .$defaultFn(() => createId("tok")),
+    purpose: appTokenPurposeEnum("purpose").notNull(),
+    subject: t.text().notNull(),
+    tokenHash: t.text("token_hash").notNull(),
+    expiresAt: t.timestamp("expires_at").notNull(),
+    usedAt: t.timestamp("used_at"),
+    createdBy: t
+      .text("created_by")
+      .references(() => userTable.id, { onDelete: "set null" }),
+    metadata: t.jsonb().default({}).notNull(),
+    createdAt: t
+      .timestamp("created_at")
+      .$defaultFn(() => new Date())
+      .notNull(),
+    updatedAt: t
+      .timestamp("updated_at")
+      .$defaultFn(() => new Date())
+      .$onUpdate(() => new Date())
+      .notNull(),
+  }),
+  (table) => [
+    uniqueIndex("app_token_token_hash_idx").on(table.tokenHash),
+    index("app_token_purpose_subject_idx").on(table.purpose, table.subject),
+    index("app_token_expires_at_idx").on(table.expiresAt),
+  ],
+);
+
+export type AppToken = typeof appTokenTable.$inferSelect;
+export type AppTokenInsert = typeof appTokenTable.$inferInsert;
 
 export const accountTable = pgTable(
   "account",

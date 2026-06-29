@@ -264,6 +264,7 @@ export const auth = betterAuth({
   },
   trustedOrigins: [
     "http://localhost:3000",
+    "https://swipestats-21.localcan.dev",
     "https://swipestats-42.beta.localcan.dev",
     // Trust all of THIS project's Vercel preview + per-deployment URLs. The
     // stable branch alias is already covered via baseURL (VERCEL_BRANCH_URL),

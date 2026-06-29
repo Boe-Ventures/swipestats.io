@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTRPC } from "@/trpc/react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
 import {
   Field,
   FieldDescription,
@@ -69,6 +70,8 @@ export function NewsletterPreferencesForm() {
   const [localTopics, setLocalTopics] = useState<
     Partial<Record<TopicKey, boolean>>
   >({});
+  const [preferenceEmail, setPreferenceEmail] = useState("");
+  const [requestSent, setRequestSent] = useState(false);
   const { data: session } = authClient.useSession();
 
   // Get localStorage email for anonymous users
@@ -76,13 +79,11 @@ export function NewsletterPreferencesForm() {
   const isAnonymous = session?.user?.email
     ? isAnonymousEmail(session.user.email)
     : false;
-
-  // For anonymous users with localStorage email, pass it to the query
-  const queryInput =
-    isAnonymous && localStorageEmail ? { email: localStorageEmail } : undefined;
+  const isRealUser = !!session?.user?.email && !isAnonymous;
 
   const topicsQuery = useQuery(
-    trpc.newsletter.getMyTopics.queryOptions(queryInput, {
+    trpc.newsletter.getMyTopics.queryOptions(undefined, {
+      enabled: isRealUser,
       staleTime: 1000 * 60 * 5, // Cache for 5 minutes
     }),
   );
@@ -101,6 +102,21 @@ export function NewsletterPreferencesForm() {
       },
     }),
   );
+
+  const requestPreferenceLinkMutation = useMutation(
+    trpc.newsletter.requestPreferenceLink.mutationOptions({
+      onSuccess: () => setRequestSent(true),
+      onError: (error) => {
+        toast.error(error.message || "Failed to request preferences link");
+      },
+    }),
+  );
+
+  useEffect(() => {
+    if (localStorageEmail && !preferenceEmail) {
+      setPreferenceEmail(localStorageEmail);
+    }
+  }, [localStorageEmail, preferenceEmail]);
 
   // Initialize local state when data loads
   const topicsData = topicsQuery.data;
@@ -129,19 +145,7 @@ export function NewsletterPreferencesForm() {
       .filter(([_, enabled]) => enabled)
       .map(([topic]) => topic as TopicKey);
 
-    // For anonymous users, pass the localStorage email
-    // Cast to the expected API type (excludes "waitlist-directory-profiles")
-    const mutationInput =
-      isAnonymous && localStorageEmail
-        ? {
-            topics: selectedTopics,
-            email: localStorageEmail,
-          }
-        : {
-            topics: selectedTopics,
-          };
-
-    updateTopicsMutation.mutate(mutationInput);
+    updateTopicsMutation.mutate({ topics: selectedTopics });
   };
 
   const hasChanges =
@@ -155,6 +159,58 @@ export function NewsletterPreferencesForm() {
           false)
       );
     });
+
+  if (!isRealUser) {
+    return (
+      <div className="space-y-4">
+        {requestSent ? (
+          <Alert variant="success">
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              If that email can receive SwipeStats updates, a preferences link
+              is on its way.
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <form
+            className="space-y-3"
+            onSubmit={(event) => {
+              event.preventDefault();
+              requestPreferenceLinkMutation.mutate({ email: preferenceEmail });
+            }}
+          >
+            <div className="space-y-2">
+              <FieldLabel>Email address</FieldLabel>
+              <Input
+                type="email"
+                value={preferenceEmail}
+                onChange={(event) => setPreferenceEmail(event.target.value)}
+                placeholder="you@example.com"
+                required
+              />
+            </div>
+            <Button
+              type="submit"
+              loading={requestPreferenceLinkMutation.isPending}
+              disabled={!preferenceEmail}
+            >
+              Send preferences link
+            </Button>
+          </form>
+        )}
+
+        {localStorageEmail && (
+          <Alert variant="info">
+            <Info className="h-4 w-4" />
+            <AlertDescription>
+              {localStorageEmail} is saved on this device for form prefilling.
+              For security, preference changes now use an emailed link.
+            </AlertDescription>
+          </Alert>
+        )}
+      </div>
+    );
+  }
 
   if (topicsQuery.isLoading) {
     return (
@@ -193,31 +249,6 @@ export function NewsletterPreferencesForm() {
 
   return (
     <div className="space-y-4">
-      {/* Newsletter Email Address - Show for anonymous users */}
-      {isAnonymous && localStorageEmail && (
-        <div className="space-y-2">
-          <FieldLabel>Newsletter Email Address</FieldLabel>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-            <code className="bg-muted flex-1 rounded px-2 py-1 text-sm break-all">
-              {localStorageEmail}
-            </code>
-            {topicsQuery.data && (
-              <div className="flex shrink-0 items-center gap-1 text-xs text-green-600">
-                <Info className="h-4 w-4" />
-                Synced with Resend
-              </div>
-            )}
-          </div>
-          <Alert variant="info" className="mt-2">
-            <Info className="h-4 w-4" />
-            <AlertDescription>
-              This email is saved locally on this device. Add a real email to
-              your account to manage preferences across all devices.
-            </AlertDescription>
-          </Alert>
-        </div>
-      )}
-
       {/* Topics Selection */}
       <div className="space-y-3">
         {VISIBLE_TOPICS.map((topic) => {
