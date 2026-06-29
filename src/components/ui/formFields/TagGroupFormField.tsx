@@ -2,13 +2,7 @@
 
 import type { ControllerProps, FieldPath, FieldValues } from "react-hook-form";
 
-import {
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "../form";
+import { Controller, Field, FieldError, FieldLabel } from "../form-new";
 import { cn } from "../lib/utils";
 import { Button } from "../button";
 
@@ -36,43 +30,45 @@ export function TagGroupFormField<
   ...props
 }: TagGroupFormFieldProps<TFieldValues, TName>) {
   return (
-    <FormField
+    <Controller
       {...props}
-      render={({ field }) => (
-        <FormItem className={cn("space-y-2", className)}>
-          {label && <FormLabel>{label}</FormLabel>}
-          <FormControl>
-            <div className="flex flex-wrap gap-2">
-              {options.map((option) => {
-                const currentValue = (field.value ?? []) as string[];
-                const isSelected = currentValue.includes(option.value);
+      render={({ field, fieldState }) => (
+        <Field
+          className={cn("space-y-2", className)}
+          data-invalid={fieldState.invalid}
+        >
+          {label && <FieldLabel>{label}</FieldLabel>}
+          <div className="flex flex-wrap gap-2">
+            {options.map((option) => {
+              const currentValue = (field.value ?? []) as string[];
+              const isSelected = currentValue.includes(option.value);
 
-                return (
-                  <Button
-                    key={option.value}
-                    type="button"
-                    variant={isSelected ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => {
-                      if (isSelected) {
-                        // Remove from selection
-                        field.onChange(
-                          currentValue.filter((v) => v !== option.value),
-                        );
-                      } else {
-                        // Add to selection
-                        field.onChange([...currentValue, option.value]);
-                      }
-                    }}
-                  >
-                    {option.label}
-                  </Button>
-                );
-              })}
-            </div>
-          </FormControl>
-          <FormMessage />
-        </FormItem>
+              return (
+                <Button
+                  key={option.value}
+                  type="button"
+                  variant={isSelected ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    if (isSelected) {
+                      // Remove from selection
+                      field.onChange(
+                        currentValue.filter((v) => v !== option.value),
+                      );
+                    } else {
+                      // Add to selection
+                      field.onChange([...currentValue, option.value]);
+                    }
+                  }}
+                  aria-invalid={fieldState.invalid}
+                >
+                  {option.label}
+                </Button>
+              );
+            })}
+          </div>
+          {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+        </Field>
       )}
     />
   );

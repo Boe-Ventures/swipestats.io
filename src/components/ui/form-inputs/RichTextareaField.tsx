@@ -6,13 +6,12 @@ import { useController } from "react-hook-form";
 
 import type { JSONContent } from "@tiptap/core";
 import {
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "../form";
+  Controller,
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from "../form-new";
 
 /**
  * Form field wrapper for Tiptap rich text editor
@@ -115,10 +114,10 @@ export function RichTextareaField<
   });
 
   return (
-    <FormField
+    <Controller
       control={control}
       name={name}
-      render={({ field }) => {
+      render={({ field, fieldState }) => {
         // Use markdown field for character count if available, otherwise text field
         const characterCount = markdownFieldName
           ? markdownFieldController.field.value
@@ -129,43 +128,41 @@ export function RichTextareaField<
             : 0;
 
         return (
-          <FormItem className={className}>
+          <Field className={className} data-invalid={fieldState.invalid}>
             {label && (
-              <FormLabel>
+              <FieldLabel>
                 {label}
                 {required && <span className="text-destructive ml-1">*</span>}
-              </FormLabel>
+              </FieldLabel>
             )}
-            <FormControl>
-              <EditorComponent
-                content={field.value as JSONContent | string}
-                onChange={(json, text, markdown) => {
-                  field.onChange(json);
-                  // Update text field if provided
-                  if (textFieldName) {
-                    textFieldController.field.onChange(text);
-                  }
-                  // Update markdown field if provided
-                  if (markdownFieldName) {
-                    markdownFieldController.field.onChange(markdown);
-                  }
-                }}
-                placeholder={placeholder}
-                editable={!disabled}
-                className="min-h-[100px]"
-                {...editorProps}
-              />
-            </FormControl>
-            {description && <FormDescription>{description}</FormDescription>}
+            <EditorComponent
+              content={field.value as JSONContent | string}
+              onChange={(json, text, markdown) => {
+                field.onChange(json);
+                // Update text field if provided
+                if (textFieldName) {
+                  textFieldController.field.onChange(text);
+                }
+                // Update markdown field if provided
+                if (markdownFieldName) {
+                  markdownFieldController.field.onChange(markdown);
+                }
+              }}
+              placeholder={placeholder}
+              editable={!disabled}
+              className="min-h-[100px]"
+              {...editorProps}
+            />
+            {description && <FieldDescription>{description}</FieldDescription>}
             <div className="flex items-center justify-between">
-              <FormMessage />
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
               {maxLength && (
                 <span className="text-muted-foreground text-xs">
                   {characterCount}/{maxLength} characters
                 </span>
               )}
             </div>
-          </FormItem>
+          </Field>
         );
       }}
     />

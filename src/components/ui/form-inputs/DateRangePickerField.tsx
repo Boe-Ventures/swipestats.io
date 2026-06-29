@@ -11,13 +11,12 @@ import { Popover, PopoverContent, PopoverTrigger } from "../popover";
 
 import { cn } from "../lib/utils";
 import {
-  FormControl,
-  FormDescription,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "../form";
+  Controller,
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from "../form-new";
 
 interface DateRangePickerFieldProps<
   TFieldValues extends FieldValues = FieldValues,
@@ -67,32 +66,34 @@ export function DateRangePickerField<
   };
 
   return (
-    <FormField
+    <Controller
       control={control}
       name={name}
-      render={({ field }) => (
-        <FormItem className={cn("flex flex-col", className)}>
+      render={({ field, fieldState }) => (
+        <Field
+          className={cn("flex flex-col", className)}
+          data-invalid={fieldState.invalid}
+        >
           {label && (
-            <FormLabel>
+            <FieldLabel>
               {label}
               {required && <span className="text-destructive ml-1">*</span>}
-            </FormLabel>
+            </FieldLabel>
           )}
           <Popover>
             <PopoverTrigger asChild>
-              <FormControl>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-between pl-3 text-left font-normal",
-                    !field.value?.from && "text-muted-foreground",
-                  )}
-                  disabled={disabled}
-                >
-                  {formatDateRange(field.value)}
-                  <CalendarIcon className="h-4 w-4 opacity-50" />
-                </Button>
-              </FormControl>
+              <Button
+                variant="outline"
+                className={cn(
+                  "w-full justify-between pl-3 text-left font-normal",
+                  !field.value?.from && "text-muted-foreground",
+                )}
+                disabled={disabled}
+                aria-invalid={fieldState.invalid}
+              >
+                {formatDateRange(field.value)}
+                <CalendarIcon className="h-4 w-4 opacity-50" />
+              </Button>
             </PopoverTrigger>
             <PopoverContent className="w-auto p-0" align="start">
               <Calendar
@@ -110,9 +111,9 @@ export function DateRangePickerField<
               />
             </PopoverContent>
           </Popover>
-          {description && <FormDescription>{description}</FormDescription>}
-          <FormMessage />
-        </FormItem>
+          {description && <FieldDescription>{description}</FieldDescription>}
+          {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+        </Field>
       )}
     />
   );

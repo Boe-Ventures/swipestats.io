@@ -5,7 +5,7 @@ import { useController } from "react-hook-form";
 
 import type { ComboboxOption } from "../compound/combobox";
 import { Combobox } from "../compound/combobox";
-import { FormControl, FormItem, FormLabel, FormMessage } from "../form";
+import { Field, FieldError, FieldLabel } from "../form-new";
 
 // Generate timezone options using Intl API
 function generateTimezoneOptions(): ComboboxOption[] {
@@ -135,37 +135,32 @@ export function TimeZoneSelect<
   className,
   required = false,
 }: TimeZoneSelectProps<TFieldValues, TName>) {
-  const {
-    field,
-    fieldState: { error: _error },
-  } = useController({
+  const { field, fieldState } = useController({
     name,
     control,
     rules: required ? { required: `${label} is required` } : undefined,
   });
 
   return (
-    <FormItem className={className}>
+    <Field className={className} data-invalid={fieldState.invalid}>
       {label && (
-        <FormLabel>
+        <FieldLabel>
           {label}
           {required && <span className="text-destructive ml-1">*</span>}
-        </FormLabel>
+        </FieldLabel>
       )}
-      <FormControl>
-        <Combobox
-          options={timezoneOptions}
-          value={field.value}
-          onValueChange={field.onChange}
-          placeholder={placeholder}
-          searchPlaceholder="Search time zones..."
-          emptyText="No time zone found."
-          disabled={disabled}
-          className="w-full"
-        />
-      </FormControl>
-      <FormMessage />
-    </FormItem>
+      <Combobox
+        options={timezoneOptions}
+        value={field.value}
+        onValueChange={field.onChange}
+        placeholder={placeholder}
+        searchPlaceholder="Search time zones..."
+        emptyText="No time zone found."
+        disabled={disabled}
+        className="w-full"
+      />
+      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+    </Field>
   );
 }
 

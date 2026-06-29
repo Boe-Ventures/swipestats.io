@@ -4,13 +4,7 @@ import type { Control, FieldPath, FieldValues } from "react-hook-form";
 import * as React from "react";
 import { useController } from "react-hook-form";
 
-import {
-  FormControl,
-  FormDescription,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "../form";
+import { Field, FieldDescription, FieldError, FieldLabel } from "../form-new";
 import { Label } from "../label";
 import { Switch } from "../switch";
 import { ToggleGroup, ToggleGroupItem } from "../toggle-group";
@@ -65,10 +59,7 @@ export function PresetNumberField<
   defaultUseCustom = false,
   placeholder,
 }: PresetNumberFieldProps<TFieldValues, TName>) {
-  const {
-    field,
-    fieldState: { error: _error },
-  } = useController({
+  const { field, fieldState } = useController({
     name,
     control,
     rules: {
@@ -124,10 +115,10 @@ export function PresetNumberField<
   };
 
   return (
-    <FormItem className={className}>
+    <Field className={className} data-invalid={fieldState.invalid}>
       {label && (
         <div className="flex h-3.5 items-center gap-2">
-          <FormLabel className="leading-none">{label}</FormLabel>
+          <FieldLabel className="leading-none">{label}</FieldLabel>
           <div className="flex items-center space-x-2">
             <Label
               htmlFor={`${name}-custom-switch`}
@@ -145,46 +136,44 @@ export function PresetNumberField<
           </div>
         </div>
       )}
-      <FormControl>
-        <div>
-          {!useCustom ? (
-            <ToggleGroup
-              variant="outline"
-              type="single"
-              value={toggleValue}
-              onValueChange={handleToggleChange}
-              disabled={disabled}
-              className="justify-start"
-            >
-              {presets.map((preset) => (
-                <ToggleGroupItem
-                  key={preset.value}
-                  value={preset.value.toString()}
-                  className="data-[state=on]:bg-primary px-3 data-[state=on]:text-white"
-                >
-                  {preset.label}
-                </ToggleGroupItem>
-              ))}
-            </ToggleGroup>
-          ) : (
-            <NumberField
-              control={control}
-              name={name}
-              placeholder={placeholder}
-              min={min}
-              max={max}
-              step={step}
-              allowDecimals={allowDecimals}
-              currency={currency}
-              thousandSeparator={thousandSeparator}
-              disabled={disabled}
-              className="mb-0"
-            />
-          )}
-        </div>
-      </FormControl>
-      {description && <FormDescription>{description}</FormDescription>}
-      <FormMessage />
-    </FormItem>
+      <div>
+        {!useCustom ? (
+          <ToggleGroup
+            variant="outline"
+            type="single"
+            value={toggleValue}
+            onValueChange={handleToggleChange}
+            disabled={disabled}
+            className="justify-start"
+          >
+            {presets.map((preset) => (
+              <ToggleGroupItem
+                key={preset.value}
+                value={preset.value.toString()}
+                className="data-[state=on]:bg-primary px-3 data-[state=on]:text-white"
+              >
+                {preset.label}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+        ) : (
+          <NumberField
+            control={control}
+            name={name}
+            placeholder={placeholder}
+            min={min}
+            max={max}
+            step={step}
+            allowDecimals={allowDecimals}
+            currency={currency}
+            thousandSeparator={thousandSeparator}
+            disabled={disabled}
+            className="mb-0"
+          />
+        )}
+      </div>
+      {description && <FieldDescription>{description}</FieldDescription>}
+      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+    </Field>
   );
 }
