@@ -149,29 +149,40 @@ export const auth = betterAuth({
   // so there's no additional performance overhead.
   hooks: {
     after: createAuthMiddleware(async (ctx) => {
-      // Only handle anonymous sign-in endpoint (early return for all other endpoints)
-      if (ctx.path !== "/sign-in/anonymous") return;
-
       const newSession = ctx.context.newSession;
       if (!newSession?.user) return;
 
-      // Read source from custom header (passed from client via fetchOptions)
-      // This lets us track where anonymous users are coming from for analytics.
-      // Validated against the shared allowlist; anything else → "direct".
-      const sourceHeader = ctx.headers?.get("x-anonymous-source");
-      const source: AnonymousSource =
-        sourceHeader &&
-        (ANONYMOUS_SOURCES as readonly string[]).includes(sourceHeader)
-          ? (sourceHeader as AnonymousSource)
-          : "direct";
+      if (ctx.path === "/sign-in/anonymous") {
+        // Read source from custom header (passed from client via fetchOptions)
+        // This lets us track where anonymous users are coming from for analytics.
+        // Validated against the shared allowlist; anything else → "direct".
+        const sourceHeader = ctx.headers?.get("x-anonymous-source");
+        const source: AnonymousSource =
+          sourceHeader &&
+          (ANONYMOUS_SOURCES as readonly string[]).includes(sourceHeader)
+            ? (sourceHeader as AnonymousSource)
+            : "direct";
 
-      // Track anonymous user creation with specific source
-      if (newSession.user.isAnonymous) {
-        console.log(
-          `[Auth] Anonymous user created: ${newSession.user.id} (source: ${source})`,
-        );
-        trackServerEvent(newSession.user.id, "anonymous_user_created", {
-          source,
+        // Track anonymous user creation with specific source
+        if (newSession.user.isAnonymous) {
+          console.log(
+            `[Auth] Anonymous user created: ${newSession.user.id} (source: ${source})`,
+          );
+          trackServerEvent(newSession.user.id, "anonymous_user_created", {
+            source,
+          });
+        }
+        return;
+      }
+
+      // Genuine returning sign-ins: explicit credential logins only. Sessions
+      // are also created on sign-up (autoSignIn defaults to true), anonymous
+      // sign-in, email verification (autoSignInAfterVerification), and admin
+      // impersonation — those are registration/system side effects tracked as
+      // user_signed_up / anonymous_user_created, not sign-ins.
+      if (ctx.path === "/sign-in/email" || ctx.path === "/sign-in/username") {
+        trackServerEvent(newSession.user.id, "user_signed_in", {
+          method: ctx.path === "/sign-in/username" ? "username" : "email",
         });
       }
     }),
@@ -238,16 +249,9 @@ export const auth = betterAuth({
       },
     },
     session: {
-      create: {
-        after: async (session) => {
-          try {
-            console.log("[Auth] Session created:", session.userId);
-            trackServerEvent(session.userId, "user_signed_in", {});
-          } catch (error) {
-            console.error("[Auth] Error in session.create.after hook:", error);
-          }
-        },
-      },
+      // user_signed_in is tracked in hooks.after (path-filtered) instead of
+      // session.create — sessions are also created on sign-up, anonymous
+      // sign-in, email verification, and impersonation, which are not sign-ins.
       delete: {
         after: async (session) => {
           try {

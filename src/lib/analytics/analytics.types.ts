@@ -222,7 +222,9 @@ export type ServerEventPropertiesDefinition = {
         provider: SupportedAuthProvider;
       };
 
-  user_signed_in: Record<string, never>;
+  user_signed_in: {
+    method: EmailAndPasswordMethod | "username";
+  };
 
   user_signed_out: undefined;
 

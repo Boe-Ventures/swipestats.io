@@ -100,7 +100,14 @@ export const SERVER_EVENT_PROPERTIES: EventPropertyRegistry<ServerEventPropertie
         values: ["google"],
       },
     },
-    user_signed_in: {},
+    user_signed_in: {
+      method: {
+        type: "enum",
+        required: true,
+        description: "Credential type used to sign in.",
+        values: ["email", "username"],
+      },
+    },
     user_signed_out: {},
 
     // ── Anonymous (lead gen) ─────────────────────────
