@@ -36,6 +36,7 @@ import {
   getStoredConsent,
   isGpcEnabled,
 } from "@/lib/analytics/consent.storage";
+import { isAnonymousEmail } from "@/lib/utils/auth";
 
 interface DebugSnapshot {
   consent: ConsentRecord | null;
@@ -179,6 +180,8 @@ export default function AdminAnalyticsPage() {
   const user = session.data?.user;
   const isFullUser = !!user && !user.isAnonymous;
   const isAnon = !!user && !!user.isAnonymous;
+  const canUseDbConsent =
+    !!user?.email && !user.isAnonymous && !isAnonymousEmail(user.email);
   const authState = isFullUser
     ? "logged in"
     : isAnon
@@ -406,27 +409,28 @@ export default function AdminAnalyticsPage() {
             Durable, cross-device consent on{" "}
             <code className="text-xs">user.analyticsConsent</code> (preferences +
             version + timestamp). Server-side event gating reads this. Requires a
-            logged-in user.
+            real logged-in user.
           </p>
           <div className="flex flex-wrap gap-2">
             <Button
               variant="outline"
               onClick={() => void dbConsentQuery.refetch()}
-              disabled={!user || dbConsentQuery.isFetching}
+              disabled={!canUseDbConsent || dbConsentQuery.isFetching}
             >
               {dbConsentQuery.isFetching ? "Reading…" : "Read DB consent"}
             </Button>
             <Button
               variant="outline"
               onClick={() => writeDbConsent.mutate({ preferences: current })}
-              disabled={!user || writeDbConsent.isPending}
+              disabled={!canUseDbConsent || writeDbConsent.isPending}
             >
               {writeDbConsent.isPending ? "Writing…" : "Write DB consent"}
             </Button>
           </div>
-          {!user && (
+          {!canUseDbConsent && (
             <p className="text-xs text-amber-600">
-              Sign in (or create an anon session) to read/write DB consent.
+              Sign in with a real account to read/write DB consent. Anonymous
+              sessions stay local-only.
             </p>
           )}
           {dbConsentQuery.isFetched && (

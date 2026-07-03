@@ -3,7 +3,7 @@
 // =====================================================
 //
 // Browser-specific read/write for the consent record. Pre-login this IS the
-// source of truth; after login it is mirrored into `user.consentPreferences`
+// source of truth; after real-user login it is mirrored into `user.analyticsConsent`
 // (DB) so the server can read it too. Types live in `./consent`.
 
 import {
@@ -50,6 +50,28 @@ export function setStoredConsent(
     }
   }
   return record;
+}
+
+/**
+ * Persist a server-provided decision as the local device decision. Used only
+ * when the browser has no fresh local record of its own.
+ */
+export function setStoredConsentRecord(record: ConsentRecord): ConsentRecord {
+  const storedRecord: ConsentRecord = {
+    preferences: normalizeConsent(record.preferences),
+    version: record.version,
+    decidedAt: record.decidedAt,
+  };
+
+  if (typeof window !== "undefined") {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(storedRecord));
+    } catch {
+      // localStorage unavailable — non-fatal
+    }
+  }
+
+  return storedRecord;
 }
 
 /** Remove the stored decision (reverts to "undecided" → banner shows again). */

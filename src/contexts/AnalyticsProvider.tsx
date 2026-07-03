@@ -11,7 +11,7 @@ import {
   useState,
 } from "react";
 import { track as vercelTrack } from "@vercel/analytics";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import posthog from "posthog-js";
 
 import { useTRPC } from "@/trpc/react";
@@ -43,7 +43,9 @@ import {
   isConsentStale,
   isGpcEnabled,
   setStoredConsent,
+  setStoredConsentRecord,
 } from "@/lib/analytics/consent.storage";
+import { isAnonymousEmail } from "@/lib/utils/auth";
 import { authClient } from "@/server/better-auth/client";
 import { CookieBanner } from "@/components/analytics/CookieBanner";
 
@@ -99,6 +101,8 @@ interface ClientAnalyticsProvider {
   reset?: () => void;
 }
 
+type ConsentHydrationStatus = "resolving" | "backend" | "done";
+
 // =====================================================
 // CONTEXT CREATION
 // =====================================================
@@ -124,6 +128,13 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
   const trpc = useTRPC();
   const lastIdentifiedUserId = useRef<string | null>(null);
 
+  const realUser = useMemo(() => {
+    const user = session.data?.user;
+    if (!user?.email) return null;
+    if (user.isAnonymous || isAnonymousEmail(user.email)) return null;
+    return user;
+  }, [session.data?.user]);
+
   // Mirror the local decision into the DB (user.analyticsConsent) so the server
   // can gate events too. Fire-and-forget; failures are non-fatal.
   const syncConsentToDb = useMutation(trpc.consent.set.mutationOptions());
@@ -135,33 +146,88 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
   );
   const [showBanner, setShowBanner] = useState(false);
   const [eventQueue, setEventQueue] = useState<QueuedEvent[]>([]);
+  const [hydrationStatus, setHydrationStatus] =
+    useState<ConsentHydrationStatus>("resolving");
+
+  const backendConsentQuery = useQuery({
+    ...trpc.consent.get.queryOptions(undefined),
+    enabled: hydrationStatus === "backend" && realUser !== null,
+    retry: false,
+  });
 
   const decided = preferences !== null;
   const analyticsOn = isAllowed(preferences, "analytics");
 
-  // ── Resolve the initial state on mount (localStorage + GPC) ──────────
+  // ── Resolve initial state: GPC > fresh local > real-user backend ─────
   useEffect(() => {
+    if (session.isPending) return;
+
     const gpc = isGpcEnabled();
     const stored = getStoredConsent();
 
-    if (stored && !isConsentStale(stored)) {
-      // Honor GPC as an override even over a stored "granted".
-      const prefs = gpc
-        ? { ...stored.preferences, analytics: false, advertising: false }
-        : stored.preferences;
+    if (gpc) {
+      // GPC is a valid opt-out signal and wins over both local and backend
+      // state. Do not overwrite localStorage; if the browser signal changes,
+      // the user's prior local decision can become active again.
+      const prefs =
+        stored && !isConsentStale(stored)
+          ? { ...stored.preferences, analytics: false, advertising: false }
+          : ALL_OFF;
       setPreferences(prefs);
       setShowBanner(false);
-    } else if (gpc) {
-      // GPC is a valid opt-out signal — respect it, skip the banner.
-      setPreferences(ALL_OFF);
+      setHydrationStatus("done");
+      return;
+    }
+
+    if (stored && !isConsentStale(stored)) {
+      // Local device state wins when it is fresh.
+      setPreferences(stored.preferences);
+      setShowBanner(false);
+      setHydrationStatus("done");
+      return;
+    }
+
+    if (realUser) {
+      // No fresh local decision; ask the backend for this real user's durable
+      // mirror before showing the banner.
+      setPreferences(null);
+      setShowBanner(false);
+      setHydrationStatus("backend");
+    } else {
+      // Logged-out and anonymous sessions are local-only.
+      setPreferences(null);
+      setShowBanner(true);
+      setHydrationStatus("done");
+    }
+  }, [realUser, session.isPending]);
+
+  useEffect(() => {
+    if (hydrationStatus !== "backend") return;
+    if (backendConsentQuery.isPending || backendConsentQuery.isFetching) return;
+
+    const backendRecord = backendConsentQuery.data;
+    if (backendRecord && !isConsentStale(backendRecord)) {
+      const storedRecord = setStoredConsentRecord(backendRecord);
+      if (realUser) {
+        lastSyncedRef.current = `${realUser.id}:${JSON.stringify(
+          storedRecord.preferences,
+        )}`;
+      }
+      setPreferences(storedRecord.preferences);
       setShowBanner(false);
     } else {
-      // Undecided — show the banner; nothing fires until they choose.
       setPreferences(null);
       setShowBanner(true);
     }
-    // Run once on mount.
-  }, []);
+
+    setHydrationStatus("done");
+  }, [
+    backendConsentQuery.data,
+    backendConsentQuery.isFetching,
+    backendConsentQuery.isPending,
+    hydrationStatus,
+    realUser,
+  ]);
 
   // ── Providers (each tagged with the category that gates it) ──────────
   const providers: ClientAnalyticsProvider[] = useMemo(
@@ -351,13 +417,12 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
 
   // ── Sync the decision to the DB on login / change (cross-device) ─────
   useEffect(() => {
-    const user = session.data?.user;
-    if (!user || preferences === null) return;
-    const key = `${user.id}:${JSON.stringify(preferences)}`;
+    if (!realUser || preferences === null) return;
+    const key = `${realUser.id}:${JSON.stringify(preferences)}`;
     if (lastSyncedRef.current === key) return;
     lastSyncedRef.current = key;
     syncConsentToDb.mutate({ preferences });
-  }, [session.data, preferences, syncConsentToDb]);
+  }, [realUser, preferences, syncConsentToDb]);
 
   // ── Consent mutations ─────────────────────────────────────────────────
   const setConsent = useCallback(

@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createHash, randomBytes } from "node:crypto";
-import { and, eq, isNull, lt } from "drizzle-orm";
+import { and, count, eq, gte, isNull, lt } from "drizzle-orm";
 
 import { db, withTransaction } from "@/server/db";
 import {
@@ -41,6 +41,25 @@ export async function createAppToken(input: {
     .returning();
 
   return { rawToken, token: row };
+}
+
+export async function countRecentAppTokens(input: {
+  purpose: AppTokenPurpose;
+  subject: string;
+  since: Date;
+}) {
+  const [row] = await db
+    .select({ count: count() })
+    .from(appTokenTable)
+    .where(
+      and(
+        eq(appTokenTable.purpose, input.purpose),
+        eq(appTokenTable.subject, normalizeAppTokenSubject(input.subject)),
+        gte(appTokenTable.createdAt, input.since),
+      ),
+    );
+
+  return row?.count ?? 0;
 }
 
 export async function validateAppToken(input: {

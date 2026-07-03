@@ -1,13 +1,16 @@
 import { z } from "zod";
 import { eq } from "drizzle-orm";
+import { TRPCError } from "@trpc/server";
 
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { userTable } from "@/server/db/schema";
 import {
   CONSENT_VERSION,
   normalizeConsent,
+  readConsent,
   type ConsentRecord,
 } from "@/lib/analytics/consent";
+import { isAnonymousEmail } from "@/lib/utils/auth";
 import { identifyServerUser } from "@/server/services/analytics.service";
 
 const consentPreferencesSchema = z.object({
@@ -17,6 +20,13 @@ const consentPreferencesSchema = z.object({
   advertising: z.boolean(),
 });
 
+function isDurableConsentUser(user: {
+  email?: string | null;
+  isAnonymous?: boolean | null;
+}) {
+  return !!user.email && !user.isAnonymous && !isAnonymousEmail(user.email);
+}
+
 /**
  * Durable, server-readable analytics consent on `user.analyticsConsent`.
  *
@@ -25,12 +35,28 @@ const consentPreferencesSchema = z.object({
  */
 export const consentRouter = createTRPCRouter({
   /** The current user's stored consent record, or null if undecided. */
-  get: protectedProcedure.query(({ ctx }) => ctx.analyticsConsent),
+  get: protectedProcedure.query(async ({ ctx }) => {
+    if (!isDurableConsentUser(ctx.session.user)) return null;
+
+    const user = await ctx.db.query.userTable.findFirst({
+      where: eq(userTable.id, ctx.session.user.id),
+      columns: { analyticsConsent: true },
+    });
+
+    return readConsent(user?.analyticsConsent);
+  }),
 
   /** Persist a decision (essential always forced on); stamps version + time. */
   set: protectedProcedure
     .input(z.object({ preferences: consentPreferencesSchema.partial() }))
     .mutation(async ({ ctx, input }) => {
+      if (!isDurableConsentUser(ctx.session.user)) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "Anonymous sessions keep cookie consent local-only.",
+        });
+      }
+
       const record: ConsentRecord = {
         preferences: normalizeConsent(input.preferences),
         version: CONSENT_VERSION,

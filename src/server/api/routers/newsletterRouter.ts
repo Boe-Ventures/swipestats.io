@@ -14,12 +14,15 @@ import {
 import { topicKeySchema, emailSchema } from "@/lib/validators";
 import { isAnonymousEmail } from "@/lib/utils/auth";
 import {
+  countRecentAppTokens,
   createAppToken,
   normalizeAppTokenSubject,
   validateAppToken,
 } from "@/server/services/app-token.service";
 
 const PREFERENCE_TOKEN_TTL_SECONDS = 60 * 60 * 24;
+const PREFERENCE_LINK_WINDOW_SECONDS = 60 * 60;
+const PREFERENCE_LINK_MAX_PER_WINDOW = 3;
 const UNSUBSCRIBE_TOKEN_TTL_SECONDS = 60 * 60 * 24 * 180;
 const genericPreferenceMessage =
   "If that email can receive SwipeStats updates, we'll send a preferences link.";
@@ -122,6 +125,16 @@ export const newsletterRouter = createTRPCRouter({
       }
 
       try {
+        const recentPreferenceLinks = await countRecentAppTokens({
+          purpose: "email_preferences",
+          subject: email,
+          since: new Date(Date.now() - PREFERENCE_LINK_WINDOW_SECONDS * 1000),
+        });
+
+        if (recentPreferenceLinks >= PREFERENCE_LINK_MAX_PER_WINDOW) {
+          return { success: true, message: genericPreferenceMessage };
+        }
+
         const { rawToken } = await createAppToken({
           purpose: "email_preferences",
           subject: email,
