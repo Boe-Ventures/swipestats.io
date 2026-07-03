@@ -175,11 +175,23 @@ export const auth = betterAuth({
         return;
       }
 
-      // Genuine returning sign-ins: explicit credential logins only. Sessions
-      // are also created on sign-up (autoSignIn defaults to true), anonymous
-      // sign-in, email verification (autoSignInAfterVerification), and admin
-      // impersonation — those are registration/system side effects tracked as
-      // user_signed_up / anonymous_user_created, not sign-ins.
+      // ── Why user_signed_in is tracked HERE, not in databaseHooks.session.create ──
+      // Better Auth writes a session row in (at least) five flows:
+      //   /sign-up/email           → autoSignIn (default true) signs users in on registration
+      //   /sign-in/anonymous       → every guest visitor gets a user + session
+      //   /verify-email            → autoSignInAfterVerification creates another session
+      //   /admin/impersonate-user  → impersonation creates a session for the target user
+      //   /sign-in/email|username  → an actual returning login
+      // Only the last one means "a returning user signed in" (was logged out,
+      // new device, expired session). Hooking session.create fired
+      // user_signed_in for all five, inflating the metric ~25x (2026-07:
+      // 666 "sign-ins" ≈ 531 anonymous guests + 110 sign-ups + ~25 genuine
+      // logins). The endpoint path is the only reliable signal of intent — a
+      // user-age check alone would still miscount delayed /verify-email
+      // sessions and impersonation — so we filter on ctx.path, which is only
+      // available in this middleware.
+      // Note: sign-ins are rare by design (sessions are long-lived and refresh
+      // on activity), so this event measures re-authentication, not engagement.
       if (ctx.path === "/sign-in/email" || ctx.path === "/sign-in/username") {
         trackServerEvent(newSession.user.id, "user_signed_in", {
           method: ctx.path === "/sign-in/username" ? "username" : "email",

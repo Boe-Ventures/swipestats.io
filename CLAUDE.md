@@ -310,3 +310,22 @@ deleteProfile: adminProcedure
     // Only accessible in dev or to admin emails in production
   }),
 ```
+
+## Pending Cleanup: Timestamp-Suffixed Backup Folders (TODO — delete)
+
+The repo root contains untracked duplicate copies with timestamp suffixes,
+apparently created by macOS/file-sync recovery:
+
+- `node_modules 17.12.47/` (~1GB), `package 17.12.47.json`, `bun 17.12.47.lock`
+- `content 17.12.47/`, `BLOG.md 19-01-18-693.md`
+- `drizzle 11-25-43-006/`, `drizzle 15-30-39-483/`, `drizzle 17-35-44-121/`, `drizzle 21-47-40-223/`
+
+These actively break tooling: tsconfig only excludes `node_modules`, so
+`node_modules 17.12.47/` gets swept into `tsc --noEmit` and the default 4GB
+Node heap OOMs — `bun run typecheck` crashes unless run with
+`NODE_OPTIONS=--max-old-space-size=16384`.
+
+Kristian wants these deleted. Before removing, verify nothing valuable is
+inside (the `drizzle <timestamp>/` folders may hold old migration snapshots
+worth comparing against `drizzle/`). After deletion, typecheck should work
+again without heap flags.
