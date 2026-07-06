@@ -12,7 +12,7 @@ How to work with our LemonSqueezy (LS) account programmatically, so we never hav
   - **Test/dev key:** in the worktree `.env` (`LEMON_SQUEEZY_API_KEY`).
   - **Live/prod key:** Vercel production env (operator-owned). Not in local `.env`.
 - **Store:** `97795` ("Swipestats"). Same store id in both modes; the data you get back depends on which key you use.
-- The mode the *app* uses is driven by `NEXT_PUBLIC_IS_PRODUCTION` via `envSelect({ test, prod })` in `src/env.ts`.
+- The mode the _app_ uses is driven by `NEXT_PUBLIC_IS_PRODUCTION` via `envSelect({ test, prod })` in `src/env.ts`.
 
 ## Quick start — read the catalog
 
@@ -37,24 +37,24 @@ curl -sS \
 
 ## Common endpoints
 
-| Endpoint | Use |
-|---|---|
-| `GET /stores` | stores + `total_revenue` (cents) + `total_sales` |
-| `GET /products?include=variants&page[size]=100` | products with their variants |
-| `GET /variants/{id}` | single variant (probe whether a key sees an id) |
-| `GET /orders`, `GET /orders/{id}` | orders |
-| `GET /subscriptions`, `GET /subscriptions/{id}` | subscriptions |
-| `GET /license-keys`, `GET /license-keys/{id}` | dataset license keys |
-| `POST /checkouts` | create checkout (we use the SDK helper) |
-| `/webhooks` | webhook endpoints |
+| Endpoint                                        | Use                                                                               |
+| ----------------------------------------------- | --------------------------------------------------------------------------------- |
+| `GET /stores`                                   | stores + `total_revenue` (cents) + `total_sales`                                  |
+| `GET /products?include=variants&page[size]=100` | products with their variants                                                      |
+| `GET /variants/{id}`                            | single variant (probe whether a key sees an id)                                   |
+| `GET /orders`, `GET /orders/{id}`               | orders                                                                            |
+| `GET /subscriptions`, `GET /subscriptions/{id}` | subscriptions                                                                     |
+| `GET /license-keys`, `GET /license-keys/{id}`   | dataset license keys                                                              |
+| `POST /checkouts`                               | create checkout (we use the SDK helper)                                           |
+| `/webhooks`                                     | webhook endpoints; product/variant create/update is not exposed in the public API |
 
 Pagination is `page[size]` + `page[number]` (URL-encode brackets as `%5B%5D`).
 
 ## How the app uses LS (code map)
 
 - **`src/server/services/lemonSqueezy.service.ts`** — SDK init; variant config via `envSelect({ test, prod })`; `createUpgradeCheckout`, `createDatasetCheckout`, `getSubscriptionDetails`, `getCustomerPortalUrl`, `validateDatasetLicenseKey`, `getOrderFromLicenseKey`, `getTierFromVariantId`, `getDatasetTierFromVariant`, `verifyWebhookSignature`.
-- **`src/app/api/webhooks/lemon-squeezy/route.ts`** — verifies signature, then maps `order_created/refunded` + `subscription_created/updated/resumed/cancelled/expired` onto `userTable`: `swipestatsTier`, `subscriptionProviderId`, `subscriptionCurrentPeriodEnd`, `isLifetime`. The user id comes from checkout `custom_data.user_id`.
-- **Datasets** are fulfilled **on-demand via license key** in `researchRouter` + `datasetExport.service.ts` — NOT via the webhook.
+- **`src/app/api/webhooks/lemon-squeezy/route.ts`** — verifies signature, then maps `order_created/refunded` + `subscription_created/updated/resumed/cancelled/expired` onto `userTable`: `swipestatsTier`, `subscriptionProviderId`, `subscriptionCurrentPeriodEnd`, `isLifetime`. The user id comes from checkout `custom_data.user_id`. It also handles `license_key_created` for dataset purchases and queues dataset generation.
+- **Datasets** are fulfilled by license key in `researchRouter` + `datasetExport.service.ts`. The preferred path is webhook pre-provisioning from `license_key_created`; the download page still validates and creates on demand if a webhook was missed or an older order exists.
 - **Env:** `LEMON_SQUEEZY_API_KEY`, `LEMON_SQUEEZY_WEBHOOK_SECRET`.
 
 ### Webhook signature
@@ -63,17 +63,17 @@ HMAC-SHA256 of the raw request body keyed with `LEMON_SQUEEZY_WEBHOOK_SECRET`, c
 
 ## Live catalog snapshot — store `97795` (as of 2026-06-21, $3,859 revenue / 141 sales)
 
-| Product | Variant | ID (live) | Price | Wired in code |
-|---|---|---|---|---|
-| Swipestats+ | Default | `1269532` | $9/mo | PLUS monthly (prod) |
-| Swipestats Plus Lifetime | Default | `624630` | $49 | PLUS lifetime (prod) |
-| Research Dataset | Sample | `470938` | $15 | dataset STARTER |
-| Research Dataset | Full package | `456562` | $50 | dataset STANDARD |
-| Research Dataset | Fresh | `470945` | $150 | **FRESH = `"TBD"` ⚠️** |
-| Research Dataset | Premium | `1783971` | $300 | **PREMIUM = `"TBD"` ⚠️** |
-| The Swipe Guide | Default | `491105` | $9 | not wired |
-| AI Dating Photos | from Swipestats | `455719` | $199 | not wired |
-| AI Dating Profile Review | Unlimited / 1 review | `1223203` / `1223211` | $19 / $5 | not wired |
+| Product                  | Variant              | ID (live)             | Price    | Wired in code        |
+| ------------------------ | -------------------- | --------------------- | -------- | -------------------- |
+| Swipestats+              | Default              | `1269532`             | $9/mo    | PLUS monthly (prod)  |
+| Swipestats Plus Lifetime | Default              | `624630`              | $49      | PLUS lifetime (prod) |
+| Research Dataset         | Sample               | `470938`              | $15      | dataset STARTER      |
+| Research Dataset         | Full package         | `456562`              | $50      | dataset STANDARD     |
+| Research Dataset         | Fresh                | `470945`              | $150     | dataset FRESH        |
+| Research Dataset         | Premium              | `1783971`             | $300     | dataset PREMIUM      |
+| The Swipe Guide          | Default              | `491105`              | $9       | not wired            |
+| AI Dating Photos         | from Swipestats      | `455719`              | $199     | not wired            |
+| AI Dating Profile Review | Unlimited / 1 review | `1223203` / `1223211` | $19 / $5 | not wired            |
 
 (Test/dev store has its own variant ids — e.g. PLUS monthly `624661`, lifetime `433959`, dataset Starter `537493`, Standard `1269608`.)
 
@@ -82,8 +82,10 @@ HMAC-SHA256 of the raw request body keyed with `LEMON_SQUEEZY_WEBHOOK_SECRET`, c
 - **Separate keys per mode** is the #1 source of confusion — a `404` usually means "wrong-mode key," not "doesn't exist."
 - **Variant `status`:** the auto-created "Default" variant often shows `pending`; the real, sellable ones are `published`.
 - **One-time products report `interval: year`** in the API — ignore the interval for non-subscription products.
-- **⚠️ Dataset Fresh (`470945`, $150) and Premium (`1783971`, $300) are live + published in LS, but `datasetVariants.FRESH`/`PREMIUM` are `"TBD"` in `lemonSqueezy.service.ts`.** `getDatasetTierFromVariant()` returns `null` for them → those license keys won't be recognized for download. Fix the ids before selling those tiers.
+- **Dataset Premium (`1783971`, $300) is live + published, wired in code, and has license keys enabled as of 2026-06-27.**
+- **⚠️ Test/dev still lacks Fresh and Premium dataset variants.** `datasetVariants.FRESH`/`PREMIUM` are `TBD` in test mode, so `/research` cannot fully exercise staging checkouts until matching LS test variants exist.
 - **Duplicate "Plus" products** in the live catalog: `805039` (Swipestats+, the live $9/mo we use), `420882` (Swipestats Plus), `748773` (Swipestats Plus (Copy), draft), `408932` (Lifetime). Cleanup candidate.
+- **Webhook events:** live webhook `23123` and test webhooks `71371`/`66947` include `license_key_created` as of 2026-06-27, so dataset exports can be pre-provisioned.
 
 ## Polar (parked)
 

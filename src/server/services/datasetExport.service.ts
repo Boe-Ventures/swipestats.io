@@ -10,6 +10,62 @@ import {
   tinderUsageTable,
   matchTable,
 } from "@/server/db/schema";
+import { createId } from "@/server/db/utils";
+import {
+  DATASET_PRODUCTS,
+  type DatasetTier,
+} from "@/server/services/lemonSqueezy.service";
+
+export async function ensureDatasetExportForLicense(input: {
+  licenseKey: string;
+  licenseKeyId?: string;
+  orderId?: string;
+  tier: DatasetTier;
+  customerEmail?: string;
+  expiresAt?: Date | null;
+}) {
+  const existingExport = await db.query.datasetExportTable.findFirst({
+    where: eq(datasetExportTable.licenseKey, input.licenseKey),
+  });
+
+  if (existingExport) {
+    return { exportRecord: existingExport, created: false };
+  }
+
+  const product = DATASET_PRODUCTS[input.tier];
+
+  try {
+    const records = await db
+      .insert(datasetExportTable)
+      .values({
+        id: createId("dex"),
+        licenseKey: input.licenseKey,
+        licenseKeyId: input.licenseKeyId,
+        orderId: input.orderId,
+        tier: input.tier,
+        profileCount: product.profileCount,
+        recency: product.recency,
+        customerEmail: input.customerEmail,
+        expiresAt: input.expiresAt ?? undefined,
+        maxDownloads: 3,
+        status: "PENDING",
+      })
+      .returning();
+
+    return { exportRecord: records[0] ?? null, created: true };
+  } catch (error) {
+    // Handles webhook/request races when the same license is provisioned twice.
+    const existing = await db.query.datasetExportTable.findFirst({
+      where: eq(datasetExportTable.licenseKey, input.licenseKey),
+    });
+
+    if (existing) {
+      return { exportRecord: existing, created: false };
+    }
+
+    throw error;
+  }
+}
 
 /**
  * Generate a dataset export for a given export record.
@@ -91,8 +147,16 @@ export async function generateDatasetForExport(
           ]);
 
           // Strip internal fields, keep everything researchers need
-          const { userId, computed, createdAt, updatedAt, llmAnalyzedAt, bioOriginal, swipestatsVersion, ...profileData } =
-            profile;
+          const {
+            userId,
+            computed,
+            createdAt,
+            updatedAt,
+            llmAnalyzedAt,
+            bioOriginal,
+            swipestatsVersion,
+            ...profileData
+          } = profile;
 
           return JSON.stringify({
             type: "profile",
@@ -130,7 +194,9 @@ export async function generateDatasetForExport(
     // Upload gzipped to Vercel Blob
     const rawMB = (raw.length / 1024 / 1024).toFixed(1);
     const gzMB = (compressed.length / 1024 / 1024).toFixed(1);
-    console.log(`[dataset-export] ${exportId} — uploading ${gzMB}MB gzipped (${rawMB}MB raw) to blob...`);
+    console.log(
+      `[dataset-export] ${exportId} — uploading ${gzMB}MB gzipped (${rawMB}MB raw) to blob...`,
+    );
     const date = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
     const pathname = `datasets/${exportRecord.tier.toLowerCase()}/${date}/${exportId}.jsonl.gz`;
     const blobResult = await put(pathname, compressed, {
@@ -140,7 +206,9 @@ export async function generateDatasetForExport(
     });
 
     const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
-    console.log(`[dataset-export] ${exportId} — done! ${profiles.length} profiles, ${rawMB}MB raw, ${gzMB}MB gzipped, ${totalTime}s total`);
+    console.log(
+      `[dataset-export] ${exportId} — done! ${profiles.length} profiles, ${rawMB}MB raw, ${gzMB}MB gzipped, ${totalTime}s total`,
+    );
 
     // Update export record with success
     await db

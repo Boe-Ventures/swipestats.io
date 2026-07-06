@@ -263,7 +263,14 @@ export async function getOrderFromLicenseKey(licenseKey: string): Promise<{
 
   if (!orderId) return null;
 
-  // Fetch the order to get variant and email
+  return getOrderDetails(orderId.toString());
+}
+
+export async function getOrderDetails(orderId: string): Promise<{
+  orderId: string;
+  variantId: number;
+  customerEmail: string;
+} | null> {
   const orderResponse = await fetch(
     `https://api.lemonsqueezy.com/v1/orders/${orderId}`,
     {
