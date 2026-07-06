@@ -58,11 +58,11 @@ const LEMON_SQUEEZY_CONFIG = {
       prod: "456562",
     }),
     FRESH: envSelect({
-      test: "TBD",
+      test: "1269609",
       prod: "470945",
     }),
     PREMIUM: envSelect({
-      test: "TBD",
+      test: "1876702",
       prod: "1783971",
     }),
   },
