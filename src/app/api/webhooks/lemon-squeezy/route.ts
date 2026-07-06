@@ -1,12 +1,20 @@
 import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
+import { waitUntil } from "@vercel/functions";
 
 import { db } from "@/server/db";
 import { userTable } from "@/server/db/schema";
 import {
   verifyWebhookSignature,
   getTierFromVariantId,
+  getDatasetTierFromVariant,
+  getOrderDetails,
+  type DatasetTier,
 } from "@/server/services/lemonSqueezy.service";
+import {
+  ensureDatasetExportForLicense,
+  generateDatasetForExport,
+} from "@/server/services/datasetExport.service";
 
 // Enhanced logging helper
 function formatDate(dateString: string | null | undefined): string {
@@ -80,7 +88,8 @@ type WebhookEventName =
   | "subscription_updated" // Plan changes, renewals
   | "subscription_cancelled" // Cancellation
   | "subscription_expired" // Subscription expired
-  | "subscription_resumed"; // Subscription resumed
+  | "subscription_resumed" // Subscription resumed
+  | "license_key_created"; // Dataset license-key fulfillment
 
 interface WebhookPayload {
   meta: {
@@ -103,12 +112,11 @@ interface WebhookPayload {
       user_email?: string; // Customer email
       order_number?: number; // Order number
       // License key attributes (for products with license keys)
-      license_key?: {
-        id: string;
-        key: string;
-        activation_limit?: number;
-        expires_at?: string | null;
-      };
+      order_id?: number;
+      product_id?: number;
+      key?: string;
+      activation_limit?: number;
+      expires_at?: string | null;
       // Subscription attributes (for subscription_* events)
       // See: https://docs.lemonsqueezy.com/api/subscriptions#the-subscription-object
       // Note: status field exists for both orders and subscriptions, but with different values
@@ -118,6 +126,19 @@ interface WebhookPayload {
       cancelled_at?: string | null;
     };
   };
+}
+
+function parseDatasetTier(tier: string | undefined): DatasetTier | null {
+  if (
+    tier === "STARTER" ||
+    tier === "STANDARD" ||
+    tier === "FRESH" ||
+    tier === "PREMIUM"
+  ) {
+    return tier;
+  }
+
+  return null;
 }
 
 export async function POST(request: Request) {
@@ -169,7 +190,88 @@ export async function POST(request: Request) {
     let action = "processed";
     let details: Record<string, unknown> = {};
 
-    // 4. All events require userId (dataset purchases handled on-demand via license key validation)
+    if (eventName === "license_key_created") {
+      const licenseKey = payload.data.attributes.key;
+      const orderId = payload.data.attributes.order_id?.toString();
+      const licenseKeyId = payload.data.id;
+
+      if (!licenseKey) {
+        console.warn("[Webhook] License key event missing key", {
+          eventName,
+          licenseKeyId,
+          orderId,
+        });
+
+        return NextResponse.json({
+          received: true,
+          event: eventName,
+          action: "skipped",
+          reason: "missing_license_key",
+          test_mode: testMode,
+        });
+      }
+
+      let datasetTier = parseDatasetTier(
+        payload.meta.custom_data?.dataset_tier,
+      );
+      let customerEmail = payload.data.attributes.user_email;
+
+      if (!datasetTier && orderId) {
+        const orderDetails = await getOrderDetails(orderId);
+        datasetTier = getDatasetTierFromVariant(orderDetails?.variantId);
+        customerEmail ??= orderDetails?.customerEmail;
+      }
+
+      if (!datasetTier) {
+        console.log("[Webhook] Skipping non-dataset license key", {
+          eventName,
+          licenseKeyId,
+          orderId,
+          productId: payload.data.attributes.product_id,
+        });
+
+        return NextResponse.json({
+          received: true,
+          event: eventName,
+          action: "skipped",
+          reason: "non_dataset_license_key",
+          test_mode: testMode,
+        });
+      }
+
+      const { exportRecord, created } = await ensureDatasetExportForLicense({
+        licenseKey,
+        licenseKeyId,
+        orderId,
+        tier: datasetTier,
+        customerEmail,
+        expiresAt: payload.data.attributes.expires_at
+          ? new Date(payload.data.attributes.expires_at)
+          : null,
+      });
+
+      if (exportRecord && created) {
+        waitUntil(
+          generateDatasetForExport(exportRecord.id).catch((error) => {
+            console.error(
+              `Failed to generate dataset ${exportRecord.id}:`,
+              error,
+            );
+          }),
+        );
+      }
+
+      return NextResponse.json({
+        received: true,
+        event: eventName,
+        action: created ? "dataset_export_queued" : "dataset_export_exists",
+        export_id: exportRecord?.id,
+        tier: datasetTier,
+        test_mode: testMode,
+      });
+    }
+
+    // 4. User subscription events require userId.
     if (!userId) {
       console.warn(`[Webhook] No user_id for ${eventName}`, { eventName });
       return NextResponse.json({

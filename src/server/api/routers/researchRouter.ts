@@ -14,8 +14,10 @@ import {
   DATASET_PRODUCTS,
   type DatasetTier,
 } from "@/server/services/lemonSqueezy.service";
-import { generateDatasetForExport } from "@/server/services/datasetExport.service";
-import { createId } from "@/server/db/utils";
+import {
+  ensureDatasetExportForLicense,
+  generateDatasetForExport,
+} from "@/server/services/datasetExport.service";
 
 import { publicProcedure, protectedProcedure } from "../trpc";
 
@@ -111,50 +113,22 @@ export const researchRouter = {
         });
       }
 
-      const product = DATASET_PRODUCTS[datasetTier];
+      // 5. Try to create export record (handle webhook/request races)
+      const { exportRecord, created } = await ensureDatasetExportForLicense({
+        licenseKey: input.licenseKey,
+        licenseKeyId: validation.licenseKeyId?.toString(),
+        orderId: orderDetails.orderId,
+        tier: datasetTier,
+        customerEmail: orderDetails.customerEmail,
+      });
 
-      // 5. Try to create export record (handle race condition)
-      let exportRecord;
-      try {
-        const records = await ctx.db
-          .insert(datasetExportTable)
-          .values({
-            id: createId("dex"),
-            licenseKey: input.licenseKey,
-            licenseKeyId: validation.licenseKeyId?.toString(),
-            orderId: orderDetails.orderId,
-            tier: datasetTier,
-            profileCount: product.profileCount,
-            recency: product.recency,
-            customerEmail: orderDetails.customerEmail,
-            maxDownloads: 3,
-            status: "PENDING",
-          })
-          .returning();
-
-        exportRecord = records[0];
-
-        // Trigger background generation only if we created the record
-        if (exportRecord) {
-          const exportId = exportRecord.id;
-          waitUntil(
-            generateDatasetForExport(exportId).catch((error) => {
-              console.error(`Failed to generate dataset ${exportId}:`, error);
-            }),
-          );
-        }
-      } catch (error) {
-        // If insert fails (likely unique constraint on license_key), re-query the existing record
-        const existing = await ctx.db.query.datasetExportTable.findFirst({
-          where: eq(datasetExportTable.licenseKey, input.licenseKey),
-        });
-
-        if (existing) {
-          exportRecord = existing;
-        } else {
-          // Unexpected error
-          throw error;
-        }
+      if (exportRecord && created) {
+        const exportId = exportRecord.id;
+        waitUntil(
+          generateDatasetForExport(exportId).catch((error) => {
+            console.error(`Failed to generate dataset ${exportId}:`, error);
+          }),
+        );
       }
 
       if (!exportRecord) {
@@ -163,6 +137,8 @@ export const researchRouter = {
           message: "Failed to create or retrieve export record.",
         });
       }
+
+      const product = DATASET_PRODUCTS[exportRecord.tier as DatasetTier];
 
       return {
         found: true,
