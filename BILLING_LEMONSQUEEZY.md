@@ -26,6 +26,23 @@ LEMON_SQUEEZY_API_KEY="<prod key>" bun run ls:overview
 
 Script: `src/scripts/lemonsqueezy/overview.ts` (read-only; lists stores + products + variants).
 
+## Agent workflow
+
+When updating or debugging LS, use this sequence:
+
+1. Run `bun run ls:overview` first. This uses the local test/dev key and shows what staging/local checkout can see.
+2. For production, use the production env key explicitly, e.g. `bun --env-file=.context/.env.vercel.production run src/scripts/lemonsqueezy/overview.ts` when that file exists in the workspace.
+3. Verify a specific object with `GET /variants/{id}` before editing app config. A `404` usually means the wrong mode key, not necessarily a missing object.
+4. Update app-facing variant IDs only in `LEMON_SQUEEZY_CONFIG` in `src/server/services/lemonSqueezy.service.ts`; keep test and prod IDs separate through `envSelect`.
+5. Smoke test checkout creation through `createDatasetCheckout`/`createUpgradeCheckout`, not just raw API reads, because checkout creation is the path users actually hit.
+6. Run `bun run typecheck` and `git diff --check` before opening or merging a billing PR.
+
+Dashboard notes:
+
+- The product dashboard URL is `https://app.lemonsqueezy.com/products/{product_id}`. Do not add `/edit`; that URL 404s.
+- Product and variant create/update is dashboard-only in LS today. The public API and installed SDK can read products/variants and create checkouts/webhooks, but `POST /v1/variants` returns `405 Method Not Allowed`.
+- If you add variants in the dashboard, make them `published`, copy the production price, turn on license keys where needed, then rerun the overview script and wire the new test/prod IDs in code.
+
 Raw curl equivalent:
 
 ```bash
