@@ -15,6 +15,7 @@ import {
   DATASET_PRODUCTS,
   type DatasetTier,
 } from "@/server/services/lemonSqueezy.service";
+import { trackServerEvent } from "@/server/services/analytics.service";
 
 export async function ensureDatasetExportForLicense(input: {
   licenseKey: string;
@@ -77,9 +78,13 @@ export async function ensureDatasetExportForLicense(input: {
 export async function generateDatasetForExport(
   exportId: string,
 ): Promise<void> {
+  let exportRecord:
+    | (typeof datasetExportTable.$inferSelect)
+    | undefined;
+
   try {
     // Get the export record
-    const exportRecord = await db.query.datasetExportTable.findFirst({
+    exportRecord = await db.query.datasetExportTable.findFirst({
       where: eq(datasetExportTable.id, exportId),
     });
 
@@ -221,6 +226,16 @@ export async function generateDatasetForExport(
         generatedAt: new Date(),
       })
       .where(eq(datasetExportTable.id, exportId));
+
+    trackServerEvent(`dataset_export:${exportId}`, "dataset_export_ready", {
+      exportId,
+      tier: exportRecord.tier as DatasetTier,
+      profileCount: profiles.length,
+      recency: exportRecord.recency,
+      blobSize: raw.length,
+      compressedSize: compressed.length,
+      generationTimeSeconds: Number(totalTime),
+    });
   } catch (error) {
     console.error(`Failed to generate dataset ${exportId}:`, error);
 
@@ -236,6 +251,16 @@ export async function generateDatasetForExport(
       .catch((updateError) => {
         console.error("Failed to update status to FAILED:", updateError);
       });
+
+    if (exportRecord) {
+      trackServerEvent(`dataset_export:${exportId}`, "dataset_export_failed", {
+        exportId,
+        tier: exportRecord.tier as DatasetTier,
+        profileCount: exportRecord.profileCount,
+        recency: exportRecord.recency,
+        errorMessage,
+      });
+    }
 
     throw error;
   }

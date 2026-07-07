@@ -1,3 +1,9 @@
+import type {
+  BillingProvider,
+  BillingSurface,
+  DatasetTier,
+} from "@/lib/validators";
+
 import type { ConsentRecord } from "./consent";
 
 // =====================================================
@@ -43,6 +49,9 @@ export const ANONYMOUS_SOURCES = [
 
 export type AnonymousSource = (typeof ANONYMOUS_SOURCES)[number];
 
+type PaidBillingPeriod = "monthly" | "yearly" | "lifetime";
+type PaidProductLine = "subscription";
+type DatasetProductLine = "dataset";
 export type ServerAnalyticsEventName =
   // ─────────────────────────────────────────────────
   // User authentication events
@@ -99,10 +108,16 @@ export type ServerAnalyticsEventName =
   // Billing events (Implementation Details)
   // Use these for debugging and reconciliation
   // ─────────────────────────────────────────────────
-  | "billing_checkout_created" // LemonSqueezy checkout initiated
+  | "billing_checkout_created" // Billing provider checkout initiated
   | "billing_payment_successful" // Payment processed successfully
   | "billing_payment_failed" // Payment failed
   | "billing_subscription_updated" // Subscription modified
+  | "dataset_checkout_created" // Dataset checkout initiated
+  | "dataset_purchase_completed" // Dataset license created after purchase
+  | "dataset_export_queued" // Dataset export record queued for generation
+  | "dataset_export_ready" // Dataset export generated and ready
+  | "dataset_export_failed" // Dataset export generation failed
+  | "dataset_downloaded" // Purchased dataset downloaded
 
   // ─────────────────────────────────────────────────
   // Life Events (Feature engagement)
@@ -163,6 +178,8 @@ export type ClientAnalyticsEventName =
   | "upgrade_modal_dismissed"
   | "upgrade_plan_selected"
   | "upgrade_checkout_clicked"
+  | "dataset_checkout_clicked"
+  | "dataset_academic_inquiry_clicked"
 
   // ─────────────────────────────────────────────────
   // Cookie consent
@@ -391,7 +408,8 @@ export type ServerEventPropertiesDefinition = {
   subscription_activated: {
     tier: "PLUS" | "ELITE";
     source: "trial_conversion" | "direct_purchase" | "admin_grant";
-    billingPeriod?: "monthly" | "annual" | "lifetime";
+    billingPeriod?: PaidBillingPeriod;
+    checkoutAttemptId?: string;
   };
 
   subscription_cancelled: {
@@ -404,20 +422,29 @@ export type ServerEventPropertiesDefinition = {
   // Billing events (Implementation Details)
   // ─────────────────────────────────────────────────
   billing_checkout_created: {
-    checkoutUrl: string;
+    productLine: PaidProductLine;
+    billingProvider: BillingProvider;
+    checkoutAttemptId: string;
+    surface: BillingSurface;
     tier: "PLUS" | "ELITE";
-    billingPeriod: "monthly" | "annual" | "lifetime";
+    billingPeriod: PaidBillingPeriod;
     amount: number;
     currency: string;
+    providerVariantId: string;
+    testMode: boolean;
   };
 
   billing_payment_successful: {
-    orderId: string;
+    productLine: PaidProductLine;
+    billingProvider: BillingProvider;
+    orderId: string | null;
     subscriptionId: string | null;
     amount: number;
     currency: string;
     tier: "PLUS" | "ELITE";
-    billingPeriod: "monthly" | "annual" | "lifetime";
+    billingPeriod: PaidBillingPeriod;
+    checkoutAttemptId?: string;
+    testMode: boolean;
   };
 
   billing_payment_failed: {
@@ -436,6 +463,74 @@ export type ServerEventPropertiesDefinition = {
       | "billing_details_updated";
     previousTier?: "PLUS" | "ELITE";
     newTier?: "PLUS" | "ELITE";
+  };
+
+  dataset_checkout_created: {
+    productLine: DatasetProductLine;
+    billingProvider: BillingProvider;
+    checkoutAttemptId: string;
+    surface: BillingSurface;
+    tier: DatasetTier;
+    amount: number;
+    currency: string;
+    providerVariantId: string;
+    hasPrefilledEmail: boolean;
+    testMode: boolean;
+  };
+
+  dataset_purchase_completed: {
+    productLine: DatasetProductLine;
+    billingProvider: BillingProvider;
+    checkoutAttemptId?: string;
+    orderId: string | null;
+    licenseKeyId: string;
+    tier: DatasetTier;
+    amount: number;
+    currency: string;
+    profileCount: number;
+    recency: "MIXED" | "RECENT";
+    testMode: boolean;
+  };
+
+  dataset_export_queued: {
+    exportId: string;
+    checkoutAttemptId?: string;
+    orderId: string | null;
+    licenseKeyId?: string;
+    tier: DatasetTier;
+    profileCount: number;
+    recency: "MIXED" | "RECENT";
+    source: "webhook" | "download_page" | "retry";
+    alreadyExisted: boolean;
+    testMode?: boolean;
+  };
+
+  dataset_export_ready: {
+    exportId: string;
+    tier: DatasetTier;
+    profileCount: number;
+    recency: "MIXED" | "RECENT";
+    blobSize: number;
+    compressedSize: number;
+    generationTimeSeconds: number;
+  };
+
+  dataset_export_failed: {
+    exportId: string;
+    tier: DatasetTier;
+    profileCount: number;
+    recency: "MIXED" | "RECENT";
+    errorMessage: string;
+  };
+
+  dataset_downloaded: {
+    exportId: string;
+    orderId: string | null;
+    tier: DatasetTier;
+    profileCount: number;
+    downloadCount: number;
+    downloadsRemaining: number;
+    maxDownloads: number;
   };
 
   // ─────────────────────────────────────────────────
@@ -643,14 +738,26 @@ export type ClientEventPropertiesDefinition = {
 
   upgrade_plan_selected: {
     tier: "PLUS" | "ELITE";
-    billingPeriod: "monthly" | "annual" | "lifetime";
+    billingPeriod: PaidBillingPeriod;
     price: number;
   };
 
   upgrade_checkout_clicked: {
     tier: "PLUS" | "ELITE";
-    billingPeriod: "monthly" | "annual" | "lifetime";
+    billingPeriod: PaidBillingPeriod;
     price: number;
+    source?: "feature_gate" | "pricing_page" | "settings" | "banner";
+  };
+
+  dataset_checkout_clicked: {
+    tier: DatasetTier;
+    price: number;
+    source: "research_pricing" | "dataset_pricing" | "home";
+  };
+
+  dataset_academic_inquiry_clicked: {
+    source: "research_pricing" | "dataset_pricing";
+    price: string;
   };
 
   // ─────────────────────────────────────────────────

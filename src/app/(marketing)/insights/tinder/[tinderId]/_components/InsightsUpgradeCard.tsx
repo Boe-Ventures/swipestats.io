@@ -12,6 +12,7 @@ import {
 } from "@/lib/constants/pricing";
 import { useSubscription } from "@/hooks/useSubscription";
 import { SwipestatsPlanUpgradeModal } from "@/app/app/components/SwipestatsPlanUpgradeModal";
+import { useAnalytics } from "@/contexts/AnalyticsProvider";
 
 /**
  * Upgrade card for the insights page promoting SwipeStats Plus/Elite
@@ -22,6 +23,7 @@ export function InsightsUpgradeCard() {
   const [selectedPeriod, setSelectedPeriod] =
     useState<BillingPeriod>("monthly");
   const { effectiveTier, isLifetime, periodEnd } = useSubscription();
+  const { trackEvent } = useAnalytics();
 
   // Determine which tier to show based on current subscription
   const displayTier = effectiveTier === "FREE" ? "PLUS" : "ELITE";
@@ -62,6 +64,15 @@ export function InsightsUpgradeCard() {
 
   const features = TIER_FEATURES[displayTier];
   const pricing = SWIPESTATS_PRICING[displayTier];
+
+  const handleOpenUpgradeModal = () => {
+    trackEvent("upgrade_modal_opened", {
+      source: "feature_gate",
+      currentTier: effectiveTier,
+      blockedFeature: "advanced_insights",
+    });
+    setUpgradeModalOpen(true);
+  };
 
   return (
     <>
@@ -166,7 +177,7 @@ export function InsightsUpgradeCard() {
                 </div>
 
                 <Button
-                  onClick={() => setUpgradeModalOpen(true)}
+                  onClick={handleOpenUpgradeModal}
                   className={cn(
                     "w-full font-semibold shadow-sm",
                     displayTier === "PLUS"

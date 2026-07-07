@@ -2,6 +2,8 @@ import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/server/db";
 import { datasetExportTable } from "@/server/db/schema";
 import { eq } from "drizzle-orm";
+import { trackServerEvent } from "@/server/services/analytics.service";
+import type { DatasetTier } from "@/server/services/lemonSqueezy.service";
 
 export async function GET(request: NextRequest) {
   try {
@@ -78,6 +80,24 @@ export async function GET(request: NextRequest) {
         lastDownloadedAt: now,
       })
       .where(eq(datasetExportTable.id, exportRecord.id));
+
+    const downloadCount = exportRecord.downloadCount + 1;
+    trackServerEvent(
+      `dataset_export:${exportRecord.id}`,
+      "dataset_downloaded",
+      {
+        exportId: exportRecord.id,
+        orderId: exportRecord.orderId ?? null,
+        tier: exportRecord.tier as DatasetTier,
+        profileCount: exportRecord.profileCount,
+        downloadCount,
+        downloadsRemaining: Math.max(
+          0,
+          exportRecord.maxDownloads - downloadCount,
+        ),
+        maxDownloads: exportRecord.maxDownloads,
+      },
+    );
 
     // Get the blob content
     const blob = await blobResponse.blob();

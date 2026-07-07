@@ -112,6 +112,12 @@ export const OPERATIONAL_SERVER_EVENTS = new Set<ServerAnalyticsEventName>([
   "billing_payment_successful",
   "billing_payment_failed",
   "billing_subscription_updated",
+  "dataset_checkout_created",
+  "dataset_purchase_completed",
+  "dataset_export_queued",
+  "dataset_export_ready",
+  "dataset_export_failed",
+  "dataset_downloaded",
   // Internal
   "admin_test_event_fired",
 ]);
@@ -246,8 +252,9 @@ export const SERVER_EVENT_REGISTRY = {
   // ── Billing (implementation detail) ──────────────
   billing_checkout_created: {
     category: "Billing",
-    description: "Checkout session initiated. Not yet instrumented.",
-    status: "planned",
+    description:
+      "Subscription checkout session created by the billing provider.",
+    status: "live",
   },
   billing_payment_successful: {
     category: "Billing",
@@ -262,7 +269,37 @@ export const SERVER_EVENT_REGISTRY = {
   billing_subscription_updated: {
     category: "Billing",
     description: "Subscription modified (plan/payment/billing details).",
-    status: "planned",
+    status: "live",
+  },
+  dataset_checkout_created: {
+    category: "Research Dataset Billing",
+    description: "Dataset checkout session created by the billing provider.",
+    status: "live",
+  },
+  dataset_purchase_completed: {
+    category: "Research Dataset Billing",
+    description: "Dataset license key created after purchase.",
+    status: "live",
+  },
+  dataset_export_queued: {
+    category: "Research Dataset Fulfillment",
+    description: "Dataset export record queued for generation.",
+    status: "live",
+  },
+  dataset_export_ready: {
+    category: "Research Dataset Fulfillment",
+    description: "Dataset export generated and ready to download.",
+    status: "live",
+  },
+  dataset_export_failed: {
+    category: "Research Dataset Fulfillment",
+    description: "Dataset export generation failed.",
+    status: "live",
+  },
+  dataset_downloaded: {
+    category: "Research Dataset Fulfillment",
+    description: "Purchased dataset file downloaded.",
+    status: "live",
   },
 
   // ── Life events (engagement) ─────────────────────
@@ -399,8 +436,8 @@ export const CLIENT_EVENT_REGISTRY = {
   // ── Monetization funnel ──────────────────────────
   upgrade_modal_opened: {
     category: "Monetization Funnel",
-    description: "Upgrade modal opened. Not yet instrumented.",
-    status: "planned",
+    description: "Upgrade modal opened.",
+    status: "live",
   },
   upgrade_modal_dismissed: {
     category: "Monetization Funnel",
@@ -409,24 +446,36 @@ export const CLIENT_EVENT_REGISTRY = {
   },
   upgrade_plan_selected: {
     category: "Monetization Funnel",
-    description: "A plan was selected in the upgrade flow. Not yet instrumented.",
-    status: "planned",
+    description: "A plan was selected in the upgrade flow.",
+    status: "live",
   },
   upgrade_checkout_clicked: {
     category: "Monetization Funnel",
-    description: "Checkout triggered from the upgrade flow. Not yet instrumented.",
-    status: "planned",
+    description: "Checkout triggered from the upgrade flow.",
+    status: "live",
+  },
+  dataset_checkout_clicked: {
+    category: "Research Dataset Funnel",
+    description: "Dataset checkout CTA clicked.",
+    status: "live",
+  },
+  dataset_academic_inquiry_clicked: {
+    category: "Research Dataset Funnel",
+    description: "Academic dataset inquiry CTA clicked.",
+    status: "live",
   },
 
   // ── Cookie consent ───────────────────────────────
   cookie_consent_accepted: {
     category: "Cookie Consent",
-    description: "Consent accepted. Handled in code but not emitted as an event.",
+    description:
+      "Consent accepted. Handled in code but not emitted as an event.",
     status: "planned",
   },
   cookie_consent_declined: {
     category: "Cookie Consent",
-    description: "Consent declined. Handled in code but not emitted as an event.",
+    description:
+      "Consent declined. Handled in code but not emitted as an event.",
     status: "planned",
   },
 
@@ -445,12 +494,14 @@ export const CLIENT_EVENT_REGISTRY = {
   },
   roast_tone_selected: {
     category: "Roast (Profile)",
-    description: "User picked a roast tone (incl. re-roast). Not yet instrumented.",
+    description:
+      "User picked a roast tone (incl. re-roast). Not yet instrumented.",
     status: "planned",
   },
   roast_shared_viewed: {
     category: "Roast (Profile)",
-    description: "Public profile-roast share page viewed. Not yet instrumented.",
+    description:
+      "Public profile-roast share page viewed. Not yet instrumented.",
     status: "planned",
   },
   comparison_shared_viewed: {

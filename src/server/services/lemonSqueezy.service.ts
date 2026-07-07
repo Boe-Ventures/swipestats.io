@@ -8,6 +8,8 @@ import {
 import crypto from "crypto";
 
 import { env, envSelect } from "@/env";
+import type { BillingProvider, BillingSurface } from "@/lib/validators";
+import { createId } from "@/server/db/utils";
 
 // Initialize SDK on module load
 lemonSqueezySetup({ apiKey: env.LEMON_SQUEEZY_API_KEY });
@@ -94,6 +96,16 @@ export type SwipestatsTier = "PLUS" | "ELITE";
 export type BillingPeriod = "monthly" | "yearly" | "lifetime";
 export type DatasetTier = keyof typeof DATASET_PRODUCTS;
 
+export interface CheckoutResult {
+  checkoutUrl: string;
+  billingProvider: BillingProvider;
+  checkoutAttemptId: string;
+  providerVariantId: string;
+  amount: number;
+  currency: "usd";
+  testMode: boolean;
+}
+
 /**
  * Get tier and billing period from variant ID
  * Used by webhook handler to identify purchases
@@ -122,8 +134,11 @@ export async function createUpgradeCheckout(
   email: string | undefined,
   tier: SwipestatsTier,
   billingPeriod: BillingPeriod,
-): Promise<string> {
+  surface: BillingSurface = "unknown",
+): Promise<CheckoutResult> {
   const variantId = LEMON_SQUEEZY_CONFIG.variants[tier][billingPeriod];
+  const checkoutAttemptId = createId("chk");
+  const amount = SWIPESTATS_PRODUCTS[tier][billingPeriod].price;
 
   // Validate variant ID is configured
   if (!variantId || variantId === "TBD") {
@@ -138,7 +153,12 @@ export async function createUpgradeCheckout(
     {
       checkoutData: {
         email,
-        custom: { user_id: userId }, // Passed to webhooks
+        custom: {
+          user_id: userId,
+          product_line: "subscription",
+          checkout_attempt_id: checkoutAttemptId,
+          checkout_surface: surface,
+        }, // Passed to webhooks
       },
       productOptions: {
         redirectUrl: `${env.NEXT_PUBLIC_BASE_URL}/app/dashboard?upgraded=true`,
@@ -156,7 +176,15 @@ export async function createUpgradeCheckout(
     throw new Error("Checkout URL not returned from LemonSqueezy");
   }
 
-  return data.data.attributes.url;
+  return {
+    checkoutUrl: data.data.attributes.url,
+    billingProvider: "lemon_squeezy",
+    checkoutAttemptId,
+    providerVariantId: variantId,
+    amount,
+    currency: "usd",
+    testMode: !env.NEXT_PUBLIC_IS_PRODUCTION,
+  };
 }
 
 // Get customer portal URL for managing subscription
@@ -331,8 +359,11 @@ export function isDatasetVariant(
 export async function createDatasetCheckout(
   tier: DatasetTier,
   email?: string,
-): Promise<string> {
+  surface: BillingSurface = "research_pricing",
+): Promise<CheckoutResult> {
   const variantId = LEMON_SQUEEZY_CONFIG.datasetVariants[tier];
+  const checkoutAttemptId = createId("chk");
+  const amount = DATASET_PRODUCTS[tier].price;
 
   // Validate variant ID is configured
   if (!variantId || variantId === "TBD") {
@@ -348,7 +379,10 @@ export async function createDatasetCheckout(
       checkoutData: {
         email,
         custom: {
+          product_line: "dataset",
           dataset_tier: tier,
+          checkout_attempt_id: checkoutAttemptId,
+          checkout_surface: surface,
         },
       },
       productOptions: {
@@ -368,7 +402,15 @@ export async function createDatasetCheckout(
     throw new Error("Checkout URL not returned from LemonSqueezy");
   }
 
-  return data.data.attributes.url;
+  return {
+    checkoutUrl: data.data.attributes.url,
+    billingProvider: "lemon_squeezy",
+    checkoutAttemptId,
+    providerVariantId: variantId,
+    amount,
+    currency: "usd",
+    testMode: !env.NEXT_PUBLIC_IS_PRODUCTION,
+  };
 }
 
 // Verify webhook signature (per LS docs)

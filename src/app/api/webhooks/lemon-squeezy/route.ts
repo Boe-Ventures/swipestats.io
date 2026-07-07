@@ -9,12 +9,15 @@ import {
   getTierFromVariantId,
   getDatasetTierFromVariant,
   getOrderDetails,
+  DATASET_PRODUCTS,
+  SWIPESTATS_PRODUCTS,
   type DatasetTier,
 } from "@/server/services/lemonSqueezy.service";
 import {
   ensureDatasetExportForLicense,
   generateDatasetForExport,
 } from "@/server/services/datasetExport.service";
+import { trackServerEvent } from "@/server/services/analytics.service";
 
 // Enhanced logging helper
 function formatDate(dateString: string | null | undefined): string {
@@ -98,6 +101,9 @@ interface WebhookPayload {
     custom_data?: {
       user_id?: string;
       dataset_tier?: string;
+      checkout_attempt_id?: string;
+      checkout_surface?: string;
+      product_line?: string;
     };
   };
   data: {
@@ -184,6 +190,7 @@ export async function POST(request: Request) {
 
     const eventName = eventNameFromPayload;
     const userId = payload.meta.custom_data?.user_id;
+    const checkoutAttemptId = payload.meta.custom_data?.checkout_attempt_id;
     const testMode = payload.meta.test_mode ?? false;
 
     // Track what action we took for response
@@ -239,6 +246,7 @@ export async function POST(request: Request) {
         });
       }
 
+      const product = DATASET_PRODUCTS[datasetTier];
       const { exportRecord, created } = await ensureDatasetExportForLicense({
         licenseKey,
         licenseKeyId,
@@ -249,6 +257,38 @@ export async function POST(request: Request) {
           ? new Date(payload.data.attributes.expires_at)
           : null,
       });
+
+      const analyticsUserId =
+        userId ?? `dataset_license:${licenseKeyId ?? orderId ?? "unknown"}`;
+
+      trackServerEvent(analyticsUserId, "dataset_purchase_completed", {
+        productLine: "dataset",
+        billingProvider: "lemon_squeezy",
+        checkoutAttemptId,
+        orderId: orderId ?? null,
+        licenseKeyId,
+        tier: datasetTier,
+        amount: product.price,
+        currency: "usd",
+        profileCount: product.profileCount,
+        recency: product.recency,
+        testMode,
+      });
+
+      if (exportRecord) {
+        trackServerEvent(analyticsUserId, "dataset_export_queued", {
+          exportId: exportRecord.id,
+          checkoutAttemptId,
+          orderId: orderId ?? null,
+          licenseKeyId,
+          tier: datasetTier,
+          profileCount: product.profileCount,
+          recency: product.recency,
+          source: "webhook",
+          alreadyExisted: !created,
+          testMode,
+        });
+      }
 
       if (exportRecord && created) {
         waitUntil(
@@ -309,6 +349,30 @@ export async function POST(request: Request) {
 
           action = "upgraded";
           details = { tier: variantInfo.tier, lifetime: true };
+
+          const amount =
+            SWIPESTATS_PRODUCTS[variantInfo.tier][variantInfo.billingPeriod]
+              .price;
+
+          trackServerEvent(userId, "subscription_activated", {
+            tier: variantInfo.tier,
+            source: "direct_purchase",
+            billingPeriod: variantInfo.billingPeriod,
+            checkoutAttemptId,
+          });
+
+          trackServerEvent(userId, "billing_payment_successful", {
+            productLine: "subscription",
+            billingProvider: "lemon_squeezy",
+            orderId: payload.data.id,
+            subscriptionId: null,
+            amount,
+            currency: "usd",
+            tier: variantInfo.tier,
+            billingPeriod: variantInfo.billingPeriod,
+            checkoutAttemptId,
+            testMode,
+          });
         } else {
           logWebhookEvent(eventName, userId, {
             action: "skipped",
@@ -395,6 +459,38 @@ export async function POST(request: Request) {
             billing: variantInfo.billingPeriod,
             period_end: periodEnd,
           };
+
+          if (eventName === "subscription_created") {
+            const amount =
+              SWIPESTATS_PRODUCTS[variantInfo.tier][variantInfo.billingPeriod]
+                .price;
+
+            trackServerEvent(userId, "subscription_activated", {
+              tier: variantInfo.tier,
+              source: "direct_purchase",
+              billingPeriod: variantInfo.billingPeriod,
+              checkoutAttemptId,
+            });
+
+            trackServerEvent(userId, "billing_payment_successful", {
+              productLine: "subscription",
+              billingProvider: "lemon_squeezy",
+              orderId: null,
+              subscriptionId: payload.data.id,
+              amount,
+              currency: "usd",
+              tier: variantInfo.tier,
+              billingPeriod: variantInfo.billingPeriod,
+              checkoutAttemptId,
+              testMode,
+            });
+          } else {
+            trackServerEvent(userId, "billing_subscription_updated", {
+              subscriptionId: payload.data.id,
+              changeType: "plan_changed",
+              newTier: variantInfo.tier,
+            });
+          }
         } else {
           logWebhookEvent(eventName, userId, {
             action: "skipped",
@@ -411,6 +507,10 @@ export async function POST(request: Request) {
         // Update period end to ends_at so user keeps access until cancellation date
         // Don't downgrade immediately - getEffectiveTier() will handle access based on period end
         const endsAt = payload.data.attributes.ends_at;
+        const variantInfo = getTierFromVariantId(
+          payload.data.attributes.variant_id,
+        );
+        const cancelledTier = variantInfo?.tier ?? "PLUS";
 
         if (endsAt) {
           await db
@@ -428,6 +528,12 @@ export async function POST(request: Request) {
 
           action = "cancelled";
           details = { access_until: endsAt };
+
+          trackServerEvent(userId, "subscription_cancelled", {
+            tier: cancelledTier,
+            reason: "user_requested",
+            hadActiveSubscription: true,
+          });
         } else {
           logWebhookEvent(eventName, userId, {
             action: "cancelled",
@@ -441,6 +547,11 @@ export async function POST(request: Request) {
       }
 
       case "subscription_expired": {
+        const variantInfo = getTierFromVariantId(
+          payload.data.attributes.variant_id,
+        );
+        const expiredTier = variantInfo?.tier ?? "PLUS";
+
         // Subscription expired - downgrade to FREE
         await db
           .update(userTable)
@@ -458,6 +569,12 @@ export async function POST(request: Request) {
         });
         action = "expired";
         details = { tier: "FREE" };
+
+        trackServerEvent(userId, "subscription_cancelled", {
+          tier: expiredTier,
+          reason: "payment_failed",
+          hadActiveSubscription: true,
+        });
         break;
       }
 

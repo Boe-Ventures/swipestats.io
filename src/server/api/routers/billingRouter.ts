@@ -11,7 +11,12 @@ import {
   createUpgradeCheckout,
   getSubscriptionDetails,
 } from "@/server/services/lemonSqueezy.service";
-import { paidTierSchema, billingPeriodSchema } from "@/lib/validators";
+import {
+  billingPeriodSchema,
+  paidTierSchema,
+  subscriptionCheckoutSurfaceSchema,
+} from "@/lib/validators";
+import { trackServerEvent } from "@/server/services/analytics.service";
 
 import { protectedProcedure } from "../trpc";
 
@@ -40,6 +45,7 @@ export const billingRouter = {
       z.object({
         tier: paidTierSchema,
         billingPeriod: billingPeriodSchema,
+        surface: subscriptionCheckoutSurfaceSchema.optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -50,14 +56,33 @@ export const billingRouter = {
           ? undefined
           : (ctx.session.user.email ?? undefined);
 
-      const checkoutUrl = await createUpgradeCheckout(
+      const checkout = await createUpgradeCheckout(
         ctx.session.user.id,
         email,
         input.tier,
         input.billingPeriod,
+        input.surface,
       );
 
-      return { checkoutUrl };
+      trackServerEvent(
+        ctx.session.user.id,
+        "billing_checkout_created",
+        {
+          productLine: "subscription",
+          billingProvider: checkout.billingProvider,
+          checkoutAttemptId: checkout.checkoutAttemptId,
+          surface: input.surface ?? "unknown",
+          tier: input.tier,
+          billingPeriod: input.billingPeriod,
+          amount: checkout.amount,
+          currency: checkout.currency,
+          providerVariantId: checkout.providerVariantId,
+          testMode: checkout.testMode,
+        },
+        { consent: ctx.analyticsConsent },
+      );
+
+      return { checkoutUrl: checkout.checkoutUrl };
     }),
 
   // Get customer portal URL (for managing subscription)
