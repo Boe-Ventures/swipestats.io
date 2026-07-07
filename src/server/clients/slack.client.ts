@@ -1058,7 +1058,7 @@ export async function trackSlackEvent<T extends ServerAnalyticsEventName>(
           tier: props.tier,
           billingPeriod: props.billingPeriod,
           amount: `${props.currency.toUpperCase()} ${props.amount}`,
-          orderId: props.orderId,
+          orderId: props.orderId ?? "N/A",
           subscriptionId: props.subscriptionId ?? "N/A (lifetime)",
           userName: sanitizeSlackText(user?.name) || "Unknown",
           userEmail: sanitizeSlackText(user?.email) || "No email",

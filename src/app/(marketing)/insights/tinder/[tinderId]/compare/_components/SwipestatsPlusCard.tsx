@@ -21,6 +21,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import Link from "next/link";
+import { useAnalytics } from "@/contexts/AnalyticsProvider";
 
 export function SwipestatsPlusCard({
   className,
@@ -31,6 +32,7 @@ export function SwipestatsPlusCard({
 }) {
   const { effectiveTier } = useSubscription();
   const trpc = useTRPC();
+  const { trackEvent } = useAnalytics();
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selectedPeriod, setSelectedPeriod] =
@@ -39,6 +41,10 @@ export function SwipestatsPlusCard({
   const hasPremiumAccess =
     effectiveTier === "PLUS" || effectiveTier === "ELITE";
   const pricing = SWIPESTATS_PRICING.PLUS;
+  const selectedPrice =
+    selectedPeriod === "lifetime"
+      ? pricing.lifetimeLaunchPrice
+      : pricing.monthly;
 
   const createCheckoutMutation = useMutation(
     trpc.billing.createCheckout.mutationOptions({
@@ -60,9 +66,28 @@ export function SwipestatsPlusCard({
   const handleUpgrade = () => {
     setError(null);
     setIsProcessing(true);
+    trackEvent("upgrade_checkout_clicked", {
+      tier: "PLUS",
+      billingPeriod: selectedPeriod,
+      price: selectedPrice,
+      source: "feature_gate",
+    });
     createCheckoutMutation.mutate({
       tier: "PLUS",
       billingPeriod: selectedPeriod,
+      surface: "insights_compare",
+    });
+  };
+
+  const handlePeriodSelected = (billingPeriod: BillingPeriod) => {
+    setSelectedPeriod(billingPeriod);
+    trackEvent("upgrade_plan_selected", {
+      tier: "PLUS",
+      billingPeriod,
+      price:
+        billingPeriod === "lifetime"
+          ? pricing.lifetimeLaunchPrice
+          : pricing.monthly,
     });
   };
 
@@ -228,7 +253,7 @@ export function SwipestatsPlusCard({
             {/* Billing period toggle */}
             <div className="mb-6 inline-flex rounded-lg bg-gray-200 p-1">
               <button
-                onClick={() => setSelectedPeriod("monthly")}
+                onClick={() => handlePeriodSelected("monthly")}
                 className={cn(
                   "relative cursor-pointer rounded-md px-3 py-1 text-xs font-medium transition-colors",
                   selectedPeriod === "monthly"
@@ -243,7 +268,7 @@ export function SwipestatsPlusCard({
                 </span>
               </button>
               <button
-                onClick={() => setSelectedPeriod("lifetime")}
+                onClick={() => handlePeriodSelected("lifetime")}
                 className={cn(
                   "cursor-pointer rounded-md px-3 py-1 text-xs font-medium transition-colors",
                   selectedPeriod === "lifetime"

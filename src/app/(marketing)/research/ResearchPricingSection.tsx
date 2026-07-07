@@ -5,6 +5,7 @@ import { CheckIcon } from "@heroicons/react/20/solid";
 import { cn } from "@/components/ui/lib/utils";
 import { useTRPC } from "@/trpc/react";
 import { useMutation } from "@tanstack/react-query";
+import { useAnalytics } from "@/contexts/AnalyticsProvider";
 import { SectionHead, marketingButton } from "../_components/marketing-ui";
 
 type Tier = {
@@ -212,6 +213,7 @@ function TierCard({
 export function ResearchPricingSection() {
   const [loadingTier, setLoadingTier] = useState<string | null>(null);
   const trpc = useTRPC();
+  const { trackEvent } = useAnalytics();
 
   const createCheckout = useMutation(
     trpc.research.createCheckout.mutationOptions({
@@ -228,6 +230,10 @@ export function ResearchPricingSection() {
 
   const handleCheckout = (tier: Tier) => {
     if (tier.id === "academic") {
+      trackEvent("dataset_academic_inquiry_clicked", {
+        source: "research_pricing",
+        price: tier.price,
+      });
       window.location.href =
         "mailto:kris@swipestats.io?subject=Academic%20License%20Inquiry";
       return;
@@ -236,7 +242,16 @@ export function ResearchPricingSection() {
     if (!tier.apiTier) return;
 
     setLoadingTier(tier.id);
-    createCheckout.mutate({ tier: tier.apiTier });
+    const price = Number(tier.price.replace(/[^0-9.]/g, ""));
+    trackEvent("dataset_checkout_clicked", {
+      tier: tier.apiTier,
+      price,
+      source: "research_pricing",
+    });
+    createCheckout.mutate({
+      tier: tier.apiTier,
+      surface: "research_pricing",
+    });
   };
 
   const topTiers = tiers.slice(0, 3);

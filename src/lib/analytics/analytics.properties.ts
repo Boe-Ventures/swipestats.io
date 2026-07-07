@@ -23,6 +23,14 @@
 // is a cosmetic label in an admin table, never a runtime bug. Keep them honest.
 // =====================================================
 
+import {
+  BILLING_PERIODS,
+  BILLING_PROVIDERS,
+  BILLING_SURFACES,
+  DATASET_TIERS,
+  PAID_TIERS,
+} from "@/lib/validators";
+
 import { ANONYMOUS_SOURCES } from "./analytics.types";
 import type {
   ClientEventPropertiesDefinition,
@@ -52,8 +60,7 @@ type EventPropertyRegistry<Defs> = {
   [K in keyof Defs]: Record<AllPropKeys<Defs[K]>, PropertyMeta>;
 };
 
-const TIER = ["PLUS", "ELITE"] as const;
-const BILLING_PERIOD = ["monthly", "annual", "lifetime"] as const;
+const DATASET_RECENCY = ["MIXED", "RECENT"] as const;
 const PROVIDER = ["tinder", "hinge", "bumble"] as const;
 const UPLOAD_PROVIDER = ["tinder", "hinge"] as const;
 const AUTH_SOURCE = ["conversion_modal", "signin_page", "navbar"] as const;
@@ -347,11 +354,11 @@ export const SERVER_EVENT_PROPERTIES: EventPropertyRegistry<ServerEventPropertie
 
     // ── Monetization ─────────────────────────────────
     subscription_trial_started: {
-      tier: { type: "enum", required: true, values: TIER },
+      tier: { type: "enum", required: true, values: PAID_TIERS },
       trialDurationDays: { type: "number", required: true },
     },
     subscription_activated: {
-      tier: { type: "enum", required: true, values: TIER },
+      tier: { type: "enum", required: true, values: PAID_TIERS },
       source: {
         type: "enum",
         required: true,
@@ -360,11 +367,12 @@ export const SERVER_EVENT_PROPERTIES: EventPropertyRegistry<ServerEventPropertie
       billingPeriod: {
         type: "enum",
         required: false,
-        values: BILLING_PERIOD,
+        values: BILLING_PERIODS,
       },
+      checkoutAttemptId: { type: "string", required: false },
     },
     subscription_cancelled: {
-      tier: { type: "enum", required: true, values: TIER },
+      tier: { type: "enum", required: true, values: PAID_TIERS },
       reason: {
         type: "enum",
         required: true,
@@ -375,14 +383,41 @@ export const SERVER_EVENT_PROPERTIES: EventPropertyRegistry<ServerEventPropertie
 
     // ── Billing ──────────────────────────────────────
     billing_checkout_created: {
-      checkoutUrl: { type: "string", required: true },
-      tier: { type: "enum", required: true, values: TIER },
-      billingPeriod: { type: "enum", required: true, values: BILLING_PERIOD },
+      productLine: {
+        type: "enum",
+        required: true,
+        values: ["subscription"],
+      },
+      billingProvider: {
+        type: "enum",
+        required: true,
+        values: BILLING_PROVIDERS,
+      },
+      checkoutAttemptId: { type: "string", required: true },
+      surface: {
+        type: "enum",
+        required: true,
+        values: BILLING_SURFACES,
+      },
+      tier: { type: "enum", required: true, values: PAID_TIERS },
+      billingPeriod: { type: "enum", required: true, values: BILLING_PERIODS },
       amount: { type: "number", required: true },
       currency: { type: "string", required: true },
+      providerVariantId: { type: "string", required: true },
+      testMode: { type: "boolean", required: true },
     },
     billing_payment_successful: {
-      orderId: { type: "string", required: true },
+      productLine: {
+        type: "enum",
+        required: true,
+        values: ["subscription"],
+      },
+      billingProvider: {
+        type: "enum",
+        required: true,
+        values: BILLING_PROVIDERS,
+      },
+      orderId: { type: "string | null", required: true },
       subscriptionId: {
         type: "string | null",
         required: true,
@@ -390,8 +425,10 @@ export const SERVER_EVENT_PROPERTIES: EventPropertyRegistry<ServerEventPropertie
       },
       amount: { type: "number", required: true },
       currency: { type: "string", required: true },
-      tier: { type: "enum", required: true, values: TIER },
-      billingPeriod: { type: "enum", required: true, values: BILLING_PERIOD },
+      tier: { type: "enum", required: true, values: PAID_TIERS },
+      billingPeriod: { type: "enum", required: true, values: BILLING_PERIODS },
+      checkoutAttemptId: { type: "string", required: false },
+      testMode: { type: "boolean", required: true },
     },
     billing_payment_failed: {
       subscriptionId: { type: "string | null", required: true },
@@ -411,8 +448,94 @@ export const SERVER_EVENT_PROPERTIES: EventPropertyRegistry<ServerEventPropertie
           "billing_details_updated",
         ],
       },
-      previousTier: { type: "enum", required: false, values: TIER },
-      newTier: { type: "enum", required: false, values: TIER },
+      previousTier: { type: "enum", required: false, values: PAID_TIERS },
+      newTier: { type: "enum", required: false, values: PAID_TIERS },
+    },
+    dataset_checkout_created: {
+      productLine: {
+        type: "enum",
+        required: true,
+        values: ["dataset"],
+      },
+      billingProvider: {
+        type: "enum",
+        required: true,
+        values: BILLING_PROVIDERS,
+      },
+      checkoutAttemptId: { type: "string", required: true },
+      surface: {
+        type: "enum",
+        required: true,
+        values: BILLING_SURFACES,
+      },
+      tier: { type: "enum", required: true, values: DATASET_TIERS },
+      amount: { type: "number", required: true },
+      currency: { type: "string", required: true },
+      providerVariantId: { type: "string", required: true },
+      hasPrefilledEmail: { type: "boolean", required: true },
+      testMode: { type: "boolean", required: true },
+    },
+    dataset_purchase_completed: {
+      productLine: {
+        type: "enum",
+        required: true,
+        values: ["dataset"],
+      },
+      billingProvider: {
+        type: "enum",
+        required: true,
+        values: BILLING_PROVIDERS,
+      },
+      checkoutAttemptId: { type: "string", required: false },
+      orderId: { type: "string | null", required: true },
+      licenseKeyId: { type: "string", required: true },
+      tier: { type: "enum", required: true, values: DATASET_TIERS },
+      amount: { type: "number", required: true },
+      currency: { type: "string", required: true },
+      profileCount: { type: "number", required: true },
+      recency: { type: "enum", required: true, values: DATASET_RECENCY },
+      testMode: { type: "boolean", required: true },
+    },
+    dataset_export_queued: {
+      exportId: { type: "string", required: true },
+      checkoutAttemptId: { type: "string", required: false },
+      orderId: { type: "string | null", required: true },
+      licenseKeyId: { type: "string", required: false },
+      tier: { type: "enum", required: true, values: DATASET_TIERS },
+      profileCount: { type: "number", required: true },
+      recency: { type: "enum", required: true, values: DATASET_RECENCY },
+      source: {
+        type: "enum",
+        required: true,
+        values: ["webhook", "download_page", "retry"],
+      },
+      alreadyExisted: { type: "boolean", required: true },
+      testMode: { type: "boolean", required: false },
+    },
+    dataset_export_ready: {
+      exportId: { type: "string", required: true },
+      tier: { type: "enum", required: true, values: DATASET_TIERS },
+      profileCount: { type: "number", required: true },
+      recency: { type: "enum", required: true, values: DATASET_RECENCY },
+      blobSize: { type: "number", required: true },
+      compressedSize: { type: "number", required: true },
+      generationTimeSeconds: { type: "number", required: true },
+    },
+    dataset_export_failed: {
+      exportId: { type: "string", required: true },
+      tier: { type: "enum", required: true, values: DATASET_TIERS },
+      profileCount: { type: "number", required: true },
+      recency: { type: "enum", required: true, values: DATASET_RECENCY },
+      errorMessage: { type: "string", required: true },
+    },
+    dataset_downloaded: {
+      exportId: { type: "string", required: true },
+      orderId: { type: "string | null", required: true },
+      tier: { type: "enum", required: true, values: DATASET_TIERS },
+      profileCount: { type: "number", required: true },
+      downloadCount: { type: "number", required: true },
+      downloadsRemaining: { type: "number", required: true },
+      maxDownloads: { type: "number", required: true },
     },
 
     // ── Life events ──────────────────────────────────
@@ -683,17 +806,39 @@ export const CLIENT_EVENT_PROPERTIES: EventPropertyRegistry<ClientEventPropertie
         values: ["feature_gate", "pricing_page", "settings", "banner"],
       },
       timeSpentSeconds: { type: "number", required: true },
-      viewedPlans: { type: "enum[]", required: true, values: TIER },
+      viewedPlans: { type: "enum[]", required: true, values: PAID_TIERS },
     },
     upgrade_plan_selected: {
-      tier: { type: "enum", required: true, values: TIER },
-      billingPeriod: { type: "enum", required: true, values: BILLING_PERIOD },
+      tier: { type: "enum", required: true, values: PAID_TIERS },
+      billingPeriod: { type: "enum", required: true, values: BILLING_PERIODS },
       price: { type: "number", required: true },
     },
     upgrade_checkout_clicked: {
-      tier: { type: "enum", required: true, values: TIER },
-      billingPeriod: { type: "enum", required: true, values: BILLING_PERIOD },
+      tier: { type: "enum", required: true, values: PAID_TIERS },
+      billingPeriod: { type: "enum", required: true, values: BILLING_PERIODS },
       price: { type: "number", required: true },
+      source: {
+        type: "enum",
+        required: false,
+        values: ["feature_gate", "pricing_page", "settings", "banner"],
+      },
+    },
+    dataset_checkout_clicked: {
+      tier: { type: "enum", required: true, values: DATASET_TIERS },
+      price: { type: "number", required: true },
+      source: {
+        type: "enum",
+        required: true,
+        values: ["research_pricing", "dataset_pricing", "home"],
+      },
+    },
+    dataset_academic_inquiry_clicked: {
+      source: {
+        type: "enum",
+        required: true,
+        values: ["research_pricing", "dataset_pricing"],
+      },
+      price: { type: "string", required: true },
     },
 
     // ── Cookie consent ───────────────────────────────

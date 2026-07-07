@@ -8,6 +8,7 @@ import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { useAnalytics } from "@/contexts/AnalyticsProvider";
 
 const tiers = [
   {
@@ -52,6 +53,7 @@ export function DatasetPricingSection() {
   const [loadingTier, setLoadingTier] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const trpc = useTRPC();
+  const { trackEvent } = useAnalytics();
 
   const createCheckoutMutation = useMutation(
     trpc.research.createCheckout.mutationOptions({
@@ -72,6 +74,10 @@ export function DatasetPricingSection() {
 
   const handleCheckout = (tier: (typeof tiers)[number]) => {
     if (tier.id === "tier-enterprise") {
+      trackEvent("dataset_academic_inquiry_clicked", {
+        source: "dataset_pricing",
+        price: tier.price,
+      });
       window.location.assign(
         "mailto:kris@swipestats.io?subject=Academic%20License%20Inquiry",
       );
@@ -82,7 +88,15 @@ export function DatasetPricingSection() {
 
     setError(null);
     setLoadingTier(tier.id);
-    createCheckoutMutation.mutate({ tier: tier.apiTier });
+    trackEvent("dataset_checkout_clicked", {
+      tier: tier.apiTier,
+      price: Number(tier.price.replace(/[^0-9.]/g, "")),
+      source: "dataset_pricing",
+    });
+    createCheckoutMutation.mutate({
+      tier: tier.apiTier,
+      surface: "research_pricing",
+    });
   };
 
   return (

@@ -14,10 +14,12 @@ import {
   DATASET_PRODUCTS,
   type DatasetTier,
 } from "@/server/services/lemonSqueezy.service";
+import { datasetCheckoutSurfaceSchema } from "@/lib/validators";
 import {
   ensureDatasetExportForLicense,
   generateDatasetForExport,
 } from "@/server/services/datasetExport.service";
+import { trackServerEvent } from "@/server/services/analytics.service";
 
 import { publicProcedure, protectedProcedure } from "../trpc";
 
@@ -30,15 +32,38 @@ export const researchRouter = {
       z.object({
         tier: z.enum(["STARTER", "STANDARD", "FRESH", "PREMIUM"]),
         email: z.string().email().optional(),
+        surface: datasetCheckoutSurfaceSchema.optional(),
       }),
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       try {
-        const checkoutUrl = await createDatasetCheckout(
+        const checkout = await createDatasetCheckout(
           input.tier,
           input.email,
+          input.surface,
         );
-        return { checkoutUrl };
+        const product = DATASET_PRODUCTS[input.tier];
+
+        trackServerEvent(
+          ctx.session?.user.id ??
+            `dataset_checkout:${checkout.checkoutAttemptId}`,
+          "dataset_checkout_created",
+          {
+            productLine: "dataset",
+            billingProvider: checkout.billingProvider,
+            checkoutAttemptId: checkout.checkoutAttemptId,
+            surface: input.surface ?? "research_pricing",
+            tier: input.tier,
+            amount: product.price,
+            currency: checkout.currency,
+            providerVariantId: checkout.providerVariantId,
+            hasPrefilledEmail: Boolean(input.email),
+            testMode: checkout.testMode,
+          },
+          { consent: ctx.analyticsConsent },
+        );
+
+        return { checkoutUrl: checkout.checkoutUrl };
       } catch (error) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
@@ -124,6 +149,24 @@ export const researchRouter = {
 
       if (exportRecord && created) {
         const exportId = exportRecord.id;
+        const product = DATASET_PRODUCTS[exportRecord.tier as DatasetTier];
+
+        trackServerEvent(
+          ctx.session?.user.id ?? `dataset_export:${exportId}`,
+          "dataset_export_queued",
+          {
+            exportId,
+            orderId: exportRecord.orderId ?? null,
+            licenseKeyId: exportRecord.licenseKeyId ?? undefined,
+            tier: exportRecord.tier as DatasetTier,
+            profileCount: product.profileCount,
+            recency: product.recency,
+            source: "download_page",
+            alreadyExisted: false,
+          },
+          { consent: ctx.analyticsConsent },
+        );
+
         waitUntil(
           generateDatasetForExport(exportId).catch((error) => {
             console.error(`Failed to generate dataset ${exportId}:`, error);
@@ -213,6 +256,24 @@ export const researchRouter = {
         })
         .where(eq(datasetExportTable.id, exportRecord.id));
 
+      trackServerEvent(
+        ctx.session?.user.id ?? `dataset_export:${exportRecord.id}`,
+        "dataset_downloaded",
+        {
+          exportId: exportRecord.id,
+          orderId: exportRecord.orderId ?? null,
+          tier: exportRecord.tier as DatasetTier,
+          profileCount: exportRecord.profileCount,
+          downloadCount: exportRecord.downloadCount + 1,
+          downloadsRemaining: Math.max(
+            0,
+            exportRecord.maxDownloads - exportRecord.downloadCount - 1,
+          ),
+          maxDownloads: exportRecord.maxDownloads,
+        },
+        { consent: ctx.analyticsConsent },
+      );
+
       // Return the blob URL (it's already public)
       return {
         downloadUrl: exportRecord.blobUrl!,
@@ -275,6 +336,23 @@ export const researchRouter = {
         .update(datasetExportTable)
         .set({ status: "PENDING", errorMessage: null })
         .where(eq(datasetExportTable.id, exportRecord.id));
+
+      const product = DATASET_PRODUCTS[exportRecord.tier as DatasetTier];
+      trackServerEvent(
+        ctx.session?.user.id ?? `dataset_export:${exportRecord.id}`,
+        "dataset_export_queued",
+        {
+          exportId: exportRecord.id,
+          orderId: exportRecord.orderId ?? null,
+          licenseKeyId: exportRecord.licenseKeyId ?? undefined,
+          tier: exportRecord.tier as DatasetTier,
+          profileCount: product.profileCount,
+          recency: product.recency,
+          source: "retry",
+          alreadyExisted: true,
+        },
+        { consent: ctx.analyticsConsent },
+      );
 
       // Trigger generation — waitUntil keeps the function alive after response
       waitUntil(
