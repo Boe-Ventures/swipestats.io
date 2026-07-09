@@ -222,8 +222,13 @@ SwipeStats has proprietary data from 7,000+ real Tinder profiles:
 - Never use "click here" or generic anchors
 - No more than 1 link per 200 words
 - Do not use the same anchor text more than once per post
-- 3-8 internal links per post
+- 6-8 internal links per post
 - Spread across sections, don't cluster
+- LINK BALANCE (Paw, 2026-07-09): at most 8 external links per post, and never more
+  external links than 1.5x the internal count. Externals cite sources; internals are
+  the SEO spine. Cite the single best source per claim and reuse an already-cited
+  source for related claims. Before saving, count both; over the cap, cut the weakest
+  citations, never the internal links.
 
 ## Sources
 
