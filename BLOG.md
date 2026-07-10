@@ -115,6 +115,11 @@ Product configuration and visual previews live in
 `src/components/mdx/ProductCard.tsx`. Prefer adding a reusable product key or a
 small copy override over creating one-off card components in individual posts.
 
+Product-card clicks emit `blog_product_card_clicked` through the shared
+analytics provider to PostHog, Vercel Analytics, and Amplitude. The event
+captures the source post slug, destination product, and destination path; the
+source slug is inferred from the current `/blog/[slug]` route.
+
 ## Previewing cards
 
 Run the app locally, then open:

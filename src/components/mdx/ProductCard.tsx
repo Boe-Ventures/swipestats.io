@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import {
   ArrowRight,
   BarChart3,
@@ -11,6 +14,7 @@ import {
 
 import { marketingButton } from "@/app/(marketing)/_components/marketing-ui";
 import { cn } from "@/components/ui/lib/utils";
+import { useAnalytics } from "@/contexts/AnalyticsProvider";
 
 export const BLOG_PRODUCT_KEYS = [
   "insights",
@@ -289,6 +293,21 @@ export function ProductCard({
 }: ProductCardProps) {
   const config = PRODUCT_CONFIG[product];
   const Icon = config.icon;
+  const pathname = usePathname();
+  const { trackEvent } = useAnalytics();
+  const destinationPath = buttonHref ?? config.buttonHref;
+
+  const handleProductClick = () => {
+    const sourcePost = pathname.startsWith("/blog/")
+      ? pathname.slice("/blog/".length)
+      : pathname;
+
+    trackEvent("blog_product_card_clicked", {
+      sourcePost,
+      destinationProduct: product,
+      destinationPath,
+    });
+  };
 
   return (
     <aside
@@ -321,7 +340,8 @@ export function ProductCard({
 
           <div className="mt-6 flex flex-wrap items-center gap-3.5">
             <Link
-              href={buttonHref ?? config.buttonHref}
+              href={destinationPath}
+              onClick={handleProductClick}
               className={marketingButton({
                 variant: "primary",
                 size: "default",

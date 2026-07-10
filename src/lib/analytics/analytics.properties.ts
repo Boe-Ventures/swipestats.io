@@ -593,6 +593,30 @@ export const CLIENT_EVENT_PROPERTIES: EventPropertyRegistry<ClientEventPropertie
       path: { type: "string", required: true },
       referrer: { type: "string", required: false },
     },
+    blog_product_card_clicked: {
+      sourcePost: {
+        type: "string",
+        required: true,
+        description: "Blog slug where the contextual product card was clicked.",
+      },
+      destinationProduct: {
+        type: "enum",
+        required: true,
+        values: [
+          "insights",
+          "profile-compare",
+          "profile-roast",
+          "prompt-assistant",
+          "directory",
+        ],
+        description: "Product surface promoted by the card.",
+      },
+      destinationPath: {
+        type: "string",
+        required: true,
+        description: "Internal path opened by the card CTA.",
+      },
+    },
 
     // ── Auth UI ──────────────────────────────────────
     sign_up_clicked: {

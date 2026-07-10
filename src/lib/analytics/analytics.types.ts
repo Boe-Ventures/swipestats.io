@@ -136,6 +136,7 @@ export type ClientAnalyticsEventName =
   // Navigation
   // ─────────────────────────────────────────────────
   | "page_viewed"
+  | "blog_product_card_clicked"
 
   // ─────────────────────────────────────────────────
   // User authentication UI
@@ -582,6 +583,17 @@ export type ClientEventPropertiesDefinition = {
   page_viewed: {
     path: string;
     referrer?: string;
+  };
+
+  blog_product_card_clicked: {
+    sourcePost: string;
+    destinationProduct:
+      | "insights"
+      | "profile-compare"
+      | "profile-roast"
+      | "prompt-assistant"
+      | "directory";
+    destinationPath: string;
   };
 
   // ─────────────────────────────────────────────────
