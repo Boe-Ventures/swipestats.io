@@ -15,6 +15,7 @@ import { Video } from "./Video";
 import { AffiliateDisclosure } from "./AffiliateDisclosure";
 import { FAQ } from "./FAQ";
 import { ImageGrid } from "./ImageGrid";
+import { ProductCard } from "./ProductCard";
 
 const sharedComponents = {
   AffiliateDisclosure,
@@ -25,6 +26,7 @@ const sharedComponents = {
   CtaCard,
   FeatureGrid,
   NewsletterCard,
+  ProductCard,
   Quote,
   Stats,
   TLDR,
