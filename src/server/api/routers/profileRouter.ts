@@ -28,6 +28,7 @@ import {
 import { trackServerEvent } from "@/server/services/analytics.service";
 import { captureException } from "@/server/clients/posthog.client";
 import { getFirstAndLastDayOnApp } from "@/lib/profile.utils";
+import { summarizeUploadError } from "@/server/services/upload-error.service";
 
 /**
  * Helper function to handle existing profile upload scenarios
@@ -333,10 +334,11 @@ export const profileRouter = {
         if (error instanceof Error) {
           await captureException(error, ctx.session.user.id);
         }
+        const uploadError = summarizeUploadError(error);
         trackServerEvent(ctx.session.user.id, "tinder_profile_upload_failed", {
           tinderId: input.tinderId,
-          errorType: "unknown",
-          errorMessage: error instanceof Error ? error.message : "Unknown error",
+          ...uploadError,
+          blobUrl: input.blobUrl,
         });
         throw error;
       }
@@ -433,10 +435,11 @@ export const profileRouter = {
         if (error instanceof Error) {
           await captureException(error, ctx.session.user.id);
         }
+        const uploadError = summarizeUploadError(error);
         trackServerEvent(ctx.session.user.id, "tinder_profile_upload_failed", {
           tinderId: input.tinderId,
-          errorType: "unknown",
-          errorMessage: error instanceof Error ? error.message : "Unknown error",
+          ...uploadError,
+          blobUrl: input.blobUrl,
         });
         throw error;
       }
@@ -544,10 +547,11 @@ export const profileRouter = {
         if (error instanceof Error) {
           await captureException(error, ctx.session.user.id);
         }
+        const uploadError = summarizeUploadError(error);
         trackServerEvent(ctx.session.user.id, "tinder_profile_upload_failed", {
           tinderId: input.tinderId,
-          errorType: "unknown",
-          errorMessage: error instanceof Error ? error.message : "Unknown error",
+          ...uploadError,
+          blobUrl: input.blobUrl,
         });
         throw error;
       }

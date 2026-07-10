@@ -19,6 +19,7 @@ import {
 import { trackServerEvent } from "@/server/services/analytics.service";
 import { captureException } from "@/server/clients/posthog.client";
 import { fetchBlobJson } from "@/server/services/blob.service";
+import { summarizeUploadError } from "@/server/services/upload-error.service";
 
 /**
  * Helper function to handle existing profile upload scenarios
@@ -67,50 +68,6 @@ async function handleExistingHingeProfileUpload(params: {
     message:
       "This profile belongs to another user. Please sign in with a different account or use a different email address.",
   });
-}
-
-type HingeUploadErrorDetails = {
-  errorType: "auth" | "ownership" | "database" | "unknown";
-  errorMessage: string;
-  errorCode?: string;
-  errorConstraint?: string;
-  errorTable?: string;
-  errorColumn?: string;
-  errorDetail?: string;
-};
-
-function getErrorRecord(error: unknown): Record<string, unknown> {
-  return typeof error === "object" && error !== null
-    ? (error as Record<string, unknown>)
-    : {};
-}
-
-function truncateUploadError(
-  value: unknown,
-  maxLength = 700,
-): string | undefined {
-  if (typeof value !== "string" || value.length === 0) return undefined;
-  return value.length > maxLength ? `${value.slice(0, maxLength)}...` : value;
-}
-
-function summarizeHingeUploadError(error: unknown): HingeUploadErrorDetails {
-  const errorRecord = getErrorRecord(error);
-  const cause = errorRecord.cause ?? error;
-  const causeRecord = getErrorRecord(cause);
-  const code = truncateUploadError(causeRecord.code);
-  const causeMessage = truncateUploadError(causeRecord.message);
-  const fallbackMessage =
-    error instanceof Error ? truncateUploadError(error.message) : undefined;
-
-  return {
-    errorType: code ? "database" : "unknown",
-    errorMessage: causeMessage ?? fallbackMessage ?? "Unknown error",
-    errorCode: code,
-    errorConstraint: truncateUploadError(causeRecord.constraint),
-    errorTable: truncateUploadError(causeRecord.table),
-    errorColumn: truncateUploadError(causeRecord.column),
-    errorDetail: truncateUploadError(causeRecord.detail),
-  };
 }
 
 export const hingeProfileRouter = {
@@ -344,7 +301,7 @@ export const hingeProfileRouter = {
         if (error instanceof Error) {
           await captureException(error, ctx.session.user.id);
         }
-        const uploadError = summarizeHingeUploadError(error);
+        const uploadError = summarizeUploadError(error);
         trackServerEvent(ctx.session.user.id, "hinge_profile_upload_failed", {
           hingeId: input.hingeId,
           ...uploadError,
@@ -420,7 +377,7 @@ export const hingeProfileRouter = {
         if (error instanceof Error) {
           await captureException(error, ctx.session.user.id);
         }
-        const uploadError = summarizeHingeUploadError(error);
+        const uploadError = summarizeUploadError(error);
         trackServerEvent(ctx.session.user.id, "hinge_profile_upload_failed", {
           hingeId: input.hingeId,
           ...uploadError,
@@ -530,7 +487,7 @@ export const hingeProfileRouter = {
         if (error instanceof Error) {
           await captureException(error, ctx.session.user.id);
         }
-        const uploadError = summarizeHingeUploadError(error);
+        const uploadError = summarizeUploadError(error);
         trackServerEvent(ctx.session.user.id, "hinge_profile_upload_failed", {
           hingeId: input.hingeId,
           ...uploadError,
@@ -601,7 +558,7 @@ export const hingeProfileRouter = {
         if (error instanceof Error) {
           await captureException(error, ctx.session.user.id);
         }
-        const uploadError = summarizeHingeUploadError(error);
+        const uploadError = summarizeUploadError(error);
         trackServerEvent(ctx.session.user.id, "hinge_profile_upload_failed", {
           hingeId: input.hingeId,
           ...uploadError,
@@ -684,7 +641,7 @@ export const hingeProfileRouter = {
         if (error instanceof Error) {
           await captureException(error, ctx.session.user.id);
         }
-        const uploadError = summarizeHingeUploadError(error);
+        const uploadError = summarizeUploadError(error);
         trackServerEvent(ctx.session.user.id, "hinge_profile_upload_failed", {
           hingeId: input.hingeId,
           ...uploadError,

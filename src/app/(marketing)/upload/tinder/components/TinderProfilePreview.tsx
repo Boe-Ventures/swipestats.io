@@ -139,9 +139,10 @@ export function TinderProfilePreview({
         <div className="mt-4">
           <h3 className="text-sm font-semibold text-gray-700">Looking for</h3>
           <p className="mt-1 text-sm text-gray-600">
-            {user.interested_in &&
-              `${getInterestedInText(user.interested_in)} `}
-            ages {user.age_filter_min}-{user.age_filter_max}
+            {user.interested_in && getInterestedInText(user.interested_in)}
+            {user.age_filter_min !== undefined &&
+              user.age_filter_max !== undefined &&
+              ` ages ${user.age_filter_min}-${user.age_filter_max}`}
           </p>
         </div>
 

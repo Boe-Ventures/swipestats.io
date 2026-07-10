@@ -200,6 +200,16 @@ export const SERVER_EVENT_PROPERTIES: EventPropertyRegistry<ServerEventPropertie
         values: UPLOAD_ERROR_TYPE,
       },
       errorMessage: { type: "string", required: true },
+      errorCode: { type: "string", required: false },
+      errorConstraint: { type: "string", required: false },
+      errorTable: { type: "string", required: false },
+      errorColumn: { type: "string", required: false },
+      errorDetail: { type: "string", required: false },
+      blobUrl: {
+        type: "string",
+        required: false,
+        description: "Uploaded blob URL if the upload made it to storage.",
+      },
       jsonSizeMB: { type: "number", required: false },
     },
 

@@ -82,8 +82,9 @@ export type TinderJsonGender = (typeof TinderJsonGenderValues)[number];
 interface TinderUserBase {
   // TODO: Probably move all Date to DateString
   active_time: Date;
-  age_filter_max: number;
-  age_filter_min: number;
+  // Tinder omits discovery age preferences from some exports.
+  age_filter_max?: number;
+  age_filter_min?: number;
   birth_date: DateString;
   create_date: DateString;
 

@@ -1,6 +1,5 @@
 import { eq, sql } from "drizzle-orm";
 
-import type { AnonymizedTinderDataJSON } from "@/lib/interfaces/TinderDataJSON";
 import { withTransaction, type TransactionClient } from "@/server/db";
 import {
   matchTable,
@@ -19,6 +18,7 @@ import { createId } from "@/server/db/utils";
 import { computeProfileMeta } from "./meta.service";
 import { createMessagesAndMatches } from "./messages.service";
 import { transformTinderJsonToProfile } from "./transform.service";
+import { parseAnonymizedTinderData } from "./validation.service";
 import { createUsageRecords } from "./usage.service";
 import {
   type TinderProfileResult,
@@ -147,9 +147,8 @@ export async function absorbProfileIntoNew(data: {
 
   // Fetch JSON from blob storage
   const { fetchBlobJson } = await import("../blob.service");
-  const anonymizedTinderJson = await fetchBlobJson<AnonymizedTinderDataJSON>(
-    data.blobUrl,
-  );
+  const blobJson = await fetchBlobJson<unknown>(data.blobUrl);
+  const anonymizedTinderJson = parseAnonymizedTinderData(blobJson);
 
   console.log(
     `\n🔄 Cross-account merge: ${data.oldTinderId} → ${data.newTinderId}`,
@@ -417,9 +416,8 @@ export async function additiveUpdateProfile(data: {
 
   // Fetch JSON from blob storage
   const { fetchBlobJson } = await import("../blob.service");
-  const anonymizedTinderJson = await fetchBlobJson<AnonymizedTinderDataJSON>(
-    data.blobUrl,
-  );
+  const blobJson = await fetchBlobJson<unknown>(data.blobUrl);
+  const anonymizedTinderJson = parseAnonymizedTinderData(blobJson);
 
   console.log(`\n📊 Additive update for profile: ${data.tinderId}`);
   console.log(`   User ID: ${data.userId}`);

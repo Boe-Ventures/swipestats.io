@@ -1,9 +1,6 @@
 import { eq } from "drizzle-orm";
 
-import type {
-  AnonymizedTinderDataJSON,
-  TinderPhoto,
-} from "@/lib/interfaces/TinderDataJSON";
+import type { TinderPhoto } from "@/lib/interfaces/TinderDataJSON";
 import { withTransaction, db } from "@/server/db";
 import {
   matchTable,
@@ -21,6 +18,7 @@ import { createId } from "@/server/db/utils";
 import { computeProfileMeta } from "./meta.service";
 import { createMessagesAndMatches } from "./messages.service";
 import { transformTinderJsonToProfile } from "./transform.service";
+import { parseAnonymizedTinderData } from "./validation.service";
 import { createUsageRecords } from "./usage.service";
 
 /**
@@ -212,9 +210,8 @@ export async function createTinderProfile(data: {
   const fetchStart = Date.now();
   console.log(`\n📥 [1/6] Fetching Tinder data from blob storage...`);
   const { fetchBlobJson } = await import("../blob.service");
-  const anonymizedTinderJson = await fetchBlobJson<AnonymizedTinderDataJSON>(
-    data.blobUrl,
-  );
+  const blobJson = await fetchBlobJson<unknown>(data.blobUrl);
+  const anonymizedTinderJson = parseAnonymizedTinderData(blobJson);
   console.log(`✅ Blob fetched in ${Date.now() - fetchStart}ms`);
 
   // Log JSON size
@@ -485,4 +482,3 @@ export async function resetTinderProfile(tinderId: string): Promise<void> {
 
   console.log(`✅ Profile reset complete: ${tinderId}\n`);
 }
-

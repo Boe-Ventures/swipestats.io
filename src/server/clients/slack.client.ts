@@ -831,7 +831,13 @@ export async function trackSlackEvent<T extends ServerAnalyticsEventName>(
           userName: sanitizeSlackText(user?.name) || "Unknown",
           tinderId: props.tinderId ?? "unknown",
           errorType: props.errorType,
-          jsonSizeMB: props.jsonSizeMB ?? 0,
+          errorCode: props.errorCode,
+          constraint: sanitizeSlackText(props.errorConstraint),
+          table: sanitizeSlackText(props.errorTable),
+          column: sanitizeSlackText(props.errorColumn),
+          detail: sanitizeSlackText(props.errorDetail),
+          blobUrl: props.blobUrl,
+          jsonSizeMB: props.jsonSizeMB,
         },
       });
       return;
@@ -958,7 +964,7 @@ export async function trackSlackEvent<T extends ServerAnalyticsEventName>(
           column: sanitizeSlackText(props.errorColumn),
           detail: sanitizeSlackText(props.errorDetail),
           blobUrl: props.blobUrl,
-          jsonSizeMB: props.jsonSizeMB ?? 0,
+          jsonSizeMB: props.jsonSizeMB,
         },
       });
       return;

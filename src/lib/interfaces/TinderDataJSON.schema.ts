@@ -141,8 +141,9 @@ const tinderUserBaseSchema = z
     gender: tinderJsonGenderSchema,
     gender_filter: tinderJsonGenderSchema,
     interested_in: tinderJsonGenderSchema,
-    age_filter_min: z.number(),
-    age_filter_max: z.number(),
+    // Discovery preferences are absent from some otherwise usable exports.
+    age_filter_min: z.number().optional(),
+    age_filter_max: z.number().optional(),
 
     // Optional - inferred post-parse from app_opens if missing
     create_date: z.string().optional(),
@@ -212,6 +213,15 @@ const fullTinderUserSchema = tinderUserBaseSchema
   })
   .passthrough();
 
+const anonymizedTinderUserSchema = tinderUserBaseSchema
+  .extend({
+    create_date: z.string(),
+    instagram: z.boolean().optional().default(false),
+    spotify: z.boolean().optional().default(false),
+    country: z.object({ code: z.string() }).passthrough().optional(),
+  })
+  .passthrough();
+
 // ── Top-level schema ────────────────────────────────────────────────────────
 
 export const fullTinderDataSchema = z
@@ -222,6 +232,32 @@ export const fullTinderDataSchema = z
     Photos: photosSchema,
 
     // Non-extraction types — pass through without validation
+    Campaigns: z.unknown().optional(),
+    Experiences: z.unknown().optional(),
+    Purchases: z.unknown().optional(),
+    Spotify: z.unknown().optional(),
+    RoomsAndInteractions: z.unknown().optional(),
+    SwipeNotes: z.unknown().optional(),
+    SwipeParty: z.unknown().optional(),
+    StudentVerifications: z.unknown().optional(),
+    SocialGraph: z.unknown().optional(),
+    ReportContent: z.unknown().optional(),
+    Tailor: z.unknown().optional(),
+    ShareMyDate: z.unknown().optional(),
+  })
+  .passthrough();
+
+/**
+ * Server-side contract for the anonymized blob consumed by profile services.
+ * It keeps the fields needed for insights strict while normalizing optional
+ * collections that are absent from some Tinder exports.
+ */
+export const anonymizedTinderDataSchema = z
+  .object({
+    Usage: usageSchema,
+    User: anonymizedTinderUserSchema,
+    Messages: z.array(tinderJsonMatchSchema),
+    Photos: photosSchema.optional().default([]),
     Campaigns: z.unknown().optional(),
     Experiences: z.unknown().optional(),
     Purchases: z.unknown().optional(),
