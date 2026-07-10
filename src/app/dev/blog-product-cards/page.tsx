@@ -9,12 +9,16 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "Blog product-card preview",
-  description: "Development-only preview of SwipeStats blog product cards.",
+  description: "Non-production preview of SwipeStats blog product cards.",
   robots: { index: false, follow: false },
 };
 
 export default function BlogProductCardsPreviewPage() {
-  if (process.env.NODE_ENV !== "development") {
+  const isPreviewEnabled =
+    process.env.NODE_ENV === "development" ||
+    process.env.VERCEL_ENV === "preview";
+
+  if (!isPreviewEnabled) {
     notFound();
   }
 
@@ -23,7 +27,7 @@ export default function BlogProductCardsPreviewPage() {
       <header className="border-b border-gray-200 bg-white">
         <div className="mx-auto max-w-6xl px-6 py-14 lg:px-8">
           <div className="font-mono text-[11px] font-semibold tracking-[0.12em] text-rose-600 uppercase">
-            Development only · MDX specimens
+            Non-production · MDX specimens
           </div>
           <h1 className="mt-3 text-4xl font-bold tracking-[-0.04em] sm:text-5xl">
             Blog product cards

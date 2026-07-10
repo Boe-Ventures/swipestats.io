@@ -124,8 +124,8 @@ http://localhost:3000/dev/blog-product-cards
 ```
 
 The preview route renders all product variants, an in-article example, and the
-existing fallback cards. It returns 404 outside `next dev` and is marked
-`noindex`.
+existing fallback cards. It is available in local development and Vercel
+Preview deployments, returns 404 in production, and is marked `noindex`.
 
 ## Article page structure
 
@@ -150,7 +150,7 @@ JSON-LD, breadcrumb JSON-LD, and generated social images.
 - `src/components/mdx/MDXContent.tsx` — MDX component registry
 - `src/components/mdx/CtaInjector.tsx` — automatic fallback injection
 - `src/components/mdx/ProductCard.tsx` — contextual product cards
-- `src/app/dev/blog-product-cards/page.tsx` — development preview gallery
+- `src/app/dev/blog-product-cards/page.tsx` — non-production preview gallery
 - `src/app/(marketing)/blog/page.tsx` — blog index
 - `src/app/(marketing)/blog/BlogGrid.tsx` — article cards and thumbnails
 
