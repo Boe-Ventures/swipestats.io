@@ -15,6 +15,7 @@ import {
   userTable,
 } from "@/server/db/schema";
 import { captureException } from "@/server/clients/posthog.client";
+import { buildUploadFailureCodexPrompt } from "./slack-codex";
 
 // =====================================================
 // TYPE DEFINITIONS
@@ -521,6 +522,7 @@ export function sendError(params: {
   context?: Record<string, string | number | undefined>;
   logUrl?: string;
   imageUrls?: string[];
+  codexPrompt?: string;
 }): void {
   const { title, context, logUrl } = params;
   const errorMsg =
@@ -544,6 +546,19 @@ export function sendError(params: {
     createSectionBlock(`*Error:*\n\`\`\`${errorMsg}\`\`\``),
   ];
 
+  // A real Slack mention requires the installed app's member ID. Keep this
+  // production-only so local and preview failures cannot launch cloud tasks.
+  const codexInvocation =
+    params.codexPrompt &&
+    env.NEXT_PUBLIC_IS_PRODUCTION &&
+    env.SLACK_CODEX_USER_ID
+      ? `<@${env.SLACK_CODEX_USER_ID}> ${params.codexPrompt}`
+      : undefined;
+
+  if (codexInvocation) {
+    blocks.push(createSectionBlock(codexInvocation));
+  }
+
   if (logUrl) {
     blocks.push(
       createActionsBlock([
@@ -560,7 +575,9 @@ export function sendError(params: {
 
   sendSlackMessage({
     channel: params.channel,
-    text: `⚠️ ${title}`,
+    // Keep the invocation in the top-level text as well as the visible block.
+    // Slack app-mention events are derived from the message text payload.
+    text: codexInvocation ? `⚠️ ${title}\n${codexInvocation}` : `⚠️ ${title}`,
     blocks,
   });
 }
@@ -826,6 +843,7 @@ export async function trackSlackEvent<T extends ServerAnalyticsEventName>(
         channel,
         title: "Tinder Upload Failed",
         error: sanitizeSlackText(props.errorMessage),
+        codexPrompt: buildUploadFailureCodexPrompt("Tinder"),
         context: {
           userId,
           userName: sanitizeSlackText(user?.name) || "Unknown",
@@ -953,6 +971,7 @@ export async function trackSlackEvent<T extends ServerAnalyticsEventName>(
         channel,
         title: "Hinge Upload Failed",
         error: sanitizeSlackText(props.errorMessage),
+        codexPrompt: buildUploadFailureCodexPrompt("Hinge"),
         context: {
           userId,
           userName: sanitizeSlackText(user?.name) || "Unknown",

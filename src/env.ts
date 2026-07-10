@@ -33,6 +33,13 @@ export const env = createEnv({
     SLACK_WEBHOOK_BOT_DEVELOPER: z.string().url(),
     SLACK_WEBHOOK_SALES: z.string().url(),
     SLACK_WEBHOOK_RICH_MESSAGE_TEST: z.string().url(),
+    // Slack member ID for the Codex cloud-task app. Optional so development
+    // and preview alerts never launch cloud tasks by accident.
+    SLACK_CODEX_USER_ID: z
+      .string()
+      .regex(/^U[A-Z0-9]+$/)
+      .optional()
+      .or(z.literal("")),
     // Amplitude SECRET key (server-only — never expose to the client).
     // Pairs with NEXT_PUBLIC_AMPLITUDE_API_KEY for Basic Auth on the
     // Amplitude Taxonomy API. Optional: taxonomy tooling no-ops when unset.
@@ -86,6 +93,7 @@ export const env = createEnv({
     SLACK_WEBHOOK_SALES: process.env.SLACK_WEBHOOK_SALES,
     SLACK_WEBHOOK_RICH_MESSAGE_TEST:
       process.env.SLACK_WEBHOOK_RICH_MESSAGE_TEST,
+    SLACK_CODEX_USER_ID: process.env.SLACK_CODEX_USER_ID,
     AMPLITUDE_SECRET_KEY: process.env.AMPLITUDE_SECRET_KEY,
     // Priority: explicit override > true production > branch URL > localhost default
     NEXT_PUBLIC_BASE_URL:
