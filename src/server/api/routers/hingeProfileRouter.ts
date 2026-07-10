@@ -260,28 +260,28 @@ export const hingeProfileRouter = {
       }
 
       try {
-        // Quick check: does this hingeId already exist?
-        const existingByHingeId = await getHingeProfile(input.hingeId);
+        // Resolve create-vs-update on the server. The client can have stale
+        // upload context after a successful upload or a retry.
+        const existingByHingeId = await getHingeProfileWithUser(input.hingeId);
+        const isExistingProfile = Boolean(existingByHingeId);
+        const result = existingByHingeId
+          ? await handleExistingHingeProfileUpload({
+              existing: existingByHingeId,
+              hingeId: input.hingeId,
+              blobUrl: input.blobUrl,
+              currentUserId: ctx.session.user.id,
+              timezone: input.timezone,
+              country: input.country,
+            })
+          : await createHingeProfile({
+              hingeId: input.hingeId,
+              blobUrl: input.blobUrl,
+              userId: ctx.session.user.id,
+              timezone: input.timezone,
+              country: input.country,
+            });
 
-        if (existingByHingeId) {
-          throw new TRPCError({
-            code: "CONFLICT",
-            message:
-              "This profile already exists. Use updateProfile or mergeAccounts instead.",
-          });
-        }
-
-        // Create brand new profile
-        console.log(`📝 Creating new Hinge profile: ${input.hingeId}`);
-        const result = await createHingeProfile({
-          hingeId: input.hingeId,
-          blobUrl: input.blobUrl,
-          userId: ctx.session.user.id,
-          timezone: input.timezone,
-          country: input.country,
-        });
-
-        trackServerEvent(ctx.session.user.id, "hinge_profile_created", {
+        const metrics = {
           hingeId: input.hingeId,
           matchCount: result.metrics.matchCount,
           messageCount: result.metrics.messageCount,
@@ -294,7 +294,23 @@ export const hingeProfileRouter = {
           consentPhotos: input.consentPhotos ?? true,
           consentWork: input.consentWork ?? true,
           blobUrl: input.blobUrl,
-        });
+        };
+
+        if (isExistingProfile) {
+          if (!result.isNoOp) {
+            trackServerEvent(
+              ctx.session.user.id,
+              "hinge_profile_updated",
+              metrics,
+            );
+          }
+        } else {
+          trackServerEvent(
+            ctx.session.user.id,
+            "hinge_profile_created",
+            metrics,
+          );
+        }
 
         return result.profile;
       } catch (error) {
