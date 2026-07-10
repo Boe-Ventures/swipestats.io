@@ -49,4 +49,59 @@ describe("parseAnonymizedTinderData", () => {
       }),
     ).toThrow("User.birth_date");
   });
+
+  test("accepts Tinder's optional metadata variants", () => {
+    const parsed = parseAnonymizedTinderData({
+      ...minimalExport,
+      Messages: [
+        {
+          match_id: "Match 1",
+          messages: [
+            {
+              to: 1,
+              from: "You",
+              message: "A song",
+              sent_date: "Mon, 12 Jan 2026 18:22:45 GMT",
+              type: "song",
+            },
+          ],
+        },
+      ],
+      User: {
+        ...minimalExport.User,
+        city: "Oslo",
+        country: "Norway",
+        display_genders: null,
+        display_sexual_orientations: "",
+      },
+    });
+    const profile = transformTinderJsonToProfile(parsed, {
+      tinderId: "tinder-metadata-variants",
+      userId: "user-test",
+    });
+
+    expect(profile.city).toBe("Oslo");
+    expect(profile.country).toBe("Norway");
+    expect(parsed.User.display_sexual_orientations).toBe("");
+    expect(parsed.Messages[0]?.messages[0]?.type).toBe("song");
+  });
+
+  test("accepts city objects without a region", () => {
+    const parsed = parseAnonymizedTinderData({
+      ...minimalExport,
+      User: {
+        ...minimalExport.User,
+        city: { name: "Oslo" },
+        country: { code: "NO" },
+      },
+    });
+    const profile = transformTinderJsonToProfile(parsed, {
+      tinderId: "tinder-city-without-region",
+      userId: "user-test",
+    });
+
+    expect(profile.city).toBe("Oslo");
+    expect(profile.region).toBeNull();
+    expect(profile.country).toBe("NO");
+  });
 });

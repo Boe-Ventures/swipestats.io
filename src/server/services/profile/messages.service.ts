@@ -25,7 +25,6 @@ function getMessageType(msg: TinderJsonMatch["messages"][number]): MessageType {
       return "ACTIVITY";
     case "1":
       return "TEXT"; // Number type actually represents text
-    // @ts-expect-error - covering edge cases
     case 1:
       return "TEXT";
     case "vibes":

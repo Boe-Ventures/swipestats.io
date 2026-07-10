@@ -40,6 +40,16 @@ export function transformTinderJsonToProfile(
   // Extract job and school info
   const firstJob = user.jobs?.[0];
   const firstSchool = user.schools?.[0];
+  const city =
+    typeof user.city === "string"
+      ? user.city || null
+      : (user.city?.name ?? null);
+  const region =
+    typeof user.city === "string" ? null : (user.city?.region ?? null);
+  const country =
+    typeof user.country === "string"
+      ? user.country || null
+      : (user.country?.code ?? null);
 
   return {
     tinderId: options.tinderId,
@@ -53,9 +63,9 @@ export function transformTinderJsonToProfile(
     genderStr: user.gender,
     bio: user.bio ? he.decode(user.bio) : null, // Decode HTML entities
     bioOriginal: user.bio ?? null,
-    city: user.city?.name ?? null,
-    country: options.country ?? user.country?.code ?? null,
-    region: user.city?.region ?? null,
+    city,
+    country: options.country ?? country,
+    region,
     userInterests: user.user_interests ?? null,
     interests: user.interests ?? null,
     sexualOrientations: user.sexual_orientations ?? null,

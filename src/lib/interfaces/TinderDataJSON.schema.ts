@@ -15,19 +15,9 @@ export const messageSchema = z
     from: z.string(),
     message: z.string().optional(),
     sent_date: z.string(),
-    type: z
-      .union([
-        z.literal("gif"),
-        z.literal("gesture"),
-        z.literal("1"),
-        z.literal("activity"),
-        z.literal("contact_card"),
-        z.literal("swipe_note"),
-        z.literal("game_notification"),
-        z.literal("contextual"),
-        z.literal("vibes"),
-      ])
-      .optional(),
+    // Tinder adds message types without notice (for example song, sticker,
+    // and tombstone). Unknown values are intentionally mapped to OTHER.
+    type: z.union([z.string(), z.number()]).optional(),
     fixed_height: z.string().optional(),
   })
   .passthrough();
@@ -91,7 +81,7 @@ const coordsSchema = z
 const citySchema = z
   .object({
     name: z.string(),
-    region: z.string(),
+    region: z.string().optional(),
     coords: coordsSchema.optional(),
   })
   .passthrough();
@@ -154,7 +144,7 @@ const tinderUserBaseSchema = z
     gender_extended: z.string().optional(),
     interested_in_genders: tinderJsonGenderSchema.optional(),
     bio: z.string().optional(),
-    city: citySchema.optional(),
+    city: z.union([citySchema, z.string()]).optional(),
     connection_count: z.number().optional(),
     education: z.string().optional().default(""),
     interests: z.array(z.unknown()).optional(),
@@ -187,8 +177,14 @@ const tinderUserBaseSchema = z
     selfie_verification: z.string().optional(),
     onboarded_at: z.string().optional(),
     show_gender_on_profile: z.boolean().optional(),
-    display_genders: z.array(z.string()).optional(),
-    display_sexual_orientations: z.array(z.string()).optional(),
+    // Empty strings and null are common when these display-only fields are
+    // unset. They are not used for profile computation.
+    display_genders: z
+      .union([z.array(z.string()), z.string(), z.null()])
+      .optional(),
+    display_sexual_orientations: z
+      .union([z.array(z.string()), z.string(), z.null()])
+      .optional(),
     pos_major: z.unknown().optional(),
     signup_pos: z.unknown().optional(),
     client_metadata: z.unknown().optional(),
@@ -197,7 +193,10 @@ const tinderUserBaseSchema = z
     image_tags: z.array(z.unknown()).optional(),
     user_contents: z.array(z.unknown()).optional(),
     user_message_consents: z.array(z.unknown()).optional(),
-    authIds: z.array(z.unknown()).optional(),
+    // Observed as both an object and an array across Tinder export versions.
+    // Authentication identifiers are removed during anonymization and are not
+    // consumed by the profile pipeline.
+    authIds: z.unknown().optional(),
   })
   .passthrough();
 
@@ -218,7 +217,9 @@ const anonymizedTinderUserSchema = tinderUserBaseSchema
     create_date: z.string(),
     instagram: z.boolean().optional().default(false),
     spotify: z.boolean().optional().default(false),
-    country: z.object({ code: z.string() }).passthrough().optional(),
+    country: z
+      .union([z.object({ code: z.string() }).passthrough(), z.string()])
+      .optional(),
   })
   .passthrough();
 

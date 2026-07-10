@@ -50,6 +50,10 @@ export function TinderProfilePreview({
   const birthDate = new Date(user.birth_date);
   const age = differenceInYears(new Date(), birthDate);
   const genderDisplay = getGenderDisplay(user.gender);
+  const city =
+    typeof user.city === "string" ? user.city : (user.city?.name ?? null);
+  const region =
+    typeof user.city === "string" ? null : (user.city?.region ?? null);
 
   // Process photos - handle both old format (string[]) and new format (TinderPhoto[])
   // Only show photos if consented (or if consent is undefined for backward compatibility)
@@ -114,10 +118,10 @@ export function TinderProfilePreview({
             <div className="text-lg font-bold sm:text-xl">
               {genderDisplay.text}, {age}
             </div>
-            {user.city && (
+            {city && (
               <p className="mt-0.5 text-sm text-gray-600">
-                {user.city.name}
-                {user.city.region && `, ${user.city.region}`}
+                {city}
+                {region && `, ${region}`}
               </p>
             )}
           </div>

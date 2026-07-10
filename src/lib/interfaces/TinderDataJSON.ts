@@ -95,7 +95,7 @@ interface TinderUserBase {
   interested_in: TinderJsonGender;
   interested_in_genders?: TinderJsonGender;
   bio?: string;
-  city?: City;
+  city?: City | string;
   connection_count?: number;
   education: string; // I think this is depreciated
 
@@ -126,8 +126,8 @@ interface TinderUserBase {
   selfie_verification?: string; // "verified", "not_verified", etc.
   onboarded_at?: string; // ISO date string
   show_gender_on_profile?: boolean;
-  display_genders?: string[];
-  display_sexual_orientations?: string[];
+  display_genders?: string[] | string | null;
+  display_sexual_orientations?: string[] | string | null;
   pos_major?: unknown; // Position data
   signup_pos?: unknown; // Sign-up location
   client_metadata?: unknown;
@@ -136,7 +136,7 @@ interface TinderUserBase {
   image_tags?: unknown[];
   user_contents?: unknown[];
   user_message_consents?: unknown[];
-  authIds?: unknown[];
+  authIds?: unknown;
 
   // New fields in 2026+ exports
   bio_suppression?: boolean;
@@ -197,9 +197,7 @@ interface Descriptor {
 export interface AnonymizedTinderUser extends TinderUserBase {
   instagram: boolean;
   spotify: boolean;
-  country?: {
-    code: string;
-  };
+  country?: { code: string } | string;
 }
 
 interface FullTinderUser extends TinderUserBase {
@@ -253,7 +251,7 @@ interface Coords {
 
 export interface City {
   name: string;
-  region: string;
+  region?: string;
   coords?: Coords;
 }
 
@@ -427,16 +425,9 @@ export interface Message {
   from: string; // "You"
   message?: string; // should maybe clean this from HTML to string. Lot's of "don&rsquo;t"
   sent_date: string; // not iso string, but close "Tue, 30 Nov 2021 05:08:21 GMT" // new Date() actually works well to parse it
-  type?: // undefined = text
-    | "gif"
-    | "gesture"
-    | "1" // actually a number / Int, but actually actually it's just a normal text
-    | "activity"
-    | "contact_card"
-    | "swipe_note"
-    | "game_notification"
-    | "contextual"
-    | "vibes"; // almost never occurs
+  // Undefined is text. Tinder also emits undocumented values such as song,
+  // sticker, and tombstone; the transformer maps unknown values to OTHER.
+  type?: string | number;
   fixed_height?: string; // url (to gif)
 }
 
