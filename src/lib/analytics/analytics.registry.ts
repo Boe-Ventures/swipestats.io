@@ -334,6 +334,12 @@ export const CLIENT_EVENT_REGISTRY = {
     description: "Route navigation. PostHog handles pageviews natively today.",
     status: "planned",
   },
+  blog_product_card_clicked: {
+    category: "Blog Conversion",
+    description:
+      "Contextual blog product card clicked, including source post and destination product.",
+    status: "live",
+  },
 
   // ── Auth UI ──────────────────────────────────────
   sign_up_clicked: {
