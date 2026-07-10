@@ -12,7 +12,6 @@ import { SubmitButton } from "../_components/SubmitButton";
 import { UploadLayout } from "../_components/UploadLayout";
 import { RayaProfilePreview } from "./components/RayaProfilePreview";
 import { cn } from "@/components/ui";
-import { Button } from "@/components/ui/button";
 import { useAnalytics } from "@/contexts/AnalyticsProvider";
 import type { SwipestatsRayaProfilePayload } from "@/lib/interfaces/RayaDataJSON";
 import { extractRayaData } from "@/lib/upload/extract-raya-data";
@@ -35,8 +34,8 @@ export function RayaUploadPage() {
   const [uploadState, setUploadState] = useState<
     "idle" | "session" | "uploading" | "processing"
   >("idle");
-  const [photosConsent, setPhotosConsent] = useState(false);
-  const [workConsent, setWorkConsent] = useState(false);
+  const [photosConsent, setPhotosConsent] = useState(true);
+  const [workConsent, setWorkConsent] = useState(true);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [brokenImageUrls, setBrokenImageUrls] = useState<string[]>([]);
   const isReadingRef = useRef(false);
@@ -181,14 +180,11 @@ export function RayaUploadPage() {
     return (
       <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-8 text-center">
-          <p className="font-mono text-xs tracking-wider text-gray-500 uppercase">
-            New provider
-          </p>
-          <h1 className="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-            Upload your Raya data
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+            Upload Your Raya Data
           </h1>
           <p className="mt-3 text-gray-600">
-            Drop the original ZIP. Identifying fields are removed before upload.
+            Upload your Raya data to get personalized insights
           </p>
         </div>
 
@@ -212,6 +208,9 @@ export function RayaUploadPage() {
           <p className="mt-1 text-sm text-gray-500">
             Required: {REQUIRED_FILES.join(", ")}
           </p>
+          <p className="mt-2 text-xs text-gray-400">
+            Identifying fields are removed in your browser before upload.
+          </p>
         </div>
 
         {error && <ErrorAlert message={error} />}
@@ -219,30 +218,16 @@ export function RayaUploadPage() {
     );
   }
 
-  const resetArchive = () => {
-    setPayload(null);
-    setError(null);
-    setBrokenImageUrls([]);
-    setPhotosConsent(false);
-    setWorkConsent(false);
-    setTermsAccepted(false);
-  };
-
   return (
     <UploadLayout
       leftColumn={
         <>
           <div>
-            <p className="font-mono text-xs tracking-wider text-gray-500 uppercase">
-              Raya archive ready
-            </p>
-            <h1 className="mt-2 text-3xl font-bold tracking-tight text-gray-900">
-              Review your Raya data
+            <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+              Upload Your Raya Data
             </h1>
             <p className="mt-2 text-sm leading-6 text-gray-600">
-              Raya exports fewer profile fields than Tinder or Hinge. This
-              review shows every useful profile and activity field it does
-              provide.
+              Upload your Raya data to get personalized insights
             </p>
           </div>
 
@@ -250,7 +235,9 @@ export function RayaUploadPage() {
             <div className="flex items-start gap-3">
               <CheckCircleIcon className="mt-0.5 h-6 w-6 shrink-0 text-emerald-600" />
               <div>
-                <h2 className="font-semibold text-gray-900">Archive summary</h2>
+                <h2 className="font-semibold text-gray-900">
+                  Confirm Your Raya Data
+                </h2>
                 <p className="mt-0.5 text-sm text-gray-500">
                   {summary.firstActivityAt} to {summary.lastActivityAt}
                 </p>
@@ -274,12 +261,6 @@ export function RayaUploadPage() {
             </div>
           </div>
 
-          <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm leading-6 text-gray-600">
-            The profile on the right is a local preview. Photos and work details
-            are only stored when you opt in below. Raya does not export received
-            messages or conversation threads, so we do not invent those stats.
-          </div>
-
           <div className="space-y-3 rounded-xl border border-gray-200 bg-white p-5 text-sm text-gray-700 shadow-sm">
             <h2 className="font-semibold text-gray-900">
               Choose what to include
@@ -299,6 +280,10 @@ export function RayaUploadPage() {
               onChange={setTermsAccepted}
               label="I agree to the terms and privacy policy"
             />
+            <p className="border-t border-gray-100 pt-3 text-xs leading-5 text-gray-500">
+              Raya does not export received messages or conversation threads, so
+              those insights are unavailable rather than estimated.
+            </p>
           </div>
 
           {error && <ErrorAlert message={error} />}
@@ -307,27 +292,16 @@ export function RayaUploadPage() {
             onClick={handleSubmit}
             disabled={!termsAccepted || isBusy}
             isLoading={isBusy}
-            className="bg-gray-950 hover:bg-gray-800"
           >
             Upload &amp; view Raya insights
           </SubmitButton>
-
-          <Button
-            type="button"
-            variant="ghost"
-            onClick={resetArchive}
-            disabled={isBusy}
-            className="w-full text-gray-500"
-          >
-            Choose a different archive
-          </Button>
         </>
       }
       rightColumn={
         <RayaProfilePreview
           payload={payload}
-          photosWillBeSaved={photosConsent}
-          workWillBeSaved={workConsent}
+          sharePhotos={photosConsent}
+          shareWorkInfo={workConsent}
           onBrokenImagesDetected={setBrokenImageUrls}
         />
       }
@@ -342,12 +316,6 @@ function ErrorAlert({ message }: { message: string }) {
     </div>
   );
 }
-
-/*
-  The preview is intentionally richer than the persisted default. Direct
-  identifiers were already removed by extraction, while photos and work remain
-  local until their explicit consent toggles are enabled.
-*/
 
 function ConsentCheckbox({
   checked,
