@@ -9,7 +9,10 @@ import { useRouter } from "next/navigation";
 import { useDropzone } from "react-dropzone";
 
 import { SubmitButton } from "../_components/SubmitButton";
+import { UploadLayout } from "../_components/UploadLayout";
+import { RayaProfilePreview } from "./components/RayaProfilePreview";
 import { cn } from "@/components/ui";
+import { Button } from "@/components/ui/button";
 import { useAnalytics } from "@/contexts/AnalyticsProvider";
 import type { SwipestatsRayaProfilePayload } from "@/lib/interfaces/RayaDataJSON";
 import { extractRayaData } from "@/lib/upload/extract-raya-data";
@@ -35,6 +38,7 @@ export function RayaUploadPage() {
   const [photosConsent, setPhotosConsent] = useState(false);
   const [workConsent, setWorkConsent] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [brokenImageUrls, setBrokenImageUrls] = useState<string[]>([]);
   const isReadingRef = useRef(false);
 
   const router = useRouter();
@@ -131,7 +135,11 @@ export function RayaUploadPage() {
         ...payload.anonymizedRayaJson,
         User: {
           ...payload.anonymizedRayaJson.User,
-          photos: photosConsent ? payload.anonymizedRayaJson.User.photos : [],
+          photos: photosConsent
+            ? payload.anonymizedRayaJson.User.photos.filter(
+                (url) => !brokenImageUrls.includes(url),
+              )
+            : [],
           occupation: workConsent
             ? payload.anonymizedRayaJson.User.occupation
             : undefined,
@@ -169,91 +177,122 @@ export function RayaUploadPage() {
   const summary = payload?.anonymizedRayaJson.Summary;
   const isBusy = isReading || uploadState !== "idle" || saveMutation.isPending;
 
-  return (
-    <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mb-8 text-center">
-        <p className="font-mono text-xs tracking-wider text-gray-500 uppercase">
-          New provider
-        </p>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
-          Upload your Raya data
-        </h1>
-        <p className="mt-3 text-gray-600">
-          Drop the original ZIP. Identifying fields are removed before upload.
-        </p>
-      </div>
-
-      <div
-        {...getRootProps()}
-        className={cn(
-          "cursor-pointer rounded-2xl border-2 border-dashed px-6 py-14 text-center transition",
-          isDragActive
-            ? "border-gray-900 bg-gray-100"
-            : "border-gray-300 bg-white hover:border-gray-500",
-          isBusy && "cursor-not-allowed opacity-60",
-        )}
-      >
-        <input {...getInputProps()} />
-        {payload ? (
-          <CheckCircleIcon className="mx-auto h-14 w-14 text-emerald-600" />
-        ) : (
-          <CloudArrowUpIcon className="mx-auto h-14 w-14 text-gray-400" />
-        )}
-        <p className="mt-4 font-medium text-gray-900">
-          {isReading
-            ? "Reading and anonymizing your archive..."
-            : payload
-              ? "Raya archive ready"
-              : "Choose your Raya ZIP archive"}
-        </p>
-        <p className="mt-1 text-sm text-gray-500">
-          Required: {REQUIRED_FILES.join(", ")}
-        </p>
-      </div>
-
-      {error && (
-        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
-          {error}
+  if (!payload || !summary) {
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mb-8 text-center">
+          <p className="font-mono text-xs tracking-wider text-gray-500 uppercase">
+            New provider
+          </p>
+          <h1 className="mt-2 text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+            Upload your Raya data
+          </h1>
+          <p className="mt-3 text-gray-600">
+            Drop the original ZIP. Identifying fields are removed before upload.
+          </p>
         </div>
-      )}
 
-      {payload && summary && (
-        <div className="mt-6 space-y-6 rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+        <div
+          {...getRootProps()}
+          className={cn(
+            "cursor-pointer rounded-2xl border-2 border-dashed px-6 py-14 text-center transition",
+            isDragActive
+              ? "border-gray-900 bg-gray-100"
+              : "border-gray-300 bg-white hover:border-gray-500",
+            isBusy && "cursor-not-allowed opacity-60",
+          )}
+        >
+          <input {...getInputProps()} />
+          <CloudArrowUpIcon className="mx-auto h-14 w-14 text-gray-400" />
+          <p className="mt-4 font-medium text-gray-900">
+            {isReading
+              ? "Reading and anonymizing your archive..."
+              : "Choose your Raya ZIP archive"}
+          </p>
+          <p className="mt-1 text-sm text-gray-500">
+            Required: {REQUIRED_FILES.join(", ")}
+          </p>
+        </div>
+
+        {error && <ErrorAlert message={error} />}
+      </div>
+    );
+  }
+
+  const resetArchive = () => {
+    setPayload(null);
+    setError(null);
+    setBrokenImageUrls([]);
+    setPhotosConsent(false);
+    setWorkConsent(false);
+    setTermsAccepted(false);
+  };
+
+  return (
+    <UploadLayout
+      leftColumn={
+        <>
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">
-              Archive summary
-            </h2>
-            <p className="mt-1 text-sm text-gray-500">
-              {summary.firstActivityAt} to {summary.lastActivityAt}
+            <p className="font-mono text-xs tracking-wider text-gray-500 uppercase">
+              Raya archive ready
+            </p>
+            <h1 className="mt-2 text-3xl font-bold tracking-tight text-gray-900">
+              Review your Raya data
+            </h1>
+            <p className="mt-2 text-sm leading-6 text-gray-600">
+              Raya exports fewer profile fields than Tinder or Hinge. This
+              review shows every useful profile and activity field it does
+              provide.
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-            {[
-              ["Likes", summary.likes],
-              ["Passes", summary.passes],
-              ["Matches", summary.matches],
-              ["Messages sent", summary.messagesSent],
-            ].map(([label, value]) => (
-              <div key={label} className="rounded-xl bg-gray-50 p-4">
-                <p className="text-2xl font-semibold text-gray-900">
-                  {Number(value).toLocaleString()}
+          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+            <div className="flex items-start gap-3">
+              <CheckCircleIcon className="mt-0.5 h-6 w-6 shrink-0 text-emerald-600" />
+              <div>
+                <h2 className="font-semibold text-gray-900">Archive summary</h2>
+                <p className="mt-0.5 text-sm text-gray-500">
+                  {summary.firstActivityAt} to {summary.lastActivityAt}
                 </p>
-                <p className="text-xs text-gray-500">{label}</p>
               </div>
-            ))}
+            </div>
+
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              {[
+                ["Likes", summary.likes],
+                ["Passes", summary.passes],
+                ["Matches", summary.matches],
+                ["Messages sent", summary.messagesSent],
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-xl bg-gray-50 p-4">
+                  <p className="text-2xl font-semibold text-gray-900">
+                    {Number(value).toLocaleString()}
+                  </p>
+                  <p className="text-xs text-gray-500">{label}</p>
+                </div>
+              ))}
+            </div>
           </div>
 
-          <div className="space-y-3 border-t border-gray-200 pt-5 text-sm text-gray-700">
+          <div className="rounded-xl border border-gray-200 bg-gray-50 p-4 text-sm leading-6 text-gray-600">
+            The profile on the right is a local preview. Photos and work details
+            are only stored when you opt in below. Raya does not export received
+            messages or conversation threads, so we do not invent those stats.
+          </div>
+
+          <div className="space-y-3 rounded-xl border border-gray-200 bg-white p-5 text-sm text-gray-700 shadow-sm">
+            <h2 className="font-semibold text-gray-900">
+              Choose what to include
+            </h2>
             <ConsentCheckbox
               checked={photosConsent}
               onChange={setPhotosConsent}
-              label="Include my profile photo URLs in my private profile"
+              label="Save my profile photos with my private insights"
             />
             <ConsentCheckbox
               checked={workConsent}
               onChange={setWorkConsent}
-              label="Include my occupation and company in my private profile"
+              label="Save my occupation and company with my private insights"
             />
             <ConsentCheckbox
               checked={termsAccepted}
@@ -261,6 +300,8 @@ export function RayaUploadPage() {
               label="I agree to the terms and privacy policy"
             />
           </div>
+
+          {error && <ErrorAlert message={error} />}
 
           <SubmitButton
             onClick={handleSubmit}
@@ -270,11 +311,43 @@ export function RayaUploadPage() {
           >
             Upload &amp; view Raya insights
           </SubmitButton>
-        </div>
-      )}
+
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={resetArchive}
+            disabled={isBusy}
+            className="w-full text-gray-500"
+          >
+            Choose a different archive
+          </Button>
+        </>
+      }
+      rightColumn={
+        <RayaProfilePreview
+          payload={payload}
+          photosWillBeSaved={photosConsent}
+          workWillBeSaved={workConsent}
+          onBrokenImagesDetected={setBrokenImageUrls}
+        />
+      }
+    />
+  );
+}
+
+function ErrorAlert({ message }: { message: string }) {
+  return (
+    <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+      {message}
     </div>
   );
 }
+
+/*
+  The preview is intentionally richer than the persisted default. Direct
+  identifiers were already removed by extraction, while photos and work remain
+  local until their explicit consent toggles are enabled.
+*/
 
 function ConsentCheckbox({
   checked,
