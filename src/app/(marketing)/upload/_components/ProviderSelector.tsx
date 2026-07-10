@@ -22,6 +22,11 @@ const providers = [
     label: "Bumble",
     description: "Women make the first move.",
   },
+  {
+    value: "raya",
+    label: "Raya",
+    description: "Private, global dating and networking.",
+  },
 ];
 
 export function ProviderSelector() {
@@ -73,7 +78,7 @@ export function ProviderSelector() {
             name="provider"
             label="Select your dating app"
             options={providers}
-            gridCols={3}
+            gridCols={2}
           />
         </form>
       </FormProvider>

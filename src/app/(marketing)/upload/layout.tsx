@@ -14,7 +14,8 @@ export default function UploadLayout({
   let currentStep: 1 | 2 | 3 = 1;
   if (
     pathname.startsWith("/upload/tinder") ||
-    pathname.startsWith("/upload/hinge")
+    pathname.startsWith("/upload/hinge") ||
+    pathname.startsWith("/upload/raya")
   ) {
     currentStep = 2;
   } else if (pathname.startsWith("/insights")) {
@@ -24,7 +25,8 @@ export default function UploadLayout({
   // Check if we're on a provider page (needs wider container)
   const isProviderPage =
     pathname.startsWith("/upload/tinder") ||
-    pathname.startsWith("/upload/hinge");
+    pathname.startsWith("/upload/hinge") ||
+    pathname.startsWith("/upload/raya");
 
   return (
     <div className="min-h-screen bg-white">

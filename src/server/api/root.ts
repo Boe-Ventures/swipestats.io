@@ -4,6 +4,7 @@ import { blobRouter } from "@/server/api/routers/blobRouter";
 import { profileCompareRouter } from "@/server/api/routers/profileCompareRouter";
 import { profileRouter } from "@/server/api/routers/profileRouter";
 import { hingeProfileRouter } from "@/server/api/routers/hingeProfileRouter";
+import { rayaProfileRouter } from "@/server/api/routers/rayaProfileRouter";
 import { adminRouter } from "@/server/api/routers/adminRouter";
 import { directoryRouter } from "@/server/api/routers/directoryRouter";
 import { eventRouter } from "@/server/api/routers/eventRouter";
@@ -32,6 +33,7 @@ export const appRouter = createTRPCRouter({
   profileCompare: profileCompareRouter,
   profile: profileRouter,
   hingeProfile: hingeProfileRouter,
+  rayaProfile: rayaProfileRouter,
   admin: adminRouter,
   directory: directoryRouter,
   event: eventRouter,

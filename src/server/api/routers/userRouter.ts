@@ -8,6 +8,7 @@ import {
   userTable,
   tinderProfileTable,
   hingeProfileTable,
+  rayaProfileTable,
   originalAnonymizedFileTable,
 } from "@/server/db/schema";
 import { protectedProcedure } from "../trpc";
@@ -216,8 +217,8 @@ export const userRouter = {
   getUploadedProfiles: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.session.user.id;
 
-    // Fetch both Tinder and Hinge profiles
-    const [tinderProfiles, hingeProfiles] = await Promise.all([
+    // Fetch all supported uploaded profile types
+    const [tinderProfiles, hingeProfiles, rayaProfiles] = await Promise.all([
       ctx.db.query.tinderProfileTable.findMany({
         where: eq(tinderProfileTable.userId, userId),
         columns: {
@@ -274,6 +275,31 @@ export const userRouter = {
         },
         orderBy: [desc(hingeProfileTable.updatedAt)],
       }),
+      ctx.db.query.rayaProfileTable.findMany({
+        where: eq(rayaProfileTable.userId, userId),
+        columns: {
+          rayaId: true,
+          createdAt: true,
+          updatedAt: true,
+          ageAtUpload: true,
+          gender: true,
+          residenceLocation: true,
+          firstDayOnApp: true,
+          lastDayOnApp: true,
+          daysInProfilePeriod: true,
+        },
+        with: {
+          usage: {
+            columns: {
+              swipeLikes: true,
+              swipePasses: true,
+              matches: true,
+              messagesSent: true,
+            },
+          },
+        },
+        orderBy: [desc(rayaProfileTable.updatedAt)],
+      }),
     ]);
 
     return {
@@ -287,6 +313,34 @@ export const userRouter = {
         type: "hinge" as const,
         stats: profile.profileMeta?.[0] ?? null,
       })),
+      raya: rayaProfiles.map((profile) => {
+        const stats = profile.usage.reduce(
+          (total, day) => ({
+            matchesTotal: total.matchesTotal + day.matches,
+            swipeLikesTotal: total.swipeLikesTotal + day.swipeLikes,
+            swipePassesTotal: total.swipePassesTotal + day.swipePasses,
+            messagesSentTotal: total.messagesSentTotal + day.messagesSent,
+          }),
+          {
+            matchesTotal: 0,
+            swipeLikesTotal: 0,
+            swipePassesTotal: 0,
+            messagesSentTotal: 0,
+          },
+        );
+
+        return {
+          ...profile,
+          type: "raya" as const,
+          stats: {
+            ...stats,
+            matchRate:
+              stats.swipeLikesTotal > 0
+                ? stats.matchesTotal / stats.swipeLikesTotal
+                : 0,
+          },
+        };
+      }),
     };
   }),
 } satisfies TRPCRouterRecord;

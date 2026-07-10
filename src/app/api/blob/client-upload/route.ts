@@ -75,6 +75,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
               break;
             case "tinder_data":
             case "hinge_data":
+            case "raya_data":
               // For data exports, allow JSON files
               allowedContentTypes = ["application/json"];
               break;

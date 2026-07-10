@@ -5,6 +5,7 @@ import { ProviderSelector } from "./_components/ProviderSelector";
 import { TinderEducationalContent } from "./flows/TinderEducationalContent";
 import { HingeEducationalContent } from "./flows/HingeEducationalContent";
 import { BumbleEducationalContent } from "./flows/BumbleEducationalContent";
+import { RayaEducationalContent } from "./flows/RayaEducationalContent";
 
 export function UploadClient() {
   const [provider] = useQueryState("provider", parseAsString.withDefault(""));
@@ -19,6 +20,7 @@ export function UploadClient() {
         {provider === "tinder" && <TinderEducationalContent />}
         {provider === "hinge" && <HingeEducationalContent />}
         {provider === "bumble" && <BumbleEducationalContent />}
+        {provider === "raya" && <RayaEducationalContent />}
       </div>
     </div>
   );
