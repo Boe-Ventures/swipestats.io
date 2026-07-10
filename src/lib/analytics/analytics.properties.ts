@@ -62,7 +62,7 @@ type EventPropertyRegistry<Defs> = {
 
 const DATASET_RECENCY = ["MIXED", "RECENT"] as const;
 const PROVIDER = ["tinder", "hinge", "bumble"] as const;
-const UPLOAD_PROVIDER = ["tinder", "hinge"] as const;
+const UPLOAD_PROVIDER = ["tinder", "hinge", "raya"] as const;
 const AUTH_SOURCE = ["conversion_modal", "signin_page", "navbar"] as const;
 const ROAST_TONE = ["helpful", "mild", "spicy"] as const;
 const UPLOAD_ERROR_TYPE = ["auth", "ownership", "database", "unknown"] as const;
@@ -792,6 +792,7 @@ export const CLIENT_EVENT_PROPERTIES: EventPropertyRegistry<ClientEventPropertie
       provider: { type: "enum", required: true, values: UPLOAD_PROVIDER },
       tinderId: { type: "string", required: false },
       hingeId: { type: "string", required: false },
+      rayaId: { type: "string", required: false },
       photoCount: { type: "number", required: true },
       hasPhotos: { type: "boolean", required: true },
       hasPhotosConsent: { type: "boolean", required: true },

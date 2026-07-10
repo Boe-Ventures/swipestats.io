@@ -48,11 +48,23 @@ interface DashboardHeroProps {
       messagesSentTotal: number | null;
     } | null;
   }>;
+  rayaProfiles?: Array<{
+    rayaId: string;
+    updatedAt: Date;
+    stats: {
+      matchesTotal: number;
+      swipeLikesTotal: number;
+      swipePassesTotal: number;
+      messagesSentTotal: number;
+      matchRate: number;
+    };
+  }>;
 }
 
 export function DashboardHero({
   tinderProfiles = [],
   hingeProfiles = [],
+  rayaProfiles = [],
 }: DashboardHeroProps) {
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [eventDialogOpen, setEventDialogOpen] = useState(false);
@@ -61,8 +73,10 @@ export function DashboardHero({
   const trpc = useTRPC();
   const latestTinder = tinderProfiles[0];
   const latestHinge = hingeProfiles[0];
+  const latestRaya = rayaProfiles[0];
   const hasTinder = !!latestTinder;
   const hasHinge = !!latestHinge;
+  const hasRaya = !!latestRaya;
 
   // Fetch events for count display
   const eventsQuery = useQuery(
@@ -138,7 +152,7 @@ export function DashboardHero({
         <div className="space-y-5">
           <SectionHeader
             title="Your apps"
-            meta="Tinder + Hinge"
+            meta="Tinder + Hinge + Raya"
             sub="View your latest insights or refresh the data behind them."
           />
 
@@ -181,6 +195,42 @@ export function DashboardHero({
                           latestTinder.stats?.matchRate != null
                             ? `${(latestTinder.stats.matchRate * 100).toFixed(1)}%`
                             : "—",
+                      },
+                    ]
+                  : undefined
+              }
+            />
+
+            <ProviderPanel
+              provider="RAYA"
+              updatedAt={latestRaya?.updatedAt}
+              insightHref={
+                latestRaya ? `/insights/raya/${latestRaya.rayaId}` : undefined
+              }
+              uploadHref="/upload?provider=raya"
+              updateHref="/upload/raya"
+              stats={
+                hasRaya
+                  ? [
+                      {
+                        label: "Swipes",
+                        value: formatTotal(
+                          latestRaya.stats.swipeLikesTotal,
+                          latestRaya.stats.swipePassesTotal,
+                        ),
+                      },
+                      {
+                        label: "Matches",
+                        value: latestRaya.stats.matchesTotal.toLocaleString(),
+                      },
+                      {
+                        label: "Messages",
+                        value:
+                          latestRaya.stats.messagesSentTotal.toLocaleString(),
+                      },
+                      {
+                        label: "Match rate",
+                        value: `${(latestRaya.stats.matchRate * 100).toFixed(1)}%`,
                       },
                     ]
                   : undefined
@@ -339,7 +389,7 @@ function ProviderPanel({
   uploadHref,
   updateHref,
 }: {
-  provider: "TINDER" | "HINGE";
+  provider: "TINDER" | "HINGE" | "RAYA";
   updatedAt?: Date;
   stats?: { label: string; value: string }[];
   insightHref?: string;

@@ -10,6 +10,7 @@ import {
   profileComparisonFeedbackTable,
   profileComparisonTable,
   purchaseTable,
+  rayaProfileTable,
   tinderProfileTable,
   userTable,
 } from "@/server/db/schema";
@@ -25,6 +26,7 @@ export interface TransferResult {
  * The transfer includes:
  * - Tinder profiles (userId)
  * - Hinge profiles (userId)
+ * - Raya profiles (userId)
  * - Events (userId)
  * - Custom data (userId)
  * - Original anonymized files (userId)
@@ -87,10 +89,20 @@ export async function transferAnonymousUserData(
       `[Anonymous] Transferred ${hingeProfilesUpdated.rowCount ?? 0} Hinge profiles`,
     );
 
+    // Transfer Raya profiles
+    const rayaProfilesUpdated = await tx
+      .update(rayaProfileTable)
+      .set({ userId: toUserId })
+      .where(eq(rayaProfileTable.userId, fromUserId));
+    console.log(
+      `[Anonymous] Transferred ${rayaProfilesUpdated.rowCount ?? 0} Raya profiles`,
+    );
+
     // Check if user had any profiles
     hadProfile =
       (tinderProfilesUpdated.rowCount ?? 0) > 0 ||
-      (hingeProfilesUpdated.rowCount ?? 0) > 0;
+      (hingeProfilesUpdated.rowCount ?? 0) > 0 ||
+      (rayaProfilesUpdated.rowCount ?? 0) > 0;
 
     // Transfer events
     const eventsUpdated = await tx

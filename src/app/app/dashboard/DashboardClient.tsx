@@ -52,6 +52,7 @@ export function DashboardClient() {
         <DashboardHero
           tinderProfiles={uploadedProfiles?.tinder ?? []}
           hingeProfiles={uploadedProfiles?.hinge ?? []}
+          rayaProfiles={uploadedProfiles?.raya ?? []}
         />
       )}
 

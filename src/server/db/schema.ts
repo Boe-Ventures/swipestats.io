@@ -151,6 +151,7 @@ export const RESOURCE_TYPES = [
   "user_photo",
   "tinder_data",
   "hinge_data",
+  "raya_data",
 ] as const;
 
 export type ResourceType = (typeof RESOURCE_TYPES)[number];
@@ -585,6 +586,69 @@ export const hingePromptTable = pgTable("hinge_prompt", (t) => ({
 
 export type HingePrompt = typeof hingePromptTable.$inferSelect;
 export type HingePromptInsert = typeof hingePromptTable.$inferInsert;
+
+// ---- RAYA TABLES --------------------------------------------------
+
+export const rayaProfileTable = pgTable(
+  "raya_profile",
+  (t) => ({
+    rayaId: t.text().primaryKey(),
+    createdAt: t
+      .timestamp()
+      .$defaultFn(() => new Date())
+      .notNull(),
+    updatedAt: t
+      .timestamp()
+      .$defaultFn(() => new Date())
+      .$onUpdate(() => new Date())
+      .notNull(),
+    birthDate: t.timestamp().notNull(),
+    ageAtUpload: t.integer().notNull(),
+    gender: genderEnum().notNull(),
+    genderStr: t.text().notNull(),
+    occupation: t.text(),
+    company: t.text(),
+    residenceLocation: t.text(),
+    status: t.text(),
+    instagramConnected: t.boolean().notNull(),
+    websiteConnected: t.boolean().notNull(),
+    photoUrls: t.jsonb().$type<string[]>().default([]).notNull(),
+    firstDayOnApp: t.timestamp().notNull(),
+    lastDayOnApp: t.timestamp().notNull(),
+    daysInProfilePeriod: t.integer().notNull(),
+    userId: t.text().references(() => userTable.id, { onDelete: "cascade" }),
+  }),
+  (table) => [uniqueIndex("raya_profile_user_id_unique").on(table.userId)],
+);
+
+export type RayaProfile = typeof rayaProfileTable.$inferSelect;
+export type RayaProfileInsert = typeof rayaProfileTable.$inferInsert;
+
+export const rayaUsageTable = pgTable(
+  "raya_usage",
+  (t) => ({
+    dateStamp: t.timestamp().notNull(),
+    dateStampRaw: t.text().notNull(),
+    rayaProfileId: t
+      .text()
+      .notNull()
+      .references(() => rayaProfileTable.rayaId, { onDelete: "cascade" }),
+    swipeLikes: t.integer().notNull(),
+    swipePasses: t.integer().notNull(),
+    swipesCombined: t.integer().notNull(),
+    matches: t.integer().notNull(),
+    messagesSent: t.integer().notNull(),
+    matchRate: t.doublePrecision().notNull(),
+    likeRate: t.doublePrecision().notNull(),
+  }),
+  (t) => ({
+    pk: primaryKey({ columns: [t.dateStampRaw, t.rayaProfileId] }),
+    rayaProfileIdx: index("raya_usage_raya_profile_id_idx").on(t.rayaProfileId),
+  }),
+);
+
+export type RayaUsage = typeof rayaUsageTable.$inferSelect;
+export type RayaUsageInsert = typeof rayaUsageTable.$inferInsert;
 
 // ---- SHARED TABLES (Match, Message, Media, ProfileMeta) ----------
 
@@ -1491,6 +1555,10 @@ export const userRelations = relations(userTable, ({ one, many }) => ({
     fields: [userTable.id],
     references: [hingeProfileTable.userId],
   }),
+  rayaProfile: one(rayaProfileTable, {
+    fields: [userTable.id],
+    references: [rayaProfileTable.userId],
+  }),
   events: many(eventTable),
   customData: many(customDataTable),
   originalAnonymizedFiles: many(originalAnonymizedFileTable),
@@ -1556,6 +1624,24 @@ export const hingeProfileRelations = relations(
     }),
   }),
 );
+
+export const rayaProfileRelations = relations(
+  rayaProfileTable,
+  ({ one, many }) => ({
+    user: one(userTable, {
+      fields: [rayaProfileTable.userId],
+      references: [userTable.id],
+    }),
+    usage: many(rayaUsageTable),
+  }),
+);
+
+export const rayaUsageRelations = relations(rayaUsageTable, ({ one }) => ({
+  rayaProfile: one(rayaProfileTable, {
+    fields: [rayaUsageTable.rayaProfileId],
+    references: [rayaProfileTable.rayaId],
+  }),
+}));
 
 export const matchRelations = relations(matchTable, ({ one, many }) => ({
   tinderProfile: one(tinderProfileTable, {

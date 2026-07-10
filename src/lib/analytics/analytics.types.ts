@@ -719,9 +719,10 @@ export type ClientEventPropertiesDefinition = {
   };
 
   upload_submit_clicked: {
-    provider: "tinder" | "hinge";
+    provider: "tinder" | "hinge" | "raya";
     tinderId?: string;
     hingeId?: string;
+    rayaId?: string;
     photoCount: number; // Always present, 0 if no consent
     hasPhotos: boolean; // Actual data presence
     hasPhotosConsent: boolean; // User consent state
