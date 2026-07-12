@@ -79,7 +79,7 @@ separately.
   composition, checkbox hidden-input anatomy, accordion array values, tab
   relationships, and server-rendered dropdown group ownership.
 - `bun run check` passes with 0 errors (25 pre-existing warnings), all 16 Bun
-  tests pass with 60 assertions, `bun install --frozen-lockfile` is clean, and
+  tests pass with 61 assertions, `bun install --frozen-lockfile` is clean, and
   the side-effect-free webpack production build completes all 305 static pages.
 - All responsive Dialog parts consume one root-owned desktop/mobile decision,
   preventing mixed Base UI and Vaul trees during hydration. Polymorphic Button
@@ -87,3 +87,24 @@ separately.
 - Collision, hover-delay, exhaustive cross-browser behavior, and screen-reader
   coverage still require the per-component manual checks listed in
   `.migration/*.md`; no assistive-technology verification is claimed here.
+
+## Base UI-only branch handoff
+
+- `codex/swipestats-base-ui` is based on the refreshed React Hook Form
+  accessibility baseline (`7ac0921c`). React Hook Form and its Zod resolver
+  remain installed and used across 24 source files. Formisch and Valibot have
+  zero direct dependencies and zero source imports.
+- All seven remaining nullable Select consumers now guard Base UI's `null`
+  value instead of relying on non-null assertions.
+- Final inventory: zero direct Radix dependencies/imports, three `asChild`
+  occurrences all owned by intentionally retained Vaul drawer paths, and 102
+  transitive audit findings (0 critical, 46 high, 47 moderate, 9 low).
+- Fresh desktop browser QA on `/design-system` hydrated without a fallback or
+  Dialog/native-button/hydration warning. Accordion expansion, ArrowRight tab
+  activation, dialog close/focus return, and dropdown Escape/focus return all
+  passed.
+- At 390x844, the responsive SimpleDialog used the drawer path, closed with
+  Escape after its animation, and returned focus to the trigger.
+- Real mutation-backed account/upload/profile flows, exhaustive cross-browser
+  collision/hover behavior, and screen-reader announcements remain honest
+  manual QA rather than claimed coverage.
