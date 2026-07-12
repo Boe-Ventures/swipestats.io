@@ -7,7 +7,13 @@ import { useController } from "react-hook-form";
 
 import type { ComboboxOption } from "../compound/combobox";
 import { Combobox } from "../compound/combobox";
-import { Field, FieldError, FieldLabel } from "../form-new";
+import {
+  Field,
+  FieldError,
+  FieldLabel,
+  getFieldControlA11yProps,
+  getFormFieldIds,
+} from "../form-new";
 
 export type {
   CountrySlug,
@@ -170,11 +176,16 @@ export function CountrySelect<
       }))
       .sort((a, b) => a.label.localeCompare(b.label));
   }, [filteredCountries]);
+  const ids = getFormFieldIds(field.name);
+  const controlA11y = getFieldControlA11yProps(field.name, {
+    hasError: fieldState.invalid,
+    "aria-invalid": fieldState.invalid,
+  });
 
   return (
     <Field className={className} data-invalid={fieldState.invalid}>
       {label && (
-        <FieldLabel>
+        <FieldLabel id={ids.labelId} htmlFor={controlA11y.id}>
           {label}
           {required && <span className="text-destructive ml-1">*</span>}
         </FieldLabel>
@@ -188,8 +199,11 @@ export function CountrySelect<
         emptyText="No country found."
         disabled={disabled}
         className="w-full"
+        triggerProps={controlA11y}
       />
-      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+      {fieldState.invalid && (
+        <FieldError id={ids.errorId} errors={[fieldState.error]} />
+      )}
     </Field>
   );
 }
@@ -256,11 +270,16 @@ export function RegionSelect<
       keywords: [name, shortCode],
     }));
   }, [regions]);
+  const ids = getFormFieldIds(field.name);
+  const controlA11y = getFieldControlA11yProps(field.name, {
+    hasError: fieldState.invalid,
+    "aria-invalid": fieldState.invalid,
+  });
 
   return (
     <Field className={className} data-invalid={fieldState.invalid}>
       {label && (
-        <FieldLabel>
+        <FieldLabel id={ids.labelId} htmlFor={controlA11y.id}>
           {label}
           {required && <span className="text-destructive ml-1">*</span>}
         </FieldLabel>
@@ -274,8 +293,11 @@ export function RegionSelect<
         emptyText="No region found."
         disabled={disabled}
         className="w-full"
+        triggerProps={controlA11y}
       />
-      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+      {fieldState.invalid && (
+        <FieldError id={ids.errorId} errors={[fieldState.error]} />
+      )}
     </Field>
   );
 }

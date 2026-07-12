@@ -12,7 +12,30 @@ import {
   getFieldControlA11yProps,
   getFormFieldIds,
   mergeAriaDescribedBy,
+  useForm,
 } from "./form-new";
+import { CountrySelect, RegionSelect } from "./form-inputs/CountrySelect";
+
+function CountryRegionHarness() {
+  const form = useForm<{ country: string; region: string }>({
+    defaultValues: { country: "US", region: "CA" },
+  });
+  return createElement(
+    "div",
+    null,
+    createElement(CountrySelect, {
+      control: form.control,
+      name: "country",
+      label: "Country",
+    }),
+    createElement(RegionSelect, {
+      control: form.control,
+      name: "region",
+      countryCode: "US",
+      label: "Region",
+    }),
+  );
+}
 
 describe("form field accessibility contract", () => {
   test("derives stable IDs and composes described-by values", () => {
@@ -117,5 +140,14 @@ describe("form field accessibility contract", () => {
     );
     expect(html).toContain('id="interests-error"');
     expect(html).toContain('role="alert"');
+  });
+
+  test("wires country and region labels to their combobox triggers", () => {
+    const html = renderToStaticMarkup(createElement(CountryRegionHarness));
+
+    expect(html).toContain('id="country-label" for="country-control"');
+    expect(html).toContain('id="country-control"');
+    expect(html).toContain('id="region-label" for="region-control"');
+    expect(html).toContain('id="region-control"');
   });
 });

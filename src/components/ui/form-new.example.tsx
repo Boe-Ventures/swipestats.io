@@ -18,6 +18,7 @@ import {
   FieldLegend,
   FieldGroup,
   FieldTitle,
+  getFormFieldIds,
 } from "./form-new";
 import { Input } from "./input";
 import { Textarea } from "./textarea";
@@ -64,10 +65,12 @@ export function BasicFormExample() {
         control={form.control}
         render={({ field, fieldState }) => (
           <Field data-invalid={fieldState.invalid}>
-            <FieldLabel htmlFor={field.name}>Title</FieldLabel>
+            <FieldLabel htmlFor={getFormFieldIds(field.name).controlId}>
+              Title
+            </FieldLabel>
             <Input
               {...field}
-              id={field.name}
+              id={getFormFieldIds(field.name).controlId}
               aria-invalid={fieldState.invalid}
               placeholder="Enter a title"
             />
@@ -85,10 +88,12 @@ export function BasicFormExample() {
         control={form.control}
         render={({ field, fieldState }) => (
           <Field data-invalid={fieldState.invalid}>
-            <FieldLabel htmlFor={field.name}>Description</FieldLabel>
+            <FieldLabel htmlFor={getFormFieldIds(field.name).controlId}>
+              Description
+            </FieldLabel>
             <Textarea
               {...field}
-              id={field.name}
+              id={getFormFieldIds(field.name).controlId}
               aria-invalid={fieldState.invalid}
               placeholder="Write a description..."
               className="min-h-[120px]"
@@ -129,9 +134,14 @@ export function SelectFormExample() {
         control={form.control}
         render={({ field, fieldState }) => (
           <Field data-invalid={fieldState.invalid}>
-            <FieldLabel htmlFor={field.name}>Country</FieldLabel>
+            <FieldLabel htmlFor={getFormFieldIds(field.name).controlId}>
+              Country
+            </FieldLabel>
             <Select value={field.value} onValueChange={field.onChange}>
-              <SelectTrigger id={field.name} aria-invalid={fieldState.invalid}>
+              <SelectTrigger
+                id={getFormFieldIds(field.name).controlId}
+                aria-invalid={fieldState.invalid}
+              >
                 <SelectValue placeholder="Select a country" />
               </SelectTrigger>
               <SelectContent>
@@ -325,7 +335,7 @@ export function SwitchFormExample() {
         render={({ field, fieldState }) => (
           <Field orientation="horizontal" data-invalid={fieldState.invalid}>
             <FieldContent>
-              <FieldLabel htmlFor={field.name}>
+              <FieldLabel htmlFor={getFormFieldIds(field.name).controlId}>
                 Two-Factor Authentication
               </FieldLabel>
               <FieldDescription>
@@ -334,7 +344,7 @@ export function SwitchFormExample() {
               {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
             </FieldContent>
             <Switch
-              id={field.name}
+              id={getFormFieldIds(field.name).controlId}
               checked={field.value}
               onCheckedChange={field.onChange}
               aria-invalid={fieldState.invalid}
@@ -377,7 +387,9 @@ export function ResponsiveFormExample() {
         render={({ field, fieldState }) => (
           <Field orientation="responsive" data-invalid={fieldState.invalid}>
             <FieldContent>
-              <FieldLabel htmlFor={field.name}>Language</FieldLabel>
+              <FieldLabel htmlFor={getFormFieldIds(field.name).controlId}>
+                Language
+              </FieldLabel>
               <FieldDescription>
                 Select your preferred language.
               </FieldDescription>
@@ -385,7 +397,7 @@ export function ResponsiveFormExample() {
             </FieldContent>
             <Select value={field.value} onValueChange={field.onChange}>
               <SelectTrigger
-                id={field.name}
+                id={getFormFieldIds(field.name).controlId}
                 aria-invalid={fieldState.invalid}
                 className="md:w-[180px]"
               >
@@ -447,10 +459,12 @@ export function ComplexFormExample() {
           control={form.control}
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor={field.name}>Username</FieldLabel>
+              <FieldLabel htmlFor={getFormFieldIds(field.name).controlId}>
+                Username
+              </FieldLabel>
               <Input
                 {...field}
-                id={field.name}
+                id={getFormFieldIds(field.name).controlId}
                 aria-invalid={fieldState.invalid}
               />
               {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
@@ -463,10 +477,12 @@ export function ComplexFormExample() {
           control={form.control}
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor={field.name}>Email</FieldLabel>
+              <FieldLabel htmlFor={getFormFieldIds(field.name).controlId}>
+                Email
+              </FieldLabel>
               <Input
                 {...field}
-                id={field.name}
+                id={getFormFieldIds(field.name).controlId}
                 type="email"
                 aria-invalid={fieldState.invalid}
               />
@@ -480,10 +496,12 @@ export function ComplexFormExample() {
           control={form.control}
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor={field.name}>Bio</FieldLabel>
+              <FieldLabel htmlFor={getFormFieldIds(field.name).controlId}>
+                Bio
+              </FieldLabel>
               <Textarea
                 {...field}
-                id={field.name}
+                id={getFormFieldIds(field.name).controlId}
                 aria-invalid={fieldState.invalid}
                 placeholder="Tell us about yourself..."
               />
@@ -541,13 +559,15 @@ export function ComplexFormExample() {
           render={({ field, fieldState }) => (
             <Field orientation="horizontal" data-invalid={fieldState.invalid}>
               <FieldContent>
-                <FieldLabel htmlFor={field.name}>Marketing Emails</FieldLabel>
+                <FieldLabel htmlFor={getFormFieldIds(field.name).controlId}>
+                  Marketing Emails
+                </FieldLabel>
                 <FieldDescription>
                   Receive updates about new features and promotions.
                 </FieldDescription>
               </FieldContent>
               <Switch
-                id={field.name}
+                id={getFormFieldIds(field.name).controlId}
                 checked={field.value}
                 onCheckedChange={field.onChange}
                 aria-invalid={fieldState.invalid}
