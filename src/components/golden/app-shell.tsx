@@ -175,8 +175,12 @@ export function GoldenAppHeader({
 
         {/* right cluster */}
         <div className="ml-auto flex items-center gap-3">
-          <Button asChild variant="outline" size="sm">
-            <Link href={upgradeHref}>Upgrade</Link>
+          <Button
+            render={<Link href={upgradeHref} />}
+            variant="outline"
+            size="sm"
+          >
+            Upgrade
           </Button>
           <Avatar initials={userInitials} />
         </div>

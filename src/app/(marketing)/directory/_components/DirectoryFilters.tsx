@@ -303,17 +303,19 @@ export function DirectoryFilters({
   if (isMobile) {
     return (
       <Sheet>
-        <SheetTrigger asChild>
-          <Button variant="outline" className="relative">
-            <SlidersHorizontal className="mr-2 h-4 w-4" />
-            Filters
-            {activeFilterCount > 0 && (
-              <span className="bg-primary text-primary-foreground absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full text-xs font-semibold">
-                {activeFilterCount}
-              </span>
-            )}
-          </Button>
-        </SheetTrigger>
+        <SheetTrigger
+          render={
+            <Button variant="outline" className="relative">
+              <SlidersHorizontal className="mr-2 h-4 w-4" />
+              Filters
+              {activeFilterCount > 0 && (
+                <span className="bg-primary text-primary-foreground absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full text-xs font-semibold">
+                  {activeFilterCount}
+                </span>
+              )}
+            </Button>
+          }
+        />
         <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto">
           <SheetHeader>
             <SheetTitle>Filters</SheetTitle>

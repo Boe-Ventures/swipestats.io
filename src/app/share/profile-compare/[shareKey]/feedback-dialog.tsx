@@ -270,16 +270,18 @@ export function FeedbackDialog({
                   {/* Delete button - only show for own feedback */}
                   {session?.user?.id === item.authorId && (
                     <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="bg-muted h-7 w-7"
-                        >
-                          <span className="sr-only">More options</span>
-                          <span className="text-xs">⋯</span>
-                        </Button>
-                      </DropdownMenuTrigger>
+                      <DropdownMenuTrigger
+                        render={
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="bg-muted h-7 w-7"
+                          >
+                            <span className="sr-only">More options</span>
+                            <span className="text-xs">⋯</span>
+                          </Button>
+                        }
+                      />
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem
                           onClick={() => handleDelete(item.id)}

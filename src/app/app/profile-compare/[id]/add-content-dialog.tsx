@@ -510,20 +510,22 @@ export function AddContentDialog({
           </span>
           {analyzedCount > 0 && (
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={composeMutation.isPending}
-                >
-                  {composeMutation.isPending ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Wand2 className="mr-2 h-4 w-4" />
-                  )}
-                  Build with AI
-                </Button>
-              </DropdownMenuTrigger>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={composeMutation.isPending}
+                  >
+                    {composeMutation.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Wand2 className="mr-2 h-4 w-4" />
+                    )}
+                    Build with AI
+                  </Button>
+                }
+              />
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>
                   Add an AI draft column for

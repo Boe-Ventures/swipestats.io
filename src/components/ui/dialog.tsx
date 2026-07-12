@@ -1,7 +1,7 @@
 "use client";
 
-import type * as React from "react";
-import * as DialogPrimitive from "@radix-ui/react-dialog";
+import * as React from "react";
+import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
 import { XIcon } from "lucide-react";
 
 import { cn } from "./lib/utils";
@@ -24,37 +24,43 @@ import { ScrollArea } from "./scroll-area";
 // Original Dialog Components (Desktop)
 function DialogRoot({
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Root>) {
+}: Omit<DialogPrimitive.Root.Props, "children"> & {
+  children?: React.ReactNode;
+}) {
   return <DialogPrimitive.Root data-slot="dialog" {...props} />;
 }
 
 function DialogTriggerPrimitive({
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Trigger>) {
+}: Omit<
+  DialogPrimitive.Trigger.Props,
+  "children" | "className" | "style" | "render"
+> & {
+  children?: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
+  render?: React.ReactElement;
+}) {
   return <DialogPrimitive.Trigger data-slot="dialog-trigger" {...props} />;
 }
 
-function DialogPortalPrimitive({
-  ...props
-}: React.ComponentProps<typeof DialogPrimitive.Portal>) {
+function DialogPortalPrimitive({ ...props }: DialogPrimitive.Portal.Props) {
   return <DialogPrimitive.Portal data-slot="dialog-portal" {...props} />;
 }
 
-function DialogClosePrimitive({
-  ...props
-}: React.ComponentProps<typeof DialogPrimitive.Close>) {
+function DialogClosePrimitive({ ...props }: DialogPrimitive.Close.Props) {
   return <DialogPrimitive.Close data-slot="dialog-close" {...props} />;
 }
 
 function DialogOverlayPrimitive({
   className,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Overlay>) {
+}: DialogPrimitive.Backdrop.Props) {
   return (
-    <DialogPrimitive.Overlay
+    <DialogPrimitive.Backdrop
       data-slot="dialog-overlay"
       className={cn(
-        "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 fixed inset-0 z-50 bg-black/50",
+        "fixed inset-0 z-50 bg-black/50 transition-opacity data-ending-style:opacity-0 data-starting-style:opacity-0",
         className,
       )}
       {...props}
@@ -68,17 +74,20 @@ function DialogContentPrimitive({
   showCloseButton = true,
   size = "default",
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Content> & {
+}: Omit<DialogPrimitive.Popup.Props, "children" | "className" | "style"> & {
+  children?: React.ReactNode;
+  className?: string;
+  style?: React.CSSProperties;
   showCloseButton?: boolean;
   size?: "default" | "sm" | "lg" | "xl" | "2xl" | "full";
 }) {
   return (
     <DialogPortalPrimitive data-slot="dialog-portal">
       <DialogOverlayPrimitive />
-      <DialogPrimitive.Content
+      <DialogPrimitive.Popup
         data-slot="dialog-content"
         className={cn(
-          "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200",
+          "bg-background fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg transition-[opacity,transform] duration-200 data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0",
           {
             "sm:max-w-lg": size === "default",
             "sm:max-w-sm": size === "sm",
@@ -101,7 +110,7 @@ function DialogContentPrimitive({
             <span className="sr-only">Close</span>
           </DialogPrimitive.Close>
         )}
-      </DialogPrimitive.Content>
+      </DialogPrimitive.Popup>
     </DialogPortalPrimitive>
   );
 }
@@ -135,7 +144,10 @@ function DialogFooterPrimitive({
 function DialogTitlePrimitive({
   className,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Title>) {
+}: Omit<DialogPrimitive.Title.Props, "className" | "style"> & {
+  className?: string;
+  style?: React.CSSProperties;
+}) {
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
@@ -148,7 +160,10 @@ function DialogTitlePrimitive({
 function DialogDescriptionPrimitive({
   className,
   ...props
-}: React.ComponentProps<typeof DialogPrimitive.Description>) {
+}: Omit<DialogPrimitive.Description.Props, "className" | "style"> & {
+  className?: string;
+  style?: React.CSSProperties;
+}) {
   return (
     <DialogPrimitive.Description
       data-slot="dialog-description"
@@ -171,19 +186,49 @@ function Dialog({
     return <DialogRoot {...props} />;
   }
 
-  return <Drawer repositionInputs={repositionInputs} {...props} />;
+  return (
+    <Drawer
+      repositionInputs={repositionInputs}
+      {...(props as React.ComponentProps<typeof Drawer>)}
+    />
+  );
 }
 
 function DialogTrigger({
+  render,
+  children,
   ...props
 }: React.ComponentProps<typeof DialogTriggerPrimitive>) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
 
   if (isDesktop) {
-    return <DialogTriggerPrimitive {...props} />;
+    if (children === undefined) {
+      return <DialogTriggerPrimitive render={render} {...props} />;
+    }
+
+    return (
+      <DialogTriggerPrimitive render={render} {...props}>
+        {children}
+      </DialogTriggerPrimitive>
+    );
   }
 
-  return <DrawerTriggerPrimitive {...props} />;
+  if (React.isValidElement(render)) {
+    const renderElement = render as React.ReactElement<{
+      children?: React.ReactNode;
+    }>;
+    return (
+      <DrawerTriggerPrimitive asChild {...props}>
+        {React.cloneElement(
+          renderElement,
+          undefined,
+          children ?? renderElement.props.children,
+        )}
+      </DrawerTriggerPrimitive>
+    );
+  }
+
+  return <DrawerTriggerPrimitive {...props}>{children}</DrawerTriggerPrimitive>;
 }
 
 function DialogContent({
@@ -293,7 +338,12 @@ function DialogClose({
     return <DialogClosePrimitive className={className} {...props} />;
   }
 
-  return <DrawerClosePrimitive className={className} {...props} />;
+  return (
+    <DrawerClosePrimitive
+      className={typeof className === "string" ? className : undefined}
+      {...(props as React.ComponentProps<typeof DrawerClosePrimitive>)}
+    />
+  );
 }
 
 function DialogOverlay({
@@ -306,7 +356,12 @@ function DialogOverlay({
     return <DialogOverlayPrimitive className={className} {...props} />;
   }
 
-  return <DrawerOverlayPrimitive className={className} {...props} />;
+  return (
+    <DrawerOverlayPrimitive
+      className={typeof className === "string" ? className : undefined}
+      {...(props as React.ComponentProps<typeof DrawerOverlayPrimitive>)}
+    />
+  );
 }
 
 function DialogPortal({
@@ -318,7 +373,13 @@ function DialogPortal({
     return <DialogPortalPrimitive {...props} />;
   }
 
-  return <DrawerPortalPrimitive {...props} />;
+  return (
+    <DrawerPortalPrimitive
+      {...(props as unknown as React.ComponentProps<
+        typeof DrawerPortalPrimitive
+      >)}
+    />
+  );
 }
 
 export {
@@ -379,7 +440,9 @@ export function SimpleDialog({
       onOpenChange={onOpenChange}
       repositionInputs={repositionInputs}
     >
-      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
+      {trigger && React.isValidElement(trigger) && (
+        <DialogTrigger render={trigger} />
+      )}
       <DialogContent
         className={cn(
           className,

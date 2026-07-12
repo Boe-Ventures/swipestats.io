@@ -499,16 +499,18 @@ export function ComparisonColumn({
                 </TabsTrigger>
               </TabsList>
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-muted-foreground h-8 w-8"
-                  >
-                    <MoreVertical className="h-4 w-4" />
-                    <span className="sr-only">Column options</span>
-                  </Button>
-                </DropdownMenuTrigger>
+                <DropdownMenuTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-muted-foreground h-8 w-8"
+                    >
+                      <MoreVertical className="h-4 w-4" />
+                      <span className="sr-only">Column options</span>
+                    </Button>
+                  }
+                />
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem
                     onClick={() => setAddContentDialogOpen(true)}

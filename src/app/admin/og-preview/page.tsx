@@ -241,7 +241,7 @@ export default function OgPreviewPage() {
                     <Label>Variant</Label>
                     <Select
                       value={variant}
-                      onValueChange={(v) => setVariant(v as Variant)}
+                      onValueChange={(v) => setVariant(v!)}
                     >
                       <SelectTrigger>
                         <SelectValue />

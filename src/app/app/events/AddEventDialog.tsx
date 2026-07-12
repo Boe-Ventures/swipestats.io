@@ -48,11 +48,7 @@ import {
   useForm,
   zodResolver,
 } from "@/components/ui/form-new";
-import {
-  Field,
-  FieldLabel,
-  FieldError,
-} from "@/components/ui/form-new";
+import { Field, FieldLabel, FieldError } from "@/components/ui/form-new";
 import { DatePickerField } from "@/components/ui/form-inputs/DatePickerField";
 import { RadioGroupCardsField } from "@/components/ui/form-inputs/RadioGroupCardsField";
 import {
@@ -554,21 +550,23 @@ export function AddEventDialog({
                         open={showAllEventTypes}
                         onOpenChange={setShowAllEventTypes}
                       >
-                        <CollapsibleTrigger asChild>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            className="w-full"
-                          >
-                            {showAllEventTypes
-                              ? "Show less"
-                              : "Show more event types"}
-                            <ChevronDown
-                              className={`ml-2 h-4 w-4 transition-transform ${showAllEventTypes ? "rotate-180" : ""}`}
-                            />
-                          </Button>
-                        </CollapsibleTrigger>
+                        <CollapsibleTrigger
+                          render={
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="w-full"
+                            >
+                              {showAllEventTypes
+                                ? "Show less"
+                                : "Show more event types"}
+                              <ChevronDown
+                                className={`ml-2 h-4 w-4 transition-transform ${showAllEventTypes ? "rotate-180" : ""}`}
+                              />
+                            </Button>
+                          }
+                        />
                         <CollapsibleContent className="mt-3">
                           <RadioGroupCardsField
                             control={form.control}
@@ -588,14 +586,18 @@ export function AddEventDialog({
                       name="name"
                       render={({ field, fieldState }) => (
                         <Field data-invalid={fieldState.invalid}>
-                          <FieldLabel htmlFor={field.name}>Event Name</FieldLabel>
+                          <FieldLabel htmlFor={field.name}>
+                            Event Name
+                          </FieldLabel>
                           <Input
                             placeholder="e.g., Trip to Colombia"
                             {...field}
                             id={field.name}
                             aria-invalid={fieldState.invalid}
                           />
-                          {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                          {fieldState.invalid && (
+                            <FieldError errors={[fieldState.error]} />
+                          )}
                         </Field>
                       )}
                     />
@@ -629,7 +631,10 @@ export function AddEventDialog({
                             aria-invalid={fieldState.invalid}
                           />
                           <div className="space-y-1 leading-none">
-                            <FieldLabel htmlFor={field.name} className="cursor-pointer font-normal">
+                            <FieldLabel
+                              htmlFor={field.name}
+                              className="cursor-pointer font-normal"
+                            >
                               This event has an end date
                             </FieldLabel>
                           </div>

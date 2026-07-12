@@ -1,7 +1,13 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { Upload, Loader2, Sparkles, Wand2, Image as ImageIcon } from "lucide-react";
+import {
+  Upload,
+  Loader2,
+  Sparkles,
+  Wand2,
+  Image as ImageIcon,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { SimpleDialog } from "@/components/ui/dialog";
@@ -219,20 +225,24 @@ export function PhotoLibraryDialog({
           <div className="flex flex-wrap items-center gap-2">
             {analyzedCount > 0 && (
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={composeMutation.isPending}
-                  >
-                    {composeMutation.isPending ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Wand2 className="mr-2 h-4 w-4" />
-                    )}
-                    {composeMutation.isPending ? "Building…" : "Build with AI"}
-                  </Button>
-                </DropdownMenuTrigger>
+                <DropdownMenuTrigger
+                  render={
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={composeMutation.isPending}
+                    >
+                      {composeMutation.isPending ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Wand2 className="mr-2 h-4 w-4" />
+                      )}
+                      {composeMutation.isPending
+                        ? "Building…"
+                        : "Build with AI"}
+                    </Button>
+                  }
+                />
                 <DropdownMenuContent align="end">
                   <DropdownMenuLabel>
                     Add an AI draft column for
@@ -323,7 +333,9 @@ export function PhotoLibraryDialog({
                 photo={photo}
                 isPaid={isPaid}
                 isBulkAnalyzing={analyzingIds.has(photo.id)}
-                onRequireUpgrade={() => openUpgradeModal({ feature: "aiRoast" })}
+                onRequireUpgrade={() =>
+                  openUpgradeModal({ feature: "aiRoast" })
+                }
                 onDelete={(id) => setDeleteId(id)}
               />
             ))}
@@ -334,7 +346,9 @@ export function PhotoLibraryDialog({
       <DeleteAlert
         open={deleteId !== null}
         onOpenChange={(o) => !o && setDeleteId(null)}
-        onConfirm={() => deleteId && deleteAttachmentMutation.mutate({ id: deleteId })}
+        onConfirm={() =>
+          deleteId && deleteAttachmentMutation.mutate({ id: deleteId })
+        }
         title="Delete photo?"
         description="This permanently deletes the photo. If it's used in any comparisons, it will be removed from them."
         isLoading={deleteAttachmentMutation.isPending}

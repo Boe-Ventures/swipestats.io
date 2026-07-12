@@ -75,11 +75,11 @@ export function PromptSuggestions({
 
         {/* Mode toggle: full prompt+answer vs prompt shells only */}
         <ToggleGroup
-          type="single"
           variant="outline"
           size="sm"
-          value={mode}
-          onValueChange={(v) => {
+          value={[mode]}
+          onValueChange={(values) => {
+            const v = values[0];
             if (!v || v === mode) return;
             // Cards carry mode-specific shape (answers in "full"), so drop
             // stale ones when switching — the next Generate matches the toggle.
@@ -135,7 +135,7 @@ export function PromptSuggestions({
       {suggestMutation.isPending && cards.length === 0 && (
         <div className="space-y-2">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="space-y-2 rounded-lg border bg-card p-3">
+            <div key={i} className="bg-card space-y-2 rounded-lg border p-3">
               <Skeleton className="h-3 w-1/2" />
               {isFull && <Skeleton className="h-3 w-5/6" />}
               <Skeleton className="h-3 w-1/3" />

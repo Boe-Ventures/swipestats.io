@@ -85,7 +85,12 @@ export function MasterCohortBenchmarkSection() {
             </div>
           </div>
           {hasPremiumAccess && (
-            <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+            <Select
+              value={selectedPeriod}
+              onValueChange={(nextValue) =>
+                nextValue !== null && setSelectedPeriod(nextValue)
+              }
+            >
               <SelectTrigger className="w-[140px]">
                 <SelectValue />
               </SelectTrigger>
@@ -518,16 +523,18 @@ function PercentileDialog({
 
   return (
     <Dialog>
-      <DialogTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="text-muted-foreground hover:text-foreground h-5 w-5"
-        >
-          <Info className="h-4 w-4" />
-          <span className="sr-only">View percentile details</span>
-        </Button>
-      </DialogTrigger>
+      <DialogTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-muted-foreground hover:text-foreground h-5 w-5"
+          >
+            <Info className="h-4 w-4" />
+            <span className="sr-only">View percentile details</span>
+          </Button>
+        }
+      />
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>
           <DialogTitle>{title} - Percentile Distribution</DialogTitle>

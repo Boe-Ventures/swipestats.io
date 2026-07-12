@@ -88,14 +88,14 @@ export function FAQ({ children }: { children: React.ReactNode }) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <Accordion type="single" collapsible className="w-full">
+      <Accordion className="w-full">
         {items.map((item, index) => (
           <AccordionItem
             key={index}
             value={`faq-${index}`}
             className="border-b border-gray-200"
           >
-            <AccordionTrigger className="cursor-pointer py-5 text-left text-base leading-7 font-semibold text-gray-900 transition-colors hover:text-rose-600 hover:no-underline data-[state=open]:text-rose-600 lg:text-lg">
+            <AccordionTrigger className="cursor-pointer py-5 text-left text-base leading-7 font-semibold text-gray-900 transition-colors hover:text-rose-600 hover:no-underline data-panel-open:text-rose-600 lg:text-lg">
               {item.question}
             </AccordionTrigger>
             <AccordionContent className="pb-5">
