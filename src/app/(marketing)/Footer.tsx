@@ -110,7 +110,7 @@ export default function Footer() {
             @kristianeboe
           </Link>
         </p>
-        <p className="mt-2 text-center text-sm/6 text-gray-600">
+        <p className="mt-3 text-center text-sm/6 text-gray-600">
           &copy; 2026 Boe Ventures AS. All rights reserved.
         </p>
       </div>
