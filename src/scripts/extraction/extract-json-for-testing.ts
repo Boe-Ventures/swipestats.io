@@ -7,7 +7,7 @@
  * 2. Re-uploading the JSON files through the upload page
  *
  * Usage:
- *   DATABASE_URL=<your-db-url> pnpm tsx src/scripts/extract-json-for-testing.ts
+ *   DATABASE_URL=<your-db-url> bun run src/scripts/extraction/extract-json-for-testing.ts
  */
 
 import { neon } from "@neondatabase/serverless";

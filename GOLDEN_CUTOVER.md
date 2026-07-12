@@ -24,15 +24,14 @@ not live code.
 These were only imported by the old home `page.tsx`, which was overwritten.
 Verified: no remaining importers.
 
-| File | Superseded by (in the new home) |
-|------|--------------------------------|
-| `src/app/(marketing)/HeroHeading.tsx` | golden `Hero` |
-| `src/app/(marketing)/AboutSection.tsx` | golden `AboutImage` |
-| `src/app/(marketing)/Testimonials.tsx` | golden `TestimonialsMasonry` |
+| File                                             | Superseded by (in the new home)      |
+| ------------------------------------------------ | ------------------------------------ |
+| `src/app/(marketing)/HeroHeading.tsx`            | golden `Hero`                        |
+| `src/app/(marketing)/AboutSection.tsx`           | golden `AboutImage`                  |
+| `src/app/(marketing)/Testimonials.tsx`           | golden `TestimonialsMasonry`         |
 | `src/app/(marketing)/FAQ.tsx` (shadcn Accordion) | golden `Faq` + `_components/FaqList` |
-| `src/app/(marketing)/DatasetPricingSection.tsx` | golden `Research` section |
-| `src/app/(marketing)/DataRequestSupport.tsx` | golden `DataRequestBand` |
-| `src/app/(marketing)/ProfilePreviewsBanner.tsx` | (was already commented out) |
+| `src/app/(marketing)/DatasetPricingSection.tsx`  | golden `Research` section            |
+| `src/app/(marketing)/DataRequestSupport.tsx`     | golden `DataRequestBand`             |
 
 ## Keep — still live, do NOT delete
 
@@ -42,6 +41,7 @@ Verified: no remaining importers.
 - `src/app/(marketing)/NewsletterCTA.tsx` — used by the home + insights +
   directory + blog + design-system.
 - `src/app/(marketing)/InsightsShowcase.tsx` — used by home + research + insights.
+- `src/app/(marketing)/ProfilePreviewsBanner.tsx` — used by the production home.
 - `src/app/(marketing)/MarketingCtaSection.tsx` — **not** home-orphaned: still
   imported by `/design-system` as a catalog example. Orphaned only if
   design-system is also removed.

@@ -34,11 +34,6 @@ bun db:migrate       # Run migrations
 bun db:push          # Push schema changes directly
 bun db:studio        # Open Drizzle Studio
 
-# Migration Scripts (from old Prisma DB)
-bun migrate:reset    # Reset schema (drops all tables)
-bun migrate:run      # Run full migration pipeline
-bun migrate:stats    # Compute ProfileMeta + Cohorts
-
 # Content & Email
 bun velite:build     # Build blog content
 bun velite:dev       # Watch blog content
@@ -49,6 +44,7 @@ bun email:dev        # Email preview server
 ## Architecture
 
 ### Tech Stack
+
 - **Framework**: Next.js 16 (App Router)
 - **Database**: PostgreSQL (Neon) with Drizzle ORM
 - **API**: tRPC for type-safe API calls
@@ -86,7 +82,7 @@ src/
 │   ├── upload/            # Data extraction (Tinder/Hinge)
 │   ├── utils/             # Helper functions
 │   └── interfaces/        # TypeScript interfaces for data formats
-└── scripts/               # Migration & utility scripts
+└── scripts/               # Maintenance and utility scripts
 
 content/posts/             # MDX blog posts
 emails/                    # React Email templates
@@ -97,10 +93,12 @@ emails/                    # React Email templates
 The database uses Drizzle ORM with PostgreSQL. Key tables:
 
 **Auth Tables** (Better Auth):
+
 - `user` - User accounts with SwipeStats fields (activeOnTinder, swipestatsTier, etc.)
 - `session`, `account`, `verification` - Auth system tables
 
 **Dating App Profile Tables**:
+
 - `tinder_profile` - Tinder profile data and metadata
 - `hinge_profile` - Hinge profile data and metadata
 - `tinder_usage` - Daily usage statistics (swipes, matches, messages)
@@ -109,17 +107,20 @@ The database uses Drizzle ORM with PostgreSQL. Key tables:
 - `media` - Photos/videos from profiles
 
 **Analytics**:
+
 - `profile_meta` - Pre-computed profile statistics
 - `cohort_definition` - Cohort filters (e.g., "tinder_male")
 - `cohort_stats` - Percentile distributions for cohort comparisons
 
 **Profile Comparison Feature**:
+
 - `profile_comparison` - Container for A/B test
 - `comparison_column` - One column per dating app
 - `comparison_column_content` - Photos/prompts in each column
 - `profile_comparison_feedback` - Ratings/comments
 
 **Research & Marketing**:
+
 - `dataset_export` - Research dataset exports
 - `newsletter`, `email_reminder`, `waitlist`
 
@@ -128,15 +129,18 @@ The database uses Drizzle ORM with PostgreSQL. Key tables:
 ### tRPC Architecture
 
 **Context** (src/server/api/trpc.ts):
+
 - Available in all procedures: `db`, `session`, `headers`
 - Session comes from Better Auth via `auth.api.getSession()`
 
 **Procedure Types**:
+
 - `publicProcedure` - No auth required (can still access session if logged in)
 - `protectedProcedure` - Requires authentication
 - `adminProcedure` - Requires admin email (no auth in dev mode)
 
 **Adding a New Router**:
+
 1. Create router in `src/server/api/routers/[name]Router.ts`
 2. Export router using `createTRPCRouter({ ... })`
 3. Import and add to `appRouter` in `src/server/api/root.ts`
@@ -145,6 +149,7 @@ The database uses Drizzle ORM with PostgreSQL. Key tables:
 ### Better Auth
 
 Authentication is handled by Better Auth with plugins:
+
 - Email/password authentication
 - Username plugin (unique usernames)
 - Admin plugin (role-based access)
@@ -152,21 +157,29 @@ Authentication is handled by Better Auth with plugins:
 
 Configuration in `src/server/better-auth/config.ts`. Session available in tRPC context.
 
+For local browser or headless testing, `GET /api/dev/login` creates a real
+Better Auth session for an existing user. The route is available only under
+`next dev`; production and preview deployments return 404. Use
+`?mode=token` for a cookie header instead of a browser redirect.
+
 ### Data Upload & Processing
 
 **Tinder Data**:
+
 1. User uploads `data.json` file
 2. `extract-tinder-data.ts` parses and validates
 3. `profile.service.ts` transforms to DB schema
 4. `meta.service.ts` computes statistics
 
 **Hinge Data**:
+
 1. User uploads `matches.json` + `account.json`
 2. `extract-hinge-data.ts` parses and validates
 3. `hinge-transform.service.ts` transforms to DB schema
 4. `hinge-meta.service.ts` computes statistics
 
 Both flows:
+
 - Store original files in `original_anonymized_file` table
 - Create profile records (tinder_profile/hinge_profile)
 - Compute ProfileMeta for quick analytics queries
@@ -174,6 +187,7 @@ Both flows:
 ### Cohort System
 
 Pre-computed percentile distributions for comparing users:
+
 - System cohorts: gender + data provider (e.g., "tinder_male")
 - User can create custom cohorts with additional filters
 - CohortStats stores P10, P25, P50, P75, P90, mean for key metrics
@@ -182,6 +196,7 @@ Pre-computed percentile distributions for comparing users:
 ### Blog Content
 
 Uses Velite to process MDX files in `content/posts/`:
+
 - Frontmatter schema in `velite.config.ts`
 - Authors defined in `src/lib/blog-authors.ts`
 - Auto-detects thumbnails from `public/images/blog/thumbnails/`
@@ -191,6 +206,7 @@ Uses Velite to process MDX files in `content/posts/`:
 ## Environment Variables
 
 Required variables (see `.env.example`):
+
 - `DATABASE_URL` - PostgreSQL connection string
 - `BETTER_AUTH_SECRET` - Auth encryption key (production only)
 - `NEXT_PUBLIC_BASE_URL` - Application URL
@@ -201,18 +217,10 @@ Required variables (see `.env.example`):
 
 Environment validation in `src/env.ts` using `@t3-oss/env-nextjs`.
 
-## Migration Notes
-
-This project recently migrated from Prisma to Drizzle. See `MIGRATION.md` for:
-- Database migration scripts
-- Schema transformation details
-- ProfileMeta computation pipeline
-
-If working with migration scripts, they're in `src/scripts/`.
-
 ## Path Aliases
 
 Use `@/*` to import from `src/`:
+
 ```typescript
 import { db } from "@/server/db";
 import { api } from "@/trpc/react";
@@ -221,6 +229,7 @@ import { api } from "@/trpc/react";
 ## Common Patterns
 
 **Client-side tRPC query** (in React component):
+
 ```typescript
 import { useTRPC } from "@/trpc/react";
 import { useQuery } from "@tanstack/react-query";
@@ -228,15 +237,19 @@ import { useQuery } from "@tanstack/react-query";
 const trpc = useTRPC();
 
 const profileQuery = useQuery(
-  trpc.profile.getById.queryOptions({ id: "..." }, {
-    refetchOnWindowFocus: false,
-  })
+  trpc.profile.getById.queryOptions(
+    { id: "..." },
+    {
+      refetchOnWindowFocus: false,
+    },
+  ),
 );
 
 // Access data: profileQuery.data, profileQuery.isLoading, etc.
 ```
 
 **Client-side tRPC mutation** (in React component):
+
 ```typescript
 import { useTRPC } from "@/trpc/react";
 import { useMutation } from "@tanstack/react-query";
@@ -253,13 +266,14 @@ const updateProfileMutation = useMutation(
     onError: (error) => {
       toast.error(error.message || "Failed to update profile");
     },
-  })
+  }),
 );
 
 // Trigger mutation: updateProfileMutation.mutate({ id: "...", data: {...} })
 ```
 
 **Server-side tRPC call** (in Server Component - immediate fetch):
+
 ```typescript
 import { trpcApi } from "@/trpc/server";
 
@@ -272,6 +286,7 @@ export default async function Page() {
 ```
 
 **Server-side tRPC prefetch** (for client components):
+
 ```typescript
 import { trpc, HydrateClient, prefetch } from "@/trpc/server";
 
@@ -292,17 +307,19 @@ export default async function Page() {
 ```
 
 **Direct database query** (when you don't need tRPC):
+
 ```typescript
 import { db } from "@/server/db";
 import { eq } from "drizzle-orm";
 
 const user = await db.query.userTable.findFirst({
   where: eq(userTable.id, userId),
-  with: { tinderProfiles: true, hingeProfiles: true }
+  with: { tinderProfiles: true, hingeProfiles: true },
 });
 ```
 
 **Admin procedure** (in router):
+
 ```typescript
 deleteProfile: adminProcedure
   .input(z.object({ profileId: z.string() }))
@@ -310,22 +327,3 @@ deleteProfile: adminProcedure
     // Only accessible in dev or to admin emails in production
   }),
 ```
-
-## Pending Cleanup: Timestamp-Suffixed Backup Folders (TODO — delete)
-
-The repo root contains untracked duplicate copies with timestamp suffixes,
-apparently created by macOS/file-sync recovery:
-
-- `node_modules 17.12.47/` (~1GB), `package 17.12.47.json`, `bun 17.12.47.lock`
-- `content 17.12.47/`, `BLOG.md 19-01-18-693.md`
-- `drizzle 11-25-43-006/`, `drizzle 15-30-39-483/`, `drizzle 17-35-44-121/`, `drizzle 21-47-40-223/`
-
-These actively break tooling: tsconfig only excludes `node_modules`, so
-`node_modules 17.12.47/` gets swept into `tsc --noEmit` and the default 4GB
-Node heap OOMs — `bun run typecheck` crashes unless run with
-`NODE_OPTIONS=--max-old-space-size=16384`.
-
-Kristian wants these deleted. Before removing, verify nothing valuable is
-inside (the `drizzle <timestamp>/` folders may hold old migration snapshots
-worth comparing against `drizzle/`). After deletion, typecheck should work
-again without heap flags.

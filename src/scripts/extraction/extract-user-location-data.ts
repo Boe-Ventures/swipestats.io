@@ -11,7 +11,7 @@
  * Also counts messages per profile.
  *
  * Usage:
- *   pnpm tsx src/scripts/extract-user-location-data.ts
+ *   bun run src/scripts/extraction/extract-user-location-data.ts
  */
 
 import { db } from "@/server/db";
