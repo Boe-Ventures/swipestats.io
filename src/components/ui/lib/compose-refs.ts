@@ -1,5 +1,5 @@
 /**
- * @see https://github.com/radix-ui/primitives/blob/main/packages/react/compose-refs/src/compose-refs.tsx
+ * Compose multiple React refs into one callback ref.
  */
 
 import * as React from "react";

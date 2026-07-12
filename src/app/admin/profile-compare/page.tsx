@@ -104,7 +104,7 @@ export default function AdminProfileComparePage() {
           <Select
             value={visibility}
             onValueChange={(v) => {
-              setVisibility(v as Visibility);
+              setVisibility(v!);
               setPage(1);
             }}
           >
@@ -120,7 +120,7 @@ export default function AdminProfileComparePage() {
           <Select
             value={sort}
             onValueChange={(v) => {
-              setSort(v as Sort);
+              setSort(v!);
               setPage(1);
             }}
           >
@@ -248,7 +248,7 @@ export default function AdminProfileComparePage() {
                     </div>
 
                     {c.photos.length > 0 && (
-                      <Accordion type="single" collapsible>
+                      <Accordion>
                         <AccordionItem value="photos" className="border-b-0">
                           <AccordionTrigger className="py-2 text-xs font-normal text-gray-500 hover:no-underline">
                             Show all {c.photos.length} photo

@@ -1,7 +1,7 @@
 import type { VariantProps } from "class-variance-authority";
 import type * as React from "react";
 import Link from "next/link";
-import { Slot } from "@radix-ui/react-slot";
+import { Button as ButtonPrimitive } from "@base-ui/react/button";
 import { cva } from "class-variance-authority";
 
 import { cn } from "./lib/utils";
@@ -43,62 +43,25 @@ const buttonVariants = cva(
 );
 
 /**
- * Button — the action primitive (shadcn spec, Radix `Slot` for composition).
- *
- * Pick the right tool:
- * - **Action** (onClick, submit): `<Button>` — supports `loading`.
- * - **Link styled as a button**: prefer `<ButtonLink href>` (a real `<Link>`,
- *   safe with icons + text). `<Button asChild>` also works for any element.
- * - **Inline text link**: `<SmartLink href>` from `./smart-link`.
- *
- * `asChild` merges the button styles onto a single child element via Radix
- * `Slot` (the shadcn way). It is crash-safe — the child may contain icons and
- * text. For a loading state on a slotted child, compose `<Spinner />` yourself.
- *
- * @example
- * // Action with loading state (Spinner is rendered for you)
- * <Button loading={isSaving}>Save</Button>
- *
- * @example
- * // Icon + text
- * <Button variant="outline" size="sm">
- *   <GitBranchIcon /> New branch
- * </Button>
- *
- * @example
- * // Render another element as a button
- * <Button asChild variant="outline">
- *   <Link href="/login">Login</Link>
- * </Button>
+ * Action primitive with loading states and Base UI polymorphic rendering.
+ * Use `render={<Link href="/login" />}` to render a link while preserving
+ * button behavior and styling, or use `ButtonLink` for an explicit link API.
  */
 function Button({
   className,
   variant,
   size,
-  asChild = false,
   loading = false,
   disabled,
   children,
   ...props
-}: React.ComponentProps<"button"> &
+}: ButtonPrimitive.Props &
   VariantProps<typeof buttonVariants> & {
-    asChild?: boolean;
     loading?: boolean;
   }) {
   const classes = cn(buttonVariants({ variant, size, className }));
-
-  // asChild: hand the button styles to a single child via Slot. Pass ONLY the
-  // child (no spinner sibling) so it never trips Slot's single-child rule.
-  if (asChild) {
-    return (
-      <Slot data-slot="button" className={classes} {...props}>
-        {children}
-      </Slot>
-    );
-  }
-
   return (
-    <button
+    <ButtonPrimitive
       data-slot="button"
       className={classes}
       disabled={disabled || loading}
@@ -106,7 +69,7 @@ function Button({
     >
       {loading && <Spinner data-icon="inline-start" />}
       {children}
-    </button>
+    </ButtonPrimitive>
   );
 }
 
@@ -114,8 +77,7 @@ function Button({
  * ButtonLink — a Next.js `<Link>` styled as a button.
  *
  * The ergonomic, crash-safe way to render a link that looks like a button
- * (handles icons + text). Equivalent to `<Button asChild><Link/></Button>`
- * without the single-child caveat. Does not support `loading` (links navigate).
+ * (handles icons + text). Does not support `loading` because links navigate.
  *
  * @example
  * <ButtonLink href="/dashboard" variant="outline" size="sm">

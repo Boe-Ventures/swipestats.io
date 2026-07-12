@@ -91,7 +91,8 @@ export default function CountryGeographyPage() {
           </div>
           <h1 className="mt-2 text-3xl font-bold text-gray-900">{country}</h1>
           <p className="mt-2 text-gray-600">
-            Profile distribution by {groupBy === "region" ? "state/region" : "city"}
+            Profile distribution by{" "}
+            {groupBy === "region" ? "state/region" : "city"}
           </p>
         </div>
       </div>
@@ -107,7 +108,12 @@ export default function CountryGeographyPage() {
               <label className="mb-2 block text-sm font-medium text-gray-700">
                 Platform
               </label>
-              <Select value={platform} onValueChange={handlePlatformChange}>
+              <Select
+                value={platform}
+                onValueChange={(value) =>
+                  value !== null && handlePlatformChange(value)
+                }
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -122,7 +128,12 @@ export default function CountryGeographyPage() {
               <label className="mb-2 block text-sm font-medium text-gray-700">
                 Group By
               </label>
-              <Select value={groupBy} onValueChange={handleGroupByChange}>
+              <Select
+                value={groupBy}
+                onValueChange={(value) =>
+                  value !== null && handleGroupByChange(value)
+                }
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -136,7 +147,12 @@ export default function CountryGeographyPage() {
               <label className="mb-2 block text-sm font-medium text-gray-700">
                 Sort By
               </label>
-              <Select value={sortBy} onValueChange={handleSortByChange}>
+              <Select
+                value={sortBy}
+                onValueChange={(value) =>
+                  value !== null && handleSortByChange(value)
+                }
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

@@ -267,7 +267,12 @@ export function SwipeActivityComboChart() {
               value={granularity}
               onChange={setGranularity}
             />
-            <Select value={timeRange} onValueChange={setTimeRange}>
+            <Select
+              value={timeRange}
+              onValueChange={(nextValue) =>
+                nextValue !== null && setTimeRange(nextValue)
+              }
+            >
               <SelectTrigger
                 className="w-[160px]"
                 aria-label="Select time range"
