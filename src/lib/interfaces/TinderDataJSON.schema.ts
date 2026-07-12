@@ -142,7 +142,13 @@ const tinderUserBaseSchema = z
     active_time: z.unknown().optional(),
     genders: z.string().optional(),
     gender_extended: z.string().optional(),
-    interested_in_genders: tinderJsonGenderSchema.optional(),
+    // Tinder emits this unused display label in unstable formats, including
+    // "Unknown, Unknown, and Unknown". Discard it while keeping the canonical
+    // interested_in and gender_filter fields strict above.
+    interested_in_genders: z
+      .unknown()
+      .optional()
+      .transform(() => undefined),
     bio: z.string().optional(),
     city: z.union([citySchema, z.string()]).optional(),
     connection_count: z.number().optional(),

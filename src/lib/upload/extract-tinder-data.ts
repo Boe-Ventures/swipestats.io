@@ -229,6 +229,8 @@ export async function extractTinderData(
           "name",
           "username",
           "phone_id",
+          // Unreliable display metadata; canonical preference fields are kept.
+          "interested_in_genders",
           // Additional PII in new format (2025+)
           "authIds", // Authentication IDs
           // Third-party PII in 2026+ exports (Duo/Matchmaker feature)

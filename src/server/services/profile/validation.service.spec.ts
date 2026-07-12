@@ -104,4 +104,26 @@ describe("parseAnonymizedTinderData", () => {
     expect(profile.region).toBeNull();
     expect(profile.country).toBe("NO");
   });
+
+  test("discards Tinder's unreliable interested-in display label", () => {
+    const parsed = parseAnonymizedTinderData({
+      ...minimalExport,
+      User: {
+        ...minimalExport.User,
+        gender: "F",
+        gender_filter: "More",
+        interested_in: "More",
+        interested_in_genders: "Unknown, Unknown, and Unknown",
+      },
+    });
+    const profile = transformTinderJsonToProfile(parsed, {
+      tinderId: "tinder-interested-in-display-label",
+      userId: "user-test",
+    });
+
+    expect(parsed.User.interested_in_genders).toBeUndefined();
+    expect(profile.genderStr).toBe("F");
+    expect(profile.genderFilterStr).toBe("More");
+    expect(profile.interestedInStr).toBe("More");
+  });
 });

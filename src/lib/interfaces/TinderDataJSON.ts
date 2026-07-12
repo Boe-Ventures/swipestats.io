@@ -93,7 +93,10 @@ interface TinderUserBase {
   gender_extended?: string; // usually ""
   gender_filter: TinderJsonGender;
   interested_in: TinderJsonGender;
-  interested_in_genders?: TinderJsonGender;
+  // Unreliable display metadata. Tinder exports values such as "Unknown" and
+  // "Unknown, Unknown, and Unknown"; SwipeStats discards it in favor of the
+  // normalized interested_in and gender_filter fields.
+  interested_in_genders?: unknown;
   bio?: string;
   city?: City | string;
   connection_count?: number;
