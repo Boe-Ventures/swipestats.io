@@ -5,7 +5,13 @@ import { useController } from "react-hook-form";
 
 import type { ComboboxOption } from "../compound/combobox";
 import { Combobox } from "../compound/combobox";
-import { Field, FieldError, FieldLabel } from "../form-new";
+import {
+  Field,
+  FieldError,
+  FieldLabel,
+  getFieldControlA11yProps,
+  getFormFieldIds,
+} from "../form-new";
 
 // Generate timezone options using Intl API
 function generateTimezoneOptions(): ComboboxOption[] {
@@ -140,11 +146,16 @@ export function TimeZoneSelect<
     control,
     rules: required ? { required: `${label} is required` } : undefined,
   });
+  const ids = getFormFieldIds(field.name);
+  const controlA11y = getFieldControlA11yProps(field.name, {
+    hasError: fieldState.invalid,
+    "aria-invalid": fieldState.invalid,
+  });
 
   return (
     <Field className={className} data-invalid={fieldState.invalid}>
       {label && (
-        <FieldLabel>
+        <FieldLabel id={ids.labelId} htmlFor={controlA11y.id}>
           {label}
           {required && <span className="text-destructive ml-1">*</span>}
         </FieldLabel>
@@ -158,8 +169,11 @@ export function TimeZoneSelect<
         emptyText="No time zone found."
         disabled={disabled}
         className="w-full"
+        triggerProps={controlA11y}
       />
-      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+      {fieldState.invalid && (
+        <FieldError id={ids.errorId} errors={[fieldState.error]} />
+      )}
     </Field>
   );
 }

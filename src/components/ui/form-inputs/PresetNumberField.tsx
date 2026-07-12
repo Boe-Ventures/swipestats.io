@@ -4,7 +4,14 @@ import type { Control, FieldPath, FieldValues } from "react-hook-form";
 import * as React from "react";
 import { useController } from "react-hook-form";
 
-import { Field, FieldDescription, FieldError, FieldLabel } from "../form-new";
+import {
+  FieldDescription,
+  FieldError,
+  FieldLegend,
+  FieldSet,
+  getFormFieldIds,
+  mergeAriaDescribedBy,
+} from "../form-new";
 import { Label } from "../label";
 import { Switch } from "../switch";
 import { ToggleGroup, ToggleGroupItem } from "../toggle-group";
@@ -115,30 +122,43 @@ export function PresetNumberField<
   };
 
   return (
-    <Field className={className} data-invalid={fieldState.invalid}>
+    <FieldSet
+      className={className}
+      data-invalid={fieldState.invalid}
+      aria-describedby={mergeAriaDescribedBy(
+        description ? getFormFieldIds(field.name).descriptionId : undefined,
+        fieldState.invalid ? getFormFieldIds(field.name).errorId : undefined,
+      )}
+    >
       {label && (
-        <div className="flex h-3.5 items-center gap-2">
-          <FieldLabel className="leading-none">{label}</FieldLabel>
-          <div className="flex items-center space-x-2">
-            <Label
-              htmlFor={`${name}-custom-switch`}
-              className="text-muted-foreground sr-only text-xs leading-none"
-            >
-              custom
-            </Label>
-            <Switch
-              id={`${name}-custom-switch`}
-              checked={useCustom}
-              onCheckedChange={handleCustomToggle}
-              disabled={disabled}
-              className="scale-75"
-            />
-          </div>
+        <FieldLegend
+          id={getFormFieldIds(field.name).labelId}
+          className="leading-none"
+        >
+          {label}
+        </FieldLegend>
+      )}
+      {label && (
+        <div className="flex h-3.5 items-center space-x-2">
+          <Label
+            htmlFor={`${name}-custom-switch`}
+            className="text-muted-foreground sr-only text-xs leading-none"
+          >
+            custom
+          </Label>
+          <Switch
+            id={`${name}-custom-switch`}
+            checked={useCustom}
+            onCheckedChange={handleCustomToggle}
+            disabled={disabled}
+            className="scale-75"
+          />
         </div>
       )}
       <div>
         {!useCustom ? (
           <ToggleGroup
+            id={getFormFieldIds(field.name).controlId}
             variant="outline"
             type="single"
             value={toggleValue}
@@ -172,8 +192,17 @@ export function PresetNumberField<
           />
         )}
       </div>
-      {description && <FieldDescription>{description}</FieldDescription>}
-      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-    </Field>
+      {description && (
+        <FieldDescription id={getFormFieldIds(field.name).descriptionId}>
+          {description}
+        </FieldDescription>
+      )}
+      {fieldState.invalid && (
+        <FieldError
+          id={getFormFieldIds(field.name).errorId}
+          errors={[fieldState.error]}
+        />
+      )}
+    </FieldSet>
   );
 }

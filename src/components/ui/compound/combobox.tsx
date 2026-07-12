@@ -33,6 +33,7 @@ interface ComboboxProps {
   className?: string;
   triggerClassName?: string;
   contentClassName?: string;
+  triggerProps?: Omit<React.ComponentProps<typeof Button>, "children">;
 }
 
 export function Combobox({
@@ -46,6 +47,7 @@ export function Combobox({
   className,
   triggerClassName,
   contentClassName,
+  triggerProps,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const isDesktop = useMediaQuery("(min-width: 768px)");
@@ -58,10 +60,15 @@ export function Combobox({
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             <Button
+              {...triggerProps}
               variant="outline"
               role="combobox"
               aria-expanded={open}
-              className={cn("w-full justify-between", triggerClassName)}
+              className={cn(
+                "w-full justify-between",
+                triggerClassName,
+                triggerProps?.className,
+              )}
               disabled={disabled}
             >
               {selectedOption ? selectedOption.label : placeholder}
@@ -104,8 +111,13 @@ export function Combobox({
       <Drawer open={open} onOpenChange={setOpen}>
         <DrawerTrigger asChild>
           <Button
+            {...triggerProps}
             variant="outline"
-            className={cn("w-full justify-between", triggerClassName)}
+            className={cn(
+              "w-full justify-between",
+              triggerClassName,
+              triggerProps?.className,
+            )}
             disabled={disabled}
           >
             {selectedOption ? selectedOption.label : placeholder}

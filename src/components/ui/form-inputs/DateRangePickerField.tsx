@@ -16,6 +16,8 @@ import {
   FieldDescription,
   FieldError,
   FieldLabel,
+  getFieldControlA11yProps,
+  getFormFieldIds,
 } from "../form-new";
 
 interface DateRangePickerFieldProps<
@@ -69,52 +71,66 @@ export function DateRangePickerField<
     <Controller
       control={control}
       name={name}
-      render={({ field, fieldState }) => (
-        <Field
-          className={cn("flex flex-col", className)}
-          data-invalid={fieldState.invalid}
-        >
-          {label && (
-            <FieldLabel>
-              {label}
-              {required && <span className="text-destructive ml-1">*</span>}
-            </FieldLabel>
-          )}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-full justify-between pl-3 text-left font-normal",
-                  !field.value?.from && "text-muted-foreground",
-                )}
-                disabled={disabled}
-                aria-invalid={fieldState.invalid}
-              >
-                {formatDateRange(field.value)}
-                <CalendarIcon className="h-4 w-4 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="range"
-                defaultMonth={field.value?.from as Date | undefined}
-                selected={field.value}
-                onSelect={field.onChange}
-                numberOfMonths={numberOfMonths}
-                disabled={disabledDates}
-                className="rounded-lg border shadow-sm"
-                showOutsideDays={false}
-                fromYear={fromYear}
-                toYear={toYear}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-          {description && <FieldDescription>{description}</FieldDescription>}
-          {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-        </Field>
-      )}
+      render={({ field, fieldState }) => {
+        const ids = getFormFieldIds(field.name);
+        const controlA11y = getFieldControlA11yProps(field.name, {
+          hasDescription: Boolean(description),
+          hasError: fieldState.invalid,
+          "aria-invalid": fieldState.invalid,
+        });
+        return (
+          <Field
+            className={cn("flex flex-col", className)}
+            data-invalid={fieldState.invalid}
+          >
+            {label && (
+              <FieldLabel id={ids.labelId} htmlFor={controlA11y.id}>
+                {label}
+                {required && <span className="text-destructive ml-1">*</span>}
+              </FieldLabel>
+            )}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  {...controlA11y}
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-between pl-3 text-left font-normal",
+                    !field.value?.from && "text-muted-foreground",
+                  )}
+                  disabled={disabled}
+                >
+                  {formatDateRange(field.value)}
+                  <CalendarIcon className="h-4 w-4 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="range"
+                  defaultMonth={field.value?.from as Date | undefined}
+                  selected={field.value}
+                  onSelect={field.onChange}
+                  numberOfMonths={numberOfMonths}
+                  disabled={disabledDates}
+                  className="rounded-lg border shadow-sm"
+                  showOutsideDays={false}
+                  fromYear={fromYear}
+                  toYear={toYear}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            {description && (
+              <FieldDescription id={ids.descriptionId}>
+                {description}
+              </FieldDescription>
+            )}
+            {fieldState.invalid && (
+              <FieldError id={ids.errorId} errors={[fieldState.error]} />
+            )}
+          </Field>
+        );
+      }}
     />
   );
 }

@@ -6,10 +6,11 @@ import type { ControllerProps, FieldPath, FieldValues } from "react-hook-form";
 import { Checkbox } from "../checkbox";
 import {
   Controller,
-  Field,
   FieldDescription,
   FieldError,
-  FieldLabel,
+  FieldLegend,
+  FieldSet,
+  getFormFieldIds,
 } from "../form-new";
 import { cn } from "../lib/utils";
 
@@ -59,17 +60,37 @@ export function CheckboxGroupCardsField<
         const fieldValue = field.value as string[] | undefined;
 
         return (
-          <Field
+          <FieldSet
             className={cn("space-y-3", className)}
             data-invalid={fieldState.invalid}
+            aria-describedby={
+              [
+                description
+                  ? getFormFieldIds(field.name).descriptionId
+                  : undefined,
+                fieldState.invalid
+                  ? getFormFieldIds(field.name).errorId
+                  : undefined,
+              ]
+                .filter(Boolean)
+                .join(" ") || undefined
+            }
           >
-            {label && <FieldLabel>{label}</FieldLabel>}
-            {description && <FieldDescription>{description}</FieldDescription>}
+            {label && (
+              <FieldLegend id={getFormFieldIds(field.name).labelId}>
+                {label}
+              </FieldLegend>
+            )}
+            {description && (
+              <FieldDescription id={getFormFieldIds(field.name).descriptionId}>
+                {description}
+              </FieldDescription>
+            )}
             <div className={cn("grid gap-3", gridClassName)}>
               {options.map((option) => (
                 <div key={option.value} className="space-y-0">
                   <label
-                    htmlFor={`checkbox-${option.value}`}
+                    htmlFor={`${field.name}-checkbox-${option.value}`}
                     className={cn(
                       // revisit if the extra has-[:checked] is needed, the blue bg stopped working out of nowhere and this was a quick fix
                       layout === "grid"
@@ -84,7 +105,7 @@ export function CheckboxGroupCardsField<
                     )}
                   >
                     <Checkbox
-                      id={`checkbox-${option.value}`}
+                      id={`${field.name}-checkbox-${option.value}`}
                       checked={
                         Array.isArray(fieldValue)
                           ? fieldValue.includes(option.value)
@@ -161,8 +182,13 @@ export function CheckboxGroupCardsField<
                 </div>
               ))}
             </div>
-            {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-          </Field>
+            {fieldState.invalid && (
+              <FieldError
+                id={getFormFieldIds(field.name).errorId}
+                errors={[fieldState.error]}
+              />
+            )}
+          </FieldSet>
         );
       }}
     />

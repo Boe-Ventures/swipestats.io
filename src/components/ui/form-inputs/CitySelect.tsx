@@ -6,7 +6,13 @@ import { useController } from "react-hook-form";
 
 import type { ComboboxOption } from "../compound/combobox";
 import { Combobox } from "../compound/combobox";
-import { Field, FieldError, FieldLabel } from "../form-new";
+import {
+  Field,
+  FieldError,
+  FieldLabel,
+  getFieldControlA11yProps,
+  getFormFieldIds,
+} from "../form-new";
 
 // Import type from shared location to avoid duplication
 export interface MajorCity {
@@ -95,11 +101,16 @@ export function CitySelect<
   const selectedCity = React.useMemo(() => {
     return cities.find((city) => city.id === field.value);
   }, [cities, field.value]);
+  const ids = getFormFieldIds(field.name);
+  const controlA11y = getFieldControlA11yProps(field.name, {
+    hasError: fieldState.invalid,
+    "aria-invalid": fieldState.invalid,
+  });
 
   return (
     <Field className={className} data-invalid={fieldState.invalid}>
       {label && (
-        <FieldLabel>
+        <FieldLabel id={ids.labelId} htmlFor={controlA11y.id}>
           {label}
           {required && <span className="text-destructive ml-1">*</span>}
         </FieldLabel>
@@ -113,6 +124,7 @@ export function CitySelect<
         emptyText="No city found."
         disabled={disabled}
         className="w-full"
+        triggerProps={controlA11y}
       />
       {selectedCity && (
         <div className="text-muted-foreground mt-1 text-xs">
@@ -120,7 +132,9 @@ export function CitySelect<
           {selectedCity.currency.toUpperCase()}
         </div>
       )}
-      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+      {fieldState.invalid && (
+        <FieldError id={ids.errorId} errors={[fieldState.error]} />
+      )}
     </Field>
   );
 }

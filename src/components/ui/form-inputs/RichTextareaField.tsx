@@ -11,6 +11,8 @@ import {
   FieldDescription,
   FieldError,
   FieldLabel,
+  getFormFieldIds,
+  mergeAriaDescribedBy,
 } from "../form-new";
 
 /**
@@ -128,9 +130,24 @@ export function RichTextareaField<
             : 0;
 
         return (
-          <Field className={className} data-invalid={fieldState.invalid}>
+          <Field
+            className={className}
+            data-invalid={fieldState.invalid}
+            role="group"
+            aria-labelledby={
+              label ? getFormFieldIds(field.name).labelId : undefined
+            }
+            aria-describedby={mergeAriaDescribedBy(
+              description
+                ? getFormFieldIds(field.name).descriptionId
+                : undefined,
+              fieldState.invalid
+                ? getFormFieldIds(field.name).errorId
+                : undefined,
+            )}
+          >
             {label && (
-              <FieldLabel>
+              <FieldLabel id={getFormFieldIds(field.name).labelId}>
                 {label}
                 {required && <span className="text-destructive ml-1">*</span>}
               </FieldLabel>
@@ -153,9 +170,18 @@ export function RichTextareaField<
               className="min-h-[100px]"
               {...editorProps}
             />
-            {description && <FieldDescription>{description}</FieldDescription>}
+            {description && (
+              <FieldDescription id={getFormFieldIds(field.name).descriptionId}>
+                {description}
+              </FieldDescription>
+            )}
             <div className="flex items-center justify-between">
-              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+              {fieldState.invalid && (
+                <FieldError
+                  id={getFormFieldIds(field.name).errorId}
+                  errors={[fieldState.error]}
+                />
+              )}
               {maxLength && (
                 <span className="text-muted-foreground text-xs">
                   {characterCount}/{maxLength} characters

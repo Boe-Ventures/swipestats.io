@@ -10,6 +10,7 @@
  * - Uses direct Controller instead of wrapped FormField
  * - Explicit fieldState handling for validation states
  * - Proper aria-invalid and data-invalid attributes
+ * - Stable IDs connecting labels, descriptions, errors, and controls
  * - More flexible and composable
  *
  * Future architecture note: React Hook Form remains the app standard after the
@@ -19,20 +20,25 @@
  *
  * @example Basic Input Field
  * ```tsx
+ * const ids = getFormFieldIds("email");
+ * const controlA11y = getFieldControlA11yProps("email", {
+ *   hasDescription: true,
+ *   hasError: fieldState.invalid,
+ *   "aria-invalid": fieldState.invalid,
+ * });
  * <Controller
  *   name="email"
  *   control={form.control}
  *   render={({ field, fieldState }) => (
  *     <Field data-invalid={fieldState.invalid}>
- *       <FieldLabel htmlFor={field.name}>Email</FieldLabel>
+ *       <FieldLabel id={ids.labelId} htmlFor={controlA11y.id}>Email</FieldLabel>
  *       <Input
  *         {...field}
- *         id={field.name}
+ *         {...controlA11y}
  *         type="email"
- *         aria-invalid={fieldState.invalid}
  *       />
- *       <FieldDescription>We'll never share your email.</FieldDescription>
- *       {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+ *       <FieldDescription id={ids.descriptionId}>We'll never share your email.</FieldDescription>
+ *       {fieldState.invalid && <FieldError id={ids.errorId} errors={[fieldState.error]} />}
  *     </Field>
  *   )}
  * />
@@ -96,6 +102,49 @@
 import * as React from "react";
 import type { FieldError as RHFFieldError } from "react-hook-form";
 import { cn } from "./lib/utils";
+
+export function getFormFieldIds(baseId: string) {
+  return {
+    controlId: `${baseId}-control`,
+    labelId: `${baseId}-label`,
+    descriptionId: `${baseId}-description`,
+    errorId: `${baseId}-error`,
+  } as const;
+}
+
+export function mergeAriaDescribedBy(
+  ...values: Array<string | undefined>
+): string | undefined {
+  const ids = values
+    .flatMap((value) => value?.split(/\s+/) ?? [])
+    .filter(Boolean);
+  return ids.length ? [...new Set(ids)].join(" ") : undefined;
+}
+
+interface FieldControlA11yOptions {
+  id?: string;
+  "aria-describedby"?: string;
+  "aria-invalid"?: React.AriaAttributes["aria-invalid"];
+  hasDescription?: boolean;
+  hasError?: boolean;
+}
+
+/** Compose a caller's IDs and ARIA attributes with the shared field contract. */
+export function getFieldControlA11yProps(
+  baseId: string,
+  options: FieldControlA11yOptions = {},
+) {
+  const ids = getFormFieldIds(baseId);
+  return {
+    id: options.id ?? ids.controlId,
+    "aria-describedby": mergeAriaDescribedBy(
+      options.hasDescription ? ids.descriptionId : undefined,
+      options.hasError ? ids.errorId : undefined,
+      options["aria-describedby"],
+    ),
+    "aria-invalid": options["aria-invalid"],
+  };
+}
 
 // Re-export for convenience
 export {

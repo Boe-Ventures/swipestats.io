@@ -4,7 +4,14 @@ import type * as React from "react";
 import type { Control, FieldPath, FieldValues } from "react-hook-form";
 import { useController } from "react-hook-form";
 
-import { Field, FieldDescription, FieldError, FieldLabel } from "../form-new";
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+  getFieldControlA11yProps,
+  getFormFieldIds,
+} from "../form-new";
 import { Input } from "../input";
 
 interface NumberFieldProps<
@@ -107,11 +114,17 @@ export function NumberField<
   };
 
   const displayValue = formatNumber(field.value);
+  const ids = getFormFieldIds(field.name);
+  const controlA11y = getFieldControlA11yProps(field.name, {
+    hasDescription: Boolean(description),
+    hasError: fieldState.invalid,
+    "aria-invalid": fieldState.invalid,
+  });
 
   return (
     <Field className={className} data-invalid={fieldState.invalid}>
       {label && (
-        <FieldLabel htmlFor={field.name}>
+        <FieldLabel id={ids.labelId} htmlFor={controlA11y.id}>
           {label}
           {required && <span className="text-destructive ml-1">*</span>}
         </FieldLabel>
@@ -123,7 +136,7 @@ export function NumberField<
           </div>
         )}
         <Input
-          id={field.name}
+          {...controlA11y}
           type="text"
           inputMode="numeric"
           placeholder={placeholder}
@@ -135,11 +148,16 @@ export function NumberField<
           max={max}
           step={step}
           className={currency ? "pl-8" : undefined}
-          aria-invalid={fieldState.invalid}
         />
       </div>
-      {description && <FieldDescription>{description}</FieldDescription>}
-      {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+      {description && (
+        <FieldDescription id={ids.descriptionId}>
+          {description}
+        </FieldDescription>
+      )}
+      {fieldState.invalid && (
+        <FieldError id={ids.errorId} errors={[fieldState.error]} />
+      )}
     </Field>
   );
 }

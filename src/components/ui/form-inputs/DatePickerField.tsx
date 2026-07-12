@@ -19,6 +19,8 @@ import {
   FieldDescription,
   FieldError,
   FieldLabel,
+  getFieldControlA11yProps,
+  getFormFieldIds,
 } from "../form-new";
 
 interface DatePickerFieldProps<
@@ -60,53 +62,67 @@ export function DatePickerField<
     <Controller
       control={control}
       name={name}
-      render={({ field, fieldState }) => (
-        <Field
-          className={cn("flex flex-col", className)}
-          data-invalid={fieldState.invalid}
-        >
-          {label && (
-            <FieldLabel>
-              {label}
-              {required && <span className="text-destructive ml-1">*</span>}
-            </FieldLabel>
-          )}
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button
-                variant="outline"
-                className={cn(
-                  "w-full justify-between pl-3 text-left font-normal",
-                  !field.value && "text-muted-foreground",
-                )}
-                disabled={disabled}
-                aria-invalid={fieldState.invalid}
-              >
-                {field.value ? (
-                  format(field.value, "PPP")
-                ) : (
-                  <span>{placeholder}</span>
-                )}
-                <CalendarIcon className="h-4 w-4 opacity-50" />
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
-              <Calendar
-                mode="single"
-                selected={field.value}
-                onSelect={field.onChange}
-                disabled={disabledDates}
-                captionLayout={captionLayout}
-                fromYear={fromYear}
-                toYear={toYear}
-                initialFocus
-              />
-            </PopoverContent>
-          </Popover>
-          {description && <FieldDescription>{description}</FieldDescription>}
-          {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-        </Field>
-      )}
+      render={({ field, fieldState }) => {
+        const ids = getFormFieldIds(field.name);
+        const controlA11y = getFieldControlA11yProps(field.name, {
+          hasDescription: Boolean(description),
+          hasError: fieldState.invalid,
+          "aria-invalid": fieldState.invalid,
+        });
+        return (
+          <Field
+            className={cn("flex flex-col", className)}
+            data-invalid={fieldState.invalid}
+          >
+            {label && (
+              <FieldLabel id={ids.labelId} htmlFor={controlA11y.id}>
+                {label}
+                {required && <span className="text-destructive ml-1">*</span>}
+              </FieldLabel>
+            )}
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  {...controlA11y}
+                  variant="outline"
+                  className={cn(
+                    "w-full justify-between pl-3 text-left font-normal",
+                    !field.value && "text-muted-foreground",
+                  )}
+                  disabled={disabled}
+                >
+                  {field.value ? (
+                    format(field.value, "PPP")
+                  ) : (
+                    <span>{placeholder}</span>
+                  )}
+                  <CalendarIcon className="h-4 w-4 opacity-50" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={field.value}
+                  onSelect={field.onChange}
+                  disabled={disabledDates}
+                  captionLayout={captionLayout}
+                  fromYear={fromYear}
+                  toYear={toYear}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+            {description && (
+              <FieldDescription id={ids.descriptionId}>
+                {description}
+              </FieldDescription>
+            )}
+            {fieldState.invalid && (
+              <FieldError id={ids.errorId} errors={[fieldState.error]} />
+            )}
+          </Field>
+        );
+      }}
     />
   );
 }
@@ -140,6 +156,7 @@ interface NaturalDatePickerInputProps {
   disabledDates?: (date: Date) => boolean;
   fromYear?: number;
   toYear?: number;
+  controlA11y: ReturnType<typeof getFieldControlA11yProps>;
 }
 
 function NaturalDatePickerInput({
@@ -149,6 +166,7 @@ function NaturalDatePickerInput({
   disabledDates,
   fromYear,
   toYear,
+  controlA11y,
 }: NaturalDatePickerInputProps) {
   const [open, setOpen] = useState(false);
   const [inputValue, setInputValue] = useState("");
@@ -189,7 +207,7 @@ function NaturalDatePickerInput({
   return (
     <div className="relative flex gap-2">
       <Input
-        id={field.name}
+        {...controlA11y}
         value={inputValue}
         placeholder={placeholder}
         className="bg-background pr-10"
@@ -250,26 +268,41 @@ export function NaturalDatePickerField<
     <Controller
       control={control}
       name={name}
-      render={({ field, fieldState }) => (
-        <Field className={className} data-invalid={fieldState.invalid}>
-          {label && (
-            <FieldLabel htmlFor={field.name}>
-              {label}
-              {required && <span className="text-destructive ml-1">*</span>}
-            </FieldLabel>
-          )}
-          <NaturalDatePickerInput
-            field={field}
-            placeholder={placeholder}
-            disabled={disabled}
-            disabledDates={disabledDates}
-            fromYear={fromYear}
-            toYear={toYear}
-          />
-          {description && <FieldDescription>{description}</FieldDescription>}
-          {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-        </Field>
-      )}
+      render={({ field, fieldState }) => {
+        const ids = getFormFieldIds(field.name);
+        const controlA11y = getFieldControlA11yProps(field.name, {
+          hasDescription: Boolean(description),
+          hasError: fieldState.invalid,
+          "aria-invalid": fieldState.invalid,
+        });
+        return (
+          <Field className={className} data-invalid={fieldState.invalid}>
+            {label && (
+              <FieldLabel id={ids.labelId} htmlFor={controlA11y.id}>
+                {label}
+                {required && <span className="text-destructive ml-1">*</span>}
+              </FieldLabel>
+            )}
+            <NaturalDatePickerInput
+              field={field}
+              placeholder={placeholder}
+              disabled={disabled}
+              disabledDates={disabledDates}
+              fromYear={fromYear}
+              toYear={toYear}
+              controlA11y={controlA11y}
+            />
+            {description && (
+              <FieldDescription id={ids.descriptionId}>
+                {description}
+              </FieldDescription>
+            )}
+            {fieldState.invalid && (
+              <FieldError id={ids.errorId} errors={[fieldState.error]} />
+            )}
+          </Field>
+        );
+      }}
     />
   );
 }

@@ -9,6 +9,8 @@ import {
   FieldDescription,
   FieldError,
   FieldLabel,
+  getFieldControlA11yProps,
+  getFormFieldIds,
 } from "../form-new";
 import { Input } from "../input";
 import { Textarea } from "../textarea";
@@ -50,37 +52,49 @@ export function TextField<
     <Controller
       control={control}
       name={name}
-      render={({ field, fieldState }) => (
-        <Field className={className} data-invalid={fieldState.invalid}>
-          {label && (
-            <FieldLabel htmlFor={field.name}>
-              {label}
-              {required && <span className="text-destructive ml-1">*</span>}
-            </FieldLabel>
-          )}
-          {multiline ? (
-            <Textarea
-              {...field}
-              id={field.name}
-              rows={rows}
-              placeholder={placeholder}
-              disabled={disabled}
-              aria-invalid={fieldState.invalid}
-            />
-          ) : (
-            <Input
-              {...field}
-              id={field.name}
-              type={type}
-              placeholder={placeholder}
-              disabled={disabled}
-              aria-invalid={fieldState.invalid}
-            />
-          )}
-          {description && <FieldDescription>{description}</FieldDescription>}
-          {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-        </Field>
-      )}
+      render={({ field, fieldState }) => {
+        const ids = getFormFieldIds(field.name);
+        const controlA11y = getFieldControlA11yProps(field.name, {
+          hasDescription: Boolean(description),
+          hasError: fieldState.invalid,
+          "aria-invalid": fieldState.invalid,
+        });
+        return (
+          <Field className={className} data-invalid={fieldState.invalid}>
+            {label && (
+              <FieldLabel id={ids.labelId} htmlFor={controlA11y.id}>
+                {label}
+                {required && <span className="text-destructive ml-1">*</span>}
+              </FieldLabel>
+            )}
+            {multiline ? (
+              <Textarea
+                {...field}
+                {...controlA11y}
+                rows={rows}
+                placeholder={placeholder}
+                disabled={disabled}
+              />
+            ) : (
+              <Input
+                {...field}
+                {...controlA11y}
+                type={type}
+                placeholder={placeholder}
+                disabled={disabled}
+              />
+            )}
+            {description && (
+              <FieldDescription id={ids.descriptionId}>
+                {description}
+              </FieldDescription>
+            )}
+            {fieldState.invalid && (
+              <FieldError id={ids.errorId} errors={[fieldState.error]} />
+            )}
+          </Field>
+        );
+      }}
     />
   );
 }

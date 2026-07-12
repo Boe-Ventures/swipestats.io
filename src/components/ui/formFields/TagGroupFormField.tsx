@@ -2,7 +2,13 @@
 
 import type { ControllerProps, FieldPath, FieldValues } from "react-hook-form";
 
-import { Controller, Field, FieldError, FieldLabel } from "../form-new";
+import {
+  Controller,
+  FieldError,
+  FieldLegend,
+  FieldSet,
+  getFormFieldIds,
+} from "../form-new";
 import { cn } from "../lib/utils";
 import { Button } from "../button";
 
@@ -33,11 +39,19 @@ export function TagGroupFormField<
     <Controller
       {...props}
       render={({ field, fieldState }) => (
-        <Field
+        <FieldSet
           className={cn("space-y-2", className)}
           data-invalid={fieldState.invalid}
+          aria-invalid={fieldState.invalid}
+          aria-describedby={
+            fieldState.invalid ? getFormFieldIds(field.name).errorId : undefined
+          }
         >
-          {label && <FieldLabel>{label}</FieldLabel>}
+          {label && (
+            <FieldLegend id={getFormFieldIds(field.name).labelId}>
+              {label}
+            </FieldLegend>
+          )}
           <div className="flex flex-wrap gap-2">
             {options.map((option) => {
               const currentValue = (field.value ?? []) as string[];
@@ -61,14 +75,20 @@ export function TagGroupFormField<
                     }
                   }}
                   aria-invalid={fieldState.invalid}
+                  aria-pressed={isSelected}
                 >
                   {option.label}
                 </Button>
               );
             })}
           </div>
-          {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-        </Field>
+          {fieldState.invalid && (
+            <FieldError
+              id={getFormFieldIds(field.name).errorId}
+              errors={[fieldState.error]}
+            />
+          )}
+        </FieldSet>
       )}
     />
   );

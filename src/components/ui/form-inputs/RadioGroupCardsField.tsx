@@ -5,10 +5,11 @@ import type { ControllerProps, FieldPath, FieldValues } from "react-hook-form";
 
 import {
   Controller,
-  Field,
   FieldDescription,
   FieldError,
-  FieldLabel,
+  FieldLegend,
+  FieldSet,
+  getFormFieldIds,
 } from "../form-new";
 import { RadioGroup, RadioGroupItem } from "../radio-group";
 import { cn } from "../lib/utils";
@@ -63,12 +64,33 @@ export function RadioGroupCardsField<
     <Controller
       {...props}
       render={({ field, fieldState }) => (
-        <Field
+        <FieldSet
           className={cn("space-y-3", className)}
           data-invalid={fieldState.invalid}
+          aria-invalid={fieldState.invalid}
+          aria-describedby={
+            [
+              description
+                ? getFormFieldIds(field.name).descriptionId
+                : undefined,
+              fieldState.invalid
+                ? getFormFieldIds(field.name).errorId
+                : undefined,
+            ]
+              .filter(Boolean)
+              .join(" ") || undefined
+          }
         >
-          {label && <FieldLabel>{label}</FieldLabel>}
-          {description && <FieldDescription>{description}</FieldDescription>}
+          {label && (
+            <FieldLegend id={getFormFieldIds(field.name).labelId}>
+              {label}
+            </FieldLegend>
+          )}
+          {description && (
+            <FieldDescription id={getFormFieldIds(field.name).descriptionId}>
+              {description}
+            </FieldDescription>
+          )}
           <RadioGroup
             onValueChange={field.onChange}
             value={field.value}
@@ -78,7 +100,7 @@ export function RadioGroupCardsField<
             {options.map((option) => (
               <div key={option.value} className="space-y-0">
                 <label
-                  htmlFor={`radio-${option.value}`}
+                  htmlFor={`${field.name}-radio-${option.value}`}
                   className={cn(
                     layout === "grid"
                       ? "border-input hover:border-ring focus-within:border-ring focus-within:ring-ring/50 has-[:checked]:border-primary has-[:checked]:bg-primary/5 has-[:checked]:ring-primary/20 has-[*[data-state=checked]]:border-primary has-[*[data-state=checked]]:bg-primary/5 has-[*[data-state=checked]]:ring-primary/20 relative flex min-h-[80px] cursor-pointer items-start gap-3 rounded-lg border p-4 shadow-sm transition-all focus-within:ring-[3px] has-[*[data-state=checked]]:ring-[3px] has-[:checked]:ring-[3px]"
@@ -87,7 +109,7 @@ export function RadioGroupCardsField<
                   )}
                 >
                   <RadioGroupItem
-                    id={`radio-${option.value}`}
+                    id={`${field.name}-radio-${option.value}`}
                     value={option.value}
                     className={cn("shrink-0", layout === "grid" && "mt-1")}
                   />
@@ -122,8 +144,13 @@ export function RadioGroupCardsField<
               </div>
             ))}
           </RadioGroup>
-          {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-        </Field>
+          {fieldState.invalid && (
+            <FieldError
+              id={getFormFieldIds(field.name).errorId}
+              errors={[fieldState.error]}
+            />
+          )}
+        </FieldSet>
       )}
     />
   );

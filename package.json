@@ -6,7 +6,7 @@
   "scripts": {
     "build": "velite build && next build && bun db:migrate",
     "postinstall": "velite build",
-    "check": "bun db:check && velite build && eslint . && tsc --noEmit",
+    "check": "bun db:check && velite build && eslint . && tsc --noEmit && bun test",
     "clean": "rm -rf node_modules .next .turbo .cache .velite .eslintcache bun.lock",
     "reinstall": "bun run clean && bun install",
     "db:generate": "drizzle-kit generate",
@@ -22,6 +22,7 @@
     "ls:overview": "bun run src/scripts/lemonsqueezy/overview.ts",
     "preview": "next build && next start",
     "start": "next start",
+    "test": "bun test",
     "typecheck": "velite build && tsc --noEmit",
     "velite:build": "velite build",
     "velite:dev": "velite --watch",

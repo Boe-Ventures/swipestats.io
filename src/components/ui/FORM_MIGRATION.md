@@ -92,7 +92,13 @@ When migrating a form from old to new:
 
    // After
    import { Controller } from "@/components/ui/form-new";
-   import { Field, FieldLabel, FieldError } from "@/components/ui/form-new";
+   import {
+     Field,
+     FieldLabel,
+     FieldError,
+     getFieldControlA11yProps,
+     getFormFieldIds,
+   } from "@/components/ui/form-new";
    ```
 
 2. **Replace FormField with Controller:**
@@ -115,21 +121,32 @@ When migrating a form from old to new:
        <Input {...field} />
      </FormControl>
      <FormMessage />
-   </FormItem>
+   </FormItem>;
 
    // After
+   const ids = getFormFieldIds(field.name);
+   const controlA11y = getFieldControlA11yProps(field.name, {
+     hasError: fieldState.invalid,
+     "aria-invalid": fieldState.invalid,
+   });
    <Field data-invalid={fieldState.invalid}>
-     <FieldLabel htmlFor={field.name}>Email</FieldLabel>
-     <Input {...field} id={field.name} aria-invalid={fieldState.invalid} />
-     {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-   </Field>
+     <FieldLabel id={ids.labelId} htmlFor={controlA11y.id}>
+       Email
+     </FieldLabel>
+     <Input {...field} {...controlA11y} />
+     {fieldState.invalid && (
+       <FieldError id={ids.errorId} errors={[fieldState.error]} />
+     )}
+   </Field>;
    ```
 
 4. **Add accessibility attributes:**
    - Add `data-invalid={fieldState.invalid}` to `<Field>`
    - Add `aria-invalid={fieldState.invalid}` to the input component
-   - Add `id={field.name}` to the input
-   - Add `htmlFor={field.name}` to the label
+   - Derive stable IDs with `getFormFieldIds(field.name)`
+   - Compose the control's ID, `aria-describedby`, and `aria-invalid` with `getFieldControlA11yProps`
+   - Give descriptions and errors their derived IDs; never overwrite caller-provided IDs or ARIA
+   - For checkbox, radio, tag, or rating groups, use `FieldSet` + `FieldLegend` (or a labelled `role="group"`) rather than pointing one group label at a single child
 
 ## Examples
 
