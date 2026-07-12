@@ -5,6 +5,7 @@
 ## Changed
 
 - `src/components/ui/dialog.tsx:4` maps Overlay to Backdrop and Content to Popup with Base UI transition hooks.
+- Responsive parts consume one root-owned desktop/mobile decision so hydration cannot mix a Base UI root with a Vaul trigger or content tree.
 - Benchmark-detail and design-system triggers use `render`; `SimpleDialog` keeps SwipeStats' `subHeader`, footer, and bounded scrolling behavior.
 - `grep -n "radix-ui\|@radix-ui" src/components/ui/dialog.tsx` is clean.
 - Automated verification: covered by `bun run check`, focused Base UI contract tests, and the compile-only production build.
