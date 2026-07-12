@@ -110,23 +110,22 @@ export function UserDropdown({ user }: UserDropdownProps) {
         }
       />
       <DropdownMenuContent className="w-56" align="end" keepMounted>
-        <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col space-y-1">
-            <p className="truncate text-sm leading-none font-medium">
-              {displayName}
-            </p>
-            {user.email && (
-              <p
-                className="text-muted-foreground truncate text-xs leading-none"
-                title={user.email}
-              >
-                {user.email}
-              </p>
-            )}
-          </div>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
         <DropdownMenuGroup>
+          <DropdownMenuLabel className="font-normal">
+            <div className="flex flex-col space-y-1">
+              <p className="truncate text-sm leading-none font-medium">
+                {displayName}
+              </p>
+              {user.email && (
+                <p
+                  className="text-muted-foreground truncate text-xs leading-none"
+                  title={user.email}
+                >
+                  {user.email}
+                </p>
+              )}
+            </div>
+          </DropdownMenuLabel>
           <DropdownMenuLinkItem href="/app/dashboard">
             <User className="mr-2 h-4 w-4" />
             Dashboard

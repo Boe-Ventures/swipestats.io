@@ -52,6 +52,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -573,61 +574,63 @@ export function ComparisonColumn({
                   {isDev && (
                     <>
                       <DropdownMenuSeparator />
-                      <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">
-                        Dev tools
-                      </DropdownMenuLabel>
-                      <DropdownMenuItem
-                        disabled={devDownload !== null}
-                        onClick={() =>
-                          void handleDevDownload(
-                            "column",
-                            `/api/dev/profile-compare/column-photos/${column.id}`,
-                            `${displayName}-photos.zip`,
-                          )
-                        }
-                      >
-                        <Download className="mr-2 h-4 w-4" />
-                        Download column photos (.zip)
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        disabled={devDownload !== null}
-                        onClick={() =>
-                          void handleDevDownload(
-                            "library",
-                            `/api/dev/profile-compare/library`,
-                            "swipestats-photo-library.zip",
-                          )
-                        }
-                      >
-                        <Images className="mr-2 h-4 w-4" />
-                        Download my photo library (.zip)
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        disabled={devDownload !== null}
-                        onClick={() =>
-                          void handleDevDownload(
-                            "column-json",
-                            `/api/dev/profile-compare/export-column/${column.id}`,
-                            `${displayName}-export.json`,
-                          )
-                        }
-                      >
-                        <FileJson className="mr-2 h-4 w-4" />
-                        Export this column (.json)
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        disabled={devDownload !== null}
-                        onClick={() =>
-                          void handleDevDownload(
-                            "export",
-                            `/api/dev/profile-compare/export/${comparisonId}`,
-                            "comparison-export.json",
-                          )
-                        }
-                      >
-                        <FileJson className="mr-2 h-4 w-4" />
-                        Export whole comparison (.json)
-                      </DropdownMenuItem>
+                      <DropdownMenuGroup>
+                        <DropdownMenuLabel className="text-muted-foreground text-xs font-normal">
+                          Dev tools
+                        </DropdownMenuLabel>
+                        <DropdownMenuItem
+                          disabled={devDownload !== null}
+                          onClick={() =>
+                            void handleDevDownload(
+                              "column",
+                              `/api/dev/profile-compare/column-photos/${column.id}`,
+                              `${displayName}-photos.zip`,
+                            )
+                          }
+                        >
+                          <Download className="mr-2 h-4 w-4" />
+                          Download column photos (.zip)
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          disabled={devDownload !== null}
+                          onClick={() =>
+                            void handleDevDownload(
+                              "library",
+                              `/api/dev/profile-compare/library`,
+                              "swipestats-photo-library.zip",
+                            )
+                          }
+                        >
+                          <Images className="mr-2 h-4 w-4" />
+                          Download my photo library (.zip)
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          disabled={devDownload !== null}
+                          onClick={() =>
+                            void handleDevDownload(
+                              "column-json",
+                              `/api/dev/profile-compare/export-column/${column.id}`,
+                              `${displayName}-export.json`,
+                            )
+                          }
+                        >
+                          <FileJson className="mr-2 h-4 w-4" />
+                          Export this column (.json)
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          disabled={devDownload !== null}
+                          onClick={() =>
+                            void handleDevDownload(
+                              "export",
+                              `/api/dev/profile-compare/export/${comparisonId}`,
+                              "comparison-export.json",
+                            )
+                          }
+                        >
+                          <FileJson className="mr-2 h-4 w-4" />
+                          Export whole comparison (.json)
+                        </DropdownMenuItem>
+                      </DropdownMenuGroup>
                     </>
                   )}
                   <DropdownMenuSeparator />
