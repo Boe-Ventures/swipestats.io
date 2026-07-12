@@ -327,7 +327,9 @@ export function CompareMetricChart({ metric, title }: CompareMetricChartProps) {
           <div className="flex gap-2">
             <Select
               value={granularity}
-              onValueChange={(value) => setGranularity(value!)}
+              onValueChange={(nextGranularity) => {
+                if (nextGranularity !== null) setGranularity(nextGranularity);
+              }}
             >
               <SelectTrigger
                 className="w-[120px]"

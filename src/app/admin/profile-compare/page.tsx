@@ -103,8 +103,9 @@ export default function AdminProfileComparePage() {
           <Filter className="h-4 w-4 text-gray-500" />
           <Select
             value={visibility}
-            onValueChange={(v) => {
-              setVisibility(v!);
+            onValueChange={(nextVisibility) => {
+              if (nextVisibility === null) return;
+              setVisibility(nextVisibility);
               setPage(1);
             }}
           >
@@ -119,8 +120,9 @@ export default function AdminProfileComparePage() {
           </Select>
           <Select
             value={sort}
-            onValueChange={(v) => {
-              setSort(v!);
+            onValueChange={(nextSort) => {
+              if (nextSort === null) return;
+              setSort(nextSort);
               setPage(1);
             }}
           >

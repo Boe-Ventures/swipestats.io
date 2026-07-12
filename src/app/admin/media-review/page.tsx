@@ -93,8 +93,9 @@ export default function AdminMediaReviewPage() {
           <Filter className="h-4 w-4 text-gray-500" />
           <Select
             value={platform}
-            onValueChange={(v) => {
-              setPlatform(v!);
+            onValueChange={(nextPlatform) => {
+              if (nextPlatform === null) return;
+              setPlatform(nextPlatform);
               setPage(1);
             }}
           >
