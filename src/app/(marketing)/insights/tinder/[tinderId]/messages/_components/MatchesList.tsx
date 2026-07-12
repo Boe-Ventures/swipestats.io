@@ -198,7 +198,12 @@ export function MatchesList() {
         <h2 className="text-2xl font-bold">All Matches ({matches.length})</h2>
         <div className="flex items-center gap-2">
           <span className="text-muted-foreground text-sm">Sort by:</span>
-          <Select value={sortBy} onValueChange={(value) => setSortBy(value!)}>
+          <Select
+            value={sortBy}
+            onValueChange={(nextSort) => {
+              if (nextSort !== null) setSortBy(nextSort);
+            }}
+          >
             <SelectTrigger className="w-[180px]">
               <SelectValue />
             </SelectTrigger>
