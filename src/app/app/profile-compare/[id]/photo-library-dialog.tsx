@@ -15,6 +15,7 @@ import { DeleteAlert } from "@/components/ui/alert-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
@@ -244,17 +245,19 @@ export function PhotoLibraryDialog({
                   }
                 />
                 <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>
-                    Add an AI draft column for
-                  </DropdownMenuLabel>
-                  {COMPOSE_PROVIDERS.map((app) => (
-                    <DropdownMenuItem
-                      key={app.key}
-                      onClick={() => handleCompose(app.key)}
-                    >
-                      {app.label}
-                    </DropdownMenuItem>
-                  ))}
+                  <DropdownMenuGroup>
+                    <DropdownMenuLabel>
+                      Add an AI draft column for
+                    </DropdownMenuLabel>
+                    {COMPOSE_PROVIDERS.map((app) => (
+                      <DropdownMenuItem
+                        key={app.key}
+                        onClick={() => handleCompose(app.key)}
+                      >
+                        {app.label}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuGroup>
                 </DropdownMenuContent>
               </DropdownMenu>
             )}

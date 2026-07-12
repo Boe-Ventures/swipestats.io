@@ -10,6 +10,12 @@ import {
 } from "./accordion";
 import { Button } from "./button";
 import { Checkbox } from "./checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+} from "./dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./tabs";
 
 describe("Base UI wrapper contracts", () => {
@@ -77,5 +83,30 @@ describe("Base UI wrapper contracts", () => {
     expect(html).toContain('role="tab"');
     expect(html).toContain('aria-selected="true"');
     expect(html).toContain('role="tabpanel"');
+  });
+
+  test("Dropdown menu labels render inside the group they own", () => {
+    const html = renderToStaticMarkup(
+      createElement(
+        DropdownMenu,
+        null,
+        createElement(
+          DropdownMenuGroup,
+          null,
+          createElement(DropdownMenuLabel, null, "Account"),
+          createElement(DropdownMenuItem, null, "Profile"),
+        ),
+      ),
+    );
+
+    const labelId = /id="([^"]+)"[^>]*>Account<\/div>/.exec(html)?.[1];
+    const labelIndex = html.indexOf(">Account</div>");
+    const itemIndex = html.indexOf(">Profile</div>");
+
+    expect(labelId).toBeDefined();
+    expect(html).toContain('role="group"');
+    expect(html).toContain('role="menuitem"');
+    expect(labelIndex).toBeGreaterThan(html.indexOf('role="group"'));
+    expect(itemIndex).toBeGreaterThan(labelIndex);
   });
 });

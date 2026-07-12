@@ -22,6 +22,7 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
@@ -241,15 +242,19 @@ export default function PhotoGalleryPage() {
                 }
               />
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Compose a profile with AI</DropdownMenuLabel>
-                {COMPOSE_PROVIDERS.map((app) => (
-                  <DropdownMenuItem
-                    key={app.key}
-                    onClick={() => handleCompose(app.key)}
-                  >
-                    {app.label}
-                  </DropdownMenuItem>
-                ))}
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel>
+                    Compose a profile with AI
+                  </DropdownMenuLabel>
+                  {COMPOSE_PROVIDERS.map((app) => (
+                    <DropdownMenuItem
+                      key={app.key}
+                      onClick={() => handleCompose(app.key)}
+                    >
+                      {app.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuGroup>
               </DropdownMenuContent>
             </DropdownMenu>
           )}

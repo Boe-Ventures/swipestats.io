@@ -4,8 +4,8 @@
 
 - `bun run build` is compile-only (`velite build && next build --webpack`). It
   does not run a database migration.
-- Production database migrations are explicit through `bun run
-release:migrate` (which delegates to the existing `db:migrate` command).
+- Production database migrations are explicit through `bun run release:migrate`
+  (which delegates to the existing `db:migrate` command).
 - `bun run clean` preserves `bun.lock`; `bun run clean:lock` is the deliberate
   lock-refresh escape hatch.
 - `.github/workflows/verify.yml` uses Bun 1.3.6, a frozen install, read-only
@@ -63,7 +63,8 @@ separately.
 - Tabs explicitly retain automatic activation through `activateOnFocus`.
   Dropdown checkbox/radio/link items and navigation links explicitly retain
   close-on-click behavior. Navigation Menu retains the previous 200ms open
-  delay.
+  delay. Dropdown labels are nested inside their owning groups so Base UI can
+  establish the automatic hydrated `aria-labelledby` relationship.
 - Intentionally untouched composites: cmdk/command, Vaul/drawer,
   Sonner/toast, input-otp, React Day Picker/calendar, and Recharts/chart. The
   remaining `asChild` and open/closed `data-state` selectors are Vaul-owned.
@@ -75,10 +76,10 @@ separately.
 ### Base UI verification
 
 - `src/components/ui/base-ui-contract.test.tsx` characterizes Button render
-  composition, checkbox hidden-input anatomy, accordion array values, and tab
-  relationships.
-- `bun run check` passes with 0 errors (25 pre-existing warnings), all 15 Bun
-  tests pass with 55 assertions, `bun install --frozen-lockfile` is clean, and
+  composition, checkbox hidden-input anatomy, accordion array values, tab
+  relationships, and server-rendered dropdown group ownership.
+- `bun run check` passes with 0 errors (25 pre-existing warnings), all 16 Bun
+  tests pass with 60 assertions, `bun install --frozen-lockfile` is clean, and
   the side-effect-free webpack production build completes all 305 static pages.
 - Keyboard, focus-return, collision, hover-delay, and screen-reader behavior
   still require the per-component manual checks listed in `.migration/*.md`;

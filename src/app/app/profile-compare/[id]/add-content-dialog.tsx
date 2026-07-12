@@ -24,6 +24,7 @@ import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
@@ -527,17 +528,19 @@ export function AddContentDialog({
                 }
               />
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>
-                  Add an AI draft column for
-                </DropdownMenuLabel>
-                {COMPOSE_PROVIDERS.map((app) => (
-                  <DropdownMenuItem
-                    key={app.key}
-                    onClick={() => handleCompose(app.key)}
-                  >
-                    {app.label}
-                  </DropdownMenuItem>
-                ))}
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel>
+                    Add an AI draft column for
+                  </DropdownMenuLabel>
+                  {COMPOSE_PROVIDERS.map((app) => (
+                    <DropdownMenuItem
+                      key={app.key}
+                      onClick={() => handleCompose(app.key)}
+                    >
+                      {app.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuGroup>
               </DropdownMenuContent>
             </DropdownMenu>
           )}
