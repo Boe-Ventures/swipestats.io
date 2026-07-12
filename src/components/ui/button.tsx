@@ -54,6 +54,8 @@ function Button({
   loading = false,
   disabled,
   children,
+  render,
+  nativeButton,
   ...props
 }: ButtonPrimitive.Props &
   VariantProps<typeof buttonVariants> & {
@@ -65,6 +67,8 @@ function Button({
       data-slot="button"
       className={classes}
       disabled={disabled || loading}
+      render={render}
+      nativeButton={nativeButton ?? render === undefined}
       {...props}
     >
       {loading && <Spinner data-icon="inline-start" />}

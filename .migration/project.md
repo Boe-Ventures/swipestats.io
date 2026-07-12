@@ -81,6 +81,9 @@ separately.
 - `bun run check` passes with 0 errors (25 pre-existing warnings), all 16 Bun
   tests pass with 60 assertions, `bun install --frozen-lockfile` is clean, and
   the side-effect-free webpack production build completes all 305 static pages.
-- Keyboard, focus-return, collision, hover-delay, and screen-reader behavior
-  still require the per-component manual checks listed in `.migration/*.md`;
-  no browser or assistive-technology verification is claimed here.
+- All responsive Dialog parts consume one root-owned desktop/mobile decision,
+  preventing mixed Base UI and Vaul trees during hydration. Polymorphic Button
+  renders also derive the correct non-native button semantics by default.
+- Collision, hover-delay, exhaustive cross-browser behavior, and screen-reader
+  coverage still require the per-component manual checks listed in
+  `.migration/*.md`; no assistive-technology verification is claimed here.

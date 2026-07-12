@@ -6,6 +6,7 @@
 
 - `src/components/ui/button.tsx:4` replaces Radix Slot/asChild with `@base-ui/react/button` and the `render` API.
 - Golden-shell and design-system link consumers now use `render`; SwipeStats' `xs`, `icon-xs`, Spinner, and `ButtonLink` contracts are preserved.
+- Polymorphic renders default `nativeButton` from whether `render` is present, while still allowing an explicit override, so link renders do not claim native-button anatomy.
 - `grep -n "radix-ui\|@radix-ui" src/components/ui/button.tsx` is clean.
 - Automated verification: covered by `bun run check`, focused Base UI contract tests, and the compile-only production build.
 

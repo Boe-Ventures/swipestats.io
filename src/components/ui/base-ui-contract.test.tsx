@@ -30,6 +30,7 @@ describe("Base UI wrapper contracts", () => {
 
     expect(html).toContain('<a href="/upload"');
     expect(html).toContain('data-slot="button"');
+    expect(html).toContain('role="button"');
     expect(html).toContain("Upload</a>");
     expect(html).not.toContain("<button");
   });

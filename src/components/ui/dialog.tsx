@@ -21,6 +21,18 @@ import {
 } from "./drawer";
 import { ScrollArea } from "./scroll-area";
 
+const DialogResponsiveContext = React.createContext<boolean | null>(null);
+
+function useDialogIsDesktop() {
+  const isDesktop = React.useContext(DialogResponsiveContext);
+
+  if (isDesktop === null) {
+    throw new Error("Responsive dialog parts must be used within Dialog");
+  }
+
+  return isDesktop;
+}
+
 // Original Dialog Components (Desktop)
 function DialogRoot({
   ...props
@@ -182,15 +194,17 @@ function Dialog({
 }) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
 
-  if (isDesktop) {
-    return <DialogRoot {...props} />;
-  }
-
   return (
-    <Drawer
-      repositionInputs={repositionInputs}
-      {...(props as React.ComponentProps<typeof Drawer>)}
-    />
+    <DialogResponsiveContext.Provider value={isDesktop}>
+      {isDesktop ? (
+        <DialogRoot {...props} />
+      ) : (
+        <Drawer
+          repositionInputs={repositionInputs}
+          {...(props as React.ComponentProps<typeof Drawer>)}
+        />
+      )}
+    </DialogResponsiveContext.Provider>
   );
 }
 
@@ -199,7 +213,7 @@ function DialogTrigger({
   children,
   ...props
 }: React.ComponentProps<typeof DialogTriggerPrimitive>) {
-  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const isDesktop = useDialogIsDesktop();
 
   if (isDesktop) {
     if (children === undefined) {
@@ -241,7 +255,7 @@ function DialogContent({
   scrollable?: boolean;
   size?: "default" | "sm" | "lg" | "xl" | "2xl" | "full";
 }) {
-  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const isDesktop = useDialogIsDesktop();
 
   if (isDesktop) {
     return (
@@ -273,7 +287,7 @@ function DialogHeader({
   className,
   ...props
 }: React.ComponentProps<typeof DialogHeaderPrimitive>) {
-  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const isDesktop = useDialogIsDesktop();
 
   if (isDesktop) {
     return <DialogHeaderPrimitive className={className} {...props} />;
@@ -286,7 +300,7 @@ function DialogFooter({
   className,
   ...props
 }: React.ComponentProps<typeof DialogFooterPrimitive>) {
-  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const isDesktop = useDialogIsDesktop();
 
   if (isDesktop) {
     return <DialogFooterPrimitive className={className} {...props} />;
@@ -299,7 +313,7 @@ function DialogTitle({
   className,
   ...props
 }: React.ComponentProps<typeof DialogTitlePrimitive>) {
-  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const isDesktop = useDialogIsDesktop();
 
   if (isDesktop) {
     // Desktop: Keep original alignment (usually text-left)
@@ -319,7 +333,7 @@ function DialogDescription({
   className,
   ...props
 }: React.ComponentProps<typeof DialogDescriptionPrimitive>) {
-  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const isDesktop = useDialogIsDesktop();
 
   if (isDesktop) {
     return <DialogDescriptionPrimitive className={className} {...props} />;
@@ -332,7 +346,7 @@ function DialogClose({
   className,
   ...props
 }: React.ComponentProps<typeof DialogClosePrimitive>) {
-  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const isDesktop = useDialogIsDesktop();
 
   if (isDesktop) {
     return <DialogClosePrimitive className={className} {...props} />;
@@ -350,7 +364,7 @@ function DialogOverlay({
   className,
   ...props
 }: React.ComponentProps<typeof DialogOverlayPrimitive>) {
-  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const isDesktop = useDialogIsDesktop();
 
   if (isDesktop) {
     return <DialogOverlayPrimitive className={className} {...props} />;
@@ -367,7 +381,7 @@ function DialogOverlay({
 function DialogPortal({
   ...props
 }: React.ComponentProps<typeof DialogPortalPrimitive>) {
-  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const isDesktop = useDialogIsDesktop();
 
   if (isDesktop) {
     return <DialogPortalPrimitive {...props} />;
@@ -510,7 +524,7 @@ export function ScrollableDialogContent({
   className,
   ...props
 }: ScrollableDialogContentProps) {
-  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const isDesktop = useDialogIsDesktop();
 
   return (
     <DialogContent
