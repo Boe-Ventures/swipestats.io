@@ -8,7 +8,8 @@ Swipestats is a Bun-driven Next.js app with routes and handlers in `src/app`, UI
 
 - `bun run dev` – Next dev server with Turbo.
 - `bun run build` – Build Velite + Next and apply committed Drizzle migrations; `bun run preview` builds and runs `next start` without the migration step.
-- `bun run check` – `eslint` + `tsc --noEmit`; treat as the pre-PR gate.
+- `bun run check` – migration-history validation + `eslint` + `tsc --noEmit`;
+  treat it as the pre-PR gate.
 - `bun run lint` / `bun run lint:fix` / `bun run format:write` – Keep ESLint + Prettier + Tailwind ordering enforced.
 - `bun run db:migrate | db:push | db:studio` – Manage Drizzle schema changes and inspect data.
 - `bun run velite:dev` / `bun run email:dev` – Watch content and email previews while editing marketing flows.
@@ -27,4 +28,10 @@ History uses short, imperative titles (`lint cleanup`, `download dataset improve
 
 ## Database & Configuration Tips
 
-Launch the local DB via `start-database.sh` (or Neon) before running Drizzle commands, and store `DATABASE_URL`, auth secrets, and analytics keys in `.env`. Generate or migrate schemas with `bun run db:generate` and `bun run db:migrate`; never edit emitted SQL. For marketing or email updates, follow with `bun run velite:build` and `bun run email:dev` to validate output.
+SwipeStats intentionally uses separate long-lived Neon `production` and shared
+`dev` branches; local development and Preview deployments share `dev`. Generate
+and apply migrations with `bun run db:generate` and `bun run db:migrate`;
+regenerate emitted SQL rather than editing it by hand, and never rewrite a
+migration that has reached a shared database. Do not use `db:push` against either
+long-lived branch. See `docs/ops/database-migrations.md` for branch and recovery
+policy.

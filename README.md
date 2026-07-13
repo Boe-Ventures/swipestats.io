@@ -92,6 +92,8 @@ src/
 
 - **[CLAUDE.md](CLAUDE.md)** - Developer guide for working with this codebase
 - **[BLOG.md](BLOG.md)** - Blog content ideas
+- **[Database migrations](docs/ops/database-migrations.md)** - Shared dev,
+  production, and optional Neon branch workflow
 
 ## Project History
 

@@ -6,10 +6,11 @@
   "scripts": {
     "build": "velite build && next build && bun db:migrate",
     "postinstall": "velite build",
-    "check": "velite build && eslint . && tsc --noEmit",
+    "check": "bun db:check && velite build && eslint . && tsc --noEmit",
     "clean": "rm -rf node_modules .next .turbo .cache .velite .eslintcache bun.lock",
     "reinstall": "bun run clean && bun install",
     "db:generate": "drizzle-kit generate",
+    "db:check": "drizzle-kit check --dialect=postgresql --out=drizzle",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
