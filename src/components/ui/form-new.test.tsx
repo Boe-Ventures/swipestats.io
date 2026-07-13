@@ -20,20 +20,16 @@ function CountryRegionHarness() {
   const form = useForm<{ country: string; region: string }>({
     defaultValues: { country: "US", region: "CA" },
   });
-  return createElement(
-    "div",
-    null,
-    createElement(CountrySelect, {
-      control: form.control,
-      name: "country",
-      label: "Country",
-    }),
-    createElement(RegionSelect, {
-      control: form.control,
-      name: "region",
-      countryCode: "US",
-      label: "Region",
-    }),
+  return (
+    <div>
+      <CountrySelect control={form.control} name="country" label="Country" />
+      <RegionSelect
+        control={form.control}
+        name="region"
+        countryCode="US"
+        label="Region"
+      />
+    </div>
   );
 }
 
