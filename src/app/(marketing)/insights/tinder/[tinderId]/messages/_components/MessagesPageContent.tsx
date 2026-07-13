@@ -2,17 +2,40 @@
 
 import { useMessages } from "../MessagesProvider";
 import { MessagesMetaSection } from "./MessagesMetaSection";
+import { ConversationReplaySection } from "./ConversationReplaySection";
 import { MatchesList } from "./MatchesList";
 import { Loader2 } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function MessagesPageContent() {
-  const { loading } = useMessages();
+  const { loading, readonly } = useMessages();
 
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <Loader2 className="text-muted-foreground h-8 w-8 animate-spin" />
       </div>
+    );
+  }
+
+  if (readonly) {
+    return (
+      <main className="bg-background min-h-screen">
+        <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Conversation replay is private</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">
+                Only the profile owner can view message activity and individual
+                threads. Sign in with the account that uploaded this profile to
+                continue.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
     );
   }
 
@@ -25,9 +48,12 @@ export function MessagesPageContent() {
             Messages & Conversations
           </h1>
           <p className="text-muted-foreground text-base sm:text-lg">
-            Explore your messaging patterns and conversations
+            See where you kept the conversation going, based on the messages you
+            sent.
           </p>
         </div>
+
+        <ConversationReplaySection />
 
         {/* Meta Statistics Section */}
         <MessagesMetaSection />

@@ -47,7 +47,7 @@ function MetricRow({ icon: Icon, label, value, description }: MetricRowProps) {
 }
 
 export function MessagesMetaCard() {
-  const { meta, tinderId } = useTinderProfile();
+  const { meta, tinderId, isOwner } = useTinderProfile();
 
   if (!meta) return null;
 
@@ -55,8 +55,6 @@ export function MessagesMetaCard() {
   const router = useRouter();
 
   const handleAnalyze = () => {
-    // TODO: Navigate to message analysis page when ready
-    console.log("Message analysis page coming soon!");
     router.push(`/insights/tinder/${tinderId}/messages`);
   };
 
@@ -95,18 +93,20 @@ export function MessagesMetaCard() {
           <div className="space-y-1.5">
             <CardTitle>Your Chats</CardTitle>
             <CardDescription>
-              Messaging patterns and conversation insights
+              Patterns from the outgoing messages in your export
             </CardDescription>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleAnalyze}
-            className="shrink-0"
-          >
-            <ArrowRight className="mr-2 h-4 w-4" />
-            Analyze
-          </Button>
+          {isOwner && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleAnalyze}
+              className="shrink-0"
+            >
+              <ArrowRight className="mr-2 h-4 w-4" />
+              Replay
+            </Button>
+          )}
         </div>
       </CardHeader>
       <CardContent>
@@ -132,12 +132,12 @@ export function MessagesMetaCard() {
           {medianResponseTime && (
             <MetricRow
               icon={Clock}
-              label="Response time"
+              label="Sending cadence"
               value={medianResponseTime}
               description={
                 meanResponseTime
-                  ? `Typical: ${medianResponseTime}, Avg: ${meanResponseTime} between messages`
-                  : "Median time between messages"
+                  ? `Typical: ${medianResponseTime}, Avg: ${meanResponseTime} between your messages`
+                  : "Median time between your outgoing messages"
               }
             />
           )}
@@ -147,7 +147,7 @@ export function MessagesMetaCard() {
                 icon={CalendarRange}
                 label="Median conversation"
                 value={`${medianConvoDuration} days`}
-                description="Typical conversation length"
+                description="Typical span of your outgoing messages"
               />
             )}
           {longestConvo !== null && longestConvo !== undefined && (
@@ -155,7 +155,7 @@ export function MessagesMetaCard() {
               icon={Trophy}
               label="Longest conversation"
               value={`${longestConvo} days`}
-              description="Your record conversation"
+              description="Longest span of your outgoing messages"
             />
           )}
         </div>

@@ -2,12 +2,14 @@
 
 import { createContext, useContext, type ReactNode } from "react";
 import { useTRPC } from "@/trpc/react";
+import type { RouterOutputs } from "@/trpc/react";
 import { useQuery } from "@tanstack/react-query";
 import type { Match } from "@/server/db/schema";
 import { useTinderProfile } from "../TinderProfileProvider";
 
 type MessagesContextValue = {
   matches: Match[];
+  replay: RouterOutputs["match"]["getConversationReplay"] | null;
   loading: boolean;
   readonly: boolean;
 };
@@ -44,12 +46,22 @@ export function MessagesProvider({ children }: MessagesProviderProps) {
   );
 
   const matches = matchesQuery.data ?? [];
-  const loading = matchesQuery.isLoading;
+  const replayQuery = useQuery(
+    trpc.match.getConversationReplay.queryOptions(
+      { tinderId },
+      {
+        refetchOnWindowFocus: false,
+        enabled: !readonly,
+      },
+    ),
+  );
+  const loading = matchesQuery.isLoading || replayQuery.isLoading;
 
   return (
     <MessagesContext.Provider
       value={{
         matches,
+        replay: replayQuery.data ?? null,
         loading,
         readonly, // Pass to components
       }}
