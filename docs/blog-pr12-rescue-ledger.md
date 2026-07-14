@@ -7,12 +7,12 @@ This ledger is the explicit editorial decision surface for the 81 recovered post
 ## Inventory summary
 
 - Recovered posts: **81**
-- Total draft words: **118,962**
+- Total draft words: **111,395**
 - Review decisions: **81 rewrite / 0 keep-as-is / 0 drop**
-- Editorial status: **55 reviewed / 26 pending**
+- Editorial status: **58 reviewed / 23 pending**
 - Review tiers: {"heavy":34,"light":46,"medium":1}
 - Editorial batches: {"algorithm-account":9,"commercial":11,"evergreen":31,"other":30}
-- Unique in-batch link targets: **30**
+- Unique in-batch link targets: **28**
 - Dependency-orderable posts: **81**
 - Posts in dependency cycles: **0**
 - Missing internal targets after recovery: **0**
@@ -36,9 +36,9 @@ This ledger is the explicit editorial decision surface for the 81 recovered post
 | `double-texting` | rewrite | reviewed | light | evergreen | 1060 | 3 | on | 0 | 0 | none |
 | `dry-texting` | rewrite | reviewed | light | evergreen | 973 | 3 | on | 0 | 0 | absolute-claim |
 | `first-message-on-dating-app` | rewrite | reviewed | light | evergreen | 1063 | 6 | on | 0 | 0 | none |
-| `flirty-emojis` | rewrite | pending | light | evergreen | 2534 | 9 | on | 0 | 4 | absolute-claim |
-| `flirty-gifs` | rewrite | pending | light | evergreen | 2723 | 5 | on | 0 | 5 | absolute-claim |
-| `flirty-texts-for-him` | rewrite | pending | light | evergreen | 4102 | 5 | on | 0 | 1 | dynamic-pricing, absolute-claim |
+| `flirty-emojis` | rewrite | reviewed | light | evergreen | 602 | 3 | on | 0 | 0 | absolute-claim |
+| `flirty-gifs` | rewrite | reviewed | light | evergreen | 562 | 3 | on | 0 | 0 | none |
+| `flirty-texts-for-him` | rewrite | reviewed | light | evergreen | 628 | 3 | on | 0 | 0 | none |
 | `free-messaging-dating-sites` | rewrite | pending | heavy | other | 2331 | 3 | on | 0 | 2 | dynamic-pricing, algorithm-claim, absolute-claim |
 | `good-morning-messages-for-him` | rewrite | reviewed | light | evergreen | 729 | 3 | on | 0 | 0 | absolute-claim |
 | `good-morning-texts-for-her` | rewrite | reviewed | light | evergreen | 684 | 3 | on | 0 | 0 | none |
@@ -123,72 +123,72 @@ This is a mechanical topological order only. Editorial priority and the final tw
 10. `double-texting`
 11. `dry-texting`
 12. `first-message-on-dating-app`
-13. `good-morning-messages-for-him`
-14. `good-morning-texts-for-her`
+13. `flirty-emojis`
+14. `flirty-gifs`
 15. `flirty-texts-for-him`
-16. `good-night-texts`
-17. `hinge-algorithm`
-18. `hinge-app-icons`
-19. `hinge-ban`
-20. `hinge-boost`
-21. `hinge-conversation-starters`
-22. `hinge-for-friends`
-23. `hinge-match-note`
-24. `hinge-most-compatible`
-25. `hinge-notifications`
-26. `hinge-opening-lines`
-27. `hinge-or-bumble`
-28. `hinge-phone-number`
-29. `hinge-roses`
-30. `hinge-standouts`
-31. `hinge-subscription`
-32. `hinge-verification`
-33. `how-does-match-com-work`
-34. `how-does-tinder-work`
-35. `how-many-free-likes-on-hinge`
-36. `how-to-cancel-tinder-gold`
-37. `how-to-find-someone-on-hinge`
-38. `how-to-find-someone-on-tinder`
-39. `how-to-flirt-over-text`
-40. `how-to-keep-a-conversation-going-over-text`
-41. `how-to-like-someone-on-hinge`
-42. `how-to-refresh-hinge`
-43. `how-to-reset-hinge`
-44. `hinge-desktop`
-45. `how-does-hinge-work-for-guys`
-46. `how-to-reset-tinder`
-47. `how-to-slide-into-dms`
-48. `how-to-talk-dirty`
-49. `ai-text-message-generator`
-50. `flirty-emojis`
-51. `how-to-tell-if-she-likes-you-over-text`
-52. `break-up-text`
-53. `how-to-text-a-guy-to-like-you`
-54. `how-to-text-a-woman`
-55. `how-to-ask-her-out-over-text`
-56. `how-to-use-hinge`
-57. `if-you-x-someone-on-hinge-what-happens`
-58. `is-hinge-a-good-dating-app`
-59. `is-hinge-better-than-tinder`
-60. `is-hinge-x-worth-it`
-61. `hinge-gift-card`
-62. `married-people-on-tinder`
-63. `pick-up-lines`
-64. `pick-up-lines-for-girls`
-65. `tinder-boost`
-66. `how-to-get-matches-on-tinder`
-67. `tinder-for-friends`
-68. `tinder-for-seniors`
-69. `how-does-facebook-dating-work`
-70. `tinder-platinum`
-71. `tinder-questionnaire`
-72. `tinder-shadowban`
-73. `tinder-subscription`
-74. `free-messaging-dating-sites`
-75. `tinder-terms-and-conditions`
-76. `what-does-rizz-mean`
-77. `dirty-pick-up-lines`
-78. `what-to-text-your-crush`
-79. `flirty-gifs`
+16. `good-morning-messages-for-him`
+17. `good-morning-texts-for-her`
+18. `good-night-texts`
+19. `hinge-algorithm`
+20. `hinge-app-icons`
+21. `hinge-ban`
+22. `hinge-boost`
+23. `hinge-conversation-starters`
+24. `hinge-for-friends`
+25. `hinge-match-note`
+26. `hinge-most-compatible`
+27. `hinge-notifications`
+28. `hinge-opening-lines`
+29. `hinge-or-bumble`
+30. `hinge-phone-number`
+31. `hinge-roses`
+32. `hinge-standouts`
+33. `hinge-subscription`
+34. `hinge-verification`
+35. `how-does-match-com-work`
+36. `how-does-tinder-work`
+37. `how-many-free-likes-on-hinge`
+38. `how-to-cancel-tinder-gold`
+39. `how-to-find-someone-on-hinge`
+40. `how-to-find-someone-on-tinder`
+41. `how-to-flirt-over-text`
+42. `how-to-keep-a-conversation-going-over-text`
+43. `how-to-like-someone-on-hinge`
+44. `how-to-refresh-hinge`
+45. `how-to-reset-hinge`
+46. `hinge-desktop`
+47. `how-does-hinge-work-for-guys`
+48. `how-to-reset-tinder`
+49. `how-to-slide-into-dms`
+50. `how-to-talk-dirty`
+51. `ai-text-message-generator`
+52. `how-to-tell-if-she-likes-you-over-text`
+53. `break-up-text`
+54. `how-to-text-a-guy-to-like-you`
+55. `how-to-text-a-woman`
+56. `how-to-ask-her-out-over-text`
+57. `how-to-use-hinge`
+58. `if-you-x-someone-on-hinge-what-happens`
+59. `is-hinge-a-good-dating-app`
+60. `is-hinge-better-than-tinder`
+61. `is-hinge-x-worth-it`
+62. `hinge-gift-card`
+63. `married-people-on-tinder`
+64. `pick-up-lines`
+65. `pick-up-lines-for-girls`
+66. `tinder-boost`
+67. `how-to-get-matches-on-tinder`
+68. `tinder-for-friends`
+69. `tinder-for-seniors`
+70. `how-does-facebook-dating-work`
+71. `tinder-platinum`
+72. `tinder-questionnaire`
+73. `tinder-shadowban`
+74. `tinder-subscription`
+75. `free-messaging-dating-sites`
+76. `tinder-terms-and-conditions`
+77. `what-does-rizz-mean`
+78. `dirty-pick-up-lines`
+79. `what-to-text-your-crush`
 80. `when-do-hinge-roses-reset`
 81. `who-should-text-first-after-a-date`
