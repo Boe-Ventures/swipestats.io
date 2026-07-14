@@ -40,6 +40,7 @@ const navigation = {
   simple: [
     { name: "Research", href: "/#pricing" },
     { name: "Blog", href: "/blog" },
+    { name: "Services", href: "/dating-services" },
     { name: "FAQ", href: "/#faq" },
     { name: "Contact", href: "mailto:kris@swipestats.io" },
   ],

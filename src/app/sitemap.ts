@@ -1,5 +1,6 @@
 import { posts } from "@velite";
 import { type MetadataRoute } from "next";
+import { CATALOG_CATEGORIES, CATALOG_CATEGORY_KEYS } from "@/lib/catalog";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   // Filter for published posts only
@@ -79,6 +80,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "monthly",
       priority: 0.4,
     },
+    {
+      url: `${baseUrl}/dating-services`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.7,
+    },
+    ...CATALOG_CATEGORY_KEYS.map((key) => ({
+      url: `${baseUrl}/dating-services/${CATALOG_CATEGORIES[key].slug}`,
+      lastModified: new Date(),
+      changeFrequency: "weekly" as const,
+      priority: 0.6,
+    })),
     // Legal pages
     {
       url: `${baseUrl}/privacy`,
