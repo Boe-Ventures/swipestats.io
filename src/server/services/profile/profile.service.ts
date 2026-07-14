@@ -49,7 +49,6 @@ async function hasRemainingAnonymousUserData(
       OR EXISTS (SELECT 1 FROM hinge_profile WHERE user_id = ${userId})
       OR EXISTS (SELECT 1 FROM raya_profile WHERE user_id = ${userId})
       OR EXISTS (SELECT 1 FROM swipe_rank_profile WHERE user_id = ${userId})
-      OR EXISTS (SELECT 1 FROM swipe_rank_publication WHERE user_id = ${userId})
       OR EXISTS (SELECT 1 FROM event WHERE user_id = ${userId})
       OR EXISTS (SELECT 1 FROM custom_data WHERE user_id = ${userId})
       OR EXISTS (

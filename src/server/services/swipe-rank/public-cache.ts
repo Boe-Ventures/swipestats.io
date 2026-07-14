@@ -1,6 +1,6 @@
 import { revalidateTag } from "next/cache";
 
-export const SWIPE_RANK_PUBLIC_CACHE_TAG = "swipe-rank-public-v1";
+export const SWIPE_RANK_PUBLIC_CACHE_TAG = "swipe-rank-public-v2";
 
 /**
  * Runtime mutations invalidate immediately. Fact recomputes also run from

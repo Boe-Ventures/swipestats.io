@@ -194,9 +194,8 @@ export const userRouter = {
     }
 
     // Purge the Tinder analytical registry before the user cascade removes the
-    // provider source. This removes live facts, publication consent, and the
-    // person's frozen entry rows, and rolls back with account deletion if
-    // either step fails.
+    // provider source. This removes live facts and the person's frozen entry
+    // rows, and rolls back with account deletion if either step fails.
     await withTransaction(async (tx) => {
       await lockTinderSwipeRankMutationsInTx(tx);
       await purgeTinderSwipeRankUserInTx(tx, userId);

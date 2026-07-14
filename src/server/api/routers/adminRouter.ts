@@ -94,9 +94,8 @@ export const adminRouter = {
       }
 
       // Keep the provider source and analytical subject deletion atomic.
-      // Live facts and publication consent cascade from the SwipeRank
-      // registry; frozen snapshot rows detach, and source children cascade
-      // from tinder_profile.
+      // Live facts cascade from the SwipeRank registry; frozen snapshot rows
+      // detach, and source children cascade from tinder_profile.
       await withTransaction(async (tx) => {
         await lockTinderSwipeRankMutationsInTx(tx);
         await purgeTinderSwipeRankProfilesInTx(tx, [input.tinderId]);

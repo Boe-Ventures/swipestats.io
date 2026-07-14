@@ -1,5 +1,8 @@
 export type SwipeRankPeriodKind = "MONTH" | "QUARTER" | "YEAR" | "ALL_TIME";
 
+export const DEFAULT_SWIPE_RANK_PERIOD_KIND =
+  "QUARTER" satisfies SwipeRankPeriodKind;
+
 export interface SwipeRankPeriodLabelInput {
   kind: SwipeRankPeriodKind;
   start: string;

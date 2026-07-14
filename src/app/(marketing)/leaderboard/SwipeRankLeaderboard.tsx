@@ -1,9 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   CalendarClock,
+  ChevronLeft,
+  ChevronRight,
   Info,
   Loader2,
   ShieldCheck,
@@ -12,7 +14,7 @@ import {
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { ButtonLink } from "@/components/ui/button";
+import { Button, ButtonLink } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -36,6 +38,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
+  DEFAULT_SWIPE_RANK_PERIOD_KIND,
   formatSwipeRankPeriodLabel,
   swipeRankPeriodKey,
   type SwipeRankPeriodKind,
@@ -61,22 +64,12 @@ function formatTopShare(value: number) {
   })}%`;
 }
 
-function DescriptorList({
-  values,
-}: {
-  values: Array<string | null | undefined>;
-}) {
-  const visible = values.filter((value): value is string => Boolean(value));
-  return visible.length > 0 ? (
-    <span>{visible.join(" · ")}</span>
-  ) : (
-    <span className="text-muted-foreground">Private</span>
-  );
-}
-
 export function SwipeRankLeaderboard() {
   const trpc = useTRPC();
-  const [kind, setKind] = useState<SwipeRankPeriodKind>("MONTH");
+  const [kind, setKind] = useState<SwipeRankPeriodKind>(
+    DEFAULT_SWIPE_RANK_PERIOD_KIND,
+  );
+  const [page, setPage] = useState(1);
   const availablePeriods = useQuery(
     trpc.swipeRank.publicAvailablePeriods.queryOptions(undefined, {
       staleTime: 5 * 60 * 1000,
@@ -106,6 +99,7 @@ export function SwipeRankLeaderboard() {
           start: selected.start,
           end: selected.end,
         },
+        page,
       },
       {
         refetchInterval: 60 * 1000,
@@ -122,10 +116,17 @@ export function SwipeRankLeaderboard() {
     const preferred = preferredLeaderboardPeriod(nextOptions, nextKind);
     setKind(nextKind);
     setSelectedKey(swipeRankPeriodKey(preferred));
+    setPage(1);
   }
 
   const data = leaderboard.data;
   const periodLabel = formatSwipeRankPeriodLabel(selected);
+
+  useEffect(() => {
+    if (data && data.totalPages > 0 && page > data.totalPages) {
+      setPage(data.totalPages);
+    }
+  }, [data, page]);
 
   return (
     <main className="min-h-screen bg-slate-50/50">
@@ -139,11 +140,8 @@ export function SwipeRankLeaderboard() {
             SwipeRank
           </h1>
           <p className="text-muted-foreground mt-5 max-w-3xl text-lg leading-8">
-            A playful, opt-in leaderboard for uploaded Tinder activity. Match
-            yield is observed matches divided by right swipes. It can exceed
-            100% because exported match events and swipe counts do not always
-            align one-for-one, so unusual values stay visible instead of being
-            capped.
+            A playful leaderboard for uploaded Tinder activity. Match yield is
+            observed matches divided by right swipes.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <ButtonLink href="/upload/tinder">Find my SwipeRank</ButtonLink>
@@ -183,7 +181,10 @@ export function SwipeRankLeaderboard() {
             </Select>
             <Select
               value={swipeRankPeriodKey(selected)}
-              onValueChange={setSelectedKey}
+              onValueChange={(value) => {
+                setSelectedKey(value);
+                setPage(1);
+              }}
             >
               <SelectTrigger className="sm:w-64">
                 <SelectValue />
@@ -236,13 +237,9 @@ export function SwipeRankLeaderboard() {
               />
               <MetricCard
                 icon={<ShieldCheck className="h-4 w-4" />}
-                label="Public opt-ins"
-                value={
-                  data.publishedProfiles === null
-                    ? `<${data.minimumPublicFieldSize}`
-                    : data.publishedProfiles.toLocaleString()
-                }
-                detail="Only people who explicitly publish appear"
+                label="Visibility"
+                value="Pseudonymous"
+                detail="Every eligible profile is included"
               />
               <MetricCard
                 icon={<CalendarClock className="h-4 w-4" />}
@@ -288,62 +285,79 @@ export function SwipeRankLeaderboard() {
                   />
                 ) : data.entries.length === 0 ? (
                   <EmptyLeaderboard
-                    title="The field is ready; nobody has opted in yet"
-                    description="Existing profiles stay private by default. Publish your alias from your private insights page to become the first entry."
+                    title="No profiles found on this page"
+                    description="Try another season or return to the first page of this leaderboard."
                   />
                 ) : (
-                  <div className="overflow-x-auto">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-24">Rank</TableHead>
-                          <TableHead>Dater</TableHead>
-                          <TableHead>Shared details</TableHead>
-                          <TableHead className="text-right">
-                            Match yield
-                          </TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {data.entries.map((entry) => (
-                          <TableRow key={entry.entryKey}>
-                            <TableCell>
-                              <span className="text-lg font-bold tabular-nums">
-                                #{entry.rank.toLocaleString()}
-                              </span>
-                              <span className="text-muted-foreground mt-0.5 block text-xs">
-                                {formatTopShare(entry.topShare)}
-                              </span>
-                            </TableCell>
-                            <TableCell className="font-medium">
-                              {entry.alias}
-                            </TableCell>
-                            <TableCell className="text-sm">
-                              <DescriptorList
-                                values={[
-                                  entry.ageBand,
-                                  entry.gender,
-                                  entry.interestedIn
-                                    ? `interested in ${entry.interestedIn.toLowerCase()}`
-                                    : null,
-                                  entry.location,
-                                ]}
-                              />
-                            </TableCell>
-                            <TableCell className="text-right text-base font-semibold tabular-nums">
-                              {entry.matchYieldPercent.toLocaleString(
-                                undefined,
-                                {
-                                  minimumFractionDigits: 1,
-                                  maximumFractionDigits: 1,
-                                },
-                              )}
-                              %
-                            </TableCell>
+                  <div>
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-24">Rank</TableHead>
+                            <TableHead>Anonymous entry</TableHead>
+                            <TableHead className="text-right">
+                              Match yield
+                            </TableHead>
                           </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
+                        </TableHeader>
+                        <TableBody>
+                          {data.entries.map((entry) => (
+                            <TableRow key={entry.entryKey}>
+                              <TableCell>
+                                <span className="text-lg font-bold tabular-nums">
+                                  #{entry.rank.toLocaleString()}
+                                </span>
+                                <span className="text-muted-foreground mt-0.5 block text-xs">
+                                  {formatTopShare(entry.topShare)}
+                                </span>
+                              </TableCell>
+                              <TableCell className="font-medium">
+                                {entry.alias}
+                              </TableCell>
+                              <TableCell className="text-right text-base font-semibold tabular-nums">
+                                {entry.matchYieldPercent.toLocaleString(
+                                  undefined,
+                                  {
+                                    minimumFractionDigits: 1,
+                                    maximumFractionDigits: 1,
+                                  },
+                                )}
+                                %
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                    {data.totalPages > 1 && (
+                      <div className="flex items-center justify-between gap-4 border-t px-4 py-4 sm:px-6">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={data.page <= 1}
+                          onClick={() => setPage((current) => current - 1)}
+                        >
+                          <ChevronLeft />
+                          Previous
+                        </Button>
+                        <p className="text-muted-foreground text-sm tabular-nums">
+                          Page {data.page.toLocaleString()} of{" "}
+                          {data.totalPages.toLocaleString()}
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={data.page >= data.totalPages}
+                          onClick={() => setPage((current) => current + 1)}
+                        >
+                          Next
+                          <ChevronRight />
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
               </CardContent>

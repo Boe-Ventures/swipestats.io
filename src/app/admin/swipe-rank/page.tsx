@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/table";
 import { GENDERS } from "@/server/db/constants";
 import {
+  DEFAULT_SWIPE_RANK_PERIOD_KIND,
   formatMatchYield,
   formatSwipeRankPeriodLabel,
   swipeRankPeriodKey,
@@ -114,7 +115,13 @@ export default function AdminSwipeRankPage() {
     );
     if (!selectionExists) {
       const preferredPeriod =
-        periods.find((item) => item.eligibleCount > 0) ?? periods[0]!;
+        periods.find(
+          (item) =>
+            item.period.kind === DEFAULT_SWIPE_RANK_PERIOD_KIND &&
+            item.eligibleCount > 0,
+        ) ??
+        periods.find((item) => item.eligibleCount > 0) ??
+        periods[0]!;
       setSelectedPeriodKey(swipeRankPeriodKey(preferredPeriod.period));
       setPage(1);
     }
@@ -132,9 +139,9 @@ export default function AdminSwipeRankPage() {
     trpc.swipeRank.adminLeaderboard.queryOptions(
       {
         period: selectedPeriod?.period ?? {
-          kind: "MONTH",
+          kind: DEFAULT_SWIPE_RANK_PERIOD_KIND,
           start: "2000-01-01",
-          end: "2000-02-01",
+          end: "2000-04-01",
         },
         filters,
         page,

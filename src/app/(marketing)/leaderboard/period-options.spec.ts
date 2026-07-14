@@ -67,4 +67,39 @@ describe("public SwipeRank period selection", () => {
       "2026-08-01",
     );
   });
+
+  test("defaults quarters to the newest eligible observed season", () => {
+    const options = resolveLeaderboardPeriodOptions(
+      "QUARTER",
+      [
+        {
+          period: {
+            kind: "QUARTER",
+            start: "2026-01-01",
+            end: "2026-04-01",
+          },
+        },
+        {
+          period: {
+            kind: "QUARTER",
+            start: "2026-07-01",
+            end: "2026-10-01",
+          },
+        },
+        {
+          period: {
+            kind: "QUARTER",
+            start: "2026-04-01",
+            end: "2026-07-01",
+          },
+        },
+      ],
+      new Date("2026-07-15T12:00:00.000Z"),
+    );
+
+    expect(preferredLeaderboardPeriod(options, "QUARTER")).toMatchObject({
+      start: "2026-07-01",
+      live: true,
+    });
+  });
 });

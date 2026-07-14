@@ -7,11 +7,8 @@ import { assertAlignedPeriod } from "@/server/services/swipe-rank/periods";
 import { getTinderSwipeRankBenchmark } from "@/server/services/swipe-rank/benchmark.service";
 import {
   getPublicSwipeRankLeaderboard,
-  getSwipeRankPublication,
   listPublicSwipeRankPeriods,
-  revokeSwipeRankPublication,
-  updateSwipeRankPublication,
-} from "@/server/services/swipe-rank/publication.service";
+} from "@/server/services/swipe-rank/public.service";
 import {
   getAdminSwipeRankLeaderboard,
   getTinderSwipeRankPlacement,
@@ -20,10 +17,7 @@ import {
   listAdminSwipeRankPeriods,
 } from "@/server/services/swipe-rank/product.service";
 import { getSwipeRankEligibility } from "@/server/services/swipe-rank/eligibility";
-import {
-  invalidatePublicSwipeRankCache,
-  SWIPE_RANK_PUBLIC_CACHE_TAG,
-} from "@/server/services/swipe-rank/public-cache";
+import { SWIPE_RANK_PUBLIC_CACHE_TAG } from "@/server/services/swipe-rank/public-cache";
 
 import {
   adminProcedure,
@@ -79,22 +73,14 @@ const periodSchema = z
     }
   });
 
-const publicationPreferencesSchema = z.object({
-  alias: z.string().trim().min(1).max(40),
-  showGender: z.boolean(),
-  showAgeBand: z.boolean(),
-  showInterestedIn: z.boolean(),
-  locationGranularity: z.enum(["NONE", "COUNTRY", "REGION", "CITY"]),
-});
-
 const cachedPublicSwipeRankLeaderboard = unstable_cache(
   getPublicSwipeRankLeaderboard,
-  ["swipe-rank-public-leaderboard-v1"],
+  ["swipe-rank-public-leaderboard-v2"],
   { revalidate: 60, tags: [SWIPE_RANK_PUBLIC_CACHE_TAG] },
 );
 const cachedPublicSwipeRankPeriods = unstable_cache(
   listPublicSwipeRankPeriods,
-  ["swipe-rank-public-periods-v1"],
+  ["swipe-rank-public-periods-v2"],
   { revalidate: 300, tags: [SWIPE_RANK_PUBLIC_CACHE_TAG] },
 );
 
@@ -132,47 +118,12 @@ export const swipeRankRouter = {
       });
     }),
 
-  /** Private: explicit, revocable publication state for the owner. */
-  publication: tinderProfileOwnerProcedure.query(async ({ input, ctx }) => {
-    return getSwipeRankPublication(input.tinderId, ctx.session.user.id);
-  }),
-
-  /** Private: initial publication and descriptor expansion require consent. */
-  updatePublication: tinderProfileOwnerProcedure
-    .input(
-      z.object({
-        consentToPublicRanking: z.boolean(),
-        preferences: publicationPreferencesSchema,
-      }),
-    )
-    .mutation(async ({ input, ctx }) => {
-      const publication = await updateSwipeRankPublication({
-        tinderId: input.tinderId,
-        userId: ctx.session.user.id,
-        consentToPublicRanking: input.consentToPublicRanking,
-        preferences: input.preferences,
-      });
-      invalidatePublicSwipeRankCache();
-      return publication;
-    }),
-
-  /** Private: revocation has no alias, descriptor, or consent preconditions. */
-  revokePublication: tinderProfileOwnerProcedure.mutation(
-    async ({ input, ctx }) => {
-      const publication = await revokeSwipeRankPublication({
-        tinderId: input.tinderId,
-        userId: ctx.session.user.id,
-      });
-      invalidatePublicSwipeRankCache();
-      return publication;
-    },
-  ),
-
-  /** Public: opt-in rows only; no profile, user, media, or upload identifiers. */
+  /** Public: every eligible row, with season-scoped anonymous identities. */
   publicLeaderboard: publicProcedure
     .input(
       z.object({
         period: periodSchema,
+        page: z.number().int().min(1).max(10_000).default(1),
       }),
     )
     .query(async ({ input }) => {
@@ -180,8 +131,6 @@ export const swipeRankRouter = {
       return cachedPublicSwipeRankLeaderboard({
         ...input,
         ...eligibility,
-        limit: 100,
-        offset: 0,
       });
     }),
 

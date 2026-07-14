@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
+  DEFAULT_SWIPE_RANK_PERIOD_KIND,
   formatMatchYield,
   formatSwipeRankPeriodLabel,
   swipeRankPeriodKey,
@@ -28,7 +29,6 @@ import {
 import { useTRPC } from "@/trpc/react";
 
 import { useTinderProfile } from "../TinderProfileProvider";
-import { SwipeRankPublicationControl } from "./SwipeRankPublicationControl";
 
 type PeriodKind = "MONTH" | "QUARTER" | "YEAR" | "ALL_TIME";
 
@@ -97,7 +97,9 @@ function RankBlock({
 export function SwipeRankCard() {
   const trpc = useTRPC();
   const { tinderId } = useTinderProfile();
-  const [selectedKind, setSelectedKind] = useState<PeriodKind>("MONTH");
+  const [selectedKind, setSelectedKind] = useState<PeriodKind>(
+    DEFAULT_SWIPE_RANK_PERIOD_KIND,
+  );
   const [selectedPeriodKey, setSelectedPeriodKey] = useState("");
   const inventory = useQuery(
     trpc.swipeRank.availablePeriods.queryOptions(
@@ -167,7 +169,6 @@ export function SwipeRankCard() {
             <Skeleton className="h-36 w-full" />
             <Skeleton className="h-36 w-full" />
           </div>
-          <SwipeRankPublicationControl tinderId={tinderId} />
         </CardContent>
       </Card>
     );
@@ -185,9 +186,6 @@ export function SwipeRankCard() {
             SwipeRank could not be loaded right now.
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <SwipeRankPublicationControl tinderId={tinderId} />
-        </CardContent>
       </Card>
     );
   }
@@ -201,13 +199,9 @@ export function SwipeRankCard() {
             SwipeRank
           </CardTitle>
           <CardDescription>
-            Your first private ranking will appear after the next SwipeRank fact
-            build.
+            Your first ranking will appear after the next SwipeRank fact build.
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <SwipeRankPublicationControl tinderId={tinderId} />
-        </CardContent>
       </Card>
     );
   }
@@ -374,8 +368,6 @@ export function SwipeRankCard() {
             sample {selected.peer.fieldSize.toLocaleString()}
           </span>
         </div>
-
-        <SwipeRankPublicationControl tinderId={tinderId} />
       </CardContent>
     </Card>
   );

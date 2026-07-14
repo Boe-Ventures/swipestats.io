@@ -22,10 +22,9 @@ queries.
 
 ## Versioned fact build
 
-Migrations `0008` through `0014` add the provider-neutral profile registry,
-auditable build records and activation state, period facts, explicit publication
-consent history, and leaderboard snapshot/entry tables. They do not change or
-periodize legacy `profile_meta`.
+Migrations `0008` onward add the provider-neutral profile registry, auditable
+build records and activation state, period facts, and leaderboard
+snapshot/entry tables. They do not change or periodize legacy `profile_meta`.
 
 After applying the migration to the intended isolated database branch, run a
 write-side rehearsal explicitly:

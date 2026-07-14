@@ -328,8 +328,8 @@ export async function absorbProfileIntoNew(data: {
     );
 
     // 6. Delete old profile and its provider-specific analytical subject in
-    // the same transaction. Live facts, publication consent, and per-person
-    // frozen edition entries cascade from the SwipeRank registry row.
+    // the same transaction. Live facts and per-person frozen edition entries
+    // cascade from the SwipeRank registry row.
     const deleteStart = Date.now();
     await purgeTinderSwipeRankProfilesInTx(tx, [data.oldTinderId]);
     await tx

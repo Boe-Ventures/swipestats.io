@@ -1,8 +1,16 @@
 import { describe, expect, test } from "bun:test";
 
-import { formatMatchYield, formatSwipeRankPeriodLabel } from "./format";
+import {
+  DEFAULT_SWIPE_RANK_PERIOD_KIND,
+  formatMatchYield,
+  formatSwipeRankPeriodLabel,
+} from "./format";
 
 describe("SwipeRank formatting", () => {
+  test("uses quarters as the default SwipeRank season", () => {
+    expect(DEFAULT_SWIPE_RANK_PERIOD_KIND).toBe("QUARTER");
+  });
+
   test("preserves match yield above 100 percent", () => {
     expect(formatMatchYield(1.41, "en-US")).toBe("141.0%");
   });

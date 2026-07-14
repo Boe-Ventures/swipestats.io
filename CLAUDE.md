@@ -208,6 +208,7 @@ Required variables (see `.env.example`):
 
 - `DATABASE_URL` - PostgreSQL connection string
 - `BETTER_AUTH_SECRET` - Auth encryption key (production only)
+- `SWIPE_RANK_PUBLIC_ID_SECRET` - Optional dedicated SwipeRank pseudonym key
 - `NEXT_PUBLIC_BASE_URL` - Application URL
 - `LEMON_SQUEEZY_API_KEY` - Billing integration
 - `LEMON_SQUEEZY_WEBHOOK_SECRET` - Webhook verification

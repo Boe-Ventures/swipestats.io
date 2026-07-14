@@ -4,11 +4,9 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 import { db, withTransaction, type TransactionClient } from "@/server/db";
 import {
   swipeRankProfileTable,
-  swipeRankPublicationTable,
   tinderProfileTable,
   userTable,
 } from "@/server/db/schema";
-import { createId } from "@/server/db/utils";
 
 import { swipeRankBuildLockName } from "./constants";
 import { invalidatePublicSwipeRankCache } from "./public-cache";
@@ -77,7 +75,7 @@ function reportFailure(
  * lock waits for every source transaction to commit before taking its source
  * snapshot.
  * Call this before mutating Tinder or SwipeRank rows so a build cannot recreate
- * ownership or public state from a pre-deletion REPEATABLE READ snapshot.
+ * ownership state from a pre-deletion REPEATABLE READ snapshot.
  */
 export async function lockTinderSwipeRankMutationsInTx(
   tx: TransactionClient,
@@ -216,10 +214,10 @@ export async function updateTinderSwipeRankUserLocation(input: {
 
 /**
  * Remove provider-specific analytical state in the same transaction that
- * removes the source Tinder profile. Live facts and explicit publication
- * consent and the person's frozen snapshot entries cascade from the registry
- * row. The aggregate edition field size remains an historical count, but no
- * per-person numerator, denominator, or quality record survives erasure.
+ * removes the source Tinder profile. Live facts and the person's frozen
+ * snapshot entries cascade from the registry row. The aggregate edition field
+ * size remains an historical count, but no per-person numerator, denominator,
+ * or quality record survives erasure.
  */
 export async function purgeTinderSwipeRankProfilesInTx(
   tx: TransactionClient,
@@ -240,8 +238,6 @@ export async function purgeTinderSwipeRankProfilesInTx(
 
 /**
  * Rebind a claimed Tinder profile before the old anonymous user is deleted.
- * Publication state is forced private and its key rotates because consent must
- * never transfer implicitly between accounts.
  */
 export async function transferTinderSwipeRankOwnershipInTx(
   tx: TransactionClient,
@@ -261,21 +257,6 @@ export async function transferTinderSwipeRankOwnershipInTx(
   });
   if (!registry) return;
 
-  await tx
-    .update(swipeRankPublicationTable)
-    .set({
-      userId: input.toUserId,
-      publicKey: createId("rank"),
-      status: "PRIVATE",
-      consentedAt: null,
-      revokedAt: new Date(),
-    })
-    .where(
-      and(
-        eq(swipeRankPublicationTable.profileId, registry.id),
-        eq(swipeRankPublicationTable.userId, input.fromUserId),
-      ),
-    );
   await tx
     .update(swipeRankProfileTable)
     .set({ userId: input.toUserId })

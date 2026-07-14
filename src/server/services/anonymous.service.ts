@@ -1,4 +1,4 @@
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db, withTransaction } from "@/server/db";
 import {
   attachmentTable,
@@ -12,7 +12,6 @@ import {
   purchaseTable,
   rayaProfileTable,
   swipeRankProfileTable,
-  swipeRankPublicationTable,
   tinderProfileTable,
   userTable,
 } from "@/server/db/schema";
@@ -39,7 +38,7 @@ export interface TransferResult {
  * - Attachments (uploadedBy)
  * - Profile comparisons (userId)
  * - Profile comparison feedback (authorId)
- * - SwipeRank live ownership and publication settings
+ * - SwipeRank live ownership
  * - User preferences and data (dating app activity, location, self-assessment, history, subscription/tier)
  * - Deletion of the old anonymous user only after every transfer succeeds
  */
@@ -139,24 +138,12 @@ export async function transferAnonymousUserData(
     );
 
     // Keep SwipeRank ownership aligned with the transferred provider profile.
-    // Publication rows are normally absent for anonymous users, but moving any
-    // private row prevents a future user cascade from discarding preferences.
-    const swipeRankPublicationsUpdated = await tx
-      .update(swipeRankPublicationTable)
-      .set({
-        userId: toUserId,
-        publicKey: sql`'rank_' || replace(gen_random_uuid()::text, '-', '')`,
-        status: "PRIVATE",
-        consentedAt: null,
-        revokedAt: new Date(),
-      })
-      .where(eq(swipeRankPublicationTable.userId, fromUserId));
     const swipeRankProfilesUpdated = await tx
       .update(swipeRankProfileTable)
       .set({ userId: toUserId })
       .where(eq(swipeRankProfileTable.userId, fromUserId));
     console.log(
-      `[Anonymous] Transferred ${swipeRankProfilesUpdated.rowCount ?? 0} SwipeRank profiles and ${swipeRankPublicationsUpdated.rowCount ?? 0} publication settings`,
+      `[Anonymous] Transferred ${swipeRankProfilesUpdated.rowCount ?? 0} SwipeRank profiles`,
     );
 
     // Transfer purchases
