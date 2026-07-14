@@ -55,13 +55,16 @@ const REVIEWED_REWRITES = new Set([
   "hinge-verification",
   "how-does-tinder-work",
   "how-many-free-likes-on-hinge",
+  "how-to-ask-her-out-over-text",
   "how-to-cancel-tinder-gold",
   "how-to-find-someone-on-hinge",
   "how-to-find-someone-on-tinder",
+  "how-to-keep-a-conversation-going-over-text",
   "how-to-like-someone-on-hinge",
   "how-to-refresh-hinge",
   "how-to-reset-tinder",
   "how-to-reset-hinge",
+  "how-to-text-a-woman",
   "how-to-use-hinge",
   "is-hinge-x-worth-it",
   "is-hinge-a-good-dating-app",
@@ -77,6 +80,7 @@ const REVIEWED_REWRITES = new Set([
   "when-do-hinge-roses-reset",
   "who-should-text-first-after-a-date",
   "what-does-rizz-mean",
+  "what-to-text-your-crush",
 ]);
 
 interface PostInventory {

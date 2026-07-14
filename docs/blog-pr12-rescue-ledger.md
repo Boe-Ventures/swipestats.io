@@ -7,12 +7,12 @@ This ledger is the explicit editorial decision surface for the 81 recovered post
 ## Inventory summary
 
 - Recovered posts: **81**
-- Total draft words: **109,022**
+- Total draft words: **99,929**
 - Review decisions: **81 rewrite / 0 keep-as-is / 0 drop**
-- Editorial status: **59 reviewed / 22 pending**
+- Editorial status: **63 reviewed / 18 pending**
 - Review tiers: {"heavy":34,"light":46,"medium":1}
 - Editorial batches: {"algorithm-account":9,"commercial":11,"evergreen":31,"other":30}
-- Unique in-batch link targets: **26**
+- Unique in-batch link targets: **23**
 - Dependency-orderable posts: **81**
 - Posts in dependency cycles: **0**
 - Missing internal targets after recovery: **0**
@@ -66,13 +66,13 @@ This ledger is the explicit editorial decision surface for the 81 recovered post
 | `how-does-match-com-work` | rewrite | pending | heavy | other | 2525 | 5 | on | 0 | 0 | dynamic-pricing, algorithm-claim, absolute-claim |
 | `how-does-tinder-work` | rewrite | reviewed | heavy | other | 1446 | 5 | off | 1 | 0 | algorithm-claim, absolute-claim |
 | `how-many-free-likes-on-hinge` | rewrite | reviewed | light | other | 571 | 5 | on | 0 | 0 | dynamic-pricing, absolute-claim |
-| `how-to-ask-her-out-over-text` | rewrite | pending | light | evergreen | 2661 | 4 | on | 0 | 3 | absolute-claim |
+| `how-to-ask-her-out-over-text` | rewrite | reviewed | light | evergreen | 568 | 3 | on | 0 | 0 | none |
 | `how-to-cancel-tinder-gold` | rewrite | reviewed | light | other | 636 | 4 | on | 0 | 0 | none |
 | `how-to-find-someone-on-hinge` | rewrite | reviewed | light | other | 536 | 4 | on | 0 | 0 | absolute-claim |
 | `how-to-find-someone-on-tinder` | rewrite | reviewed | light | other | 552 | 4 | on | 0 | 0 | absolute-claim |
 | `how-to-flirt-over-text` | rewrite | pending | heavy | evergreen | 3996 | 4 | on | 0 | 2 | dynamic-pricing, algorithm-claim, absolute-claim |
 | `how-to-get-matches-on-tinder` | rewrite | pending | heavy | other | 2434 | 2 | on | 0 | 1 | dynamic-pricing, swipestats-data-claim, algorithm-claim, absolute-claim |
-| `how-to-keep-a-conversation-going-over-text` | rewrite | pending | light | evergreen | 3010 | 4 | on | 0 | 3 | swipestats-data-claim, absolute-claim |
+| `how-to-keep-a-conversation-going-over-text` | rewrite | reviewed | light | evergreen | 621 | 3 | on | 0 | 0 | first-person-claim, absolute-claim |
 | `how-to-like-someone-on-hinge` | rewrite | reviewed | light | other | 651 | 5 | on | 0 | 0 | absolute-claim |
 | `how-to-refresh-hinge` | rewrite | reviewed | heavy | other | 551 | 4 | on | 0 | 0 | algorithm-claim, evasion-or-identity-guidance |
 | `how-to-reset-hinge` | rewrite | reviewed | heavy | algorithm-account | 800 | 5 | on | 0 | 0 | algorithm-claim, evasion-or-identity-guidance, absolute-claim |
@@ -81,7 +81,7 @@ This ledger is the explicit editorial decision surface for the 81 recovered post
 | `how-to-talk-dirty` | rewrite | pending | heavy | evergreen | 3472 | 4 | on | 0 | 3 | absolute-claim, adult-content |
 | `how-to-tell-if-she-likes-you-over-text` | rewrite | pending | heavy | evergreen | 2915 | 4 | on | 0 | 4 | algorithm-claim, absolute-claim |
 | `how-to-text-a-guy-to-like-you` | rewrite | pending | light | evergreen | 2803 | 4 | on | 0 | 2 | swipestats-data-claim, absolute-claim |
-| `how-to-text-a-woman` | rewrite | pending | light | evergreen | 2798 | 4 | on | 0 | 4 | absolute-claim |
+| `how-to-text-a-woman` | rewrite | reviewed | light | evergreen | 577 | 3 | on | 0 | 0 | absolute-claim |
 | `how-to-use-hinge` | rewrite | reviewed | heavy | other | 1062 | 11 | off | 1 | 0 | dynamic-pricing, algorithm-claim, absolute-claim |
 | `if-you-x-someone-on-hinge-what-happens` | rewrite | reviewed | light | other | 592 | 4 | on | 0 | 0 | none |
 | `is-hinge-a-good-dating-app` | rewrite | reviewed | heavy | other | 751 | 7 | on | 0 | 0 | algorithm-claim, absolute-claim |
@@ -99,7 +99,7 @@ This ledger is the explicit editorial decision surface for the 81 recovered post
 | `tinder-subscription` | rewrite | reviewed | heavy | commercial | 758 | 5 | off | 1 | 0 | algorithm-claim, absolute-claim |
 | `tinder-terms-and-conditions` | rewrite | pending | heavy | algorithm-account | 2210 | 7 | on | 0 | 0 | dynamic-pricing, algorithm-claim, absolute-claim |
 | `what-does-rizz-mean` | rewrite | reviewed | light | evergreen | 631 | 3 | on | 0 | 0 | none |
-| `what-to-text-your-crush` | rewrite | pending | light | evergreen | 2981 | 8 | on | 0 | 5 | first-person-claim, absolute-claim |
+| `what-to-text-your-crush` | rewrite | reviewed | light | evergreen | 591 | 3 | on | 0 | 0 | none |
 | `when-do-hinge-roses-reset` | rewrite | reviewed | light | algorithm-account | 424 | 2 | on | 0 | 0 | dynamic-pricing, absolute-claim |
 | `who-should-text-first-after-a-date` | rewrite | reviewed | light | evergreen | 877 | 2 | on | 0 | 0 | absolute-claim |
 
@@ -149,24 +149,24 @@ This is a mechanical topological order only. Editorial priority and the final tw
 36. `how-does-match-com-work`
 37. `how-does-tinder-work`
 38. `how-many-free-likes-on-hinge`
-39. `how-to-cancel-tinder-gold`
-40. `how-to-find-someone-on-hinge`
-41. `how-to-find-someone-on-tinder`
-42. `how-to-flirt-over-text`
-43. `how-to-keep-a-conversation-going-over-text`
-44. `how-to-like-someone-on-hinge`
-45. `how-to-refresh-hinge`
-46. `how-to-reset-hinge`
-47. `hinge-desktop`
-48. `how-does-hinge-work-for-guys`
-49. `how-to-reset-tinder`
-50. `how-to-slide-into-dms`
-51. `how-to-talk-dirty`
-52. `how-to-tell-if-she-likes-you-over-text`
-53. `break-up-text`
-54. `how-to-text-a-guy-to-like-you`
-55. `how-to-text-a-woman`
-56. `how-to-ask-her-out-over-text`
+39. `how-to-ask-her-out-over-text`
+40. `how-to-cancel-tinder-gold`
+41. `how-to-find-someone-on-hinge`
+42. `how-to-find-someone-on-tinder`
+43. `how-to-flirt-over-text`
+44. `how-to-keep-a-conversation-going-over-text`
+45. `how-to-like-someone-on-hinge`
+46. `how-to-refresh-hinge`
+47. `how-to-reset-hinge`
+48. `hinge-desktop`
+49. `how-does-hinge-work-for-guys`
+50. `how-to-reset-tinder`
+51. `how-to-slide-into-dms`
+52. `how-to-talk-dirty`
+53. `how-to-tell-if-she-likes-you-over-text`
+54. `break-up-text`
+55. `how-to-text-a-guy-to-like-you`
+56. `how-to-text-a-woman`
 57. `how-to-use-hinge`
 58. `if-you-x-someone-on-hinge-what-happens`
 59. `is-hinge-a-good-dating-app`
