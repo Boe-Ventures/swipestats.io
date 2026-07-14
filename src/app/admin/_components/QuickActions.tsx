@@ -8,6 +8,7 @@ import {
   Palette,
   ClipboardList,
   Columns3,
+  Trophy,
 } from "lucide-react";
 import { ActionCard } from "./ActionCard";
 
@@ -23,6 +24,12 @@ export function QuickActions() {
           title="Profile Compare"
           description="Inspect shared profile comparisons"
           href="/admin/profile-compare"
+        />
+        <ActionCard
+          icon={Trophy}
+          title="SwipeRank Explorer"
+          description="Inspect private period leaderboards and cohorts"
+          href="/admin/swipe-rank"
         />
         <ActionCard
           icon={ImageIcon}

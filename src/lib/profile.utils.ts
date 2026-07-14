@@ -18,6 +18,41 @@ export function getFirstAndLastDayOnApp(appOpens: DateValueMap): {
 }
 
 /**
+ * Return the full observed usage range across every Tinder usage map.
+ *
+ * Tinder exports occasionally contain swipes, matches, or messages on dates
+ * that are absent from `app_opens`. Those rows are still observed source data
+ * and must be included in all-time aggregates. `app_opens` remains required by
+ * validation, so this helper always has at least one date for a valid export.
+ */
+export function getFirstAndLastObservedUsageDay(
+  usageMaps: Array<DateValueMap | undefined>,
+): {
+  firstDayOnApp: Date;
+  lastDayOnApp: Date;
+} {
+  const observedDates = new Set<string>();
+
+  for (const usageMap of usageMaps) {
+    if (!usageMap) continue;
+    for (const date of Object.keys(usageMap)) observedDates.add(date);
+  }
+
+  const sortedDates = [...observedDates].sort((a, b) => a.localeCompare(b));
+  const firstDate = sortedDates[0];
+  const lastDate = sortedDates.at(-1);
+
+  if (!firstDate || !lastDate) {
+    throw new Error("Tinder usage must contain at least one observed date.");
+  }
+
+  return {
+    firstDayOnApp: new Date(firstDate),
+    lastDayOnApp: new Date(lastDate),
+  };
+}
+
+/**
  * @deprecated This type is no longer used. Activity metadata fields were removed from the schema.
  */
 export type ExpandedUsageValue = {

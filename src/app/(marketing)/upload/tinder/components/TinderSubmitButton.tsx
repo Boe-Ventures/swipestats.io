@@ -25,7 +25,6 @@ interface TinderSubmitButtonProps {
       | "new_user"
       | "same_tinderId"
       | "different_tinderId"
-      | "can_claim"
       | "needs_signin"
       | "owned_by_other";
     identityMismatch?: boolean;
@@ -171,7 +170,7 @@ export function TinderSubmitButton({
 
       if (scenario === "new_profile" || scenario === "new_user") {
         createMutation.mutate(uploadData);
-      } else if (scenario === "same_tinderId" || scenario === "can_claim") {
+      } else if (scenario === "same_tinderId") {
         updateMutation.mutate(uploadData);
       } else if (scenario === "different_tinderId") {
         mergeMutation.mutate(uploadData);
@@ -206,7 +205,8 @@ export function TinderSubmitButton({
 
   const termsAccepted = consent.terms;
   const hasUploadContext = !!uploadContext?.scenario;
-  const canSubmit = !hasUnknownGender && !disabled && termsAccepted && hasUploadContext;
+  const canSubmit =
+    !hasUnknownGender && !disabled && termsAccepted && hasUploadContext;
   const isLoading =
     isCreatingSession ||
     uploadState !== "idle" ||

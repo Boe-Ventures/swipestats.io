@@ -1,7 +1,10 @@
-import type { CohortStats, ProfileMeta } from "@/server/db/schema";
+import type { ProfileMeta } from "@/server/db/schema";
 import { AI_MODELS } from "@/lib/ai/models";
 import { generateStructured } from "@/lib/ai/generate-structured";
-import { statsRoastSchema, type StatsRoastResult } from "@/lib/ai/roast-schemas";
+import {
+  statsRoastSchema,
+  type StatsRoastResult,
+} from "@/lib/ai/roast-schemas";
 import { TONE_PERSONA, type RoastTone } from "./roast-tone";
 import { getProviderMeta } from "./providers";
 
@@ -36,6 +39,25 @@ export interface RoastInput {
   benchmarks?: RoastBenchmark[];
 }
 
+/** Fact-backed distribution subset used by stats-roast prompts. */
+export interface RoastBenchmarkDistribution {
+  matchRateP10: number | null;
+  matchRateP25: number | null;
+  matchRateP50: number | null;
+  matchRateP75: number | null;
+  matchRateP90: number | null;
+  likeRateP10: number | null;
+  likeRateP25: number | null;
+  likeRateP50: number | null;
+  likeRateP75: number | null;
+  likeRateP90: number | null;
+  swipesPerDayP10: number | null;
+  swipesPerDayP25: number | null;
+  swipesPerDayP50: number | null;
+  swipesPerDayP75: number | null;
+  swipesPerDayP90: number | null;
+}
+
 /** Where a value lands in a P10–P90 distribution, as plain English. */
 function percentileBucket(
   value: number,
@@ -62,7 +84,7 @@ function percentileBucket(
  */
 export function buildRoastBenchmarks(
   profileMeta: ProfileMeta,
-  cohort: CohortStats,
+  cohort: RoastBenchmarkDistribution,
   cohortLabel: string,
 ): RoastBenchmark[] {
   const out: RoastBenchmark[] = [];

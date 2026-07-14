@@ -17,7 +17,7 @@ import { eq } from "drizzle-orm";
 import { tinderProfileTable, userTable } from "@/server/db/schema";
 import { canAccessFeature } from "@/server/services/gating.service";
 import { readConsent } from "@/lib/analytics/consent";
-import { env } from "@/env";
+import { evaluateAdminAccess } from "@/server/admin-access";
 
 /**
  * 1. CONTEXT
@@ -144,52 +144,29 @@ export const protectedProcedure = t.procedure
 /**
  * Admin procedure
  *
- * Accessible on localhost and preview deployments (no auth required).
- * Requires admin email authentication on production (swipestats.io).
+ * Every environment requires an authenticated, verified admin email.
  * Used for admin operations like profile deletion during development.
  */
 export const adminProcedure = t.procedure
   .use(timingMiddleware)
   .use(({ ctx, next }) => {
-    // Check if this is true production (swipestats.io)
-    const isProduction = env.NEXT_PUBLIC_IS_PRODUCTION;
+    const decision = evaluateAdminAccess({
+      identity: ctx.session?.user,
+    });
 
-    // On localhost and preview deployments, skip auth checks entirely
-    if (!isProduction) {
+    if (decision.isAuthorized) {
       return next({
         ctx,
       });
     }
 
-    // On production, require authentication
-    if (!ctx.session?.user) {
+    if (decision.reason === "unauthenticated") {
       throw new TRPCError({ code: "UNAUTHORIZED" });
     }
 
-    // Admin email list for production
-    const adminEmails = [
-      "kristian.e.boe@gmail.com",
-      "paw@swipestats.io",
-      "kris@swipestats.io",
-      // Add more admin emails here as needed
-    ];
-    const isAdmin = adminEmails.includes(
-      ctx.session.user.email?.toLowerCase() ?? "",
-    );
-
-    // Require admin access in production
-    if (!isAdmin) {
-      throw new TRPCError({
-        code: "FORBIDDEN",
-        message: "Admin access required",
-      });
-    }
-
-    return next({
-      ctx: {
-        // infers the `session` as non-nullable
-        session: { ...ctx.session, user: ctx.session.user },
-      },
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Admin access required",
     });
   });
 

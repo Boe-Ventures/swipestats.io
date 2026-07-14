@@ -2,7 +2,7 @@ import { differenceInDays, differenceInYears } from "date-fns";
 import he from "he";
 
 import type { AnonymizedTinderDataJSON } from "@/lib/interfaces/TinderDataJSON";
-import { getFirstAndLastDayOnApp } from "@/lib/profile.utils";
+import { getFirstAndLastObservedUsageDay } from "@/lib/profile.utils";
 import type {
   TinderProfileInsert,
   TinderUsageInsert,
@@ -24,10 +24,18 @@ export function transformTinderJsonToProfile(
   const user = json.User;
   const usage = json.Usage;
 
-  // Calculate first and last day on app from usage data
-  const { firstDayOnApp, lastDayOnApp } = getFirstAndLastDayOnApp(
-    usage.app_opens,
-  );
+  // Include every observed usage map. Tinder can report a swipe, match, or
+  // message on a date that is absent from app_opens.
+  const { firstDayOnApp, lastDayOnApp } =
+    getFirstAndLastObservedUsageDay([
+      usage.app_opens,
+      usage.swipes_likes,
+      usage.swipes_passes,
+      usage.superlikes,
+      usage.matches,
+      usage.messages_sent,
+      usage.messages_received,
+    ]);
 
   // Calculate days in profile period
   const daysInProfilePeriod = differenceInDays(lastDayOnApp, firstDayOnApp) + 1;

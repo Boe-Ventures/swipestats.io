@@ -14,6 +14,7 @@ import { dirname } from "node:path";
 // breaking CSS imports like `tw-animate-css` that only live in
 // swipestats/node_modules.
 const projectRoot = dirname(fileURLToPath(import.meta.url));
+const postHogPersonalApiKey = process.env.POSTHOG_PERSONAL_API_KEY;
 
 // RFC 8288 Link header for agent discovery on the homepage. Points crawlers
 // and LLMs at machine-readable resources — llms.txt, sitemap, the public
@@ -158,11 +159,13 @@ const config: NextConfig = {
 };
 
 export default withPostHogConfig(config, {
-  personalApiKey: process.env.POSTHOG_PERSONAL_API_KEY ?? "",
+  personalApiKey: postHogPersonalApiKey ?? "",
   projectId: envSelect({ prod: "26095", test: "132105" }),
   host: "https://eu.posthog.com",
   sourcemaps: {
-    enabled: true,
+    // Local/CI builds without the upload credential should still validate the
+    // application. Vercel environments provide the key and retain uploads.
+    enabled: Boolean(postHogPersonalApiKey),
     deleteAfterUpload: true,
   },
 });

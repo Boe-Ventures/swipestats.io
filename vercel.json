@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/deploy",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/swipe-rank",
+      "schedule": "30 6 * * *"
     }
   ]
 }

@@ -126,4 +126,26 @@ describe("parseAnonymizedTinderData", () => {
     expect(profile.genderFilterStr).toBe("More");
     expect(profile.interestedInStr).toBe("More");
   });
+
+  test("derives the profile range from every observed usage map", () => {
+    const parsed = parseAnonymizedTinderData({
+      ...minimalExport,
+      Usage: {
+        ...minimalExport.Usage,
+        swipes_likes: { "2025-12-31": 2 },
+        matches: { "2026-03-01": 1 },
+      },
+    });
+    const profile = transformTinderJsonToProfile(parsed, {
+      tinderId: "tinder-full-observed-range",
+      userId: "user-test",
+    });
+
+    expect(profile.firstDayOnApp.toISOString().slice(0, 10)).toBe(
+      "2025-12-31",
+    );
+    expect(profile.lastDayOnApp.toISOString().slice(0, 10)).toBe(
+      "2026-03-01",
+    );
+  });
 });

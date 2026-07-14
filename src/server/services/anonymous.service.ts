@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db, withTransaction } from "@/server/db";
 import {
   attachmentTable,
@@ -11,9 +11,13 @@ import {
   profileComparisonTable,
   purchaseTable,
   rayaProfileTable,
+  swipeRankProfileTable,
+  swipeRankPublicationTable,
   tinderProfileTable,
   userTable,
 } from "@/server/db/schema";
+import { lockTinderSwipeRankMutationsInTx } from "./swipe-rank/lifecycle.service";
+import { invalidatePublicSwipeRankCache } from "./swipe-rank/public-cache";
 
 export interface TransferResult {
   hadProfile: boolean;
@@ -35,7 +39,9 @@ export interface TransferResult {
  * - Attachments (uploadedBy)
  * - Profile comparisons (userId)
  * - Profile comparison feedback (authorId)
+ * - SwipeRank live ownership and publication settings
  * - User preferences and data (dating app activity, location, self-assessment, history, subscription/tier)
+ * - Deletion of the old anonymous user only after every transfer succeeds
  */
 export async function transferAnonymousUserData(
   fromUserId: string,
@@ -71,6 +77,7 @@ export async function transferAnonymousUserData(
   let hadProfile = false;
 
   await withTransaction(async (tx) => {
+    await lockTinderSwipeRankMutationsInTx(tx);
     // Transfer Tinder profiles
     const tinderProfilesUpdated = await tx
       .update(tinderProfileTable)
@@ -131,6 +138,27 @@ export async function transferAnonymousUserData(
       `[Anonymous] Transferred ${filesUpdated.rowCount ?? 0} original anonymized files`,
     );
 
+    // Keep SwipeRank ownership aligned with the transferred provider profile.
+    // Publication rows are normally absent for anonymous users, but moving any
+    // private row prevents a future user cascade from discarding preferences.
+    const swipeRankPublicationsUpdated = await tx
+      .update(swipeRankPublicationTable)
+      .set({
+        userId: toUserId,
+        publicKey: sql`'rank_' || replace(gen_random_uuid()::text, '-', '')`,
+        status: "PRIVATE",
+        consentedAt: null,
+        revokedAt: new Date(),
+      })
+      .where(eq(swipeRankPublicationTable.userId, fromUserId));
+    const swipeRankProfilesUpdated = await tx
+      .update(swipeRankProfileTable)
+      .set({ userId: toUserId })
+      .where(eq(swipeRankProfileTable.userId, fromUserId));
+    console.log(
+      `[Anonymous] Transferred ${swipeRankProfilesUpdated.rowCount ?? 0} SwipeRank profiles and ${swipeRankPublicationsUpdated.rowCount ?? 0} publication settings`,
+    );
+
     // Transfer purchases
     const purchasesUpdated = await tx
       .update(purchaseTable)
@@ -182,7 +210,15 @@ export async function transferAnonymousUserData(
     console.log(
       `[Anonymous] Transferred user data (${Object.keys(fieldsToTransfer).length} fields): ${fieldsToTransfer.swipestatsTier}`,
     );
+
+    // Better Auth's native anonymous deletion is disabled. Delete here so the
+    // resource transfer and old-account cleanup either commit together or roll
+    // back together.
+    await tx.delete(userTable).where(eq(userTable.id, fromUserId));
+    console.log("[Anonymous] Deleted transferred anonymous user");
   });
+
+  invalidatePublicSwipeRankCache();
 
   console.log(
     `[Anonymous] Successfully transferred all data from ${fromUserId} to ${toUserId}`,

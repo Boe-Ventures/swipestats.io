@@ -6,20 +6,18 @@ import {
   createHingeProfile,
   getHingeProfile,
 } from "@/server/services/hinge/hinge.service";
-import { env } from "@/env";
+import { isAdminRequestAuthorized } from "@/lib/admin-request-auth";
 
 /**
  * Admin endpoint to regenerate a Hinge profile from blob by deleting and recreating.
  * Use this when you need to reprocess with updated extraction logic (e.g., new interaction types).
  *
- * POST /api/admin/regenerate-hinge-from-blob?token=xxx
+ * POST /api/admin/regenerate-hinge-from-blob
+ * Authorization: Bearer $ADMIN_TOKEN (or a verified admin browser session)
  * Body: { hingeId, userId, blobUrl, timezone?, country? }
  */
 export async function POST(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const token = searchParams.get("token");
-
-  if (!token || token !== env.ADMIN_TOKEN) {
+  if (!(await isAdminRequestAuthorized(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -47,9 +45,7 @@ export async function POST(request: Request) {
     const existing = await getHingeProfile(hingeId);
 
     if (existing) {
-      console.log(
-        `🗑️  [Admin] Deleting existing Hinge profile: ${hingeId}`,
-      );
+      console.log(`🗑️  [Admin] Deleting existing Hinge profile: ${hingeId}`);
       console.log(
         `   This will cascade delete: interactions, prompts, matches, messages, media, events, profile_meta`,
       );
@@ -61,9 +57,7 @@ export async function POST(request: Request) {
 
       console.log(`✅ [Admin] Profile deleted successfully`);
     } else {
-      console.log(
-        `ℹ️  [Admin] No existing profile found for: ${hingeId}`,
-      );
+      console.log(`ℹ️  [Admin] No existing profile found for: ${hingeId}`);
     }
 
     // Step 2: Create fresh profile from blob

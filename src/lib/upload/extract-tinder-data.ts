@@ -4,21 +4,8 @@ import type {
   SwipestatsProfilePayload,
 } from "@/lib/interfaces/TinderDataJSON";
 import { isNewPhotoFormat } from "@/lib/interfaces/TinderDataJSON";
-import { createSHA256Hash } from "@/lib/utils/hash";
 import { omit } from "@/lib/utils/object";
-
-/**
- * Create a unique SwipeStats profile ID from birth date and account creation date
- */
-async function createSwipestatsProfileId(
-  birthDate: string,
-  appProfileCreateDate: string,
-): Promise<string> {
-  const profileId = await createSHA256Hash(
-    birthDate + "-" + appProfileCreateDate,
-  );
-  return profileId;
-}
+import { deriveTinderProfileIdFromExport } from "./tinder-profile-id";
 
 /**
  * Validate that Tinder JSON has required fields
@@ -243,10 +230,8 @@ export async function extractTinderData(
       },
     };
 
-    const profileId = await createSwipestatsProfileId(
-      anonymizedTinderJson.User.birth_date,
-      anonymizedTinderJson.User.create_date,
-    );
+    const profileId =
+      await deriveTinderProfileIdFromExport(anonymizedTinderJson);
 
     const swipestatsProfilePayload: SwipestatsProfilePayload = {
       tinderId: profileId,

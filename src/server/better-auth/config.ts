@@ -115,7 +115,11 @@ export const auth = betterAuth({
       enabled: true,
     },
     deleteUser: {
-      enabled: true,
+      // Account deletion is intentionally owned by userRouter.delete, which
+      // removes provider files, profiles, and analytical state together. The
+      // native Better Auth endpoint cannot join that application transaction
+      // and would leave SwipeRank facts detached from their deleted owner.
+      enabled: false,
     },
     additionalFields: {
       // Subscription fields (from userTable schema)
@@ -327,6 +331,11 @@ export const auth = betterAuth({
     }),
     anonymous({
       emailDomainName: "anonymous.swipestats.io",
+      // The plugin's native delete path cannot participate in SwipeStats'
+      // resource-transfer/account-purge transaction. The transfer service
+      // deletes the old anonymous user itself only after every owned resource,
+      // including SwipeRank state, has moved successfully.
+      disableDeleteAnonymousUser: true,
       generateName: () => `Guest-${crypto.randomUUID().slice(0, 8)}`,
       onLinkAccount: async ({ anonymousUser, newUser }) => {
         console.log(
@@ -369,7 +378,10 @@ export const auth = betterAuth({
           );
         } catch (error) {
           console.error("[Auth] Error in onLinkAccount:", error);
-          // Don't throw - Better Auth will still complete the conversion
+          // Never complete a conversion that lost its application data. With
+          // native anonymous deletion disabled, the old account remains intact
+          // and the user can safely retry.
+          throw error;
         }
       },
     }),

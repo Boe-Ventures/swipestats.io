@@ -287,7 +287,7 @@ function initializeYearlyAggregations(
  * Key features:
  * - All usage data is now real (no synthetic days since removal of expansion)
  * - Supports optional date range filtering via `options.from` and `options.to`
- * - Uses daysActive (appOpens > 0) for swipesPerDay calculation
+ * - Uses daysActive (at least one swipe) for swipesPerDay calculation
  * - Computes conversation stats from pre-computed match-level data
  *
  * @param profile - Tinder profile with usage and matches data
@@ -321,9 +321,25 @@ export function computeProfileMeta(
   meanResponseTimeSeconds: number | null;
   computedAt: Date;
 } {
-  // Determine date range (default = all-time from profile dates)
-  const from = options?.from ?? profile.firstDayOnApp;
-  const to = options?.to ?? profile.lastDayOnApp;
+  // The usage table is the aggregate source of truth. Additive uploads retain
+  // older rows even when the newest export reports a narrower app-open range,
+  // so defaulting to profile.firstDayOnApp/lastDayOnApp can silently discard
+  // real history. Explicit ranges still take precedence for period analysis.
+  const observedTimes = profile.usage
+    .map((day) => day.dateStamp.getTime())
+    .filter(Number.isFinite);
+  const observedFromMs = observedTimes.reduce(
+    (minimum, value) => Math.min(minimum, value),
+    profile.firstDayOnApp.getTime(),
+  );
+  const observedToMs = observedTimes.reduce(
+    (maximum, value) => Math.max(maximum, value),
+    profile.lastDayOnApp.getTime(),
+  );
+  // Preserve the app-open profile span when raw usage is sparse, but expand it
+  // if any retained additive-upload row lies outside that span.
+  const from = options?.from ?? new Date(observedFromMs);
+  const to = options?.to ?? new Date(observedToMs);
 
   console.log(`   📊 Computing ProfileMeta...`);
   console.log(

@@ -8,14 +8,38 @@
  * the dashboard — and `list({ mode: "folded" })` — a browsable folder tree, and
  * makes per-owner cleanup a single prefix operation.
  *
- * Note: in Vercel's client-upload flow the client chooses the pathname, so these
- * are applied client-side. `addRandomSuffix: true` only affects the leaf
- * filename, so navigation at the prefix level is unaffected.
+ * The client-upload route independently validates these paths before issuing a
+ * token. These builders are only the client-side half of that contract.
  */
+
+const MAX_BLOB_FILENAME_LENGTH = 120;
+
+/** Reduce an arbitrary local filename to one safe Blob pathname segment. */
+export function safeBlobFilename(filename: string): string {
+  const basename = filename.split(/[\\/]/).pop() ?? "";
+  const normalized = basename
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Za-z0-9._-]+/g, "-")
+    .replace(/\.{2,}/g, ".")
+    .replace(/-+\./g, ".")
+    .replace(/^[._-]+|[._-]+$/g, "");
+
+  const safe = normalized || "upload";
+  if (safe.length <= MAX_BLOB_FILENAME_LENGTH) return safe;
+
+  const extensionIndex = safe.lastIndexOf(".");
+  const extension =
+    extensionIndex > 0 && safe.length - extensionIndex <= 16
+      ? safe.slice(extensionIndex)
+      : "";
+  const stemLength = MAX_BLOB_FILENAME_LENGTH - extension.length;
+  return `${safe.slice(0, stemLength)}${extension}`;
+}
 
 /** Gallery / profile-compare photos, partitioned by their owning user. */
 export function userPhotoPath(userId: string, filename: string): string {
-  return `user-photos/${userId}/${filename}`;
+  return `user-photos/${userId}/${safeBlobFilename(filename)}`;
 }
 
 /** Generic fallback: group by resource so uploads never land at the bucket root. */
@@ -24,5 +48,5 @@ export function resourceBlobPath(
   resourceId: string,
   filename: string,
 ): string {
-  return `${resourceType}/${resourceId}/${filename}`;
+  return `${resourceType}/${resourceId}/${safeBlobFilename(filename)}`;
 }

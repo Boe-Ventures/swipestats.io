@@ -13,11 +13,18 @@ import {
 } from "@/server/db/schema";
 import { createId } from "@/server/db/utils";
 import { computeProfileMeta } from "@/server/services/profile/meta.service";
-import { env } from "@/env";
+import {
+  lockTinderSwipeRankMutationsInTx,
+  purgeTinderSwipeRankProfilesInTx,
+  scheduleTinderSwipeRankRefresh,
+} from "@/server/services/swipe-rank/lifecycle.service";
+import { invalidatePublicSwipeRankCache } from "@/server/services/swipe-rank/public-cache";
+import { isAdminRequestAuthorized } from "@/lib/admin-request-auth";
 
 /**
  * Admin endpoint to merge two Tinder profiles
- * POST /api/admin/merge-profiles?token=xxx&oldTinderId=xxx&newTinderId=xxx
+ * POST /api/admin/merge-profiles?oldTinderId=xxx&newTinderId=xxx
+ * Authorization: Bearer $ADMIN_TOKEN (or a verified admin browser session)
  *
  * This merges all data from oldTinderId into newTinderId:
  * - Transfers all usage, matches, messages, media, and custom data
@@ -27,12 +34,10 @@ import { env } from "@/env";
  */
 export async function POST(request: Request) {
   const { searchParams } = new URL(request.url);
-  const token = searchParams.get("token");
   const oldTinderId = searchParams.get("oldTinderId");
   const newTinderId = searchParams.get("newTinderId");
 
-  // Verify admin token
-  if (!token || token !== env.ADMIN_TOKEN) {
+  if (!(await isAdminRequestAuthorized(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -58,6 +63,7 @@ export async function POST(request: Request) {
     );
 
     const result = await withTransaction(async (tx) => {
+      await lockTinderSwipeRankMutationsInTx(tx);
       // 1. Fetch both profiles
       const [oldProfile, newProfile] = await Promise.all([
         tx.query.tinderProfileTable.findFirst({
@@ -172,7 +178,9 @@ export async function POST(request: Request) {
         `   ✓ Transferred all data to new profile (${Date.now() - transferStart}ms)`,
       );
 
-      // 6. Delete old profile (cascade will handle profileMeta)
+      // 6. Delete the old source and its live analytical subject atomically;
+      // frozen edition entries detach from the superseded profile.
+      await purgeTinderSwipeRankProfilesInTx(tx, [oldTinderId]);
       await tx
         .delete(tinderProfileTable)
         .where(eq(tinderProfileTable.tinderId, oldTinderId));
@@ -230,6 +238,8 @@ export async function POST(request: Request) {
     console.log(
       `\n✅ [Admin] Merge complete: ${oldTinderId} → ${newTinderId}\n`,
     );
+    invalidatePublicSwipeRankCache();
+    scheduleTinderSwipeRankRefresh([newTinderId]);
 
     return NextResponse.json(result);
   } catch (error) {

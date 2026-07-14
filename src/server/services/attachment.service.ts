@@ -261,7 +261,13 @@ export async function deleteResourceAttachments(
       return { deleted: 0, failed: [] };
     }
 
-    // Hard delete all of this user's attachments for the resource.
+    // Delete storage first. If any blob fails, retain every attachment row so
+    // its URL remains available for an honest, retryable erasure attempt.
+    const blobUrls = userAttachments.map((att) => att.url);
+    await BlobService.deleteBulkOrThrow(blobUrls);
+
+    // Hard delete all of this user's attachment rows only after storage has
+    // confirmed the complete batch.
     await db
       .delete(attachmentTable)
       .where(
@@ -271,12 +277,6 @@ export async function deleteResourceAttachments(
           eq(attachmentTable.uploadedBy, userId),
         ),
       );
-
-    // Delete blobs (fire and forget)
-    const blobUrls = userAttachments.map((att) => att.url);
-    BlobService.deleteBulk(blobUrls).catch((error) => {
-      console.error(`⚠️ Failed to delete some blobs:`, error);
-    });
 
     console.log(
       `✅ Deleted ${userAttachments.length} attachments for ${resourceType}:${resourceId}`,

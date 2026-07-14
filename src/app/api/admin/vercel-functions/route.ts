@@ -1,22 +1,19 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { geolocation, ipAddress, getEnv } from "@vercel/functions";
-import { env } from "@/env";
+import { isAdminRequestAuthorized } from "@/lib/admin-request-auth";
 
 /**
  * Admin showcase endpoint for @vercel/functions helpers.
  * Demonstrates geolocation, ipAddress, and getEnv utilities.
  *
- * GET /api/admin/vercel-functions?token=xxx
+ * GET /api/admin/vercel-functions
+ * Authorization: Bearer $ADMIN_TOKEN (or a verified admin browser session)
  *
  * Only works in production on Vercel — locally most values will be undefined/empty.
  */
 export async function GET(request: NextRequest) {
-  const { searchParams } = new URL(request.url);
-  const token = searchParams.get("token");
-
-  // Verify admin token
-  if (!token || token !== env.ADMIN_TOKEN) {
+  if (!(await isAdminRequestAuthorized(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

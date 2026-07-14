@@ -18,9 +18,8 @@ import { SwipestatsPlusCard } from "../compare/_components/SwipestatsPlusCard";
 import { MainInsightsSkeleton } from "./LoadingSkeletons";
 import { CohortBenchmarksSection } from "./CohortBenchmarksSection";
 import { RoastCtaCard } from "./RoastCtaCard";
-// import { MasterCohortBenchmarkSection } from "./MasterCohortBenchmarkSection";
+import { SwipeRankCard } from "./SwipeRankCard";
 import { toast } from "sonner";
-// import { CompareToOthersSection } from "./CompareToOthersSection"; // Deprecated: keeping component file for potential future use
 
 export function MainInsightsPageContent() {
   const { usageLoading, tinderId, isOwner, isAnonymous } = useTinderProfile();
@@ -96,6 +95,8 @@ export function MainInsightsPageContent() {
         {/* Row 2: Master Chart */}
         <MasterActivityChart />
 
+        {isOwner && <SwipeRankCard />}
+
         {/* Row 3: Funnel Visualization + Messages Meta Card */}
         <div className="grid items-start gap-8 lg:grid-cols-2">
           <TinderInsightsFunnel />
@@ -117,11 +118,8 @@ export function MainInsightsPageContent() {
 
         <SwipestatsPlusCard tinderId={tinderId} />
 
-        {/* Master Performance Dashboard (Premium) */}
-        {/* <MasterCohortBenchmarkSection /> */}
-
-        {/* Row 4: Cohort Benchmarks with Period Selector */}
-        <CohortBenchmarksSection />
+        {/* Private, fact-backed cohort benchmarks */}
+        {isOwner && <CohortBenchmarksSection />}
 
         {/* Row 7: Data Request CTA */}
         <DataRequestCTA />

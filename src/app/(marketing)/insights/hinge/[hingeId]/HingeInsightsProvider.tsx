@@ -50,7 +50,7 @@ type HingeInsightsProviderProps = {
 export function HingeInsightsProvider({
   children,
   hingeId,
-  initialProfile,
+  initialProfile: _initialProfile,
   readonly = false,
   isOwner = false,
   isAnonymous = false,
@@ -65,15 +65,12 @@ export function HingeInsightsProvider({
     ),
   );
 
-  // Fetch events for the profile owner (for event overlays on charts)
+  // Event overlays are private to the signed-in owner.
   const eventsQuery = useQuery(
-    trpc.event.list.queryOptions(
-      { userId: initialProfile.userId ?? undefined },
-      {
-        refetchOnWindowFocus: false,
-        enabled: !!initialProfile.userId, // Skip if no userId
-      },
-    ),
+    trpc.event.list.queryOptions(undefined, {
+      refetchOnWindowFocus: false,
+      enabled: isOwner,
+    }),
   );
 
   const profile = profileQuery.data ?? null;

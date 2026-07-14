@@ -72,13 +72,6 @@ export function CompareInsightsContent() {
         </div>
 
         <DataRequestCTA />
-
-        {/* Row 3: Cohort Benchmarks + Match Rate Card */}
-        {/* <div className="grid gap-10 md:grid-cols-2">
-          <CohortBenchmarksCard />
-          <MatchRateCard />
-        </div>
-        */}
       </div>
     </main>
   );

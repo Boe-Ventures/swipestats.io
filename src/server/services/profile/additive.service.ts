@@ -1,5 +1,7 @@
 import { eq, sql } from "drizzle-orm";
 
+import type { AnonymizedTinderDataJSON } from "@/lib/interfaces/TinderDataJSON";
+import { assertTinderProfileIdMatchesExport } from "@/lib/upload/tinder-profile-id";
 import { withTransaction, type TransactionClient } from "@/server/db";
 import {
   matchTable,
@@ -18,12 +20,18 @@ import { createId } from "@/server/db/utils";
 import { computeProfileMeta } from "./meta.service";
 import { createMessagesAndMatches } from "./messages.service";
 import { transformTinderJsonToProfile } from "./transform.service";
-import { parseAnonymizedTinderData } from "./validation.service";
+import { loadVerifiedAnonymizedTinderData } from "./validation.service";
 import { createUsageRecords } from "./usage.service";
 import {
   type TinderProfileResult,
   transformTinderPhotosToMedia,
 } from "./profile.service";
+import {
+  lockTinderSwipeRankMutationsInTx,
+  purgeTinderSwipeRankProfilesInTx,
+  scheduleTinderSwipeRankRefresh,
+} from "../swipe-rank/lifecycle.service";
+import { invalidatePublicSwipeRankCache } from "../swipe-rank/public-cache";
 
 /**
  * Helper: Upsert usage records in transaction
@@ -74,6 +82,45 @@ async function upsertUsageRecordsInTx(
   }
 
   return usageInserted;
+}
+
+/**
+ * Keep the profile-level observed range aligned with the union of every usage
+ * row retained across additive uploads. New exports can be narrower than an
+ * older export; overwriting the profile range would otherwise hide valid rows
+ * from legacy all-time consumers.
+ */
+async function syncObservedUsageRangeInTx(
+  tx: TransactionClient,
+  tinderId: string,
+): Promise<void> {
+  await tx.execute(sql`
+    UPDATE tinder_profile AS profile
+    SET
+      first_day_on_app = least(profile.first_day_on_app, bounds.first_day),
+      last_day_on_app = greatest(profile.last_day_on_app, bounds.last_day),
+      days_in_profile_period =
+        (
+          greatest(profile.last_day_on_app::date, bounds.last_day::date) -
+          least(profile.first_day_on_app::date, bounds.first_day::date)
+        ) + 1,
+      age_at_last_usage = extract(
+        year FROM age(
+          greatest(profile.last_day_on_app::date, bounds.last_day::date),
+          profile.birth_date
+        )
+      )::int
+    FROM (
+      SELECT
+        min(date_stamp) AS first_day,
+        max(date_stamp) AS last_day
+      FROM tinder_usage
+      WHERE tinder_profile_id = ${tinderId}
+    ) AS bounds
+    WHERE profile.tinder_id = ${tinderId}
+      AND bounds.first_day IS NOT NULL
+      AND bounds.last_day IS NOT NULL
+  `);
 }
 
 /**
@@ -145,10 +192,10 @@ export async function absorbProfileIntoNew(data: {
 }): Promise<TinderProfileResult> {
   const startTime = Date.now();
 
-  // Fetch JSON from blob storage
-  const { fetchBlobJson } = await import("../blob.service");
-  const blobJson = await fetchBlobJson<unknown>(data.blobUrl);
-  const anonymizedTinderJson = parseAnonymizedTinderData(blobJson);
+  const anonymizedTinderJson = await loadVerifiedAnonymizedTinderData(
+    data.blobUrl,
+    data.newTinderId,
+  );
 
   console.log(
     `\n🔄 Cross-account merge: ${data.oldTinderId} → ${data.newTinderId}`,
@@ -160,6 +207,7 @@ export async function absorbProfileIntoNew(data: {
   console.log(`   JSON size: ${jsonSizeMB} MB`);
 
   const profile = await withTransaction(async (tx) => {
+    await lockTinderSwipeRankMutationsInTx(tx);
     // 1. Get old profile to compute combined date range
     const fetchOldStart = Date.now();
     const oldProfile = await tx.query.tinderProfileTable.findFirst({
@@ -279,8 +327,11 @@ export async function absorbProfileIntoNew(data: {
       `   ✓ Transferred all data to new profile (${Date.now() - transferStart}ms)`,
     );
 
-    // 6. Delete old profile (cascade will handle profileMeta, jobs, schools)
+    // 6. Delete old profile and its provider-specific analytical subject in
+    // the same transaction. Live facts, publication consent, and per-person
+    // frozen edition entries cascade from the SwipeRank registry row.
     const deleteStart = Date.now();
+    await purgeTinderSwipeRankProfilesInTx(tx, [data.oldTinderId]);
     await tx
       .delete(tinderProfileTable)
       .where(eq(tinderProfileTable.tinderId, data.oldTinderId));
@@ -298,6 +349,7 @@ export async function absorbProfileIntoNew(data: {
       data.newTinderId,
       newUsage,
     );
+    await syncObservedUsageRangeInTx(tx, data.newTinderId);
     console.log(
       `   ✓ Usage upserted: ${usageInserted} records (${Date.now() - usageStart}ms)`,
     );
@@ -372,6 +424,8 @@ export async function absorbProfileIntoNew(data: {
   });
 
   const totalTime = Date.now() - startTime;
+  invalidatePublicSwipeRankCache();
+  scheduleTinderSwipeRankRefresh([data.newTinderId]);
   console.log(
     `\n✅ Cross-account merge complete: ${data.oldTinderId} → ${data.newTinderId}`,
   );
@@ -411,13 +465,19 @@ export async function additiveUpdateProfile(data: {
   userId: string;
   timezone?: string;
   country?: string;
+  verifiedTinderJson?: AnonymizedTinderDataJSON;
 }): Promise<TinderProfileResult> {
   const startTime = Date.now();
 
-  // Fetch JSON from blob storage
-  const { fetchBlobJson } = await import("../blob.service");
-  const blobJson = await fetchBlobJson<unknown>(data.blobUrl);
-  const anonymizedTinderJson = parseAnonymizedTinderData(blobJson);
+  const anonymizedTinderJson =
+    data.verifiedTinderJson ??
+    (await loadVerifiedAnonymizedTinderData(data.blobUrl, data.tinderId));
+  if (data.verifiedTinderJson) {
+    await assertTinderProfileIdMatchesExport(
+      data.tinderId,
+      data.verifiedTinderJson,
+    );
+  }
 
   console.log(`\n📊 Additive update for profile: ${data.tinderId}`);
   console.log(`   User ID: ${data.userId}`);
@@ -426,6 +486,7 @@ export async function additiveUpdateProfile(data: {
   const jsonSizeMB = (jsonString.length / 1024 / 1024).toFixed(2);
 
   const profile = await withTransaction(async (tx) => {
+    await lockTinderSwipeRankMutationsInTx(tx);
     // 1. Update profile metadata (bio, settings, etc.)
     const transformStart = Date.now();
     const profileData = transformTinderJsonToProfile(anonymizedTinderJson, {
@@ -464,6 +525,7 @@ export async function additiveUpdateProfile(data: {
       data.tinderId,
       newUsage,
     );
+    await syncObservedUsageRangeInTx(tx, data.tinderId);
     console.log(
       `   ✓ Usage upserted: ${usageInserted} records (${Date.now() - usageStart}ms)`,
     );
@@ -552,6 +614,7 @@ export async function additiveUpdateProfile(data: {
   });
 
   const totalTime = Date.now() - startTime;
+  scheduleTinderSwipeRankRefresh([data.tinderId]);
   console.log(`\n✅ Additive update complete for ${data.tinderId}`);
   console.log(
     `⏱️  Total time: ${totalTime}ms (${(totalTime / 1000).toFixed(2)}s)\n`,

@@ -138,6 +138,30 @@ export const catalogEntryStatusEnum = pgEnum("catalog_entry_status", [
   "ARCHIVED",
 ]);
 
+export const swipeRankPeriodKindEnum = pgEnum("SwipeRankPeriodKind", [
+  "MONTH",
+  "QUARTER",
+  "YEAR",
+  "ALL_TIME",
+]);
+
+export const swipeRankBuildStatusEnum = pgEnum("SwipeRankBuildStatus", [
+  "RUNNING",
+  "COMPLETE",
+  "FAILED",
+]);
+
+export const swipeRankBuildScopeEnum = pgEnum("SwipeRankBuildScope", [
+  "FULL",
+  "PROFILE",
+]);
+
+export const swipeRankSnapshotStatusEnum = pgEnum("SwipeRankSnapshotStatus", [
+  "DRAFT",
+  "PUBLISHED",
+  "ARCHIVED",
+]);
+
 export const catalogVerificationStatusEnum = pgEnum(
   "catalog_verification_status",
   ["UNVERIFIED", "VERIFIED"],
@@ -173,7 +197,6 @@ export const catalogSubmissionStatusEnum = pgEnum("catalog_submission_status", [
   "REJECTED",
   "WITHDRAWN",
 ]);
-
 // Export TypeScript types
 export type DataProvider = (typeof dataProviderEnum.enumValues)[number];
 export type EventType = (typeof eventTypeEnum.enumValues)[number];
@@ -203,6 +226,14 @@ export type CatalogRequestVisibility =
   (typeof catalogRequestVisibilityEnum.enumValues)[number];
 export type CatalogSubmissionStatus =
   (typeof catalogSubmissionStatusEnum.enumValues)[number];
+export type SwipeRankPeriodKind =
+  (typeof swipeRankPeriodKindEnum.enumValues)[number];
+export type SwipeRankBuildStatus =
+  (typeof swipeRankBuildStatusEnum.enumValues)[number];
+export type SwipeRankBuildScope =
+  (typeof swipeRankBuildScopeEnum.enumValues)[number];
+export type SwipeRankSnapshotStatus =
+  (typeof swipeRankSnapshotStatusEnum.enumValues)[number];
 
 /** ISO 639-1 two-letter language code, e.g. "en", "no", "es" */
 export type LanguageCode = string;
@@ -877,6 +908,567 @@ export const profileMetaTable = pgTable("profile_meta", (t) => ({
 
 export type ProfileMeta = typeof profileMetaTable.$inferSelect;
 export type ProfileMetaInsert = typeof profileMetaTable.$inferInsert;
+
+// ---- SWIPE RANK ANALYTICS ----------------------------------------
+
+/**
+ * Provider-neutral subject registry for versioned period analytics.
+ *
+ * Provider-native source tables remain authoritative. This registry gives the
+ * analytical layer one stable FK without pretending that every provider has
+ * the same raw capabilities.
+ */
+export const swipeRankProfileTable = pgTable(
+  "swipe_rank_profile",
+  (t) => ({
+    id: t
+      .text()
+      .primaryKey()
+      .$defaultFn(() => createId("srp")),
+    dataProvider: dataProviderEnum().notNull(),
+    providerProfileId: t.text().notNull(),
+    userId: t.text().references(() => userTable.id, { onDelete: "set null" }),
+    gender: genderEnum(),
+    interestedIn: genderEnum(),
+    // Current comparison dimensions, not historical period location. Tinder
+    // sync prefers the user record and falls back field-by-field to profile.
+    city: t.text(),
+    region: t.text(),
+    country: t.text(),
+    locationSource: t.text(),
+    isSynthetic: t.boolean().default(false).notNull(),
+    capabilities: t
+      .jsonb()
+      .$type<Record<string, boolean>>()
+      .default({})
+      .notNull(),
+    sourceProfileUpdatedAt: t.timestamp().notNull(),
+    sourceFileCreatedAt: t.timestamp(),
+    createdAt: t
+      .timestamp()
+      .$defaultFn(() => new Date())
+      .notNull(),
+    updatedAt: t
+      .timestamp()
+      .$defaultFn(() => new Date())
+      .$onUpdate(() => new Date())
+      .notNull(),
+  }),
+  (table) => [
+    uniqueIndex("swipe_rank_profile_provider_profile_idx").on(
+      table.dataProvider,
+      table.providerProfileId,
+    ),
+    uniqueIndex("swipe_rank_profile_provider_user_idx").on(
+      table.dataProvider,
+      table.userId,
+    ),
+    index("swipe_rank_profile_dimensions_idx").on(
+      table.dataProvider,
+      table.gender,
+      table.interestedIn,
+    ),
+    index("swipe_rank_profile_country_idx").on(
+      table.dataProvider,
+      table.country,
+    ),
+  ],
+);
+
+export type SwipeRankProfile = typeof swipeRankProfileTable.$inferSelect;
+export type SwipeRankProfileInsert = typeof swipeRankProfileTable.$inferInsert;
+
+/**
+ * Privacy-safe source mutation journal used to prove snapshot lineage.
+ *
+ * Rows contain no user or provider identifier. The monotonically increasing
+ * ID changes whenever an application transaction mutates Tinder source or
+ * ownership state; a FULL fact build records the latest visible ID.
+ */
+export const swipeRankSourceMutationTable = pgTable(
+  "swipe_rank_source_mutation",
+  (t) => ({
+    id: t.bigserial({ mode: "number" }).primaryKey(),
+    dataProvider: dataProviderEnum().notNull(),
+    createdAt: t
+      .timestamp()
+      .$defaultFn(() => new Date())
+      .notNull(),
+  }),
+  (table) => [
+    index("swipe_rank_source_mutation_provider_idx").on(
+      table.dataProvider,
+      table.id,
+    ),
+  ],
+);
+
+/** One auditable invocation of a fact recomputation. */
+export const swipeRankBuildTable = pgTable(
+  "swipe_rank_build",
+  (t) => ({
+    id: t
+      .text()
+      .primaryKey()
+      .$defaultFn(() => createId("srb")),
+    dataProvider: dataProviderEnum().notNull(),
+    metricVersion: t.text().notNull(),
+    scope: swipeRankBuildScopeEnum().notNull(),
+    status: swipeRankBuildStatusEnum().default("RUNNING").notNull(),
+    sourceWatermark: t
+      .jsonb()
+      .$type<Record<string, string | number | null>>()
+      .default({})
+      .notNull(),
+    startedAt: t
+      .timestamp()
+      .$defaultFn(() => new Date())
+      .notNull(),
+    completedAt: t.timestamp(),
+    /** Set only after an independent full-build validation succeeds. */
+    activatedAt: t.timestamp(),
+    /** Privacy-safe failure category; never persist query text, params, or IDs. */
+    failureCode: t.text(),
+  }),
+  (table) => [
+    index("swipe_rank_build_provider_version_idx").on(
+      table.dataProvider,
+      table.metricVersion,
+      table.startedAt,
+    ),
+    index("swipe_rank_build_status_idx").on(table.status, table.startedAt),
+    check(
+      "swipe_rank_build_completion_state",
+      sql`(${table.status} = 'RUNNING' AND ${table.completedAt} IS NULL) OR (${table.status} <> 'RUNNING' AND ${table.completedAt} IS NOT NULL)`,
+    ),
+    check(
+      "swipe_rank_build_activation_state",
+      sql`${table.activatedAt} IS NULL OR (${table.scope} = 'FULL' AND ${table.status} = 'COMPLETE' AND ${table.completedAt} IS NOT NULL)`,
+    ),
+  ],
+);
+
+export type SwipeRankBuild = typeof swipeRankBuildTable.$inferSelect;
+export type SwipeRankBuildInsert = typeof swipeRankBuildTable.$inferInsert;
+
+/**
+ * Versioned period facts. Periods are half-open [periodStart, periodEnd).
+ * MONTH is the canonical stored grain; broader grains are sums of month facts.
+ * ALL_TIME uses the fixed [0001-01-01, 9999-01-01) sentinel interval.
+ */
+export const swipeRankPeriodFactTable = pgTable(
+  "swipe_rank_period_fact",
+  (t) => ({
+    id: t
+      .text()
+      .primaryKey()
+      .$defaultFn(() => createId("srf")),
+    profileId: t
+      .text()
+      .notNull()
+      .references(() => swipeRankProfileTable.id, { onDelete: "cascade" }),
+    buildId: t
+      .text()
+      .notNull()
+      .references(() => swipeRankBuildTable.id, { onDelete: "restrict" }),
+    metricVersion: t.text().notNull(),
+    periodKind: swipeRankPeriodKindEnum().notNull(),
+    periodStart: t.date().notNull(),
+    periodEnd: t.date().notNull(),
+    observedFirstDate: t.date().notNull(),
+    observedLastDate: t.date().notNull(),
+    sourceRowCount: t.bigint({ mode: "number" }).notNull(),
+    observedDays: t.integer().notNull(),
+    activeDays: t.integer().notNull(),
+    ageInPeriod: t.integer(),
+    swipeLikes: t.bigint({ mode: "number" }),
+    swipePasses: t.bigint({ mode: "number" }),
+    swipeSuperLikes: t.bigint({ mode: "number" }),
+    matches: t.bigint({ mode: "number" }),
+    messagesSent: t.bigint({ mode: "number" }),
+    messagesReceived: t.bigint({ mode: "number" }),
+    appOpens: t.bigint({ mode: "number" }),
+    matchRateNumerator: t.bigint({ mode: "number" }),
+    matchRateDenominator: t.bigint({ mode: "number" }),
+    likeRateNumerator: t.bigint({ mode: "number" }),
+    likeRateDenominator: t.bigint({ mode: "number" }),
+    matchRate: t
+      .doublePrecision()
+      .generatedAlwaysAs(
+        sql`CASE WHEN match_rate_denominator > 0 THEN match_rate_numerator::double precision / match_rate_denominator END`,
+      ),
+    likeRate: t
+      .doublePrecision()
+      .generatedAlwaysAs(
+        sql`CASE WHEN like_rate_denominator > 0 THEN like_rate_numerator::double precision / like_rate_denominator END`,
+      ),
+    swipesPerActiveDay: t
+      .doublePrecision()
+      .generatedAlwaysAs(
+        sql`CASE WHEN active_days > 0 AND swipe_likes IS NOT NULL AND swipe_passes IS NOT NULL THEN (swipe_likes + swipe_passes)::double precision / active_days END`,
+      ),
+    qualityFlags: t.jsonb().$type<string[]>().default([]).notNull(),
+    hasQualityAnomaly: t.boolean().default(false).notNull(),
+    sourceProfileUpdatedAt: t.timestamp().notNull(),
+    sourceFileCreatedAt: t.timestamp(),
+    sourceFingerprint: t.text().notNull(),
+    computedAt: t
+      .timestamp()
+      .$defaultFn(() => new Date())
+      .notNull(),
+  }),
+  (table) => [
+    uniqueIndex("swipe_rank_fact_profile_period_version_idx").on(
+      table.profileId,
+      table.periodKind,
+      table.periodStart,
+      table.metricVersion,
+    ),
+    index("swipe_rank_fact_period_rank_idx").on(
+      table.periodKind,
+      table.periodStart,
+      table.metricVersion,
+      table.matchRate,
+    ),
+    index("swipe_rank_fact_profile_version_idx").on(
+      table.profileId,
+      table.metricVersion,
+      table.periodKind,
+      table.periodStart,
+    ),
+    index("swipe_rank_fact_build_idx").on(table.buildId),
+    index("swipe_rank_fact_anomaly_idx").on(
+      table.hasQualityAnomaly,
+      table.periodKind,
+      table.periodStart,
+    ),
+    check(
+      "swipe_rank_fact_period_bounds",
+      sql`${table.periodStart} < ${table.periodEnd}`,
+    ),
+    check(
+      "swipe_rank_fact_period_alignment",
+      sql`(${table.periodKind} = 'MONTH' AND ${table.periodStart} = date_trunc('month', ${table.periodStart})::date AND ${table.periodEnd} = (${table.periodStart} + interval '1 month')::date) OR (${table.periodKind} = 'QUARTER' AND extract(month from ${table.periodStart}) IN (1, 4, 7, 10) AND extract(day from ${table.periodStart}) = 1 AND ${table.periodEnd} = (${table.periodStart} + interval '3 months')::date) OR (${table.periodKind} = 'YEAR' AND extract(month from ${table.periodStart}) = 1 AND extract(day from ${table.periodStart}) = 1 AND ${table.periodEnd} = (${table.periodStart} + interval '1 year')::date) OR (${table.periodKind} = 'ALL_TIME' AND ${table.periodStart} = date '0001-01-01' AND ${table.periodEnd} = date '9999-01-01')`,
+    ),
+    check(
+      "swipe_rank_fact_observed_bounds",
+      sql`${table.observedFirstDate} <= ${table.observedLastDate} AND ${table.observedFirstDate} >= ${table.periodStart} AND ${table.observedLastDate} < ${table.periodEnd}`,
+    ),
+    check(
+      "swipe_rank_fact_day_counts",
+      sql`${table.sourceRowCount} > 0 AND ${table.observedDays} > 0 AND ${table.activeDays} >= 0 AND ${table.activeDays} <= ${table.observedDays}`,
+    ),
+    check(
+      "swipe_rank_fact_nonnegative_metrics",
+      sql`coalesce(${table.swipeLikes}, 0) >= 0 AND coalesce(${table.swipePasses}, 0) >= 0 AND coalesce(${table.swipeSuperLikes}, 0) >= 0 AND coalesce(${table.matches}, 0) >= 0 AND coalesce(${table.messagesSent}, 0) >= 0 AND coalesce(${table.messagesReceived}, 0) >= 0 AND coalesce(${table.appOpens}, 0) >= 0 AND coalesce(${table.matchRateNumerator}, 0) >= 0 AND coalesce(${table.matchRateDenominator}, 0) >= 0 AND coalesce(${table.likeRateNumerator}, 0) >= 0 AND coalesce(${table.likeRateDenominator}, 0) >= 0`,
+    ),
+    check(
+      "swipe_rank_fact_rate_inputs",
+      sql`(${table.matchRateNumerator} IS NULL) = (${table.matchRateDenominator} IS NULL) AND (${table.likeRateNumerator} IS NULL) = (${table.likeRateDenominator} IS NULL)`,
+    ),
+    check(
+      "swipe_rank_fact_quality_state",
+      sql`${table.hasQualityAnomaly} = (jsonb_array_length(${table.qualityFlags}) > 0)`,
+    ),
+  ],
+);
+
+export type SwipeRankPeriodFact = typeof swipeRankPeriodFactTable.$inferSelect;
+export type SwipeRankPeriodFactInsert =
+  typeof swipeRankPeriodFactTable.$inferInsert;
+
+/** An immutable leaderboard edition built from one completed fact build. */
+export const swipeRankSnapshotTable = pgTable(
+  "swipe_rank_snapshot",
+  (t) => ({
+    id: t
+      .text()
+      .primaryKey()
+      .$defaultFn(() => createId("srs")),
+    dataProvider: dataProviderEnum().notNull(),
+    buildId: t
+      .text()
+      .notNull()
+      .references(() => swipeRankBuildTable.id, { onDelete: "restrict" }),
+    metricKey: t.text().notNull(),
+    metricVersion: t.text().notNull(),
+    eligibilityVersion: t.text().notNull(),
+    periodKind: swipeRankPeriodKindEnum().notNull(),
+    periodStart: t.date().notNull(),
+    periodEnd: t.date().notNull(),
+    cohortSpec: t
+      .jsonb()
+      .$type<Record<string, unknown>>()
+      .default({})
+      .notNull(),
+    cohortHash: t.text().notNull(),
+    minimumRateDenominator: t.integer().default(0).notNull(),
+    minimumActiveDays: t.integer().default(0).notNull(),
+    fieldSize: t.integer().notNull(),
+    status: swipeRankSnapshotStatusEnum().default("DRAFT").notNull(),
+    sourceCutoff: t.timestamp().notNull(),
+    createdAt: t
+      .timestamp()
+      .$defaultFn(() => new Date())
+      .notNull(),
+    publishedAt: t.timestamp(),
+  }),
+  (table) => [
+    uniqueIndex("swipe_rank_snapshot_edition_idx").on(
+      table.dataProvider,
+      table.metricKey,
+      table.metricVersion,
+      table.eligibilityVersion,
+      table.periodKind,
+      table.periodStart,
+      table.cohortHash,
+      table.buildId,
+    ),
+    index("swipe_rank_snapshot_status_idx").on(
+      table.status,
+      table.periodKind,
+      table.periodStart,
+    ),
+    check(
+      "swipe_rank_snapshot_period_bounds",
+      sql`${table.periodStart} < ${table.periodEnd}`,
+    ),
+    check(
+      "swipe_rank_snapshot_period_alignment",
+      sql`(${table.periodKind} = 'MONTH' AND ${table.periodStart} = date_trunc('month', ${table.periodStart})::date AND ${table.periodEnd} = (${table.periodStart} + interval '1 month')::date) OR (${table.periodKind} = 'QUARTER' AND extract(month from ${table.periodStart}) IN (1, 4, 7, 10) AND extract(day from ${table.periodStart}) = 1 AND ${table.periodEnd} = (${table.periodStart} + interval '3 months')::date) OR (${table.periodKind} = 'YEAR' AND extract(month from ${table.periodStart}) = 1 AND extract(day from ${table.periodStart}) = 1 AND ${table.periodEnd} = (${table.periodStart} + interval '1 year')::date) OR (${table.periodKind} = 'ALL_TIME' AND ${table.periodStart} = date '0001-01-01' AND ${table.periodEnd} = date '9999-01-01')`,
+    ),
+    check(
+      "swipe_rank_snapshot_nonnegative_thresholds",
+      sql`${table.minimumRateDenominator} >= 0 AND ${table.minimumActiveDays} >= 0 AND ${table.fieldSize} >= 0`,
+    ),
+    check(
+      "swipe_rank_snapshot_publication_state",
+      sql`(${table.status} = 'PUBLISHED' AND ${table.publishedAt} IS NOT NULL) OR (${table.status} <> 'PUBLISHED')`,
+    ),
+  ],
+);
+
+export type SwipeRankSnapshot = typeof swipeRankSnapshotTable.$inferSelect;
+export type SwipeRankSnapshotInsert =
+  typeof swipeRankSnapshotTable.$inferInsert;
+
+/**
+ * Frozen ranks for a snapshot; no public identity fields are copied here.
+ *
+ * Deleting the source profile removes its per-person frozen row. Other ranks
+ * and the aggregate edition field size remain historical; no exact numerator,
+ * denominator, or quality record survives for the erased person.
+ */
+export const swipeRankEntryTable = pgTable(
+  "swipe_rank_entry",
+  (t) => ({
+    id: t
+      .text()
+      .primaryKey()
+      .$defaultFn(() => createId("sre")),
+    snapshotId: t
+      .text()
+      .notNull()
+      .references(() => swipeRankSnapshotTable.id, { onDelete: "cascade" }),
+    profileId: t
+      .text()
+      .notNull()
+      .references(() => swipeRankProfileTable.id, { onDelete: "cascade" }),
+    rank: t.integer().notNull(),
+    tieCount: t.integer().notNull(),
+    fieldSize: t.integer().notNull(),
+    percentile: t.doublePrecision().notNull(),
+    topShare: t.doublePrecision().notNull(),
+    metricNumerator: t.bigint({ mode: "number" }).notNull(),
+    metricDenominator: t.bigint({ mode: "number" }).notNull(),
+    metricValue: t.doublePrecision().notNull(),
+    qualityFlags: t.jsonb().$type<string[]>().default([]).notNull(),
+    createdAt: t
+      .timestamp()
+      .$defaultFn(() => new Date())
+      .notNull(),
+  }),
+  (table) => [
+    uniqueIndex("swipe_rank_entry_snapshot_profile_idx").on(
+      table.snapshotId,
+      table.profileId,
+    ),
+    index("swipe_rank_entry_snapshot_rank_idx").on(
+      table.snapshotId,
+      table.rank,
+    ),
+    check(
+      "swipe_rank_entry_rank_bounds",
+      sql`${table.rank} > 0 AND ${table.tieCount} > 0 AND ${table.fieldSize} > 0 AND ${table.rank} <= ${table.fieldSize} AND ${table.tieCount} <= ${table.fieldSize}`,
+    ),
+    check(
+      "swipe_rank_entry_rate_bounds",
+      sql`${table.metricNumerator} >= 0 AND ${table.metricDenominator} > 0 AND ${table.metricValue} >= 0 AND ${table.percentile} >= 0 AND ${table.percentile} <= 100 AND ${table.topShare} >= 0 AND ${table.topShare} <= 100`,
+    ),
+  ],
+);
+
+export type SwipeRankEntry = typeof swipeRankEntryTable.$inferSelect;
+export type SwipeRankEntryInsert = typeof swipeRankEntryTable.$inferInsert;
+
+/**
+ * Explicit, revocable consent for appearing on public SwipeRank surfaces.
+ *
+ * No existing analytics, research, photo, or upload consent implies public
+ * leaderboard consent. Existing profiles receive no row and remain private.
+ * Images are deliberately outside the first publication contract.
+ */
+export const swipeRankPublicationTable = pgTable(
+  "swipe_rank_publication",
+  (t) => ({
+    id: t
+      .text()
+      .primaryKey()
+      .$defaultFn(() => createId("srpub")),
+    profileId: t
+      .text()
+      .notNull()
+      .references(() => swipeRankProfileTable.id, { onDelete: "cascade" }),
+    userId: t
+      .text()
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    publicKey: t
+      .text()
+      .notNull()
+      .unique()
+      .$defaultFn(() => createId("rank")),
+    status: t.text().$type<"PRIVATE" | "PUBLIC">().default("PRIVATE").notNull(),
+    alias: t.text().default("Anonymous dater").notNull(),
+    showGender: t.boolean().default(false).notNull(),
+    showAgeBand: t.boolean().default(false).notNull(),
+    showInterestedIn: t.boolean().default(false).notNull(),
+    locationGranularity: t
+      .text()
+      .$type<"NONE" | "COUNTRY" | "REGION" | "CITY">()
+      .default("NONE")
+      .notNull(),
+    consentVersion: t.integer().default(1).notNull(),
+    consentedAt: t.timestamp(),
+    revokedAt: t.timestamp(),
+    createdAt: t
+      .timestamp()
+      .$defaultFn(() => new Date())
+      .notNull(),
+    updatedAt: t
+      .timestamp()
+      .$defaultFn(() => new Date())
+      .$onUpdate(() => new Date())
+      .notNull(),
+  }),
+  (table) => [
+    uniqueIndex("swipe_rank_publication_profile_idx").on(table.profileId),
+    index("swipe_rank_publication_public_idx").on(
+      table.status,
+      table.updatedAt,
+    ),
+    check(
+      "swipe_rank_publication_status",
+      sql`${table.status} IN ('PRIVATE', 'PUBLIC')`,
+    ),
+    check(
+      "swipe_rank_publication_location_granularity",
+      sql`${table.locationGranularity} IN ('NONE', 'COUNTRY', 'REGION', 'CITY')`,
+    ),
+    check(
+      "swipe_rank_publication_consent_state",
+      sql`${table.status} <> 'PUBLIC' OR (${table.consentedAt} IS NOT NULL AND ${table.revokedAt} IS NULL)`,
+    ),
+  ],
+);
+
+export type SwipeRankPublication =
+  typeof swipeRankPublicationTable.$inferSelect;
+export type SwipeRankPublicationInsert =
+  typeof swipeRankPublicationTable.$inferInsert;
+
+export type SwipeRankPublicationEventType =
+  | "PUBLISHED"
+  | "CONSENT_RENEWED"
+  | "SETTINGS_UPDATED"
+  | "REVOKED";
+
+export interface SwipeRankPublicationEventPreferences {
+  alias: string;
+  showGender: boolean;
+  showAgeBand: boolean;
+  showInterestedIn: boolean;
+  locationGranularity: "NONE" | "COUNTRY" | "REGION" | "CITY";
+}
+
+/**
+ * Append-only evidence of the exact publication state a person consented to,
+ * changed, or revoked. Application code never updates these rows. Cascades are
+ * intentional so account/profile erasure also removes consent audit data.
+ */
+export const swipeRankPublicationEventTable = pgTable(
+  "swipe_rank_publication_event",
+  (t) => ({
+    id: t
+      .text()
+      .primaryKey()
+      .$defaultFn(() => createId("srpe")),
+    publicationId: t
+      .text()
+      .notNull()
+      .references(() => swipeRankPublicationTable.id, { onDelete: "cascade" }),
+    profileId: t
+      .text()
+      .notNull()
+      .references(() => swipeRankProfileTable.id, { onDelete: "cascade" }),
+    userId: t
+      .text()
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    eventType: t.text().$type<SwipeRankPublicationEventType>().notNull(),
+    consentVersion: t.integer().notNull(),
+    explicitConsentReceived: t.boolean().default(false).notNull(),
+    preferences: t
+      .jsonb()
+      .$type<SwipeRankPublicationEventPreferences>()
+      .notNull(),
+    occurredAt: t
+      .timestamp()
+      .$defaultFn(() => new Date())
+      .notNull(),
+  }),
+  (table) => [
+    index("swipe_rank_publication_event_publication_idx").on(
+      table.publicationId,
+      table.occurredAt,
+    ),
+    index("swipe_rank_publication_event_user_idx").on(
+      table.userId,
+      table.occurredAt,
+    ),
+    check(
+      "swipe_rank_publication_event_type",
+      sql`${table.eventType} IN ('PUBLISHED', 'CONSENT_RENEWED', 'SETTINGS_UPDATED', 'REVOKED')`,
+    ),
+    check(
+      "swipe_rank_publication_event_consent_version",
+      sql`${table.consentVersion} > 0`,
+    ),
+    check(
+      "swipe_rank_publication_event_explicit_consent",
+      sql`${table.explicitConsentReceived} = (${table.eventType} IN ('PUBLISHED', 'CONSENT_RENEWED'))`,
+    ),
+    check(
+      "swipe_rank_publication_event_preferences",
+      sql`jsonb_typeof(${table.preferences}) = 'object'`,
+    ),
+  ],
+);
+
+export type SwipeRankPublicationEvent =
+  typeof swipeRankPublicationEventTable.$inferSelect;
+export type SwipeRankPublicationEventInsert =
+  typeof swipeRankPublicationEventTable.$inferInsert;
 
 // ---- SUPPORT TABLES -----------------------------------------------
 
@@ -1732,95 +2324,6 @@ export type AiOutputRowInsert = typeof aiOutputTable.$inferInsert;
 // by content id; image URLs are resolved live on read (not frozen), so the roast
 // always renders against the current profile.
 
-// ---- COHORT SYSTEM TABLES -----------------------------------------
-
-// Cohort definition - what filters constitute a cohort
-export const cohortDefinitionTable = pgTable("cohort_definition", (t) => ({
-  id: t.text().primaryKey(), // e.g., "tinder_male", "user_abc123_custom1"
-  name: t.text().notNull(),
-  description: t.text(),
-
-  // Filters
-  dataProvider: dataProviderEnum(),
-  gender: genderEnum(),
-  ageMin: t.integer(),
-  ageMax: t.integer(),
-  country: t.text(),
-  region: t.text(),
-
-  // Ownership
-  type: t.text().$type<"SYSTEM" | "USER_CUSTOM">().default("SYSTEM").notNull(),
-  createdByUserId: t
-    .text()
-    .references(() => userTable.id, { onDelete: "cascade" }),
-
-  // Metadata
-  profileCount: t.integer().default(0).notNull(),
-  lastComputedAt: t.timestamp(),
-  createdAt: t
-    .timestamp()
-    .$defaultFn(() => new Date())
-    .notNull(),
-}));
-
-export type CohortDefinition = typeof cohortDefinitionTable.$inferSelect;
-export type CohortDefinitionInsert = typeof cohortDefinitionTable.$inferInsert;
-
-// Cohort stats - pre-computed percentile distributions
-export const cohortStatsTable = pgTable(
-  "cohort_stats",
-  (t) => ({
-    id: t
-      .text()
-      .primaryKey()
-      .$defaultFn(() => createId("cst")),
-    cohortId: t
-      .text()
-      .notNull()
-      .references(() => cohortDefinitionTable.id, { onDelete: "cascade" }),
-
-    // Period (e.g., "all-time", "2024", "2023")
-    period: t.text().notNull().default("all-time"),
-    periodStart: t.timestamp(),
-    periodEnd: t.timestamp(),
-
-    // Sample size
-    profileCount: t.integer().notNull(),
-
-    // Like Rate (pickiness) - full distribution
-    likeRateP10: t.doublePrecision(),
-    likeRateP25: t.doublePrecision(),
-    likeRateP50: t.doublePrecision(),
-    likeRateP75: t.doublePrecision(),
-    likeRateP90: t.doublePrecision(),
-    likeRateMean: t.doublePrecision(),
-
-    // Match Rate (desirability) - full distribution
-    matchRateP10: t.doublePrecision(),
-    matchRateP25: t.doublePrecision(),
-    matchRateP50: t.doublePrecision(),
-    matchRateP75: t.doublePrecision(),
-    matchRateP90: t.doublePrecision(),
-    matchRateMean: t.doublePrecision(),
-
-    // Swipes Per Day (activity) - full distribution
-    swipesPerDayP10: t.doublePrecision(),
-    swipesPerDayP25: t.doublePrecision(),
-    swipesPerDayP50: t.doublePrecision(),
-    swipesPerDayP75: t.doublePrecision(),
-    swipesPerDayP90: t.doublePrecision(),
-    swipesPerDayMean: t.doublePrecision(),
-
-    computedAt: t.timestamp().notNull(),
-  }),
-  (t) => ({
-    cohortPeriodIdx: uniqueIndex("cohort_period_idx").on(t.cohortId, t.period),
-  }),
-);
-
-export type CohortStats = typeof cohortStatsTable.$inferSelect;
-export type CohortStatsInsert = typeof cohortStatsTable.$inferInsert;
-
 // ---- RELATIONS ----------------------------------------------------
 
 export const userRelations = relations(userTable, ({ one, many }) => ({
@@ -1843,10 +2346,11 @@ export const userRelations = relations(userTable, ({ one, many }) => ({
   events: many(eventTable),
   customData: many(customDataTable),
   originalAnonymizedFiles: many(originalAnonymizedFileTable),
+  swipeRankPublications: many(swipeRankPublicationTable),
+  swipeRankPublicationEvents: many(swipeRankPublicationEventTable),
   purchases: many(purchaseTable),
   profileComparisons: many(profileComparisonTable),
   uploadedAttachments: many(attachmentTable),
-  cohortDefinitions: many(cohortDefinitionTable),
   aiOutputs: many(aiOutputTable),
   catalogMemberships: many(catalogEntryMemberTable),
   submittedCatalogClaims: many(catalogEntryClaimTable, {
@@ -1856,6 +2360,7 @@ export const userRelations = relations(userTable, ({ one, many }) => ({
     relationName: "catalogClaimReviewer",
   }),
   catalogRequests: many(catalogRequestTable),
+  swipeRankProfiles: many(swipeRankProfileTable),
 }));
 
 export const accountRelations = relations(accountTable, ({ one }) => ({
@@ -1980,6 +2485,100 @@ export const profileMetaRelations = relations(profileMetaTable, ({ one }) => ({
     references: [hingeProfileTable.hingeId],
   }),
 }));
+
+export const swipeRankProfileRelations = relations(
+  swipeRankProfileTable,
+  ({ one, many }) => ({
+    user: one(userTable, {
+      fields: [swipeRankProfileTable.userId],
+      references: [userTable.id],
+    }),
+    periodFacts: many(swipeRankPeriodFactTable),
+    leaderboardEntries: many(swipeRankEntryTable),
+    publication: one(swipeRankPublicationTable),
+    publicationEvents: many(swipeRankPublicationEventTable),
+  }),
+);
+
+export const swipeRankPublicationRelations = relations(
+  swipeRankPublicationTable,
+  ({ one, many }) => ({
+    profile: one(swipeRankProfileTable, {
+      fields: [swipeRankPublicationTable.profileId],
+      references: [swipeRankProfileTable.id],
+    }),
+    user: one(userTable, {
+      fields: [swipeRankPublicationTable.userId],
+      references: [userTable.id],
+    }),
+    events: many(swipeRankPublicationEventTable),
+  }),
+);
+
+export const swipeRankPublicationEventRelations = relations(
+  swipeRankPublicationEventTable,
+  ({ one }) => ({
+    publication: one(swipeRankPublicationTable, {
+      fields: [swipeRankPublicationEventTable.publicationId],
+      references: [swipeRankPublicationTable.id],
+    }),
+    profile: one(swipeRankProfileTable, {
+      fields: [swipeRankPublicationEventTable.profileId],
+      references: [swipeRankProfileTable.id],
+    }),
+    user: one(userTable, {
+      fields: [swipeRankPublicationEventTable.userId],
+      references: [userTable.id],
+    }),
+  }),
+);
+
+export const swipeRankBuildRelations = relations(
+  swipeRankBuildTable,
+  ({ many }) => ({
+    periodFacts: many(swipeRankPeriodFactTable),
+    snapshots: many(swipeRankSnapshotTable),
+  }),
+);
+
+export const swipeRankPeriodFactRelations = relations(
+  swipeRankPeriodFactTable,
+  ({ one }) => ({
+    profile: one(swipeRankProfileTable, {
+      fields: [swipeRankPeriodFactTable.profileId],
+      references: [swipeRankProfileTable.id],
+    }),
+    build: one(swipeRankBuildTable, {
+      fields: [swipeRankPeriodFactTable.buildId],
+      references: [swipeRankBuildTable.id],
+    }),
+  }),
+);
+
+export const swipeRankSnapshotRelations = relations(
+  swipeRankSnapshotTable,
+  ({ one, many }) => ({
+    build: one(swipeRankBuildTable, {
+      fields: [swipeRankSnapshotTable.buildId],
+      references: [swipeRankBuildTable.id],
+    }),
+    entries: many(swipeRankEntryTable),
+  }),
+);
+
+export const swipeRankEntryRelations = relations(
+  swipeRankEntryTable,
+  ({ one }) => ({
+    snapshot: one(swipeRankSnapshotTable, {
+      fields: [swipeRankEntryTable.snapshotId],
+      references: [swipeRankSnapshotTable.id],
+    }),
+    profile: one(swipeRankProfileTable, {
+      fields: [swipeRankEntryTable.profileId],
+      references: [swipeRankProfileTable.id],
+    }),
+  }),
+);
 
 export const jobRelations = relations(jobTable, ({ one }) => ({
   tinderProfile: one(tinderProfileTable, {
@@ -2154,25 +2753,6 @@ export const profileComparisonFeedbackRelations = relations(
     }),
   }),
 );
-
-// Cohort system relations
-export const cohortDefinitionRelations = relations(
-  cohortDefinitionTable,
-  ({ one, many }) => ({
-    createdBy: one(userTable, {
-      fields: [cohortDefinitionTable.createdByUserId],
-      references: [userTable.id],
-    }),
-    stats: many(cohortStatsTable),
-  }),
-);
-
-export const cohortStatsRelations = relations(cohortStatsTable, ({ one }) => ({
-  cohort: one(cohortDefinitionTable, {
-    fields: [cohortStatsTable.cohortId],
-    references: [cohortDefinitionTable.id],
-  }),
-}));
 
 export const aiOutputRelations = relations(aiOutputTable, ({ one }) => ({
   user: one(userTable, {

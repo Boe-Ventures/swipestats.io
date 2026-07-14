@@ -9,7 +9,6 @@ import {
   tinderProfileTable,
   mediaTable,
   tinderUsageTable,
-  userTable,
 } from "@/server/db/schema";
 import { getContinentFromCountry } from "@/lib/utils/continent";
 import { publicProcedure } from "../trpc";
@@ -19,7 +18,6 @@ import {
   createTinderProfile,
   getTinderProfile,
   getTinderProfileWithUser,
-  transferProfileOwnership,
 } from "@/server/services/profile/profile.service";
 import {
   additiveUpdateProfile,
@@ -29,10 +27,11 @@ import { trackServerEvent } from "@/server/services/analytics.service";
 import { captureException } from "@/server/clients/posthog.client";
 import { getFirstAndLastDayOnApp } from "@/lib/profile.utils";
 import { summarizeUploadError } from "@/server/services/upload-error.service";
+import { updateTinderSwipeRankUserLocation } from "@/server/services/swipe-rank/lifecycle.service";
 
 /**
  * Helper function to handle existing profile upload scenarios
- * (user owns profile, anonymous transfer, or forbidden)
+ * (user owns profile or the request is forbidden)
  */
 async function handleExistingProfileUpload(params: {
   existing: NonNullable<Awaited<ReturnType<typeof getTinderProfileWithUser>>>;
@@ -55,19 +54,16 @@ async function handleExistingProfileUpload(params: {
     });
   }
 
-  // Case C: Profile owned by anonymous user - transfer then use additive update
+  // Cross-session anonymous claims are deliberately unsupported. The Tinder ID
+  // is derived from birth/create dates that are identity-consistency fields,
+  // not a possession secret. Legitimate guest conversion is transferred by
+  // Better Auth's onLinkAccount hook while the original anonymous session is
+  // still present; any other account must go through support-assisted recovery.
   if (existing.user?.isAnonymous && existing.userId) {
-    console.log(
-      `🔀 Transferring profile ${params.tinderId} from anonymous user ${existing.userId} to ${currentUserId}`,
-    );
-    await transferProfileOwnership(
-      params.tinderId,
-      existing.userId,
-      currentUserId,
-    );
-    return additiveUpdateProfile({
-      ...uploadParams,
-      userId: currentUserId,
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message:
+        "This anonymous profile belongs to a different session. Convert the original guest session or contact support to recover it.",
     });
   }
 
@@ -89,20 +85,40 @@ export const profileRouter = {
     )
     .query(async ({ ctx: _ctx, input }) => {
       const profile = await getTinderProfile(input.tinderId);
-      // Return null instead of throwing - better for optional queries
-      return profile ?? null;
+      if (!profile) return null;
+
+      // This route is public for legacy upload/directory callers. Return only
+      // the coarse presentation fields: exact birth/create dates and ownership
+      // identifiers must never be disclosed by this endpoint.
+      return {
+        tinderId: profile.tinderId,
+        computed: profile.computed,
+        ageAtUpload: profile.ageAtUpload,
+        ageAtLastUsage: profile.ageAtLastUsage,
+        gender: profile.gender,
+        city: profile.city,
+        country: profile.country,
+        region: profile.region,
+        interestedIn: profile.interestedIn,
+        firstDayOnApp: profile.firstDayOnApp,
+        lastDayOnApp: profile.lastDayOnApp,
+        daysInProfilePeriod: profile.daysInProfilePeriod,
+      };
     }),
 
   // Get multiple profiles with usage data for comparison
   getWithUsage: publicProcedure
     .input(
       z.object({
-        tinderIds: z.array(z.string().min(1)),
+        tinderIds: z.array(z.string().min(1)).max(4),
       }),
     )
     .query(async ({ ctx, input }) => {
       const profiles = await ctx.db.query.tinderProfileTable.findMany({
         where: (table, { inArray }) => inArray(table.tinderId, input.tinderIds),
+        columns: {
+          tinderId: true,
+        },
         with: {
           usage: {
             orderBy: (usage, { asc }) => [asc(usage.dateStamp)],
@@ -161,29 +177,26 @@ export const profileRouter = {
         ? await ctx.db.query.tinderProfileTable.findFirst({
             where: eq(tinderProfileTable.tinderId, input.tinderId),
             columns: { tinderId: true, userId: true },
-            with: {
-              user: {
-                columns: { isAnonymous: true },
-              },
-            },
           })
         : null;
 
       // If no session, determine scenario based on target profile
       if (!ctx.session?.user?.id) {
-        let scenario: "new_user" | "needs_signin" | "can_claim";
+        let scenario: "new_user" | "needs_signin";
 
         if (!targetProfile) {
           scenario = "new_user"; // Profile doesn't exist
-        } else if (targetProfile.user?.isAnonymous) {
-          scenario = "can_claim"; // Owned by anonymous user - can claim
         } else {
-          scenario = "needs_signin"; // Owned by real user - must sign in
+          // Both claimed and anonymous profiles require their existing session.
+          // A newly-created session cannot prove ownership from export fields.
+          scenario = "needs_signin";
         }
 
         return {
           userProfile: null,
-          targetProfile,
+          targetProfile: targetProfile
+            ? { tinderId: targetProfile.tinderId }
+            : null,
           scenario,
           identityMismatch: false,
         };
@@ -239,7 +252,9 @@ export const profileRouter = {
 
       return {
         userProfile,
-        targetProfile,
+        targetProfile: targetProfile
+          ? { tinderId: targetProfile.tinderId }
+          : null,
         scenario,
         identityMismatch,
       };
@@ -293,16 +308,14 @@ export const profileRouter = {
           const region = geo.countryRegion || null;
           const continent = getContinentFromCountry(country);
 
-          await ctx.db
-            .update(userTable)
-            .set({
-              city,
-              country,
-              region,
-              continent,
-              timeZone: input.timezone || undefined,
-            })
-            .where(eq(userTable.id, ctx.session.user.id));
+          await updateTinderSwipeRankUserLocation({
+            userId: ctx.session.user.id,
+            city,
+            country,
+            region,
+            continent,
+            timeZone: input.timezone || undefined,
+          });
         }
 
         // Create brand new profile
@@ -344,8 +357,7 @@ export const profileRouter = {
       }
     }),
 
-  // Additive update endpoint for re-uploading data or claiming anonymous profiles
-  // Handles: same_tinderId (additive update) and can_claim (transfer + update)
+  // Additive update endpoint for a profile already owned by this session.
   updateProfile: publicProcedure
     .input(
       z.object({
@@ -391,16 +403,14 @@ export const profileRouter = {
           const region = geo.countryRegion || null;
           const continent = getContinentFromCountry(country);
 
-          await ctx.db
-            .update(userTable)
-            .set({
-              city,
-              country,
-              region,
-              continent,
-              timeZone: input.timezone || undefined,
-            })
-            .where(eq(userTable.id, ctx.session.user.id));
+          await updateTinderSwipeRankUserLocation({
+            userId: ctx.session.user.id,
+            city,
+            country,
+            region,
+            continent,
+            timeZone: input.timezone || undefined,
+          });
         }
 
         // Handle ownership scenarios

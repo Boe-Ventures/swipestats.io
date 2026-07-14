@@ -349,18 +349,6 @@ export function TinderUploadPage({ isUpdate, isDebug }: TinderUploadPageProps) {
             </div>
           )}
 
-          {uploadContext?.scenario === "can_claim" && (
-            <div className="mt-6 rounded-lg border-2 border-blue-300 bg-blue-50 p-4">
-              <h3 className="mb-1 text-sm font-semibold text-blue-900">
-                👋 Welcome Back!
-              </h3>
-              <p className="text-xs text-blue-700">
-                This looks like your profile from a previous session. Click
-                upload to claim it and update your data.
-              </p>
-            </div>
-          )}
-
           {/* Dev Admin Card - visible on localhost and preview deployments, hidden on production */}
           {showDevTools &&
             uploadContext &&

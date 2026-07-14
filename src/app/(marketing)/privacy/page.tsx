@@ -162,9 +162,12 @@ export default function PrivacyPage() {
         </ul>
 
         <p>
-          We generate a unique, hashed profile ID from your birth date and
-          account creation date — this means your profile can&apos;t be linked
-          back to your real identity.
+          We generate a pseudonymous profile ID by hashing your birth date and
+          account creation date. Hashing removes those dates from the ID, but it
+          is not a guarantee of anonymity: a pseudonymous profile and its
+          statistics may still be correlated with information available
+          elsewhere. SwipeStats therefore treats the hash as an internal
+          consistency identifier, never as proof that someone owns a profile.
         </p>
         <p>
           Want to verify this yourself? Our extraction code is{" "}
@@ -314,12 +317,68 @@ export default function PrivacyPage() {
               <td>Process sensitive dating data</td>
               <td>Your explicit consent (Art. 9(2)(a))</td>
             </tr>
+            <tr>
+              <td>Publish an optional SwipeRank leaderboard entry</td>
+              <td>
+                Your consent (Art. 6(1)(a)) and, where the entry reveals
+                sensitive dating data, your explicit consent (Art. 9(2)(a))
+              </td>
+            </tr>
           </tbody>
         </table>
         <p>
           When we rely on &quot;legitimate interest,&quot; we&apos;ve done
           balancing tests to make sure our interests don&apos;t override your
           rights. You can ask us for details anytime.
+        </p>
+
+        <h3>Optional public SwipeRank entries</h3>
+        <p>
+          SwipeRank is private by default. If you affirmatively opt in from your
+          private insights page, we publish a pseudonymous leaderboard entry so
+          you can take part in a playful comparison with other eligible Tinder
+          uploads. This public publication is separate from the anonymized
+          research datasets described below and is never required to use your
+          private insights.
+        </p>
+        <p>A public SwipeRank entry may contain:</p>
+        <ul>
+          <li>Your chosen public alias</li>
+          <li>
+            Your exact competition rank and the eligible comparison field size
+          </li>
+          <li>Your match yield rounded to one decimal percentage point</li>
+          <li>
+            Only the descriptors you separately choose to share: gender,
+            interested-in gender, an age band, and/or location at country,
+            region, or city level
+          </li>
+        </ul>
+        <p>
+          We do not include your Tinder ID, SwipeStats account ID, raw match or
+          swipe totals, messages, uploaded files, or images in the public
+          leaderboard. Each public row uses a period-specific technical key so
+          our API does not provide a stable identifier for linking you across
+          months, quarters, or years. Reusing the same public alias can still
+          make your entries recognizable across periods. Exact ranks, rounded
+          match yield, and descriptor combinations can also be correlated with
+          an existing public anonymized SwipeStats insights page or information
+          published elsewhere; that correlation may make a pseudonymous entry
+          recognizable or identifiable even though we do not expose account or
+          Tinder identifiers. We ask for renewed explicit consent before a
+          public entry reveals an additional descriptor or more precise
+          location.
+        </p>
+        <p>
+          The audience is anyone on the internet. Public entries can be copied,
+          screenshotted, indexed, or cached by other people and services. We
+          keep your entry public until you revoke consent, delete the relevant
+          profile or account, or we discontinue the feature. You can make it
+          private at any time from the same insights page; we remove it from our
+          live leaderboard, but cannot retract copies or caches already made by
+          third parties. Revocation does not identify or remove genuinely
+          anonymized aggregate research or editorial statistics described in the
+          next section.
         </p>
 
         <h2>5. How does anonymization work?</h2>
@@ -870,7 +929,7 @@ export default function PrivacyPage() {
         <p>We aim to respond to all inquiries within 5 business days.</p>
 
         <p className="mt-8 text-sm text-gray-600">
-          This Privacy Policy was last updated in February 2026.
+          This Privacy Policy was last updated in July 2026.
         </p>
       </div>
     </div>
