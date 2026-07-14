@@ -7,12 +7,12 @@ This ledger is the explicit editorial decision surface for the 81 recovered post
 ## Inventory summary
 
 - Recovered posts: **81**
-- Total draft words: **162,813**
+- Total draft words: **158,823**
 - Review decisions: **81 rewrite / 0 keep-as-is / 0 drop**
-- Editorial status: **36 reviewed / 45 pending**
-- Review tiers: {"heavy":40,"light":39,"medium":2}
+- Editorial status: **38 reviewed / 43 pending**
+- Review tiers: {"heavy":38,"light":41,"medium":2}
 - Editorial batches: {"algorithm-account":9,"commercial":11,"evergreen":31,"other":30}
-- Unique in-batch link targets: **43**
+- Unique in-batch link targets: **42**
 - Dependency-orderable posts: **81**
 - Posts in dependency cycles: **0**
 - Missing internal targets after recovery: **0**
@@ -25,8 +25,8 @@ This ledger is the explicit editorial decision surface for the 81 recovered post
 | `ai-text-message-generator` | rewrite | pending | light | evergreen | 3154 | 5 | on | 0 | 4 | dynamic-pricing, absolute-claim |
 | `best-conversation-starters-over-text` | rewrite | reviewed | light | evergreen | 1351 | 5 | off | 1 | 0 | none |
 | `break-up-text` | rewrite | pending | light | evergreen | 4399 | 6 | on | 0 | 3 | dynamic-pricing, absolute-claim |
-| `bumble-boost` | rewrite | pending | heavy | commercial | 2991 | 2 | on | 0 | 0 | dynamic-pricing, swipestats-data-claim, algorithm-claim, absolute-claim |
-| `bumble-messaging` | rewrite | pending | heavy | other | 2477 | 6 | on | 0 | 4 | algorithm-claim, absolute-claim, weak-source-candidate |
+| `bumble-boost` | rewrite | reviewed | light | commercial | 671 | 3 | on | 0 | 0 | dynamic-pricing, absolute-claim |
+| `bumble-messaging` | rewrite | reviewed | light | other | 807 | 5 | on | 0 | 0 | absolute-claim |
 | `bumble-premium` | rewrite | reviewed | heavy | commercial | 1330 | 3 | off | 1 | 0 | dynamic-pricing, algorithm-claim, absolute-claim |
 | `can-you-send-pics-on-hinge` | rewrite | reviewed | light | other | 584 | 4 | on | 0 | 0 | absolute-claim |
 | `chat-up-lines` | rewrite | pending | light | evergreen | 3939 | 4 | on | 0 | 3 | absolute-claim |
@@ -114,47 +114,47 @@ This is a mechanical topological order only. Editorial priority and the final tw
 1. `ai-rizz-generator`
 2. `best-conversation-starters-over-text`
 3. `bumble-boost`
-4. `bumble-premium`
-5. `can-you-send-pics-on-hinge`
-6. `does-hinge-automatically-update-your-location`
-7. `double-texting`
-8. `dry-texting`
-9. `first-message-on-dating-app`
-10. `good-morning-texts-for-her`
-11. `flirty-texts-for-him`
-12. `hinge-algorithm`
-13. `hinge-ban`
-14. `hinge-boost`
-15. `hinge-match-note`
-16. `hinge-most-compatible`
-17. `hinge-notifications`
-18. `hinge-phone-number`
-19. `hinge-roses`
-20. `hinge-standouts`
-21. `hinge-subscription`
-22. `hinge-verification`
-23. `how-does-match-com-work`
-24. `how-does-tinder-work`
-25. `how-many-free-likes-on-hinge`
-26. `how-to-cancel-tinder-gold`
-27. `how-to-flirt-over-text`
-28. `how-to-keep-a-conversation-going-over-text`
-29. `how-to-like-someone-on-hinge`
-30. `how-to-refresh-hinge`
-31. `how-to-reset-hinge`
-32. `how-does-hinge-work-for-guys`
-33. `how-to-reset-tinder`
-34. `how-to-slide-into-dms`
-35. `how-to-talk-dirty`
-36. `good-morning-messages-for-him`
-37. `good-night-texts`
-38. `flirty-emojis`
-39. `how-to-tell-if-she-likes-you-over-text`
-40. `break-up-text`
-41. `how-to-text-a-guy-to-like-you`
-42. `how-to-text-a-woman`
-43. `how-to-ask-her-out-over-text`
-44. `bumble-messaging`
+4. `bumble-messaging`
+5. `bumble-premium`
+6. `can-you-send-pics-on-hinge`
+7. `does-hinge-automatically-update-your-location`
+8. `double-texting`
+9. `dry-texting`
+10. `first-message-on-dating-app`
+11. `good-morning-texts-for-her`
+12. `flirty-texts-for-him`
+13. `hinge-algorithm`
+14. `hinge-ban`
+15. `hinge-boost`
+16. `hinge-match-note`
+17. `hinge-most-compatible`
+18. `hinge-notifications`
+19. `hinge-phone-number`
+20. `hinge-roses`
+21. `hinge-standouts`
+22. `hinge-subscription`
+23. `hinge-verification`
+24. `how-does-match-com-work`
+25. `how-does-tinder-work`
+26. `how-many-free-likes-on-hinge`
+27. `how-to-cancel-tinder-gold`
+28. `how-to-flirt-over-text`
+29. `how-to-keep-a-conversation-going-over-text`
+30. `how-to-like-someone-on-hinge`
+31. `how-to-refresh-hinge`
+32. `how-to-reset-hinge`
+33. `how-does-hinge-work-for-guys`
+34. `how-to-reset-tinder`
+35. `how-to-slide-into-dms`
+36. `how-to-talk-dirty`
+37. `good-morning-messages-for-him`
+38. `good-night-texts`
+39. `flirty-emojis`
+40. `how-to-tell-if-she-likes-you-over-text`
+41. `break-up-text`
+42. `how-to-text-a-guy-to-like-you`
+43. `how-to-text-a-woman`
+44. `how-to-ask-her-out-over-text`
 45. `how-to-use-hinge`
 46. `hinge-app-icons`
 47. `hinge-opening-lines`

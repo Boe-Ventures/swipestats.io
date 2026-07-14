@@ -20,6 +20,8 @@ type ReviewStatus = "pending" | "reviewed";
 const REVIEWED_REWRITES = new Set([
   "ai-rizz-generator",
   "best-conversation-starters-over-text",
+  "bumble-boost",
+  "bumble-messaging",
   "bumble-premium",
   "can-you-send-pics-on-hinge",
   "does-hinge-automatically-update-your-location",
