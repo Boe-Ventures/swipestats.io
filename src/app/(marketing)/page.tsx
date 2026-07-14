@@ -18,7 +18,6 @@ import { CtaBand } from "./_components/CtaBand";
 import { FaqList } from "./_components/FaqList";
 import { InsightsShowcase } from "./InsightsShowcase";
 import NewsletterCTA from "./NewsletterCTA";
-import { ProfilePreviewsBanner } from "./ProfilePreviewsBanner";
 
 export const metadata: Metadata = {
   title: "SwipeStats - Analyze Your Dating App Data",
@@ -831,7 +830,6 @@ export default function HomePage() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
       />
-      <ProfilePreviewsBanner />
       <Hero />
       <LogoStrip />
       <HowItWorks />
