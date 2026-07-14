@@ -1,13 +1,14 @@
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
-import { and, asc, count, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import {
   CATALOG_CATEGORIES,
   CATALOG_CATEGORY_KEYS,
-  getCatalogRelatedPlaceIds,
+  catalogEntryBelongsToCategory,
+  catalogEntryMatchesLocation,
+  getCatalogEntryCategoryKeys,
   isCatalogLocationFilterKey,
-  type CatalogEntryData,
   type CatalogLocationFilterKey,
 } from "@/lib/catalog";
 import {
@@ -24,41 +25,17 @@ const locationFilterSchema = z.custom<CatalogLocationFilterKey>(
   "Unknown catalog location",
 );
 
-function entryMatchesLocation(
-  data: CatalogEntryData,
-  location: CatalogLocationFilterKey,
-  category: (typeof CATALOG_CATEGORY_KEYS)[number],
-) {
-  const relatedPlaceIds = getCatalogRelatedPlaceIds(location);
-  const locationMode = CATALOG_CATEGORIES[category].locationMode;
-  if (locationMode === "service_area") {
-    return (
-      data.serviceAreaIds?.some((placeId) =>
-        relatedPlaceIds.includes(placeId),
-      ) === true
-    );
-  }
-  if (locationMode === "market_signal") {
-    return (
-      data.marketSignals?.some((signal) =>
-        relatedPlaceIds.includes(signal.placeId),
-      ) === true
-    );
-  }
-  return false;
-}
-
 export const catalogRouter = {
   overview: publicProcedure.query(async ({ ctx }) => {
-    const [counts, featuredEntries] = await Promise.all([
+    const [publishedEntries, featuredEntries] = await Promise.all([
       ctx.db
         .select({
-          category: catalogEntryTable.primaryCategory,
-          count: count(),
+          primaryCategory: catalogEntryTable.primaryCategory,
+          data: catalogEntryTable.data,
         })
         .from(catalogEntryTable)
         .where(eq(catalogEntryTable.status, "PUBLISHED"))
-        .groupBy(catalogEntryTable.primaryCategory),
+        .orderBy(asc(catalogEntryTable.name)),
       ctx.db
         .select()
         .from(catalogEntryTable)
@@ -70,6 +47,15 @@ export const catalogRouter = {
         )
         .limit(6),
     ]);
+
+    const counts = CATALOG_CATEGORY_KEYS.map((category) => ({
+      category,
+      count: publishedEntries.filter((entry) =>
+        getCatalogEntryCategoryKeys(entry.primaryCategory, entry.data).includes(
+          category,
+        ),
+      ).length,
+    })).filter(({ count }) => count > 0);
 
     return { counts, featuredEntries };
   }),
@@ -87,12 +73,7 @@ export const catalogRouter = {
       const entries = await ctx.db
         .select()
         .from(catalogEntryTable)
-        .where(
-          and(
-            eq(catalogEntryTable.status, "PUBLISHED"),
-            eq(catalogEntryTable.primaryCategory, input.category),
-          ),
-        )
+        .where(eq(catalogEntryTable.status, "PUBLISHED"))
         .orderBy(
           desc(catalogEntryTable.featured),
           desc(catalogEntryTable.editorialPick),
@@ -100,16 +81,24 @@ export const catalogRouter = {
         );
 
       const filteredEntries = entries.filter((entry) => {
-        const locationMode =
-          CATALOG_CATEGORIES[entry.primaryCategory].locationMode;
+        if (
+          !catalogEntryBelongsToCategory(
+            entry.primaryCategory,
+            entry.data,
+            input.category,
+          )
+        ) {
+          return false;
+        }
+        const locationMode = CATALOG_CATEGORIES[input.category].locationMode;
         const matchesAvailability =
           locationMode === "global"
             ? true
             : input.location
-              ? entryMatchesLocation(
+              ? catalogEntryMatchesLocation(
                   entry.data,
                   input.location,
-                  entry.primaryCategory,
+                  input.category,
                 ) ||
                 (locationMode === "service_area" &&
                   input.includeRemote &&
@@ -152,7 +141,7 @@ export const catalogRouter = {
         const locationMode =
           CATALOG_CATEGORIES[entry.primaryCategory].locationMode;
         return (
-          entryMatchesLocation(
+          catalogEntryMatchesLocation(
             entry.data,
             input.location,
             entry.primaryCategory,

@@ -1,7 +1,9 @@
 /**
- * Preview-only catalog seed for the isolated dating-services database branch.
- * Names from the design references are fixtures, not production endorsements.
- * Replace or verify every editorial entry before using this seed in production.
+ * Catalog seed for editor-discovered and first-party listings.
+ *
+ * The default is production-safe: it excludes invented golden-design fixtures
+ * while keeping real, unclaimed providers and products. Pass
+ * `--include-preview-fixtures` only for isolated visual-development databases.
  */
 import { db } from "@/server/db";
 import { catalogEntryTable, type CatalogEntryInsert } from "@/server/db/schema";
@@ -577,7 +579,19 @@ const entries: CatalogEntryInsert[] = [
   ),
 ];
 
-for (const entry of entries) {
+const includePreviewFixtures = process.argv.includes(
+  "--include-preview-fixtures",
+);
+const entriesToSeed = includePreviewFixtures
+  ? entries
+  : entries.filter(
+      (entry) =>
+        !entry.data.sourceRefs?.some((source) =>
+          source.key.startsWith("golden-fixture-"),
+        ),
+    );
+
+for (const entry of entriesToSeed) {
   await db
     .insert(catalogEntryTable)
     .values(entry)
@@ -598,4 +612,8 @@ for (const entry of entries) {
     });
 }
 
-console.log(`Seeded ${entries.length} dating-services preview listings.`);
+console.log(
+  `Seeded ${entriesToSeed.length} dating-services listings${
+    includePreviewFixtures ? " including preview fixtures" : ""
+  }.`,
+);

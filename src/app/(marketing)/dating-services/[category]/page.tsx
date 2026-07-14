@@ -1,5 +1,7 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 import { ArrowLeft, Globe2, MapPin } from "lucide-react";
 
 import { CatalogRequestDialog } from "@/components/catalog/catalog-dialogs";
@@ -12,12 +14,50 @@ import {
   getCatalogCategoryBySlug,
   getCatalogPlaceBySlug,
   isCatalogLocationFilterKey,
+  type CatalogCategoryKey,
+  type CatalogLocationFilterKey,
 } from "@/lib/catalog";
 import { trpcApi } from "@/trpc/server";
 
 interface CategoryPageProps {
   params: Promise<{ category: string }>;
   searchParams: Promise<{ location?: string; remote?: string }>;
+}
+
+const getCategoryEntries = cache(
+  async (
+    category: CatalogCategoryKey,
+    location: CatalogLocationFilterKey | undefined,
+    includeRemote: boolean,
+  ) => {
+    const api = await trpcApi();
+    return api.catalog.list({
+      category,
+      location,
+      includeRemote,
+      tags: [],
+    });
+  },
+);
+
+export async function generateMetadata({
+  params,
+}: Pick<CategoryPageProps, "params">): Promise<Metadata> {
+  const { category: categorySlug } = await params;
+  const category = getCatalogCategoryBySlug(categorySlug);
+  if (!category) return { robots: { index: false, follow: false } };
+
+  const config = CATALOG_CATEGORIES[category];
+  const { totalCount } = await getCategoryEntries(category, undefined, false);
+  return {
+    title: `${config.label} Directory`,
+    description: `${config.description} Browse the editor-curated SwipeStats catalog.`,
+    alternates: { canonical: `/dating-services/${config.slug}` },
+    robots:
+      totalCount > 0
+        ? { index: true, follow: true }
+        : { index: false, follow: true },
+  };
 }
 
 function filterHref({
@@ -62,13 +102,11 @@ export default async function DatingServicesCategoryPage({
     (place) => place.kind === "country" || place.kind === "region",
   );
   const includeRemote = supportsRemote && rawSearchParams.remote === "1";
-  const api = await trpcApi();
-  const { entries, totalCount } = await api.catalog.list({
+  const { entries, totalCount } = await getCategoryEntries(
     category,
     location,
     includeRemote,
-    tags: [],
-  });
+  );
 
   return (
     <main className="min-h-screen bg-white text-gray-900">

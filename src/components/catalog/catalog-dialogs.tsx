@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent, type ReactNode } from "react";
 import { CheckCircle2, Loader2 } from "lucide-react";
+import Link from "next/link";
 import { useMutation } from "@tanstack/react-query";
 
 import { Button } from "@/components/ui/button";
@@ -50,6 +51,18 @@ function Field({
 function formValue(data: FormData, name: string) {
   const value = data.get(name);
   return typeof value === "string" ? value : "";
+}
+
+function CatalogPrivacyNotice() {
+  return (
+    <p className="text-xs leading-5 text-gray-500">
+      We use these details to review and respond to your submission. See our{" "}
+      <Link className="underline hover:text-gray-700" href="/privacy">
+        privacy policy
+      </Link>
+      .
+    </p>
+  );
 }
 
 const locationGroupLabels: Record<CatalogPlaceKind, string> = {
@@ -230,6 +243,8 @@ export function CatalogRequestDialog({
                 verified providers. My contact details remain private.
               </label>
             </div>
+
+            <CatalogPrivacyNotice />
 
             <DialogFooter className="border-t border-gray-100 px-0 pb-0">
               <Button
@@ -426,6 +441,8 @@ export function CatalogSubmissionDialog({ trigger }: { trigger?: ReactNode }) {
               </div>
             </div>
 
+            <CatalogPrivacyNotice />
+
             <DialogFooter className="border-t border-gray-100 px-0 pb-0">
               <Button
                 type="button"
@@ -532,6 +549,7 @@ export function CatalogClaimDialog({
                 <Textarea name="note" className="min-h-24" />
               </Field>
             </div>
+            <CatalogPrivacyNotice />
             <DialogFooter className="border-t border-gray-100 px-0 pb-0">
               <Button
                 type="button"

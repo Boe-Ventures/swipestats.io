@@ -1,5 +1,7 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 import {
   ArrowUpRight,
   Bot,
@@ -28,10 +30,30 @@ interface ListingPageProps {
   params: Promise<{ slug: string }>;
 }
 
+const getCatalogEntry = cache(async (slug: string) => {
+  const api = await trpcApi();
+  return api.catalog.bySlug({ slug }).catch(() => null);
+});
+
+export async function generateMetadata({
+  params,
+}: ListingPageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const entry = await getCatalogEntry(slug);
+  if (!entry) return { robots: { index: false, follow: false } };
+
+  const category = CATALOG_CATEGORIES[entry.primaryCategory];
+  return {
+    title: `${entry.name} — ${category.label}`,
+    description: entry.data.editorialSummary,
+    alternates: { canonical: `/dating-services/listing/${entry.slug}` },
+  };
+}
+
 export default async function CatalogListingPage({ params }: ListingPageProps) {
   const { slug } = await params;
-  const api = await trpcApi();
-  const entry = await api.catalog.bySlug({ slug }).catch(() => notFound());
+  const entry = await getCatalogEntry(slug);
+  if (!entry) notFound();
   const category = CATALOG_CATEGORIES[entry.primaryCategory];
   const affiliate = entry.data.links?.some((link) => link.type === "affiliate");
   const primaryLink =

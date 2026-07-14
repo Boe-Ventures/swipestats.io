@@ -3,6 +3,8 @@ import { describe, expect, test } from "bun:test";
 import {
   CATALOG_CATEGORIES,
   CATALOG_PLACES,
+  catalogEntryBelongsToCategory,
+  catalogEntryMatchesLocation,
   getCatalogCategoryKeysBySection,
   getCatalogLocationBreadcrumb,
   getCatalogRelatedPlaceIds,
@@ -81,5 +83,46 @@ describe("catalog category configuration", () => {
     expect(CATALOG_CATEGORIES.profile_feedback.locationMode).toBe("global");
     expect(CATALOG_CATEGORIES.ai_photo_generation.locationMode).toBe("global");
     expect(CATALOG_CATEGORIES.messaging_assistant.locationMode).toBe("global");
+  });
+
+  test("shares hierarchical location matching across catalog consumers", () => {
+    expect(
+      catalogEntryMatchesLocation(
+        {
+          entityTypes: ["organization"],
+          displayStyle: "organization",
+          editorialSummary: "Oslo provider",
+          serviceAreaIds: ["oslo-no"],
+        },
+        "norway",
+        "dating_coach",
+      ),
+    ).toBe(true);
+    expect(
+      catalogEntryMatchesLocation(
+        {
+          entityTypes: ["app"],
+          displayStyle: "product",
+          editorialSummary: "Global tool",
+        },
+        "norway",
+        "profile_feedback",
+      ),
+    ).toBe(false);
+  });
+
+  test("includes a listing in its secondary JSONB categories", () => {
+    expect(
+      catalogEntryBelongsToCategory(
+        "dating_coach",
+        {
+          entityTypes: ["person", "organization"],
+          displayStyle: "person",
+          editorialSummary: "Coach and matchmaker",
+          categories: ["dating_coach", "matchmaker"],
+        },
+        "matchmaker",
+      ),
+    ).toBe(true);
   });
 });

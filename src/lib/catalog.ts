@@ -501,6 +501,47 @@ export interface CatalogSubmissionData {
   remote?: boolean;
 }
 
+export function catalogEntryMatchesLocation(
+  data: CatalogEntryData,
+  location: CatalogLocationFilterKey,
+  category: CatalogCategoryKey,
+) {
+  const relatedPlaceIds = getCatalogRelatedPlaceIds(location);
+  const locationMode = CATALOG_CATEGORIES[category].locationMode;
+  if (locationMode === "service_area") {
+    return (
+      data.serviceAreaIds?.some((placeId) =>
+        relatedPlaceIds.includes(placeId),
+      ) === true
+    );
+  }
+  if (locationMode === "market_signal") {
+    return (
+      data.marketSignals?.some((signal) =>
+        relatedPlaceIds.includes(signal.placeId),
+      ) === true
+    );
+  }
+  return false;
+}
+
+export function getCatalogEntryCategoryKeys(
+  primaryCategory: CatalogCategoryKey,
+  data: CatalogEntryData,
+) {
+  return Array.from(
+    new Set<CatalogCategoryKey>([primaryCategory, ...(data.categories ?? [])]),
+  );
+}
+
+export function catalogEntryBelongsToCategory(
+  primaryCategory: CatalogCategoryKey,
+  data: CatalogEntryData,
+  category: CatalogCategoryKey,
+) {
+  return getCatalogEntryCategoryKeys(primaryCategory, data).includes(category);
+}
+
 export function formatCatalogTag(tag: string) {
   return tag.replaceAll("_", " ");
 }

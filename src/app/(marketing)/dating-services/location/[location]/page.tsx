@@ -1,5 +1,7 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { cache } from "react";
 import { ArrowLeft, Globe2, MapPin } from "lucide-react";
 
 import { CatalogEntryCard } from "@/components/catalog/catalog-entry-card";
@@ -19,6 +21,34 @@ import { trpcApi } from "@/trpc/server";
 interface LocationPageProps {
   params: Promise<{ location: string }>;
   searchParams: Promise<{ remote?: string }>;
+}
+
+const getLocationEntries = cache(
+  async (location: CatalogLocationFilterKey, includeRemote: boolean) => {
+    const api = await trpcApi();
+    return api.catalog.byLocation({ location, includeRemote });
+  },
+);
+
+export async function generateMetadata({
+  params,
+}: Pick<LocationPageProps, "params">): Promise<Metadata> {
+  const { location } = await params;
+  if (!isCatalogLocationFilterKey(location)) {
+    return { robots: { index: false, follow: false } };
+  }
+
+  const place = getCatalogPlaceBySlug(location);
+  const { totalCount } = await getLocationEntries(location, false);
+  return {
+    title: `Dating Services in ${place.name}`,
+    description: `Browse SwipeStats-curated dating coaches, photographers, matchmakers, and local dating-app market notes for ${place.name}.`,
+    alternates: { canonical: `/dating-services/location/${place.slug}` },
+    robots:
+      totalCount > 0
+        ? { index: true, follow: true }
+        : { index: false, follow: true },
+  };
 }
 
 function locationHref(location: CatalogLocationFilterKey, remote: boolean) {
@@ -47,11 +77,10 @@ export default async function DatingServicesLocationPage({
   const broaderAreas = CATALOG_PLACE_OPTIONS.filter(
     (place) => place.kind === "country" || place.kind === "region",
   );
-  const api = await trpcApi();
-  const { entries, totalCount } = await api.catalog.byLocation({
+  const { entries, totalCount } = await getLocationEntries(
     location,
     includeRemote,
-  });
+  );
   const groupedEntries = CATALOG_CATEGORY_KEYS.map((category) => ({
     category,
     entries: entries.filter((entry) => entry.primaryCategory === category),

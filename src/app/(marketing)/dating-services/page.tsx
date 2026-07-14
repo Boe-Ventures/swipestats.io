@@ -34,6 +34,7 @@ export const metadata: Metadata = {
   title: "Dating Services Directory",
   description:
     "Find dating coaches, photographers, matchmakers, dating apps, profile feedback, and digital dating tools curated by SwipeStats.",
+  alternates: { canonical: "/dating-services" },
 };
 
 const categoryIcons: Record<CatalogCategoryKey, LucideIcon> = {

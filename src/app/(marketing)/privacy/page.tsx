@@ -21,7 +21,7 @@ export default function PrivacyPage() {
             Privacy Policy
           </h1>
           <p className="mt-4 text-base leading-7 text-slate-600">
-            Last updated February 2026
+            Last updated July 2026
           </p>
         </div>
       </div>
@@ -85,6 +85,14 @@ export default function PrivacyPage() {
         <p>
           <strong>Account info:</strong> Your email address, password (stored
           encrypted), and username.
+        </p>
+
+        <p>
+          <strong>Catalog interactions:</strong> If you request help, submit a
+          provider or product, or claim a listing, we collect the contact and
+          professional details you provide. These may include your email,
+          location, budget, timeline, website, relationship to a listing, and
+          the description of what you need.
         </p>
 
         <p>
@@ -195,6 +203,11 @@ export default function PrivacyPage() {
           <li>
             <strong>LemonSqueezy:</strong> Payment transaction confirmations
           </li>
+          <li>
+            <strong>Public professional sources:</strong> Provider names,
+            websites, professional social profiles, service areas, and other
+            business information used to create editor-curated catalog entries
+          </li>
         </ul>
 
         <h3>What if I don&apos;t want to provide information?</h3>
@@ -247,6 +260,17 @@ export default function PrivacyPage() {
             <tr>
               <td>Manage your account</td>
               <td>Contract performance (Art. 6(1)(b))</td>
+            </tr>
+            <tr>
+              <td>Review catalog requests, submissions, and listing claims</td>
+              <td>
+                Steps you request and our legitimate interest in operating the
+                directory (Art. 6(1)(b) and Art. 6(1)(f))
+              </td>
+            </tr>
+            <tr>
+              <td>Publish and maintain professional provider listings</td>
+              <td>Legitimate interest (Art. 6(1)(f))</td>
             </tr>
             <tr>
               <td>Process payments</td>
@@ -391,6 +415,16 @@ export default function PrivacyPage() {
           </tbody>
         </table>
 
+        <h3>Catalog providers</h3>
+        <p>
+          Help requests are private by default. We do not share your contact
+          details with a listed provider merely because you submit a request. If
+          you opt in to provider matching, we may share an anonymized version of
+          your request with relevant verified providers. We will not share your
+          contact details without telling you and obtaining the necessary
+          permission.
+        </p>
+
         <h3>Do you sell my personal data?</h3>
         <p>
           <strong>No.</strong> We do not sell your personal data as defined by
@@ -471,6 +505,13 @@ export default function PrivacyPage() {
             <tr>
               <td>Support communications</td>
               <td>As long as necessary for business purposes</td>
+            </tr>
+            <tr>
+              <td>Catalog requests, submissions, and listing claims</td>
+              <td>
+                As long as necessary to review, respond, prevent abuse, and
+                maintain reasonable business or legal records
+              </td>
             </tr>
             <tr>
               <td>Anonymized research data</td>
@@ -680,12 +721,12 @@ export default function PrivacyPage() {
         <ul>
           <li>
             Anytime via{" "}
-            <SmartLink href="/cookies">Cookie preferences</SmartLink> — change or
-            withdraw any category.
+            <SmartLink href="/cookies">Cookie preferences</SmartLink> — change
+            or withdraw any category.
           </li>
           <li>
-            Through your browser settings — most browsers let you block or delete
-            cookies.
+            Through your browser settings — most browsers let you block or
+            delete cookies.
           </li>
         </ul>
 
