@@ -72,6 +72,31 @@ const entries: CatalogEntryInsert[] = [
     },
   },
   {
+    slug: "date-med-pia",
+    name: "Date med Pia",
+    primaryCategory: "dating_coach",
+    status: "PUBLISHED",
+    verificationStatus: "UNVERIFIED",
+    remote: false,
+    locationKeys: ["oslo"],
+    data: {
+      entityTypes: ["person", "organization"],
+      displayStyle: "organization",
+      descriptor: "Dating guidance · Oslo",
+      editorialSummary:
+        "An Oslo-based dating guidance account. This initial listing stays intentionally minimal until its services and availability are confirmed.",
+      tags: ["dating_strategy", "norway"],
+      links: [
+        {
+          type: "instagram",
+          url: "https://www.instagram.com/datemedpia/",
+          label: "@datemedpia",
+        },
+      ],
+      sourceRefs: [{ namespace: "instagram", key: "datemedpia" }],
+    },
+  },
+  {
     slug: "elena-marks-coaching",
     name: "Elena Marks",
     primaryCategory: "dating_coach",

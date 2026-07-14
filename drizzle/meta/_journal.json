@@ -61,22 +61,8 @@
     {
       "idx": 8,
       "version": "7",
-      "when": 1784029130091,
-      "tag": "0008_smiling_the_fury",
-      "breakpoints": true
-    },
-    {
-      "idx": 9,
-      "version": "7",
-      "when": 1784033990691,
-      "tag": "0009_zippy_gwen_stacy",
-      "breakpoints": true
-    },
-    {
-      "idx": 10,
-      "version": "7",
-      "when": 1784035717430,
-      "tag": "0010_wandering_johnny_storm",
+      "when": 1784038669506,
+      "tag": "0008_sudden_blob",
       "breakpoints": true
     }
   ]

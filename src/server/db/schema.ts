@@ -25,9 +25,9 @@ import type {
 import type { ProfileRoastLensKey } from "@/lib/ai/profile-roast-lenses";
 import type {
   CatalogCategoryKey,
-  CatalogCityKey,
   CatalogClaimEvidence,
   CatalogEntryData,
+  CatalogLocationFilterKey,
   CatalogRequestData,
   CatalogSubmissionData,
 } from "@/lib/catalog";
@@ -1051,13 +1051,13 @@ export const catalogEntryTable = pgTable(
     locationKeys: t
       .text()
       .array()
-      .$type<CatalogCityKey[]>()
+      .$type<CatalogLocationFilterKey[]>()
       .default([])
       .notNull(),
     marketKeys: t
       .text()
       .array()
-      .$type<CatalogCityKey[]>()
+      .$type<CatalogLocationFilterKey[]>()
       .default([])
       .notNull(),
     data: t.jsonb().$type<CatalogEntryData>().notNull(),

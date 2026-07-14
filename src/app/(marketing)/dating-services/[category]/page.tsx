@@ -8,13 +8,13 @@ import { Button, ButtonLink } from "@/components/ui/button";
 import { cn } from "@/components/ui/lib/utils";
 import {
   CATALOG_CATEGORIES,
+  CATALOG_BROAD_LOCATION_KEYS,
   CATALOG_CITIES,
   CATALOG_CITY_KEYS,
   CATALOG_LOCATION_FILTER_KEYS,
-  CATALOG_REGIONS,
-  CATALOG_REGION_KEYS,
   getCatalogCategoryBySlug,
   getCatalogLocationLabel,
+  getCatalogLocationShortLabel,
   type CatalogLocationFilterKey,
 } from "@/lib/catalog";
 import { trpcApi } from "@/trpc/server";
@@ -133,7 +133,7 @@ export default async function DatingServicesCategoryPage({
                 {CATALOG_CITIES[key].shortLabel}
               </Link>
             ))}
-            {CATALOG_REGION_KEYS.map((key) => (
+            {CATALOG_BROAD_LOCATION_KEYS.map((key) => (
               <Link
                 key={key}
                 href={filterHref({
@@ -148,7 +148,7 @@ export default async function DatingServicesCategoryPage({
                     : "border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300",
                 )}
               >
-                {CATALOG_REGIONS[key].label}
+                {getCatalogLocationShortLabel(key)}
               </Link>
             ))}
             {supportsRemote && (

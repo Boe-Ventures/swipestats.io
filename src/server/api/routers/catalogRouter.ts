@@ -60,10 +60,10 @@ export const catalogRouter = {
       ];
 
       if (input.location) {
-        const cityKeys = expandCatalogLocation(input.location);
+        const locationKeys = expandCatalogLocation(input.location);
         const locationCondition = or(
-          arrayOverlaps(catalogEntryTable.locationKeys, cityKeys),
-          arrayOverlaps(catalogEntryTable.marketKeys, cityKeys),
+          arrayOverlaps(catalogEntryTable.locationKeys, locationKeys),
+          arrayOverlaps(catalogEntryTable.marketKeys, locationKeys),
         )!;
         conditions.push(
           input.includeRemote
@@ -111,10 +111,10 @@ export const catalogRouter = {
       }),
     )
     .query(async ({ ctx, input }) => {
-      const cityKeys = expandCatalogLocation(input.location);
+      const locationKeys = expandCatalogLocation(input.location);
       const localOrRelevant = or(
-        arrayOverlaps(catalogEntryTable.locationKeys, cityKeys),
-        arrayOverlaps(catalogEntryTable.marketKeys, cityKeys),
+        arrayOverlaps(catalogEntryTable.locationKeys, locationKeys),
+        arrayOverlaps(catalogEntryTable.marketKeys, locationKeys),
       )!;
       const availability = input.includeRemote
         ? or(

@@ -22,8 +22,12 @@ import {
   CATALOG_CATEGORY_KEYS,
   CATALOG_CITIES,
   CATALOG_CITY_KEYS,
+  CATALOG_COUNTRIES,
+  CATALOG_COUNTRY_KEYS,
   CATALOG_REGION_KEYS,
   CATALOG_REGIONS,
+  CATALOG_STATE_KEYS,
+  CATALOG_STATES,
   type CatalogCategoryKey,
   type CatalogLocationFilterKey,
 } from "@/lib/catalog";
@@ -161,6 +165,20 @@ export function CatalogRequestDialog({
                     {CATALOG_CITY_KEYS.map((key) => (
                       <option key={key} value={key}>
                         {CATALOG_CITIES[key].label}
+                      </option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="States">
+                    {CATALOG_STATE_KEYS.map((key) => (
+                      <option key={key} value={key}>
+                        {CATALOG_STATES[key].label}
+                      </option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Countries">
+                    {CATALOG_COUNTRY_KEYS.map((key) => (
+                      <option key={key} value={key}>
+                        {CATALOG_COUNTRIES[key].label}
                       </option>
                     ))}
                   </optgroup>
@@ -354,6 +372,20 @@ export function CatalogSubmissionDialog({ trigger }: { trigger?: ReactNode }) {
                     {CATALOG_CITY_KEYS.map((key) => (
                       <option key={key} value={key}>
                         {CATALOG_CITIES[key].label}
+                      </option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="States">
+                    {CATALOG_STATE_KEYS.map((key) => (
+                      <option key={key} value={key}>
+                        {CATALOG_STATES[key].label}
+                      </option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Countries">
+                    {CATALOG_COUNTRY_KEYS.map((key) => (
+                      <option key={key} value={key}>
+                        {CATALOG_COUNTRIES[key].label}
                       </option>
                     ))}
                   </optgroup>

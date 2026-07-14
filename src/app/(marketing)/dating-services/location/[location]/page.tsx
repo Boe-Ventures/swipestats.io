@@ -8,12 +8,13 @@ import { cn } from "@/components/ui/lib/utils";
 import {
   CATALOG_CATEGORIES,
   CATALOG_CATEGORY_KEYS,
+  CATALOG_BROAD_LOCATION_KEYS,
   CATALOG_CITIES,
   CATALOG_CITY_KEYS,
   CATALOG_LOCATION_FILTER_KEYS,
-  CATALOG_REGIONS,
-  CATALOG_REGION_KEYS,
+  getCatalogLocationBreadcrumb,
   getCatalogLocationLabel,
+  getCatalogLocationShortLabel,
   type CatalogLocationFilterKey,
 } from "@/lib/catalog";
 import { trpcApi } from "@/trpc/server";
@@ -46,6 +47,7 @@ export default async function DatingServicesLocationPage({
   const location = rawLocation as CatalogLocationFilterKey;
   const includeRemote = rawSearchParams.remote === "1";
   const locationLabel = getCatalogLocationLabel(location);
+  const breadcrumb = getCatalogLocationBreadcrumb(location);
   const api = await trpcApi();
   const { entries, totalCount } = await api.catalog.byLocation({
     location,
@@ -64,8 +66,23 @@ export default async function DatingServicesLocationPage({
             <Link href="/dating-services" className="hover:text-rose-600">
               Services
             </Link>
-            <span>/</span>
-            <span className="text-gray-800">{locationLabel}</span>
+            {breadcrumb.map((key) => (
+              <span key={key} className="flex items-center gap-2">
+                <span>/</span>
+                {key === location ? (
+                  <span className="text-gray-800">
+                    {getCatalogLocationShortLabel(key)}
+                  </span>
+                ) : (
+                  <Link
+                    href={locationHref(key, includeRemote)}
+                    className="hover:text-rose-600"
+                  >
+                    {getCatalogLocationShortLabel(key)}
+                  </Link>
+                )}
+              </span>
+            ))}
           </nav>
 
           <div className="mt-8 flex flex-wrap items-end justify-between gap-6">
@@ -105,7 +122,7 @@ export default async function DatingServicesLocationPage({
                 {CATALOG_CITIES[key].shortLabel}
               </Link>
             ))}
-            {CATALOG_REGION_KEYS.map((key) => (
+            {CATALOG_BROAD_LOCATION_KEYS.map((key) => (
               <Link
                 key={key}
                 href={locationHref(key, includeRemote)}
@@ -116,7 +133,7 @@ export default async function DatingServicesLocationPage({
                     : "border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300",
                 )}
               >
-                {CATALOG_REGIONS[key].label}
+                {getCatalogLocationShortLabel(key)}
               </Link>
             ))}
             <Link

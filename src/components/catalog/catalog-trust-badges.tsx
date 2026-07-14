@@ -2,14 +2,12 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/components/ui/lib/utils";
 
 export function CatalogTrustBadges({
-  claimed,
   verified,
   featured,
   editorialPick,
   affiliate,
   className,
 }: {
-  claimed?: boolean;
   verified?: boolean;
   featured?: boolean;
   editorialPick?: boolean;
@@ -33,25 +31,12 @@ export function CatalogTrustBadges({
           Verified
         </Badge>
       )}
-      {claimed && (
-        <Badge className="border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-50">
-          Claimed
-        </Badge>
-      )}
       {affiliate && (
         <Badge
           variant="outline"
           className="border-gray-300 bg-gray-50 text-gray-600"
         >
           Affiliate link
-        </Badge>
-      )}
-      {!claimed && (
-        <Badge
-          variant="outline"
-          className="border-dashed border-gray-300 bg-white text-gray-500"
-        >
-          Unclaimed
         </Badge>
       )}
     </div>

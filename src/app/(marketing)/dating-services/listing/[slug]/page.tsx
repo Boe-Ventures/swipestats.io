@@ -19,8 +19,9 @@ import { Panel } from "@/components/golden";
 import { Button } from "@/components/ui/button";
 import {
   CATALOG_CATEGORIES,
-  CATALOG_CITIES,
   formatCatalogTag,
+  getCatalogLocationLabel,
+  getCatalogLocationShortLabel,
 } from "@/lib/catalog";
 import { trpcApi } from "@/trpc/server";
 
@@ -104,7 +105,7 @@ export default async function CatalogListingPage({ params }: ListingPageProps) {
                 {entry.locationKeys.map((key) => (
                   <span key={key} className="inline-flex items-center gap-1.5">
                     <MapPin className="h-4 w-4" />
-                    {CATALOG_CITIES[key].label}
+                    {getCatalogLocationLabel(key)}
                   </span>
                 ))}
                 {entry.remote && entry.primaryCategory !== "dating_app" && (
@@ -116,7 +117,6 @@ export default async function CatalogListingPage({ params }: ListingPageProps) {
               </div>
               <CatalogTrustBadges
                 className="mt-5"
-                claimed={!!entry.claimedAt}
                 verified={entry.verificationStatus === "VERIFIED"}
                 featured={entry.featured}
                 editorialPick={entry.editorialPick}
@@ -157,7 +157,7 @@ export default async function CatalogListingPage({ params }: ListingPageProps) {
                     className="rounded-xl border border-violet-100 bg-violet-50/40 p-4"
                   >
                     <div className="font-semibold text-gray-900">
-                      {CATALOG_CITIES[signal.locationKey].shortLabel}
+                      {getCatalogLocationShortLabel(signal.locationKey)}
                     </div>
                     <div className="mt-1 font-mono text-[11px] text-violet-700 uppercase">
                       {formatCatalogTag(signal.strength)}

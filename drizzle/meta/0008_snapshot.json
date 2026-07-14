@@ -1,5 +1,5 @@
 {
-  "id": "e100b253-b02b-4591-ae83-8b8bd4ce72e0",
+  "id": "3e9f777c-a764-4e03-8526-0193b81fe6be",
   "prevId": "458607e6-cd9d-44d6-8e03-d3a23a513dbb",
   "version": "7",
   "dialect": "postgresql",
@@ -993,6 +993,13 @@
           "notNull": true,
           "default": "'{}'"
         },
+        "market_keys": {
+          "name": "market_keys",
+          "type": "text[]",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'{}'"
+        },
         "data": {
           "name": "data",
           "type": "jsonb",
@@ -1066,6 +1073,21 @@
           "columns": [
             {
               "expression": "location_keys",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "gin",
+          "with": {}
+        },
+        "catalog_entry_market_keys_idx": {
+          "name": "catalog_entry_market_keys_idx",
+          "columns": [
+            {
+              "expression": "market_keys",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1248,6 +1270,126 @@
           "value": "\"catalog_request\".\"requester_user_id\" is not null or \"catalog_request\".\"contact_email\" is not null"
         }
       },
+      "isRLSEnabled": false
+    },
+    "public.catalog_submission": {
+      "name": "catalog_submission",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "text",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "submitter_user_id": {
+          "name": "submitter_user_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contact_email": {
+          "name": "contact_email",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "category": {
+          "name": "category",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "catalog_submission_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'PENDING'"
+        },
+        "data": {
+          "name": "data",
+          "type": "jsonb",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true
+        }
+      },
+      "indexes": {
+        "catalog_submission_status_category_idx": {
+          "name": "catalog_submission_status_category_idx",
+          "columns": [
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "category",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "catalog_submission_contact_idx": {
+          "name": "catalog_submission_contact_idx",
+          "columns": [
+            {
+              "expression": "contact_email",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "catalog_submission_submitter_user_id_user_id_fk": {
+          "name": "catalog_submission_submitter_user_id_user_id_fk",
+          "tableFrom": "catalog_submission",
+          "tableTo": "user",
+          "columnsFrom": [
+            "submitter_user_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
       "isRLSEnabled": false
     },
     "public.cohort_definition": {
@@ -5935,6 +6077,16 @@
         "PRIVATE",
         "INVITED",
         "BROADCAST"
+      ]
+    },
+    "public.catalog_submission_status": {
+      "name": "catalog_submission_status",
+      "schema": "public",
+      "values": [
+        "PENDING",
+        "APPROVED",
+        "REJECTED",
+        "WITHDRAWN"
       ]
     },
     "public.catalog_verification_status": {

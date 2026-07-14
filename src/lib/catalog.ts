@@ -100,13 +100,42 @@ export const CATALOG_CITY_KEYS = [
 
 export type CatalogCityKey = (typeof CATALOG_CITY_KEYS)[number];
 
-export const CATALOG_REGION_KEYS = ["scandinavia", "europe"] as const;
+export const CATALOG_STATE_KEYS = [
+  "new-york-state",
+  "california",
+  "florida",
+] as const;
+export type CatalogStateKey = (typeof CATALOG_STATE_KEYS)[number];
+
+export const CATALOG_COUNTRY_KEYS = [
+  "united-states",
+  "norway",
+  "germany",
+] as const;
+export type CatalogCountryKey = (typeof CATALOG_COUNTRY_KEYS)[number];
+
+export const CATALOG_REGION_KEYS = [
+  "north-america",
+  "scandinavia",
+  "europe",
+] as const;
 export type CatalogRegionKey = (typeof CATALOG_REGION_KEYS)[number];
 export const CATALOG_LOCATION_FILTER_KEYS = [
   ...CATALOG_CITY_KEYS,
+  ...CATALOG_STATE_KEYS,
+  ...CATALOG_COUNTRY_KEYS,
   ...CATALOG_REGION_KEYS,
 ] as const;
-export type CatalogLocationFilterKey = CatalogCityKey | CatalogRegionKey;
+export type CatalogLocationFilterKey =
+  | CatalogCityKey
+  | CatalogStateKey
+  | CatalogCountryKey
+  | CatalogRegionKey;
+
+export const CATALOG_BROAD_LOCATION_KEYS = [
+  ...CATALOG_COUNTRY_KEYS,
+  ...CATALOG_REGION_KEYS,
+] as const satisfies readonly CatalogLocationFilterKey[];
 
 export const CATALOG_MARKET_STRENGTHS = [
   "leader",
@@ -121,70 +150,230 @@ export const CATALOG_CITIES: Record<
   {
     label: string;
     shortLabel: string;
-    country: string;
-    regionKeys: CatalogRegionKey[];
+    countryKey: CatalogCountryKey;
+    stateKey?: CatalogStateKey;
   }
 > = {
   "new-york": {
     label: "New York, NY",
     shortLabel: "New York",
-    country: "United States",
-    regionKeys: [],
+    countryKey: "united-states",
+    stateKey: "new-york-state",
   },
   "los-angeles": {
     label: "Los Angeles, CA",
     shortLabel: "Los Angeles",
-    country: "United States",
-    regionKeys: [],
+    countryKey: "united-states",
+    stateKey: "california",
   },
   "san-francisco": {
     label: "San Francisco, CA",
     shortLabel: "San Francisco",
-    country: "United States",
-    regionKeys: [],
+    countryKey: "united-states",
+    stateKey: "california",
   },
   miami: {
     label: "Miami, FL",
     shortLabel: "Miami",
-    country: "United States",
-    regionKeys: [],
+    countryKey: "united-states",
+    stateKey: "florida",
   },
   oslo: {
     label: "Oslo, Norway",
     shortLabel: "Oslo",
-    country: "Norway",
-    regionKeys: ["scandinavia", "europe"],
+    countryKey: "norway",
   },
   berlin: {
     label: "Berlin, Germany",
     shortLabel: "Berlin",
-    country: "Germany",
+    countryKey: "germany",
+  },
+};
+
+export const CATALOG_STATES: Record<
+  CatalogStateKey,
+  {
+    label: string;
+    shortLabel: string;
+    countryKey: CatalogCountryKey;
+    cityKeys: CatalogCityKey[];
+  }
+> = {
+  "new-york-state": {
+    label: "New York State",
+    shortLabel: "New York State",
+    countryKey: "united-states",
+    cityKeys: ["new-york"],
+  },
+  california: {
+    label: "California",
+    shortLabel: "California",
+    countryKey: "united-states",
+    cityKeys: ["los-angeles", "san-francisco"],
+  },
+  florida: {
+    label: "Florida",
+    shortLabel: "Florida",
+    countryKey: "united-states",
+    cityKeys: ["miami"],
+  },
+};
+
+export const CATALOG_COUNTRIES: Record<
+  CatalogCountryKey,
+  {
+    label: string;
+    shortLabel: string;
+    cityKeys: CatalogCityKey[];
+    regionKeys: CatalogRegionKey[];
+  }
+> = {
+  "united-states": {
+    label: "United States",
+    shortLabel: "United States",
+    cityKeys: ["new-york", "los-angeles", "san-francisco", "miami"],
+    regionKeys: ["north-america"],
+  },
+  norway: {
+    label: "Norway",
+    shortLabel: "Norway",
+    cityKeys: ["oslo"],
+    regionKeys: ["scandinavia", "europe"],
+  },
+  germany: {
+    label: "Germany",
+    shortLabel: "Germany",
+    cityKeys: ["berlin"],
     regionKeys: ["europe"],
   },
 };
 
 export const CATALOG_REGIONS: Record<
   CatalogRegionKey,
-  { label: string; cityKeys: CatalogCityKey[] }
+  {
+    label: string;
+    shortLabel: string;
+    countryKeys: CatalogCountryKey[];
+  }
 > = {
-  scandinavia: { label: "Scandinavia", cityKeys: ["oslo"] },
-  europe: { label: "Europe", cityKeys: ["oslo", "berlin"] },
+  "north-america": {
+    label: "North America",
+    shortLabel: "North America",
+    countryKeys: ["united-states"],
+  },
+  scandinavia: {
+    label: "Scandinavia",
+    shortLabel: "Scandinavia",
+    countryKeys: ["norway"],
+  },
+  europe: {
+    label: "Europe",
+    shortLabel: "Europe",
+    countryKeys: ["norway", "germany"],
+  },
 };
 
 export function expandCatalogLocation(
   location: CatalogLocationFilterKey,
-): CatalogCityKey[] {
-  if (location in CATALOG_REGIONS) {
-    return CATALOG_REGIONS[location as CatalogRegionKey].cityKeys;
+): CatalogLocationFilterKey[] {
+  let cityKeys: CatalogCityKey[];
+
+  if (location in CATALOG_CITIES) {
+    cityKeys = [location as CatalogCityKey];
+  } else if (location in CATALOG_STATES) {
+    cityKeys = CATALOG_STATES[location as CatalogStateKey].cityKeys;
+  } else if (location in CATALOG_COUNTRIES) {
+    cityKeys = CATALOG_COUNTRIES[location as CatalogCountryKey].cityKeys;
+  } else {
+    cityKeys = CATALOG_REGIONS[
+      location as CatalogRegionKey
+    ].countryKeys.flatMap(
+      (countryKey) => CATALOG_COUNTRIES[countryKey].cityKeys,
+    );
   }
-  return [location as CatalogCityKey];
+
+  const relatedKeys = new Set<CatalogLocationFilterKey>([location]);
+  for (const cityKey of cityKeys) {
+    const city = CATALOG_CITIES[cityKey];
+    relatedKeys.add(cityKey);
+    if (city.stateKey) relatedKeys.add(city.stateKey);
+    relatedKeys.add(city.countryKey);
+    for (const regionKey of CATALOG_COUNTRIES[city.countryKey].regionKeys) {
+      relatedKeys.add(regionKey);
+    }
+  }
+
+  return [...relatedKeys];
 }
 
 export function getCatalogLocationLabel(location: CatalogLocationFilterKey) {
-  if (location in CATALOG_REGIONS) {
-    return CATALOG_REGIONS[location as CatalogRegionKey].label;
+  if (location in CATALOG_CITIES) {
+    return CATALOG_CITIES[location as CatalogCityKey].label;
   }
-  return CATALOG_CITIES[location as CatalogCityKey].label;
+  if (location in CATALOG_STATES) {
+    return CATALOG_STATES[location as CatalogStateKey].label;
+  }
+  if (location in CATALOG_COUNTRIES) {
+    return CATALOG_COUNTRIES[location as CatalogCountryKey].label;
+  }
+  return CATALOG_REGIONS[location as CatalogRegionKey].label;
+}
+
+export function getCatalogLocationShortLabel(
+  location: CatalogLocationFilterKey,
+) {
+  if (location in CATALOG_CITIES) {
+    return CATALOG_CITIES[location as CatalogCityKey].shortLabel;
+  }
+  if (location in CATALOG_STATES) {
+    return CATALOG_STATES[location as CatalogStateKey].shortLabel;
+  }
+  if (location in CATALOG_COUNTRIES) {
+    return CATALOG_COUNTRIES[location as CatalogCountryKey].shortLabel;
+  }
+  return CATALOG_REGIONS[location as CatalogRegionKey].shortLabel;
+}
+
+export function getCatalogLocationBreadcrumb(
+  location: CatalogLocationFilterKey,
+): CatalogLocationFilterKey[] {
+  if (location in CATALOG_CITIES) {
+    const city = CATALOG_CITIES[location as CatalogCityKey];
+    return [
+      city.countryKey,
+      ...(city.stateKey ? [city.stateKey] : []),
+      location,
+    ];
+  }
+  if (location in CATALOG_STATES) {
+    const state = CATALOG_STATES[location as CatalogStateKey];
+    return [state.countryKey, location];
+  }
+  return [location];
+}
+
+export function isCatalogCityKey(
+  location: CatalogLocationFilterKey,
+): location is CatalogCityKey {
+  return location in CATALOG_CITIES;
+}
+
+export function getCatalogLocationCityKeys(
+  location: CatalogLocationFilterKey,
+): CatalogCityKey[] {
+  if (location in CATALOG_CITIES) return [location as CatalogCityKey];
+  if (location in CATALOG_STATES) {
+    return CATALOG_STATES[location as CatalogStateKey].cityKeys;
+  }
+  if (location in CATALOG_COUNTRIES) {
+    return CATALOG_COUNTRIES[location as CatalogCountryKey].cityKeys;
+  }
+  if (location in CATALOG_REGIONS) {
+    return CATALOG_REGIONS[location as CatalogRegionKey].countryKeys.flatMap(
+      (countryKey) => CATALOG_COUNTRIES[countryKey].cityKeys,
+    );
+  }
+  return [];
 }
 
 export interface CatalogLink {
@@ -201,7 +390,7 @@ export interface CatalogSourceRef {
 }
 
 export interface CatalogMarketSignal {
-  locationKey: CatalogCityKey;
+  locationKey: CatalogLocationFilterKey;
   strength: CatalogMarketStrength;
   note?: string;
   asOf?: string;

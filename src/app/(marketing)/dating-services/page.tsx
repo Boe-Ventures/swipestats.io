@@ -21,8 +21,10 @@ import { Button } from "@/components/ui/button";
 import {
   CATALOG_CATEGORIES,
   CATALOG_CATEGORY_KEYS,
+  CATALOG_BROAD_LOCATION_KEYS,
   CATALOG_CITIES,
   CATALOG_CITY_KEYS,
+  getCatalogLocationShortLabel,
   type CatalogCategoryKey,
 } from "@/lib/catalog";
 import { trpcApi } from "@/trpc/server";
@@ -121,6 +123,20 @@ export default async function DatingServicesPage() {
               </Link>
             ))}
           </div>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className="mr-1 font-mono text-[10px] tracking-[0.08em] text-gray-400 uppercase">
+              Broader areas
+            </span>
+            {CATALOG_BROAD_LOCATION_KEYS.map((key) => (
+              <Link
+                key={key}
+                href={`/dating-services/location/${key}`}
+                className="rounded-full border border-gray-200 bg-gray-50 px-3.5 py-2 font-mono text-[11px] text-gray-600 transition hover:border-rose-300 hover:text-rose-600"
+              >
+                {getCatalogLocationShortLabel(key)}
+              </Link>
+            ))}
+          </div>
         </div>
       </section>
 
@@ -159,13 +175,12 @@ export default async function DatingServicesPage() {
                 Labels mean exactly one thing
               </h2>
               <p className="mt-2 max-w-3xl text-sm leading-6 text-gray-600">
-                Claimed, verified, featured, affiliate, and editorial are
-                separate signals. Paying for placement never implies editorial
-                preference.
+                Verified, featured, affiliate, and editorial are separate
+                signals. Paying for placement never implies editorial
+                preference. Ownership status stays out of the way for now.
               </p>
               <CatalogTrustBadges
                 className="mt-4"
-                claimed
                 verified
                 featured
                 editorialPick

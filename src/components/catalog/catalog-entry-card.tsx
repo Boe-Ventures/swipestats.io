@@ -4,12 +4,11 @@ import { ArrowRight, Globe2, MapPin } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { cn } from "@/components/ui/lib/utils";
 import {
-  CATALOG_CITIES,
   formatCatalogTag,
+  getCatalogLocationShortLabel,
   getCatalogMarketSignal,
   type CatalogCategoryKey,
   type CatalogEntryData,
-  type CatalogCityKey,
   type CatalogLocationFilterKey,
 } from "@/lib/catalog";
 import { CatalogTrustBadges } from "./catalog-trust-badges";
@@ -24,8 +23,8 @@ interface CatalogEntryCardProps {
     featured: boolean;
     editorialPick: boolean;
     remote: boolean;
-    locationKeys: CatalogCityKey[];
-    marketKeys: CatalogCityKey[];
+    locationKeys: CatalogLocationFilterKey[];
+    marketKeys: CatalogLocationFilterKey[];
     data: CatalogEntryData;
   };
   className?: string;
@@ -39,7 +38,7 @@ export function CatalogEntryCard({
 }: CatalogEntryCardProps) {
   const affiliate = entry.data.links?.some((link) => link.type === "affiliate");
   const location = entry.locationKeys[0]
-    ? CATALOG_CITIES[entry.locationKeys[0]].shortLabel
+    ? getCatalogLocationShortLabel(entry.locationKeys[0])
     : null;
   const marketSignal = contextLocation
     ? getCatalogMarketSignal(entry.data, contextLocation)
@@ -55,7 +54,6 @@ export function CatalogEntryCard({
       className={cn(
         "group relative flex min-h-[360px] flex-col rounded-2xl border bg-white p-6 shadow-[0_1px_2px_oklch(0.2_0.02_286/0.05)] transition hover:-translate-y-0.5 hover:shadow-[0_2px_6px_oklch(0.2_0.02_286/0.05),0_12px_28px_oklch(0.2_0.02_286/0.08)]",
         entry.featured ? "border-amber-300" : "border-gray-200",
-        !entry.claimedAt && "border-dashed",
         className,
       )}
     >
@@ -97,7 +95,7 @@ export function CatalogEntryCard({
               <span className="inline-flex items-center gap-1 text-violet-700">
                 <Globe2 className="h-3.5 w-3.5" />
                 {formatCatalogTag(marketSignal.strength)} in{" "}
-                {CATALOG_CITIES[marketSignal.locationKey].shortLabel}
+                {getCatalogLocationShortLabel(marketSignal.locationKey)}
               </span>
             )}
             {!marketSignal &&
@@ -114,7 +112,6 @@ export function CatalogEntryCard({
 
       <CatalogTrustBadges
         className="relative z-10 mt-5"
-        claimed={!!entry.claimedAt}
         verified={entry.verificationStatus === "VERIFIED"}
         featured={entry.featured}
         editorialPick={entry.editorialPick}
@@ -143,11 +140,6 @@ export function CatalogEntryCard({
           {entry.data.priceLabel && (
             <div className="text-sm font-semibold text-gray-900">
               {entry.data.priceLabel}
-            </div>
-          )}
-          {!entry.claimedAt && (
-            <div className="font-mono text-[11px] text-gray-400">
-              Is this you? Claim it
             </div>
           )}
         </div>
