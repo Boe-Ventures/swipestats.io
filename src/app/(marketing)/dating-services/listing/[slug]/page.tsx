@@ -17,12 +17,7 @@ import {
 import { CatalogTrustBadges } from "@/components/catalog/catalog-trust-badges";
 import { Panel } from "@/components/golden";
 import { Button } from "@/components/ui/button";
-import {
-  CATALOG_CATEGORIES,
-  formatCatalogTag,
-  getCatalogLocationLabel,
-  getCatalogLocationShortLabel,
-} from "@/lib/catalog";
+import { CATALOG_CATEGORIES, formatCatalogTag } from "@/lib/catalog";
 import { trpcApi } from "@/trpc/server";
 
 interface ListingPageProps {
@@ -32,7 +27,10 @@ interface ListingPageProps {
 export default async function CatalogListingPage({ params }: ListingPageProps) {
   const { slug } = await params;
   const api = await trpcApi();
-  const entry = await api.catalog.bySlug({ slug }).catch(() => notFound());
+  const [entry, locations] = await Promise.all([
+    api.catalog.bySlug({ slug }).catch(() => notFound()),
+    api.catalog.locations(),
+  ]);
   const category = CATALOG_CATEGORIES[entry.primaryCategory];
   const affiliate = entry.data.links?.some((link) => link.type === "affiliate");
   const primaryLink =
@@ -54,6 +52,12 @@ export default async function CatalogListingPage({ params }: ListingPageProps) {
     .slice(0, 2)
     .map((part) => part[0])
     .join("");
+  const serviceAreas = entry.places.filter(
+    (assignment) => assignment.role === "SERVICE_AREA",
+  );
+  const marketAreas = entry.places.filter(
+    (assignment) => assignment.role === "MARKET",
+  );
 
   return (
     <main className="min-h-screen bg-white text-gray-900">
@@ -102,10 +106,13 @@ export default async function CatalogListingPage({ params }: ListingPageProps) {
                 </p>
               )}
               <div className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm text-gray-500">
-                {entry.locationKeys.map((key) => (
-                  <span key={key} className="inline-flex items-center gap-1.5">
+                {serviceAreas.map((assignment) => (
+                  <span
+                    key={assignment.place.id}
+                    className="inline-flex items-center gap-1.5"
+                  >
                     <MapPin className="h-4 w-4" />
-                    {getCatalogLocationLabel(key)}
+                    {assignment.place.name}
                   </span>
                 ))}
                 {entry.remote && entry.primaryCategory !== "dating_app" && (
@@ -145,27 +152,29 @@ export default async function CatalogListingPage({ params }: ListingPageProps) {
             </section>
           )}
 
-          {entry.data.marketSignals && entry.data.marketSignals.length > 0 && (
+          {marketAreas.length > 0 && (
             <section className="mt-10">
               <div className="font-mono text-[11px] font-medium tracking-[0.09em] text-violet-600 uppercase">
                 Market notes
               </div>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                {entry.data.marketSignals.map((signal) => (
+                {marketAreas.map((assignment) => (
                   <div
-                    key={signal.locationKey}
+                    key={assignment.place.id}
                     className="rounded-xl border border-violet-100 bg-violet-50/40 p-4"
                   >
                     <div className="font-semibold text-gray-900">
-                      {getCatalogLocationShortLabel(signal.locationKey)}
+                      {assignment.place.shortName}
                     </div>
                     <div className="mt-1 font-mono text-[11px] text-violet-700 uppercase">
-                      {formatCatalogTag(signal.strength)}
-                      {signal.asOf ? ` · ${signal.asOf}` : ""}
+                      {formatCatalogTag(
+                        assignment.data.strength ?? "available",
+                      )}
+                      {assignment.data.asOf ? ` · ${assignment.data.asOf}` : ""}
                     </div>
-                    {signal.note && (
+                    {assignment.data.note && (
                       <p className="mt-2 text-sm leading-6 text-gray-600">
-                        {signal.note}
+                        {assignment.data.note}
                       </p>
                     )}
                   </div>
@@ -248,6 +257,7 @@ export default async function CatalogListingPage({ params }: ListingPageProps) {
                 )}
                 <CatalogRequestDialog
                   category={entry.primaryCategory}
+                  locations={locations}
                   targetEntryId={entry.id}
                   targetName={entry.name}
                   trigger={

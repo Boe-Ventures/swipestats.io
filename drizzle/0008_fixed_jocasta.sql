@@ -1,6 +1,8 @@
 CREATE TYPE "public"."catalog_claim_status" AS ENUM('PENDING', 'APPROVED', 'REJECTED', 'WITHDRAWN');--> statement-breakpoint
+CREATE TYPE "public"."catalog_entry_place_role" AS ENUM('SERVICE_AREA', 'MARKET');--> statement-breakpoint
 CREATE TYPE "public"."catalog_entry_status" AS ENUM('DRAFT', 'PUBLISHED', 'ARCHIVED');--> statement-breakpoint
 CREATE TYPE "public"."catalog_member_role" AS ENUM('OWNER', 'EDITOR');--> statement-breakpoint
+CREATE TYPE "public"."catalog_place_kind" AS ENUM('CITY', 'ADMIN_AREA', 'COUNTRY', 'REGION');--> statement-breakpoint
 CREATE TYPE "public"."catalog_request_status" AS ENUM('OPEN', 'MATCHED', 'CLOSED', 'WITHDRAWN');--> statement-breakpoint
 CREATE TYPE "public"."catalog_request_visibility" AS ENUM('PRIVATE', 'INVITED', 'BROADCAST');--> statement-breakpoint
 CREATE TYPE "public"."catalog_submission_status" AS ENUM('PENDING', 'APPROVED', 'REJECTED', 'WITHDRAWN');--> statement-breakpoint
@@ -26,6 +28,16 @@ CREATE TABLE "catalog_entry_member" (
 	CONSTRAINT "catalog_entry_member_entry_id_user_id_pk" PRIMARY KEY("entry_id","user_id")
 );
 --> statement-breakpoint
+CREATE TABLE "catalog_entry_place" (
+	"entry_id" text NOT NULL,
+	"place_id" text NOT NULL,
+	"role" "catalog_entry_place_role" NOT NULL,
+	"data" jsonb DEFAULT '{}'::jsonb NOT NULL,
+	"created_at" timestamp with time zone NOT NULL,
+	"updated_at" timestamp with time zone NOT NULL,
+	CONSTRAINT "catalog_entry_place_entry_id_place_id_role_pk" PRIMARY KEY("entry_id","place_id","role")
+);
+--> statement-breakpoint
 CREATE TABLE "catalog_entry" (
 	"id" text PRIMARY KEY NOT NULL,
 	"slug" text NOT NULL,
@@ -37,12 +49,39 @@ CREATE TABLE "catalog_entry" (
 	"featured" boolean DEFAULT false NOT NULL,
 	"editorial_pick" boolean DEFAULT false NOT NULL,
 	"remote" boolean DEFAULT false NOT NULL,
-	"location_keys" text[] DEFAULT '{}' NOT NULL,
-	"market_keys" text[] DEFAULT '{}' NOT NULL,
 	"data" jsonb NOT NULL,
 	"created_at" timestamp with time zone NOT NULL,
 	"updated_at" timestamp with time zone NOT NULL,
 	CONSTRAINT "catalog_entry_slug_unique" UNIQUE("slug")
+);
+--> statement-breakpoint
+CREATE TABLE "catalog_place_closure" (
+	"ancestor_id" text NOT NULL,
+	"descendant_id" text NOT NULL,
+	"depth" integer NOT NULL,
+	CONSTRAINT "catalog_place_closure_ancestor_id_descendant_id_pk" PRIMARY KEY("ancestor_id","descendant_id"),
+	CONSTRAINT "catalog_place_closure_depth_check" CHECK ("catalog_place_closure"."depth" >= 0)
+);
+--> statement-breakpoint
+CREATE TABLE "catalog_place" (
+	"id" text PRIMARY KEY NOT NULL,
+	"slug" text NOT NULL,
+	"name" text NOT NULL,
+	"short_name" text NOT NULL,
+	"kind" "catalog_place_kind" NOT NULL,
+	"country_code" text,
+	"admin_area_code" text,
+	"latitude" double precision,
+	"longitude" double precision,
+	"is_capital" boolean DEFAULT false NOT NULL,
+	"is_featured" boolean DEFAULT false NOT NULL,
+	"is_active" boolean DEFAULT true NOT NULL,
+	"sort_order" integer DEFAULT 0 NOT NULL,
+	"primary_parent_id" text,
+	"data" jsonb DEFAULT '{}'::jsonb NOT NULL,
+	"created_at" timestamp with time zone NOT NULL,
+	"updated_at" timestamp with time zone NOT NULL,
+	CONSTRAINT "catalog_place_slug_unique" UNIQUE("slug")
 );
 --> statement-breakpoint
 CREATE TABLE "catalog_request" (
@@ -78,16 +117,25 @@ ALTER TABLE "catalog_entry_claim" ADD CONSTRAINT "catalog_entry_claim_claimant_u
 ALTER TABLE "catalog_entry_claim" ADD CONSTRAINT "catalog_entry_claim_reviewed_by_user_id_fk" FOREIGN KEY ("reviewed_by") REFERENCES "public"."user"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "catalog_entry_member" ADD CONSTRAINT "catalog_entry_member_entry_id_catalog_entry_id_fk" FOREIGN KEY ("entry_id") REFERENCES "public"."catalog_entry"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "catalog_entry_member" ADD CONSTRAINT "catalog_entry_member_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "catalog_entry_place" ADD CONSTRAINT "catalog_entry_place_entry_id_catalog_entry_id_fk" FOREIGN KEY ("entry_id") REFERENCES "public"."catalog_entry"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "catalog_entry_place" ADD CONSTRAINT "catalog_entry_place_place_id_catalog_place_id_fk" FOREIGN KEY ("place_id") REFERENCES "public"."catalog_place"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "catalog_place_closure" ADD CONSTRAINT "catalog_place_closure_ancestor_id_catalog_place_id_fk" FOREIGN KEY ("ancestor_id") REFERENCES "public"."catalog_place"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "catalog_place_closure" ADD CONSTRAINT "catalog_place_closure_descendant_id_catalog_place_id_fk" FOREIGN KEY ("descendant_id") REFERENCES "public"."catalog_place"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "catalog_place" ADD CONSTRAINT "catalog_place_primary_parent_id_catalog_place_id_fk" FOREIGN KEY ("primary_parent_id") REFERENCES "public"."catalog_place"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "catalog_request" ADD CONSTRAINT "catalog_request_requester_user_id_user_id_fk" FOREIGN KEY ("requester_user_id") REFERENCES "public"."user"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "catalog_request" ADD CONSTRAINT "catalog_request_target_entry_id_catalog_entry_id_fk" FOREIGN KEY ("target_entry_id") REFERENCES "public"."catalog_entry"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "catalog_submission" ADD CONSTRAINT "catalog_submission_submitter_user_id_user_id_fk" FOREIGN KEY ("submitter_user_id") REFERENCES "public"."user"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "catalog_entry_claim_entry_status_idx" ON "catalog_entry_claim" USING btree ("entry_id","status");--> statement-breakpoint
 CREATE INDEX "catalog_entry_claim_claimant_idx" ON "catalog_entry_claim" USING btree ("claimant_user_id","claimant_email");--> statement-breakpoint
 CREATE INDEX "catalog_entry_member_user_idx" ON "catalog_entry_member" USING btree ("user_id");--> statement-breakpoint
+CREATE INDEX "catalog_entry_place_place_role_idx" ON "catalog_entry_place" USING btree ("place_id","role");--> statement-breakpoint
+CREATE INDEX "catalog_entry_place_entry_role_idx" ON "catalog_entry_place" USING btree ("entry_id","role");--> statement-breakpoint
 CREATE INDEX "catalog_entry_status_category_idx" ON "catalog_entry" USING btree ("status","primary_category");--> statement-breakpoint
 CREATE INDEX "catalog_entry_presentation_idx" ON "catalog_entry" USING btree ("featured","editorial_pick","name");--> statement-breakpoint
-CREATE INDEX "catalog_entry_location_keys_idx" ON "catalog_entry" USING gin ("location_keys");--> statement-breakpoint
-CREATE INDEX "catalog_entry_market_keys_idx" ON "catalog_entry" USING gin ("market_keys");--> statement-breakpoint
+CREATE INDEX "catalog_place_closure_descendant_idx" ON "catalog_place_closure" USING btree ("descendant_id","ancestor_id");--> statement-breakpoint
+CREATE INDEX "catalog_place_kind_featured_idx" ON "catalog_place" USING btree ("kind","is_active","is_featured","sort_order");--> statement-breakpoint
+CREATE INDEX "catalog_place_country_admin_idx" ON "catalog_place" USING btree ("country_code","admin_area_code");--> statement-breakpoint
+CREATE INDEX "catalog_place_parent_idx" ON "catalog_place" USING btree ("primary_parent_id");--> statement-breakpoint
 CREATE INDEX "catalog_request_status_category_idx" ON "catalog_request" USING btree ("status","category");--> statement-breakpoint
 CREATE INDEX "catalog_request_target_entry_idx" ON "catalog_request" USING btree ("target_entry_id");--> statement-breakpoint
 CREATE INDEX "catalog_submission_status_category_idx" ON "catalog_submission" USING btree ("status","category");--> statement-breakpoint

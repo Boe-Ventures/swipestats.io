@@ -20,16 +20,9 @@ import { toast } from "@/components/ui/toast";
 import {
   CATALOG_CATEGORIES,
   CATALOG_CATEGORY_KEYS,
-  CATALOG_CITIES,
-  CATALOG_CITY_KEYS,
-  CATALOG_COUNTRIES,
-  CATALOG_COUNTRY_KEYS,
-  CATALOG_REGION_KEYS,
-  CATALOG_REGIONS,
-  CATALOG_STATE_KEYS,
-  CATALOG_STATES,
   type CatalogCategoryKey,
-  type CatalogLocationFilterKey,
+  type CatalogPlaceKind,
+  type CatalogPlaceOption,
 } from "@/lib/catalog";
 import { useTRPC } from "@/trpc/react";
 
@@ -58,15 +51,44 @@ function formValue(data: FormData, name: string) {
   return typeof value === "string" ? value : "";
 }
 
+const locationGroupLabels: Record<CatalogPlaceKind, string> = {
+  CITY: "Launch cities",
+  ADMIN_AREA: "States and areas",
+  COUNTRY: "Countries",
+  REGION: "Regions",
+};
+
+function CatalogLocationOptions({
+  locations,
+}: {
+  locations: CatalogPlaceOption[];
+}) {
+  return Object.entries(locationGroupLabels).map(([kind, label]) => {
+    const options = locations.filter((location) => location.kind === kind);
+    if (options.length === 0) return null;
+    return (
+      <optgroup key={kind} label={label}>
+        {options.map((location) => (
+          <option key={location.id} value={location.slug}>
+            {location.name}
+          </option>
+        ))}
+      </optgroup>
+    );
+  });
+}
+
 export function CatalogRequestDialog({
   category,
   targetEntryId,
   targetName,
+  locations,
   trigger,
 }: {
   category: CatalogCategoryKey;
   targetEntryId?: string;
   targetName?: string;
+  locations: CatalogPlaceOption[];
   trigger?: ReactNode;
 }) {
   const trpc = useTRPC();
@@ -90,9 +112,7 @@ export function CatalogRequestDialog({
       targetEntryId,
       email: formValue(data, "email"),
       brief: formValue(data, "brief"),
-      locationKey: locationKey
-        ? (locationKey as CatalogLocationFilterKey)
-        : undefined,
+      locationKey: locationKey || undefined,
       remote: data.get("remote") === "on",
       timeline: formValue(data, "timeline") || undefined,
       budget: formValue(data, "budget") || undefined,
@@ -161,34 +181,7 @@ export function CatalogRequestDialog({
                   className="h-9 rounded-md border border-gray-200 bg-white px-3 text-sm outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
                 >
                   <option value="">No location preference</option>
-                  <optgroup label="Launch cities">
-                    {CATALOG_CITY_KEYS.map((key) => (
-                      <option key={key} value={key}>
-                        {CATALOG_CITIES[key].label}
-                      </option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="States">
-                    {CATALOG_STATE_KEYS.map((key) => (
-                      <option key={key} value={key}>
-                        {CATALOG_STATES[key].label}
-                      </option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="Countries">
-                    {CATALOG_COUNTRY_KEYS.map((key) => (
-                      <option key={key} value={key}>
-                        {CATALOG_COUNTRIES[key].label}
-                      </option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="Regions">
-                    {CATALOG_REGION_KEYS.map((key) => (
-                      <option key={key} value={key}>
-                        {CATALOG_REGIONS[key].label}
-                      </option>
-                    ))}
-                  </optgroup>
+                  <CatalogLocationOptions locations={locations} />
                 </select>
               </Field>
               <Field
@@ -250,7 +243,13 @@ export function CatalogRequestDialog({
   );
 }
 
-export function CatalogSubmissionDialog({ trigger }: { trigger?: ReactNode }) {
+export function CatalogSubmissionDialog({
+  locations,
+  trigger,
+}: {
+  locations: CatalogPlaceOption[];
+  trigger?: ReactNode;
+}) {
   const trpc = useTRPC();
   const [open, setOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -272,9 +271,7 @@ export function CatalogSubmissionDialog({ trigger }: { trigger?: ReactNode }) {
       email: formValue(data, "email"),
       website: formValue(data, "website") || undefined,
       description: formValue(data, "description"),
-      locationKey: locationKey
-        ? (locationKey as CatalogLocationFilterKey)
-        : undefined,
+      locationKey: locationKey || undefined,
       remote: data.get("remote") === "on",
     });
   };
@@ -368,34 +365,7 @@ export function CatalogSubmissionDialog({ trigger }: { trigger?: ReactNode }) {
                   className="h-9 rounded-md border border-gray-200 bg-white px-3 text-sm outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
                 >
                   <option value="">Not location-specific</option>
-                  <optgroup label="Launch cities">
-                    {CATALOG_CITY_KEYS.map((key) => (
-                      <option key={key} value={key}>
-                        {CATALOG_CITIES[key].label}
-                      </option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="States">
-                    {CATALOG_STATE_KEYS.map((key) => (
-                      <option key={key} value={key}>
-                        {CATALOG_STATES[key].label}
-                      </option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="Countries">
-                    {CATALOG_COUNTRY_KEYS.map((key) => (
-                      <option key={key} value={key}>
-                        {CATALOG_COUNTRIES[key].label}
-                      </option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="Regions">
-                    {CATALOG_REGION_KEYS.map((key) => (
-                      <option key={key} value={key}>
-                        {CATALOG_REGIONS[key].label}
-                      </option>
-                    ))}
-                  </optgroup>
+                  <CatalogLocationOptions locations={locations} />
                 </select>
               </Field>
               <label className="flex items-center gap-2 self-end pb-2 text-sm text-gray-600">

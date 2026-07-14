@@ -89,53 +89,16 @@ export function getCatalogCategoryBySlug(slug: string) {
   );
 }
 
-export const CATALOG_CITY_KEYS = [
-  "new-york",
-  "los-angeles",
-  "san-francisco",
-  "miami",
-  "oslo",
-  "berlin",
+export const CATALOG_PLACE_KINDS = [
+  "CITY",
+  "ADMIN_AREA",
+  "COUNTRY",
+  "REGION",
 ] as const;
+export type CatalogPlaceKind = (typeof CATALOG_PLACE_KINDS)[number];
 
-export type CatalogCityKey = (typeof CATALOG_CITY_KEYS)[number];
-
-export const CATALOG_STATE_KEYS = [
-  "new-york-state",
-  "california",
-  "florida",
-] as const;
-export type CatalogStateKey = (typeof CATALOG_STATE_KEYS)[number];
-
-export const CATALOG_COUNTRY_KEYS = [
-  "united-states",
-  "norway",
-  "germany",
-] as const;
-export type CatalogCountryKey = (typeof CATALOG_COUNTRY_KEYS)[number];
-
-export const CATALOG_REGION_KEYS = [
-  "north-america",
-  "scandinavia",
-  "europe",
-] as const;
-export type CatalogRegionKey = (typeof CATALOG_REGION_KEYS)[number];
-export const CATALOG_LOCATION_FILTER_KEYS = [
-  ...CATALOG_CITY_KEYS,
-  ...CATALOG_STATE_KEYS,
-  ...CATALOG_COUNTRY_KEYS,
-  ...CATALOG_REGION_KEYS,
-] as const;
-export type CatalogLocationFilterKey =
-  | CatalogCityKey
-  | CatalogStateKey
-  | CatalogCountryKey
-  | CatalogRegionKey;
-
-export const CATALOG_BROAD_LOCATION_KEYS = [
-  ...CATALOG_COUNTRY_KEYS,
-  ...CATALOG_REGION_KEYS,
-] as const satisfies readonly CatalogLocationFilterKey[];
+export const CATALOG_ENTRY_PLACE_ROLES = ["SERVICE_AREA", "MARKET"] as const;
+export type CatalogEntryPlaceRole = (typeof CATALOG_ENTRY_PLACE_ROLES)[number];
 
 export const CATALOG_MARKET_STRENGTHS = [
   "leader",
@@ -145,235 +108,281 @@ export const CATALOG_MARKET_STRENGTHS = [
 ] as const;
 export type CatalogMarketStrength = (typeof CATALOG_MARKET_STRENGTHS)[number];
 
-export const CATALOG_CITIES: Record<
-  CatalogCityKey,
+export interface CatalogPlaceSeed {
+  id: string;
+  slug: string;
+  name: string;
+  shortName: string;
+  kind: CatalogPlaceKind;
+  countryCode?: string;
+  adminAreaCode?: string;
+  latitude?: number;
+  longitude?: number;
+  isCapital?: boolean;
+  isFeatured?: boolean;
+  sortOrder: number;
+  primaryParentId?: string;
+}
+
+/**
+ * Curated launch vocabulary. City IDs intentionally match Homi's MajorCityId
+ * convention; containment and aggregation are stored in the database.
+ */
+export const CATALOG_PLACE_SEEDS = [
   {
-    label: string;
-    shortLabel: string;
-    countryKey: CatalogCountryKey;
-    stateKey?: CatalogStateKey;
-  }
-> = {
-  "new-york": {
-    label: "New York, NY",
-    shortLabel: "New York",
-    countryKey: "united-states",
-    stateKey: "new-york-state",
+    id: "region:north-america",
+    slug: "north-america",
+    name: "North America",
+    shortName: "North America",
+    kind: "REGION",
+    sortOrder: 300,
   },
-  "los-angeles": {
-    label: "Los Angeles, CA",
-    shortLabel: "Los Angeles",
-    countryKey: "united-states",
-    stateKey: "california",
-  },
-  "san-francisco": {
-    label: "San Francisco, CA",
-    shortLabel: "San Francisco",
-    countryKey: "united-states",
-    stateKey: "california",
-  },
-  miami: {
-    label: "Miami, FL",
-    shortLabel: "Miami",
-    countryKey: "united-states",
-    stateKey: "florida",
-  },
-  oslo: {
-    label: "Oslo, Norway",
-    shortLabel: "Oslo",
-    countryKey: "norway",
-  },
-  berlin: {
-    label: "Berlin, Germany",
-    shortLabel: "Berlin",
-    countryKey: "germany",
-  },
-};
-
-export const CATALOG_STATES: Record<
-  CatalogStateKey,
   {
-    label: string;
-    shortLabel: string;
-    countryKey: CatalogCountryKey;
-    cityKeys: CatalogCityKey[];
-  }
-> = {
-  "new-york-state": {
-    label: "New York State",
-    shortLabel: "New York State",
-    countryKey: "united-states",
-    cityKeys: ["new-york"],
+    id: "region:scandinavia",
+    slug: "scandinavia",
+    name: "Scandinavia",
+    shortName: "Scandinavia",
+    kind: "REGION",
+    sortOrder: 301,
   },
-  california: {
-    label: "California",
-    shortLabel: "California",
-    countryKey: "united-states",
-    cityKeys: ["los-angeles", "san-francisco"],
-  },
-  florida: {
-    label: "Florida",
-    shortLabel: "Florida",
-    countryKey: "united-states",
-    cityKeys: ["miami"],
-  },
-};
-
-export const CATALOG_COUNTRIES: Record<
-  CatalogCountryKey,
   {
-    label: string;
-    shortLabel: string;
-    cityKeys: CatalogCityKey[];
-    regionKeys: CatalogRegionKey[];
-  }
-> = {
-  "united-states": {
-    label: "United States",
-    shortLabel: "United States",
-    cityKeys: ["new-york", "los-angeles", "san-francisco", "miami"],
-    regionKeys: ["north-america"],
+    id: "region:europe",
+    slug: "europe",
+    name: "Europe",
+    shortName: "Europe",
+    kind: "REGION",
+    sortOrder: 302,
   },
-  norway: {
-    label: "Norway",
-    shortLabel: "Norway",
-    cityKeys: ["oslo"],
-    regionKeys: ["scandinavia", "europe"],
-  },
-  germany: {
-    label: "Germany",
-    shortLabel: "Germany",
-    cityKeys: ["berlin"],
-    regionKeys: ["europe"],
-  },
-};
-
-export const CATALOG_REGIONS: Record<
-  CatalogRegionKey,
   {
-    label: string;
-    shortLabel: string;
-    countryKeys: CatalogCountryKey[];
+    id: "US",
+    slug: "united-states",
+    name: "United States",
+    shortName: "United States",
+    kind: "COUNTRY",
+    countryCode: "US",
+    sortOrder: 200,
+  },
+  {
+    id: "NO",
+    slug: "norway",
+    name: "Norway",
+    shortName: "Norway",
+    kind: "COUNTRY",
+    countryCode: "NO",
+    sortOrder: 201,
+  },
+  {
+    id: "DE",
+    slug: "germany",
+    name: "Germany",
+    shortName: "Germany",
+    kind: "COUNTRY",
+    countryCode: "DE",
+    sortOrder: 202,
+  },
+  {
+    id: "US-NY",
+    slug: "new-york-state",
+    name: "New York State",
+    shortName: "New York State",
+    kind: "ADMIN_AREA",
+    countryCode: "US",
+    adminAreaCode: "NY",
+    sortOrder: 100,
+    primaryParentId: "US",
+  },
+  {
+    id: "US-CA",
+    slug: "california",
+    name: "California",
+    shortName: "California",
+    kind: "ADMIN_AREA",
+    countryCode: "US",
+    adminAreaCode: "CA",
+    sortOrder: 101,
+    primaryParentId: "US",
+  },
+  {
+    id: "US-FL",
+    slug: "florida",
+    name: "Florida",
+    shortName: "Florida",
+    kind: "ADMIN_AREA",
+    countryCode: "US",
+    adminAreaCode: "FL",
+    sortOrder: 102,
+    primaryParentId: "US",
+  },
+  {
+    id: "new-york-us",
+    slug: "new-york",
+    name: "New York, NY",
+    shortName: "New York",
+    kind: "CITY",
+    countryCode: "US",
+    adminAreaCode: "NY",
+    latitude: 40.7128,
+    longitude: -74.006,
+    isFeatured: true,
+    sortOrder: 0,
+    primaryParentId: "US-NY",
+  },
+  {
+    id: "los-angeles-us",
+    slug: "los-angeles",
+    name: "Los Angeles, CA",
+    shortName: "Los Angeles",
+    kind: "CITY",
+    countryCode: "US",
+    adminAreaCode: "CA",
+    latitude: 34.0522,
+    longitude: -118.2437,
+    isFeatured: true,
+    sortOrder: 1,
+    primaryParentId: "US-CA",
+  },
+  {
+    id: "san-francisco-us",
+    slug: "san-francisco",
+    name: "San Francisco, CA",
+    shortName: "San Francisco",
+    kind: "CITY",
+    countryCode: "US",
+    adminAreaCode: "CA",
+    latitude: 37.7749,
+    longitude: -122.4194,
+    isFeatured: true,
+    sortOrder: 2,
+    primaryParentId: "US-CA",
+  },
+  {
+    id: "miami-us",
+    slug: "miami",
+    name: "Miami, FL",
+    shortName: "Miami",
+    kind: "CITY",
+    countryCode: "US",
+    adminAreaCode: "FL",
+    latitude: 25.7617,
+    longitude: -80.1918,
+    isFeatured: true,
+    sortOrder: 3,
+    primaryParentId: "US-FL",
+  },
+  {
+    id: "oslo-no",
+    slug: "oslo",
+    name: "Oslo, Norway",
+    shortName: "Oslo",
+    kind: "CITY",
+    countryCode: "NO",
+    latitude: 59.9139,
+    longitude: 10.7522,
+    isCapital: true,
+    isFeatured: true,
+    sortOrder: 4,
+    primaryParentId: "NO",
+  },
+  {
+    id: "berlin-de",
+    slug: "berlin",
+    name: "Berlin, Germany",
+    shortName: "Berlin",
+    kind: "CITY",
+    countryCode: "DE",
+    latitude: 52.52,
+    longitude: 13.405,
+    isCapital: true,
+    isFeatured: true,
+    sortOrder: 5,
+    primaryParentId: "DE",
+  },
+] as const satisfies readonly CatalogPlaceSeed[];
+
+export const CATALOG_PLACE_RELATIONS = [
+  ["region:north-america", "US"],
+  ["region:europe", "NO"],
+  ["region:europe", "DE"],
+  ["region:scandinavia", "NO"],
+  ["US", "US-NY"],
+  ["US", "US-CA"],
+  ["US", "US-FL"],
+  ["US-NY", "new-york-us"],
+  ["US-CA", "los-angeles-us"],
+  ["US-CA", "san-francisco-us"],
+  ["US-FL", "miami-us"],
+  ["NO", "oslo-no"],
+  ["DE", "berlin-de"],
+] as const satisfies readonly (readonly [string, string])[];
+
+export const CATALOG_LOCATION_SLUGS = CATALOG_PLACE_SEEDS.map(
+  (place) => place.slug,
+);
+
+export interface CatalogPlaceClosureRow {
+  ancestorId: string;
+  descendantId: string;
+  depth: number;
+}
+
+export function buildCatalogPlaceClosure(): CatalogPlaceClosureRow[] {
+  const children = new Map<string, string[]>();
+  for (const [ancestorId, descendantId] of CATALOG_PLACE_RELATIONS) {
+    children.set(ancestorId, [
+      ...(children.get(ancestorId) ?? []),
+      descendantId,
+    ]);
   }
-> = {
-  "north-america": {
-    label: "North America",
-    shortLabel: "North America",
-    countryKeys: ["united-states"],
-  },
-  scandinavia: {
-    label: "Scandinavia",
-    shortLabel: "Scandinavia",
-    countryKeys: ["norway"],
-  },
-  europe: {
-    label: "Europe",
-    shortLabel: "Europe",
-    countryKeys: ["norway", "germany"],
-  },
-};
 
-export function expandCatalogLocation(
-  location: CatalogLocationFilterKey,
-): CatalogLocationFilterKey[] {
-  let cityKeys: CatalogCityKey[];
-
-  if (location in CATALOG_CITIES) {
-    cityKeys = [location as CatalogCityKey];
-  } else if (location in CATALOG_STATES) {
-    cityKeys = CATALOG_STATES[location as CatalogStateKey].cityKeys;
-  } else if (location in CATALOG_COUNTRIES) {
-    cityKeys = CATALOG_COUNTRIES[location as CatalogCountryKey].cityKeys;
-  } else {
-    cityKeys = CATALOG_REGIONS[
-      location as CatalogRegionKey
-    ].countryKeys.flatMap(
-      (countryKey) => CATALOG_COUNTRIES[countryKey].cityKeys,
-    );
-  }
-
-  const relatedKeys = new Set<CatalogLocationFilterKey>([location]);
-  for (const cityKey of cityKeys) {
-    const city = CATALOG_CITIES[cityKey];
-    relatedKeys.add(cityKey);
-    if (city.stateKey) relatedKeys.add(city.stateKey);
-    relatedKeys.add(city.countryKey);
-    for (const regionKey of CATALOG_COUNTRIES[city.countryKey].regionKeys) {
-      relatedKeys.add(regionKey);
+  return CATALOG_PLACE_SEEDS.flatMap((place) => {
+    const distances = new Map<string, number>([[place.id, 0]]);
+    const queue: string[] = [place.id];
+    while (queue.length > 0) {
+      const current = queue.shift()!;
+      const depth = distances.get(current)!;
+      for (const child of children.get(current) ?? []) {
+        const nextDepth = depth + 1;
+        const knownDepth = distances.get(child);
+        if (knownDepth === undefined || nextDepth < knownDepth) {
+          distances.set(child, nextDepth);
+          queue.push(child);
+        }
+      }
     }
-  }
-
-  return [...relatedKeys];
+    return [...distances].map(([descendantId, depth]) => ({
+      ancestorId: place.id,
+      descendantId,
+      depth,
+    }));
+  });
 }
 
-export function getCatalogLocationLabel(location: CatalogLocationFilterKey) {
-  if (location in CATALOG_CITIES) {
-    return CATALOG_CITIES[location as CatalogCityKey].label;
-  }
-  if (location in CATALOG_STATES) {
-    return CATALOG_STATES[location as CatalogStateKey].label;
-  }
-  if (location in CATALOG_COUNTRIES) {
-    return CATALOG_COUNTRIES[location as CatalogCountryKey].label;
-  }
-  return CATALOG_REGIONS[location as CatalogRegionKey].label;
+export interface CatalogPlaceOption {
+  id: string;
+  slug: string;
+  name: string;
+  shortName: string;
+  kind: CatalogPlaceKind;
+  countryCode: string | null;
+  adminAreaCode: string | null;
+  isCapital: boolean;
+  isFeatured: boolean;
+  primaryParentId: string | null;
+  breadcrumb: Array<{ id: string; slug: string; shortName: string }>;
 }
 
-export function getCatalogLocationShortLabel(
-  location: CatalogLocationFilterKey,
-) {
-  if (location in CATALOG_CITIES) {
-    return CATALOG_CITIES[location as CatalogCityKey].shortLabel;
-  }
-  if (location in CATALOG_STATES) {
-    return CATALOG_STATES[location as CatalogStateKey].shortLabel;
-  }
-  if (location in CATALOG_COUNTRIES) {
-    return CATALOG_COUNTRIES[location as CatalogCountryKey].shortLabel;
-  }
-  return CATALOG_REGIONS[location as CatalogRegionKey].shortLabel;
+export interface CatalogEntryPlaceData {
+  strength?: CatalogMarketStrength;
+  note?: string;
+  asOf?: string;
+  sourceUrls?: string[];
+  attributes?: Record<string, unknown>;
 }
 
-export function getCatalogLocationBreadcrumb(
-  location: CatalogLocationFilterKey,
-): CatalogLocationFilterKey[] {
-  if (location in CATALOG_CITIES) {
-    const city = CATALOG_CITIES[location as CatalogCityKey];
-    return [
-      city.countryKey,
-      ...(city.stateKey ? [city.stateKey] : []),
-      location,
-    ];
-  }
-  if (location in CATALOG_STATES) {
-    const state = CATALOG_STATES[location as CatalogStateKey];
-    return [state.countryKey, location];
-  }
-  return [location];
-}
-
-export function isCatalogCityKey(
-  location: CatalogLocationFilterKey,
-): location is CatalogCityKey {
-  return location in CATALOG_CITIES;
-}
-
-export function getCatalogLocationCityKeys(
-  location: CatalogLocationFilterKey,
-): CatalogCityKey[] {
-  if (location in CATALOG_CITIES) return [location as CatalogCityKey];
-  if (location in CATALOG_STATES) {
-    return CATALOG_STATES[location as CatalogStateKey].cityKeys;
-  }
-  if (location in CATALOG_COUNTRIES) {
-    return CATALOG_COUNTRIES[location as CatalogCountryKey].cityKeys;
-  }
-  if (location in CATALOG_REGIONS) {
-    return CATALOG_REGIONS[location as CatalogRegionKey].countryKeys.flatMap(
-      (countryKey) => CATALOG_COUNTRIES[countryKey].cityKeys,
-    );
-  }
-  return [];
+export interface CatalogEntryPlaceView {
+  role: CatalogEntryPlaceRole;
+  data: CatalogEntryPlaceData;
+  place: Omit<CatalogPlaceOption, "breadcrumb">;
 }
 
 export interface CatalogLink {
@@ -389,14 +398,6 @@ export interface CatalogSourceRef {
   key: string;
 }
 
-export interface CatalogMarketSignal {
-  locationKey: CatalogLocationFilterKey;
-  strength: CatalogMarketStrength;
-  note?: string;
-  asOf?: string;
-  sourceUrls?: string[];
-}
-
 export interface CatalogEntryData {
   entityTypes: CatalogEntityType[];
   displayStyle: CatalogDisplayStyle;
@@ -404,7 +405,6 @@ export interface CatalogEntryData {
   tags?: string[];
   links?: CatalogLink[];
   sourceRefs?: CatalogSourceRef[];
-  marketSignals?: CatalogMarketSignal[];
   imageUrl?: string;
   descriptor?: string;
   organizationName?: string;
@@ -425,7 +425,7 @@ export interface CatalogClaimEvidence {
 
 export interface CatalogRequestData {
   brief: string;
-  locationKey?: CatalogLocationFilterKey;
+  locationKey?: string;
   remote?: boolean;
   timeline?: string;
   budget?: string;
@@ -435,20 +435,10 @@ export interface CatalogRequestData {
 export interface CatalogSubmissionData {
   website?: string;
   description: string;
-  locationKey?: CatalogLocationFilterKey;
+  locationKey?: string;
   remote?: boolean;
 }
 
 export function formatCatalogTag(tag: string) {
   return tag.replaceAll("_", " ");
-}
-
-export function getCatalogMarketSignal(
-  data: CatalogEntryData,
-  location: CatalogLocationFilterKey,
-) {
-  const cityKeys = expandCatalogLocation(location);
-  return data.marketSignals?.find((signal) =>
-    cityKeys.includes(signal.locationKey),
-  );
 }

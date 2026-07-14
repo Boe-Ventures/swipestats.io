@@ -3,7 +3,7 @@ import { type MetadataRoute } from "next";
 import {
   CATALOG_CATEGORIES,
   CATALOG_CATEGORY_KEYS,
-  CATALOG_LOCATION_FILTER_KEYS,
+  CATALOG_LOCATION_SLUGS,
 } from "@/lib/catalog";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -96,8 +96,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "weekly" as const,
       priority: 0.6,
     })),
-    ...CATALOG_LOCATION_FILTER_KEYS.map((key) => ({
-      url: `${baseUrl}/dating-services/location/${key}`,
+    ...CATALOG_LOCATION_SLUGS.map((slug) => ({
+      url: `${baseUrl}/dating-services/location/${slug}`,
       lastModified: new Date(),
       changeFrequency: "weekly" as const,
       priority: 0.55,
