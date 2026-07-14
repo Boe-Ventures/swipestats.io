@@ -7,9 +7,9 @@ This ledger is the explicit editorial decision surface for the 81 recovered post
 ## Inventory summary
 
 - Recovered posts: **81**
-- Total draft words: **129,975**
+- Total draft words: **118,962**
 - Review decisions: **81 rewrite / 0 keep-as-is / 0 drop**
-- Editorial status: **52 reviewed / 29 pending**
+- Editorial status: **55 reviewed / 26 pending**
 - Review tiers: {"heavy":34,"light":46,"medium":1}
 - Editorial batches: {"algorithm-account":9,"commercial":11,"evergreen":31,"other":30}
 - Unique in-batch link targets: **30**
@@ -40,9 +40,9 @@ This ledger is the explicit editorial decision surface for the 81 recovered post
 | `flirty-gifs` | rewrite | pending | light | evergreen | 2723 | 5 | on | 0 | 5 | absolute-claim |
 | `flirty-texts-for-him` | rewrite | pending | light | evergreen | 4102 | 5 | on | 0 | 1 | dynamic-pricing, absolute-claim |
 | `free-messaging-dating-sites` | rewrite | pending | heavy | other | 2331 | 3 | on | 0 | 2 | dynamic-pricing, algorithm-claim, absolute-claim |
-| `good-morning-messages-for-him` | rewrite | pending | light | evergreen | 4583 | 4 | on | 0 | 4 | first-person-claim, absolute-claim |
-| `good-morning-texts-for-her` | rewrite | pending | light | evergreen | 4466 | 4 | on | 0 | 0 | first-person-claim, absolute-claim |
-| `good-night-texts` | rewrite | pending | light | evergreen | 4028 | 4 | on | 0 | 4 | absolute-claim |
+| `good-morning-messages-for-him` | rewrite | reviewed | light | evergreen | 729 | 3 | on | 0 | 0 | absolute-claim |
+| `good-morning-texts-for-her` | rewrite | reviewed | light | evergreen | 684 | 3 | on | 0 | 0 | none |
+| `good-night-texts` | rewrite | reviewed | light | evergreen | 651 | 3 | on | 0 | 0 | none |
 | `hinge-algorithm` | rewrite | reviewed | heavy | algorithm-account | 1235 | 4 | off | 1 | 0 | algorithm-claim |
 | `hinge-app-icons` | rewrite | reviewed | light | other | 676 | 7 | on | 0 | 0 | absolute-claim |
 | `hinge-ban` | rewrite | reviewed | heavy | algorithm-account | 706 | 4 | on | 0 | 0 | evasion-or-identity-guidance |
@@ -123,43 +123,43 @@ This is a mechanical topological order only. Editorial priority and the final tw
 10. `double-texting`
 11. `dry-texting`
 12. `first-message-on-dating-app`
-13. `good-morning-texts-for-her`
-14. `flirty-texts-for-him`
-15. `hinge-algorithm`
-16. `hinge-app-icons`
-17. `hinge-ban`
-18. `hinge-boost`
-19. `hinge-conversation-starters`
-20. `hinge-for-friends`
-21. `hinge-match-note`
-22. `hinge-most-compatible`
-23. `hinge-notifications`
-24. `hinge-opening-lines`
-25. `hinge-or-bumble`
-26. `hinge-phone-number`
-27. `hinge-roses`
-28. `hinge-standouts`
-29. `hinge-subscription`
-30. `hinge-verification`
-31. `how-does-match-com-work`
-32. `how-does-tinder-work`
-33. `how-many-free-likes-on-hinge`
-34. `how-to-cancel-tinder-gold`
-35. `how-to-find-someone-on-hinge`
-36. `how-to-find-someone-on-tinder`
-37. `how-to-flirt-over-text`
-38. `how-to-keep-a-conversation-going-over-text`
-39. `how-to-like-someone-on-hinge`
-40. `how-to-refresh-hinge`
-41. `how-to-reset-hinge`
-42. `hinge-desktop`
-43. `how-does-hinge-work-for-guys`
-44. `how-to-reset-tinder`
-45. `how-to-slide-into-dms`
-46. `how-to-talk-dirty`
-47. `ai-text-message-generator`
-48. `good-morning-messages-for-him`
-49. `good-night-texts`
+13. `good-morning-messages-for-him`
+14. `good-morning-texts-for-her`
+15. `flirty-texts-for-him`
+16. `good-night-texts`
+17. `hinge-algorithm`
+18. `hinge-app-icons`
+19. `hinge-ban`
+20. `hinge-boost`
+21. `hinge-conversation-starters`
+22. `hinge-for-friends`
+23. `hinge-match-note`
+24. `hinge-most-compatible`
+25. `hinge-notifications`
+26. `hinge-opening-lines`
+27. `hinge-or-bumble`
+28. `hinge-phone-number`
+29. `hinge-roses`
+30. `hinge-standouts`
+31. `hinge-subscription`
+32. `hinge-verification`
+33. `how-does-match-com-work`
+34. `how-does-tinder-work`
+35. `how-many-free-likes-on-hinge`
+36. `how-to-cancel-tinder-gold`
+37. `how-to-find-someone-on-hinge`
+38. `how-to-find-someone-on-tinder`
+39. `how-to-flirt-over-text`
+40. `how-to-keep-a-conversation-going-over-text`
+41. `how-to-like-someone-on-hinge`
+42. `how-to-refresh-hinge`
+43. `how-to-reset-hinge`
+44. `hinge-desktop`
+45. `how-does-hinge-work-for-guys`
+46. `how-to-reset-tinder`
+47. `how-to-slide-into-dms`
+48. `how-to-talk-dirty`
+49. `ai-text-message-generator`
 50. `flirty-emojis`
 51. `how-to-tell-if-she-likes-you-over-text`
 52. `break-up-text`
