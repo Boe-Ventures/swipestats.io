@@ -4,6 +4,7 @@ import { ArrowRight, Globe2, MapPin } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { cn } from "@/components/ui/lib/utils";
 import {
+  CATALOG_CATEGORIES,
   CATALOG_PLACES,
   formatCatalogTag,
   getCatalogMarketSignal,
@@ -35,6 +36,7 @@ export function CatalogEntryCard({
   contextLocation,
 }: CatalogEntryCardProps) {
   const affiliate = entry.data.links?.some((link) => link.type === "affiliate");
+  const locationMode = CATALOG_CATEGORIES[entry.primaryCategory].locationMode;
   const serviceAreaId = entry.data.serviceAreaIds?.[0];
   const location = serviceAreaId
     ? CATALOG_PLACES[serviceAreaId].shortName
@@ -99,7 +101,7 @@ export function CatalogEntryCard({
             )}
             {!marketSignal &&
               entry.remote &&
-              entry.primaryCategory !== "dating_app" && (
+              locationMode === "service_area" && (
                 <span className="inline-flex items-center gap-1 text-emerald-700">
                   <Globe2 className="h-3.5 w-3.5" />
                   Remote

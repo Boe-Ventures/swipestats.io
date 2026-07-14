@@ -3,6 +3,7 @@ import { and, asc, count, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import {
+  CATALOG_CATEGORIES,
   CATALOG_CATEGORY_KEYS,
   getCatalogRelatedPlaceIds,
   isCatalogLocationFilterKey,
@@ -26,16 +27,25 @@ const locationFilterSchema = z.custom<CatalogLocationFilterKey>(
 function entryMatchesLocation(
   data: CatalogEntryData,
   location: CatalogLocationFilterKey,
+  category: (typeof CATALOG_CATEGORY_KEYS)[number],
 ) {
   const relatedPlaceIds = getCatalogRelatedPlaceIds(location);
-  return (
-    data.serviceAreaIds?.some((placeId) =>
-      relatedPlaceIds.includes(placeId),
-    ) === true ||
-    data.marketSignals?.some((signal) =>
-      relatedPlaceIds.includes(signal.placeId),
-    ) === true
-  );
+  const locationMode = CATALOG_CATEGORIES[category].locationMode;
+  if (locationMode === "service_area") {
+    return (
+      data.serviceAreaIds?.some((placeId) =>
+        relatedPlaceIds.includes(placeId),
+      ) === true
+    );
+  }
+  if (locationMode === "market_signal") {
+    return (
+      data.marketSignals?.some((signal) =>
+        relatedPlaceIds.includes(signal.placeId),
+      ) === true
+    );
+  }
+  return false;
 }
 
 export const catalogRouter = {
@@ -90,14 +100,23 @@ export const catalogRouter = {
         );
 
       const filteredEntries = entries.filter((entry) => {
-        const matchesAvailability = input.location
-          ? entryMatchesLocation(entry.data, input.location) ||
-            (input.includeRemote &&
-              entry.remote &&
-              entry.primaryCategory !== "dating_app")
-          : input.includeRemote
-            ? entry.remote
-            : true;
+        const locationMode =
+          CATALOG_CATEGORIES[entry.primaryCategory].locationMode;
+        const matchesAvailability =
+          locationMode === "global"
+            ? true
+            : input.location
+              ? entryMatchesLocation(
+                  entry.data,
+                  input.location,
+                  entry.primaryCategory,
+                ) ||
+                (locationMode === "service_area" &&
+                  input.includeRemote &&
+                  entry.remote)
+              : locationMode === "service_area" && input.includeRemote
+                ? entry.remote
+                : true;
         return (
           matchesAvailability &&
           input.tags.every((tag) => entry.data.tags?.includes(tag))
@@ -129,13 +148,20 @@ export const catalogRouter = {
           asc(catalogEntryTable.name),
         );
 
-      const entries = allEntries.filter(
-        (entry) =>
-          entryMatchesLocation(entry.data, input.location) ||
-          (input.includeRemote &&
-            entry.remote &&
-            entry.primaryCategory !== "dating_app"),
-      );
+      const entries = allEntries.filter((entry) => {
+        const locationMode =
+          CATALOG_CATEGORIES[entry.primaryCategory].locationMode;
+        return (
+          entryMatchesLocation(
+            entry.data,
+            input.location,
+            entry.primaryCategory,
+          ) ||
+          (locationMode === "service_area" &&
+            input.includeRemote &&
+            entry.remote)
+        );
+      });
 
       return { entries, totalCount: entries.length };
     }),
@@ -175,6 +201,7 @@ export const catalogRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      const locationMode = CATALOG_CATEGORIES[input.category].locationMode;
       if (input.targetEntryId) {
         const target = await ctx.db.query.catalogEntryTable.findFirst({
           where: and(
@@ -202,8 +229,9 @@ export const catalogRouter = {
           visibility: "PRIVATE",
           data: {
             brief: input.brief,
-            locationKey: input.locationKey,
-            remote: input.remote,
+            locationKey:
+              locationMode === "global" ? undefined : input.locationKey,
+            remote: locationMode === "service_area" && input.remote,
             timeline: input.timeline,
             budget: input.budget,
             broadcastConsent: input.broadcastConsent,
@@ -227,6 +255,7 @@ export const catalogRouter = {
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      const locationMode = CATALOG_CATEGORIES[input.category].locationMode;
       const [submission] = await ctx.db
         .insert(catalogSubmissionTable)
         .values({
@@ -237,8 +266,9 @@ export const catalogRouter = {
           data: {
             website: input.website,
             description: input.description,
-            locationKey: input.locationKey,
-            remote: input.remote,
+            locationKey:
+              locationMode === "global" ? undefined : input.locationKey,
+            remote: locationMode === "service_area" && input.remote,
           },
         })
         .returning({ id: catalogSubmissionTable.id });

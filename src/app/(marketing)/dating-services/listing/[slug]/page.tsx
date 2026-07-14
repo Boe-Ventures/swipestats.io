@@ -110,7 +110,7 @@ export default async function CatalogListingPage({ params }: ListingPageProps) {
                     {CATALOG_PLACES[placeId].name}
                   </span>
                 ))}
-                {entry.remote && entry.primaryCategory !== "dating_app" && (
+                {entry.remote && category.locationMode === "service_area" && (
                   <span className="inline-flex items-center gap-1.5 text-emerald-700">
                     <Globe2 className="h-4 w-4" />
                     Available remotely
@@ -234,7 +234,9 @@ export default async function CatalogListingPage({ params }: ListingPageProps) {
                   <Button asChild size="lg" className="w-full">
                     <a
                       href={primaryLink.url}
-                      target="_blank"
+                      target={
+                        primaryLink.url.startsWith("/") ? undefined : "_blank"
+                      }
                       rel={
                         primaryLink.type === "affiliate"
                           ? "noopener noreferrer sponsored"
@@ -281,7 +283,7 @@ export default async function CatalogListingPage({ params }: ListingPageProps) {
                     <a
                       key={link.type + "-" + link.url}
                       href={link.url}
-                      target="_blank"
+                      target={link.url.startsWith("/") ? undefined : "_blank"}
                       rel={
                         link.type === "affiliate"
                           ? "noopener noreferrer sponsored"

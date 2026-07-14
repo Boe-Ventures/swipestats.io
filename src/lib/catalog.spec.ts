@@ -1,7 +1,9 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  CATALOG_CATEGORIES,
   CATALOG_PLACES,
+  getCatalogCategoryKeysBySection,
   getCatalogLocationBreadcrumb,
   getCatalogRelatedPlaceIds,
   type CatalogPlaceId,
@@ -55,5 +57,29 @@ describe("catalog place configuration", () => {
     expect(
       getCatalogLocationBreadcrumb("oslo").map((place) => place.id),
     ).toEqual(["NO", "oslo-no"]);
+  });
+});
+
+describe("catalog category configuration", () => {
+  test("separates place-bound services from digital products", () => {
+    expect(getCatalogCategoryKeysBySection("local_services")).toEqual([
+      "dating_coach",
+      "dating_photographer",
+      "matchmaker",
+    ]);
+    expect(getCatalogCategoryKeysBySection("digital_products")).toEqual([
+      "dating_app",
+      "profile_feedback",
+      "ai_photo_generation",
+      "messaging_assistant",
+    ]);
+  });
+
+  test("uses distinct location behavior for services, apps, and tools", () => {
+    expect(CATALOG_CATEGORIES.dating_coach.locationMode).toBe("service_area");
+    expect(CATALOG_CATEGORIES.dating_app.locationMode).toBe("market_signal");
+    expect(CATALOG_CATEGORIES.profile_feedback.locationMode).toBe("global");
+    expect(CATALOG_CATEGORIES.ai_photo_generation.locationMode).toBe("global");
+    expect(CATALOG_CATEGORIES.messaging_assistant.locationMode).toBe("global");
   });
 });

@@ -47,9 +47,13 @@ export default async function DatingServicesCategoryPage({
   const category = getCatalogCategoryBySlug(categorySlug);
   if (!category) notFound();
 
-  const location = isCatalogLocationFilterKey(rawSearchParams.location)
-    ? rawSearchParams.location
-    : undefined;
+  const config = CATALOG_CATEGORIES[category];
+  const supportsLocation = config.locationMode !== "global";
+  const supportsRemote = config.locationMode === "service_area";
+  const location =
+    supportsLocation && isCatalogLocationFilterKey(rawSearchParams.location)
+      ? rawSearchParams.location
+      : undefined;
   const selectedPlace = location ? getCatalogPlaceBySlug(location) : undefined;
   const featuredCities = CATALOG_PLACE_OPTIONS.filter(
     (place) => place.kind === "city" && place.isFeatured,
@@ -57,8 +61,6 @@ export default async function DatingServicesCategoryPage({
   const broaderAreas = CATALOG_PLACE_OPTIONS.filter(
     (place) => place.kind === "country" || place.kind === "region",
   );
-  const config = CATALOG_CATEGORIES[category];
-  const supportsRemote = category !== "dating_app";
   const includeRemote = supportsRemote && rawSearchParams.remote === "1";
   const api = await trpcApi();
   const { entries, totalCount } = await api.catalog.list({
@@ -91,7 +93,12 @@ export default async function DatingServicesCategoryPage({
               </h1>
               <p className="mt-5 max-w-2xl text-[17px] leading-7 text-gray-600">
                 {config.description} Browse a deliberately small, editor-curated
-                catalog across the first SwipeStats launch cities.
+                catalog
+                {config.locationMode === "service_area"
+                  ? " across the first SwipeStats launch cities."
+                  : config.locationMode === "market_signal"
+                    ? " with local market context where we have it."
+                    : " available wherever you use your dating apps."}
               </p>
             </div>
             <div className="font-mono text-[12px] text-gray-500">
@@ -100,77 +107,79 @@ export default async function DatingServicesCategoryPage({
             </div>
           </div>
 
-          <div className="mt-9 flex flex-wrap items-center gap-2">
-            <Link
-              href={filterHref({
-                category: categorySlug,
-                remote: includeRemote,
-              })}
-              className={cn(
-                "rounded-full border px-3.5 py-2 text-sm font-semibold transition",
-                !location
-                  ? "border-rose-300 bg-rose-50 text-rose-700"
-                  : "border-gray-200 bg-white text-gray-600 hover:border-gray-300",
-              )}
-            >
-              All locations
-            </Link>
-            {featuredCities.map((place) => (
+          {supportsLocation && (
+            <div className="mt-9 flex flex-wrap items-center gap-2">
               <Link
-                key={place.id}
                 href={filterHref({
                   category: categorySlug,
-                  location: place.slug,
-                  remote: includeRemote,
-                })}
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-semibold transition",
-                  location === place.slug
-                    ? "border-rose-300 bg-rose-50 text-rose-700"
-                    : "border-gray-200 bg-white text-gray-600 hover:border-gray-300",
-                )}
-              >
-                <MapPin className="h-3.5 w-3.5" />
-                {place.shortName}
-              </Link>
-            ))}
-            {broaderAreas.map((place) => (
-              <Link
-                key={place.id}
-                href={filterHref({
-                  category: categorySlug,
-                  location: place.slug,
                   remote: includeRemote,
                 })}
                 className={cn(
                   "rounded-full border px-3.5 py-2 text-sm font-semibold transition",
-                  location === place.slug
+                  !location
                     ? "border-rose-300 bg-rose-50 text-rose-700"
-                    : "border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300",
-                )}
-              >
-                {place.shortName}
-              </Link>
-            ))}
-            {supportsRemote && (
-              <Link
-                href={filterHref({
-                  category: categorySlug,
-                  location,
-                  remote: !includeRemote,
-                })}
-                className={cn(
-                  "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-semibold transition",
-                  includeRemote
-                    ? "border-emerald-300 bg-emerald-50 text-emerald-700"
                     : "border-gray-200 bg-white text-gray-600 hover:border-gray-300",
                 )}
               >
-                <Globe2 className="h-3.5 w-3.5" />
-                {location ? "Include remote" : "Remote only"}
+                All locations
               </Link>
-            )}
-          </div>
+              {featuredCities.map((place) => (
+                <Link
+                  key={place.id}
+                  href={filterHref({
+                    category: categorySlug,
+                    location: place.slug,
+                    remote: includeRemote,
+                  })}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-semibold transition",
+                    location === place.slug
+                      ? "border-rose-300 bg-rose-50 text-rose-700"
+                      : "border-gray-200 bg-white text-gray-600 hover:border-gray-300",
+                  )}
+                >
+                  <MapPin className="h-3.5 w-3.5" />
+                  {place.shortName}
+                </Link>
+              ))}
+              {broaderAreas.map((place) => (
+                <Link
+                  key={place.id}
+                  href={filterHref({
+                    category: categorySlug,
+                    location: place.slug,
+                    remote: includeRemote,
+                  })}
+                  className={cn(
+                    "rounded-full border px-3.5 py-2 text-sm font-semibold transition",
+                    location === place.slug
+                      ? "border-rose-300 bg-rose-50 text-rose-700"
+                      : "border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300",
+                  )}
+                >
+                  {place.shortName}
+                </Link>
+              ))}
+              {supportsRemote && (
+                <Link
+                  href={filterHref({
+                    category: categorySlug,
+                    location,
+                    remote: !includeRemote,
+                  })}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-semibold transition",
+                    includeRemote
+                      ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                      : "border-gray-200 bg-white text-gray-600 hover:border-gray-300",
+                  )}
+                >
+                  <Globe2 className="h-3.5 w-3.5" />
+                  {location ? "Include remote" : "Remote only"}
+                </Link>
+              )}
+            </div>
+          )}
         </div>
       </section>
 
@@ -188,11 +197,12 @@ export default async function DatingServicesCategoryPage({
               {location ? `in ${selectedPlace?.name ?? location}` : "here yet"}
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-gray-600">
-              Try remote-friendly providers, or send a private request and
-              we&apos;ll use it to prioritize who gets added next.
+              {supportsRemote
+                ? "Try remote-friendly providers, or send a private request and we’ll use it to prioritize who gets added next."
+                : "Send a private request and we’ll use it to prioritize what gets reviewed and added next."}
             </p>
             <div className="mt-6 flex flex-wrap justify-center gap-3">
-              {!includeRemote && (
+              {supportsRemote && !includeRemote && (
                 <ButtonLink
                   variant="outline"
                   href={filterHref({

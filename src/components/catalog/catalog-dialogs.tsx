@@ -86,6 +86,7 @@ export function CatalogRequestDialog({
   trigger?: ReactNode;
 }) {
   const trpc = useTRPC();
+  const categoryConfig = CATALOG_CATEGORIES[category];
   const [open, setOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
@@ -106,10 +107,13 @@ export function CatalogRequestDialog({
       targetEntryId,
       email: formValue(data, "email"),
       brief: formValue(data, "brief"),
-      locationKey: locationKey
-        ? (locationKey as CatalogLocationFilterKey)
-        : undefined,
-      remote: data.get("remote") === "on",
+      locationKey:
+        categoryConfig.locationMode !== "global" && locationKey
+          ? (locationKey as CatalogLocationFilterKey)
+          : undefined,
+      remote:
+        categoryConfig.locationMode === "service_area" &&
+        data.get("remote") === "on",
       timeline: formValue(data, "timeline") || undefined,
       budget: formValue(data, "budget") || undefined,
       broadcastConsent: data.get("broadcastConsent") === "on",
@@ -156,8 +160,8 @@ export function CatalogRequestDialog({
                   : "Tell us what you need"}
               </DialogTitle>
               <DialogDescription>
-                This creates a private request for a{" "}
-                {CATALOG_CATEGORIES[category].shortLabel.toLowerCase()}. No
+                This creates a private request about{" "}
+                {CATALOG_CATEGORIES[category].label.toLowerCase()}. No
                 SwipeStats account is required.
               </DialogDescription>
             </DialogHeader>
@@ -171,15 +175,23 @@ export function CatalogRequestDialog({
                   autoComplete="email"
                 />
               </Field>
-              <Field label="Location">
-                <select
-                  name="locationKey"
-                  className="h-9 rounded-md border border-gray-200 bg-white px-3 text-sm outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
+              {categoryConfig.locationMode !== "global" && (
+                <Field
+                  label={
+                    categoryConfig.locationMode === "market_signal"
+                      ? "Market"
+                      : "Location"
+                  }
                 >
-                  <option value="">No location preference</option>
-                  <CatalogLocationOptions />
-                </select>
-              </Field>
+                  <select
+                    name="locationKey"
+                    className="h-9 rounded-md border border-gray-200 bg-white px-3 text-sm outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
+                  >
+                    <option value="">No location preference</option>
+                    <CatalogLocationOptions />
+                  </select>
+                </Field>
+              )}
               <Field
                 label="What would help?"
                 hint="A sentence or two is enough."
@@ -198,14 +210,16 @@ export function CatalogRequestDialog({
               <Field label="Budget (optional)">
                 <Input name="budget" placeholder="$300–600" />
               </Field>
-              <label className="flex items-start gap-2 text-sm text-gray-600 sm:col-span-2">
-                <input
-                  name="remote"
-                  type="checkbox"
-                  className="mt-1 accent-rose-600"
-                />
-                Remote providers are okay
-              </label>
+              {categoryConfig.locationMode === "service_area" && (
+                <label className="flex items-start gap-2 text-sm text-gray-600 sm:col-span-2">
+                  <input
+                    name="remote"
+                    type="checkbox"
+                    className="mt-1 accent-rose-600"
+                  />
+                  Remote providers are okay
+                </label>
+              )}
               <label className="flex items-start gap-2 text-sm text-gray-600 sm:col-span-2">
                 <input
                   name="broadcastConsent"
@@ -243,6 +257,12 @@ export function CatalogSubmissionDialog({ trigger }: { trigger?: ReactNode }) {
   const trpc = useTRPC();
   const [open, setOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<
+    CatalogCategoryKey | ""
+  >("");
+  const selectedCategoryConfig = selectedCategory
+    ? CATALOG_CATEGORIES[selectedCategory]
+    : undefined;
   const mutation = useMutation(
     trpc.catalog.submitListing.mutationOptions({
       onSuccess: () => setSubmitted(true),
@@ -261,10 +281,13 @@ export function CatalogSubmissionDialog({ trigger }: { trigger?: ReactNode }) {
       email: formValue(data, "email"),
       website: formValue(data, "website") || undefined,
       description: formValue(data, "description"),
-      locationKey: locationKey
-        ? (locationKey as CatalogLocationFilterKey)
-        : undefined,
-      remote: data.get("remote") === "on",
+      locationKey:
+        selectedCategoryConfig?.locationMode !== "global" && locationKey
+          ? (locationKey as CatalogLocationFilterKey)
+          : undefined,
+      remote:
+        selectedCategoryConfig?.locationMode === "service_area" &&
+        data.get("remote") === "on",
     });
   };
 
@@ -273,7 +296,10 @@ export function CatalogSubmissionDialog({ trigger }: { trigger?: ReactNode }) {
       open={open}
       onOpenChange={(next) => {
         setOpen(next);
-        if (!next) setSubmitted(false);
+        if (!next) {
+          setSubmitted(false);
+          setSelectedCategory("");
+        }
       }}
     >
       <DialogTrigger asChild onClick={() => setOpen(true)}>
@@ -303,7 +329,7 @@ export function CatalogSubmissionDialog({ trigger }: { trigger?: ReactNode }) {
           <form onSubmit={submit}>
             <DialogHeader>
               <div className="font-mono text-[11px] font-medium tracking-[0.07em] text-rose-600 uppercase">
-                Provider intake
+                Listing intake
               </div>
               <DialogTitle className="text-2xl tracking-[-0.02em]">
                 Submit a listing
@@ -327,7 +353,12 @@ export function CatalogSubmissionDialog({ trigger }: { trigger?: ReactNode }) {
                 <select
                   name="category"
                   required
-                  defaultValue=""
+                  value={selectedCategory}
+                  onChange={(event) =>
+                    setSelectedCategory(
+                      event.target.value as CatalogCategoryKey | "",
+                    )
+                  }
                   className="h-9 rounded-md border border-gray-200 bg-white px-3 text-sm outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
                 >
                   <option value="" disabled>
@@ -351,23 +382,34 @@ export function CatalogSubmissionDialog({ trigger }: { trigger?: ReactNode }) {
               <Field label="Website or booking link">
                 <Input name="website" type="url" placeholder="https://" />
               </Field>
-              <Field label="Primary location">
-                <select
-                  name="locationKey"
-                  className="h-9 rounded-md border border-gray-200 bg-white px-3 text-sm outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
-                >
-                  <option value="">Not location-specific</option>
-                  <CatalogLocationOptions />
-                </select>
-              </Field>
-              <label className="flex items-center gap-2 self-end pb-2 text-sm text-gray-600">
-                <input
-                  name="remote"
-                  type="checkbox"
-                  className="accent-rose-600"
-                />
-                Available remotely or online
-              </label>
+              {selectedCategoryConfig?.locationMode !== "global" &&
+                selectedCategoryConfig && (
+                  <Field
+                    label={
+                      selectedCategoryConfig.locationMode === "market_signal"
+                        ? "Primary market"
+                        : "Primary location"
+                    }
+                  >
+                    <select
+                      name="locationKey"
+                      className="h-9 rounded-md border border-gray-200 bg-white px-3 text-sm outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
+                    >
+                      <option value="">Not location-specific</option>
+                      <CatalogLocationOptions />
+                    </select>
+                  </Field>
+                )}
+              {selectedCategoryConfig?.locationMode === "service_area" && (
+                <label className="flex items-center gap-2 self-end pb-2 text-sm text-gray-600">
+                  <input
+                    name="remote"
+                    type="checkbox"
+                    className="accent-rose-600"
+                  />
+                  Also available remotely
+                </label>
+              )}
               <div className="sm:col-span-2">
                 <Field
                   label="What should people know?"

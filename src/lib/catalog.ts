@@ -2,11 +2,40 @@ export const CATALOG_CATEGORY_KEYS = [
   "dating_coach",
   "dating_photographer",
   "matchmaker",
-  "ai_photo_generation",
   "dating_app",
+  "profile_feedback",
+  "ai_photo_generation",
+  "messaging_assistant",
 ] as const;
 
 export type CatalogCategoryKey = (typeof CATALOG_CATEGORY_KEYS)[number];
+
+export const CATALOG_SECTION_KEYS = [
+  "local_services",
+  "digital_products",
+] as const;
+export type CatalogSectionKey = (typeof CATALOG_SECTION_KEYS)[number];
+
+export const CATALOG_LOCATION_MODES = [
+  "service_area",
+  "market_signal",
+  "global",
+] as const;
+export type CatalogLocationMode = (typeof CATALOG_LOCATION_MODES)[number];
+
+export const CATALOG_SECTIONS: Record<
+  CatalogSectionKey,
+  { label: string; description: string }
+> = {
+  local_services: {
+    label: "Local services",
+    description: "People and practices that serve a real place.",
+  },
+  digital_products: {
+    label: "Digital products",
+    description: "Apps and tools you can use from anywhere.",
+  },
+};
 
 export const CATALOG_ENTITY_TYPES = [
   "person",
@@ -44,6 +73,8 @@ export const CATALOG_CATEGORIES: Record<
     shortLabel: string;
     description: string;
     headline: string;
+    section: CatalogSectionKey;
+    locationMode: CatalogLocationMode;
   }
 > = {
   dating_coach: {
@@ -52,6 +83,8 @@ export const CATALOG_CATEGORIES: Record<
     shortLabel: "Coaches",
     description: "Profile reviews, messaging help, and dating strategy.",
     headline: "Advice that turns your stats into a plan",
+    section: "local_services",
+    locationMode: "service_area",
   },
   dating_photographer: {
     slug: "dating-photographers",
@@ -59,6 +92,8 @@ export const CATALOG_CATEGORIES: Record<
     shortLabel: "Photographers",
     description: "Natural photos made to work on dating apps.",
     headline: "Photos shot to perform on the apps",
+    section: "local_services",
+    locationMode: "service_area",
   },
   matchmaker: {
     slug: "matchmakers",
@@ -66,6 +101,8 @@ export const CATALOG_CATEGORIES: Record<
     shortLabel: "Matchmakers",
     description: "Human introductions and search beyond the apps.",
     headline: "A human route to meeting the right person",
+    section: "local_services",
+    locationMode: "service_area",
   },
   ai_photo_generation: {
     slug: "ai-photo-generation",
@@ -73,15 +110,43 @@ export const CATALOG_CATEGORIES: Record<
     shortLabel: "AI photos",
     description: "Create dating-profile images from your own photos.",
     headline: "Generate stronger profile photos from home",
+    section: "digital_products",
+    locationMode: "global",
   },
   dating_app: {
     slug: "dating-apps",
-    label: "Dating apps & tools",
-    shortLabel: "Apps & tools",
-    description: "Where to swipe and what to improve with.",
-    headline: "Choose the right app and the right tools",
+    label: "Dating apps",
+    shortLabel: "Dating apps",
+    description: "Where to swipe, with market notes by place.",
+    headline: "Choose the right app for your market",
+    section: "digital_products",
+    locationMode: "market_signal",
+  },
+  profile_feedback: {
+    slug: "profile-feedback",
+    label: "Profile feedback",
+    shortLabel: "Profile feedback",
+    description: "Profile audits, photo ratings, and practical improvements.",
+    headline: "See what your profile is communicating",
+    section: "digital_products",
+    locationMode: "global",
+  },
+  messaging_assistant: {
+    slug: "messaging-assistants",
+    label: "Messaging assistants",
+    shortLabel: "Messaging help",
+    description: "Opener ideas, reply suggestions, and conversation feedback.",
+    headline: "Get unstuck without losing your own voice",
+    section: "digital_products",
+    locationMode: "global",
   },
 };
+
+export function getCatalogCategoryKeysBySection(section: CatalogSectionKey) {
+  return CATALOG_CATEGORY_KEYS.filter(
+    (key) => CATALOG_CATEGORIES[key].section === section,
+  );
+}
 
 export function getCatalogCategoryBySlug(slug: string) {
   return CATALOG_CATEGORY_KEYS.find(

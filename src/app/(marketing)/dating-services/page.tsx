@@ -4,9 +4,11 @@ import type { LucideIcon } from "lucide-react";
 import {
   ArrowRight,
   Camera,
+  ClipboardCheck,
   Globe2,
   HeartHandshake,
   MapPin,
+  MessageCircleReply,
   ShieldCheck,
   Smartphone,
   Sparkles,
@@ -20,8 +22,10 @@ import { Panel } from "@/components/golden";
 import { Button } from "@/components/ui/button";
 import {
   CATALOG_CATEGORIES,
-  CATALOG_CATEGORY_KEYS,
   CATALOG_PLACE_OPTIONS,
+  CATALOG_SECTIONS,
+  CATALOG_SECTION_KEYS,
+  getCatalogCategoryKeysBySection,
   type CatalogCategoryKey,
 } from "@/lib/catalog";
 import { trpcApi } from "@/trpc/server";
@@ -29,7 +33,7 @@ import { trpcApi } from "@/trpc/server";
 export const metadata: Metadata = {
   title: "Dating Services Directory",
   description:
-    "Find dating coaches, photographers, matchmakers, AI photo services, and dating apps curated by SwipeStats.",
+    "Find dating coaches, photographers, matchmakers, dating apps, profile feedback, and digital dating tools curated by SwipeStats.",
 };
 
 const categoryIcons: Record<CatalogCategoryKey, LucideIcon> = {
@@ -38,6 +42,8 @@ const categoryIcons: Record<CatalogCategoryKey, LucideIcon> = {
   matchmaker: HeartHandshake,
   ai_photo_generation: Sparkles,
   dating_app: Smartphone,
+  profile_feedback: ClipboardCheck,
+  messaging_assistant: MessageCircleReply,
 };
 
 export default async function DatingServicesPage() {
@@ -67,78 +73,112 @@ export default async function DatingServicesPage() {
               Found the problem in your stats? Find the fix.
             </h1>
             <p className="mt-7 max-w-2xl text-[18px] leading-8 text-gray-600 sm:text-[20px]">
-              A curated guide to coaches, photographers, matchmakers, and tools
-              that can improve dating-app results. Hand-picked and clearly
-              labeled.
+              A curated guide to local experts and digital tools that can
+              improve dating-app results. Hand-picked and clearly labeled.
             </p>
 
             <div className="mt-8 flex flex-wrap items-center gap-2">
               <span className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-xs">
                 <MapPin className="h-4 w-4 text-rose-600" />
-                Launching in six cities
+                Local help in six cities
               </span>
               <span className="inline-flex items-center gap-2 rounded-full border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-700 shadow-xs">
                 <Globe2 className="h-4 w-4 text-emerald-600" />
-                Remote-friendly
+                Digital tools worldwide
               </span>
             </div>
           </div>
 
-          <div className="mt-14 grid gap-px overflow-hidden rounded-3xl border border-gray-200 bg-gray-200 shadow-[0_1px_2px_oklch(0.2_0.02_286/0.05)] sm:grid-cols-2 lg:grid-cols-5">
-            {CATALOG_CATEGORY_KEYS.map((key) => {
-              const category = CATALOG_CATEGORIES[key];
-              const Icon = categoryIcons[key];
-              const count = countByCategory.get(key) ?? 0;
+          <div className="mt-14 space-y-12">
+            {CATALOG_SECTION_KEYS.map((sectionKey) => {
+              const section = CATALOG_SECTIONS[sectionKey];
+              const categoryKeys = getCatalogCategoryKeysBySection(sectionKey);
               return (
-                <Link
-                  key={key}
-                  href={`/dating-services/${category.slug}`}
-                  className="group flex min-h-[240px] flex-col bg-white p-6 transition hover:bg-rose-50/40"
-                >
-                  <span className="grid h-11 w-11 place-items-center rounded-xl bg-rose-50 text-rose-600 transition group-hover:bg-rose-600 group-hover:text-white">
-                    <Icon className="h-5 w-5" />
-                  </span>
-                  <h2 className="mt-6 text-[17px] font-bold tracking-[-0.02em]">
-                    {category.shortLabel}
-                  </h2>
-                  <p className="mt-2 text-sm leading-6 text-gray-500">
-                    {category.description}
-                  </p>
-                  <span className="mt-auto flex items-center gap-1 pt-5 font-mono text-[11px] text-rose-600">
-                    {count > 0
-                      ? `${count} ${count === 1 ? "listing" : "listings"}`
-                      : "Opening soon"}
-                    <ArrowRight className="h-3 w-3 transition group-hover:translate-x-0.5" />
-                  </span>
-                </Link>
+                <section key={sectionKey}>
+                  <div className="mb-5 flex flex-wrap items-end justify-between gap-3">
+                    <div>
+                      <div className="font-mono text-[11px] font-medium tracking-[0.09em] text-rose-600 uppercase">
+                        {section.label}
+                      </div>
+                      <p className="mt-1.5 text-sm text-gray-500">
+                        {section.description}
+                      </p>
+                    </div>
+                    {sectionKey === "local_services" && (
+                      <span className="font-mono text-[11px] text-gray-400">
+                        Filtered by service area
+                      </span>
+                    )}
+                  </div>
+                  <div
+                    className={`grid gap-px overflow-hidden rounded-3xl border border-gray-200 bg-gray-200 shadow-[0_1px_2px_oklch(0.2_0.02_286/0.05)] sm:grid-cols-2 ${
+                      sectionKey === "local_services"
+                        ? "lg:grid-cols-3"
+                        : "lg:grid-cols-4"
+                    }`}
+                  >
+                    {categoryKeys.map((key) => {
+                      const category = CATALOG_CATEGORIES[key];
+                      const Icon = categoryIcons[key];
+                      const count = countByCategory.get(key) ?? 0;
+                      return (
+                        <Link
+                          key={key}
+                          href={`/dating-services/${category.slug}`}
+                          className="group flex min-h-[220px] flex-col bg-white p-6 transition hover:bg-rose-50/40"
+                        >
+                          <span className="grid h-11 w-11 place-items-center rounded-xl bg-rose-50 text-rose-600 transition group-hover:bg-rose-600 group-hover:text-white">
+                            <Icon className="h-5 w-5" />
+                          </span>
+                          <h2 className="mt-6 text-[17px] font-bold tracking-[-0.02em]">
+                            {category.shortLabel}
+                          </h2>
+                          <p className="mt-2 text-sm leading-6 text-gray-500">
+                            {category.description}
+                          </p>
+                          <span className="mt-auto flex items-center gap-1 pt-5 font-mono text-[11px] text-rose-600">
+                            {count > 0
+                              ? `${count} ${count === 1 ? "listing" : "listings"}`
+                              : "Opening soon"}
+                            <ArrowRight className="h-3 w-3 transition group-hover:translate-x-0.5" />
+                          </span>
+                        </Link>
+                      );
+                    })}
+                  </div>
+
+                  {sectionKey === "local_services" && (
+                    <div className="mt-6">
+                      <div className="flex flex-wrap gap-2">
+                        {featuredCities.map((place) => (
+                          <Link
+                            key={place.id}
+                            href={`/dating-services/location/${place.slug}`}
+                            className="rounded-full border border-gray-200 bg-white px-3.5 py-2 font-mono text-[11px] text-gray-600 transition hover:border-rose-300 hover:text-rose-600"
+                          >
+                            {place.shortName}
+                          </Link>
+                        ))}
+                      </div>
+                      <div className="mt-3 flex flex-wrap items-center gap-2">
+                        <span className="mr-1 font-mono text-[10px] tracking-[0.08em] text-gray-400 uppercase">
+                          Broader areas
+                        </span>
+                        {broaderAreas.map((place) => (
+                          <Link
+                            key={place.id}
+                            href={`/dating-services/location/${place.slug}`}
+                            className="rounded-full border border-gray-200 bg-gray-50 px-3.5 py-2 font-mono text-[11px] text-gray-600 transition hover:border-rose-300 hover:text-rose-600"
+                          >
+                            {place.shortName}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </section>
               );
             })}
-          </div>
-
-          <div className="mt-10 flex flex-wrap gap-2">
-            {featuredCities.map((place) => (
-              <Link
-                key={place.id}
-                href={`/dating-services/location/${place.slug}`}
-                className="rounded-full border border-gray-200 bg-white px-3.5 py-2 font-mono text-[11px] text-gray-600 transition hover:border-rose-300 hover:text-rose-600"
-              >
-                {place.shortName}
-              </Link>
-            ))}
-          </div>
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <span className="mr-1 font-mono text-[10px] tracking-[0.08em] text-gray-400 uppercase">
-              Broader areas
-            </span>
-            {broaderAreas.map((place) => (
-              <Link
-                key={place.id}
-                href={`/dating-services/location/${place.slug}`}
-                className="rounded-full border border-gray-200 bg-gray-50 px-3.5 py-2 font-mono text-[11px] text-gray-600 transition hover:border-rose-300 hover:text-rose-600"
-              >
-                {place.shortName}
-              </Link>
-            ))}
           </div>
         </div>
       </section>
