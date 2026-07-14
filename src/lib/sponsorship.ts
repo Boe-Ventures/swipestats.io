@@ -32,7 +32,7 @@ export const ACTIVE_SPONSOR_CAMPAIGN: SponsorCampaign = {
   ctaText: "Sponsor SwipeStats",
   href: "mailto:paw@swipestats.io?subject=SwipeStats%20sponsorship%20inquiry",
   startsAt: "2026-07-14T14:00:00+02:00",
-  endsAt: "2026-07-21T14:00:00+02:00",
+  endsAt: "2026-08-04T14:00:00+02:00",
   proof: [
     { value: "50K+", label: "monthly visitors" },
     { value: "Dating", label: "high-intent audience" },

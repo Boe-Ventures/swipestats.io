@@ -52,5 +52,9 @@ export function useSponsorTracking(
     trackEvent("sponsor_clicked", eventProperties);
   }, [campaign.kind, eventProperties, trackEvent]);
 
-  return { sponsorRef, trackClick };
+  const trackDismiss = useCallback(() => {
+    trackEvent("sponsor_dismissed", eventProperties);
+  }, [eventProperties, trackEvent]);
+
+  return { sponsorRef, trackClick, trackDismiss };
 }

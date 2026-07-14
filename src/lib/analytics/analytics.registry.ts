@@ -356,6 +356,11 @@ export const CLIENT_EVENT_REGISTRY = {
     description: "The SwipeStats sponsorship inquiry CTA was clicked.",
     status: "live",
   },
+  sponsor_dismissed: {
+    category: "Sponsorship",
+    description: "A dismissible sponsorship placement was closed.",
+    status: "live",
+  },
 
   // ── Auth UI ──────────────────────────────────────
   sign_up_clicked: {

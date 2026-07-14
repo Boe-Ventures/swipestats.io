@@ -133,25 +133,28 @@ with sponsor-specific impressions and clicks.
 
 The default house campaign invites prospective partners to reach SwipeStats'
 50K+ monthly visitors. Its July 2026 experiment is limited to the blog and
-expires automatically after one week. Paid campaign creative is configured
+expires automatically after three weeks. Paid campaign creative is configured
 centrally in `src/lib/sponsorship.ts`; paid destinations render as external
 links with `rel="sponsored"`.
 
 During an active campaign, the automatic injector replaces the newsletter slot
 before the fourth `h2` with one `SponsorCard`. This gives eligible long-tail
 posts one measured inline placement without increasing the overall number of
-interruptions. Curated posts with `enableAutoCtAs: false` continue to use only
-their manually placed product cards.
+interruptions. Curated posts with `enableAutoCtAs: false` use only their
+manually placed cards by default. For the July experiment, three high-traffic
+curated guides include one manually positioned `<SponsorCard />`:
+`tinder-statistics`, `hinge-statistics`, and `best-hinge-openers`. Shorter
+curated posts with two existing product cards are intentionally left alone.
 
 The compact sponsor bar and the inline sponsor card may run together during the
-one-week experiment: the bar establishes the offer while the inline card gives
+three-week experiment: the bar establishes the offer while the inline card gives
 interested readers the fuller pitch later in the article. Dismissal is
 campaign-specific, so dismissing the house bar will not hide a future paid
 sponsor.
 
-Sponsorship surfaces emit `sponsor_impression`, `sponsor_clicked`, and
-`sponsor_inquiry_clicked`, attributed by campaign, placement, source path, and
-sponsor name.
+Sponsorship surfaces emit `sponsor_impression`, `sponsor_clicked`,
+`sponsor_inquiry_clicked`, and `sponsor_dismissed`, attributed by campaign,
+placement, source path, and sponsor name.
 
 ## Previewing cards
 

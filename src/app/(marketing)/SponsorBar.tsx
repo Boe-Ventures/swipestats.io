@@ -20,11 +20,15 @@ export function SponsorBar({
   logo,
   className,
 }: SponsorBarProps) {
-  const { sponsorRef, trackClick } = useSponsorTracking(
+  const { sponsorRef, trackClick, trackDismiss } = useSponsorTracking(
     campaign,
     "sitewide-bar",
   );
   const isPaid = campaign.kind === "paid";
+  const handleDismiss = () => {
+    trackDismiss();
+    onDismiss();
+  };
 
   return (
     <aside
@@ -70,7 +74,7 @@ export function SponsorBar({
 
         <button
           type="button"
-          onClick={onDismiss}
+          onClick={handleDismiss}
           className="ml-2 inline-flex size-10 items-center justify-center justify-self-end rounded-full text-white/80 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white sm:size-9"
         >
           <span className="sr-only">Dismiss sponsorship banner</span>

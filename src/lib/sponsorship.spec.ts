@@ -13,6 +13,13 @@ describe("isSponsorCampaignActive", () => {
         new Date("2026-07-18T12:00:00+02:00"),
       ),
     ).toBe(true);
+
+    expect(
+      isSponsorCampaignActive(
+        ACTIVE_SPONSOR_CAMPAIGN,
+        new Date("2026-07-28T12:00:00+02:00"),
+      ),
+    ).toBe(true);
   });
 
   test("stays hidden before the experiment begins", () => {
@@ -28,7 +35,7 @@ describe("isSponsorCampaignActive", () => {
     expect(
       isSponsorCampaignActive(
         ACTIVE_SPONSOR_CAMPAIGN,
-        new Date("2026-07-22T00:00:00+02:00"),
+        new Date("2026-08-04T14:00:00+02:00"),
       ),
     ).toBe(false);
   });

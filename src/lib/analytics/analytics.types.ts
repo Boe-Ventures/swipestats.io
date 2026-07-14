@@ -140,6 +140,7 @@ export type ClientAnalyticsEventName =
   | "sponsor_impression"
   | "sponsor_clicked"
   | "sponsor_inquiry_clicked"
+  | "sponsor_dismissed"
 
   // ─────────────────────────────────────────────────
   // User authentication UI
@@ -609,6 +610,7 @@ export type ClientEventPropertiesDefinition = {
   sponsor_impression: SponsorEventProperties;
   sponsor_clicked: SponsorEventProperties;
   sponsor_inquiry_clicked: SponsorEventProperties;
+  sponsor_dismissed: SponsorEventProperties;
 
   // ─────────────────────────────────────────────────
   // User authentication UI

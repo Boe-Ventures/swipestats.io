@@ -647,6 +647,16 @@ export const CLIENT_EVENT_PROPERTIES: EventPropertyRegistry<ClientEventPropertie
       sourcePath: { type: "string", required: true },
       sponsorName: { type: "string", required: true },
     },
+    sponsor_dismissed: {
+      campaignId: { type: "string", required: true },
+      placement: {
+        type: "enum",
+        required: true,
+        values: ["sitewide-bar", "blog-inline"],
+      },
+      sourcePath: { type: "string", required: true },
+      sponsorName: { type: "string", required: true },
+    },
 
     // ── Auth UI ──────────────────────────────────────
     sign_up_clicked: {
