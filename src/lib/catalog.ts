@@ -108,6 +108,14 @@ export const CATALOG_LOCATION_FILTER_KEYS = [
 ] as const;
 export type CatalogLocationFilterKey = CatalogCityKey | CatalogRegionKey;
 
+export const CATALOG_MARKET_STRENGTHS = [
+  "leader",
+  "strong",
+  "notable",
+  "available",
+] as const;
+export type CatalogMarketStrength = (typeof CATALOG_MARKET_STRENGTHS)[number];
+
 export const CATALOG_CITIES: Record<
   CatalogCityKey,
   {
@@ -192,6 +200,14 @@ export interface CatalogSourceRef {
   key: string;
 }
 
+export interface CatalogMarketSignal {
+  locationKey: CatalogCityKey;
+  strength: CatalogMarketStrength;
+  note?: string;
+  asOf?: string;
+  sourceUrls?: string[];
+}
+
 export interface CatalogEntryData {
   entityTypes: CatalogEntityType[];
   displayStyle: CatalogDisplayStyle;
@@ -199,6 +215,7 @@ export interface CatalogEntryData {
   tags?: string[];
   links?: CatalogLink[];
   sourceRefs?: CatalogSourceRef[];
+  marketSignals?: CatalogMarketSignal[];
   imageUrl?: string;
   descriptor?: string;
   organizationName?: string;
@@ -235,4 +252,14 @@ export interface CatalogSubmissionData {
 
 export function formatCatalogTag(tag: string) {
   return tag.replaceAll("_", " ");
+}
+
+export function getCatalogMarketSignal(
+  data: CatalogEntryData,
+  location: CatalogLocationFilterKey,
+) {
+  const cityKeys = expandCatalogLocation(location);
+  return data.marketSignals?.find((signal) =>
+    cityKeys.includes(signal.locationKey),
+  );
 }

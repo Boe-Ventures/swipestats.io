@@ -6,8 +6,11 @@ import { cn } from "@/components/ui/lib/utils";
 import {
   CATALOG_CITIES,
   formatCatalogTag,
+  getCatalogMarketSignal,
+  type CatalogCategoryKey,
   type CatalogEntryData,
   type CatalogCityKey,
+  type CatalogLocationFilterKey,
 } from "@/lib/catalog";
 import { CatalogTrustBadges } from "./catalog-trust-badges";
 
@@ -15,22 +18,32 @@ interface CatalogEntryCardProps {
   entry: {
     slug: string;
     name: string;
+    primaryCategory: CatalogCategoryKey;
     verificationStatus: "UNVERIFIED" | "VERIFIED";
     claimedAt: Date | null;
     featured: boolean;
     editorialPick: boolean;
     remote: boolean;
     locationKeys: CatalogCityKey[];
+    marketKeys: CatalogCityKey[];
     data: CatalogEntryData;
   };
   className?: string;
+  contextLocation?: CatalogLocationFilterKey;
 }
 
-export function CatalogEntryCard({ entry, className }: CatalogEntryCardProps) {
+export function CatalogEntryCard({
+  entry,
+  className,
+  contextLocation,
+}: CatalogEntryCardProps) {
   const affiliate = entry.data.links?.some((link) => link.type === "affiliate");
   const location = entry.locationKeys[0]
     ? CATALOG_CITIES[entry.locationKeys[0]].shortLabel
     : null;
+  const marketSignal = contextLocation
+    ? getCatalogMarketSignal(entry.data, contextLocation)
+    : undefined;
   const initials = entry.name
     .split(" ")
     .slice(0, 2)
@@ -80,12 +93,21 @@ export function CatalogEntryCard({ entry, className }: CatalogEntryCardProps) {
                 {location}
               </span>
             )}
-            {entry.remote && (
-              <span className="inline-flex items-center gap-1 text-emerald-700">
+            {marketSignal && (
+              <span className="inline-flex items-center gap-1 text-violet-700">
                 <Globe2 className="h-3.5 w-3.5" />
-                Remote
+                {formatCatalogTag(marketSignal.strength)} in{" "}
+                {CATALOG_CITIES[marketSignal.locationKey].shortLabel}
               </span>
             )}
+            {!marketSignal &&
+              entry.remote &&
+              entry.primaryCategory !== "dating_app" && (
+                <span className="inline-flex items-center gap-1 text-emerald-700">
+                  <Globe2 className="h-3.5 w-3.5" />
+                  Remote
+                </span>
+              )}
           </div>
         </div>
       </div>

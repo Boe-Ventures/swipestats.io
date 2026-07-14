@@ -107,7 +107,7 @@ export default async function CatalogListingPage({ params }: ListingPageProps) {
                     {CATALOG_CITIES[key].label}
                   </span>
                 ))}
-                {entry.remote && (
+                {entry.remote && entry.primaryCategory !== "dating_app" && (
                   <span className="inline-flex items-center gap-1.5 text-emerald-700">
                     <Globe2 className="h-4 w-4" />
                     Available remotely
@@ -142,6 +142,35 @@ export default async function CatalogListingPage({ params }: ListingPageProps) {
               <p className="mt-3 text-[16px] leading-7 text-gray-600">
                 {entry.data.providerSummary}
               </p>
+            </section>
+          )}
+
+          {entry.data.marketSignals && entry.data.marketSignals.length > 0 && (
+            <section className="mt-10">
+              <div className="font-mono text-[11px] font-medium tracking-[0.09em] text-violet-600 uppercase">
+                Market notes
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {entry.data.marketSignals.map((signal) => (
+                  <div
+                    key={signal.locationKey}
+                    className="rounded-xl border border-violet-100 bg-violet-50/40 p-4"
+                  >
+                    <div className="font-semibold text-gray-900">
+                      {CATALOG_CITIES[signal.locationKey].shortLabel}
+                    </div>
+                    <div className="mt-1 font-mono text-[11px] text-violet-700 uppercase">
+                      {formatCatalogTag(signal.strength)}
+                      {signal.asOf ? ` · ${signal.asOf}` : ""}
+                    </div>
+                    {signal.note && (
+                      <p className="mt-2 text-sm leading-6 text-gray-600">
+                        {signal.note}
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
             </section>
           )}
 

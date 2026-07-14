@@ -5,8 +5,42 @@
  */
 import { db } from "@/server/db";
 import { catalogEntryTable, type CatalogEntryInsert } from "@/server/db/schema";
+import {
+  CATALOG_CITY_KEYS,
+  type CatalogCityKey,
+  type CatalogMarketSignal,
+  type CatalogMarketStrength,
+} from "@/lib/catalog";
 
 const claimedAt = new Date("2026-07-01T12:00:00.000Z");
+const marketAsOf = "2026-07-14";
+const germanRankingSource =
+  "https://www.similarweb.com/top-apps/google/germany/dating/top-free/";
+const norwayMarketSource =
+  "https://www.aftenposten.no/kultur/i/7pdwzo/eksperter-advarer-derfor-boer-du-utfordre-datingappens-algoritme";
+const matchGroupMarketSource =
+  "https://s203.q4cdn.com/993464185/files/doc_financials/2025/q1/1Q-2025-Prepared-Remarks-vFinal.pdf";
+const usCityKeys: CatalogCityKey[] = [
+  "new-york",
+  "los-angeles",
+  "san-francisco",
+  "miami",
+];
+
+function marketSignals(
+  locationKeys: CatalogCityKey[],
+  strength: CatalogMarketStrength,
+  note: string,
+  sourceUrls: string[],
+): CatalogMarketSignal[] {
+  return locationKeys.map((locationKey) => ({
+    locationKey,
+    strength,
+    note,
+    asOf: marketAsOf,
+    sourceUrls,
+  }));
+}
 
 const entries: CatalogEntryInsert[] = [
   {
@@ -225,36 +259,109 @@ const entries: CatalogEntryInsert[] = [
     },
   },
   ...[
-    ["hinge", "Hinge", "https://hinge.co", "Designed to be deleted"],
-    [
-      "tinder",
-      "Tinder",
-      "https://tinder.com",
-      "The largest general dating app",
-    ],
-    [
-      "bumble",
-      "Bumble",
-      "https://bumble.com",
-      "Dating, friends, and networking",
-    ],
+    {
+      slug: "hinge",
+      name: "Hinge",
+      url: "https://hinge.co",
+      descriptor: "Designed to be deleted",
+      marketSignals: [
+        ...marketSignals(
+          usCityKeys,
+          "strong",
+          "A leading intentional-dating option in major US markets.",
+          [matchGroupMarketSource],
+        ),
+        ...marketSignals(
+          ["oslo"],
+          "strong",
+          "One of the dominant swipe-based dating apps in Norway.",
+          [norwayMarketSource],
+        ),
+        ...marketSignals(
+          ["berlin"],
+          "leader",
+          "Currently ranked first among Android dating apps in Germany.",
+          [germanRankingSource],
+        ),
+      ],
+    },
+    {
+      slug: "tinder",
+      name: "Tinder",
+      url: "https://tinder.com",
+      descriptor: "The largest general dating app",
+      marketSignals: [
+        ...marketSignals(
+          usCityKeys,
+          "leader",
+          "The broadest general-dating pool and the most-downloaded dating app worldwide.",
+          [matchGroupMarketSource],
+        ),
+        ...marketSignals(
+          ["oslo"],
+          "leader",
+          "The broadest general-dating pool among Norway's dominant apps.",
+          [norwayMarketSource],
+        ),
+        ...marketSignals(
+          ["berlin"],
+          "notable",
+          "Currently ranked third among Android dating apps in Germany.",
+          [germanRankingSource],
+        ),
+      ],
+    },
+    {
+      slug: "bumble",
+      name: "Bumble",
+      url: "https://bumble.com",
+      descriptor: "Dating, friends, and networking",
+      marketSignals: [
+        ...marketSignals(
+          usCityKeys,
+          "notable",
+          "A meaningful alternative to Tinder and Hinge in major US markets.",
+          [],
+        ),
+        ...marketSignals(
+          ["oslo"],
+          "strong",
+          "One of the dominant swipe-based dating apps in Norway.",
+          [norwayMarketSource],
+        ),
+        ...marketSignals(
+          ["berlin"],
+          "strong",
+          "Currently ranked second among Android dating apps in Germany.",
+          [germanRankingSource],
+        ),
+      ],
+    },
   ].map(
-    ([slug, name, url, descriptor]): CatalogEntryInsert => ({
+    ({
+      slug,
+      name,
+      url,
+      descriptor,
+      marketSignals: appMarketSignals,
+    }): CatalogEntryInsert => ({
       slug: `${slug}-dating-app`,
-      name: name!,
+      name,
       primaryCategory: "dating_app",
       status: "PUBLISHED",
       verificationStatus: "UNVERIFIED",
-      remote: true,
+      remote: false,
       locationKeys: [],
+      marketKeys: [...CATALOG_CITY_KEYS],
       data: {
         entityTypes: ["organization", "website", "app"],
         displayStyle: "product",
         descriptor,
         editorialSummary: `${name} is included as a directory entry so SwipeStats app reviews, comparisons, official links, and future affiliate relationships can share one catalog identity.`,
         tags: ["dating_app"],
-        links: [{ type: "official", url: url!, label: `Visit ${name}` }],
+        links: [{ type: "official", url, label: `Visit ${name}` }],
         primaryCtaLabel: `Visit ${name}`,
+        marketSignals: appMarketSignals,
         sourceRefs: [{ namespace: "editorial", key: `${slug}-app` }],
       },
     }),
@@ -277,6 +384,7 @@ for (const entry of entries) {
         editorialPick: entry.editorialPick,
         remote: entry.remote,
         locationKeys: entry.locationKeys,
+        marketKeys: entry.marketKeys ?? [],
         data: entry.data,
         updatedAt: new Date(),
       },

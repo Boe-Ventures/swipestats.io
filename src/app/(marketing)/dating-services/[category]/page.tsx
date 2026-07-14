@@ -56,8 +56,9 @@ export default async function DatingServicesCategoryPage({
   )
     ? (rawSearchParams.location as CatalogLocationFilterKey)
     : undefined;
-  const includeRemote = rawSearchParams.remote === "1";
   const config = CATALOG_CATEGORIES[category];
+  const supportsRemote = category !== "dating_app";
+  const includeRemote = supportsRemote && rawSearchParams.remote === "1";
   const api = await trpcApi();
   const { entries, totalCount } = await api.catalog.list({
     category,
@@ -150,22 +151,24 @@ export default async function DatingServicesCategoryPage({
                 {CATALOG_REGIONS[key].label}
               </Link>
             ))}
-            <Link
-              href={filterHref({
-                category: categorySlug,
-                location,
-                remote: !includeRemote,
-              })}
-              className={cn(
-                "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-semibold transition",
-                includeRemote
-                  ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-                  : "border-gray-200 bg-white text-gray-600 hover:border-gray-300",
-              )}
-            >
-              <Globe2 className="h-3.5 w-3.5" />
-              {location ? "Include remote" : "Remote only"}
-            </Link>
+            {supportsRemote && (
+              <Link
+                href={filterHref({
+                  category: categorySlug,
+                  location,
+                  remote: !includeRemote,
+                })}
+                className={cn(
+                  "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-semibold transition",
+                  includeRemote
+                    ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                    : "border-gray-200 bg-white text-gray-600 hover:border-gray-300",
+                )}
+              >
+                <Globe2 className="h-3.5 w-3.5" />
+                {location ? "Include remote" : "Remote only"}
+              </Link>
+            )}
           </div>
         </div>
       </section>

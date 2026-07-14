@@ -71,6 +71,13 @@
       "when": 1784033990691,
       "tag": "0009_zippy_gwen_stacy",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1784035717430,
+      "tag": "0010_wandering_johnny_storm",
+      "breakpoints": true
     }
   ]
 }

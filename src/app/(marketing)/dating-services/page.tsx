@@ -114,7 +114,7 @@ export default async function DatingServicesPage() {
             {CATALOG_CITY_KEYS.map((key) => (
               <Link
                 key={key}
-                href={`/dating-services/dating-photographers?location=${key}`}
+                href={`/dating-services/location/${key}`}
                 className="rounded-full border border-gray-200 bg-white px-3.5 py-2 font-mono text-[11px] text-gray-600 transition hover:border-rose-300 hover:text-rose-600"
               >
                 {CATALOG_CITIES[key].shortLabel}

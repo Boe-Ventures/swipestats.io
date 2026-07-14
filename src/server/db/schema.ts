@@ -1054,6 +1054,12 @@ export const catalogEntryTable = pgTable(
       .$type<CatalogCityKey[]>()
       .default([])
       .notNull(),
+    marketKeys: t
+      .text()
+      .array()
+      .$type<CatalogCityKey[]>()
+      .default([])
+      .notNull(),
     data: t.jsonb().$type<CatalogEntryData>().notNull(),
     createdAt: t
       .timestamp({ withTimezone: true })
@@ -1073,6 +1079,7 @@ export const catalogEntryTable = pgTable(
       t.name,
     ),
     index("catalog_entry_location_keys_idx").using("gin", t.locationKeys),
+    index("catalog_entry_market_keys_idx").using("gin", t.marketKeys),
   ],
 );
 

@@ -1,5 +1,5 @@
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
-import { and, arrayOverlaps, asc, count, desc, eq, or } from "drizzle-orm";
+import { and, arrayOverlaps, asc, count, desc, eq, ne, or } from "drizzle-orm";
 import { z } from "zod";
 
 import {
@@ -61,13 +61,19 @@ export const catalogRouter = {
 
       if (input.location) {
         const cityKeys = expandCatalogLocation(input.location);
-        const locationCondition = arrayOverlaps(
-          catalogEntryTable.locationKeys,
-          cityKeys,
-        );
+        const locationCondition = or(
+          arrayOverlaps(catalogEntryTable.locationKeys, cityKeys),
+          arrayOverlaps(catalogEntryTable.marketKeys, cityKeys),
+        )!;
         conditions.push(
           input.includeRemote
-            ? or(locationCondition, eq(catalogEntryTable.remote, true))!
+            ? or(
+                locationCondition,
+                and(
+                  eq(catalogEntryTable.remote, true),
+                  ne(catalogEntryTable.primaryCategory, "dating_app"),
+                ),
+              )!
             : locationCondition,
         );
       } else if (input.includeRemote) {
@@ -95,6 +101,43 @@ export const catalogRouter = {
         entries: filteredEntries,
         totalCount: filteredEntries.length,
       };
+    }),
+
+  byLocation: publicProcedure
+    .input(
+      z.object({
+        location: locationFilterSchema,
+        includeRemote: z.boolean().default(false),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const cityKeys = expandCatalogLocation(input.location);
+      const localOrRelevant = or(
+        arrayOverlaps(catalogEntryTable.locationKeys, cityKeys),
+        arrayOverlaps(catalogEntryTable.marketKeys, cityKeys),
+      )!;
+      const availability = input.includeRemote
+        ? or(
+            localOrRelevant,
+            and(
+              eq(catalogEntryTable.remote, true),
+              ne(catalogEntryTable.primaryCategory, "dating_app"),
+            ),
+          )!
+        : localOrRelevant;
+
+      const entries = await ctx.db
+        .select()
+        .from(catalogEntryTable)
+        .where(and(eq(catalogEntryTable.status, "PUBLISHED"), availability))
+        .orderBy(
+          asc(catalogEntryTable.primaryCategory),
+          desc(catalogEntryTable.featured),
+          desc(catalogEntryTable.editorialPick),
+          asc(catalogEntryTable.name),
+        );
+
+      return { entries, totalCount: entries.length };
     }),
 
   bySlug: publicProcedure
