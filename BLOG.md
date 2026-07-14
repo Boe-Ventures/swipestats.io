@@ -137,10 +137,17 @@ expires automatically after one week. Paid campaign creative is configured
 centrally in `src/lib/sponsorship.ts`; paid destinations render as external
 links with `rel="sponsored"`.
 
-Do not show the sponsor bar and inline sponsor card for the same campaign on one
-page. During the blog-bar experiment, `SponsorCard` remains preview-only rather
-than appearing in live article content. Dismissal is campaign-specific, so
-dismissing the house campaign will not hide a future paid sponsor.
+During an active campaign, the automatic injector replaces the newsletter slot
+before the fourth `h2` with one `SponsorCard`. This gives eligible long-tail
+posts one measured inline placement without increasing the overall number of
+interruptions. Curated posts with `enableAutoCtAs: false` continue to use only
+their manually placed product cards.
+
+The compact sponsor bar and the inline sponsor card may run together during the
+one-week experiment: the bar establishes the offer while the inline card gives
+interested readers the fuller pitch later in the article. Dismissal is
+campaign-specific, so dismissing the house bar will not hide a future paid
+sponsor.
 
 Sponsorship surfaces emit `sponsor_impression`, `sponsor_clicked`, and
 `sponsor_inquiry_clicked`, attributed by campaign, placement, source path, and
