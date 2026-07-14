@@ -21,11 +21,15 @@ const REVIEWED_REWRITES = new Set([
   "ai-rizz-generator",
   "best-conversation-starters-over-text",
   "bumble-premium",
+  "double-texting",
+  "dry-texting",
+  "first-message-on-dating-app",
   "hinge-algorithm",
   "how-does-tinder-work",
   "how-to-reset-tinder",
   "pick-up-lines",
   "tinder-platinum",
+  "who-should-text-first-after-a-date",
 ]);
 
 interface PostInventory {
