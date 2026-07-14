@@ -43,6 +43,7 @@ const REVIEWED_REWRITES = new Set([
   "how-to-refresh-hinge",
   "how-to-reset-tinder",
   "how-to-reset-hinge",
+  "how-to-use-hinge",
   "is-hinge-x-worth-it",
   "if-you-x-someone-on-hinge-what-happens",
   "pick-up-lines",

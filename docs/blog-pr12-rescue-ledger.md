@@ -7,12 +7,12 @@ This ledger is the explicit editorial decision surface for the 81 recovered post
 ## Inventory summary
 
 - Recovered posts: **81**
-- Total draft words: **170,509**
+- Total draft words: **167,606**
 - Review decisions: **81 rewrite / 0 keep-as-is / 0 drop**
-- Editorial status: **32 reviewed / 49 pending**
+- Editorial status: **33 reviewed / 48 pending**
 - Review tiers: {"heavy":42,"light":37,"medium":2}
 - Editorial batches: {"algorithm-account":9,"commercial":11,"evergreen":31,"other":30}
-- Unique in-batch link targets: **47**
+- Unique in-batch link targets: **46**
 - Dependency-orderable posts: **81**
 - Posts in dependency cycles: **0**
 - Missing internal targets after recovery: **0**
@@ -82,7 +82,7 @@ This ledger is the explicit editorial decision surface for the 81 recovered post
 | `how-to-tell-if-she-likes-you-over-text` | rewrite | pending | heavy | evergreen | 2915 | 4 | on | 0 | 4 | algorithm-claim, absolute-claim |
 | `how-to-text-a-guy-to-like-you` | rewrite | pending | light | evergreen | 2803 | 4 | on | 0 | 2 | swipestats-data-claim, absolute-claim |
 | `how-to-text-a-woman` | rewrite | pending | light | evergreen | 2798 | 4 | on | 0 | 4 | absolute-claim |
-| `how-to-use-hinge` | rewrite | pending | heavy | other | 3965 | 4 | on | 0 | 4 | dynamic-pricing, algorithm-claim, absolute-claim |
+| `how-to-use-hinge` | rewrite | reviewed | heavy | other | 1062 | 11 | off | 1 | 0 | dynamic-pricing, algorithm-claim, absolute-claim |
 | `if-you-x-someone-on-hinge-what-happens` | rewrite | reviewed | light | other | 592 | 4 | on | 0 | 0 | none |
 | `is-hinge-a-good-dating-app` | rewrite | pending | heavy | other | 2332 | 5 | on | 0 | 2 | dynamic-pricing, algorithm-claim, absolute-claim |
 | `is-hinge-better-than-tinder` | rewrite | pending | heavy | other | 2045 | 6 | on | 0 | 0 | dynamic-pricing, swipestats-data-claim, algorithm-claim, absolute-claim |
@@ -154,17 +154,17 @@ This is a mechanical topological order only. Editorial priority and the final tw
 41. `how-to-text-a-woman`
 42. `how-to-ask-her-out-over-text`
 43. `bumble-messaging`
-44. `if-you-x-someone-on-hinge-what-happens`
-45. `is-hinge-a-good-dating-app`
-46. `hinge-for-friends`
-47. `is-hinge-better-than-tinder`
-48. `how-to-use-hinge`
-49. `hinge-app-icons`
-50. `hinge-opening-lines`
-51. `hinge-conversation-starters`
-52. `ai-text-message-generator`
-53. `hinge-desktop`
-54. `how-to-find-someone-on-hinge`
+44. `how-to-use-hinge`
+45. `hinge-app-icons`
+46. `hinge-opening-lines`
+47. `hinge-conversation-starters`
+48. `ai-text-message-generator`
+49. `hinge-desktop`
+50. `how-to-find-someone-on-hinge`
+51. `if-you-x-someone-on-hinge-what-happens`
+52. `is-hinge-a-good-dating-app`
+53. `hinge-for-friends`
+54. `is-hinge-better-than-tinder`
 55. `is-hinge-x-worth-it`
 56. `hinge-gift-card`
 57. `hinge-or-bumble`
