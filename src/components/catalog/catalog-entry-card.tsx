@@ -4,10 +4,12 @@ import { ArrowRight, Globe2, MapPin } from "lucide-react";
 import { ButtonLink } from "@/components/ui/button";
 import { cn } from "@/components/ui/lib/utils";
 import {
+  CATALOG_PLACES,
   formatCatalogTag,
+  getCatalogMarketSignal,
   type CatalogCategoryKey,
   type CatalogEntryData,
-  type CatalogEntryPlaceView,
+  type CatalogLocationFilterKey,
 } from "@/lib/catalog";
 import { CatalogTrustBadges } from "./catalog-trust-badges";
 
@@ -22,27 +24,23 @@ interface CatalogEntryCardProps {
     editorialPick: boolean;
     remote: boolean;
     data: CatalogEntryData;
-    places: CatalogEntryPlaceView[];
   };
   className?: string;
-  contextPlaceIds?: string[];
+  contextLocation?: CatalogLocationFilterKey;
 }
 
 export function CatalogEntryCard({
   entry,
   className,
-  contextPlaceIds,
+  contextLocation,
 }: CatalogEntryCardProps) {
   const affiliate = entry.data.links?.some((link) => link.type === "affiliate");
-  const serviceArea = entry.places.find(
-    (place) => place.role === "SERVICE_AREA",
-  );
-  const marketSignal = contextPlaceIds
-    ? entry.places.find(
-        (assignment) =>
-          assignment.role === "MARKET" &&
-          contextPlaceIds.includes(assignment.place.id),
-      )
+  const serviceAreaId = entry.data.serviceAreaIds?.[0];
+  const location = serviceAreaId
+    ? CATALOG_PLACES[serviceAreaId].shortName
+    : null;
+  const marketSignal = contextLocation
+    ? getCatalogMarketSignal(entry.data, contextLocation)
     : undefined;
   const initials = entry.name
     .split(" ")
@@ -86,18 +84,17 @@ export function CatalogEntryCard({
             </p>
           )}
           <div className="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px] text-gray-500">
-            {serviceArea && (
+            {location && (
               <span className="inline-flex items-center gap-1">
                 <MapPin className="h-3.5 w-3.5" />
-                {serviceArea.place.shortName}
+                {location}
               </span>
             )}
             {marketSignal && (
               <span className="inline-flex items-center gap-1 text-violet-700">
                 <Globe2 className="h-3.5 w-3.5" />
-                {formatCatalogTag(
-                  marketSignal.data.strength ?? "available",
-                )} in {marketSignal.place.shortName}
+                {formatCatalogTag(marketSignal.strength)} in{" "}
+                {CATALOG_PLACES[marketSignal.placeId].shortName}
               </span>
             )}
             {!marketSignal &&

@@ -6,7 +6,13 @@ import { CatalogRequestDialog } from "@/components/catalog/catalog-dialogs";
 import { CatalogEntryCard } from "@/components/catalog/catalog-entry-card";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { cn } from "@/components/ui/lib/utils";
-import { CATALOG_CATEGORIES, getCatalogCategoryBySlug } from "@/lib/catalog";
+import {
+  CATALOG_CATEGORIES,
+  CATALOG_PLACE_OPTIONS,
+  getCatalogCategoryBySlug,
+  getCatalogPlaceBySlug,
+  isCatalogLocationFilterKey,
+} from "@/lib/catalog";
 import { trpcApi } from "@/trpc/server";
 
 interface CategoryPageProps {
@@ -41,26 +47,26 @@ export default async function DatingServicesCategoryPage({
   const category = getCatalogCategoryBySlug(categorySlug);
   if (!category) notFound();
 
-  const location = rawSearchParams.location?.match(/^[a-z0-9]+(?:-[a-z0-9]+)*$/)
+  const location = isCatalogLocationFilterKey(rawSearchParams.location)
     ? rawSearchParams.location
     : undefined;
+  const selectedPlace = location ? getCatalogPlaceBySlug(location) : undefined;
+  const featuredCities = CATALOG_PLACE_OPTIONS.filter(
+    (place) => place.kind === "city" && place.isFeatured,
+  );
+  const broaderAreas = CATALOG_PLACE_OPTIONS.filter(
+    (place) => place.kind === "country" || place.kind === "region",
+  );
   const config = CATALOG_CATEGORIES[category];
   const supportsRemote = category !== "dating_app";
   const includeRemote = supportsRemote && rawSearchParams.remote === "1";
   const api = await trpcApi();
-  const [listResult, locations] = await Promise.all([
-    api.catalog
-      .list({ category, location, includeRemote, tags: [] })
-      .catch(() => notFound()),
-    api.catalog.locations(),
-  ]);
-  const { entries, totalCount, place, contextPlaceIds } = listResult;
-  const featuredCities = locations.filter(
-    (item) => item.kind === "CITY" && item.isFeatured,
-  );
-  const broaderAreas = locations.filter(
-    (item) => item.kind === "COUNTRY" || item.kind === "REGION",
-  );
+  const { entries, totalCount } = await api.catalog.list({
+    category,
+    location,
+    includeRemote,
+    tags: [],
+  });
 
   return (
     <main className="min-h-screen bg-white text-gray-900">
@@ -90,7 +96,7 @@ export default async function DatingServicesCategoryPage({
             </div>
             <div className="font-mono text-[12px] text-gray-500">
               {totalCount} {totalCount === 1 ? "listing" : "listings"}
-              {place ? ` · ${place.name}` : ""}
+              {selectedPlace ? ` · ${selectedPlace.name}` : ""}
             </div>
           </div>
 
@@ -109,41 +115,41 @@ export default async function DatingServicesCategoryPage({
             >
               All locations
             </Link>
-            {featuredCities.map((item) => (
+            {featuredCities.map((place) => (
               <Link
-                key={item.id}
+                key={place.id}
                 href={filterHref({
                   category: categorySlug,
-                  location: item.slug,
+                  location: place.slug,
                   remote: includeRemote,
                 })}
                 className={cn(
                   "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-semibold transition",
-                  location === item.slug
+                  location === place.slug
                     ? "border-rose-300 bg-rose-50 text-rose-700"
                     : "border-gray-200 bg-white text-gray-600 hover:border-gray-300",
                 )}
               >
                 <MapPin className="h-3.5 w-3.5" />
-                {item.shortName}
+                {place.shortName}
               </Link>
             ))}
-            {broaderAreas.map((item) => (
+            {broaderAreas.map((place) => (
               <Link
-                key={item.id}
+                key={place.id}
                 href={filterHref({
                   category: categorySlug,
-                  location: item.slug,
+                  location: place.slug,
                   remote: includeRemote,
                 })}
                 className={cn(
                   "rounded-full border px-3.5 py-2 text-sm font-semibold transition",
-                  location === item.slug
+                  location === place.slug
                     ? "border-rose-300 bg-rose-50 text-rose-700"
                     : "border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300",
                 )}
               >
-                {item.shortName}
+                {place.shortName}
               </Link>
             ))}
             {supportsRemote && (
@@ -172,18 +178,14 @@ export default async function DatingServicesCategoryPage({
         {entries.length > 0 ? (
           <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
             {entries.map((entry) => (
-              <CatalogEntryCard
-                key={entry.id}
-                entry={entry}
-                contextPlaceIds={contextPlaceIds}
-              />
+              <CatalogEntryCard key={entry.id} entry={entry} />
             ))}
           </div>
         ) : (
           <div className="rounded-3xl border border-dashed border-gray-300 bg-gray-50 px-6 py-16 text-center">
             <h2 className="text-2xl font-bold tracking-[-0.03em]">
               No {config.shortLabel.toLowerCase()}{" "}
-              {location ? `in ${place?.name ?? location}` : "here yet"}
+              {location ? `in ${selectedPlace?.name ?? location}` : "here yet"}
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-gray-600">
               Try remote-friendly providers, or send a private request and
@@ -204,7 +206,6 @@ export default async function DatingServicesCategoryPage({
               )}
               <CatalogRequestDialog
                 category={category}
-                locations={locations}
                 trigger={<Button>Request help</Button>}
               />
             </div>
@@ -218,7 +219,6 @@ export default async function DatingServicesCategoryPage({
           </ButtonLink>
           <CatalogRequestDialog
             category={category}
-            locations={locations}
             trigger={
               <Button variant="outline">Can&apos;t find the right fit?</Button>
             }

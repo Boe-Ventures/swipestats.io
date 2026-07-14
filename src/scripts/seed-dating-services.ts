@@ -4,20 +4,11 @@
  * Replace or verify every editorial entry before using this seed in production.
  */
 import { db } from "@/server/db";
-import { inArray, sql } from "drizzle-orm";
+import { catalogEntryTable, type CatalogEntryInsert } from "@/server/db/schema";
 import {
-  catalogEntryPlaceTable,
-  catalogEntryTable,
-  catalogPlaceClosureTable,
-  catalogPlaceTable,
-  type CatalogEntryInsert,
-  type CatalogEntryPlaceInsert,
-} from "@/server/db/schema";
-import {
-  buildCatalogPlaceClosure,
-  CATALOG_PLACE_SEEDS,
+  type CatalogMarketSignal,
   type CatalogMarketStrength,
-  type CatalogPlaceSeed,
+  type CatalogPlaceId,
 } from "@/lib/catalog";
 
 const claimedAt = new Date("2026-07-01T12:00:00.000Z");
@@ -28,41 +19,27 @@ const norwayMarketSource =
   "https://www.aftenposten.no/kultur/i/7pdwzo/eksperter-advarer-derfor-boer-du-utfordre-datingappens-algoritme";
 const matchGroupMarketSource =
   "https://s203.q4cdn.com/993464185/files/doc_financials/2025/q1/1Q-2025-Prepared-Remarks-vFinal.pdf";
-const usCityIds = [
+const usCityIds: CatalogPlaceId[] = [
   "new-york-us",
   "los-angeles-us",
   "san-francisco-us",
   "miami-us",
 ];
 
-function marketAssignments(
-  placeIds: string[],
+function marketSignals(
+  placeIds: CatalogPlaceId[],
   strength: CatalogMarketStrength,
   note: string,
   sourceUrls: string[],
-): Array<Omit<CatalogEntryPlaceInsert, "entryId">> {
+): CatalogMarketSignal[] {
   return placeIds.map((placeId) => ({
     placeId,
-    role: "MARKET",
-    data: { strength, note, asOf: marketAsOf, sourceUrls },
+    strength,
+    note,
+    asOf: marketAsOf,
+    sourceUrls,
   }));
 }
-
-const serviceAreasBySlug: Record<string, string[]> = {
-  "date-med-pia": ["oslo-no"],
-  "lena-okafor-dating-photos": ["new-york-us"],
-  "marc-delgado-studio": ["new-york-us"],
-  "sasha-lindqvist-portraits": ["new-york-us"],
-  "northlight-dating-photos": ["oslo-no"],
-  "spree-portraits-berlin": ["berlin-de"],
-  "the-introduction-office": ["new-york-us", "miami-us"],
-  "nord-match": ["oslo-no"],
-};
-
-const marketAreasBySlug = new Map<
-  string,
-  Array<Omit<CatalogEntryPlaceInsert, "entryId">>
->();
 
 const entries: CatalogEntryInsert[] = [
   {
@@ -100,6 +77,7 @@ const entries: CatalogEntryInsert[] = [
     verificationStatus: "UNVERIFIED",
     remote: false,
     data: {
+      serviceAreaIds: ["oslo-no"],
       entityTypes: ["person", "organization"],
       displayStyle: "organization",
       descriptor: "Dating guidance · Oslo",
@@ -151,6 +129,7 @@ const entries: CatalogEntryInsert[] = [
     featured: true,
     remote: false,
     data: {
+      serviceAreaIds: ["new-york-us"],
       entityTypes: ["person", "organization"],
       displayStyle: "person",
       descriptor: "Dating photographer · solo practice",
@@ -172,6 +151,7 @@ const entries: CatalogEntryInsert[] = [
     editorialPick: true,
     remote: false,
     data: {
+      serviceAreaIds: ["new-york-us"],
       entityTypes: ["person", "organization"],
       displayStyle: "organization",
       descriptor: "Portrait studio · indoor and outdoor",
@@ -191,6 +171,7 @@ const entries: CatalogEntryInsert[] = [
     verificationStatus: "UNVERIFIED",
     remote: false,
     data: {
+      serviceAreaIds: ["new-york-us"],
       entityTypes: ["person"],
       displayStyle: "person",
       descriptor: "Lifestyle photographer",
@@ -210,6 +191,7 @@ const entries: CatalogEntryInsert[] = [
     verificationStatus: "UNVERIFIED",
     remote: false,
     data: {
+      serviceAreaIds: ["oslo-no"],
       entityTypes: ["organization"],
       displayStyle: "organization",
       descriptor: "Oslo dating-profile photography",
@@ -229,6 +211,7 @@ const entries: CatalogEntryInsert[] = [
     verificationStatus: "UNVERIFIED",
     remote: false,
     data: {
+      serviceAreaIds: ["berlin-de"],
       entityTypes: ["organization"],
       displayStyle: "organization",
       descriptor: "Berlin lifestyle photography",
@@ -246,6 +229,7 @@ const entries: CatalogEntryInsert[] = [
     verificationStatus: "UNVERIFIED",
     remote: true,
     data: {
+      serviceAreaIds: ["new-york-us", "miami-us"],
       entityTypes: ["organization"],
       displayStyle: "organization",
       descriptor: "Personal matchmaking · New York and Miami",
@@ -263,6 +247,7 @@ const entries: CatalogEntryInsert[] = [
     verificationStatus: "UNVERIFIED",
     remote: true,
     data: {
+      serviceAreaIds: ["oslo-no"],
       entityTypes: ["organization"],
       displayStyle: "organization",
       descriptor: "Scandinavian matchmaking",
@@ -300,20 +285,20 @@ const entries: CatalogEntryInsert[] = [
       name: "Hinge",
       url: "https://hinge.co",
       descriptor: "Designed to be deleted",
-      marketAssignments: [
-        ...marketAssignments(
+      marketSignals: [
+        ...marketSignals(
           usCityIds,
           "strong",
           "A leading intentional-dating option in major US markets.",
           [matchGroupMarketSource],
         ),
-        ...marketAssignments(
+        ...marketSignals(
           ["oslo-no"],
           "strong",
           "One of the dominant swipe-based dating apps in Norway.",
           [norwayMarketSource],
         ),
-        ...marketAssignments(
+        ...marketSignals(
           ["berlin-de"],
           "leader",
           "Currently ranked first among Android dating apps in Germany.",
@@ -326,20 +311,20 @@ const entries: CatalogEntryInsert[] = [
       name: "Tinder",
       url: "https://tinder.com",
       descriptor: "The largest general dating app",
-      marketAssignments: [
-        ...marketAssignments(
+      marketSignals: [
+        ...marketSignals(
           usCityIds,
           "leader",
           "The broadest general-dating pool and the most-downloaded dating app worldwide.",
           [matchGroupMarketSource],
         ),
-        ...marketAssignments(
+        ...marketSignals(
           ["oslo-no"],
           "leader",
           "The broadest general-dating pool among Norway's dominant apps.",
           [norwayMarketSource],
         ),
-        ...marketAssignments(
+        ...marketSignals(
           ["berlin-de"],
           "notable",
           "Currently ranked third among Android dating apps in Germany.",
@@ -352,20 +337,20 @@ const entries: CatalogEntryInsert[] = [
       name: "Bumble",
       url: "https://bumble.com",
       descriptor: "Dating, friends, and networking",
-      marketAssignments: [
-        ...marketAssignments(
+      marketSignals: [
+        ...marketSignals(
           usCityIds,
           "notable",
           "A meaningful alternative to Tinder and Hinge in major US markets.",
           [],
         ),
-        ...marketAssignments(
+        ...marketSignals(
           ["oslo-no"],
           "strong",
           "One of the dominant swipe-based dating apps in Norway.",
           [norwayMarketSource],
         ),
-        ...marketAssignments(
+        ...marketSignals(
           ["berlin-de"],
           "strong",
           "Currently ranked second among Android dating apps in Germany.",
@@ -379,70 +364,31 @@ const entries: CatalogEntryInsert[] = [
       name,
       url,
       descriptor,
-      marketAssignments: appMarketAssignments,
-    }): CatalogEntryInsert => {
-      const entrySlug = `${slug}-dating-app`;
-      marketAreasBySlug.set(entrySlug, appMarketAssignments);
-      return {
-        slug: entrySlug,
-        name,
-        primaryCategory: "dating_app",
-        status: "PUBLISHED",
-        verificationStatus: "UNVERIFIED",
-        remote: false,
-        data: {
-          entityTypes: ["organization", "website", "app"],
-          displayStyle: "product",
-          descriptor,
-          editorialSummary: `${name} is included as a directory entry so SwipeStats app reviews, comparisons, official links, and future affiliate relationships can share one catalog identity.`,
-          tags: ["dating_app"],
-          links: [{ type: "official", url, label: `Visit ${name}` }],
-          primaryCtaLabel: `Visit ${name}`,
-          sourceRefs: [{ namespace: "editorial", key: `${slug}-app` }],
-        },
-      };
-    },
+      marketSignals: appMarketSignals,
+    }): CatalogEntryInsert => ({
+      slug: `${slug}-dating-app`,
+      name,
+      primaryCategory: "dating_app",
+      status: "PUBLISHED",
+      verificationStatus: "UNVERIFIED",
+      remote: false,
+      data: {
+        entityTypes: ["organization", "website", "app"],
+        displayStyle: "product",
+        descriptor,
+        editorialSummary: `${name} is included as a directory entry so SwipeStats app reviews, comparisons, official links, and future affiliate relationships can share one catalog identity.`,
+        tags: ["dating_app"],
+        links: [{ type: "official", url, label: `Visit ${name}` }],
+        primaryCtaLabel: `Visit ${name}`,
+        marketSignals: appMarketSignals,
+        sourceRefs: [{ namespace: "editorial", key: `${slug}-app` }],
+      },
+    }),
   ),
 ];
 
-for (const rawPlace of CATALOG_PLACE_SEEDS) {
-  const place: CatalogPlaceSeed = rawPlace;
-  await db
-    .insert(catalogPlaceTable)
-    .values({
-      ...place,
-      isCapital: place.isCapital ?? false,
-      isFeatured: place.isFeatured ?? false,
-      primaryParentId: place.primaryParentId,
-    })
-    .onConflictDoUpdate({
-      target: catalogPlaceTable.id,
-      set: {
-        slug: place.slug,
-        name: place.name,
-        shortName: place.shortName,
-        kind: place.kind,
-        countryCode: place.countryCode,
-        adminAreaCode: place.adminAreaCode,
-        latitude: place.latitude,
-        longitude: place.longitude,
-        isCapital: place.isCapital ?? false,
-        isFeatured: place.isFeatured ?? false,
-        isActive: true,
-        sortOrder: place.sortOrder,
-        primaryParentId: place.primaryParentId,
-        updatedAt: new Date(),
-      },
-    });
-}
-
-await db.delete(catalogPlaceClosureTable).where(sql`true`);
-await db.insert(catalogPlaceClosureTable).values(buildCatalogPlaceClosure());
-
-const seededEntries: Array<{ id: string; slug: string }> = [];
-
 for (const entry of entries) {
-  const [savedEntry] = await db
+  await db
     .insert(catalogEntryTable)
     .values(entry)
     .onConflictDoUpdate({
@@ -459,38 +405,7 @@ for (const entry of entries) {
         data: entry.data,
         updatedAt: new Date(),
       },
-    })
-    .returning({ id: catalogEntryTable.id, slug: catalogEntryTable.slug });
-  seededEntries.push(savedEntry!);
+    });
 }
 
-await db.delete(catalogEntryPlaceTable).where(
-  inArray(
-    catalogEntryPlaceTable.entryId,
-    seededEntries.map((entry) => entry.id),
-  ),
-);
-
-const entryPlaces = seededEntries.flatMap((entry) => [
-  ...(serviceAreasBySlug[entry.slug] ?? []).map(
-    (placeId): CatalogEntryPlaceInsert => ({
-      entryId: entry.id,
-      placeId,
-      role: "SERVICE_AREA",
-      data: {},
-    }),
-  ),
-  ...(marketAreasBySlug.get(entry.slug) ?? []).map(
-    (assignment): CatalogEntryPlaceInsert => ({
-      ...assignment,
-      entryId: entry.id,
-    }),
-  ),
-]);
-if (entryPlaces.length > 0) {
-  await db.insert(catalogEntryPlaceTable).values(entryPlaces);
-}
-
-console.log(
-  `Seeded ${entries.length} dating-services preview listings across ${CATALOG_PLACE_SEEDS.length} places.`,
-);
+console.log(`Seeded ${entries.length} dating-services preview listings.`);

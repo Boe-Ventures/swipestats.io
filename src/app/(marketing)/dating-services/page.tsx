@@ -21,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import {
   CATALOG_CATEGORIES,
   CATALOG_CATEGORY_KEYS,
+  CATALOG_PLACE_OPTIONS,
   type CatalogCategoryKey,
 } from "@/lib/catalog";
 import { trpcApi } from "@/trpc/server";
@@ -41,15 +42,15 @@ const categoryIcons: Record<CatalogCategoryKey, LucideIcon> = {
 
 export default async function DatingServicesPage() {
   const api = await trpcApi();
-  const { counts, featuredEntries, locations } = await api.catalog.overview();
-  const featuredCities = locations.filter(
-    (location) => location.kind === "CITY" && location.isFeatured,
-  );
-  const broaderAreas = locations.filter(
-    (location) => location.kind === "COUNTRY" || location.kind === "REGION",
-  );
+  const { counts, featuredEntries } = await api.catalog.overview();
   const countByCategory = new Map(
     counts.map((row) => [row.category, Number(row.count)]),
+  );
+  const featuredCities = CATALOG_PLACE_OPTIONS.filter(
+    (place) => place.kind === "city" && place.isFeatured,
+  );
+  const broaderAreas = CATALOG_PLACE_OPTIONS.filter(
+    (place) => place.kind === "country" || place.kind === "region",
   );
 
   return (
@@ -115,13 +116,13 @@ export default async function DatingServicesPage() {
           </div>
 
           <div className="mt-10 flex flex-wrap gap-2">
-            {featuredCities.map((location) => (
+            {featuredCities.map((place) => (
               <Link
-                key={location.id}
-                href={`/dating-services/location/${location.slug}`}
+                key={place.id}
+                href={`/dating-services/location/${place.slug}`}
                 className="rounded-full border border-gray-200 bg-white px-3.5 py-2 font-mono text-[11px] text-gray-600 transition hover:border-rose-300 hover:text-rose-600"
               >
-                {location.shortName}
+                {place.shortName}
               </Link>
             ))}
           </div>
@@ -129,13 +130,13 @@ export default async function DatingServicesPage() {
             <span className="mr-1 font-mono text-[10px] tracking-[0.08em] text-gray-400 uppercase">
               Broader areas
             </span>
-            {broaderAreas.map((location) => (
+            {broaderAreas.map((place) => (
               <Link
-                key={location.id}
-                href={`/dating-services/location/${location.slug}`}
+                key={place.id}
+                href={`/dating-services/location/${place.slug}`}
                 className="rounded-full border border-gray-200 bg-gray-50 px-3.5 py-2 font-mono text-[11px] text-gray-600 transition hover:border-rose-300 hover:text-rose-600"
               >
-                {location.shortName}
+                {place.shortName}
               </Link>
             ))}
           </div>
@@ -201,7 +202,6 @@ export default async function DatingServicesPage() {
               </p>
             </div>
             <CatalogSubmissionDialog
-              locations={locations}
               trigger={
                 <Button className="mt-6 w-fit" variant="outline">
                   Submit a listing

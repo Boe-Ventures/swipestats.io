@@ -1,60 +1,59 @@
 import { describe, expect, test } from "bun:test";
 
-import { buildCatalogPlaceClosure, CATALOG_PLACE_SEEDS } from "./catalog";
+import {
+  CATALOG_PLACES,
+  getCatalogLocationBreadcrumb,
+  getCatalogRelatedPlaceIds,
+  type CatalogPlaceId,
+} from "./catalog";
 
-describe("catalog place hierarchy", () => {
-  const closure = buildCatalogPlaceClosure();
+describe("catalog place configuration", () => {
+  test("derives canonical place IDs from the configuration keys", () => {
+    const osloId = "oslo-no" satisfies CatalogPlaceId;
 
-  function related(placeId: string) {
-    return new Set(
-      closure.flatMap((row) => {
-        if (row.ancestorId === placeId) return [row.descendantId];
-        if (row.descendantId === placeId) return [row.ancestorId];
-        return [];
-      }),
-    );
-  }
-
-  test("uses Homi-compatible canonical city IDs", () => {
-    const cityIds = CATALOG_PLACE_SEEDS.filter(
-      (place) => place.kind === "CITY",
-    ).map((place) => place.id);
-
-    expect(cityIds).toEqual([
-      "new-york-us",
-      "los-angeles-us",
-      "san-francisco-us",
-      "miami-us",
-      "oslo-no",
-      "berlin-de",
-    ]);
+    expect(CATALOG_PLACES[osloId].slug).toBe("oslo");
+    expect(CATALOG_PLACES[osloId].countryCode).toBe("NO");
   });
 
-  test("an Oslo assignment aggregates to country and overlapping regions", () => {
-    const placeIds = related("oslo-no");
+  test("an Oslo search includes country and overlapping regions", () => {
+    const ids = getCatalogRelatedPlaceIds("oslo");
 
-    expect(placeIds).toContain("oslo-no");
-    expect(placeIds).toContain("NO");
-    expect(placeIds).toContain("region:scandinavia");
-    expect(placeIds).toContain("region:europe");
-    expect(placeIds).not.toContain("berlin-de");
+    expect(ids).toContain("oslo-no");
+    expect(ids).toContain("NO");
+    expect(ids).toContain("region:scandinavia");
+    expect(ids).toContain("region:europe");
+    expect(ids).not.toContain("berlin-de");
   });
 
-  test("California aggregates both launch cities and the United States", () => {
-    const placeIds = related("US-CA");
+  test("a country search includes launch cities, states, and its region", () => {
+    const ids = getCatalogRelatedPlaceIds("united-states");
 
-    expect(placeIds).toContain("los-angeles-us");
-    expect(placeIds).toContain("san-francisco-us");
-    expect(placeIds).toContain("US");
-    expect(placeIds).toContain("region:north-america");
-    expect(placeIds).not.toContain("new-york-us");
+    expect(ids).toContain("new-york-us");
+    expect(ids).toContain("los-angeles-us");
+    expect(ids).toContain("san-francisco-us");
+    expect(ids).toContain("miami-us");
+    expect(ids).toContain("US-CA");
+    expect(ids).toContain("region:north-america");
+    expect(ids).not.toContain("oslo-no");
   });
 
-  test("closure includes one self-row per place", () => {
-    const selfRows = closure.filter(
-      (row) => row.ancestorId === row.descendantId && row.depth === 0,
-    );
+  test("a state search includes its cities and broader ancestors", () => {
+    const ids = getCatalogRelatedPlaceIds("california");
 
-    expect(selfRows).toHaveLength(CATALOG_PLACE_SEEDS.length);
+    expect(ids).toContain("US-CA");
+    expect(ids).toContain("los-angeles-us");
+    expect(ids).toContain("san-francisco-us");
+    expect(ids).toContain("US");
+    expect(ids).toContain("region:north-america");
+    expect(ids).not.toContain("new-york-us");
+  });
+
+  test("breadcrumbs follow the typed primary-parent chain", () => {
+    expect(
+      getCatalogLocationBreadcrumb("new-york").map((place) => place.id),
+    ).toEqual(["US", "US-NY", "new-york-us"]);
+    expect(
+      getCatalogLocationBreadcrumb("oslo").map((place) => place.id),
+    ).toEqual(["NO", "oslo-no"]);
   });
 });

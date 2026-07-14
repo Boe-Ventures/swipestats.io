@@ -1,169 +1,46 @@
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
-import { and, asc, count, desc, eq, inArray, ne, or } from "drizzle-orm";
+import { and, asc, count, desc, eq } from "drizzle-orm";
 import { z } from "zod";
 
-import { CATALOG_CATEGORY_KEYS, type CatalogPlaceOption } from "@/lib/catalog";
-import type { db } from "@/server/db";
+import {
+  CATALOG_CATEGORY_KEYS,
+  getCatalogRelatedPlaceIds,
+  isCatalogLocationFilterKey,
+  type CatalogEntryData,
+  type CatalogLocationFilterKey,
+} from "@/lib/catalog";
 import {
   catalogEntryClaimTable,
-  catalogEntryPlaceTable,
   catalogEntryTable,
-  catalogPlaceClosureTable,
-  catalogPlaceTable,
   catalogRequestTable,
   catalogSubmissionTable,
 } from "@/server/db/schema";
 import { publicProcedure } from "../trpc";
 
-type CatalogDb = typeof db;
-
 const categorySchema = z.enum(CATALOG_CATEGORY_KEYS);
-const locationSlugSchema = z
-  .string()
-  .trim()
-  .min(1)
-  .max(120)
-  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
+const locationFilterSchema = z.custom<CatalogLocationFilterKey>(
+  (value) => typeof value === "string" && isCatalogLocationFilterKey(value),
+  "Unknown catalog location",
+);
 
-async function getCatalogPlaces(database: CatalogDb) {
-  const places = await database
-    .select()
-    .from(catalogPlaceTable)
-    .where(eq(catalogPlaceTable.isActive, true))
-    .orderBy(asc(catalogPlaceTable.sortOrder), asc(catalogPlaceTable.name));
-  const placeById = new Map(places.map((place) => [place.id, place]));
-
-  return places.map((place): CatalogPlaceOption => {
-    const breadcrumb: CatalogPlaceOption["breadcrumb"] = [];
-    const seen = new Set<string>();
-    let current: typeof place | undefined = place;
-    while (current && !seen.has(current.id)) {
-      seen.add(current.id);
-      breadcrumb.unshift({
-        id: current.id,
-        slug: current.slug,
-        shortName: current.shortName,
-      });
-      current = current.primaryParentId
-        ? placeById.get(current.primaryParentId)
-        : undefined;
-    }
-
-    return {
-      id: place.id,
-      slug: place.slug,
-      name: place.name,
-      shortName: place.shortName,
-      kind: place.kind,
-      countryCode: place.countryCode,
-      adminAreaCode: place.adminAreaCode,
-      isCapital: place.isCapital,
-      isFeatured: place.isFeatured,
-      primaryParentId: place.primaryParentId,
-      breadcrumb,
-    };
-  });
-}
-
-async function getPlaceBySlug(database: CatalogDb, slug: string) {
-  const place = await database.query.catalogPlaceTable.findFirst({
-    where: and(
-      eq(catalogPlaceTable.slug, slug),
-      eq(catalogPlaceTable.isActive, true),
-    ),
-  });
-  if (!place) {
-    throw new TRPCError({ code: "NOT_FOUND", message: "Location not found" });
-  }
-  return place;
-}
-
-async function getRelatedPlaceIds(database: CatalogDb, placeId: string) {
-  const [ancestorRows, descendantRows] = await Promise.all([
-    database
-      .select({ id: catalogPlaceClosureTable.ancestorId })
-      .from(catalogPlaceClosureTable)
-      .where(eq(catalogPlaceClosureTable.descendantId, placeId)),
-    database
-      .select({ id: catalogPlaceClosureTable.descendantId })
-      .from(catalogPlaceClosureTable)
-      .where(eq(catalogPlaceClosureTable.ancestorId, placeId)),
-  ]);
-  return [
-    ...new Set([...ancestorRows, ...descendantRows].map((row) => row.id)),
-  ];
-}
-
-async function getEntryIdsForPlaces(database: CatalogDb, placeIds: string[]) {
-  if (placeIds.length === 0) return [];
-  const rows = await database
-    .selectDistinct({ entryId: catalogEntryPlaceTable.entryId })
-    .from(catalogEntryPlaceTable)
-    .where(inArray(catalogEntryPlaceTable.placeId, placeIds));
-  return rows.map((row) => row.entryId);
-}
-
-async function hydrateCatalogEntries<T extends { id: string }>(
-  database: CatalogDb,
-  entries: T[],
+function entryMatchesLocation(
+  data: CatalogEntryData,
+  location: CatalogLocationFilterKey,
 ) {
-  if (entries.length === 0) return [] as Array<T & { places: never[] }>;
-  const rows = await database
-    .select({
-      entryId: catalogEntryPlaceTable.entryId,
-      role: catalogEntryPlaceTable.role,
-      data: catalogEntryPlaceTable.data,
-      place: {
-        id: catalogPlaceTable.id,
-        slug: catalogPlaceTable.slug,
-        name: catalogPlaceTable.name,
-        shortName: catalogPlaceTable.shortName,
-        kind: catalogPlaceTable.kind,
-        countryCode: catalogPlaceTable.countryCode,
-        adminAreaCode: catalogPlaceTable.adminAreaCode,
-        isCapital: catalogPlaceTable.isCapital,
-        isFeatured: catalogPlaceTable.isFeatured,
-        primaryParentId: catalogPlaceTable.primaryParentId,
-      },
-    })
-    .from(catalogEntryPlaceTable)
-    .innerJoin(
-      catalogPlaceTable,
-      eq(catalogEntryPlaceTable.placeId, catalogPlaceTable.id),
-    )
-    .where(
-      inArray(
-        catalogEntryPlaceTable.entryId,
-        entries.map((entry) => entry.id),
-      ),
-    )
-    .orderBy(
-      asc(catalogEntryPlaceTable.role),
-      asc(catalogPlaceTable.sortOrder),
-      asc(catalogPlaceTable.name),
-    );
-  const rowsByEntry = new Map<string, typeof rows>();
-  for (const row of rows) {
-    rowsByEntry.set(row.entryId, [
-      ...(rowsByEntry.get(row.entryId) ?? []),
-      row,
-    ]);
-  }
-  return entries.map((entry) => ({
-    ...entry,
-    places: (rowsByEntry.get(entry.id) ?? []).map(({ role, data, place }) => ({
-      role,
-      data,
-      place,
-    })),
-  }));
+  const relatedPlaceIds = getCatalogRelatedPlaceIds(location);
+  return (
+    data.serviceAreaIds?.some((placeId) =>
+      relatedPlaceIds.includes(placeId),
+    ) === true ||
+    data.marketSignals?.some((signal) =>
+      relatedPlaceIds.includes(signal.placeId),
+    ) === true
+  );
 }
 
 export const catalogRouter = {
-  locations: publicProcedure.query(({ ctx }) => getCatalogPlaces(ctx.db)),
-
   overview: publicProcedure.query(async ({ ctx }) => {
-    const [counts, rawFeaturedEntries, locations] = await Promise.all([
+    const [counts, featuredEntries] = await Promise.all([
       ctx.db
         .select({
           category: catalogEntryTable.primaryCategory,
@@ -182,142 +59,85 @@ export const catalogRouter = {
           asc(catalogEntryTable.name),
         )
         .limit(6),
-      getCatalogPlaces(ctx.db),
     ]);
-    const featuredEntries = await hydrateCatalogEntries(
-      ctx.db,
-      rawFeaturedEntries,
-    );
-    return { counts, featuredEntries, locations };
+
+    return { counts, featuredEntries };
   }),
 
   list: publicProcedure
     .input(
       z.object({
         category: categorySchema,
-        location: locationSlugSchema.optional(),
+        location: locationFilterSchema.optional(),
         includeRemote: z.boolean().default(false),
         tags: z.array(z.string().min(1).max(60)).max(8).default([]),
       }),
     )
     .query(async ({ ctx, input }) => {
-      const conditions = [
-        eq(catalogEntryTable.status, "PUBLISHED"),
-        eq(catalogEntryTable.primaryCategory, input.category),
-      ];
-      let place: Awaited<ReturnType<typeof getPlaceBySlug>> | undefined;
-      let contextPlaceIds: string[] = [];
-
-      if (input.location) {
-        place = await getPlaceBySlug(ctx.db, input.location);
-        contextPlaceIds = await getRelatedPlaceIds(ctx.db, place.id);
-        const relevantEntryIds = await getEntryIdsForPlaces(
-          ctx.db,
-          contextPlaceIds,
-        );
-        const locationCondition =
-          relevantEntryIds.length > 0
-            ? inArray(catalogEntryTable.id, relevantEntryIds)
-            : eq(catalogEntryTable.id, "__no_catalog_entry__");
-        conditions.push(
-          input.includeRemote
-            ? or(
-                locationCondition,
-                and(
-                  eq(catalogEntryTable.remote, true),
-                  ne(catalogEntryTable.primaryCategory, "dating_app"),
-                ),
-              )!
-            : locationCondition,
-        );
-      } else if (input.includeRemote) {
-        conditions.push(eq(catalogEntryTable.remote, true));
-      }
-
-      const rawEntries = await ctx.db
+      const entries = await ctx.db
         .select()
         .from(catalogEntryTable)
-        .where(and(...conditions))
+        .where(
+          and(
+            eq(catalogEntryTable.status, "PUBLISHED"),
+            eq(catalogEntryTable.primaryCategory, input.category),
+          ),
+        )
         .orderBy(
           desc(catalogEntryTable.featured),
           desc(catalogEntryTable.editorialPick),
           asc(catalogEntryTable.name),
         );
-      const taggedEntries =
-        input.tags.length === 0
-          ? rawEntries
-          : rawEntries.filter((entry) =>
-              input.tags.every((tag) => entry.data.tags?.includes(tag)),
-            );
-      const entries = await hydrateCatalogEntries(ctx.db, taggedEntries);
+
+      const filteredEntries = entries.filter((entry) => {
+        const matchesAvailability = input.location
+          ? entryMatchesLocation(entry.data, input.location) ||
+            (input.includeRemote &&
+              entry.remote &&
+              entry.primaryCategory !== "dating_app")
+          : input.includeRemote
+            ? entry.remote
+            : true;
+        return (
+          matchesAvailability &&
+          input.tags.every((tag) => entry.data.tags?.includes(tag))
+        );
+      });
 
       return {
-        entries,
-        totalCount: entries.length,
-        place: place
-          ? (await getCatalogPlaces(ctx.db)).find(
-              (item) => item.id === place.id,
-            )
-          : undefined,
-        contextPlaceIds,
+        entries: filteredEntries,
+        totalCount: filteredEntries.length,
       };
     }),
 
   byLocation: publicProcedure
     .input(
       z.object({
-        location: locationSlugSchema,
+        location: locationFilterSchema,
         includeRemote: z.boolean().default(false),
       }),
     )
     .query(async ({ ctx, input }) => {
-      const [place, locations] = await Promise.all([
-        getPlaceBySlug(ctx.db, input.location),
-        getCatalogPlaces(ctx.db),
-      ]);
-      const contextPlaceIds = await getRelatedPlaceIds(ctx.db, place.id);
-      const relevantEntryIds = await getEntryIdsForPlaces(
-        ctx.db,
-        contextPlaceIds,
-      );
-      const locationCondition =
-        relevantEntryIds.length > 0
-          ? inArray(catalogEntryTable.id, relevantEntryIds)
-          : eq(catalogEntryTable.id, "__no_catalog_entry__");
-      const availability = input.includeRemote
-        ? or(
-            locationCondition,
-            and(
-              eq(catalogEntryTable.remote, true),
-              ne(catalogEntryTable.primaryCategory, "dating_app"),
-            ),
-          )!
-        : locationCondition;
-      const rawEntries = await ctx.db
+      const allEntries = await ctx.db
         .select()
         .from(catalogEntryTable)
-        .where(and(eq(catalogEntryTable.status, "PUBLISHED"), availability))
+        .where(eq(catalogEntryTable.status, "PUBLISHED"))
         .orderBy(
           asc(catalogEntryTable.primaryCategory),
           desc(catalogEntryTable.featured),
           desc(catalogEntryTable.editorialPick),
           asc(catalogEntryTable.name),
         );
-      const entries = await hydrateCatalogEntries(ctx.db, rawEntries);
-      const placeOption = locations.find((item) => item.id === place.id);
-      if (!placeOption) {
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: "Location hierarchy is incomplete",
-        });
-      }
-      return {
-        entries,
-        totalCount: entries.length,
-        place: placeOption,
-        locations,
-        contextPlaceIds,
-      };
+
+      const entries = allEntries.filter(
+        (entry) =>
+          entryMatchesLocation(entry.data, input.location) ||
+          (input.includeRemote &&
+            entry.remote &&
+            entry.primaryCategory !== "dating_app"),
+      );
+
+      return { entries, totalCount: entries.length };
     }),
 
   bySlug: publicProcedure
@@ -329,14 +149,15 @@ export const catalogRouter = {
           eq(catalogEntryTable.status, "PUBLISHED"),
         ),
       });
+
       if (!entry) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Listing not found",
         });
       }
-      const [hydrated] = await hydrateCatalogEntries(ctx.db, [entry]);
-      return hydrated!;
+
+      return entry;
     }),
 
   requestHelp: publicProcedure
@@ -346,7 +167,7 @@ export const catalogRouter = {
         targetEntryId: z.string().optional(),
         email: z.email(),
         brief: z.string().trim().min(10).max(3000),
-        locationKey: locationSlugSchema.optional(),
+        locationKey: locationFilterSchema.optional(),
         remote: z.boolean().default(false),
         timeline: z.string().trim().max(120).optional(),
         budget: z.string().trim().max(120).optional(),
@@ -369,7 +190,6 @@ export const catalogRouter = {
           });
         }
       }
-      if (input.locationKey) await getPlaceBySlug(ctx.db, input.locationKey);
 
       const [request] = await ctx.db
         .insert(catalogRequestTable)
@@ -390,6 +210,7 @@ export const catalogRouter = {
           },
         })
         .returning({ id: catalogRequestTable.id });
+
       return { id: request!.id };
     }),
 
@@ -401,12 +222,11 @@ export const catalogRouter = {
         email: z.email(),
         website: z.url().optional(),
         description: z.string().trim().min(20).max(3000),
-        locationKey: locationSlugSchema.optional(),
+        locationKey: locationFilterSchema.optional(),
         remote: z.boolean().default(false),
       }),
     )
     .mutation(async ({ ctx, input }) => {
-      if (input.locationKey) await getPlaceBySlug(ctx.db, input.locationKey);
       const [submission] = await ctx.db
         .insert(catalogSubmissionTable)
         .values({
@@ -422,6 +242,7 @@ export const catalogRouter = {
           },
         })
         .returning({ id: catalogSubmissionTable.id });
+
       return { id: submission!.id };
     }),
 
@@ -440,6 +261,7 @@ export const catalogRouter = {
         where: eq(catalogEntryTable.id, input.entryId),
         columns: { id: true, claimedAt: true },
       });
+
       if (!entry) {
         throw new TRPCError({
           code: "NOT_FOUND",
@@ -452,6 +274,7 @@ export const catalogRouter = {
           message: "This listing is already claimed",
         });
       }
+
       const [claim] = await ctx.db
         .insert(catalogEntryClaimTable)
         .values({
@@ -465,6 +288,7 @@ export const catalogRouter = {
           },
         })
         .returning({ id: catalogEntryClaimTable.id });
+
       return { id: claim!.id };
     }),
 } satisfies TRPCRouterRecord;

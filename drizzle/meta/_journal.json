@@ -61,8 +61,8 @@
     {
       "idx": 8,
       "version": "7",
-      "when": 1784041752799,
-      "tag": "0008_fixed_jocasta",
+      "when": 1784045068488,
+      "tag": "0008_stale_chat",
       "breakpoints": true
     }
   ]

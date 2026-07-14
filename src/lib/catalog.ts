@@ -89,17 +89,6 @@ export function getCatalogCategoryBySlug(slug: string) {
   );
 }
 
-export const CATALOG_PLACE_KINDS = [
-  "CITY",
-  "ADMIN_AREA",
-  "COUNTRY",
-  "REGION",
-] as const;
-export type CatalogPlaceKind = (typeof CATALOG_PLACE_KINDS)[number];
-
-export const CATALOG_ENTRY_PLACE_ROLES = ["SERVICE_AREA", "MARKET"] as const;
-export type CatalogEntryPlaceRole = (typeof CATALOG_ENTRY_PLACE_ROLES)[number];
-
 export const CATALOG_MARKET_STRENGTHS = [
   "leader",
   "strong",
@@ -108,12 +97,21 @@ export const CATALOG_MARKET_STRENGTHS = [
 ] as const;
 export type CatalogMarketStrength = (typeof CATALOG_MARKET_STRENGTHS)[number];
 
-export interface CatalogPlaceSeed {
-  id: string;
+export const CATALOG_PLACE_KINDS = [
+  "city",
+  "admin_area",
+  "country",
+  "region",
+] as const;
+export type CatalogPlaceKind = (typeof CATALOG_PLACE_KINDS)[number];
+
+interface CatalogPlaceInput {
   slug: string;
   name: string;
   shortName: string;
   kind: CatalogPlaceKind;
+  ancestorIds: readonly string[];
+  primaryParentId?: string;
   countryCode?: string;
   adminAreaCode?: string;
   latitude?: number;
@@ -121,268 +119,257 @@ export interface CatalogPlaceSeed {
   isCapital?: boolean;
   isFeatured?: boolean;
   sortOrder: number;
-  primaryParentId?: string;
+}
+
+function defineCatalogPlaces<const T extends Record<string, CatalogPlaceInput>>(
+  places: T & {
+    [K in keyof T]: {
+      ancestorIds: readonly (keyof T & string)[];
+      primaryParentId?: keyof T & string;
+    };
+  },
+) {
+  return places;
 }
 
 /**
- * Curated launch vocabulary. City IDs intentionally match Homi's MajorCityId
- * convention; containment and aggregation are stored in the database.
+ * Small, deploy-time catalog geography. City IDs intentionally follow Homi's
+ * MajorCityId convention, while countries and admin areas use ISO codes.
  */
-export const CATALOG_PLACE_SEEDS = [
-  {
-    id: "region:north-america",
+export const CATALOG_PLACES = defineCatalogPlaces({
+  "region:north-america": {
     slug: "north-america",
     name: "North America",
     shortName: "North America",
-    kind: "REGION",
+    kind: "region",
+    ancestorIds: [],
     sortOrder: 300,
   },
-  {
-    id: "region:scandinavia",
+  "region:scandinavia": {
     slug: "scandinavia",
     name: "Scandinavia",
     shortName: "Scandinavia",
-    kind: "REGION",
+    kind: "region",
+    ancestorIds: [],
     sortOrder: 301,
   },
-  {
-    id: "region:europe",
+  "region:europe": {
     slug: "europe",
     name: "Europe",
     shortName: "Europe",
-    kind: "REGION",
+    kind: "region",
+    ancestorIds: [],
     sortOrder: 302,
   },
-  {
-    id: "US",
+  US: {
     slug: "united-states",
     name: "United States",
     shortName: "United States",
-    kind: "COUNTRY",
+    kind: "country",
+    ancestorIds: ["region:north-america"],
     countryCode: "US",
     sortOrder: 200,
   },
-  {
-    id: "NO",
+  NO: {
     slug: "norway",
     name: "Norway",
     shortName: "Norway",
-    kind: "COUNTRY",
+    kind: "country",
+    ancestorIds: ["region:scandinavia", "region:europe"],
     countryCode: "NO",
     sortOrder: 201,
   },
-  {
-    id: "DE",
+  DE: {
     slug: "germany",
     name: "Germany",
     shortName: "Germany",
-    kind: "COUNTRY",
+    kind: "country",
+    ancestorIds: ["region:europe"],
     countryCode: "DE",
     sortOrder: 202,
   },
-  {
-    id: "US-NY",
+  "US-NY": {
     slug: "new-york-state",
     name: "New York State",
     shortName: "New York State",
-    kind: "ADMIN_AREA",
+    kind: "admin_area",
+    ancestorIds: ["US", "region:north-america"],
+    primaryParentId: "US",
     countryCode: "US",
     adminAreaCode: "NY",
     sortOrder: 100,
-    primaryParentId: "US",
   },
-  {
-    id: "US-CA",
+  "US-CA": {
     slug: "california",
     name: "California",
     shortName: "California",
-    kind: "ADMIN_AREA",
+    kind: "admin_area",
+    ancestorIds: ["US", "region:north-america"],
+    primaryParentId: "US",
     countryCode: "US",
     adminAreaCode: "CA",
     sortOrder: 101,
-    primaryParentId: "US",
   },
-  {
-    id: "US-FL",
+  "US-FL": {
     slug: "florida",
     name: "Florida",
     shortName: "Florida",
-    kind: "ADMIN_AREA",
+    kind: "admin_area",
+    ancestorIds: ["US", "region:north-america"],
+    primaryParentId: "US",
     countryCode: "US",
     adminAreaCode: "FL",
     sortOrder: 102,
-    primaryParentId: "US",
   },
-  {
-    id: "new-york-us",
+  "new-york-us": {
     slug: "new-york",
     name: "New York, NY",
     shortName: "New York",
-    kind: "CITY",
+    kind: "city",
+    ancestorIds: ["US-NY", "US", "region:north-america"],
+    primaryParentId: "US-NY",
     countryCode: "US",
     adminAreaCode: "NY",
     latitude: 40.7128,
     longitude: -74.006,
     isFeatured: true,
     sortOrder: 0,
-    primaryParentId: "US-NY",
   },
-  {
-    id: "los-angeles-us",
+  "los-angeles-us": {
     slug: "los-angeles",
     name: "Los Angeles, CA",
     shortName: "Los Angeles",
-    kind: "CITY",
+    kind: "city",
+    ancestorIds: ["US-CA", "US", "region:north-america"],
+    primaryParentId: "US-CA",
     countryCode: "US",
     adminAreaCode: "CA",
     latitude: 34.0522,
     longitude: -118.2437,
     isFeatured: true,
     sortOrder: 1,
-    primaryParentId: "US-CA",
   },
-  {
-    id: "san-francisco-us",
+  "san-francisco-us": {
     slug: "san-francisco",
     name: "San Francisco, CA",
     shortName: "San Francisco",
-    kind: "CITY",
+    kind: "city",
+    ancestorIds: ["US-CA", "US", "region:north-america"],
+    primaryParentId: "US-CA",
     countryCode: "US",
     adminAreaCode: "CA",
     latitude: 37.7749,
     longitude: -122.4194,
     isFeatured: true,
     sortOrder: 2,
-    primaryParentId: "US-CA",
   },
-  {
-    id: "miami-us",
+  "miami-us": {
     slug: "miami",
     name: "Miami, FL",
     shortName: "Miami",
-    kind: "CITY",
+    kind: "city",
+    ancestorIds: ["US-FL", "US", "region:north-america"],
+    primaryParentId: "US-FL",
     countryCode: "US",
     adminAreaCode: "FL",
     latitude: 25.7617,
     longitude: -80.1918,
     isFeatured: true,
     sortOrder: 3,
-    primaryParentId: "US-FL",
   },
-  {
-    id: "oslo-no",
+  "oslo-no": {
     slug: "oslo",
     name: "Oslo, Norway",
     shortName: "Oslo",
-    kind: "CITY",
+    kind: "city",
+    ancestorIds: ["NO", "region:scandinavia", "region:europe"],
+    primaryParentId: "NO",
     countryCode: "NO",
     latitude: 59.9139,
     longitude: 10.7522,
     isCapital: true,
     isFeatured: true,
     sortOrder: 4,
-    primaryParentId: "NO",
   },
-  {
-    id: "berlin-de",
+  "berlin-de": {
     slug: "berlin",
     name: "Berlin, Germany",
     shortName: "Berlin",
-    kind: "CITY",
+    kind: "city",
+    ancestorIds: ["DE", "region:europe"],
+    primaryParentId: "DE",
     countryCode: "DE",
     latitude: 52.52,
     longitude: 13.405,
     isCapital: true,
     isFeatured: true,
     sortOrder: 5,
-    primaryParentId: "DE",
   },
-] as const satisfies readonly CatalogPlaceSeed[];
+});
 
-export const CATALOG_PLACE_RELATIONS = [
-  ["region:north-america", "US"],
-  ["region:europe", "NO"],
-  ["region:europe", "DE"],
-  ["region:scandinavia", "NO"],
-  ["US", "US-NY"],
-  ["US", "US-CA"],
-  ["US", "US-FL"],
-  ["US-NY", "new-york-us"],
-  ["US-CA", "los-angeles-us"],
-  ["US-CA", "san-francisco-us"],
-  ["US-FL", "miami-us"],
-  ["NO", "oslo-no"],
-  ["DE", "berlin-de"],
-] as const satisfies readonly (readonly [string, string])[];
+export type CatalogPlaceId = keyof typeof CATALOG_PLACES;
+export type CatalogPlace = {
+  [K in CatalogPlaceId]: { id: K } & Omit<
+    CatalogPlaceInput,
+    "ancestorIds" | "primaryParentId"
+  > & {
+      ancestorIds: readonly CatalogPlaceId[];
+      primaryParentId?: CatalogPlaceId;
+    } & (typeof CATALOG_PLACES)[K];
+}[CatalogPlaceId];
+export type CatalogLocationFilterKey = CatalogPlace["slug"];
 
-export const CATALOG_LOCATION_SLUGS = CATALOG_PLACE_SEEDS.map(
+export const CATALOG_PLACE_OPTIONS = Object.entries(CATALOG_PLACES)
+  .map(([id, place]) => ({ id, ...place }) as CatalogPlace)
+  .sort((a, b) => a.sortOrder - b.sortOrder);
+
+const catalogPlaceBySlug = new Map<string, CatalogPlace>(
+  CATALOG_PLACE_OPTIONS.map((place) => [place.slug, place]),
+);
+
+export const CATALOG_LOCATION_FILTER_KEYS = CATALOG_PLACE_OPTIONS.map(
   (place) => place.slug,
 );
 
-export interface CatalogPlaceClosureRow {
-  ancestorId: string;
-  descendantId: string;
-  depth: number;
+export function isCatalogLocationFilterKey(
+  value: string | undefined,
+): value is CatalogLocationFilterKey {
+  return value !== undefined && catalogPlaceBySlug.has(value);
 }
 
-export function buildCatalogPlaceClosure(): CatalogPlaceClosureRow[] {
-  const children = new Map<string, string[]>();
-  for (const [ancestorId, descendantId] of CATALOG_PLACE_RELATIONS) {
-    children.set(ancestorId, [
-      ...(children.get(ancestorId) ?? []),
-      descendantId,
-    ]);
+export function getCatalogPlaceBySlug(location: CatalogLocationFilterKey) {
+  return catalogPlaceBySlug.get(location)!;
+}
+
+export function getCatalogRelatedPlaceIds(
+  location: CatalogLocationFilterKey,
+): CatalogPlaceId[] {
+  const selected = getCatalogPlaceBySlug(location);
+  return CATALOG_PLACE_OPTIONS.filter(
+    (place) =>
+      place.id === selected.id ||
+      place.ancestorIds.includes(selected.id) ||
+      selected.ancestorIds.includes(place.id),
+  ).map((place) => place.id);
+}
+
+export function getCatalogLocationBreadcrumb(
+  location: CatalogLocationFilterKey,
+): CatalogPlace[] {
+  const breadcrumb: CatalogPlace[] = [];
+  const seen = new Set<CatalogPlaceId>();
+  let current: CatalogPlace | undefined = getCatalogPlaceBySlug(location);
+  while (current && !seen.has(current.id)) {
+    seen.add(current.id);
+    breadcrumb.unshift(current);
+    current = current.primaryParentId
+      ? ({
+          id: current.primaryParentId,
+          ...CATALOG_PLACES[current.primaryParentId],
+        } as CatalogPlace)
+      : undefined;
   }
-
-  return CATALOG_PLACE_SEEDS.flatMap((place) => {
-    const distances = new Map<string, number>([[place.id, 0]]);
-    const queue: string[] = [place.id];
-    while (queue.length > 0) {
-      const current = queue.shift()!;
-      const depth = distances.get(current)!;
-      for (const child of children.get(current) ?? []) {
-        const nextDepth = depth + 1;
-        const knownDepth = distances.get(child);
-        if (knownDepth === undefined || nextDepth < knownDepth) {
-          distances.set(child, nextDepth);
-          queue.push(child);
-        }
-      }
-    }
-    return [...distances].map(([descendantId, depth]) => ({
-      ancestorId: place.id,
-      descendantId,
-      depth,
-    }));
-  });
-}
-
-export interface CatalogPlaceOption {
-  id: string;
-  slug: string;
-  name: string;
-  shortName: string;
-  kind: CatalogPlaceKind;
-  countryCode: string | null;
-  adminAreaCode: string | null;
-  isCapital: boolean;
-  isFeatured: boolean;
-  primaryParentId: string | null;
-  breadcrumb: Array<{ id: string; slug: string; shortName: string }>;
-}
-
-export interface CatalogEntryPlaceData {
-  strength?: CatalogMarketStrength;
-  note?: string;
-  asOf?: string;
-  sourceUrls?: string[];
-  attributes?: Record<string, unknown>;
-}
-
-export interface CatalogEntryPlaceView {
-  role: CatalogEntryPlaceRole;
-  data: CatalogEntryPlaceData;
-  place: Omit<CatalogPlaceOption, "breadcrumb">;
+  return breadcrumb;
 }
 
 export interface CatalogLink {
@@ -398,6 +385,14 @@ export interface CatalogSourceRef {
   key: string;
 }
 
+export interface CatalogMarketSignal {
+  placeId: CatalogPlaceId;
+  strength: CatalogMarketStrength;
+  note?: string;
+  asOf?: string;
+  sourceUrls?: string[];
+}
+
 export interface CatalogEntryData {
   entityTypes: CatalogEntityType[];
   displayStyle: CatalogDisplayStyle;
@@ -405,6 +400,8 @@ export interface CatalogEntryData {
   tags?: string[];
   links?: CatalogLink[];
   sourceRefs?: CatalogSourceRef[];
+  serviceAreaIds?: CatalogPlaceId[];
+  marketSignals?: CatalogMarketSignal[];
   imageUrl?: string;
   descriptor?: string;
   organizationName?: string;
@@ -425,7 +422,7 @@ export interface CatalogClaimEvidence {
 
 export interface CatalogRequestData {
   brief: string;
-  locationKey?: string;
+  locationKey?: CatalogLocationFilterKey;
   remote?: boolean;
   timeline?: string;
   budget?: string;
@@ -435,10 +432,20 @@ export interface CatalogRequestData {
 export interface CatalogSubmissionData {
   website?: string;
   description: string;
-  locationKey?: string;
+  locationKey?: CatalogLocationFilterKey;
   remote?: boolean;
 }
 
 export function formatCatalogTag(tag: string) {
   return tag.replaceAll("_", " ");
+}
+
+export function getCatalogMarketSignal(
+  data: CatalogEntryData,
+  location: CatalogLocationFilterKey,
+) {
+  const relatedPlaceIds = getCatalogRelatedPlaceIds(location);
+  return data.marketSignals?.find((signal) =>
+    relatedPlaceIds.includes(signal.placeId),
+  );
 }

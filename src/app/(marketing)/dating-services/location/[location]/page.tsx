@@ -5,7 +5,15 @@ import { ArrowLeft, Globe2, MapPin } from "lucide-react";
 import { CatalogEntryCard } from "@/components/catalog/catalog-entry-card";
 import { ButtonLink } from "@/components/ui/button";
 import { cn } from "@/components/ui/lib/utils";
-import { CATALOG_CATEGORIES, CATALOG_CATEGORY_KEYS } from "@/lib/catalog";
+import {
+  CATALOG_CATEGORIES,
+  CATALOG_CATEGORY_KEYS,
+  CATALOG_PLACE_OPTIONS,
+  getCatalogLocationBreadcrumb,
+  getCatalogPlaceBySlug,
+  isCatalogLocationFilterKey,
+  type CatalogLocationFilterKey,
+} from "@/lib/catalog";
 import { trpcApi } from "@/trpc/server";
 
 interface LocationPageProps {
@@ -13,7 +21,7 @@ interface LocationPageProps {
   searchParams: Promise<{ remote?: string }>;
 }
 
-function locationHref(location: string, remote: boolean) {
+function locationHref(location: CatalogLocationFilterKey, remote: boolean) {
   return `/dating-services/location/${location}${remote ? "?remote=1" : ""}`;
 }
 
@@ -25,18 +33,25 @@ export default async function DatingServicesLocationPage({
     params,
     searchParams,
   ]);
+  if (!isCatalogLocationFilterKey(rawLocation)) {
+    notFound();
+  }
+
+  const location = rawLocation;
   const includeRemote = rawSearchParams.remote === "1";
+  const selectedPlace = getCatalogPlaceBySlug(location);
+  const breadcrumb = getCatalogLocationBreadcrumb(location);
+  const featuredCities = CATALOG_PLACE_OPTIONS.filter(
+    (place) => place.kind === "city" && place.isFeatured,
+  );
+  const broaderAreas = CATALOG_PLACE_OPTIONS.filter(
+    (place) => place.kind === "country" || place.kind === "region",
+  );
   const api = await trpcApi();
-  const { entries, totalCount, place, locations, contextPlaceIds } =
-    await api.catalog
-      .byLocation({ location: rawLocation, includeRemote })
-      .catch(() => notFound());
-  const featuredCities = locations.filter(
-    (item) => item.kind === "CITY" && item.isFeatured,
-  );
-  const broaderAreas = locations.filter(
-    (item) => item.kind === "COUNTRY" || item.kind === "REGION",
-  );
+  const { entries, totalCount } = await api.catalog.byLocation({
+    location,
+    includeRemote,
+  });
   const groupedEntries = CATALOG_CATEGORY_KEYS.map((category) => ({
     category,
     entries: entries.filter((entry) => entry.primaryCategory === category),
@@ -50,17 +65,17 @@ export default async function DatingServicesLocationPage({
             <Link href="/dating-services" className="hover:text-rose-600">
               Services
             </Link>
-            {place.breadcrumb.map((item) => (
-              <span key={item.id} className="flex items-center gap-2">
+            {breadcrumb.map((place) => (
+              <span key={place.id} className="flex items-center gap-2">
                 <span>/</span>
-                {item.id === place.id ? (
-                  <span className="text-gray-800">{item.shortName}</span>
+                {place.id === selectedPlace.id ? (
+                  <span className="text-gray-800">{place.shortName}</span>
                 ) : (
                   <Link
-                    href={locationHref(item.slug, includeRemote)}
+                    href={locationHref(place.slug, includeRemote)}
                     className="hover:text-rose-600"
                   >
-                    {item.shortName}
+                    {place.shortName}
                   </Link>
                 )}
               </span>
@@ -74,7 +89,7 @@ export default async function DatingServicesLocationPage({
                 Local catalog
               </div>
               <h1 className="mt-4 text-[clamp(38px,5vw,58px)] leading-[1.02] font-bold tracking-[-0.04em]">
-                Dating services in {place.name}
+                Dating services in {selectedPlace.name}
               </h1>
               <p className="mt-5 max-w-2xl text-[17px] leading-7 text-gray-600">
                 Browse local providers and apps with a meaningful presence in
@@ -89,37 +104,37 @@ export default async function DatingServicesLocationPage({
           </div>
 
           <div className="mt-9 flex flex-wrap items-center gap-2">
-            {featuredCities.map((item) => (
+            {featuredCities.map((place) => (
               <Link
-                key={item.id}
-                href={locationHref(item.slug, includeRemote)}
+                key={place.id}
+                href={locationHref(place.slug, includeRemote)}
                 className={cn(
                   "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-semibold transition",
-                  place.id === item.id
+                  location === place.slug
                     ? "border-rose-300 bg-rose-50 text-rose-700"
                     : "border-gray-200 bg-white text-gray-600 hover:border-gray-300",
                 )}
               >
                 <MapPin className="h-3.5 w-3.5" />
-                {item.shortName}
+                {place.shortName}
               </Link>
             ))}
-            {broaderAreas.map((item) => (
+            {broaderAreas.map((place) => (
               <Link
-                key={item.id}
-                href={locationHref(item.slug, includeRemote)}
+                key={place.id}
+                href={locationHref(place.slug, includeRemote)}
                 className={cn(
                   "rounded-full border px-3.5 py-2 text-sm font-semibold transition",
-                  place.id === item.id
+                  location === place.slug
                     ? "border-rose-300 bg-rose-50 text-rose-700"
                     : "border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300",
                 )}
               >
-                {item.shortName}
+                {place.shortName}
               </Link>
             ))}
             <Link
-              href={locationHref(place.slug, !includeRemote)}
+              href={locationHref(location, !includeRemote)}
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-semibold transition",
                 includeRemote
@@ -152,7 +167,7 @@ export default async function DatingServicesLocationPage({
                       </h2>
                     </div>
                     <Link
-                      href={`/dating-services/${config.slug}?location=${place.slug}`}
+                      href={`/dating-services/${config.slug}?location=${location}`}
                       className="text-sm font-semibold text-rose-600 hover:text-rose-700"
                     >
                       View only {config.shortLabel.toLowerCase()} →
@@ -163,7 +178,7 @@ export default async function DatingServicesLocationPage({
                       <CatalogEntryCard
                         key={entry.id}
                         entry={entry}
-                        contextPlaceIds={contextPlaceIds}
+                        contextLocation={location}
                       />
                     ))}
                   </div>
@@ -174,7 +189,7 @@ export default async function DatingServicesLocationPage({
         ) : (
           <div className="rounded-3xl border border-dashed border-gray-300 bg-gray-50 px-6 py-16 text-center">
             <h2 className="text-2xl font-bold tracking-[-0.03em]">
-              No local listings in {place.name} yet
+              No local listings in {selectedPlace.name} yet
             </h2>
             <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-gray-600">
               Include remote services, or browse by category while the local
@@ -184,7 +199,7 @@ export default async function DatingServicesLocationPage({
               {!includeRemote && (
                 <ButtonLink
                   variant="outline"
-                  href={locationHref(place.slug, true)}
+                  href={locationHref(location, true)}
                 >
                   Show remote services
                 </ButtonLink>

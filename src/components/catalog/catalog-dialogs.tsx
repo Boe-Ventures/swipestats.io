@@ -20,9 +20,10 @@ import { toast } from "@/components/ui/toast";
 import {
   CATALOG_CATEGORIES,
   CATALOG_CATEGORY_KEYS,
+  CATALOG_PLACE_OPTIONS,
   type CatalogCategoryKey,
+  type CatalogLocationFilterKey,
   type CatalogPlaceKind,
-  type CatalogPlaceOption,
 } from "@/lib/catalog";
 import { useTRPC } from "@/trpc/react";
 
@@ -52,25 +53,20 @@ function formValue(data: FormData, name: string) {
 }
 
 const locationGroupLabels: Record<CatalogPlaceKind, string> = {
-  CITY: "Launch cities",
-  ADMIN_AREA: "States and areas",
-  COUNTRY: "Countries",
-  REGION: "Regions",
+  city: "Launch cities",
+  admin_area: "States and areas",
+  country: "Countries",
+  region: "Regions",
 };
 
-function CatalogLocationOptions({
-  locations,
-}: {
-  locations: CatalogPlaceOption[];
-}) {
+function CatalogLocationOptions() {
   return Object.entries(locationGroupLabels).map(([kind, label]) => {
-    const options = locations.filter((location) => location.kind === kind);
-    if (options.length === 0) return null;
+    const places = CATALOG_PLACE_OPTIONS.filter((place) => place.kind === kind);
     return (
       <optgroup key={kind} label={label}>
-        {options.map((location) => (
-          <option key={location.id} value={location.slug}>
-            {location.name}
+        {places.map((place) => (
+          <option key={place.id} value={place.slug}>
+            {place.name}
           </option>
         ))}
       </optgroup>
@@ -82,13 +78,11 @@ export function CatalogRequestDialog({
   category,
   targetEntryId,
   targetName,
-  locations,
   trigger,
 }: {
   category: CatalogCategoryKey;
   targetEntryId?: string;
   targetName?: string;
-  locations: CatalogPlaceOption[];
   trigger?: ReactNode;
 }) {
   const trpc = useTRPC();
@@ -112,7 +106,9 @@ export function CatalogRequestDialog({
       targetEntryId,
       email: formValue(data, "email"),
       brief: formValue(data, "brief"),
-      locationKey: locationKey || undefined,
+      locationKey: locationKey
+        ? (locationKey as CatalogLocationFilterKey)
+        : undefined,
       remote: data.get("remote") === "on",
       timeline: formValue(data, "timeline") || undefined,
       budget: formValue(data, "budget") || undefined,
@@ -181,7 +177,7 @@ export function CatalogRequestDialog({
                   className="h-9 rounded-md border border-gray-200 bg-white px-3 text-sm outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
                 >
                   <option value="">No location preference</option>
-                  <CatalogLocationOptions locations={locations} />
+                  <CatalogLocationOptions />
                 </select>
               </Field>
               <Field
@@ -243,13 +239,7 @@ export function CatalogRequestDialog({
   );
 }
 
-export function CatalogSubmissionDialog({
-  locations,
-  trigger,
-}: {
-  locations: CatalogPlaceOption[];
-  trigger?: ReactNode;
-}) {
+export function CatalogSubmissionDialog({ trigger }: { trigger?: ReactNode }) {
   const trpc = useTRPC();
   const [open, setOpen] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -271,7 +261,9 @@ export function CatalogSubmissionDialog({
       email: formValue(data, "email"),
       website: formValue(data, "website") || undefined,
       description: formValue(data, "description"),
-      locationKey: locationKey || undefined,
+      locationKey: locationKey
+        ? (locationKey as CatalogLocationFilterKey)
+        : undefined,
       remote: data.get("remote") === "on",
     });
   };
@@ -365,7 +357,7 @@ export function CatalogSubmissionDialog({
                   className="h-9 rounded-md border border-gray-200 bg-white px-3 text-sm outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
                 >
                   <option value="">Not location-specific</option>
-                  <CatalogLocationOptions locations={locations} />
+                  <CatalogLocationOptions />
                 </select>
               </Field>
               <label className="flex items-center gap-2 self-end pb-2 text-sm text-gray-600">

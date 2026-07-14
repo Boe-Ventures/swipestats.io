@@ -1,6 +1,5 @@
 import { relations, sql } from "drizzle-orm";
 import {
-  type AnyPgColumn,
   check,
   foreignKey,
   index,
@@ -28,7 +27,6 @@ import type {
   CatalogCategoryKey,
   CatalogClaimEvidence,
   CatalogEntryData,
-  CatalogEntryPlaceData,
   CatalogRequestData,
   CatalogSubmissionData,
 } from "@/lib/catalog";
@@ -175,18 +173,6 @@ export const catalogSubmissionStatusEnum = pgEnum("catalog_submission_status", [
   "WITHDRAWN",
 ]);
 
-export const catalogPlaceKindEnum = pgEnum("catalog_place_kind", [
-  "CITY",
-  "ADMIN_AREA",
-  "COUNTRY",
-  "REGION",
-]);
-
-export const catalogEntryPlaceRoleEnum = pgEnum("catalog_entry_place_role", [
-  "SERVICE_AREA",
-  "MARKET",
-]);
-
 // Export TypeScript types
 export type DataProvider = (typeof dataProviderEnum.enumValues)[number];
 export type EventType = (typeof eventTypeEnum.enumValues)[number];
@@ -216,9 +202,6 @@ export type CatalogRequestVisibility =
   (typeof catalogRequestVisibilityEnum.enumValues)[number];
 export type CatalogSubmissionStatus =
   (typeof catalogSubmissionStatusEnum.enumValues)[number];
-export type CatalogPlaceKind = (typeof catalogPlaceKindEnum.enumValues)[number];
-export type CatalogEntryPlaceRole =
-  (typeof catalogEntryPlaceRoleEnum.enumValues)[number];
 
 /** ISO 639-1 two-letter language code, e.g. "en", "no", "es" */
 export type LanguageCode = string;
@@ -1046,80 +1029,6 @@ export type WaitlistInsert = typeof waitlistTable.$inferInsert;
 
 // ---- DATING SERVICES CATALOG -------------------------------------
 
-export const catalogPlaceTable = pgTable(
-  "catalog_place",
-  (t) => ({
-    id: t.text().primaryKey(),
-    slug: t.text().notNull().unique(),
-    name: t.text().notNull(),
-    shortName: t.text().notNull(),
-    kind: catalogPlaceKindEnum().notNull(),
-    countryCode: t.text(),
-    adminAreaCode: t.text(),
-    latitude: t.doublePrecision(),
-    longitude: t.doublePrecision(),
-    isCapital: t.boolean().default(false).notNull(),
-    isFeatured: t.boolean().default(false).notNull(),
-    isActive: t.boolean().default(true).notNull(),
-    sortOrder: t.integer().default(0).notNull(),
-    primaryParentId: t
-      .text()
-      .references((): AnyPgColumn => catalogPlaceTable.id, {
-        onDelete: "set null",
-      }),
-    data: t.jsonb().$type<Record<string, unknown>>().default({}).notNull(),
-    createdAt: t
-      .timestamp({ withTimezone: true })
-      .$defaultFn(() => new Date())
-      .notNull(),
-    updatedAt: t
-      .timestamp({ withTimezone: true })
-      .$defaultFn(() => new Date())
-      .$onUpdate(() => new Date())
-      .notNull(),
-  }),
-  (t) => [
-    index("catalog_place_kind_featured_idx").on(
-      t.kind,
-      t.isActive,
-      t.isFeatured,
-      t.sortOrder,
-    ),
-    index("catalog_place_country_admin_idx").on(t.countryCode, t.adminAreaCode),
-    index("catalog_place_parent_idx").on(t.primaryParentId),
-  ],
-);
-
-export type CatalogPlace = typeof catalogPlaceTable.$inferSelect;
-export type CatalogPlaceInsert = typeof catalogPlaceTable.$inferInsert;
-
-export const catalogPlaceClosureTable = pgTable(
-  "catalog_place_closure",
-  (t) => ({
-    ancestorId: t
-      .text()
-      .notNull()
-      .references(() => catalogPlaceTable.id, { onDelete: "cascade" }),
-    descendantId: t
-      .text()
-      .notNull()
-      .references(() => catalogPlaceTable.id, { onDelete: "cascade" }),
-    depth: t.integer().notNull(),
-  }),
-  (t) => [
-    primaryKey({ columns: [t.ancestorId, t.descendantId] }),
-    index("catalog_place_closure_descendant_idx").on(
-      t.descendantId,
-      t.ancestorId,
-    ),
-    check("catalog_place_closure_depth_check", sql`${t.depth} >= 0`),
-  ],
-);
-
-export type CatalogPlaceClosure = typeof catalogPlaceClosureTable.$inferSelect;
-export type CatalogPlaceClosureInsert =
-  typeof catalogPlaceClosureTable.$inferInsert;
-
 export const catalogEntryTable = pgTable(
   "catalog_entry",
   (t) => ({
@@ -1161,40 +1070,6 @@ export const catalogEntryTable = pgTable(
 
 export type CatalogEntry = typeof catalogEntryTable.$inferSelect;
 export type CatalogEntryInsert = typeof catalogEntryTable.$inferInsert;
-
-export const catalogEntryPlaceTable = pgTable(
-  "catalog_entry_place",
-  (t) => ({
-    entryId: t
-      .text()
-      .notNull()
-      .references(() => catalogEntryTable.id, { onDelete: "cascade" }),
-    placeId: t
-      .text()
-      .notNull()
-      .references(() => catalogPlaceTable.id, { onDelete: "cascade" }),
-    role: catalogEntryPlaceRoleEnum().notNull(),
-    data: t.jsonb().$type<CatalogEntryPlaceData>().default({}).notNull(),
-    createdAt: t
-      .timestamp({ withTimezone: true })
-      .$defaultFn(() => new Date())
-      .notNull(),
-    updatedAt: t
-      .timestamp({ withTimezone: true })
-      .$defaultFn(() => new Date())
-      .$onUpdate(() => new Date())
-      .notNull(),
-  }),
-  (t) => [
-    primaryKey({ columns: [t.entryId, t.placeId, t.role] }),
-    index("catalog_entry_place_place_role_idx").on(t.placeId, t.role),
-    index("catalog_entry_place_entry_role_idx").on(t.entryId, t.role),
-  ],
-);
-
-export type CatalogEntryPlace = typeof catalogEntryPlaceTable.$inferSelect;
-export type CatalogEntryPlaceInsert =
-  typeof catalogEntryPlaceTable.$inferInsert;
 
 export const catalogEntryMemberTable = pgTable(
   "catalog_entry_member",
@@ -2295,61 +2170,9 @@ export const aiOutputRelations = relations(aiOutputTable, ({ one }) => ({
 export const catalogEntryRelations = relations(
   catalogEntryTable,
   ({ many }) => ({
-    places: many(catalogEntryPlaceTable),
     members: many(catalogEntryMemberTable),
     claims: many(catalogEntryClaimTable),
     requests: many(catalogRequestTable),
-  }),
-);
-
-export const catalogPlaceRelations = relations(
-  catalogPlaceTable,
-  ({ one, many }) => ({
-    primaryParent: one(catalogPlaceTable, {
-      fields: [catalogPlaceTable.primaryParentId],
-      references: [catalogPlaceTable.id],
-      relationName: "catalogPlacePrimaryParent",
-    }),
-    primaryChildren: many(catalogPlaceTable, {
-      relationName: "catalogPlacePrimaryParent",
-    }),
-    ancestorRows: many(catalogPlaceClosureTable, {
-      relationName: "catalogPlaceClosureAncestor",
-    }),
-    descendantRows: many(catalogPlaceClosureTable, {
-      relationName: "catalogPlaceClosureDescendant",
-    }),
-    entries: many(catalogEntryPlaceTable),
-  }),
-);
-
-export const catalogPlaceClosureRelations = relations(
-  catalogPlaceClosureTable,
-  ({ one }) => ({
-    ancestor: one(catalogPlaceTable, {
-      fields: [catalogPlaceClosureTable.ancestorId],
-      references: [catalogPlaceTable.id],
-      relationName: "catalogPlaceClosureAncestor",
-    }),
-    descendant: one(catalogPlaceTable, {
-      fields: [catalogPlaceClosureTable.descendantId],
-      references: [catalogPlaceTable.id],
-      relationName: "catalogPlaceClosureDescendant",
-    }),
-  }),
-);
-
-export const catalogEntryPlaceRelations = relations(
-  catalogEntryPlaceTable,
-  ({ one }) => ({
-    entry: one(catalogEntryTable, {
-      fields: [catalogEntryPlaceTable.entryId],
-      references: [catalogEntryTable.id],
-    }),
-    place: one(catalogPlaceTable, {
-      fields: [catalogEntryPlaceTable.placeId],
-      references: [catalogPlaceTable.id],
-    }),
   }),
 );
 
