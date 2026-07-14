@@ -15,6 +15,18 @@ type ReviewBatch =
   | "other";
 
 type ReviewTier = "light" | "medium" | "heavy";
+type ReviewStatus = "pending" | "reviewed";
+
+const REVIEWED_REWRITES = new Set([
+  "ai-rizz-generator",
+  "best-conversation-starters-over-text",
+  "bumble-premium",
+  "hinge-algorithm",
+  "how-does-tinder-work",
+  "how-to-reset-tinder",
+  "pick-up-lines",
+  "tinder-platinum",
+]);
 
 interface PostInventory {
   file: string;
@@ -34,6 +46,7 @@ interface PostInventory {
   riskFlags: string[];
   batch: ReviewBatch;
   reviewTier: ReviewTier;
+  reviewStatus: ReviewStatus;
 }
 
 function sourceFiles(): string[] {
@@ -261,6 +274,7 @@ async function main() {
       riskFlags: flags,
       batch: classifyBatch(slug, content),
       reviewTier: reviewTier(flags, sourceLinks),
+      reviewStatus: REVIEWED_REWRITES.has(slug) ? "reviewed" : "pending",
     });
   }
 
@@ -270,6 +284,9 @@ async function main() {
   );
   const missingTargets = unique(
     posts.flatMap((post) => post.missingInternalTargets),
+  );
+  const reviewedPosts = posts.filter(
+    (post) => post.reviewStatus === "reviewed",
   );
   const counts = <T extends string>(values: T[]) =>
     Object.fromEntries(
@@ -284,13 +301,14 @@ async function main() {
     "",
     `Generated from source commit \`${SOURCE_COMMIT}\`. Re-run with \`bun src/scripts/content/blog-pr12-rescue-audit.ts\`.`,
     "",
-    "This ledger is the explicit editorial decision surface for the 81 recovered posts. `rewrite` means the post is retained only after its flagged claims, sources, tone, dates, and CTA strategy have been reviewed; it does not mean the historical draft is publication-ready.",
+    "This ledger is the explicit editorial decision surface for the 81 recovered posts. `rewrite` retains a post only after review. `pending` means the historical draft is not publication-ready; `reviewed` means its factual boundaries, sources, tone, dates, and CTA strategy received a manual pass.",
     "",
     "## Inventory summary",
     "",
     `- Recovered posts: **${posts.length}**`,
     `- Total draft words: **${posts.reduce((sum, post) => sum + post.words, 0).toLocaleString()}**`,
     `- Review decisions: **81 rewrite / 0 keep-as-is / 0 drop**`,
+    `- Editorial status: **${reviewedPosts.length} reviewed / ${posts.length - reviewedPosts.length} pending**`,
     `- Review tiers: ${JSON.stringify(counts(posts.map((post) => post.reviewTier)))}`,
     `- Editorial batches: ${JSON.stringify(counts(posts.map((post) => post.batch)))}`,
     `- Unique in-batch link targets: **${uniqueRescueTargets.size}**`,
@@ -300,11 +318,11 @@ async function main() {
     "",
     "## Review decisions",
     "",
-    "| Slug | Decision | Tier | Batch | Words | Sources | In-batch dependencies | Risk flags |",
-    "| --- | --- | --- | --- | ---: | ---: | ---: | --- |",
+    "| Slug | Decision | Status | Tier | Batch | Words | Sources | Auto CTA | Product cards | In-batch dependencies | Risk flags |",
+    "| --- | --- | --- | --- | --- | ---: | ---: | --- | ---: | ---: | --- |",
     ...posts.map(
       (post) =>
-        `| \`${post.slug}\` | rewrite | ${post.reviewTier} | ${post.batch} | ${post.words} | ${post.sourceLinks} | ${post.rescueDependencies.length} | ${escapeCell(post.riskFlags.join(", ") || "none")} |`,
+        `| \`${post.slug}\` | rewrite | ${post.reviewStatus} | ${post.reviewTier} | ${post.batch} | ${post.words} | ${post.sourceLinks} | ${post.enableAutoCtAs ? "on" : "off"} | ${post.productCards} | ${post.rescueDependencies.length} | ${escapeCell(post.riskFlags.join(", ") || "none")} |`,
     ),
     "",
     "## Dependency cycles",
