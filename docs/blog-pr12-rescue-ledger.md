@@ -7,12 +7,12 @@ This ledger is the explicit editorial decision surface for the 81 recovered post
 ## Inventory summary
 
 - Recovered posts: **81**
-- Total draft words: **167,606**
+- Total draft words: **162,813**
 - Review decisions: **81 rewrite / 0 keep-as-is / 0 drop**
-- Editorial status: **33 reviewed / 48 pending**
-- Review tiers: {"heavy":42,"light":37,"medium":2}
+- Editorial status: **36 reviewed / 45 pending**
+- Review tiers: {"heavy":40,"light":39,"medium":2}
 - Editorial batches: {"algorithm-account":9,"commercial":11,"evergreen":31,"other":30}
-- Unique in-batch link targets: **46**
+- Unique in-batch link targets: **43**
 - Dependency-orderable posts: **81**
 - Posts in dependency cycles: **0**
 - Missing internal targets after recovery: **0**
@@ -67,7 +67,7 @@ This ledger is the explicit editorial decision surface for the 81 recovered post
 | `how-does-tinder-work` | rewrite | reviewed | heavy | other | 1446 | 5 | off | 1 | 0 | algorithm-claim, absolute-claim |
 | `how-many-free-likes-on-hinge` | rewrite | reviewed | light | other | 571 | 5 | on | 0 | 0 | dynamic-pricing, absolute-claim |
 | `how-to-ask-her-out-over-text` | rewrite | pending | light | evergreen | 2661 | 4 | on | 0 | 3 | absolute-claim |
-| `how-to-cancel-tinder-gold` | rewrite | pending | heavy | other | 1839 | 3 | on | 0 | 2 | dynamic-pricing, algorithm-claim, absolute-claim |
+| `how-to-cancel-tinder-gold` | rewrite | reviewed | light | other | 636 | 4 | on | 0 | 0 | none |
 | `how-to-find-someone-on-hinge` | rewrite | pending | heavy | other | 2195 | 6 | on | 0 | 7 | dynamic-pricing, algorithm-claim, absolute-claim |
 | `how-to-find-someone-on-tinder` | rewrite | pending | heavy | other | 3197 | 6 | on | 0 | 1 | dynamic-pricing, algorithm-claim, absolute-claim |
 | `how-to-flirt-over-text` | rewrite | pending | heavy | evergreen | 3996 | 4 | on | 0 | 2 | dynamic-pricing, algorithm-claim, absolute-claim |
@@ -90,13 +90,13 @@ This ledger is the explicit editorial decision surface for the 81 recovered post
 | `married-people-on-tinder` | rewrite | pending | heavy | other | 2152 | 5 | on | 0 | 0 | algorithm-claim, absolute-claim |
 | `pick-up-lines-for-girls` | rewrite | pending | medium | evergreen | 3408 | 5 | on | 0 | 5 | first-person-claim, absolute-claim, weak-source-candidate |
 | `pick-up-lines` | rewrite | reviewed | heavy | evergreen | 1735 | 4 | off | 1 | 0 | algorithm-claim, absolute-claim |
-| `tinder-boost` | rewrite | pending | heavy | commercial | 2294 | 4 | on | 0 | 0 | dynamic-pricing, first-person-claim, algorithm-claim, absolute-claim, weak-source-candidate |
+| `tinder-boost` | rewrite | reviewed | light | commercial | 691 | 3 | on | 0 | 0 | dynamic-pricing, absolute-claim |
 | `tinder-for-friends` | rewrite | pending | heavy | other | 2577 | 8 | on | 0 | 0 | dynamic-pricing, swipestats-data-claim, algorithm-claim, absolute-claim |
 | `tinder-for-seniors` | rewrite | pending | heavy | other | 2188 | 8 | on | 0 | 0 | dynamic-pricing, algorithm-claim, absolute-claim |
 | `tinder-platinum` | rewrite | reviewed | heavy | commercial | 1372 | 3 | off | 1 | 0 | swipestats-data-claim, algorithm-claim, absolute-claim |
 | `tinder-questionnaire` | rewrite | pending | medium | other | 3085 | 4 | on | 0 | 0 | dynamic-pricing, swipestats-data-claim, absolute-claim |
 | `tinder-shadowban` | rewrite | reviewed | heavy | algorithm-account | 840 | 5 | on | 0 | 0 | algorithm-claim, evasion-or-identity-guidance |
-| `tinder-subscription` | rewrite | pending | heavy | commercial | 2745 | 7 | on | 0 | 3 | dynamic-pricing, swipestats-data-claim, algorithm-claim, weak-source-candidate |
+| `tinder-subscription` | rewrite | reviewed | heavy | commercial | 758 | 5 | off | 1 | 0 | algorithm-claim, absolute-claim |
 | `tinder-terms-and-conditions` | rewrite | pending | heavy | algorithm-account | 2210 | 7 | on | 0 | 0 | dynamic-pricing, algorithm-claim, absolute-claim |
 | `what-does-rizz-mean` | rewrite | pending | light | evergreen | 2653 | 4 | on | 0 | 2 | absolute-claim |
 | `what-to-text-your-crush` | rewrite | pending | light | evergreen | 2981 | 8 | on | 0 | 5 | first-person-claim, absolute-claim |
@@ -136,56 +136,56 @@ This is a mechanical topological order only. Editorial priority and the final tw
 23. `how-does-match-com-work`
 24. `how-does-tinder-work`
 25. `how-many-free-likes-on-hinge`
-26. `how-to-flirt-over-text`
-27. `how-to-keep-a-conversation-going-over-text`
-28. `how-to-like-someone-on-hinge`
-29. `how-to-refresh-hinge`
-30. `how-to-reset-hinge`
-31. `how-does-hinge-work-for-guys`
-32. `how-to-reset-tinder`
-33. `how-to-slide-into-dms`
-34. `how-to-talk-dirty`
-35. `good-morning-messages-for-him`
-36. `good-night-texts`
-37. `flirty-emojis`
-38. `how-to-tell-if-she-likes-you-over-text`
-39. `break-up-text`
-40. `how-to-text-a-guy-to-like-you`
-41. `how-to-text-a-woman`
-42. `how-to-ask-her-out-over-text`
-43. `bumble-messaging`
-44. `how-to-use-hinge`
-45. `hinge-app-icons`
-46. `hinge-opening-lines`
-47. `hinge-conversation-starters`
-48. `ai-text-message-generator`
-49. `hinge-desktop`
-50. `how-to-find-someone-on-hinge`
-51. `if-you-x-someone-on-hinge-what-happens`
-52. `is-hinge-a-good-dating-app`
-53. `hinge-for-friends`
-54. `is-hinge-better-than-tinder`
-55. `is-hinge-x-worth-it`
-56. `hinge-gift-card`
-57. `hinge-or-bumble`
-58. `married-people-on-tinder`
-59. `pick-up-lines`
-60. `chat-up-lines`
-61. `cheesy-pick-up-lines`
-62. `pick-up-lines-for-girls`
-63. `tinder-boost`
-64. `how-to-get-matches-on-tinder`
-65. `tinder-for-friends`
-66. `tinder-for-seniors`
-67. `how-does-facebook-dating-work`
-68. `tinder-platinum`
-69. `tinder-questionnaire`
-70. `tinder-shadowban`
-71. `how-to-find-someone-on-tinder`
-72. `tinder-terms-and-conditions`
-73. `how-to-cancel-tinder-gold`
-74. `tinder-subscription`
-75. `free-messaging-dating-sites`
+26. `how-to-cancel-tinder-gold`
+27. `how-to-flirt-over-text`
+28. `how-to-keep-a-conversation-going-over-text`
+29. `how-to-like-someone-on-hinge`
+30. `how-to-refresh-hinge`
+31. `how-to-reset-hinge`
+32. `how-does-hinge-work-for-guys`
+33. `how-to-reset-tinder`
+34. `how-to-slide-into-dms`
+35. `how-to-talk-dirty`
+36. `good-morning-messages-for-him`
+37. `good-night-texts`
+38. `flirty-emojis`
+39. `how-to-tell-if-she-likes-you-over-text`
+40. `break-up-text`
+41. `how-to-text-a-guy-to-like-you`
+42. `how-to-text-a-woman`
+43. `how-to-ask-her-out-over-text`
+44. `bumble-messaging`
+45. `how-to-use-hinge`
+46. `hinge-app-icons`
+47. `hinge-opening-lines`
+48. `hinge-conversation-starters`
+49. `ai-text-message-generator`
+50. `hinge-desktop`
+51. `how-to-find-someone-on-hinge`
+52. `if-you-x-someone-on-hinge-what-happens`
+53. `is-hinge-a-good-dating-app`
+54. `hinge-for-friends`
+55. `is-hinge-better-than-tinder`
+56. `is-hinge-x-worth-it`
+57. `hinge-gift-card`
+58. `hinge-or-bumble`
+59. `married-people-on-tinder`
+60. `pick-up-lines`
+61. `chat-up-lines`
+62. `cheesy-pick-up-lines`
+63. `pick-up-lines-for-girls`
+64. `tinder-boost`
+65. `how-to-get-matches-on-tinder`
+66. `tinder-for-friends`
+67. `tinder-for-seniors`
+68. `how-does-facebook-dating-work`
+69. `tinder-platinum`
+70. `tinder-questionnaire`
+71. `tinder-shadowban`
+72. `how-to-find-someone-on-tinder`
+73. `tinder-subscription`
+74. `free-messaging-dating-sites`
+75. `tinder-terms-and-conditions`
 76. `what-does-rizz-mean`
 77. `dirty-pick-up-lines`
 78. `what-to-text-your-crush`
