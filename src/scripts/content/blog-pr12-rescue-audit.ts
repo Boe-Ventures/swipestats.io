@@ -24,6 +24,8 @@ const REVIEWED_REWRITES = new Set([
   "bumble-messaging",
   "bumble-premium",
   "can-you-send-pics-on-hinge",
+  "chat-up-lines",
+  "cheesy-pick-up-lines",
   "does-hinge-automatically-update-your-location",
   "double-texting",
   "dry-texting",
@@ -50,12 +52,14 @@ const REVIEWED_REWRITES = new Set([
   "is-hinge-x-worth-it",
   "if-you-x-someone-on-hinge-what-happens",
   "pick-up-lines",
+  "pick-up-lines-for-girls",
   "tinder-platinum",
   "tinder-boost",
   "tinder-subscription",
   "tinder-shadowban",
   "when-do-hinge-roses-reset",
   "who-should-text-first-after-a-date",
+  "what-does-rizz-mean",
 ]);
 
 interface PostInventory {
