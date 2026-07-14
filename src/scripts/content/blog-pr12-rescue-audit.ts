@@ -26,12 +26,16 @@ const REVIEWED_REWRITES = new Set([
   "first-message-on-dating-app",
   "hinge-algorithm",
   "hinge-boost",
+  "hinge-roses",
+  "hinge-standouts",
   "hinge-subscription",
   "how-does-tinder-work",
+  "how-many-free-likes-on-hinge",
   "how-to-reset-tinder",
   "is-hinge-x-worth-it",
   "pick-up-lines",
   "tinder-platinum",
+  "when-do-hinge-roses-reset",
   "who-should-text-first-after-a-date",
 ]);
 
