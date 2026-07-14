@@ -7,12 +7,12 @@ This ledger is the explicit editorial decision surface for the 81 recovered post
 ## Inventory summary
 
 - Recovered posts: **81**
-- Total draft words: **204,142**
+- Total draft words: **199,360**
 - Review decisions: **81 rewrite / 0 keep-as-is / 0 drop**
-- Editorial status: **12 reviewed / 69 pending**
+- Editorial status: **15 reviewed / 66 pending**
 - Review tiers: {"heavy":52,"light":27,"medium":2}
 - Editorial batches: {"algorithm-account":9,"commercial":11,"evergreen":31,"other":30}
-- Unique in-batch link targets: **52**
+- Unique in-batch link targets: **51**
 - Dependency-orderable posts: **81**
 - Posts in dependency cycles: **0**
 - Missing internal targets after recovery: **0**
@@ -46,7 +46,7 @@ This ledger is the explicit editorial decision surface for the 81 recovered post
 | `hinge-algorithm` | rewrite | reviewed | heavy | algorithm-account | 1235 | 4 | off | 1 | 0 | algorithm-claim |
 | `hinge-app-icons` | rewrite | pending | heavy | other | 2324 | 6 | on | 0 | 4 | dynamic-pricing, algorithm-claim, absolute-claim |
 | `hinge-ban` | rewrite | pending | heavy | algorithm-account | 2693 | 4 | on | 0 | 0 | dynamic-pricing, algorithm-claim, evasion-or-identity-guidance, absolute-claim |
-| `hinge-boost` | rewrite | pending | heavy | commercial | 2424 | 3 | on | 0 | 2 | dynamic-pricing, swipestats-data-claim, algorithm-claim, absolute-claim |
+| `hinge-boost` | rewrite | reviewed | heavy | commercial | 859 | 3 | on | 0 | 0 | algorithm-claim, absolute-claim |
 | `hinge-conversation-starters` | rewrite | pending | light | evergreen | 3686 | 5 | on | 0 | 3 | swipestats-data-claim, absolute-claim |
 | `hinge-desktop` | rewrite | pending | heavy | other | 2010 | 6 | on | 0 | 3 | dynamic-pricing, algorithm-claim, absolute-claim |
 | `hinge-for-friends` | rewrite | pending | heavy | other | 1804 | 8 | on | 0 | 2 | dynamic-pricing, algorithm-claim, absolute-claim |
@@ -59,7 +59,7 @@ This ledger is the explicit editorial decision surface for the 81 recovered post
 | `hinge-phone-number` | rewrite | pending | heavy | algorithm-account | 2200 | 4 | on | 0 | 3 | dynamic-pricing, algorithm-claim, evasion-or-identity-guidance, absolute-claim |
 | `hinge-roses` | rewrite | pending | heavy | commercial | 2485 | 5 | on | 0 | 3 | dynamic-pricing, algorithm-claim, absolute-claim |
 | `hinge-standouts` | rewrite | pending | heavy | commercial | 2423 | 5 | on | 0 | 5 | dynamic-pricing, algorithm-claim, absolute-claim |
-| `hinge-subscription` | rewrite | pending | heavy | commercial | 2257 | 3 | on | 0 | 0 | dynamic-pricing, algorithm-claim, absolute-claim |
+| `hinge-subscription` | rewrite | reviewed | heavy | commercial | 933 | 5 | on | 0 | 0 | dynamic-pricing, algorithm-claim, absolute-claim |
 | `hinge-verification` | rewrite | pending | heavy | other | 2132 | 7 | on | 0 | 3 | dynamic-pricing, algorithm-claim, absolute-claim |
 | `how-does-facebook-dating-work` | rewrite | pending | heavy | other | 2713 | 4 | on | 0 | 3 | dynamic-pricing, algorithm-claim, evasion-or-identity-guidance, absolute-claim |
 | `how-does-hinge-work-for-guys` | rewrite | pending | heavy | other | 2735 | 3 | on | 0 | 2 | dynamic-pricing, algorithm-claim, absolute-claim, quantitative-claim |
@@ -86,7 +86,7 @@ This ledger is the explicit editorial decision surface for the 81 recovered post
 | `if-you-x-someone-on-hinge-what-happens` | rewrite | pending | heavy | other | 1917 | 3 | on | 0 | 6 | dynamic-pricing, algorithm-claim, absolute-claim |
 | `is-hinge-a-good-dating-app` | rewrite | pending | heavy | other | 2332 | 5 | on | 0 | 2 | dynamic-pricing, algorithm-claim, absolute-claim |
 | `is-hinge-better-than-tinder` | rewrite | pending | heavy | other | 2045 | 6 | on | 0 | 0 | dynamic-pricing, swipestats-data-claim, algorithm-claim, absolute-claim |
-| `is-hinge-x-worth-it` | rewrite | pending | heavy | commercial | 2809 | 3 | on | 0 | 2 | dynamic-pricing, first-person-claim, swipestats-data-claim, algorithm-claim, absolute-claim, weak-source-candidate |
+| `is-hinge-x-worth-it` | rewrite | reviewed | heavy | commercial | 916 | 4 | off | 1 | 0 | algorithm-claim, absolute-claim |
 | `married-people-on-tinder` | rewrite | pending | heavy | other | 2152 | 5 | on | 0 | 0 | algorithm-claim, absolute-claim |
 | `pick-up-lines-for-girls` | rewrite | pending | medium | evergreen | 3408 | 5 | on | 0 | 5 | first-person-claim, absolute-claim, weak-source-candidate |
 | `pick-up-lines` | rewrite | reviewed | heavy | evergreen | 1735 | 4 | off | 1 | 0 | algorithm-claim, absolute-claim |
@@ -122,13 +122,13 @@ This is a mechanical topological order only. Editorial priority and the final tw
 9. `flirty-texts-for-him`
 10. `hinge-algorithm`
 11. `hinge-ban`
-12. `hinge-subscription`
-13. `how-does-match-com-work`
-14. `how-does-tinder-work`
-15. `how-to-flirt-over-text`
-16. `how-to-keep-a-conversation-going-over-text`
-17. `how-to-reset-hinge`
-18. `hinge-boost`
+12. `hinge-boost`
+13. `hinge-subscription`
+14. `how-does-match-com-work`
+15. `how-does-tinder-work`
+16. `how-to-flirt-over-text`
+17. `how-to-keep-a-conversation-going-over-text`
+18. `how-to-reset-hinge`
 19. `how-does-hinge-work-for-guys`
 20. `how-to-reset-tinder`
 21. `how-to-slide-into-dms`
@@ -148,16 +148,16 @@ This is a mechanical topological order only. Editorial priority and the final tw
 35. `is-hinge-better-than-tinder`
 36. `how-to-use-hinge`
 37. `hinge-verification`
-38. `married-people-on-tinder`
-39. `pick-up-lines`
-40. `tinder-boost`
-41. `how-to-get-matches-on-tinder`
-42. `tinder-for-friends`
-43. `tinder-for-seniors`
-44. `how-does-facebook-dating-work`
-45. `tinder-platinum`
-46. `is-hinge-x-worth-it`
-47. `how-to-refresh-hinge`
+38. `is-hinge-x-worth-it`
+39. `how-to-refresh-hinge`
+40. `married-people-on-tinder`
+41. `pick-up-lines`
+42. `tinder-boost`
+43. `how-to-get-matches-on-tinder`
+44. `tinder-for-friends`
+45. `tinder-for-seniors`
+46. `how-does-facebook-dating-work`
+47. `tinder-platinum`
 48. `tinder-questionnaire`
 49. `tinder-terms-and-conditions`
 50. `how-to-cancel-tinder-gold`
