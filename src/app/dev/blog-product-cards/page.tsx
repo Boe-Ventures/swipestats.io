@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { BLOG_PRODUCT_KEYS, ProductCard } from "@/components/mdx/ProductCard";
+import { ProductCard } from "@/components/mdx/ProductCard";
+import { SponsorCard } from "@/components/mdx/SponsorCard";
 import { CtaCard } from "@/components/mdx/CtaCard";
 import { StickyCtaCard } from "@/components/mdx/StickyCtaCard";
+import { BLOG_PRODUCT_KEYS } from "@/lib/blog-products";
+import { PREVIEW_PAID_SPONSOR_CAMPAIGN } from "@/lib/sponsorship";
 
 export const dynamic = "force-dynamic";
 
@@ -77,7 +80,28 @@ export default function BlogProductCardsPreviewPage() {
       <section className="border-y border-gray-200 bg-white">
         <div className="mx-auto max-w-6xl px-6 py-16 lg:px-8">
           <div className="font-mono text-[11px] font-semibold tracking-[0.1em] text-gray-400 uppercase">
-            02 · In context
+            02 · Sponsorship
+          </div>
+          <h2 className="mt-2 text-3xl font-bold tracking-[-0.03em]">
+            House and paid campaigns
+          </h2>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-gray-500">
+            The house card sells the placement using SwipeStats audience proof.
+            A paid campaign keeps the shell but carries its own sponsor
+            identity, destination, and reporting.
+          </p>
+
+          <div className="mx-auto mt-10 max-w-3xl">
+            <SponsorCard />
+            <SponsorCard campaign={PREVIEW_PAID_SPONSOR_CAMPAIGN} />
+          </div>
+        </div>
+      </section>
+
+      <section className="border-b border-gray-200 bg-white">
+        <div className="mx-auto max-w-6xl px-6 py-16 lg:px-8">
+          <div className="font-mono text-[11px] font-semibold tracking-[0.1em] text-gray-400 uppercase">
+            03 · In context
           </div>
           <h2 className="mt-2 text-3xl font-bold tracking-[-0.03em]">
             Inside an article
@@ -108,7 +132,7 @@ export default function BlogProductCardsPreviewPage() {
 
       <section className="mx-auto max-w-6xl px-6 py-16 lg:px-8">
         <div className="font-mono text-[11px] font-semibold tracking-[0.1em] text-gray-400 uppercase">
-          03 · Current system
+          04 · Current system
         </div>
         <h2 className="mt-2 text-3xl font-bold tracking-[-0.03em]">
           Fallback cards for comparison

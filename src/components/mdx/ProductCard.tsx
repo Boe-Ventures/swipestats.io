@@ -15,16 +15,7 @@ import {
 import { marketingButton } from "@/app/(marketing)/_components/marketing-ui";
 import { cn } from "@/components/ui/lib/utils";
 import { useAnalytics } from "@/contexts/AnalyticsProvider";
-
-export const BLOG_PRODUCT_KEYS = [
-  "insights",
-  "profile-compare",
-  "profile-roast",
-  "prompt-assistant",
-  "directory",
-] as const;
-
-export type BlogProductKey = (typeof BLOG_PRODUCT_KEYS)[number];
+import type { BlogProductKey } from "@/lib/blog-products";
 
 type ProductCardConfig = {
   eyebrow: string;

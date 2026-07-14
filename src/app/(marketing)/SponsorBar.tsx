@@ -1,31 +1,38 @@
+"use client";
+
 import type { ReactNode } from "react";
 import { XMarkIcon } from "@heroicons/react/20/solid";
 
 import { cn } from "@/components/ui/lib/utils";
+import { useSponsorTracking } from "@/hooks/use-sponsor-tracking";
+import type { SponsorCampaign } from "@/lib/sponsorship";
 
 interface SponsorBarProps {
   onDismiss: () => void;
-  label: string;
-  message: string;
-  ctaText: string;
-  href: string;
+  campaign: SponsorCampaign;
   logo?: ReactNode;
   className?: string;
 }
 
 export function SponsorBar({
   onDismiss,
-  label,
-  message,
-  ctaText,
-  href,
+  campaign,
   logo,
   className,
 }: SponsorBarProps) {
+  const { sponsorRef, trackClick } = useSponsorTracking(
+    campaign,
+    "sitewide-bar",
+  );
+  const isPaid = campaign.kind === "paid";
+
   return (
     <aside
+      ref={sponsorRef}
       data-sponsor-bar
-      aria-label="Sponsorship opportunity"
+      aria-label={
+        isPaid ? `Sponsored by ${campaign.sponsorName}` : campaign.title
+      }
       className={cn(
         "from-primary to-primary sticky top-0 z-40 h-16 bg-linear-to-r via-rose-700 text-white sm:h-11",
         className,
@@ -33,19 +40,22 @@ export function SponsorBar({
     >
       <div className="mx-auto grid h-full max-w-7xl grid-cols-[minmax(0,1fr)_auto] items-center px-3 sm:grid-cols-[1fr_auto_1fr] sm:px-6 lg:px-8">
         <span className="hidden justify-self-start text-xs font-semibold tracking-wide text-white/70 sm:block">
-          {label}
+          {campaign.eyebrow}
         </span>
 
         <a
-          href={href}
+          href={campaign.href}
+          onClick={trackClick}
+          target={isPaid ? "_blank" : undefined}
+          rel={isPaid ? "sponsored noopener noreferrer" : undefined}
           className="group min-w-0 justify-self-start rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-rose-700 sm:justify-self-center"
         >
           <span className="block text-[10px] leading-3 font-semibold tracking-wide text-white/70 sm:hidden">
-            {label}
+            {campaign.eyebrow}
           </span>
           <span className="flex items-center gap-1.5 text-sm leading-5 whitespace-nowrap">
             {logo}
-            <span className="font-semibold">{message}</span>
+            <span className="font-semibold">{campaign.barMessage}</span>
             <span
               aria-hidden="true"
               className="font-semibold text-white/80 transition-transform group-hover:translate-x-0.5 sm:hidden"
@@ -53,7 +63,7 @@ export function SponsorBar({
               &rarr;
             </span>
             <span className="hidden font-semibold text-white/80 transition-colors group-hover:text-white sm:inline">
-              {ctaText} <span aria-hidden="true">&rarr;</span>
+              {campaign.ctaText} <span aria-hidden="true">&rarr;</span>
             </span>
           </span>
         </a>

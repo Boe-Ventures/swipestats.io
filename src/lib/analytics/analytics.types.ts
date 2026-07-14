@@ -137,6 +137,9 @@ export type ClientAnalyticsEventName =
   // ─────────────────────────────────────────────────
   | "page_viewed"
   | "blog_product_card_clicked"
+  | "sponsor_impression"
+  | "sponsor_clicked"
+  | "sponsor_inquiry_clicked"
 
   // ─────────────────────────────────────────────────
   // User authentication UI
@@ -576,6 +579,13 @@ export type ServerEventPropertiesDefinition = {
 // EVENT PROPERTIES DEFINITIONS - CLIENT
 // =====================================================
 
+type SponsorEventProperties = {
+  campaignId: string;
+  placement: "sitewide-bar" | "blog-inline";
+  sourcePath: string;
+  sponsorName: string;
+};
+
 export type ClientEventPropertiesDefinition = {
   // ─────────────────────────────────────────────────
   // Navigation
@@ -595,6 +605,10 @@ export type ClientEventPropertiesDefinition = {
       | "directory";
     destinationPath: string;
   };
+
+  sponsor_impression: SponsorEventProperties;
+  sponsor_clicked: SponsorEventProperties;
+  sponsor_inquiry_clicked: SponsorEventProperties;
 
   // ─────────────────────────────────────────────────
   // User authentication UI

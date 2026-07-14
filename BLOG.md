@@ -53,6 +53,7 @@ Frequently used components include:
 - `Video`, `ImageGrid`, `Quote`, and `Stats` for supporting media
 - `NewsletterCard` for an explicit newsletter signup
 - `ProductCard` for contextual links into SwipeStats products
+- `SponsorCard` for a measured sponsorship placement
 - `CtaCard` for the generic upload-oriented fallback
 
 Do not add an `h1` inside article content. The page renders the frontmatter `h1`.
@@ -120,6 +121,31 @@ analytics provider to PostHog, Vercel Analytics, and Amplitude. The event
 captures the source post slug, destination product, and destination path; the
 source slug is inferred from the current `/blog/[slug]` route.
 
+### Sponsorship cards
+
+`SponsorCard` is deliberately separate from `ProductCard`: product cards route
+readers into SwipeStats, while sponsor cards represent a commercial campaign
+with sponsor-specific impressions and clicks.
+
+```mdx
+<SponsorCard />
+```
+
+The default house campaign invites prospective partners to reach SwipeStats'
+50K+ monthly visitors. Paid campaign creative is configured centrally in
+`src/lib/sponsorship.ts`; paid destinations render as external links with
+`rel="sponsored"`.
+
+Do not show the sitewide sponsor bar and inline sponsor card for the same
+campaign on one page. Add manually sponsored article paths to
+`INLINE_SPONSOR_PATHS` so the header suppresses the duplicate bar. Dismissal is
+campaign-specific, so dismissing a house campaign will not hide a future paid
+sponsor.
+
+Sponsorship surfaces emit `sponsor_impression`, `sponsor_clicked`, and
+`sponsor_inquiry_clicked`, attributed by campaign, placement, source path, and
+sponsor name.
+
 ## Previewing cards
 
 Run the app locally, then open:
@@ -155,6 +181,8 @@ JSON-LD, breadcrumb JSON-LD, and generated social images.
 - `src/components/mdx/MDXContent.tsx` — MDX component registry
 - `src/components/mdx/CtaInjector.tsx` — automatic fallback injection
 - `src/components/mdx/ProductCard.tsx` — contextual product cards
+- `src/components/mdx/SponsorCard.tsx` — inline sponsorship campaigns
+- `src/lib/sponsorship.ts` — active campaign copy and placement rules
 - `src/app/dev/blog-product-cards/page.tsx` — non-production preview gallery
 - `src/app/(marketing)/blog/page.tsx` — blog index
 - `src/app/(marketing)/blog/BlogGrid.tsx` — article cards and thumbnails
