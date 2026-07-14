@@ -132,15 +132,15 @@ with sponsor-specific impressions and clicks.
 ```
 
 The default house campaign invites prospective partners to reach SwipeStats'
-50K+ monthly visitors. Paid campaign creative is configured centrally in
-`src/lib/sponsorship.ts`; paid destinations render as external links with
-`rel="sponsored"`.
+50K+ monthly visitors. Its July 2026 experiment is limited to the blog and
+expires automatically after one week. Paid campaign creative is configured
+centrally in `src/lib/sponsorship.ts`; paid destinations render as external
+links with `rel="sponsored"`.
 
-Do not show the sitewide sponsor bar and inline sponsor card for the same
-campaign on one page. Add manually sponsored article paths to
-`INLINE_SPONSOR_PATHS` so the header suppresses the duplicate bar. Dismissal is
-campaign-specific, so dismissing a house campaign will not hide a future paid
-sponsor.
+Do not show the sponsor bar and inline sponsor card for the same campaign on one
+page. During the blog-bar experiment, `SponsorCard` remains preview-only rather
+than appearing in live article content. Dismissal is campaign-specific, so
+dismissing the house campaign will not hide a future paid sponsor.
 
 Sponsorship surfaces emit `sponsor_impression`, `sponsor_clicked`, and
 `sponsor_inquiry_clicked`, attributed by campaign, placement, source path, and

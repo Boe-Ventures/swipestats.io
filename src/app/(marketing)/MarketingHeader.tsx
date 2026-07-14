@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { useLocalStorage } from "@/components/ui/hooks/use-local-storage";
 import {
   ACTIVE_SPONSOR_CAMPAIGN,
-  INLINE_SPONSOR_PATHS,
+  isSponsorCampaignActive,
 } from "@/lib/sponsorship";
 
 import Header from "./Header";
@@ -27,10 +27,12 @@ export function MarketingHeader() {
     setMounted(true);
   }, []);
 
-  const hasInlineSponsor = INLINE_SPONSOR_PATHS.some(
-    (path) => path === pathname,
-  );
-  const showSponsorBar = mounted && !dismissed && !hasInlineSponsor;
+  const isBlogPage = pathname === "/blog" || pathname.startsWith("/blog/");
+  const showSponsorBar =
+    mounted &&
+    isBlogPage &&
+    !dismissed &&
+    isSponsorCampaignActive(ACTIVE_SPONSOR_CAMPAIGN);
 
   return (
     <>

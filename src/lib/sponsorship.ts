@@ -12,6 +12,8 @@ export interface SponsorCampaign {
   description: string;
   ctaText: string;
   href: string;
+  startsAt?: string;
+  endsAt?: string;
   proof: ReadonlyArray<{
     value: string;
     label: string;
@@ -19,7 +21,7 @@ export interface SponsorCampaign {
 }
 
 export const ACTIVE_SPONSOR_CAMPAIGN: SponsorCampaign = {
-  id: "house-sponsorship-2026-07",
+  id: "house-sponsorship-blog-week-2026-07",
   kind: "house",
   sponsorName: "SwipeStats",
   eyebrow: "Advertise with SwipeStats",
@@ -29,6 +31,8 @@ export const ACTIVE_SPONSOR_CAMPAIGN: SponsorCampaign = {
     "Sponsor a high-intent dating guide or product surface with clear placement and reporting from SwipeStats.",
   ctaText: "Sponsor SwipeStats",
   href: "mailto:paw@swipestats.io?subject=SwipeStats%20sponsorship%20inquiry",
+  startsAt: "2026-07-14T14:00:00+02:00",
+  endsAt: "2026-07-21T14:00:00+02:00",
   proof: [
     { value: "50K+", label: "monthly visitors" },
     { value: "Dating", label: "high-intent audience" },
@@ -54,8 +58,17 @@ export const PREVIEW_PAID_SPONSOR_CAMPAIGN: SponsorCampaign = {
   ],
 };
 
-/**
- * The house bar stays hidden on pages with a manually placed inline card so a
- * reader never sees the same sponsorship ask twice on one page.
- */
-export const INLINE_SPONSOR_PATHS = ["/blog/tinder-statistics"] as const;
+export function isSponsorCampaignActive(
+  campaign: SponsorCampaign,
+  now = new Date(),
+) {
+  const currentTime = now.getTime();
+  const startsAt = campaign.startsAt
+    ? Date.parse(campaign.startsAt)
+    : Number.NEGATIVE_INFINITY;
+  const endsAt = campaign.endsAt
+    ? Date.parse(campaign.endsAt)
+    : Number.POSITIVE_INFINITY;
+
+  return currentTime >= startsAt && currentTime < endsAt;
+}
