@@ -62,6 +62,7 @@ type EventPropertyRegistry<Defs> = {
 
 const DATASET_RECENCY = ["MIXED", "RECENT"] as const;
 const PROVIDER = ["tinder", "hinge", "bumble"] as const;
+const DATA_REQUEST_PROVIDER = ["tinder", "hinge", "bumble", "raya"] as const;
 const UPLOAD_PROVIDER = ["tinder", "hinge", "raya"] as const;
 const AUTH_SOURCE = ["conversion_modal", "signin_page", "navbar"] as const;
 const ROAST_TONE = ["helpful", "mild", "spicy"] as const;
@@ -681,11 +682,58 @@ export const CLIENT_EVENT_PROPERTIES: EventPropertyRegistry<ClientEventPropertie
       isReupload: { type: "boolean", required: true },
     },
     upload_provider_selected: {
-      provider: { type: "enum", required: true, values: PROVIDER },
+      provider: {
+        type: "enum",
+        required: true,
+        values: DATA_REQUEST_PROVIDER,
+      },
       source: {
         type: "enum",
         required: true,
         values: ["upload_modal", "instructions_page"],
+      },
+    },
+    data_request_official_link_clicked: {
+      provider: {
+        type: "enum",
+        required: true,
+        values: DATA_REQUEST_PROVIDER,
+      },
+      source: {
+        type: "enum",
+        required: true,
+        values: ["primary_cta", "step_link", "deleted_account_help"],
+      },
+      destinationUrl: {
+        type: "string",
+        required: true,
+        description: "Public provider URL opened by the guide.",
+      },
+    },
+    data_request_upload_clicked: {
+      provider: {
+        type: "enum",
+        required: false,
+        values: DATA_REQUEST_PROVIDER,
+        description: "Present when the CTA belongs to a provider guide.",
+      },
+      source: {
+        type: "enum",
+        required: true,
+        values: ["hero_existing_export", "provider_guide", "final_cta"],
+      },
+    },
+    data_request_reminder_clicked: {
+      provider: {
+        type: "enum",
+        required: false,
+        values: DATA_REQUEST_PROVIDER,
+        description: "Present for provider-specific reminder CTAs.",
+      },
+      source: {
+        type: "enum",
+        required: true,
+        values: ["hero", "provider_guide", "reminder_form"],
       },
     },
     upload_file_processing_started: {

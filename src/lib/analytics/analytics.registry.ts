@@ -388,8 +388,8 @@ export const CLIENT_EVENT_REGISTRY = {
   },
   upload_provider_selected: {
     category: "Upload Flow",
-    description: "Dating provider chosen. Not yet instrumented.",
-    status: "planned",
+    description: "Dating provider chosen in the upload or request guide.",
+    status: "live",
   },
   upload_file_processing_started: {
     category: "Upload Flow",
@@ -429,6 +429,25 @@ export const CLIENT_EVENT_REGISTRY = {
   upload_submit_clicked: {
     category: "Upload Flow",
     description: "User clicked submit on the upload preview.",
+    status: "live",
+  },
+
+  // ── Data request guide ───────────────────────────
+  data_request_official_link_clicked: {
+    category: "Data Request Flow",
+    description:
+      "Official Tinder, Hinge, or Bumble request destination opened from the guide.",
+    status: "live",
+  },
+  data_request_upload_clicked: {
+    category: "Data Request Flow",
+    description: "Upload CTA clicked from the data-request journey.",
+    status: "live",
+  },
+  data_request_reminder_clicked: {
+    category: "Data Request Flow",
+    description:
+      "Reminder CTA or reminder form submitted from the data-request journey.",
     status: "live",
   },
 

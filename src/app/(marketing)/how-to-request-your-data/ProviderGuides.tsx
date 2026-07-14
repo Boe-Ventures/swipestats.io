@@ -12,6 +12,7 @@ import {
   ExclamationTriangleIcon,
 } from "@heroicons/react/20/solid";
 import { cn } from "@/components/ui/lib/utils";
+import { useAnalytics } from "@/contexts/AnalyticsProvider";
 import { marketingButton } from "../_components/marketing-ui";
 
 /* ----------------------------------------------------------- brand icons */
@@ -41,6 +42,16 @@ function BumbleIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+function RayaIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 40 40" fill="none" className={className}>
+      <path
+        d="M11 32V8h10.2c5.7 0 9.3 3.1 9.3 8 0 3.7-2.2 6.4-5.9 7.4L31 32h-6.3l-5.6-7.8h-2.4V32H11Zm5.7-12.8h4c2.6 0 4.1-1.1 4.1-3.2s-1.5-3.1-4.1-3.1h-4v6.3Z"
+        fill="currentColor"
+      />
+    </svg>
+  );
+}
 
 /* ----------------------------------------------------------- data */
 
@@ -50,8 +61,41 @@ const TINDER_GRAD =
 const HINGE = "oklch(0.18 0.01 286)";
 const BUMBLE = "oklch(0.78 0.16 85)";
 const BUMBLE_INK = "#6b4e00";
+const RAYA = "oklch(0.12 0.01 286)";
 
 const UPLOAD_HREF = "/upload";
+
+type DataRequestProvider = "tinder" | "hinge" | "bumble" | "raya";
+
+function TrackedOfficialLink({
+  provider,
+  source,
+  href,
+  children,
+  ...props
+}: Omit<React.AnchorHTMLAttributes<HTMLAnchorElement>, "href" | "onClick"> & {
+  provider: DataRequestProvider;
+  source: "step_link" | "deleted_account_help";
+  href: string;
+}) {
+  const { trackEvent } = useAnalytics();
+
+  return (
+    <a
+      {...props}
+      href={href}
+      onClick={() =>
+        trackEvent("data_request_official_link_clicked", {
+          provider,
+          source,
+          destinationUrl: href,
+        })
+      }
+    >
+      {children}
+    </a>
+  );
+}
 
 function InlineCode({ children }: { children: React.ReactNode }) {
   return (
@@ -70,7 +114,7 @@ type Chip = {
 type Step = { title: string; desc: React.ReactNode };
 
 type Provider = {
-  id: "tinder" | "hinge" | "bumble";
+  id: DataRequestProvider;
   name: string;
   tabMeta: string;
   icon: ({ className }: { className?: string }) => React.JSX.Element;
@@ -117,7 +161,9 @@ const providers: Provider[] = [
         desc: (
           <>
             Open{" "}
-            <a
+            <TrackedOfficialLink
+              provider="tinder"
+              source="step_link"
               href="https://account.gotinder.com/data"
               target="_blank"
               rel="noopener noreferrer"
@@ -125,7 +171,7 @@ const providers: Provider[] = [
               style={{ color: TINDER }}
             >
               account.gotinder.com/data
-            </a>{" "}
+            </TrackedOfficialLink>{" "}
             and sign in with the same method you use for Tinder (phone, Google,
             Facebook, or Apple).
           </>
@@ -159,7 +205,9 @@ const providers: Provider[] = [
       <>
         <strong>Deleted your account?</strong> You can still request your data
         through{" "}
-        <a
+        <TrackedOfficialLink
+          provider="tinder"
+          source="deleted_account_help"
           href="https://www.help.tinder.com/hc/en-us/articles/115005626726-How-do-I-request-a-copy-of-my-personal-data"
           target="_blank"
           rel="noopener noreferrer"
@@ -167,7 +215,7 @@ const providers: Provider[] = [
           style={{ color: TINDER }}
         >
           Tinder&apos;s contact form
-        </a>
+        </TrackedOfficialLink>
         .
       </>
     ),
@@ -273,7 +321,9 @@ const providers: Provider[] = [
         desc: (
           <>
             Go to{" "}
-            <a
+            <TrackedOfficialLink
+              provider="bumble"
+              source="step_link"
               href="https://support.bumble.com/hc/en-us/requests/new"
               target="_blank"
               rel="noopener noreferrer"
@@ -281,7 +331,7 @@ const providers: Provider[] = [
               style={{ color: "oklch(0.5 0.12 70)" }}
             >
               Bumble&apos;s contact form
-            </a>{" "}
+            </TrackedOfficialLink>{" "}
             and choose <strong>&quot;Request my data&quot;</strong> as the
             reason.
           </>
@@ -326,6 +376,76 @@ const providers: Provider[] = [
       app: "support.bumble.com",
       cta: "Submit request",
       cap: "[ screenshot: Bumble support form ]",
+      rows: 3,
+      hl: 0,
+    },
+  },
+  {
+    id: "raya",
+    name: "Raya",
+    tabMeta: "MANUAL · TIMING VARIES",
+    icon: RayaIcon,
+    iconStyle: { background: RAYA },
+    iconColor: "#fff",
+    tabActiveBg: "oklch(0.96 0.004 286)",
+    accent: RAYA,
+    numberInk: "#fff",
+    sub: "Requested manually from Raya support and delivered as a ZIP archive.",
+    chips: [
+      { label: "Manual support request", icon: EnvelopeIcon },
+      { label: "Timing varies", icon: ClockIcon },
+      { label: "Delivered as a ZIP", icon: CheckIcon, variant: "good" },
+    ],
+    steps: [
+      {
+        title: "Email Raya support",
+        desc: (
+          <>
+            Contact{" "}
+            <TrackedOfficialLink
+              provider="raya"
+              source="step_link"
+              href="mailto:members@rayatheapp.com?subject=Personal%20data%20request"
+              className="font-semibold underline underline-offset-2"
+              style={{ color: RAYA }}
+            >
+              members@rayatheapp.com
+            </TrackedOfficialLink>{" "}
+            from the email address connected to your Raya account.
+          </>
+        ),
+      },
+      {
+        title: "Ask for a copy of your personal data",
+        desc: "Tell Raya support that you want to download the personal data associated with your account. They may reply to confirm the request.",
+      },
+      {
+        title: "Wait for Raya to compile the archive",
+        desc: "This is a manual process, so timing varies. Raya sends the completed ZIP archive back in the support email thread.",
+      },
+      {
+        title: "Upload the ZIP to SwipeStats",
+        desc: "Bring the archive straight to the Raya uploader. SwipeStats removes direct identifiers and unsupported message details in your browser.",
+      },
+    ],
+    primaryCta: {
+      label: "Email Raya support",
+      href: "mailto:members@rayatheapp.com?subject=Personal%20data%20request",
+    },
+    secondaryCta: {
+      label: "I have my ZIP: upload",
+      href: "/upload/raya",
+    },
+    note: (
+      <>
+        <strong>No self-service portal yet.</strong> Raya handled our latest
+        data request manually through its support team.
+      </>
+    ),
+    phone: {
+      app: "Raya Support",
+      cta: "Send data request",
+      cap: "[ email: Raya personal data request ]",
       rows: 3,
       hl: 0,
     },
@@ -437,6 +557,7 @@ function Phone({ provider }: { provider: Provider }) {
 /* ----------------------------------------------------------- panel */
 
 function ProviderPanel({ provider }: { provider: Provider }) {
+  const { trackEvent } = useAnalytics();
   const ctaInk = provider.id === "bumble" ? "#5c4300" : "#fff";
   return (
     <div className="mt-6 grid grid-cols-1 items-start gap-9 lg:grid-cols-[1.25fr_0.75fr]">
@@ -524,6 +645,13 @@ function ProviderPanel({ provider }: { provider: Provider }) {
             href={provider.primaryCta.href}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() =>
+              trackEvent("data_request_official_link_clicked", {
+                provider: provider.id,
+                source: "primary_cta",
+                destinationUrl: provider.primaryCta.href,
+              })
+            }
             className={marketingButton({ variant: "bare", size: "lg" })}
             style={{ background: provider.accent, color: ctaInk }}
           >
@@ -532,6 +660,20 @@ function ProviderPanel({ provider }: { provider: Provider }) {
           </a>
           <Link
             href={provider.secondaryCta.href}
+            onClick={() => {
+              if (provider.secondaryCta.href.startsWith(UPLOAD_HREF)) {
+                trackEvent("data_request_upload_clicked", {
+                  provider: provider.id,
+                  source: "provider_guide",
+                });
+                return;
+              }
+
+              trackEvent("data_request_reminder_clicked", {
+                provider: provider.id,
+                source: "provider_guide",
+              });
+            }}
             className={marketingButton({ variant: "ghost", size: "lg" })}
           >
             {provider.secondaryCta.label}
@@ -552,6 +694,7 @@ function ProviderPanel({ provider }: { provider: Provider }) {
 
 export function ProviderGuides() {
   const [active, setActive] = useState<Provider["id"]>("tinder");
+  const { trackEvent } = useAnalytics();
   const activeProvider = providers.find((p) => p.id === active)!;
 
   return (
@@ -564,7 +707,13 @@ export function ProviderGuides() {
               key={p.id}
               role="tab"
               aria-selected={isActive}
-              onClick={() => setActive(p.id)}
+              onClick={() => {
+                setActive(p.id);
+                trackEvent("upload_provider_selected", {
+                  provider: p.id,
+                  source: "instructions_page",
+                });
+              }}
               className={cn(
                 "flex items-center gap-[11px] rounded-xl border px-[18px] py-3 transition",
                 isActive

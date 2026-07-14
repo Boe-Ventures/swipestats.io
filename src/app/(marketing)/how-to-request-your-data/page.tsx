@@ -22,19 +22,22 @@ import {
 import { CtaBand } from "../_components/CtaBand";
 import { FaqList } from "../_components/FaqList";
 import { ProviderGuides } from "./ProviderGuides";
-import { NewsletterSignup } from "../_components/NewsletterSignup";
+import {
+  DataRequestReminderSignup,
+  TrackedDataRequestLink,
+} from "./DataRequestAnalytics";
 
 export const metadata: Metadata = {
   title: "How to Request Your Dating Data",
   description:
-    "Step-by-step guides to download your data from Tinder, Hinge, and Bumble. Then turn it into personal insights with SwipeStats.",
+    "Step-by-step guides to download your data from Tinder, Hinge, Bumble, and Raya. Then turn it into personal insights with SwipeStats.",
   alternates: {
     canonical: "/how-to-request-your-data",
   },
   openGraph: {
     title: "How to Request Your Dating Data | SwipeStats",
     description:
-      "Step-by-step guides to download your data from Tinder, Hinge, and Bumble. Then turn it into personal insights with SwipeStats.",
+      "Step-by-step guides to download your data from Tinder, Hinge, Bumble, and Raya. Then turn it into personal insights with SwipeStats.",
     url: "/how-to-request-your-data",
   },
 };
@@ -67,22 +70,26 @@ function HeroSection() {
               Pick your app
               <ArrowRightIcon className="h-4 w-4" />
             </Link>
-            <Link
+            <TrackedDataRequestLink
+              event="reminder"
+              source="hero"
               href="#reminder"
               className={marketingButton({ variant: "ghost", size: "lg" })}
             >
               Remind me when it arrives
-            </Link>
+            </TrackedDataRequestLink>
           </div>
           <p className="mt-[18px] flex flex-wrap items-center gap-2 text-[13px] text-gray-500">
             <LockClosedIcon className="h-[15px] w-[15px] text-gray-400" />
             Already have your export file?
-            <Link
+            <TrackedDataRequestLink
+              event="upload"
+              source="hero_existing_export"
               href={UPLOAD_HREF}
               className="font-semibold text-rose-600 underline underline-offset-2"
             >
               Skip straight to upload →
-            </Link>
+            </TrackedDataRequestLink>
           </p>
         </div>
       </div>
@@ -103,8 +110,8 @@ function FlowSection() {
     {
       n: 2,
       title: "Wait for the email",
-      body: "The app emails you a download link. Tinder & Hinge are quick; Bumble can take longer.",
-      badge: { icon: EnvelopeIcon, label: "24–48 hrs · Bumble up to 30 days" },
+      body: "The app or support team emails your export. Tinder and Hinge are usually quick; Raya and Bumble can take longer.",
+      badge: { icon: EnvelopeIcon, label: "24–48 hrs · manual requests vary" },
     },
     {
       n: 3,
@@ -289,26 +296,12 @@ function ReminderSection() {
               Get a reminder when to upload
             </h3>
             <p className="mt-2.5 max-w-[440px] text-[14.5px] text-gray-400">
-              Data requests take a day or two, and Bumble up to a month. Leave
-              your email and we&apos;ll nudge you when it&apos;s time to come
-              back and upload.
+              Tinder and Hinge usually take a day or two. Raya and Bumble are
+              manual and may take longer. Leave your email and we&apos;ll nudge
+              you when it&apos;s time to come back and upload.
             </p>
           </div>
-          <NewsletterSignup
-            topic="newsletter-general"
-            autoFetch={false}
-            buttonLabel="Remind me"
-            placeholder="you@email.com"
-            formClassName="relative z-[2] flex flex-col gap-2.5 sm:flex-row sm:items-center"
-            groupClassName="flex flex-col gap-2 sm:flex-row sm:items-center"
-            inputClassName="min-w-[220px] rounded-[10px] border border-white/[0.18] bg-white/[0.07] px-4 py-3 text-[14.5px] text-white placeholder:text-gray-500 focus:border-rose-600 focus:outline-none"
-            buttonClassName={marketingButton({
-              variant: "primary",
-              size: "lg",
-            })}
-            successClassName="relative z-[2] flex items-center gap-3 rounded-[10px] border border-white/15 bg-white/[0.07] px-4 py-3 text-[14.5px] font-semibold text-white"
-            successLabel="You're on the list. We'll nudge you when it's time to upload."
-          />
+          <DataRequestReminderSignup />
         </div>
       </div>
     </section>
@@ -320,7 +313,7 @@ function ReminderSection() {
 const faqs: { q: string; a: React.ReactNode; open?: boolean }[] = [
   {
     q: "How long does it take to get my data?",
-    a: "Tinder and Hinge usually email your export within 24–48 hours. Bumble is a manual process and can take up to 30 days. We recommend requesting it now and setting a reminder so you don't forget to come back.",
+    a: "Tinder and Hinge usually email your export within 24–48 hours. Raya is handled manually and can take days or weeks, while Bumble can take up to 30 days. We recommend requesting it now and setting a reminder so you don't forget to come back.",
     open: true,
   },
   {
@@ -335,9 +328,9 @@ const faqs: { q: string; a: React.ReactNode; open?: boolean }[] = [
         <code className="rounded-[5px] border border-gray-200 bg-gray-100 px-1.5 py-px font-mono text-[12.5px] text-gray-800">
           tinder.json
         </code>{" "}
-        file inside a ZIP, and Hinge and Bumble send similar structured exports.
-        You don&apos;t need to open or edit anything; just upload the file you
-        receive and SwipeStats handles the rest.
+        file inside a ZIP, and Hinge, Bumble, and Raya send similar structured
+        exports. You don&apos;t need to open or edit anything; just upload the
+        file you receive and SwipeStats handles the rest.
       </>
     ),
   },
@@ -347,7 +340,7 @@ const faqs: { q: string; a: React.ReactNode; open?: boolean }[] = [
   },
   {
     q: "Which apps does SwipeStats support?",
-    a: "Tinder and Hinge are fully supported today. Bumble support is coming soon. Join the waitlist above and we'll notify you the moment it's ready. Want another app? Let us know and we'll prioritize it.",
+    a: "Tinder, Hinge, and Raya are fully supported today. Bumble support is coming soon. Join the waitlist above and we'll notify you the moment it's ready. Want another app? Let us know and we'll prioritize it.",
   },
   {
     q: "Does it cost anything?",
@@ -406,12 +399,14 @@ function FinalCtaSection() {
               >
                 Pick your app
               </Link>
-              <Link
+              <TrackedDataRequestLink
+                event="upload"
+                source="final_cta"
                 href={UPLOAD_HREF}
                 className={marketingButton({ variant: "white", size: "lg" })}
               >
                 Upload data
-              </Link>
+              </TrackedDataRequestLink>
             </>
           }
         />

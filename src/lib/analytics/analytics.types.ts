@@ -168,6 +168,13 @@ export type ClientAnalyticsEventName =
   | "upload_submit_clicked" // User clicked submit button
 
   // ─────────────────────────────────────────────────
+  // Data request guide
+  // ─────────────────────────────────────────────────
+  | "data_request_official_link_clicked"
+  | "data_request_upload_clicked"
+  | "data_request_reminder_clicked"
+
+  // ─────────────────────────────────────────────────
   // Insights interactions
   // ─────────────────────────────────────────────────
   | "insights_tab_changed"
@@ -655,8 +662,27 @@ export type ClientEventPropertiesDefinition = {
   };
 
   upload_provider_selected: {
-    provider: "tinder" | "hinge" | "bumble";
+    provider: "tinder" | "hinge" | "bumble" | "raya";
     source: "upload_modal" | "instructions_page";
+  };
+
+  // ─────────────────────────────────────────────────
+  // Data request guide
+  // ─────────────────────────────────────────────────
+  data_request_official_link_clicked: {
+    provider: "tinder" | "hinge" | "bumble" | "raya";
+    source: "primary_cta" | "step_link" | "deleted_account_help";
+    destinationUrl: string;
+  };
+
+  data_request_upload_clicked: {
+    provider?: "tinder" | "hinge" | "bumble" | "raya";
+    source: "hero_existing_export" | "provider_guide" | "final_cta";
+  };
+
+  data_request_reminder_clicked: {
+    provider?: "tinder" | "hinge" | "bumble" | "raya";
+    source: "hero" | "provider_guide" | "reminder_form";
   };
 
   upload_file_processing_started: {
