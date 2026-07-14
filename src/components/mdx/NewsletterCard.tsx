@@ -32,6 +32,7 @@ export function NewsletterCard({
 
         <NewsletterSignup
           topic="newsletter-general"
+          source="blog_newsletter_card"
           buttonLabel={buttonText}
           realButtonLabel={buttonText}
           loadingLabel="…"

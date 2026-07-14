@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { CheckCircleIcon } from "@heroicons/react/20/solid";
 import { cn } from "@/components/ui/lib/utils";
-import type { TopicKey } from "@/lib/validators";
+import type { NewsletterSource, TopicKey } from "@/lib/validators";
 import { useNewsletter } from "@/hooks/useNewsletter";
 
 /**
@@ -20,6 +20,7 @@ type SuccessState = { alreadySubscribed: boolean; email?: string };
 
 export type NewsletterSignupProps = {
   topic: TopicKey;
+  source: NewsletterSource;
   /** Fetch existing subscriptions to detect already-subscribed users. */
   autoFetch?: boolean;
 
@@ -49,6 +50,7 @@ export type NewsletterSignupProps = {
 
 export function NewsletterSignup({
   topic,
+  source,
   autoFetch = true,
   formClassName,
   groupClassName = "flex gap-x-4",
@@ -106,7 +108,11 @@ export function NewsletterSignup({
     setSubmitting(true);
     setError(null);
     try {
-      await subscribe({ email: isRealUser ? undefined : email, topic });
+      await subscribe({
+        email: isRealUser ? undefined : email,
+        topic,
+        source,
+      });
       setJustSubscribed(true);
     } catch (err) {
       setError(

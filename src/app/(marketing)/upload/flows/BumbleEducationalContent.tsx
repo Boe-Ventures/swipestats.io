@@ -44,6 +44,7 @@ export function BumbleEducationalContent() {
       await subscribe({
         email,
         topic: "waitlist-bumble",
+        source: "bumble_waitlist",
       });
       setIsSubmitted(true);
     } catch (err) {

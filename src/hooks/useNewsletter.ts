@@ -6,7 +6,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { authClient } from "@/server/better-auth/client";
 import { useTRPC } from "@/trpc/react";
 import { useLocalStorage } from "@/components/ui/hooks/use-local-storage";
-import type { TopicKey } from "@/lib/validators";
+import type { NewsletterSource, TopicKey } from "@/lib/validators";
 import { isAnonymousEmail } from "@/lib/utils/auth";
 
 // =====================================================
@@ -32,7 +32,11 @@ export type UseNewsletterReturn = {
 
   // Methods
   isSubscribedToTopic: (topic: TopicKey) => boolean;
-  subscribe: (params: { email?: string; topic: TopicKey }) => Promise<void>;
+  subscribe: (params: {
+    email?: string;
+    topic: TopicKey;
+    source: NewsletterSource;
+  }) => Promise<void>;
   unsubscribe: (topic: TopicKey) => Promise<void>;
 
   // Metadata
@@ -143,8 +147,12 @@ export function useNewsletter(
   );
 
   const subscribe = useCallback(
-    async (params: { email?: string; topic: TopicKey }): Promise<void> => {
-      const { email: emailParam, topic } = params;
+    async (params: {
+      email?: string;
+      topic: TopicKey;
+      source: NewsletterSource;
+    }): Promise<void> => {
+      const { email: emailParam, topic, source } = params;
 
       if (isRealUser) {
         // Real user: API only (use session email)
@@ -156,6 +164,7 @@ export function useNewsletter(
         await subscribeMutation.mutateAsync({
           email: userEmail,
           topic,
+          source,
           path:
             typeof window !== "undefined"
               ? window.location.pathname
@@ -170,6 +179,7 @@ export function useNewsletter(
           await subscribeMutation.mutateAsync({
             email: emailParam,
             topic,
+            source,
             path:
               typeof window !== "undefined"
                 ? window.location.pathname

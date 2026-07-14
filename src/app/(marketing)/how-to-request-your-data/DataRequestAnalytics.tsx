@@ -56,6 +56,7 @@ export function DataRequestReminderSignup() {
     >
       <NewsletterSignup
         topic="newsletter-general"
+        source="data_request_reminder"
         autoFetch={false}
         buttonLabel="Remind me"
         placeholder="you@email.com"

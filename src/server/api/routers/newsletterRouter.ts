@@ -11,7 +11,11 @@ import {
   getContactTopicSubscriptions,
   unsubscribeFromTopics,
 } from "@/server/clients/resend.client";
-import { topicKeySchema, emailSchema } from "@/lib/validators";
+import {
+  topicKeySchema,
+  emailSchema,
+  newsletterSourceSchema,
+} from "@/lib/validators";
 import { isAnonymousEmail } from "@/lib/utils/auth";
 import {
   countRecentAppTokens,
@@ -55,11 +59,12 @@ export const newsletterRouter = createTRPCRouter({
       z.object({
         email: emailSchema,
         path: z.string().optional(),
+        source: newsletterSourceSchema,
         topic: topicKeySchema.optional(), // Single topic
       }),
     )
     .mutation(async ({ input }) => {
-      const { email, path, topic } = input;
+      const { email, path, source, topic } = input;
 
       // Skip anonymous emails
       if (isAnonymousEmail(email)) {
@@ -71,7 +76,7 @@ export const newsletterRouter = createTRPCRouter({
 
       try {
         // Create contact in Resend (idempotent)
-        const contactResult = await createContact({ email });
+        const contactResult = await createContact({ email, path, source });
 
         if (!contactResult.success) {
           throw new Error(contactResult.error || "Failed to create contact");
@@ -97,6 +102,7 @@ export const newsletterRouter = createTRPCRouter({
         console.log("Newsletter subscription:", {
           email,
           path,
+          source,
           topic,
           timestamp: new Date().toISOString(),
         });

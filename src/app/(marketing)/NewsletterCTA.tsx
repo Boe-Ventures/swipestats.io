@@ -38,6 +38,7 @@ export default function NewsletterCTA() {
 
       <NewsletterSignup
         topic="newsletter-general"
+        source="general_newsletter_cta"
         formClassName="w-full max-w-md"
         groupClassName="flex gap-x-4"
         inputClassName="min-w-0 flex-auto rounded-md border-0 bg-white/5 px-3.5 py-2.5 text-white shadow-sm ring-1 ring-white/10 ring-inset placeholder:text-gray-400 focus:ring-2 focus:ring-white focus:ring-inset sm:text-sm sm:leading-6"

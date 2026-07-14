@@ -72,6 +72,7 @@ export function ComingSoonWrapper({
       await subscribe({
         email: data.email,
         topic,
+        source: "feature_waitlist",
       });
       setJustSubscribed(true);
     } catch (err) {

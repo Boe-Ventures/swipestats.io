@@ -2,7 +2,7 @@ import { Resend } from "resend";
 import { render } from "@react-email/components";
 
 import { env } from "@/env";
-import { type TopicKey } from "./resend.constants";
+import { type NewsletterSource, type TopicKey } from "./resend.constants";
 
 // Re-export TopicKey for convenience
 export type { TopicKey };
@@ -104,23 +104,87 @@ export async function sendEmailPreferencesEmail(
 export async function createContact(params: {
   email: string;
   unsubscribed?: boolean;
+  source?: NewsletterSource;
+  path?: string;
 }) {
   const client = resend;
+  const subscribedAt = new Date().toISOString();
+  const signupPath = params.path ?? "unknown";
+  const attributionProperties = params.source
+    ? {
+        first_signup_source: params.source,
+        first_signup_path: signupPath,
+        first_signup_at: subscribedAt,
+        last_signup_source: params.source,
+        last_signup_path: signupPath,
+        last_signup_at: subscribedAt,
+      }
+    : undefined;
 
   try {
-    const response = await client.contacts.create({
-      email: params.email,
-      unsubscribed: params.unsubscribed ?? false,
-    });
+    if (params.source) {
+      const existingContact = await client.contacts.get({
+        email: params.email,
+      });
 
-    return { success: true, data: response };
-  } catch (error) {
-    // Resend returns 400 if contact already exists - handle gracefully
-    if (error instanceof Error && error.message.includes("already exists")) {
-      console.log(`Contact ${params.email} already exists`);
-      return { success: true, alreadyExists: true };
+      if (existingContact.data) {
+        const existingProperties = existingContact.data.properties;
+        const existingString = (key: string) => {
+          const property = existingProperties[key];
+          return property?.type === "string" ? property.value : undefined;
+        };
+
+        const updateResponse = await client.contacts.update({
+          email: params.email,
+          properties: {
+            first_signup_source:
+              existingString("first_signup_source") ?? params.source,
+            first_signup_path:
+              existingString("first_signup_path") ?? signupPath,
+            first_signup_at: existingString("first_signup_at") ?? subscribedAt,
+            last_signup_source: params.source,
+            last_signup_path: signupPath,
+            last_signup_at: subscribedAt,
+          },
+        });
+
+        if (updateResponse.error) {
+          console.error(
+            "Failed to update contact attribution:",
+            updateResponse.error,
+          );
+          return { success: false, error: updateResponse.error.message };
+        }
+
+        return {
+          success: true,
+          data: updateResponse.data,
+          alreadyExists: true,
+        };
+      }
+
+      if (existingContact.error && existingContact.error.statusCode !== 404) {
+        console.error(
+          "Failed to read existing contact attribution:",
+          existingContact.error,
+        );
+        return { success: false, error: existingContact.error.message };
+      }
     }
 
+    const createResponse = await client.contacts.create({
+      email: params.email,
+      unsubscribed: params.unsubscribed ?? false,
+      properties: attributionProperties,
+    });
+
+    if (createResponse.error) {
+      console.error("Failed to create contact:", createResponse.error);
+      return { success: false, error: createResponse.error.message };
+    }
+
+    return { success: true, data: createResponse.data };
+  } catch (error) {
     console.error("Failed to create contact:", error);
     return {
       success: false,

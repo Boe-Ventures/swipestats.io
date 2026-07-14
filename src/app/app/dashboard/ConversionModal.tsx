@@ -93,6 +93,7 @@ export function ConversionModal({
           newsletterSubscribeMutation.mutate({
             email,
             topic: "newsletter-general",
+            source: "account_conversion",
             path:
               typeof window !== "undefined"
                 ? window.location.pathname

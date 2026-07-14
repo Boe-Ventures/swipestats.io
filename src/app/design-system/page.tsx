@@ -385,6 +385,7 @@ export default function DesignSystemPage() {
                     </div>
                     <NewsletterSignup
                       topic="newsletter-general"
+                      source="design_system"
                       autoFetch={false}
                       buttonLabel="Remind me"
                       placeholder="you@email.com"
