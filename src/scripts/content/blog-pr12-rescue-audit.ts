@@ -107,6 +107,7 @@ interface PostInventory {
   title: string;
   category: string;
   publishedAt: string;
+  updatedAt: string;
   enableAutoCtAs: boolean;
   words: number;
   h2s: number;
@@ -330,6 +331,7 @@ async function main() {
       title: frontmatterValue(frontmatter, "h1"),
       category: frontmatterValue(frontmatter, "category"),
       publishedAt: frontmatterValue(frontmatter, "publishedAt"),
+      updatedAt: frontmatterValue(frontmatter, "updatedAt"),
       enableAutoCtAs:
         frontmatterValue(frontmatter, "enableAutoCtAs") !== "false",
       words: wordCount(body),
@@ -368,6 +370,50 @@ async function main() {
         values.filter((candidate) => candidate === value).length,
       ]),
     );
+  const publicationCounts = counts(posts.map((post) => post.publishedAt));
+  const dependencyDateViolations = posts.flatMap((post) =>
+    post.rescueDependencies
+      .filter((dependencySlug) => {
+        const dependencyPost = posts.find(
+          (candidate) => candidate.slug === dependencySlug,
+        );
+        return dependencyPost && dependencyPost.publishedAt > post.publishedAt;
+      })
+      .map((dependencySlug) => `${post.slug} -> ${dependencySlug}`),
+  );
+  const invalidUpdatedDates = posts
+    .filter((post) => post.updatedAt !== "2026-07-14")
+    .map((post) => post.slug);
+  const invalidPublicationDates = Object.entries(publicationCounts).filter(
+    ([date, count]) =>
+      date < "2026-07-14" ||
+      date > "2026-08-21" ||
+      (date === "2026-07-14" ? count !== 6 : count > 2),
+  );
+
+  if (reviewedPosts.length !== 81) {
+    throw new Error(
+      `Editorial review incomplete: ${reviewedPosts.length}/81 reviewed`,
+    );
+  }
+  if (invalidUpdatedDates.length > 0) {
+    throw new Error(
+      `Unexpected updatedAt date: ${invalidUpdatedDates.join(", ")}`,
+    );
+  }
+  if (
+    invalidPublicationDates.length > 0 ||
+    publicationCounts["2026-08-21"] !== 1
+  ) {
+    throw new Error(
+      `Invalid publication calendar: ${JSON.stringify(publicationCounts)}`,
+    );
+  }
+  if (dependencyDateViolations.length > 0) {
+    throw new Error(
+      `Posts publish before their dependencies: ${dependencyDateViolations.join(", ")}`,
+    );
+  }
 
   const lines = [
     "# PR #12 rescue review ledger",
@@ -384,6 +430,8 @@ async function main() {
     `- Editorial status: **${reviewedPosts.length} reviewed / ${posts.length - reviewedPosts.length} pending**`,
     `- Review tiers: ${JSON.stringify(counts(posts.map((post) => post.reviewTier)))}`,
     `- Editorial batches: ${JSON.stringify(counts(posts.map((post) => post.batch)))}`,
+    `- Publication calendar: **6 immediate on 2026-07-14; then at most 2/day through 2026-08-21**`,
+    `- Dependency date violations: **${dependencyDateViolations.length}**`,
     `- Unique in-batch link targets: **${uniqueRescueTargets.size}**`,
     `- Dependency-orderable posts: **${dependency.ordered.length}**`,
     `- Posts in dependency cycles: **${dependency.cycles.length}**`,
@@ -391,11 +439,11 @@ async function main() {
     "",
     "## Review decisions",
     "",
-    "| Slug | Decision | Status | Tier | Batch | Words | Sources | Auto CTA | Product cards | In-batch dependencies | Risk flags |",
-    "| --- | --- | --- | --- | --- | ---: | ---: | --- | ---: | ---: | --- |",
+    "| Slug | Publish | Decision | Status | Tier | Batch | Words | Sources | Auto CTA | Product cards | In-batch dependencies | Risk flags |",
+    "| --- | --- | --- | --- | --- | --- | ---: | ---: | --- | ---: | ---: | --- |",
     ...posts.map(
       (post) =>
-        `| \`${post.slug}\` | rewrite | ${post.reviewStatus} | ${post.reviewTier} | ${post.batch} | ${post.words} | ${post.sourceLinks} | ${post.enableAutoCtAs ? "on" : "off"} | ${post.productCards} | ${post.rescueDependencies.length} | ${escapeCell(post.riskFlags.join(", ") || "none")} |`,
+        `| \`${post.slug}\` | ${post.publishedAt} | rewrite | ${post.reviewStatus} | ${post.reviewTier} | ${post.batch} | ${post.words} | ${post.sourceLinks} | ${post.enableAutoCtAs ? "on" : "off"} | ${post.productCards} | ${post.rescueDependencies.length} | ${escapeCell(post.riskFlags.join(", ") || "none")} |`,
     ),
     "",
     "## Dependency cycles",
@@ -406,7 +454,7 @@ async function main() {
     "",
     "## Publication dependency order",
     "",
-    "This is a mechanical topological order only. Editorial priority and the final two-per-day calendar still need to be applied.",
+    "The calendar is validated so every in-batch dependency publishes no later than the post that links to it.",
     "",
     ...dependency.ordered.map((slug, index) => `${index + 1}. \`${slug}\``),
     "",
