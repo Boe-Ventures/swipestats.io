@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import Footer from "./Footer";
-import Header from "./Header";
+import { MarketingHeader } from "./MarketingHeader";
 
 export const metadata: Metadata = {
   title: {
@@ -42,7 +42,7 @@ export default function MarketingLayout({
 }) {
   return (
     <div className="bg-background">
-      <Header container />
+      <MarketingHeader />
       <main className="isolate">{children}</main>
       <Footer />
     </div>

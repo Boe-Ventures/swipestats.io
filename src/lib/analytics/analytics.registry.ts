@@ -340,6 +340,27 @@ export const CLIENT_EVENT_REGISTRY = {
       "Contextual blog product card clicked, including source post and destination product.",
     status: "live",
   },
+  sponsor_impression: {
+    category: "Sponsorship",
+    description:
+      "A sponsorship placement became visible, attributed to its campaign and surface.",
+    status: "live",
+  },
+  sponsor_clicked: {
+    category: "Sponsorship",
+    description: "A paid sponsor destination was opened.",
+    status: "live",
+  },
+  sponsor_inquiry_clicked: {
+    category: "Sponsorship",
+    description: "The SwipeStats sponsorship inquiry CTA was clicked.",
+    status: "live",
+  },
+  sponsor_dismissed: {
+    category: "Sponsorship",
+    description: "A dismissible sponsorship placement was closed.",
+    status: "live",
+  },
 
   // ── Auth UI ──────────────────────────────────────
   sign_up_clicked: {

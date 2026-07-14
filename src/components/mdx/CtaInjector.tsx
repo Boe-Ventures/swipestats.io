@@ -5,6 +5,11 @@ import { createPortal } from "react-dom";
 import { CTA } from "./CTA";
 import { CtaCard } from "./CtaCard";
 import { NewsletterCard } from "./NewsletterCard";
+import { SponsorCard } from "./SponsorCard";
+import {
+  ACTIVE_SPONSOR_CAMPAIGN,
+  isSponsorCampaignActive,
+} from "@/lib/sponsorship";
 
 /**
  * CTA injection position configuration
@@ -12,7 +17,7 @@ import { NewsletterCard } from "./NewsletterCard";
 type CtaPosition = {
   headingIndex: number; // 0-based index: 1 = 2nd h2
   position: "before" | "after"; // Whether to inject before or after the heading
-  ctaType: "inline" | "card" | "newsletter";
+  ctaType: "inline" | "card" | "newsletter" | "sponsor";
   props: Record<string, unknown>;
 };
 
@@ -69,7 +74,17 @@ function getCtaInjectionRules(
   _tags?: string[],
 ): CtaPosition[] {
   // Future: Add category-specific rules here
-  // For now, return default rules for all posts
+  // During an active sponsor campaign, replace one newsletter slot with a
+  // single inline sponsor card. This keeps the existing CTA cadence without
+  // adding another interruption to the article.
+  if (isSponsorCampaignActive(ACTIVE_SPONSOR_CAMPAIGN)) {
+    return CTA_INJECTION_RULES.map((rule) =>
+      rule.headingIndex === 3
+        ? { ...rule, ctaType: "sponsor", props: {} }
+        : rule,
+    );
+  }
+
   return CTA_INJECTION_RULES;
 }
 
@@ -175,6 +190,8 @@ function getCtaComponent(type: CtaPosition["ctaType"]) {
       return CtaCard;
     case "newsletter":
       return NewsletterCard;
+    case "sponsor":
+      return SponsorCard;
     default:
       return CTA;
   }

@@ -16,6 +16,7 @@ import { AffiliateDisclosure } from "./AffiliateDisclosure";
 import { FAQ } from "./FAQ";
 import { ImageGrid } from "./ImageGrid";
 import { ProductCard } from "./ProductCard";
+import { SponsorCard } from "./SponsorCard";
 
 const sharedComponents = {
   AffiliateDisclosure,
@@ -27,6 +28,7 @@ const sharedComponents = {
   FeatureGrid,
   NewsletterCard,
   ProductCard,
+  SponsorCard,
   Quote,
   Stats,
   TLDR,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
 import { Banner } from "@/components/ui/banner";
 
 const DISMISS_KEY = "swipestats:profile-previews-banner-dismissed:v2";
