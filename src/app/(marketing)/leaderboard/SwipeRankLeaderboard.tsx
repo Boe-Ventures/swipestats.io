@@ -72,6 +72,12 @@ const AVATAR_STYLES = [
   "border-emerald-200 bg-emerald-50 text-emerald-700",
 ] as const;
 
+const UNKNOWN_GENDER_PRESENTATION = {
+  short: "?",
+  label: "Not reported",
+  className: "border-slate-200 bg-slate-50 text-slate-600",
+} as const;
+
 const GENDER_PRESENTATION: Record<
   string,
   { short: string; label: string; className: string }
@@ -96,11 +102,7 @@ const GENDER_PRESENTATION: Record<
     label: "More",
     className: "border-violet-200 bg-violet-50 text-violet-700",
   },
-  UNKNOWN: {
-    short: "?",
-    label: "Not reported",
-    className: "border-slate-200 bg-slate-50 text-slate-600",
-  },
+  UNKNOWN: UNKNOWN_GENDER_PRESENTATION,
 };
 
 function formatTopShare(value: number) {
@@ -123,9 +125,9 @@ function avatarStyle(entryKey: string) {
 }
 
 function GenderPill({ value }: { value: string | null }) {
-  const presentation = value
-    ? (GENDER_PRESENTATION[value] ?? GENDER_PRESENTATION.UNKNOWN)
-    : GENDER_PRESENTATION.UNKNOWN;
+  const presentation =
+    (value ? GENDER_PRESENTATION[value] : undefined) ??
+    UNKNOWN_GENDER_PRESENTATION;
 
   return (
     <span
@@ -143,7 +145,7 @@ function GenderPill({ value }: { value: string | null }) {
 
 function genderLabel(value: string | null): string {
   if (!value) return "Dater";
-  return (GENDER_PRESENTATION[value] ?? GENDER_PRESENTATION.UNKNOWN).label;
+  return (GENDER_PRESENTATION[value] ?? UNKNOWN_GENDER_PRESENTATION).label;
 }
 
 function formatLocation(
