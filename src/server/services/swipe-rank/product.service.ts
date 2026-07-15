@@ -62,6 +62,8 @@ interface LeaderboardRow extends Record<string, unknown> {
   city: string | null;
   region: string | null;
   country: string | null;
+  photo_url: string | null;
+  photo_count: number | string;
   age_in_period: number | string | null;
   match_rate_numerator: number | string;
   match_rate_denominator: number | string;
@@ -381,12 +383,22 @@ export async function getAdminSwipeRankLeaderboard(
           srp.interested_in,
           srp.city,
           srp.region,
-          srp.country
+          srp.country,
+          profile_media.photo_url,
+          profile_media.photo_count
         FROM swipe_rank_period_fact fact
         JOIN swipe_rank_profile srp ON srp.id = fact.profile_id
         JOIN swipe_rank_build build
           ON build.id = fact.build_id
          AND build.status = 'COMPLETE'
+        LEFT JOIN LATERAL (
+          SELECT
+            min(media.url) AS photo_url,
+            count(*)::bigint AS photo_count
+          FROM media
+          WHERE media.tinder_profile_id = srp.provider_profile_id
+            AND media.type = 'photo'
+        ) AS profile_media ON true
         WHERE srp.data_provider = 'TINDER'
           AND srp.is_synthetic = false
           AND srp.is_swipe_rank_excluded = false
@@ -446,6 +458,8 @@ export async function getAdminSwipeRankLeaderboard(
         city: row.city,
         region: row.region,
         country: row.country,
+        photoUrl: row.photo_url,
+        photoCount: asNumber(row.photo_count),
         ageInPeriod: asNullableNumber(row.age_in_period),
         matchRateNumerator: asNumber(row.match_rate_numerator),
         matchRateDenominator: asNumber(row.match_rate_denominator),

@@ -3,11 +3,15 @@
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
+  ArrowRight,
+  CalendarDays,
   ChevronLeft,
   ChevronRight,
+  History,
   Info,
   Loader2,
   ShieldCheck,
+  Sparkles,
   Trophy,
 } from "lucide-react";
 
@@ -42,11 +46,13 @@ import {
   swipeRankPeriodKey,
   type SwipeRankPeriodKind,
 } from "@/lib/swipe-rank/format";
+import { formatSwipeRankOrientation } from "@/lib/swipe-rank/orientation";
 import { cn } from "@/components/ui/lib/utils";
 import { useTRPC } from "@/trpc/react";
 
 import {
   preferredLeaderboardPeriod,
+  resolveLeaderboardQuickJumps,
   resolveLeaderboardPeriodOptions,
 } from "./period-options";
 
@@ -124,21 +130,31 @@ function avatarStyle(entryKey: string) {
   ];
 }
 
-function GenderPill({ value }: { value: string | null }) {
-  const presentation =
-    (value ? GENDER_PRESENTATION[value] : undefined) ??
-    UNKNOWN_GENDER_PRESENTATION;
+function OrientationPill({
+  gender,
+  interestedIn,
+}: {
+  gender: string | null;
+  interestedIn: string | null;
+}) {
+  const label = formatSwipeRankOrientation(gender, interestedIn);
+  const className = {
+    Straight: "border-sky-200 bg-sky-50 text-sky-700",
+    Gay: "border-violet-200 bg-violet-50 text-violet-700",
+    Bi: "border-fuchsia-200 bg-fuchsia-50 text-fuchsia-700",
+    Queer: "border-emerald-200 bg-emerald-50 text-emerald-700",
+    "Not specified": "border-slate-200 bg-slate-50 text-slate-600",
+  }[label];
 
   return (
     <span
       className={cn(
-        "inline-flex h-7 min-w-9 items-center justify-center rounded-full border px-2 text-xs font-semibold",
-        presentation.className,
+        "inline-flex h-7 items-center justify-center rounded-full border px-2.5 text-xs font-semibold",
+        className,
       )}
-      title={presentation.label}
-      aria-label={presentation.label}
+      title="Inferred from current gender and interested-in preference"
     >
-      {presentation.short}
+      {label}
     </span>
   );
 }
@@ -206,6 +222,10 @@ export function SwipeRankLeaderboard() {
       availablePeriods.data?.periods,
     );
   }, [availablePeriods.data?.periods, kind]);
+  const quickJumps = useMemo(
+    () => resolveLeaderboardQuickJumps(availablePeriods.data?.periods),
+    [availablePeriods.data?.periods],
+  );
   const defaultPeriod = preferredLeaderboardPeriod(options, kind);
   const [selectedKey, setSelectedKey] = useState(() =>
     swipeRankPeriodKey(defaultPeriod),
@@ -239,6 +259,12 @@ export function SwipeRankLeaderboard() {
     const preferred = preferredLeaderboardPeriod(nextOptions, nextKind);
     setKind(nextKind);
     setSelectedKey(swipeRankPeriodKey(preferred));
+    setPage(1);
+  }
+
+  function choosePeriod(period: (typeof options)[number]) {
+    setKind(period.kind);
+    setSelectedKey(swipeRankPeriodKey(period));
     setPage(1);
   }
 
@@ -286,74 +312,135 @@ export function SwipeRankLeaderboard() {
 
       <div className="mx-auto max-w-[1440px] space-y-7 px-4 py-9 sm:px-6 lg:px-8">
         <Card className="overflow-hidden border-slate-200 shadow-sm">
-          <CardContent className="flex flex-col gap-5 p-5 lg:flex-row lg:items-center lg:justify-between lg:px-7">
-            <div className="flex flex-col gap-3 sm:flex-row">
-              <Select
-                value={kind}
-                onValueChange={(value) =>
-                  chooseKind(value as SwipeRankPeriodKind)
-                }
-              >
-                <SelectTrigger
-                  className="h-11 bg-white sm:w-44"
-                  aria-label="Competition length"
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(KIND_LABELS).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={swipeRankPeriodKey(selected)}
-                onValueChange={(value) => {
-                  setSelectedKey(value);
-                  setPage(1);
-                }}
-              >
-                <SelectTrigger
-                  className="h-11 bg-white sm:w-56"
-                  aria-label="Competition season"
-                >
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {options.map((period) => (
-                    <SelectItem
-                      key={swipeRankPeriodKey(period)}
-                      value={swipeRankPeriodKey(period)}
-                    >
-                      {formatSwipeRankPeriodLabel(period)}
-                      {period.live ? " · live" : ""}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {data && (
-              <div className="text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-xs sm:text-sm">
-                {data.fieldSize !== null && (
-                  <span className="font-semibold text-slate-950">
-                    {data.fieldSize.toLocaleString()} eligible
-                  </span>
-                )}
-                <span aria-hidden>·</span>
-                <span>
-                  {data.minimumRateDenominator.toLocaleString()}+ right swipes
-                </span>
-                <span aria-hidden>·</span>
-                <span>{data.minimumActiveDays}+ active days</span>
-                <span aria-hidden>·</span>
-                <span className="inline-flex items-center gap-1">
-                  <ShieldCheck className="h-3.5 w-3.5" /> stable pseudonyms
-                </span>
+          <CardContent className="p-0">
+            {quickJumps.length > 0 && (
+              <div className="border-b bg-gradient-to-r from-rose-50/80 via-white to-violet-50/60 p-4 sm:p-5">
+                <div className="mb-3 flex items-center gap-2">
+                  <Sparkles className="text-primary h-4 w-4" />
+                  <p className="text-sm font-semibold text-slate-950">
+                    Quick jumps
+                  </p>
+                  <p className="text-muted-foreground hidden text-xs sm:block">
+                    The leaderboards worth opening first
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+                  {quickJumps.map((jump) => {
+                    const active =
+                      swipeRankPeriodKey(jump.period) ===
+                      swipeRankPeriodKey(selected);
+                    return (
+                      <button
+                        key={jump.key}
+                        type="button"
+                        aria-pressed={active}
+                        onClick={() => choosePeriod(jump.period)}
+                        className={cn(
+                          "group flex min-w-0 items-center gap-3 rounded-xl border bg-white px-3 py-3 text-left shadow-xs transition hover:-translate-y-0.5 hover:border-rose-200 hover:shadow-sm",
+                          active && "border-primary/40 ring-primary/10 ring-2",
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600",
+                            active && "bg-primary/10 text-primary",
+                          )}
+                        >
+                          {jump.key === "ALL_TIME" ? (
+                            <History className="h-4 w-4" />
+                          ) : jump.key === "LAST_QUARTER" ? (
+                            <Sparkles className="h-4 w-4" />
+                          ) : (
+                            <CalendarDays className="h-4 w-4" />
+                          )}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block text-sm font-semibold text-slate-950">
+                            {jump.label}
+                          </span>
+                          <span className="text-muted-foreground block truncate text-xs">
+                            {jump.key === "ALL_TIME"
+                              ? "Full archive"
+                              : formatSwipeRankPeriodLabel(jump.period)}
+                          </span>
+                        </span>
+                        <ArrowRight className="text-muted-foreground h-4 w-4 shrink-0 transition-transform group-hover:translate-x-0.5" />
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
+
+            <div className="flex flex-col gap-5 p-5 lg:flex-row lg:items-center lg:justify-between lg:px-7">
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Select
+                  value={kind}
+                  onValueChange={(value) =>
+                    chooseKind(value as SwipeRankPeriodKind)
+                  }
+                >
+                  <SelectTrigger
+                    className="h-11 bg-white sm:w-44"
+                    aria-label="Competition length"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(KIND_LABELS).map(([value, label]) => (
+                      <SelectItem key={value} value={value}>
+                        {label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={swipeRankPeriodKey(selected)}
+                  onValueChange={(value) => {
+                    setSelectedKey(value);
+                    setPage(1);
+                  }}
+                >
+                  <SelectTrigger
+                    className="h-11 bg-white sm:w-56"
+                    aria-label="Competition season"
+                  >
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {options.map((period) => (
+                      <SelectItem
+                        key={swipeRankPeriodKey(period)}
+                        value={swipeRankPeriodKey(period)}
+                      >
+                        {formatSwipeRankPeriodLabel(period)}
+                        {period.live ? " · live" : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {data && (
+                <div className="text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-xs sm:text-sm">
+                  {data.fieldSize !== null && (
+                    <span className="font-semibold text-slate-950">
+                      {data.fieldSize.toLocaleString()} eligible
+                    </span>
+                  )}
+                  <span aria-hidden>·</span>
+                  <span>
+                    {data.minimumRateDenominator.toLocaleString()}+ right swipes
+                  </span>
+                  <span aria-hidden>·</span>
+                  <span>{data.minimumActiveDays}+ active days</span>
+                  <span aria-hidden>·</span>
+                  <span className="inline-flex items-center gap-1">
+                    <ShieldCheck className="h-3.5 w-3.5" /> stable pseudonyms
+                  </span>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
 
@@ -382,8 +469,8 @@ export function SwipeRankLeaderboard() {
                 <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1">
                   <CardTitle>{periodLabel} leaderboard</CardTitle>
                   <CardDescription className="text-slate-400">
-                    Exact rank at the top; the field is divided into percentile
-                    bands.
+                    Exact rank throughout; rows are grouped by their share of
+                    the eligible field.
                   </CardDescription>
                 </div>
                 {selected.live && <Badge>Live period</Badge>}
@@ -418,7 +505,7 @@ export function SwipeRankLeaderboard() {
                             Dater
                           </TableHead>
                           <TableHead className="w-36 font-mono text-[11px] tracking-[0.12em] uppercase">
-                            Seeking
+                            Orientation
                           </TableHead>
                           <TableHead className="min-w-64 px-7 text-right font-mono text-[11px] tracking-[0.12em] uppercase">
                             Match rate · M / RS
@@ -443,7 +530,6 @@ export function SwipeRankLeaderboard() {
                                   data.fieldSize!,
                                 );
                           const showBand = index === 0 || band !== previousBand;
-                          const podium = entry.rank <= 3;
                           return (
                             <Fragment key={entry.entryKey}>
                               {showBand && (
@@ -475,10 +561,10 @@ export function SwipeRankLeaderboard() {
                               )}
                               <TableRow
                                 className={cn(
-                                  "group h-[96px]",
-                                  podium
-                                    ? "border-slate-700 bg-slate-950 text-white hover:bg-slate-900"
-                                    : "bg-white hover:bg-rose-50/30",
+                                  "group h-[96px] bg-white hover:bg-rose-50/30",
+                                  entry.rank === 1 && "bg-amber-50/40",
+                                  entry.rank === 2 && "bg-slate-50/70",
+                                  entry.rank === 3 && "bg-orange-50/30",
                                 )}
                               >
                                 <TableCell className="px-7">
@@ -499,14 +585,7 @@ export function SwipeRankLeaderboard() {
                                         ? entry.rank.toLocaleString()
                                         : `#${entry.rank.toLocaleString()}`}
                                     </span>
-                                    <span
-                                      className={cn(
-                                        "font-mono text-[11px] font-semibold whitespace-nowrap uppercase",
-                                        podium
-                                          ? "text-slate-400"
-                                          : "text-muted-foreground",
-                                      )}
-                                    >
+                                    <span className="text-muted-foreground font-mono text-[11px] font-semibold whitespace-nowrap uppercase">
                                       {formatTopShare(entry.topShare)}
                                     </span>
                                   </div>
@@ -542,14 +621,7 @@ export function SwipeRankLeaderboard() {
                                         {entry.age === null
                                           ? ""
                                           : `, ${entry.age}`}{" "}
-                                        <span
-                                          className={cn(
-                                            "font-normal",
-                                            podium
-                                              ? "text-slate-400"
-                                              : "text-muted-foreground",
-                                          )}
-                                        >
+                                        <span className="text-muted-foreground font-normal">
                                           ·{" "}
                                           {formatLocation(
                                             entry.city,
@@ -558,14 +630,7 @@ export function SwipeRankLeaderboard() {
                                           )}
                                         </span>
                                       </p>
-                                      <p
-                                        className={cn(
-                                          "mt-1 font-mono text-xs",
-                                          podium
-                                            ? "text-slate-400"
-                                            : "text-muted-foreground",
-                                        )}
-                                      >
+                                      <p className="text-muted-foreground mt-1 font-mono text-xs">
                                         {entry.alias} ·{" "}
                                         {formatObservedTenure(
                                           entry.observedHistoryDays,
@@ -576,14 +641,7 @@ export function SwipeRankLeaderboard() {
                                           selected.kind,
                                         )}
                                       </p>
-                                      <p
-                                        className={cn(
-                                          "mt-1 text-xs",
-                                          podium
-                                            ? "text-slate-500"
-                                            : "text-slate-400",
-                                        )}
-                                      >
+                                      <p className="mt-1 text-xs text-slate-400">
                                         {entry.activeDays.toLocaleString()}{" "}
                                         active days in this season
                                       </p>
@@ -591,7 +649,10 @@ export function SwipeRankLeaderboard() {
                                   </div>
                                 </TableCell>
                                 <TableCell>
-                                  <GenderPill value={entry.interestedIn} />
+                                  <OrientationPill
+                                    gender={entry.gender}
+                                    interestedIn={entry.interestedIn}
+                                  />
                                 </TableCell>
                                 <TableCell className="px-7 text-right">
                                   <div className="ml-auto max-w-64">
@@ -605,25 +666,11 @@ export function SwipeRankLeaderboard() {
                                       )}
                                       %
                                     </span>
-                                    <p
-                                      className={cn(
-                                        "mt-1 font-mono text-xs whitespace-nowrap tabular-nums",
-                                        podium
-                                          ? "text-slate-400"
-                                          : "text-muted-foreground",
-                                      )}
-                                    >
+                                    <p className="text-muted-foreground mt-1 font-mono text-xs whitespace-nowrap tabular-nums">
                                       {entry.matches.toLocaleString()} m /{" "}
                                       {entry.rightSwipes.toLocaleString()} rs
                                     </p>
-                                    <div
-                                      className={cn(
-                                        "mt-3 h-1.5 overflow-hidden rounded-full",
-                                        podium
-                                          ? "bg-slate-700"
-                                          : "bg-slate-100",
-                                      )}
-                                    >
+                                    <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100">
                                       <div
                                         className="bg-primary h-full rounded-full"
                                         style={{ width: `${progress}%` }}

@@ -9,6 +9,7 @@ import {
   Ban,
   ChevronLeft,
   ChevronRight,
+  Eye,
   ExternalLink,
   Filter,
   Loader2,
@@ -26,7 +27,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button, ButtonLink } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -315,11 +317,12 @@ export default function AdminSwipeRankPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <Ban className="h-4 w-4 text-amber-700" />
-              Excluded profiles
+              Banned from SwipeRank
             </CardTitle>
             <CardDescription>
-              Facts stay intact for review. These profiles are omitted from all
-              live SwipeRank fields and benchmarks until restored.
+              These are reversible ranking bans: facts stay intact for review,
+              while the profiles are omitted from every live field and benchmark
+              until restored.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -465,7 +468,7 @@ export default function AdminSwipeRankPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead className="w-20">Rank</TableHead>
-                  <TableHead>Profile</TableHead>
+                  <TableHead>Profile & media</TableHead>
                   <TableHead>Peer descriptors</TableHead>
                   <TableHead>Location</TableHead>
                   <TableHead className="text-right">
@@ -491,14 +494,46 @@ export default function AdminSwipeRankPage() {
                       )}
                     </TableCell>
                     <TableCell>
-                      <Link
-                        href={`/admin/insights/tinder/${entry.providerProfileId}`}
-                        target="_blank"
-                        className="inline-flex max-w-52 items-center gap-1 truncate font-mono text-xs text-blue-700 hover:underline"
-                      >
-                        {entry.providerProfileId}
-                        <ExternalLink className="h-3 w-3 shrink-0" />
-                      </Link>
+                      <div className="flex min-w-56 items-center gap-3">
+                        <Link
+                          href={`/admin/insights/tinder/${entry.providerProfileId}`}
+                          target="_blank"
+                          className="relative shrink-0"
+                          aria-label="Open profile inspector"
+                        >
+                          <Avatar className="h-12 w-12 rounded-lg border bg-gray-100">
+                            {entry.photoUrl && (
+                              <AvatarImage
+                                src={entry.photoUrl}
+                                alt=""
+                                className="rounded-lg"
+                              />
+                            )}
+                            <AvatarFallback className="rounded-lg font-mono text-xs">
+                              No photo
+                            </AvatarFallback>
+                          </Avatar>
+                          {entry.photoCount > 1 && (
+                            <span className="absolute -right-1 -bottom-1 rounded-full border bg-white px-1 text-[10px] font-bold shadow-sm">
+                              +{entry.photoCount - 1}
+                            </span>
+                          )}
+                        </Link>
+                        <div className="min-w-0">
+                          <Link
+                            href={`/admin/insights/tinder/${entry.providerProfileId}`}
+                            target="_blank"
+                            className="inline-flex max-w-48 items-center gap-1 truncate font-mono text-xs text-blue-700 hover:underline"
+                          >
+                            {entry.providerProfileId}
+                            <ExternalLink className="h-3 w-3 shrink-0" />
+                          </Link>
+                          <p className="mt-1 text-xs text-gray-500">
+                            {entry.photoCount.toLocaleString()} stored photo
+                            {entry.photoCount === 1 ? "" : "s"}
+                          </p>
+                        </div>
+                      </div>
                     </TableCell>
                     <TableCell className="text-sm">
                       <p>
@@ -545,20 +580,32 @@ export default function AdminSwipeRankPage() {
                       )}
                     </TableCell>
                     <TableCell>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-1.5 text-amber-800"
-                        onClick={() =>
-                          openModeration({
-                            providerProfileId: entry.providerProfileId,
-                            excluded: true,
-                          })
-                        }
-                      >
-                        <Ban className="h-3.5 w-3.5" />
-                        Exclude
-                      </Button>
+                      <div className="flex flex-col gap-2">
+                        <ButtonLink
+                          href={`/admin/insights/tinder/${entry.providerProfileId}`}
+                          target="_blank"
+                          variant="outline"
+                          size="xs"
+                          className="gap-1.5"
+                        >
+                          <Eye className="h-3.5 w-3.5" />
+                          View
+                        </ButtonLink>
+                        <Button
+                          variant="outline"
+                          size="xs"
+                          className="gap-1.5 text-amber-800"
+                          onClick={() =>
+                            openModeration({
+                              providerProfileId: entry.providerProfileId,
+                              excluded: true,
+                            })
+                          }
+                        >
+                          <Ban className="h-3.5 w-3.5" />
+                          Ban
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -618,7 +665,7 @@ export default function AdminSwipeRankPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>
               {moderationTarget?.excluded
-                ? "Exclude from SwipeRank?"
+                ? "Ban from SwipeRank?"
                 : "Restore to SwipeRank?"}
             </AlertDialogTitle>
             <AlertDialogDescription>
@@ -628,7 +675,7 @@ export default function AdminSwipeRankPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
 
-          <p className="break-all rounded-md bg-gray-50 p-2 font-mono text-xs">
+          <p className="rounded-md bg-gray-50 p-2 font-mono text-xs break-all">
             {moderationTarget?.providerProfileId}
           </p>
 
@@ -676,7 +723,7 @@ export default function AdminSwipeRankPage() {
               {exclusionMutation.isPending
                 ? "Saving…"
                 : moderationTarget?.excluded
-                  ? "Exclude profile"
+                  ? "Ban profile"
                   : "Restore profile"}
             </Button>
           </AlertDialogFooter>

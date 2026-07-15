@@ -7,12 +7,18 @@ export interface LeaderboardPeriodOption {
   live: boolean;
 }
 
-interface ObservedPeriod {
+export interface ObservedPeriod {
   period: {
     kind: SwipeRankPeriodKind;
     start: string;
     end: string;
   };
+}
+
+export interface LeaderboardQuickJump {
+  key: "ALL_TIME" | "LAST_QUARTER" | "LAST_MONTH" | "LAST_YEAR";
+  label: string;
+  period: LeaderboardPeriodOption;
 }
 
 function calendarDate(year: number, monthIndex: number, day = 1) {
@@ -115,4 +121,53 @@ export function preferredLeaderboardPeriod(
     throw new Error(`No ${kind} leaderboard periods are available.`);
   }
   return preferred;
+}
+
+/** Curated shortcuts use completed calendar periods, except all time. */
+export function resolveLeaderboardQuickJumps(
+  observedPeriods: readonly ObservedPeriod[] | undefined,
+  today = new Date(),
+): LeaderboardQuickJump[] {
+  if (!observedPeriods) return [];
+  const todayString = dateString(today);
+
+  function newest(
+    kind: SwipeRankPeriodKind,
+    completedOnly: boolean,
+  ): LeaderboardPeriodOption | undefined {
+    return observedPeriods
+      .filter(
+        (item) =>
+          item.period.kind === kind &&
+          (!completedOnly || item.period.end <= todayString),
+      )
+      .map((item) => ({
+        ...item.period,
+        live: kind === "ALL_TIME" || todayString < item.period.end,
+      }))
+      .sort((left, right) => right.start.localeCompare(left.start))[0];
+  }
+
+  return [
+    {
+      key: "ALL_TIME" as const,
+      label: "All time",
+      period: newest("ALL_TIME", false),
+    },
+    {
+      key: "LAST_QUARTER" as const,
+      label: "Last quarter",
+      period: newest("QUARTER", true),
+    },
+    {
+      key: "LAST_MONTH" as const,
+      label: "Last month",
+      period: newest("MONTH", true),
+    },
+    {
+      key: "LAST_YEAR" as const,
+      label: "Last year",
+      period: newest("YEAR", true),
+    },
+  ].flatMap((item) => (item.period ? [item as LeaderboardQuickJump] : []));
 }

@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 
 import {
   preferredLeaderboardPeriod,
+  resolveLeaderboardQuickJumps,
   resolveLeaderboardPeriodOptions,
 } from "./period-options";
 
@@ -101,5 +102,35 @@ describe("public SwipeRank period selection", () => {
       start: "2026-07-01",
       live: true,
     });
+  });
+
+  test("builds curated jumps from completed observed periods", () => {
+    const periods = [
+      ["ALL_TIME", "0001-01-01", "9999-01-01"],
+      ["QUARTER", "2026-07-01", "2026-10-01"],
+      ["QUARTER", "2026-04-01", "2026-07-01"],
+      ["MONTH", "2026-07-01", "2026-08-01"],
+      ["MONTH", "2026-06-01", "2026-07-01"],
+      ["YEAR", "2026-01-01", "2027-01-01"],
+      ["YEAR", "2025-01-01", "2026-01-01"],
+    ].map(([kind, start, end]) => ({
+      period: {
+        kind: kind as "ALL_TIME" | "QUARTER" | "MONTH" | "YEAR",
+        start: start!,
+        end: end!,
+      },
+    }));
+
+    expect(
+      resolveLeaderboardQuickJumps(
+        periods,
+        new Date("2026-07-15T12:00:00.000Z"),
+      ).map((item) => [item.label, item.period.start]),
+    ).toEqual([
+      ["All time", "0001-01-01"],
+      ["Last quarter", "2026-04-01"],
+      ["Last month", "2026-06-01"],
+      ["Last year", "2025-01-01"],
+    ]);
   });
 });
