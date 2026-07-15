@@ -208,7 +208,10 @@ export default async function DatingServicesPage() {
         </section>
       )}
 
-      <section className="border-y border-gray-200 bg-gray-50">
+      <section
+        id="list-with-us"
+        className="scroll-mt-28 border-y border-gray-200 bg-gray-50"
+      >
         <div className="mx-auto grid max-w-7xl gap-5 px-6 py-16 lg:grid-cols-[1.6fr_1fr] lg:px-8">
           <Panel className="flex items-start gap-4 shadow-none">
             <span className="grid h-10 w-10 flex-none place-items-center rounded-xl bg-rose-50 text-rose-600">

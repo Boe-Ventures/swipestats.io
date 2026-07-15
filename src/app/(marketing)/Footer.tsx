@@ -5,6 +5,7 @@ const footerNavigation = {
   directory: [
     { name: "Research", href: "/#pricing" },
     { name: "Blog", href: "/blog" },
+    { name: "Dating services", href: "/dating-services" },
     { name: "Pricing", href: "/#pricing" },
   ],
   main: [
