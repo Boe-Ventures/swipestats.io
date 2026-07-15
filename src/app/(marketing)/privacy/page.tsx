@@ -96,6 +96,13 @@ export default function PrivacyPage() {
         </p>
 
         <p>
+          <strong>Contact and partnership inquiries:</strong> If you contact us
+          or ask about sponsorship, we collect the name, email, company,
+          website, budget range, and message you choose to provide so we can
+          review and respond to your inquiry.
+        </p>
+
+        <p>
           <strong>Dating app data you upload:</strong>
         </p>
         <p>
@@ -266,6 +273,13 @@ export default function PrivacyPage() {
               <td>
                 Steps you request and our legitimate interest in operating the
                 directory (Art. 6(1)(b) and Art. 6(1)(f))
+              </td>
+            </tr>
+            <tr>
+              <td>Respond to contact and partnership inquiries</td>
+              <td>
+                Steps you request and our legitimate interest in responding to
+                business communications (Art. 6(1)(b) and Art. 6(1)(f))
               </td>
             </tr>
             <tr>
@@ -511,6 +525,13 @@ export default function PrivacyPage() {
               <td>
                 As long as necessary to review, respond, prevent abuse, and
                 maintain reasonable business or legal records
+              </td>
+            </tr>
+            <tr>
+              <td>Contact and partnership inquiries</td>
+              <td>
+                As long as necessary to respond and maintain reasonable business
+                or legal records
               </td>
             </tr>
             <tr>

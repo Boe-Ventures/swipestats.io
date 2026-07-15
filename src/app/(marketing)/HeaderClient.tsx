@@ -13,6 +13,7 @@ import {
 } from "@heroicons/react/24/outline";
 
 import { ButtonLink } from "@/components/ui/button";
+import { InquiryDialog } from "@/components/inquiries/InquiryDialog";
 // import { OldSwipestatsLogo } from "@/components/ui/OldSwipestatsLogo";
 import { NewOldLogo } from "@/components/ui/NewOldLogo";
 // import { TinderInsights } from "@/components/ui/TinderInsights";
@@ -30,6 +31,7 @@ const iconMap = {
 interface NavigationItem {
   name: string;
   href: string;
+  action?: "contact";
   description?: string;
   icon?: keyof typeof iconMap;
 }
@@ -46,6 +48,7 @@ interface HeaderClientProps {
 
 export default function HeaderClient({ navigation }: HeaderClientProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [contactOpen, setContactOpen] = useState(false);
   const { data: session, isPending } = authClient.useSession();
 
   // Use real session state, but default to logged out during loading for marketing focus
@@ -183,6 +186,11 @@ export default function HeaderClient({ navigation }: HeaderClientProps) {
             key={item.name}
             href={item.href}
             className="text-foreground hover:text-primary hover:bg-muted/50 rounded-full px-3 py-1.5 text-sm/6 font-semibold transition-all"
+            onClick={(event) => {
+              if (item.action !== "contact") return;
+              event.preventDefault();
+              setContactOpen(true);
+            }}
           >
             {item.name}
           </Link>
@@ -299,7 +307,12 @@ export default function HeaderClient({ navigation }: HeaderClientProps) {
                       key={item.name}
                       href={item.href}
                       className="text-foreground hover:bg-muted/50 hover:text-primary -mx-3 block rounded-lg px-3 py-2 text-base/7 font-semibold transition-all"
-                      onClick={() => setMobileMenuOpen(false)}
+                      onClick={(event) => {
+                        setMobileMenuOpen(false);
+                        if (item.action !== "contact") return;
+                        event.preventDefault();
+                        setContactOpen(true);
+                      }}
                     >
                       {item.name}
                     </Link>
@@ -355,7 +368,12 @@ export default function HeaderClient({ navigation }: HeaderClientProps) {
                   key={item.name}
                   href={item.href}
                   className="flex items-center justify-center gap-x-2.5 p-3 text-base/7 font-semibold text-gray-900 hover:bg-gray-100"
-                  onClick={() => setMobileMenuOpen(false)}
+                  onClick={(event) => {
+                    setMobileMenuOpen(false);
+                    if (item.action !== "contact") return;
+                    event.preventDefault();
+                    setContactOpen(true);
+                  }}
                 >
                   {IconComponent && (
                     <IconComponent
@@ -370,6 +388,11 @@ export default function HeaderClient({ navigation }: HeaderClientProps) {
           </div>
         </DialogPanel>
       </Dialog>
+      <InquiryDialog
+        kind="GENERAL"
+        open={contactOpen}
+        onOpenChange={setContactOpen}
+      />
     </>
   );
 }

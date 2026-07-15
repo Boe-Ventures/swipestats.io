@@ -33,15 +33,16 @@ const navigation = {
   callsToAction: [
     {
       name: "Contact",
-      href: "mailto:kris@swipestats.io",
+      href: "/contact",
+      action: "contact" as const,
       icon: "PhoneIcon" as const,
     },
   ],
   simple: [
-    { name: "Research", href: "/#pricing" },
+    { name: "Research", href: "/research" },
     { name: "Blog", href: "/blog" },
     { name: "FAQ", href: "/#faq" },
-    { name: "Contact", href: "mailto:kris@swipestats.io" },
+    { name: "Contact", href: "/contact", action: "contact" as const },
   ],
 };
 

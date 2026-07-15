@@ -30,6 +30,7 @@ import type {
   CatalogRequestData,
   CatalogSubmissionData,
 } from "@/lib/catalog";
+import type { InquiryData, InquiryKind } from "@/lib/inquiries";
 
 // ---- ENUMS --------------------------------------------------------
 
@@ -1218,6 +1219,31 @@ export const catalogSubmissionTable = pgTable(
 export type CatalogSubmission = typeof catalogSubmissionTable.$inferSelect;
 export type CatalogSubmissionInsert =
   typeof catalogSubmissionTable.$inferInsert;
+
+export const inquiryTable = pgTable(
+  "inquiry",
+  (t) => ({
+    id: t
+      .text()
+      .primaryKey()
+      .$defaultFn(() => createId("inq")),
+    kind: t.text().$type<InquiryKind>().notNull(),
+    name: t.text().notNull(),
+    contactEmail: t.text().notNull(),
+    data: t.jsonb().$type<InquiryData>().notNull(),
+    createdAt: t
+      .timestamp({ withTimezone: true })
+      .$defaultFn(() => new Date())
+      .notNull(),
+  }),
+  (t) => [
+    index("inquiry_kind_created_idx").on(t.kind, t.createdAt),
+    index("inquiry_contact_idx").on(t.contactEmail),
+  ],
+);
+
+export type Inquiry = typeof inquiryTable.$inferSelect;
+export type InquiryInsert = typeof inquiryTable.$inferInsert;
 
 // ---- STORAGE TABLES -----------------------------------------------
 
