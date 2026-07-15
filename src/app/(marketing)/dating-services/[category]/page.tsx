@@ -1,0 +1,278 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { cache } from "react";
+import { ArrowLeft, Globe2, MapPin } from "lucide-react";
+
+import { CatalogRequestDialog } from "@/components/catalog/catalog-dialogs";
+import { CatalogEntryCard } from "@/components/catalog/catalog-entry-card";
+import { Button, ButtonLink } from "@/components/ui/button";
+import { cn } from "@/components/ui/lib/utils";
+import {
+  CATALOG_CATEGORIES,
+  CATALOG_PLACE_OPTIONS,
+  getCatalogCategoryBySlug,
+  getCatalogPlaceBySlug,
+  isCatalogLocationFilterKey,
+  type CatalogCategoryKey,
+  type CatalogLocationFilterKey,
+} from "@/lib/catalog";
+import { trpcApi } from "@/trpc/server";
+
+interface CategoryPageProps {
+  params: Promise<{ category: string }>;
+  searchParams: Promise<{ location?: string; remote?: string }>;
+}
+
+const getCategoryEntries = cache(
+  async (
+    category: CatalogCategoryKey,
+    location: CatalogLocationFilterKey | undefined,
+    includeRemote: boolean,
+  ) => {
+    const api = await trpcApi();
+    return api.catalog.list({
+      category,
+      location,
+      includeRemote,
+      tags: [],
+    });
+  },
+);
+
+export async function generateMetadata({
+  params,
+}: Pick<CategoryPageProps, "params">): Promise<Metadata> {
+  const { category: categorySlug } = await params;
+  const category = getCatalogCategoryBySlug(categorySlug);
+  if (!category) return { robots: { index: false, follow: false } };
+
+  const config = CATALOG_CATEGORIES[category];
+  const { totalCount } = await getCategoryEntries(category, undefined, false);
+  return {
+    title: `${config.label} Directory`,
+    description: `${config.description} Browse the editor-curated SwipeStats catalog.`,
+    alternates: { canonical: `/dating-services/${config.slug}` },
+    robots:
+      totalCount > 0
+        ? { index: true, follow: true }
+        : { index: false, follow: true },
+  };
+}
+
+function filterHref({
+  category,
+  location,
+  remote,
+}: {
+  category: string;
+  location?: string;
+  remote?: boolean;
+}) {
+  const query = new URLSearchParams();
+  if (location) query.set("location", location);
+  if (remote) query.set("remote", "1");
+  const suffix = query.size > 0 ? `?${query.toString()}` : "";
+  return `/dating-services/${category}${suffix}`;
+}
+
+export default async function DatingServicesCategoryPage({
+  params,
+  searchParams,
+}: CategoryPageProps) {
+  const [{ category: categorySlug }, rawSearchParams] = await Promise.all([
+    params,
+    searchParams,
+  ]);
+  const category = getCatalogCategoryBySlug(categorySlug);
+  if (!category) notFound();
+
+  const config = CATALOG_CATEGORIES[category];
+  const supportsLocation = config.locationMode !== "global";
+  const supportsRemote = config.locationMode === "service_area";
+  const location =
+    supportsLocation && isCatalogLocationFilterKey(rawSearchParams.location)
+      ? rawSearchParams.location
+      : undefined;
+  const selectedPlace = location ? getCatalogPlaceBySlug(location) : undefined;
+  const featuredCities = CATALOG_PLACE_OPTIONS.filter(
+    (place) => place.kind === "city" && place.isFeatured,
+  );
+  const broaderAreas = CATALOG_PLACE_OPTIONS.filter(
+    (place) => place.kind === "country" || place.kind === "region",
+  );
+  const includeRemote = supportsRemote && rawSearchParams.remote === "1";
+  const { entries, totalCount } = await getCategoryEntries(
+    category,
+    location,
+    includeRemote,
+  );
+
+  return (
+    <main className="min-h-screen bg-white text-gray-900">
+      <section className="border-b border-gray-200">
+        <div className="mx-auto max-w-7xl px-6 py-12 lg:px-8 lg:py-16">
+          <nav className="flex items-center gap-2 font-mono text-[12px] text-gray-500">
+            <Link href="/dating-services" className="hover:text-rose-600">
+              Services
+            </Link>
+            <span>/</span>
+            <span className="text-gray-800">{config.label}</span>
+          </nav>
+
+          <div className="mt-8 flex flex-wrap items-end justify-between gap-6">
+            <div className="max-w-3xl">
+              <div className="flex items-center gap-3 font-mono text-[11px] font-medium tracking-[0.1em] text-rose-600 uppercase">
+                <span className="h-px w-6 bg-rose-400" />
+                {config.label}
+              </div>
+              <h1 className="mt-4 text-[clamp(36px,5vw,56px)] leading-[1.02] font-bold tracking-[-0.04em]">
+                {config.headline}
+              </h1>
+              <p className="mt-5 max-w-2xl text-[17px] leading-7 text-gray-600">
+                {config.description} Browse a deliberately small, editor-curated
+                catalog
+                {config.locationMode === "service_area"
+                  ? " across the first SwipeStats launch cities."
+                  : config.locationMode === "market_signal"
+                    ? " with local market context where we have it."
+                    : " available wherever you use your dating apps."}
+              </p>
+            </div>
+            <div className="font-mono text-[12px] text-gray-500">
+              {totalCount} {totalCount === 1 ? "listing" : "listings"}
+              {selectedPlace ? ` · ${selectedPlace.name}` : ""}
+            </div>
+          </div>
+
+          {supportsLocation && (
+            <div className="mt-9 flex flex-wrap items-center gap-2">
+              <Link
+                href={filterHref({
+                  category: categorySlug,
+                  remote: includeRemote,
+                })}
+                className={cn(
+                  "rounded-full border px-3.5 py-2 text-sm font-semibold transition",
+                  !location
+                    ? "border-rose-300 bg-rose-50 text-rose-700"
+                    : "border-gray-200 bg-white text-gray-600 hover:border-gray-300",
+                )}
+              >
+                All locations
+              </Link>
+              {featuredCities.map((place) => (
+                <Link
+                  key={place.id}
+                  href={filterHref({
+                    category: categorySlug,
+                    location: place.slug,
+                    remote: includeRemote,
+                  })}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-semibold transition",
+                    location === place.slug
+                      ? "border-rose-300 bg-rose-50 text-rose-700"
+                      : "border-gray-200 bg-white text-gray-600 hover:border-gray-300",
+                  )}
+                >
+                  <MapPin className="h-3.5 w-3.5" />
+                  {place.shortName}
+                </Link>
+              ))}
+              {broaderAreas.map((place) => (
+                <Link
+                  key={place.id}
+                  href={filterHref({
+                    category: categorySlug,
+                    location: place.slug,
+                    remote: includeRemote,
+                  })}
+                  className={cn(
+                    "rounded-full border px-3.5 py-2 text-sm font-semibold transition",
+                    location === place.slug
+                      ? "border-rose-300 bg-rose-50 text-rose-700"
+                      : "border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300",
+                  )}
+                >
+                  {place.shortName}
+                </Link>
+              ))}
+              {supportsRemote && (
+                <Link
+                  href={filterHref({
+                    category: categorySlug,
+                    location,
+                    remote: !includeRemote,
+                  })}
+                  className={cn(
+                    "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-semibold transition",
+                    includeRemote
+                      ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                      : "border-gray-200 bg-white text-gray-600 hover:border-gray-300",
+                  )}
+                >
+                  <Globe2 className="h-3.5 w-3.5" />
+                  {location ? "Include remote" : "Remote only"}
+                </Link>
+              )}
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-7xl px-6 py-12 lg:px-8 lg:py-16">
+        {entries.length > 0 ? (
+          <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            {entries.map((entry) => (
+              <CatalogEntryCard key={entry.id} entry={entry} />
+            ))}
+          </div>
+        ) : (
+          <div className="rounded-3xl border border-dashed border-gray-300 bg-gray-50 px-6 py-16 text-center">
+            <h2 className="text-2xl font-bold tracking-[-0.03em]">
+              No {config.shortLabel.toLowerCase()}{" "}
+              {location ? `in ${selectedPlace?.name ?? location}` : "here yet"}
+            </h2>
+            <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-gray-600">
+              {supportsRemote
+                ? "Try remote-friendly providers, or send a private request and we’ll use it to prioritize who gets added next."
+                : "Send a private request and we’ll use it to prioritize what gets reviewed and added next."}
+            </p>
+            <div className="mt-6 flex flex-wrap justify-center gap-3">
+              {supportsRemote && !includeRemote && (
+                <ButtonLink
+                  variant="outline"
+                  href={filterHref({
+                    category: categorySlug,
+                    location,
+                    remote: true,
+                  })}
+                >
+                  Show remote providers
+                </ButtonLink>
+              )}
+              <CatalogRequestDialog
+                category={category}
+                trigger={<Button>Request help</Button>}
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="mt-12 flex flex-wrap items-center justify-between gap-4 border-t border-gray-200 pt-8">
+          <ButtonLink variant="ghost" href="/dating-services">
+            <ArrowLeft className="h-4 w-4" />
+            All services
+          </ButtonLink>
+          <CatalogRequestDialog
+            category={category}
+            trigger={
+              <Button variant="outline">Can&apos;t find the right fit?</Button>
+            }
+          />
+        </div>
+      </section>
+    </main>
+  );
+}

@@ -19,6 +19,7 @@ import { promptSuggestRouter } from "@/server/api/routers/promptSuggestRouter";
 import { photoAnalysisRouter } from "@/server/api/routers/photoAnalysisRouter";
 import { profileComposeRouter } from "@/server/api/routers/profileComposeRouter";
 import { consentRouter } from "@/server/api/routers/consentRouter";
+import { catalogRouter } from "@/server/api/routers/catalogRouter";
 import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
 
 /**
@@ -48,6 +49,7 @@ export const appRouter = createTRPCRouter({
   photoAnalysis: photoAnalysisRouter,
   profileCompose: profileComposeRouter,
   consent: consentRouter,
+  catalog: catalogRouter,
 });
 
 // export type definition of API

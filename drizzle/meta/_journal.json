@@ -57,6 +57,13 @@
       "when": 1783692746698,
       "tag": "0007_abandoned_ozymandias",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1784045068488,
+      "tag": "0008_stale_chat",
+      "breakpoints": true
     }
   ]
 }

@@ -40,6 +40,8 @@ const navigation = {
   simple: [
     { name: "Research", href: "/#pricing" },
     { name: "Blog", href: "/blog" },
+    // Quiet-launch the catalog before adding it to the global navigation.
+    // { name: "Services", href: "/dating-services" },
     { name: "FAQ", href: "/#faq" },
     { name: "Contact", href: "mailto:kris@swipestats.io" },
   ],

@@ -23,6 +23,13 @@ import type {
   HingeThreadState,
 } from "@/lib/interfaces/HingeDataJSON";
 import type { ProfileRoastLensKey } from "@/lib/ai/profile-roast-lenses";
+import type {
+  CatalogCategoryKey,
+  CatalogClaimEvidence,
+  CatalogEntryData,
+  CatalogRequestData,
+  CatalogSubmissionData,
+} from "@/lib/catalog";
 
 // ---- ENUMS --------------------------------------------------------
 
@@ -124,6 +131,48 @@ export const appTokenPurposeEnum = pgEnum("app_token_purpose", [
   "unsubscribe",
 ]);
 
+export const catalogEntryStatusEnum = pgEnum("catalog_entry_status", [
+  "DRAFT",
+  "PUBLISHED",
+  "ARCHIVED",
+]);
+
+export const catalogVerificationStatusEnum = pgEnum(
+  "catalog_verification_status",
+  ["UNVERIFIED", "VERIFIED"],
+);
+
+export const catalogMemberRoleEnum = pgEnum("catalog_member_role", [
+  "OWNER",
+  "EDITOR",
+]);
+
+export const catalogClaimStatusEnum = pgEnum("catalog_claim_status", [
+  "PENDING",
+  "APPROVED",
+  "REJECTED",
+  "WITHDRAWN",
+]);
+
+export const catalogRequestStatusEnum = pgEnum("catalog_request_status", [
+  "OPEN",
+  "MATCHED",
+  "CLOSED",
+  "WITHDRAWN",
+]);
+
+export const catalogRequestVisibilityEnum = pgEnum(
+  "catalog_request_visibility",
+  ["PRIVATE", "INVITED", "BROADCAST"],
+);
+
+export const catalogSubmissionStatusEnum = pgEnum("catalog_submission_status", [
+  "PENDING",
+  "APPROVED",
+  "REJECTED",
+  "WITHDRAWN",
+]);
+
 // Export TypeScript types
 export type DataProvider = (typeof dataProviderEnum.enumValues)[number];
 export type EventType = (typeof eventTypeEnum.enumValues)[number];
@@ -139,6 +188,20 @@ export type DatasetTier = (typeof datasetTierEnum.enumValues)[number];
 export type DatasetExportStatus =
   (typeof datasetExportStatusEnum.enumValues)[number];
 export type AppTokenPurpose = (typeof appTokenPurposeEnum.enumValues)[number];
+export type CatalogEntryStatus =
+  (typeof catalogEntryStatusEnum.enumValues)[number];
+export type CatalogVerificationStatus =
+  (typeof catalogVerificationStatusEnum.enumValues)[number];
+export type CatalogMemberRole =
+  (typeof catalogMemberRoleEnum.enumValues)[number];
+export type CatalogClaimStatus =
+  (typeof catalogClaimStatusEnum.enumValues)[number];
+export type CatalogRequestStatus =
+  (typeof catalogRequestStatusEnum.enumValues)[number];
+export type CatalogRequestVisibility =
+  (typeof catalogRequestVisibilityEnum.enumValues)[number];
+export type CatalogSubmissionStatus =
+  (typeof catalogSubmissionStatusEnum.enumValues)[number];
 
 /** ISO 639-1 two-letter language code, e.g. "en", "no", "es" */
 export type LanguageCode = string;
@@ -964,6 +1027,198 @@ export const waitlistTable = pgTable("waitlist", (t) => ({
 export type Waitlist = typeof waitlistTable.$inferSelect;
 export type WaitlistInsert = typeof waitlistTable.$inferInsert;
 
+// ---- DATING SERVICES CATALOG -------------------------------------
+
+export const catalogEntryTable = pgTable(
+  "catalog_entry",
+  (t) => ({
+    id: t
+      .text()
+      .primaryKey()
+      .$defaultFn(() => createId("cat")),
+    slug: t.text().notNull().unique(),
+    name: t.text().notNull(),
+    primaryCategory: t.text().$type<CatalogCategoryKey>().notNull(),
+    status: catalogEntryStatusEnum().default("DRAFT").notNull(),
+    verificationStatus: catalogVerificationStatusEnum()
+      .default("UNVERIFIED")
+      .notNull(),
+    claimedAt: t.timestamp({ withTimezone: true }),
+    featured: t.boolean().default(false).notNull(),
+    editorialPick: t.boolean().default(false).notNull(),
+    remote: t.boolean().default(false).notNull(),
+    data: t.jsonb().$type<CatalogEntryData>().notNull(),
+    createdAt: t
+      .timestamp({ withTimezone: true })
+      .$defaultFn(() => new Date())
+      .notNull(),
+    updatedAt: t
+      .timestamp({ withTimezone: true })
+      .$defaultFn(() => new Date())
+      .$onUpdate(() => new Date())
+      .notNull(),
+  }),
+  (t) => [
+    index("catalog_entry_status_category_idx").on(t.status, t.primaryCategory),
+    index("catalog_entry_presentation_idx").on(
+      t.featured,
+      t.editorialPick,
+      t.name,
+    ),
+  ],
+);
+
+export type CatalogEntry = typeof catalogEntryTable.$inferSelect;
+export type CatalogEntryInsert = typeof catalogEntryTable.$inferInsert;
+
+export const catalogEntryMemberTable = pgTable(
+  "catalog_entry_member",
+  (t) => ({
+    entryId: t
+      .text()
+      .notNull()
+      .references(() => catalogEntryTable.id, { onDelete: "cascade" }),
+    userId: t
+      .text()
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    role: catalogMemberRoleEnum().default("EDITOR").notNull(),
+    createdAt: t
+      .timestamp({ withTimezone: true })
+      .$defaultFn(() => new Date())
+      .notNull(),
+  }),
+  (t) => [
+    primaryKey({ columns: [t.entryId, t.userId] }),
+    index("catalog_entry_member_user_idx").on(t.userId),
+  ],
+);
+
+export type CatalogEntryMember = typeof catalogEntryMemberTable.$inferSelect;
+export type CatalogEntryMemberInsert =
+  typeof catalogEntryMemberTable.$inferInsert;
+
+export const catalogEntryClaimTable = pgTable(
+  "catalog_entry_claim",
+  (t) => ({
+    id: t
+      .text()
+      .primaryKey()
+      .$defaultFn(() => createId("clm")),
+    entryId: t
+      .text()
+      .notNull()
+      .references(() => catalogEntryTable.id, { onDelete: "cascade" }),
+    claimantUserId: t
+      .text()
+      .references(() => userTable.id, { onDelete: "set null" }),
+    claimantEmail: t.text(),
+    status: catalogClaimStatusEnum().default("PENDING").notNull(),
+    evidence: t.jsonb().$type<CatalogClaimEvidence>().notNull(),
+    reviewedBy: t
+      .text()
+      .references(() => userTable.id, { onDelete: "set null" }),
+    createdAt: t
+      .timestamp({ withTimezone: true })
+      .$defaultFn(() => new Date())
+      .notNull(),
+    reviewedAt: t.timestamp({ withTimezone: true }),
+  }),
+  (t) => [
+    index("catalog_entry_claim_entry_status_idx").on(t.entryId, t.status),
+    index("catalog_entry_claim_claimant_idx").on(
+      t.claimantUserId,
+      t.claimantEmail,
+    ),
+    check(
+      "catalog_entry_claim_has_identity",
+      sql`${t.claimantUserId} is not null or ${t.claimantEmail} is not null`,
+    ),
+  ],
+);
+
+export type CatalogEntryClaim = typeof catalogEntryClaimTable.$inferSelect;
+export type CatalogEntryClaimInsert =
+  typeof catalogEntryClaimTable.$inferInsert;
+
+export const catalogRequestTable = pgTable(
+  "catalog_request",
+  (t) => ({
+    id: t
+      .text()
+      .primaryKey()
+      .$defaultFn(() => createId("req")),
+    requesterUserId: t
+      .text()
+      .references(() => userTable.id, { onDelete: "set null" }),
+    anonymousSessionId: t.text(),
+    contactEmail: t.text(),
+    targetEntryId: t
+      .text()
+      .references(() => catalogEntryTable.id, { onDelete: "set null" }),
+    category: t.text().$type<CatalogCategoryKey>().notNull(),
+    status: catalogRequestStatusEnum().default("OPEN").notNull(),
+    visibility: catalogRequestVisibilityEnum().default("PRIVATE").notNull(),
+    data: t.jsonb().$type<CatalogRequestData>().notNull(),
+    expiresAt: t.timestamp({ withTimezone: true }),
+    createdAt: t
+      .timestamp({ withTimezone: true })
+      .$defaultFn(() => new Date())
+      .notNull(),
+    updatedAt: t
+      .timestamp({ withTimezone: true })
+      .$defaultFn(() => new Date())
+      .$onUpdate(() => new Date())
+      .notNull(),
+  }),
+  (t) => [
+    index("catalog_request_status_category_idx").on(t.status, t.category),
+    index("catalog_request_target_entry_idx").on(t.targetEntryId),
+    check(
+      "catalog_request_has_identity",
+      sql`${t.requesterUserId} is not null or ${t.contactEmail} is not null`,
+    ),
+  ],
+);
+
+export type CatalogRequest = typeof catalogRequestTable.$inferSelect;
+export type CatalogRequestInsert = typeof catalogRequestTable.$inferInsert;
+
+export const catalogSubmissionTable = pgTable(
+  "catalog_submission",
+  (t) => ({
+    id: t
+      .text()
+      .primaryKey()
+      .$defaultFn(() => createId("sub")),
+    submitterUserId: t
+      .text()
+      .references(() => userTable.id, { onDelete: "set null" }),
+    contactEmail: t.text().notNull(),
+    name: t.text().notNull(),
+    category: t.text().$type<CatalogCategoryKey>().notNull(),
+    status: catalogSubmissionStatusEnum().default("PENDING").notNull(),
+    data: t.jsonb().$type<CatalogSubmissionData>().notNull(),
+    createdAt: t
+      .timestamp({ withTimezone: true })
+      .$defaultFn(() => new Date())
+      .notNull(),
+    updatedAt: t
+      .timestamp({ withTimezone: true })
+      .$defaultFn(() => new Date())
+      .$onUpdate(() => new Date())
+      .notNull(),
+  }),
+  (t) => [
+    index("catalog_submission_status_category_idx").on(t.status, t.category),
+    index("catalog_submission_contact_idx").on(t.contactEmail),
+  ],
+);
+
+export type CatalogSubmission = typeof catalogSubmissionTable.$inferSelect;
+export type CatalogSubmissionInsert =
+  typeof catalogSubmissionTable.$inferInsert;
+
 // ---- STORAGE TABLES -----------------------------------------------
 
 export const originalAnonymizedFileTable = pgTable(
@@ -1567,6 +1822,14 @@ export const userRelations = relations(userTable, ({ one, many }) => ({
   uploadedAttachments: many(attachmentTable),
   cohortDefinitions: many(cohortDefinitionTable),
   aiOutputs: many(aiOutputTable),
+  catalogMemberships: many(catalogEntryMemberTable),
+  submittedCatalogClaims: many(catalogEntryClaimTable, {
+    relationName: "catalogClaimant",
+  }),
+  reviewedCatalogClaims: many(catalogEntryClaimTable, {
+    relationName: "catalogClaimReviewer",
+  }),
+  catalogRequests: many(catalogRequestTable),
 }));
 
 export const accountRelations = relations(accountTable, ({ one }) => ({
@@ -1903,3 +2166,70 @@ export const aiOutputRelations = relations(aiOutputTable, ({ one }) => ({
     references: [comparisonColumnTable.id],
   }),
 }));
+
+export const catalogEntryRelations = relations(
+  catalogEntryTable,
+  ({ many }) => ({
+    members: many(catalogEntryMemberTable),
+    claims: many(catalogEntryClaimTable),
+    requests: many(catalogRequestTable),
+  }),
+);
+
+export const catalogEntryMemberRelations = relations(
+  catalogEntryMemberTable,
+  ({ one }) => ({
+    entry: one(catalogEntryTable, {
+      fields: [catalogEntryMemberTable.entryId],
+      references: [catalogEntryTable.id],
+    }),
+    user: one(userTable, {
+      fields: [catalogEntryMemberTable.userId],
+      references: [userTable.id],
+    }),
+  }),
+);
+
+export const catalogEntryClaimRelations = relations(
+  catalogEntryClaimTable,
+  ({ one }) => ({
+    entry: one(catalogEntryTable, {
+      fields: [catalogEntryClaimTable.entryId],
+      references: [catalogEntryTable.id],
+    }),
+    claimant: one(userTable, {
+      fields: [catalogEntryClaimTable.claimantUserId],
+      references: [userTable.id],
+      relationName: "catalogClaimant",
+    }),
+    reviewer: one(userTable, {
+      fields: [catalogEntryClaimTable.reviewedBy],
+      references: [userTable.id],
+      relationName: "catalogClaimReviewer",
+    }),
+  }),
+);
+
+export const catalogRequestRelations = relations(
+  catalogRequestTable,
+  ({ one }) => ({
+    requester: one(userTable, {
+      fields: [catalogRequestTable.requesterUserId],
+      references: [userTable.id],
+    }),
+    targetEntry: one(catalogEntryTable, {
+      fields: [catalogRequestTable.targetEntryId],
+      references: [catalogEntryTable.id],
+    }),
+  }),
+);
+
+export const catalogSubmissionRelations = relations(
+  catalogSubmissionTable,
+  ({ one }) => ({
+    submitter: one(userTable, {
+      fields: [catalogSubmissionTable.submitterUserId],
+      references: [userTable.id],
+    }),
+  }),
+);
