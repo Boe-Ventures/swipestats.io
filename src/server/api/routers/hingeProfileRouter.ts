@@ -5,12 +5,9 @@ import { eq } from "drizzle-orm";
 import { hingeProfileTable } from "@/server/db/schema";
 import { publicProcedure } from "../trpc";
 import type { TRPCRouterRecord } from "@trpc/server";
-import type { AnonymizedHingeDataJSON } from "@/lib/interfaces/HingeDataJSON";
 import {
   createHingeProfile,
-  getHingeProfile,
   getHingeProfileWithUser,
-  transferHingeProfileOwnership,
 } from "@/server/services/hinge/hinge.service";
 import {
   additiveUpdateHingeProfile,
@@ -18,8 +15,46 @@ import {
 } from "@/server/services/hinge/hinge-additive.service";
 import { trackServerEvent } from "@/server/services/analytics.service";
 import { captureException } from "@/server/clients/posthog.client";
-import { fetchBlobJson } from "@/server/services/blob.service";
+import { fetchVerifiedHingeBlob } from "@/server/services/hinge/hinge-blob.service";
 import { summarizeUploadError } from "@/server/services/upload-error.service";
+import { isSameHingeAccountSignup } from "@/lib/hinge/account-period";
+import {
+  cleanupCommittedTransientUpload,
+  registerTransientUploadForProcessing,
+  type TransientUploadBinding,
+} from "@/server/services/transient-upload.service";
+
+async function prepareHingeTransientUpload(params: {
+  uploadId: string;
+  blobUrl: string;
+  hingeId: string;
+  userId: string;
+  sessionId: string;
+}) {
+  const binding: TransientUploadBinding = {
+    id: params.uploadId,
+    userId: params.userId,
+    sessionId: params.sessionId,
+    dataProvider: "HINGE",
+    profileId: params.hingeId,
+    blobUrl: params.blobUrl,
+  };
+  const lease = await registerTransientUploadForProcessing(binding);
+  if (lease.status === "COMMITTED" || lease.status === "CLEANED") {
+    await cleanupCommittedTransientUpload(lease.id);
+    const profile = lease.resultProfileId
+      ? await getHingeProfileWithUser(lease.resultProfileId)
+      : null;
+    if (profile?.userId !== params.userId) {
+      throw new Error(
+        "Committed temporary upload has no owned result profile.",
+      );
+    }
+    const { user: _user, ...committedProfile } = profile;
+    return { binding, committedProfile };
+  }
+  return { binding, committedProfile: null };
+}
 
 /**
  * Helper function to handle existing profile upload scenarios
@@ -29,9 +64,12 @@ async function handleExistingHingeProfileUpload(params: {
   existing: NonNullable<Awaited<ReturnType<typeof getHingeProfileWithUser>>>;
   hingeId: string;
   blobUrl: string;
+  transientUpload: TransientUploadBinding;
   currentUserId: string;
   timezone?: string;
   country?: string;
+  consentPhotos?: boolean;
+  consentWork?: boolean;
 }) {
   const { existing, currentUserId, ...uploadParams } = params;
 
@@ -40,29 +78,21 @@ async function handleExistingHingeProfileUpload(params: {
     console.log(
       `🔄 Additive update for existing profile hingeId: ${params.hingeId}`,
     );
-    return additiveUpdateHingeProfile({
-      ...uploadParams,
-      userId: currentUserId,
-    });
-  }
-
-  // Case C: Profile owned by anonymous user - transfer then use additive update
-  if (existing.user?.isAnonymous && existing.userId) {
-    console.log(
-      `🔀 Transferring profile ${params.hingeId} from anonymous user ${existing.userId} to ${currentUserId}`,
-    );
-    await transferHingeProfileOwnership(
+    const verifiedJson = await fetchVerifiedHingeBlob(
+      params.blobUrl,
       params.hingeId,
-      existing.userId,
-      currentUserId,
+      { consume: false },
     );
     return additiveUpdateHingeProfile({
       ...uploadParams,
       userId: currentUserId,
+      verifiedJson,
     });
   }
 
-  // Case D: Owned by claimed user - block
+  // Hinge exports no provider account ID. A signup timestamp is not strong
+  // enough proof to transfer an anonymous profile across sessions, so only the
+  // session that already owns this row may update it.
   throw new TRPCError({
     code: "FORBIDDEN",
     message:
@@ -78,9 +108,11 @@ export const hingeProfileRouter = {
         hingeId: z.string().min(1),
       }),
     )
-    .query(async ({ ctx: _ctx, input }) => {
-      const profile = await getHingeProfile(input.hingeId);
-      // Return null instead of throwing - better for optional queries
+    .query(async ({ ctx, input }) => {
+      const profile = await ctx.db.query.hingeProfileTable.findFirst({
+        where: eq(hingeProfileTable.hingeId, input.hingeId),
+        columns: { hingeId: true },
+      });
       return profile ?? null;
     }),
 
@@ -94,18 +126,37 @@ export const hingeProfileRouter = {
     .query(async ({ ctx, input }) => {
       const profile = await ctx.db.query.hingeProfileTable.findFirst({
         where: eq(hingeProfileTable.hingeId, input.hingeId),
+        columns: {
+          hingeId: true,
+          gender: true,
+          ageAtUpload: true,
+          selfieVerified: true,
+          country: true,
+        },
         with: {
           matches: {
+            columns: {
+              id: true,
+              matchedAt: true,
+              likedAt: true,
+              weMet: true,
+            },
             with: {
-              messages: true,
+              messages: { columns: { sentDate: true } },
             },
             orderBy: (matches, { desc }) => [desc(matches.matchedAt)],
           },
           interactions: {
+            columns: {
+              type: true,
+              timestamp: true,
+              matchId: true,
+              threadOrigin: true,
+              threadState: true,
+            },
             orderBy: (interactions, { desc }) => [desc(interactions.timestamp)],
           },
           profileMeta: true,
-          prompts: true,
         },
       });
 
@@ -132,7 +183,7 @@ export const hingeProfileRouter = {
       const targetProfile = input.hingeId
         ? await ctx.db.query.hingeProfileTable.findFirst({
             where: eq(hingeProfileTable.hingeId, input.hingeId),
-            columns: { hingeId: true, userId: true },
+            columns: { hingeId: true },
             with: {
               user: {
                 columns: { isAnonymous: true },
@@ -143,15 +194,9 @@ export const hingeProfileRouter = {
 
       // If no session, determine scenario based on target profile
       if (!ctx.session?.user?.id) {
-        let scenario: "new_user" | "needs_signin" | "can_claim";
-
-        if (!targetProfile) {
-          scenario = "new_user"; // Profile doesn't exist
-        } else if (targetProfile.user?.isAnonymous) {
-          scenario = "can_claim"; // Owned by anonymous user - can claim
-        } else {
-          scenario = "needs_signin"; // Owned by real user - must sign in
-        }
+        const scenario: "new_user" | "needs_signin" = targetProfile
+          ? "needs_signin"
+          : "new_user";
 
         return {
           userProfile: null,
@@ -176,16 +221,13 @@ export const hingeProfileRouter = {
       let scenario:
         | "new_profile"
         | "same_hingeId"
-        | "can_claim"
         | "different_hingeId"
         | "owned_by_other";
 
       if (!userProfile && !targetProfile) {
         scenario = "new_profile"; // First upload, hingeId doesn't exist
       } else if (!userProfile && targetProfile) {
-        scenario = targetProfile.user?.isAnonymous
-          ? "can_claim"
-          : "owned_by_other"; // Profile exists but not ours
+        scenario = "owned_by_other"; // Profile exists but not ours
       } else if (userProfile && input.hingeId === userProfile.hingeId) {
         scenario = "same_hingeId"; // Additive update
       } else if (userProfile && targetProfile) {
@@ -243,6 +285,7 @@ export const hingeProfileRouter = {
     .input(
       z.object({
         hingeId: z.string().min(1),
+        uploadId: z.string().uuid(),
         blobUrl: z.string().url(),
         timezone: z.string().optional(),
         country: z.string().optional(),
@@ -260,9 +303,37 @@ export const hingeProfileRouter = {
       }
 
       try {
+        const preparedUpload = await prepareHingeTransientUpload({
+          uploadId: input.uploadId,
+          blobUrl: input.blobUrl,
+          hingeId: input.hingeId,
+          userId: ctx.session.user.id,
+          sessionId: ctx.session.session.id,
+        });
+        if (preparedUpload.committedProfile) {
+          return preparedUpload.committedProfile;
+        }
+
         // Resolve create-vs-update on the server. The client can have stale
         // upload context after a successful upload or a retry.
         const existingByHingeId = await getHingeProfileWithUser(input.hingeId);
+        const existingForUser = existingByHingeId
+          ? null
+          : await ctx.db.query.hingeProfileTable.findFirst({
+              where: eq(hingeProfileTable.userId, ctx.session.user.id),
+              columns: { hingeId: true },
+            });
+        if (existingForUser) {
+          // Do not let a stale/direct create request fall through to the
+          // one-profile-per-user constraint. The merge endpoint verifies the
+          // signup instant and decides between a historical-ID additive update
+          // and a real forward account merge.
+          throw new TRPCError({
+            code: "CONFLICT",
+            message:
+              "You already have a Hinge profile. Refresh the upload step so this export can be merged safely.",
+          });
+        }
         const isExistingProfile = Boolean(existingByHingeId);
         const result = existingByHingeId
           ? await handleExistingHingeProfileUpload({
@@ -272,6 +343,9 @@ export const hingeProfileRouter = {
               currentUserId: ctx.session.user.id,
               timezone: input.timezone,
               country: input.country,
+              consentPhotos: input.consentPhotos ?? true,
+              consentWork: input.consentWork ?? true,
+              transientUpload: preparedUpload.binding,
             })
           : await createHingeProfile({
               hingeId: input.hingeId,
@@ -279,6 +353,9 @@ export const hingeProfileRouter = {
               userId: ctx.session.user.id,
               timezone: input.timezone,
               country: input.country,
+              consentPhotos: input.consentPhotos ?? true,
+              consentWork: input.consentWork ?? true,
+              transientUpload: preparedUpload.binding,
             });
 
         const metrics = {
@@ -293,7 +370,6 @@ export const hingeProfileRouter = {
           jsonSizeMB: result.metrics.jsonSizeMB,
           consentPhotos: input.consentPhotos ?? true,
           consentWork: input.consentWork ?? true,
-          blobUrl: input.blobUrl,
         };
 
         if (isExistingProfile) {
@@ -321,18 +397,17 @@ export const hingeProfileRouter = {
         trackServerEvent(ctx.session.user.id, "hinge_profile_upload_failed", {
           hingeId: input.hingeId,
           ...uploadError,
-          blobUrl: input.blobUrl,
         });
         throw error;
       }
     }),
 
-  // Additive update endpoint for re-uploading data or claiming anonymous profiles
-  // Handles: same_hingeId (additive update) and can_claim (transfer + update)
+  // Additive update endpoint for a profile owned by the current session.
   updateProfile: publicProcedure
     .input(
       z.object({
         hingeId: z.string().min(1),
+        uploadId: z.string().uuid(),
         blobUrl: z.string().url(),
         timezone: z.string().optional(),
         country: z.string().optional(),
@@ -350,6 +425,17 @@ export const hingeProfileRouter = {
       }
 
       try {
+        const preparedUpload = await prepareHingeTransientUpload({
+          uploadId: input.uploadId,
+          blobUrl: input.blobUrl,
+          hingeId: input.hingeId,
+          userId: ctx.session.user.id,
+          sessionId: ctx.session.session.id,
+        });
+        if (preparedUpload.committedProfile) {
+          return preparedUpload.committedProfile;
+        }
+
         // Check if profile exists
         const existingProfile = await getHingeProfileWithUser(input.hingeId);
 
@@ -368,6 +454,9 @@ export const hingeProfileRouter = {
           currentUserId: ctx.session.user.id,
           timezone: input.timezone,
           country: input.country,
+          consentPhotos: input.consentPhotos ?? true,
+          consentWork: input.consentWork ?? true,
+          transientUpload: preparedUpload.binding,
         });
 
         // Skip the event when the same export was re-uploaded (nothing new
@@ -397,7 +486,6 @@ export const hingeProfileRouter = {
         trackServerEvent(ctx.session.user.id, "hinge_profile_upload_failed", {
           hingeId: input.hingeId,
           ...uploadError,
-          blobUrl: input.blobUrl,
         });
         throw error;
       }
@@ -409,6 +497,7 @@ export const hingeProfileRouter = {
     .input(
       z.object({
         hingeId: z.string().min(1),
+        uploadId: z.string().uuid(),
         blobUrl: z.string().url(),
         timezone: z.string().optional(),
         country: z.string().optional(),
@@ -426,9 +515,23 @@ export const hingeProfileRouter = {
       }
 
       try {
+        const preparedUpload = await prepareHingeTransientUpload({
+          uploadId: input.uploadId,
+          blobUrl: input.blobUrl,
+          hingeId: input.hingeId,
+          userId: ctx.session.user.id,
+          sessionId: ctx.session.session.id,
+        });
+        if (preparedUpload.committedProfile) {
+          return preparedUpload.committedProfile;
+        }
+
         // Fetch JSON from blob storage
-        const anonymizedHingeJson =
-          await fetchBlobJson<AnonymizedHingeDataJSON>(input.blobUrl);
+        const anonymizedHingeJson = await fetchVerifiedHingeBlob(
+          input.blobUrl,
+          input.hingeId,
+          { consume: false },
+        );
 
         // Get user's existing profile
         const existingUserProfile =
@@ -438,7 +541,7 @@ export const hingeProfileRouter = {
 
         if (!existingUserProfile) {
           throw new TRPCError({
-            code: "BAD_REQUEST",
+            code: "CONFLICT",
             message:
               "No existing profile found to merge with. Use createProfile instead.",
           });
@@ -446,7 +549,7 @@ export const hingeProfileRouter = {
 
         if (existingUserProfile.hingeId === input.hingeId) {
           throw new TRPCError({
-            code: "BAD_REQUEST",
+            code: "CONFLICT",
             message:
               "Cannot merge profile with itself. Use updateProfile instead.",
           });
@@ -457,6 +560,53 @@ export const hingeProfileRouter = {
         const newSignupTime = new Date(
           anonymizedHingeJson.User.account.signup_time,
         );
+
+        if (
+          isSameHingeAccountSignup(
+            existingUserProfile.createDate,
+            newSignupTime,
+          )
+        ) {
+          // REVIEW(provider assumption): Exact signup equality is our best
+          // same-account proof because Hinge exports have no durable account
+          // ID. Keep the historical public SwipeStats ID stable and perform a
+          // deduplicating additive update instead of duplicating every thread
+          // through the cross-account merge path.
+          console.log(
+            `Additive update across Hinge ID versions: ${input.hingeId} → ${existingUserProfile.hingeId}`,
+          );
+          const result = await additiveUpdateHingeProfile({
+            hingeId: existingUserProfile.hingeId,
+            blobUrl: input.blobUrl,
+            userId: ctx.session.user.id,
+            timezone: input.timezone,
+            country: input.country,
+            consentPhotos: input.consentPhotos ?? true,
+            consentWork: input.consentWork ?? true,
+            verifiedJson: anonymizedHingeJson,
+            transientUpload: preparedUpload.binding,
+          });
+
+          if (!result.isNoOp) {
+            trackServerEvent(ctx.session.user.id, "hinge_profile_updated", {
+              hingeId: existingUserProfile.hingeId,
+              incomingHingeId: input.hingeId,
+              historicalIdVersion: true,
+              matchCount: result.metrics.matchCount,
+              messageCount: result.metrics.messageCount,
+              photoCount: result.metrics.photoCount,
+              promptCount: result.metrics.promptCount,
+              interactionCount: result.metrics.interactionCount,
+              hasPhotos: result.metrics.hasPhotos,
+              processingTimeMs: result.metrics.processingTimeMs,
+              jsonSizeMB: result.metrics.jsonSizeMB,
+              consentPhotos: input.consentPhotos ?? true,
+              consentWork: input.consentWork ?? true,
+            });
+          }
+
+          return result.profile;
+        }
 
         if (newSignupTime < existingUserProfile.createDate) {
           console.log(
@@ -481,6 +631,10 @@ export const hingeProfileRouter = {
           userId: ctx.session.user.id,
           timezone: input.timezone,
           country: input.country,
+          consentPhotos: input.consentPhotos ?? true,
+          consentWork: input.consentWork ?? true,
+          verifiedJson: anonymizedHingeJson,
+          transientUpload: preparedUpload.binding,
         });
 
         trackServerEvent(ctx.session.user.id, "hinge_profile_merged", {
@@ -507,7 +661,6 @@ export const hingeProfileRouter = {
         trackServerEvent(ctx.session.user.id, "hinge_profile_upload_failed", {
           hingeId: input.hingeId,
           ...uploadError,
-          blobUrl: input.blobUrl,
         });
         throw error;
       }
@@ -519,6 +672,7 @@ export const hingeProfileRouter = {
     .input(
       z.object({
         hingeId: z.string().min(1),
+        uploadId: z.string().uuid(),
         blobUrl: z.string().url(),
         timezone: z.string().optional(),
         country: z.string().optional(),
@@ -531,6 +685,17 @@ export const hingeProfileRouter = {
           code: "UNAUTHORIZED",
           message: "Session required. Please sign in to upload your profile.",
         });
+      }
+
+      const preparedUpload = await prepareHingeTransientUpload({
+        uploadId: input.uploadId,
+        blobUrl: input.blobUrl,
+        hingeId: input.hingeId,
+        userId: ctx.session.user.id,
+        sessionId: ctx.session.session.id,
+      });
+      if (preparedUpload.committedProfile) {
+        return preparedUpload.committedProfile;
       }
 
       // Check if profile already exists
@@ -552,6 +717,7 @@ export const hingeProfileRouter = {
           userId: ctx.session.user.id,
           timezone: input.timezone,
           country: input.country,
+          transientUpload: preparedUpload.binding,
         });
 
         // Track success with rich metrics
@@ -578,7 +744,6 @@ export const hingeProfileRouter = {
         trackServerEvent(ctx.session.user.id, "hinge_profile_upload_failed", {
           hingeId: input.hingeId,
           ...uploadError,
-          blobUrl: input.blobUrl,
         });
         throw error;
       }
@@ -590,6 +755,7 @@ export const hingeProfileRouter = {
     .input(
       z.object({
         hingeId: z.string().min(1),
+        uploadId: z.string().uuid(),
         blobUrl: z.string().url(),
         timezone: z.string().optional(),
         country: z.string().optional(),
@@ -602,6 +768,17 @@ export const hingeProfileRouter = {
           code: "UNAUTHORIZED",
           message: "Session required. Please sign in to update your profile.",
         });
+      }
+
+      const preparedUpload = await prepareHingeTransientUpload({
+        uploadId: input.uploadId,
+        blobUrl: input.blobUrl,
+        hingeId: input.hingeId,
+        userId: ctx.session.user.id,
+        sessionId: ctx.session.session.id,
+      });
+      if (preparedUpload.committedProfile) {
+        return preparedUpload.committedProfile;
       }
 
       // Check if profile exists
@@ -632,6 +809,7 @@ export const hingeProfileRouter = {
           userId: ctx.session.user.id,
           timezone: input.timezone,
           country: input.country,
+          transientUpload: preparedUpload.binding,
         });
 
         // Track success with rich metrics — skip when the same export was
@@ -661,7 +839,6 @@ export const hingeProfileRouter = {
         trackServerEvent(ctx.session.user.id, "hinge_profile_upload_failed", {
           hingeId: input.hingeId,
           ...uploadError,
-          blobUrl: input.blobUrl,
         });
         throw error;
       }

@@ -20,18 +20,14 @@ export function mapTinderGender(gender: TinderJsonGender): Gender {
  */
 export function mapHingeGender(hingeGender: string): Gender {
   const genderMap: Record<string, Gender> = {
-    // From profile.gender_identity (title case)
-    Man: "MALE",
-    Woman: "FEMALE",
-    Nonbinary: "OTHER",
-    "Non-binary": "OTHER",
-    // From profile.gender (lowercase)
+    man: "MALE",
     male: "MALE",
+    woman: "FEMALE",
     female: "FEMALE",
     nonbinary: "OTHER",
     "non-binary": "OTHER",
   };
-  return genderMap[hingeGender] ?? "UNKNOWN";
+  return genderMap[hingeGender.trim().toLowerCase()] ?? "UNKNOWN";
 }
 
 /**

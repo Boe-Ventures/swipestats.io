@@ -19,7 +19,7 @@ import {
   getBrowserTimezone,
   getCountryFromTimezone,
 } from "@/lib/utils/timezone";
-import { getFirstAndLastDayOnApp } from "@/lib/profile.utils";
+import { getTinderObservedUsageRange } from "@/lib/profile.utils";
 import { env } from "@/env";
 
 interface TinderUploadPageProps {
@@ -87,8 +87,8 @@ export function TinderUploadPage({ isUpdate, isDebug }: TinderUploadPageProps) {
     ) {
       return false;
     }
-    const newFileDates = getFirstAndLastDayOnApp(
-      payload.anonymizedTinderJson.Usage.app_opens,
+    const newFileDates = getTinderObservedUsageRange(
+      payload.anonymizedTinderJson.Usage,
     );
     const existingLastDay = new Date(uploadContext.userProfile.lastDayOnApp);
     return newFileDates.lastDayOnApp < existingLastDay;
@@ -281,8 +281,8 @@ export function TinderUploadPage({ isUpdate, isDebug }: TinderUploadPageProps) {
                     ).toLocaleDateString()}
                     <br />
                     This file ends:{" "}
-                    {getFirstAndLastDayOnApp(
-                      payload.anonymizedTinderJson.Usage.app_opens,
+                    {getTinderObservedUsageRange(
+                      payload.anonymizedTinderJson.Usage,
                     ).lastDayOnApp.toLocaleDateString()}
                   </p>
                 )}

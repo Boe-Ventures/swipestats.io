@@ -9,6 +9,7 @@ import {
   getObservedDateRange,
   type SwipeRankResult,
 } from "./queries";
+import { SWIPE_RANK_METRIC_VERSION } from "@/server/services/swipe-rank/constants";
 
 const args = process.argv.slice(2);
 
@@ -87,7 +88,7 @@ function printHumanResults(results: SwipeRankResult[]): void {
   );
   console.log(`As of: ${first.asOf}`);
   console.log(
-    "Metric: observed matches / swipe likes. This is a flow ratio and can exceed 100%.",
+    "Metric: observed matches / recorded right swipes from Tinder's aggregate activity ledger.",
   );
 
   for (const result of results) {
@@ -97,7 +98,7 @@ function printHumanResults(results: SwipeRankResult[]): void {
         `${formatNumber(result.stats.matches)} matches, ` +
         `${formatNumber(result.stats.activeDays)} active days`,
     );
-    console.log(`  Match rate: ${formatRate(result.stats.matchRate)}`);
+    console.log(`  Match yield: ${formatRate(result.stats.matchRate)}`);
     console.log(
       `  Eligibility: ${result.eligible ? "eligible" : "not eligible"} ` +
         `(minimum ${formatNumber(result.eligibility.minLikes)} likes and ` +
@@ -164,7 +165,7 @@ async function main(): Promise<void> {
     console.log(
       JSON.stringify(
         {
-          metricVersion: "swipe-rank-match-rate-v1",
+          metricVersion: SWIPE_RANK_METRIC_VERSION,
           provisional: true,
           results,
         },

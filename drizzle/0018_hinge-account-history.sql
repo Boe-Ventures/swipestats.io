@@ -1,0 +1,2 @@
+ALTER TABLE "hinge_profile" ADD COLUMN "first_account_create_date" timestamp;--> statement-breakpoint
+ALTER TABLE "hinge_profile" ADD CONSTRAINT "hinge_profile_account_signup_order" CHECK ("hinge_profile"."first_account_create_date" IS NULL OR "hinge_profile"."first_account_create_date" <= "hinge_profile"."create_date");

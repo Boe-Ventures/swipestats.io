@@ -3,6 +3,8 @@ import { z } from "zod";
 import type { ResourceType } from "@/server/db/schema";
 
 const PROFILE_ID_PATTERN = /^[a-f0-9]{64}$/;
+const TRANSIENT_UPLOAD_ID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const SAFE_FILENAME_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,119}$/;
 const ISO_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const MAX_CLIENT_PAYLOAD_LENGTH = 2_048;
@@ -27,12 +29,14 @@ const clientUploadContextSchema = z.discriminatedUnion("resourceType", [
     .object({
       resourceType: z.literal("tinder_data"),
       tinderId: profileIdSchema,
+      uploadId: z.string().regex(TRANSIENT_UPLOAD_ID_PATTERN),
     })
     .strict(),
   z
     .object({
       resourceType: z.literal("hinge_data"),
       hingeId: profileIdSchema,
+      uploadId: z.string().regex(TRANSIENT_UPLOAD_ID_PATTERN),
     })
     .strict(),
   z
@@ -60,6 +64,11 @@ export interface ClientUploadPolicy {
   validUntil: number;
   addRandomSuffix: true;
   tokenPayload: string;
+  transientUpload?: {
+    id: string;
+    profileId: string;
+    expectedPathname: string;
+  };
 }
 
 function parseContext(clientPayload: string | null): ClientUploadContext {
@@ -103,6 +112,7 @@ function assertDataPathname(
   pathname: string,
   prefix: string,
   profileId: string,
+  uploadId?: string,
 ): void {
   const parts = pathname.split("/");
   if (
@@ -110,7 +120,7 @@ function assertDataPathname(
     parts[0] !== prefix ||
     parts[1] !== profileId ||
     !parts[2] ||
-    !isRealIsoDate(parts[2]) ||
+    (uploadId ? parts[2] !== uploadId : !isRealIsoDate(parts[2])) ||
     parts[3] !== "data.json"
   ) {
     throw new Error("Upload pathname is invalid");
@@ -152,17 +162,38 @@ export function resolveClientUploadPolicy(input: {
   let allowedContentTypes: string[];
   let maximumSizeInBytes: number;
   let resourceId: string | undefined;
+  let transientUpload: ClientUploadPolicy["transientUpload"];
 
   switch (context.resourceType) {
     case "tinder_data":
-      assertDataPathname(input.pathname, "tinder-data", context.tinderId);
+      assertDataPathname(
+        input.pathname,
+        "tinder-data",
+        context.tinderId,
+        context.uploadId,
+      );
       allowedContentTypes = [...DATA_CONTENT_TYPES];
       maximumSizeInBytes = CLIENT_UPLOAD_LIMITS.dataExportBytes;
+      transientUpload = {
+        id: context.uploadId,
+        profileId: context.tinderId,
+        expectedPathname: input.pathname,
+      };
       break;
     case "hinge_data":
-      assertDataPathname(input.pathname, "hinge-data", context.hingeId);
+      assertDataPathname(
+        input.pathname,
+        "hinge-data",
+        context.hingeId,
+        context.uploadId,
+      );
       allowedContentTypes = [...DATA_CONTENT_TYPES];
       maximumSizeInBytes = CLIENT_UPLOAD_LIMITS.dataExportBytes;
+      transientUpload = {
+        id: context.uploadId,
+        profileId: context.hingeId,
+        expectedPathname: input.pathname,
+      };
       break;
     case "raya_data":
       assertDataPathname(input.pathname, "raya-data", context.rayaId);
@@ -187,8 +218,16 @@ export function resolveClientUploadPolicy(input: {
     tokenPayload: JSON.stringify({
       userId: input.userId,
       resourceType: context.resourceType,
+      ...(transientUpload
+        ? {
+            uploadId: transientUpload.id,
+            profileId: transientUpload.profileId,
+            expectedPathname: transientUpload.expectedPathname,
+          }
+        : {}),
       ...(resourceId ? { resourceId } : {}),
     }),
+    ...(transientUpload ? { transientUpload } : {}),
   };
 }
 

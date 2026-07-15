@@ -17,10 +17,10 @@ export type RoastOutput = StatsRoastResult;
 /**
  * One metric's standing vs the user's cohort. The roast uses these so it knows
  * what's actually good vs bad — otherwise it dunks on elite numbers as if they
- * were failures (e.g. a top-10% match rate read as "a coin flip").
+ * were failures (e.g. a top-10% match yield read as "a coin flip").
  */
 export interface RoastBenchmark {
-  /** Human metric name, e.g. "Match rate". */
+  /** Human metric name, e.g. "Match yield". */
   label: string;
   /** Formatted value as shown to the user, e.g. "19.9%". */
   valueLabel: string;
@@ -79,7 +79,7 @@ function percentileBucket(
 
 /**
  * Turn a user's ProfileMeta + their cohort's percentile distribution into the
- * handful of benchmarks the roast cares about (match rate, like rate, activity).
+ * handful of benchmarks the roast cares about (match yield, like rate, activity).
  * Skips any metric the cohort has no distribution for.
  */
 export function buildRoastBenchmarks(
@@ -98,7 +98,7 @@ export function buildRoastBenchmarks(
   });
   if (matchBucket) {
     out.push({
-      label: "Match rate",
+      label: "Match yield",
       valueLabel: `${(profileMeta.matchRate * 100).toFixed(1)}%`,
       bucket: matchBucket,
       cohortLabel,
@@ -153,7 +153,7 @@ export async function generateRoast(input: RoastInput): Promise<RoastOutput> {
 
   const matchRatePct = (profileMeta.matchRate * 100).toFixed(1);
   const likeRatePct = (profileMeta.likeRate * 100).toFixed(1);
-  const ghostRatePct =
+  const notMessagedRatePct =
     profileMeta.conversationCount > 0
       ? (
           (profileMeta.ghostedCount / profileMeta.conversationCount) *
@@ -170,7 +170,7 @@ ${benchmarks
   .map((b) => `- ${b.label}: ${b.valueLabel} — ${b.bucket} of their cohort`)
   .join("\n")}
 
-CRITICAL: do NOT roast strong numbers as if they were bad. A top-10%/top-25% stat is genuinely impressive — acknowledge it. The funniest, sharpest roast targets the CONTRADICTIONS (e.g. elite match rate but ghosts most matches; tons of matches but barely messages), not the good stats themselves.`
+CRITICAL: do NOT roast strong numbers as if they were bad. A top-10%/top-25% stat is genuinely impressive — acknowledge it. The funniest, sharpest roast targets the CONTRADICTIONS (e.g. elite match yield but few matches messaged; tons of matches but barely messages), not the good stats themselves.`
       : `\n(No cohort benchmark available — judge the numbers on their own merits and avoid assuming a number is "bad" without context.)`;
 
   const prompt = `You are ${TONE_PERSONA[tone]}
@@ -180,16 +180,16 @@ You have someone's ${providerName} dating app statistics and your job is to roas
 Here are their stats:
 - Total swipes: ${totalSwipes.toLocaleString()} (${profileMeta.swipeLikesTotal.toLocaleString()} likes, ${profileMeta.swipePassesTotal.toLocaleString()} passes)
 - Like rate (how often they swipe right): ${likeRatePct}%
-- Match rate (matches per like sent): ${matchRatePct}%
+- Match yield (matches per recorded right swipe): ${matchRatePct}%
 - Total matches: ${profileMeta.matchesTotal.toLocaleString()}
 - Days active on app: ${profileMeta.daysActive}
 - Swipes per active day: ${profileMeta.swipesPerDay.toFixed(1)}
 - Total app opens: ${profileMeta.appOpensTotal.toLocaleString()}
-- Messages sent: ${profileMeta.messagesSentTotal.toLocaleString()}
-- Messages received: ${profileMeta.messagesReceivedTotal.toLocaleString()}
-- Conversations started: ${profileMeta.conversationsWithMessages}
-- Ghosted matches (no messages ever): ${profileMeta.ghostedCount} (${ghostRatePct}% ghost rate)
-- Avg messages per conversation: ${profileMeta.averageMessagesPerConversation?.toFixed(1) ?? "N/A"}
+- Messages sent (daily Usage aggregate): ${profileMeta.messagesSentTotal.toLocaleString()}
+- Messages received (daily Usage aggregate): ${profileMeta.messagesReceivedTotal.toLocaleString()}
+- Conversation records with an exported message: ${profileMeta.conversationsWithMessages}
+- Matches with no exported messages from the uploader: ${profileMeta.ghostedCount} (${notMessagedRatePct}% not messaged)
+- Avg exported messages per messaged record: ${profileMeta.averageMessagesPerConversation?.toFixed(1) ?? "N/A"}
 ${gender ? `- Gender: ${gender}` : ""}
 ${benchmarkBlock}
 
@@ -198,8 +198,9 @@ Roast rules:
 2. Draw absurd but accurate conclusions from the data
 3. Compare to relatable everyday things (e.g., "you've spent more time on ${providerName} than...")
 4. Keep each line to ONE punchy sentence under 140 characters — no rambling
-5. Vary the angle across the lines (pickiness, match rate, ghosting, app addiction, messaging)
-6. Make the headline the single sharpest, most shareable line
+5. Vary the angle across the lines (pickiness, match yield, matches not messaged, app addiction, messaging)
+6. Never infer replies or ghosting: Tinder exports only the uploader's message bodies
+7. Make the headline the single sharpest, most shareable line
 
 For the "Real Talk" insights, be genuinely helpful — what would actually move the needle for someone with these stats and this ranking?`;
 

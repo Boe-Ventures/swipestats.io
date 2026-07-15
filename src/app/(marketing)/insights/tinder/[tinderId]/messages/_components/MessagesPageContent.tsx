@@ -48,8 +48,8 @@ export function MessagesPageContent() {
             Messages & Conversations
           </h1>
           <p className="text-muted-foreground text-base sm:text-lg">
-            See where you kept the conversation going, based on the messages you
-            sent.
+            Explore the outgoing-message patterns retained in your Tinder
+            export.
           </p>
         </div>
 

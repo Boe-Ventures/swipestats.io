@@ -1,6 +1,8 @@
-import { eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
+import { formatDistance } from "date-fns";
 
 import type { AnonymizedTinderDataJSON } from "@/lib/interfaces/TinderDataJSON";
+import { normalizeTinderUsageDateKey } from "@/lib/profile.utils";
 import { assertTinderProfileIdMatchesExport } from "@/lib/upload/tinder-profile-id";
 import { withTransaction, type TransactionClient } from "@/server/db";
 import {
@@ -13,46 +15,275 @@ import {
   tinderUsageTable,
   customDataTable,
   type MatchInsert,
+  type MediaInsert,
+  type Message,
   type MessageInsert,
+  type TinderUsage,
   type TinderUsageInsert,
 } from "@/server/db/schema";
 import { createId } from "@/server/db/utils";
 import { computeProfileMeta } from "./meta.service";
-import { createMessagesAndMatches } from "./messages.service";
+import {
+  computeTinderMatchDerivedMetrics,
+  createMessagesAndMatches,
+  type TinderMatchDerivedMetrics,
+} from "./messages.service";
 import { transformTinderJsonToProfile } from "./transform.service";
-import { loadVerifiedAnonymizedTinderData } from "./validation.service";
-import { createUsageRecords } from "./usage.service";
+import {
+  assertTinderDataMatchesConsent,
+  loadVerifiedAnonymizedTinderData,
+  tinderBirthDatesMatch,
+} from "./validation.service";
+import {
+  createUsageRecords,
+  getTinderUsageMetricPresence,
+  type TinderUsageMetricPresence,
+} from "./usage.service";
 import {
   type TinderProfileResult,
   transformTinderPhotosToMedia,
 } from "./profile.service";
 import {
+  lockTinderProfileUploadInTx,
   lockTinderSwipeRankMutationsInTx,
   purgeTinderSwipeRankProfilesInTx,
   scheduleTinderSwipeRankRefresh,
 } from "../swipe-rank/lifecycle.service";
 import { invalidatePublicSwipeRankCache } from "../swipe-rank/public-cache";
+import {
+  cleanupCommittedTransientUpload,
+  lockTransientUploadForMutationInTx,
+  markTransientUploadCommittedInTx,
+  type TransientUploadBinding,
+} from "../transient-upload.service";
+
+const POSTGRES_INTEGER_MAX = 2_147_483_647;
+
+type TinderCreateDateSnapshot = {
+  createDate: Date;
+  createDateSource: "PROVIDER" | "INFERRED_FROM_USAGE" | null;
+};
+
+type TinderCreateDateCandidate = {
+  createDate: Date;
+  createDateSource?: "PROVIDER" | "INFERRED_FROM_USAGE" | null;
+};
+
+/** Keep a stronger stored signup claim when a later export only infers one. */
+export function reconcileTinderCreateDateSnapshot(
+  existing: TinderCreateDateSnapshot,
+  incoming: TinderCreateDateCandidate,
+): TinderCreateDateSnapshot {
+  if (incoming.createDateSource === "PROVIDER") {
+    return { createDate: incoming.createDate, createDateSource: "PROVIDER" };
+  }
+  if (
+    existing.createDateSource === "INFERRED_FROM_USAGE" &&
+    incoming.createDateSource === "INFERRED_FROM_USAGE"
+  ) {
+    return {
+      createDate: incoming.createDate,
+      createDateSource: "INFERRED_FROM_USAGE",
+    };
+  }
+
+  // REVIEW(provider assumption): an inferred earliest-usage date is weaker
+  // evidence than a provider signup timestamp. Legacy null provenance is also
+  // intentionally preserved because we cannot prove how that date originated.
+  return existing;
+}
 
 /**
  * Helper: Upsert usage records in transaction
- * Newer exports always have the most complete data - just overwrite on conflict
- * Returns the count of records processed
+ * REVIEW(provider assumption): A category included in a newer Tinder export
+ * is complete for each touched day. A category omitted from the export is
+ * unknown and must retain the previously stored value.
+ * Returns the count of inserted or materially changed records.
  */
+export function mergeTinderUsageRow(
+  existing: TinderUsage | undefined,
+  incoming: TinderUsageInsert,
+  presence: TinderUsageMetricPresence,
+): TinderUsageInsert {
+  if (!existing) return incoming;
+
+  const swipeLikes = presence.swipeLikes
+    ? incoming.swipeLikes
+    : existing.swipeLikes;
+  const swipePasses = presence.swipePasses
+    ? incoming.swipePasses
+    : existing.swipePasses;
+  const swipeSuperLikes = presence.superLikes
+    ? incoming.swipeSuperLikes
+    : existing.swipeSuperLikes;
+  const matches = presence.matches ? incoming.matches : existing.matches;
+  const messagesSent = presence.messagesSent
+    ? incoming.messagesSent
+    : existing.messagesSent;
+  const messagesReceived = presence.messagesReceived
+    ? incoming.messagesReceived
+    : existing.messagesReceived;
+  const swipesCombined = swipeLikes + swipePasses;
+  if (swipesCombined > POSTGRES_INTEGER_MAX) {
+    throw new Error(
+      "Merged Tinder likes plus passes exceed the database integer range.",
+    );
+  }
+
+  return {
+    ...incoming,
+    swipeLikes,
+    swipePasses,
+    swipeSuperLikes,
+    matches,
+    messagesSent,
+    messagesReceived,
+    swipesCombined,
+    matchRate: swipeLikes > 0 ? matches / swipeLikes : 0,
+    likeRate: swipesCombined > 0 ? swipeLikes / swipesCombined : 0,
+    messagesSentRate:
+      messagesSent + messagesReceived > 0
+        ? messagesSent / (messagesSent + messagesReceived)
+        : 0,
+    responseRate: messagesReceived > 0 ? messagesSent / messagesReceived : 0,
+    engagementRate:
+      incoming.appOpens > 0
+        ? (swipeLikes + swipePasses + messagesSent) / incoming.appOpens
+        : 0,
+  };
+}
+
+export function planTinderMediaReconciliation(
+  existingUrls: Iterable<string>,
+  incoming: MediaInsert[],
+  consentPhotos: boolean,
+): {
+  removeExisting: boolean;
+  rowsToInsert: MediaInsert[];
+  hasPhotosAfter: boolean;
+} {
+  if (!consentPhotos) {
+    return { removeExisting: true, rowsToInsert: [], hasPhotosAfter: false };
+  }
+
+  const knownUrls = new Set(existingUrls);
+  const rowsToInsert = incoming.filter((photo) => {
+    if (knownUrls.has(photo.url)) return false;
+    knownUrls.add(photo.url);
+    return true;
+  });
+  return {
+    removeExisting: false,
+    rowsToInsert,
+    hasPhotosAfter: knownUrls.size > 0,
+  };
+}
+
+/**
+ * Resolve touched usage rows by Tinder's canonical calendar-day key before any
+ * mutation occurs. Legacy SWIPESTATS_3 rows can use an ISO timestamp as their
+ * primary-key component; merging against only the new `YYYY-MM-DD` key would
+ * discard omitted metrics when that legacy row is deleted.
+ *
+ * REVIEW(provider assumption): Different raw usage keys that normalize to the
+ * same Tinder calendar day are ambiguous source buckets. Refuse the upload
+ * instead of guessing whether they are duplicates or should be summed.
+ */
+export function planTinderUsageReconciliation(
+  existingRows: TinderUsage[],
+  newUsage: TinderUsageInsert[],
+  presence: TinderUsageMetricPresence,
+): {
+  rowsToUpsert: TinderUsageInsert[];
+  legacyDateKeysToDelete: string[];
+} {
+  const incomingByCanonicalDate = new Map<string, TinderUsageInsert>();
+
+  for (const row of newUsage) {
+    const canonicalDate = normalizeTinderUsageDateKey(row.dateStampRaw);
+    if (incomingByCanonicalDate.has(canonicalDate)) {
+      throw new Error(
+        `Multiple incoming Tinder usage keys resolve to ${canonicalDate}`,
+      );
+    }
+    incomingByCanonicalDate.set(canonicalDate, {
+      ...row,
+      dateStampRaw: canonicalDate,
+      dateStamp: new Date(`${canonicalDate}T00:00:00.000Z`),
+    });
+  }
+
+  const existingByCanonicalDate = new Map<string, TinderUsage[]>();
+  for (const row of existingRows) {
+    const canonicalDate = normalizeTinderUsageDateKey(row.dateStampRaw);
+    if (!incomingByCanonicalDate.has(canonicalDate)) continue;
+
+    const rowsForDay = existingByCanonicalDate.get(canonicalDate) ?? [];
+    rowsForDay.push(row);
+    existingByCanonicalDate.set(canonicalDate, rowsForDay);
+  }
+
+  const legacyDateKeysToDelete: string[] = [];
+  const rowsToUpsert = [...incomingByCanonicalDate.entries()].map(
+    ([canonicalDate, incoming]) => {
+      const existingForDay = existingByCanonicalDate.get(canonicalDate) ?? [];
+      if (existingForDay.length > 1) {
+        const rawKeys = existingForDay
+          .map((row) => row.dateStampRaw)
+          .sort((a, b) => a.localeCompare(b));
+        throw new Error(
+          `Multiple stored Tinder usage keys resolve to ${canonicalDate}: ${rawKeys.join(", ")}`,
+        );
+      }
+
+      const existing = existingForDay[0];
+      if (existing && existing.dateStampRaw !== canonicalDate) {
+        legacyDateKeysToDelete.push(existing.dateStampRaw);
+      }
+      return mergeTinderUsageRow(existing, incoming, presence);
+    },
+  );
+
+  return { rowsToUpsert, legacyDateKeysToDelete };
+}
+
 async function upsertUsageRecordsInTx(
   tx: TransactionClient,
   tinderId: string,
   newUsage: TinderUsageInsert[],
+  presence: TinderUsageMetricPresence,
 ): Promise<number> {
   if (newUsage.length === 0) {
     return 0;
   }
 
+  // Load full touched candidates before removing any legacy raw key. The
+  // planner needs those values to preserve categories omitted by this export.
+  const existingRows = await tx.query.tinderUsageTable.findMany({
+    where: eq(tinderUsageTable.tinderProfileId, tinderId),
+  });
+  const { rowsToUpsert, legacyDateKeysToDelete } =
+    planTinderUsageReconciliation(existingRows, newUsage, presence);
+
+  if (legacyDateKeysToDelete.length > 0) {
+    await tx
+      .delete(tinderUsageTable)
+      .where(
+        and(
+          eq(tinderUsageTable.tinderProfileId, tinderId),
+          inArray(tinderUsageTable.dateStampRaw, legacyDateKeysToDelete),
+        ),
+      );
+  }
+
+  const mergedUsage = rowsToUpsert;
+
   let usageInserted = 0;
   const BATCH_SIZE = 500;
 
-  for (let i = 0; i < newUsage.length; i += BATCH_SIZE) {
-    const batch = newUsage.slice(i, i + BATCH_SIZE);
-    await tx
+  for (let i = 0; i < mergedUsage.length; i += BATCH_SIZE) {
+    const batch = mergedUsage.slice(i, i + BATCH_SIZE);
+    const changedRows = await tx
       .insert(tinderUsageTable)
       .values(batch)
       .onConflictDoUpdate({
@@ -62,6 +293,7 @@ async function upsertUsageRecordsInTx(
         ],
         set: {
           // Newer export has most complete data - just overwrite
+          dateStamp: sql`excluded.date_stamp`,
           appOpens: sql`excluded.app_opens`,
           swipeLikes: sql`excluded.swipe_likes`,
           swipePasses: sql`excluded.swipe_passes`,
@@ -77,8 +309,44 @@ async function upsertUsageRecordsInTx(
           engagementRate: sql`excluded.engagement_rate`,
           userAgeThisDay: sql`excluded.user_age_this_day`,
         },
-      });
-    usageInserted += batch.length;
+        setWhere: sql`
+          ROW(
+            app_opens,
+            swipe_likes,
+            swipe_passes,
+            swipe_super_likes,
+            matches,
+            messages_sent,
+            messages_received,
+            swipes_combined,
+            match_rate,
+            like_rate,
+            messages_sent_rate,
+            response_rate,
+            engagement_rate,
+            user_age_this_day,
+            date_stamp
+          ) IS DISTINCT FROM ROW(
+            excluded.app_opens,
+            excluded.swipe_likes,
+            excluded.swipe_passes,
+            excluded.swipe_super_likes,
+            excluded.matches,
+            excluded.messages_sent,
+            excluded.messages_received,
+            excluded.swipes_combined,
+            excluded.match_rate,
+            excluded.like_rate,
+            excluded.messages_sent_rate,
+            excluded.response_rate,
+            excluded.engagement_rate,
+            excluded.user_age_this_day,
+            excluded.date_stamp
+          )
+        `,
+      })
+      .returning({ dateStampRaw: tinderUsageTable.dateStampRaw });
+    usageInserted += changedRows.length;
   }
 
   return usageInserted;
@@ -97,23 +365,17 @@ async function syncObservedUsageRangeInTx(
   await tx.execute(sql`
     UPDATE tinder_profile AS profile
     SET
-      first_day_on_app = least(profile.first_day_on_app, bounds.first_day),
-      last_day_on_app = greatest(profile.last_day_on_app, bounds.last_day),
+      first_day_on_app = bounds.first_day,
+      last_day_on_app = bounds.last_day,
       days_in_profile_period =
-        (
-          greatest(profile.last_day_on_app::date, bounds.last_day::date) -
-          least(profile.first_day_on_app::date, bounds.first_day::date)
-        ) + 1,
+        (bounds.last_day::date - bounds.first_day::date) + 1,
       age_at_last_usage = extract(
-        year FROM age(
-          greatest(profile.last_day_on_app::date, bounds.last_day::date),
-          profile.birth_date
-        )
+        year FROM age(bounds.last_day::date, profile.birth_date::date)
       )::int
     FROM (
       SELECT
-        min(date_stamp) AS first_day,
-        max(date_stamp) AS last_day
+        min(left(date_stamp_raw, 10)::date)::timestamp AS first_day,
+        max(left(date_stamp_raw, 10)::date)::timestamp AS last_day
       FROM tinder_usage
       WHERE tinder_profile_id = ${tinderId}
     ) AS bounds
@@ -189,13 +451,35 @@ export async function absorbProfileIntoNew(data: {
   userId: string;
   timezone?: string;
   country?: string;
+  consentPhotos?: boolean;
+  consentWork?: boolean;
+  consumeBlob?: boolean;
+  verifiedTinderJson?: AnonymizedTinderDataJSON;
+  transientUpload?: TransientUploadBinding;
 }): Promise<TinderProfileResult> {
   const startTime = Date.now();
 
-  const anonymizedTinderJson = await loadVerifiedAnonymizedTinderData(
-    data.blobUrl,
-    data.newTinderId,
-  );
+  const anonymizedTinderJson =
+    data.verifiedTinderJson ??
+    (await loadVerifiedAnonymizedTinderData(
+      data.blobUrl,
+      data.newTinderId,
+      {
+        photos: data.consentPhotos ?? true,
+        work: data.consentWork ?? true,
+      },
+      { consume: data.consumeBlob ?? false },
+    ));
+  if (data.verifiedTinderJson) {
+    await assertTinderProfileIdMatchesExport(
+      data.newTinderId,
+      data.verifiedTinderJson,
+    );
+    assertTinderDataMatchesConsent(data.verifiedTinderJson, {
+      photos: data.consentPhotos ?? true,
+      work: data.consentWork ?? true,
+    });
+  }
 
   console.log(
     `\n🔄 Cross-account merge: ${data.oldTinderId} → ${data.newTinderId}`,
@@ -203,11 +487,24 @@ export async function absorbProfileIntoNew(data: {
   console.log(`   User ID: ${data.userId}`);
 
   const jsonString = JSON.stringify(anonymizedTinderJson);
-  const jsonSizeMB = (jsonString.length / 1024 / 1024).toFixed(2);
+  const jsonSizeMB = (
+    Buffer.byteLength(jsonString, "utf8") /
+    1024 /
+    1024
+  ).toFixed(2);
   console.log(`   JSON size: ${jsonSizeMB} MB`);
 
   const profile = await withTransaction(async (tx) => {
+    await lockTransientUploadForMutationInTx(tx, data.transientUpload);
     await lockTinderSwipeRankMutationsInTx(tx);
+    // Cross-account merges touch two profile identities. Sort the lock keys so
+    // concurrent merges cannot deadlock while moving rows between accounts.
+    for (const tinderId of [data.oldTinderId, data.newTinderId].sort((a, b) =>
+      a.localeCompare(b),
+    )) {
+      await lockTinderProfileUploadInTx(tx, tinderId);
+    }
+    await syncObservedUsageRangeInTx(tx, data.oldTinderId);
     // 1. Get old profile to compute combined date range
     const fetchOldStart = Date.now();
     const oldProfile = await tx.query.tinderProfileTable.findFirst({
@@ -216,6 +513,30 @@ export async function absorbProfileIntoNew(data: {
 
     if (!oldProfile) {
       throw new Error(`Old profile not found: ${data.oldTinderId}`);
+    }
+    if (oldProfile.userId !== data.userId) {
+      throw new Error(
+        "Cross-account merge rejected: the source profile is no longer owned by this user.",
+      );
+    }
+    const existingTargetProfile = await tx.query.tinderProfileTable.findFirst({
+      where: eq(tinderProfileTable.tinderId, data.newTinderId),
+      columns: { tinderId: true },
+    });
+    if (existingTargetProfile) {
+      throw new Error(
+        "Cross-account merge rejected: the target profile already exists.",
+      );
+    }
+    if (
+      !tinderBirthDatesMatch(
+        oldProfile.birthDate,
+        anonymizedTinderJson.User.birth_date,
+      )
+    ) {
+      throw new Error(
+        "Cross-account merge rejected: the incoming export has a different birth date.",
+      );
     }
     console.log(`   ✓ Fetched old profile (${Date.now() - fetchOldStart}ms)`);
     console.log(
@@ -246,8 +567,11 @@ export async function absorbProfileIntoNew(data: {
       `   New profile range: ${newProfileData.firstDayOnApp.toISOString().split("T")[0]} → ${newProfileData.lastDayOnApp.toISOString().split("T")[0]}`,
     );
 
-    // Validate no overlap in date ranges
-    // Old account should end before new account starts
+    // REVIEW(provider assumption): account replacement is represented as two
+    // sequential, non-overlapping usage histories. If Tinder can keep two
+    // accounts active on the same calendar day, that case needs an explicit
+    // account-membership model rather than silently merging their day buckets.
+    // Until then, quarantine overlapping ranges instead of adding their counts.
     if (oldProfile.lastDayOnApp >= newProfileData.firstDayOnApp) {
       const overlapDays = Math.floor(
         (oldProfile.lastDayOnApp.getTime() -
@@ -305,7 +629,18 @@ export async function absorbProfileIntoNew(data: {
 
     await tx
       .update(matchTable)
-      .set({ tinderProfileId: data.newTinderId })
+      .set({
+        tinderProfileId: data.newTinderId,
+        // REVIEW(provider assumption): Tinder match IDs are account-local.
+        // Namespace transferred rows so a later export from the new account
+        // cannot collide with an unrelated match from the absorbed account.
+        tinderMatchId: sql`
+          CASE
+            WHEN ${matchTable.tinderMatchId} IS NULL THEN NULL
+            ELSE ${`legacy:${data.oldTinderId}:`} || ${matchTable.tinderMatchId}
+          END
+        `,
+      })
       .where(eq(matchTable.tinderProfileId, data.oldTinderId));
 
     await tx
@@ -313,10 +648,28 @@ export async function absorbProfileIntoNew(data: {
       .set({ tinderProfileId: data.newTinderId })
       .where(eq(messageTable.tinderProfileId, data.oldTinderId));
 
-    await tx
-      .update(mediaTable)
-      .set({ tinderProfileId: data.newTinderId })
-      .where(eq(mediaTable.tinderProfileId, data.oldTinderId));
+    const oldMedia = await tx.query.mediaTable.findMany({
+      where: eq(mediaTable.tinderProfileId, data.oldTinderId),
+      columns: { url: true },
+    });
+    const mediaPlan = planTinderMediaReconciliation(
+      oldMedia.map((media) => media.url),
+      transformTinderPhotosToMedia(
+        anonymizedTinderJson.Photos,
+        data.newTinderId,
+      ),
+      data.consentPhotos ?? true,
+    );
+    if (mediaPlan.removeExisting) {
+      await tx
+        .delete(mediaTable)
+        .where(eq(mediaTable.tinderProfileId, data.oldTinderId));
+    } else {
+      await tx
+        .update(mediaTable)
+        .set({ tinderProfileId: data.newTinderId })
+        .where(eq(mediaTable.tinderProfileId, data.oldTinderId));
+    }
 
     await tx
       .update(customDataTable)
@@ -348,6 +701,7 @@ export async function absorbProfileIntoNew(data: {
       tx,
       data.newTinderId,
       newUsage,
+      getTinderUsageMetricPresence(anonymizedTinderJson.Usage),
     );
     await syncObservedUsageRangeInTx(tx, data.newTinderId);
     console.log(
@@ -361,6 +715,23 @@ export async function absorbProfileIntoNew(data: {
       anonymizedTinderJson.Messages,
       data.newTinderId,
     );
+
+    const retainedMatchOrders = await tx
+      .select({ order: matchTable.order })
+      .from(matchTable)
+      .where(eq(matchTable.tinderProfileId, data.newTinderId));
+    let nextMatchOrder =
+      retainedMatchOrders.reduce(
+        (highest, match) => Math.max(highest, match.order),
+        -1,
+      ) + 1;
+    // REVIEW(provider assumption): the Messages collection has no match-event
+    // timestamp. Because cross-account ranges are required to be sequential,
+    // append the newer account's provider order after every retained old-account
+    // record instead of allowing both zero-based sequences to collide.
+    for (const match of matchesInput) {
+      match.order = nextMatchOrder++;
+    }
 
     if (matchesInput.length > 0) {
       const BATCH_SIZE = 500;
@@ -384,10 +755,7 @@ export async function absorbProfileIntoNew(data: {
 
     // 9. Insert photos
     const photosStart = Date.now();
-    const photosInput = transformTinderPhotosToMedia(
-      anonymizedTinderJson.Photos,
-      data.newTinderId,
-    );
+    const photosInput = mediaPlan.rowsToInsert;
     if (photosInput.length > 0) {
       await tx.insert(mediaTable).values(photosInput);
       console.log(
@@ -406,7 +774,7 @@ export async function absorbProfileIntoNew(data: {
       dataProvider: "TINDER",
       swipestatsVersion: "SWIPESTATS_4",
       file: null, // No longer storing raw JSON
-      blobUrl: data.blobUrl,
+      blobUrl: null, // Verified upload blobs are transient and consumed.
       userId: data.userId,
     });
 
@@ -414,11 +782,18 @@ export async function absorbProfileIntoNew(data: {
       throw new Error(`Failed to insert profile: ${data.newTinderId}`);
     }
 
+    await markTransientUploadCommittedInTx(
+      tx,
+      data.transientUpload,
+      data.newTinderId,
+    );
+
     return {
       profile: insertedProfile,
       matchCount: matchesInput.length,
       messageCount: messagesInput.length,
       photoCount: photosInput.length,
+      hasPhotos: mediaPlan.hasPhotosAfter,
       usageDays: newUsage.length,
     };
   });
@@ -426,6 +801,7 @@ export async function absorbProfileIntoNew(data: {
   const totalTime = Date.now() - startTime;
   invalidatePublicSwipeRankCache();
   scheduleTinderSwipeRankRefresh([data.newTinderId]);
+  await cleanupCommittedTransientUpload(data.transientUpload?.id);
   console.log(
     `\n✅ Cross-account merge complete: ${data.oldTinderId} → ${data.newTinderId}`,
   );
@@ -443,7 +819,7 @@ export async function absorbProfileIntoNew(data: {
       messageCount: profile.messageCount,
       photoCount: profile.photoCount,
       usageDays: profile.usageDays,
-      hasPhotos: profile.photoCount > 0,
+      hasPhotos: profile.hasPhotos,
       jsonSizeMB: parseFloat(jsonSizeMB),
     },
   };
@@ -465,28 +841,68 @@ export async function additiveUpdateProfile(data: {
   userId: string;
   timezone?: string;
   country?: string;
+  consentPhotos?: boolean;
+  consentWork?: boolean;
+  consumeBlob?: boolean;
   verifiedTinderJson?: AnonymizedTinderDataJSON;
+  /** ID already bound to verifiedTinderJson when retaining a historical ID. */
+  verifiedTinderId?: string;
+  transientUpload?: TransientUploadBinding;
 }): Promise<TinderProfileResult> {
   const startTime = Date.now();
 
   const anonymizedTinderJson =
     data.verifiedTinderJson ??
-    (await loadVerifiedAnonymizedTinderData(data.blobUrl, data.tinderId));
+    (await loadVerifiedAnonymizedTinderData(
+      data.blobUrl,
+      data.tinderId,
+      {
+        photos: data.consentPhotos ?? true,
+        work: data.consentWork ?? true,
+      },
+      { consume: data.consumeBlob ?? false },
+    ));
   if (data.verifiedTinderJson) {
     await assertTinderProfileIdMatchesExport(
-      data.tinderId,
+      data.verifiedTinderId ?? data.tinderId,
       data.verifiedTinderJson,
     );
+    assertTinderDataMatchesConsent(data.verifiedTinderJson, {
+      photos: data.consentPhotos ?? true,
+      work: data.consentWork ?? true,
+    });
   }
 
   console.log(`\n📊 Additive update for profile: ${data.tinderId}`);
   console.log(`   User ID: ${data.userId}`);
 
   const jsonString = JSON.stringify(anonymizedTinderJson);
-  const jsonSizeMB = (jsonString.length / 1024 / 1024).toFixed(2);
+  const jsonSizeMB = (
+    Buffer.byteLength(jsonString, "utf8") /
+    1024 /
+    1024
+  ).toFixed(2);
 
   const profile = await withTransaction(async (tx) => {
+    await lockTransientUploadForMutationInTx(tx, data.transientUpload);
     await lockTinderSwipeRankMutationsInTx(tx);
+    await lockTinderProfileUploadInTx(tx, data.tinderId);
+    const existingIdentity = await tx.query.tinderProfileTable.findFirst({
+      where: and(
+        eq(tinderProfileTable.tinderId, data.tinderId),
+        eq(tinderProfileTable.userId, data.userId),
+      ),
+      columns: {
+        createDate: true,
+        createDateSource: true,
+      },
+    });
+    if (!existingIdentity) {
+      throw new Error(
+        `Failed to update profile ${data.tinderId}: ownership changed before processing.`,
+      );
+    }
+
     // 1. Update profile metadata (bio, settings, etc.)
     const transformStart = Date.now();
     const profileData = transformTinderJsonToProfile(anonymizedTinderJson, {
@@ -498,19 +914,60 @@ export async function additiveUpdateProfile(data: {
     console.log(
       `   ✓ Profile data transformed (${Date.now() - transformStart}ms)`,
     );
+    const createDateSnapshot = reconcileTinderCreateDateSnapshot(
+      existingIdentity,
+      profileData,
+    );
 
     const updateStart = Date.now();
     const [updatedProfile] = await tx
       .update(tinderProfileTable)
       .set({
         ...profileData,
+        ...createDateSnapshot,
         updatedAt: new Date(),
       })
-      .where(eq(tinderProfileTable.tinderId, data.tinderId))
+      .where(
+        and(
+          eq(tinderProfileTable.tinderId, data.tinderId),
+          eq(tinderProfileTable.userId, data.userId),
+        ),
+      )
       .returning();
+    if (!updatedProfile) {
+      throw new Error(
+        `Failed to update profile ${data.tinderId}: ownership changed before processing.`,
+      );
+    }
     console.log(
       `   ✓ Profile metadata updated (${Date.now() - updateStart}ms)`,
     );
+
+    // Reconcile optional media independently from activity. A false consent
+    // flag is a withdrawal and removes prior rows; otherwise additive uploads
+    // retain historical photos while inserting newly observed URLs once.
+    const existingMedia = await tx.query.mediaTable.findMany({
+      where: eq(mediaTable.tinderProfileId, data.tinderId),
+      columns: { url: true },
+    });
+    const mediaPlan = planTinderMediaReconciliation(
+      existingMedia.map((media) => media.url),
+      transformTinderPhotosToMedia(anonymizedTinderJson.Photos, data.tinderId),
+      data.consentPhotos ?? true,
+    );
+    const newPhotosInput = mediaPlan.rowsToInsert;
+    let removedPhotoCount = 0;
+    if (mediaPlan.removeExisting) {
+      const removedMedia = await tx
+        .delete(mediaTable)
+        .where(eq(mediaTable.tinderProfileId, data.tinderId))
+        .returning({ id: mediaTable.id });
+      removedPhotoCount = removedMedia.length;
+    } else {
+      if (newPhotosInput.length > 0) {
+        await tx.insert(mediaTable).values(newPhotosInput);
+      }
+    }
 
     // 2. Upsert usage records (newer export always has most complete data)
     const usageStart = Date.now();
@@ -524,36 +981,63 @@ export async function additiveUpdateProfile(data: {
       tx,
       data.tinderId,
       newUsage,
+      getTinderUsageMetricPresence(anonymizedTinderJson.Usage),
     );
     await syncObservedUsageRangeInTx(tx, data.tinderId);
     console.log(
       `   ✓ Usage upserted: ${usageInserted} records (${Date.now() - usageStart}ms)`,
     );
 
-    // 3. Get existing matches and filter to only insert NEW matches
+    // 3. Insert new matches and merge newly exported messages into known ones
     const matchStart = Date.now();
     const { matchesInput, messagesInput } = createMessagesAndMatches(
       anonymizedTinderJson.Messages,
       data.tinderId,
     );
 
-    // Fetch existing tinderMatchIds
+    // Fetch the existing outgoing rows needed for multiset reconciliation.
     const existingMatches = await tx.query.matchTable.findMany({
       where: eq(matchTable.tinderProfileId, data.tinderId),
-      columns: { tinderMatchId: true },
+      columns: { id: true, tinderMatchId: true, order: true },
+      with: {
+        messages: {
+          columns: {
+            id: true,
+            sentDate: true,
+            sentDateRaw: true,
+            to: true,
+            contentRaw: true,
+            type: true,
+            gifUrl: true,
+            messageType: true,
+            order: true,
+            timeSinceLastMessage: true,
+            timeSinceLastMessageRelative: true,
+          },
+        },
+      },
     });
-    const existingTinderMatchIds = new Set(
-      existingMatches
-        .map((m) => m.tinderMatchId)
-        .filter((id): id is string => id !== null),
-    );
 
-    // Filter to only new matches (matches are frozen in time - never updated)
-    const { matchesToInsert, messagesToInsert } = filterNewMatches(
-      existingTinderMatchIds,
-      matchesInput,
-      messagesInput,
-    );
+    const {
+      matchesToInsert,
+      messagesToInsert,
+      matchesToUpdate,
+      messagesToUpdate,
+    } = reconcileTinderMatches(existingMatches, matchesInput, messagesInput);
+
+    for (const message of messagesToUpdate) {
+      await tx
+        .update(messageTable)
+        .set(message.metrics)
+        .where(eq(messageTable.id, message.id));
+    }
+
+    for (const match of matchesToUpdate) {
+      await tx
+        .update(matchTable)
+        .set(match.metrics)
+        .where(eq(matchTable.id, match.id));
+    }
 
     // Insert new matches in batches
     if (matchesToInsert.length > 0) {
@@ -574,11 +1058,17 @@ export async function additiveUpdateProfile(data: {
     }
 
     console.log(
-      `   ✓ Matches merged: ${matchesToInsert.length} new matches, ${messagesToInsert.length} messages (${Date.now() - matchStart}ms)`,
+      `   ✓ Matches merged: ${matchesToInsert.length} new matches, ${matchesToUpdate.length} refreshed matches, ${messagesToInsert.length} messages (${Date.now() - matchStart}ms)`,
     );
 
     // Check if this was an idempotent update (no new data)
-    if (matchesToInsert.length === 0 && messagesToInsert.length === 0) {
+    if (
+      usageInserted === 0 &&
+      matchesToInsert.length === 0 &&
+      messagesToInsert.length === 0 &&
+      removedPhotoCount === 0 &&
+      newPhotosInput.length === 0
+    ) {
       console.log(
         `   ℹ️  No new data detected - upload was idempotent (same file re-uploaded)`,
       );
@@ -595,26 +1085,36 @@ export async function additiveUpdateProfile(data: {
       dataProvider: "TINDER",
       swipestatsVersion: "SWIPESTATS_4",
       file: null, // No longer storing raw JSON
-      blobUrl: data.blobUrl,
+      blobUrl: null, // Verified upload blobs are transient and consumed.
       userId: data.userId,
     });
 
-    if (!updatedProfile) {
-      throw new Error(`Failed to update profile: ${data.tinderId}`);
-    }
+    await markTransientUploadCommittedInTx(
+      tx,
+      data.transientUpload,
+      data.tinderId,
+    );
 
     return {
       profile: updatedProfile,
       matchCount: matchesToInsert.length,
       messageCount: messagesToInsert.length,
+      photoCount: newPhotosInput.length,
+      hasPhotos: mediaPlan.hasPhotosAfter,
       usageDays: newUsage.length,
       // Same export re-uploaded: nothing new merged in.
-      isNoOp: matchesToInsert.length === 0 && messagesToInsert.length === 0,
+      isNoOp:
+        usageInserted === 0 &&
+        matchesToInsert.length === 0 &&
+        messagesToInsert.length === 0 &&
+        removedPhotoCount === 0 &&
+        newPhotosInput.length === 0,
     };
   });
 
   const totalTime = Date.now() - startTime;
   scheduleTinderSwipeRankRefresh([data.tinderId]);
+  await cleanupCommittedTransientUpload(data.transientUpload?.id);
   console.log(`\n✅ Additive update complete for ${data.tinderId}`);
   console.log(
     `⏱️  Total time: ${totalTime}ms (${(totalTime / 1000).toFixed(2)}s)\n`,
@@ -628,52 +1128,205 @@ export async function additiveUpdateProfile(data: {
       // Deltas: what THIS upload added (an update reports the change, not totals).
       matchCount: profile.matchCount,
       messageCount: profile.messageCount,
-      photoCount: 0, // Additive updates don't add photos
+      photoCount: profile.photoCount,
       usageDays: profile.usageDays,
-      hasPhotos: false, // No new photos in additive updates
+      hasPhotos: profile.hasPhotos,
       jsonSizeMB: parseFloat(jsonSizeMB),
     },
   };
 }
 
-/**
- * Pure utility: Filter out matches that already exist
- * Matches are frozen in time - we only add NEW matches, never update existing ones
- * Returns only the matches (and their messages) that don't exist yet
- */
-function filterNewMatches(
-  existingTinderMatchIds: Set<string>,
+type ExistingTinderMessage = Pick<
+  Message,
+  | "id"
+  | "sentDate"
+  | "sentDateRaw"
+  | "contentRaw"
+  | "type"
+  | "gifUrl"
+  | "messageType"
+  | "order"
+  | "timeSinceLastMessage"
+  | "timeSinceLastMessageRelative"
+>;
+
+type ExistingTinderMatch = {
+  id: string;
+  tinderMatchId: string | null;
+  order: number;
+  messages: ExistingTinderMessage[];
+};
+
+function tinderMessageFingerprint(
+  message: ExistingTinderMessage | MessageInsert,
+): string {
+  // REVIEW(provider assumption): Tinder supplies no stable message ID. We
+  // treat equal timestamp/content/type occurrences as the same outgoing
+  // message and retain multiplicity. `to` is deliberately excluded because it
+  // is a provider-local match reference that can be reindexed across exports,
+  // not message identity. Edited or deleted messages remain as historical rows
+  // because a later export may be a truncated view.
+  return JSON.stringify([
+    message.sentDate.getTime(),
+    message.contentRaw,
+    message.type ?? null,
+    message.gifUrl ?? null,
+    message.messageType,
+  ]);
+}
+
+/** Merge a newer Tinder export without dropping old or repeated messages. */
+export function reconcileTinderMatches(
+  existingMatches: ExistingTinderMatch[],
   newMatches: MatchInsert[],
   newMessages: MessageInsert[],
 ): {
   matchesToInsert: MatchInsert[];
   messagesToInsert: MessageInsert[];
+  matchesToUpdate: Array<{
+    id: string;
+    metrics: TinderMatchDerivedMetrics;
+  }>;
+  messagesToUpdate: Array<{
+    id: string;
+    metrics: Pick<
+      MessageInsert,
+      "order" | "timeSinceLastMessage" | "timeSinceLastMessageRelative"
+    >;
+  }>;
 } {
-  // Group messages by their match's ID for quick lookup
-  const messagesByMatchId = new Map<string, MessageInsert[]>();
+  const newMessagesByMatchId = new Map<string, MessageInsert[]>();
   for (const message of newMessages) {
-    const messages = messagesByMatchId.get(message.matchId) || [];
+    const messages = newMessagesByMatchId.get(message.matchId) ?? [];
     messages.push(message);
-    messagesByMatchId.set(message.matchId, messages);
+    newMessagesByMatchId.set(message.matchId, messages);
+  }
+
+  const existingByTinderMatchId = new Map<string, ExistingTinderMatch>();
+  for (const match of existingMatches) {
+    if (
+      match.tinderMatchId &&
+      !existingByTinderMatchId.has(match.tinderMatchId)
+    ) {
+      existingByTinderMatchId.set(match.tinderMatchId, match);
+    }
   }
 
   const matchesToInsert: MatchInsert[] = [];
   const messagesToInsert: MessageInsert[] = [];
+  const matchesToUpdate: Array<{
+    id: string;
+    metrics: TinderMatchDerivedMetrics;
+  }> = [];
+  const messagesToUpdate: Array<{
+    id: string;
+    metrics: Pick<
+      MessageInsert,
+      "order" | "timeSinceLastMessage" | "timeSinceLastMessageRelative"
+    >;
+  }> = [];
+  let nextMatchOrder =
+    existingMatches.reduce(
+      (highest, match) => Math.max(highest, match.order),
+      -1,
+    ) + 1;
 
-  for (const match of newMatches) {
-    // Skip if this match already exists (by tinderMatchId)
-    if (
-      match.tinderMatchId &&
-      existingTinderMatchIds.has(match.tinderMatchId)
-    ) {
+  for (const newMatch of newMatches) {
+    const existingMatch = newMatch.tinderMatchId
+      ? existingByTinderMatchId.get(newMatch.tinderMatchId)
+      : undefined;
+    const matchMessages = newMessagesByMatchId.get(newMatch.id) ?? [];
+
+    if (!existingMatch) {
+      // REVIEW(provider assumption): Tinder does not expose a match timestamp
+      // here, but its export order is stable enough to preserve relative order.
+      // Append newly observed records after the retained sequence so additive
+      // exports never create duplicate zero-based display positions.
+      matchesToInsert.push({ ...newMatch, order: nextMatchOrder++ });
+      messagesToInsert.push(...matchMessages);
       continue;
     }
 
-    // New match - include it and all its messages
-    matchesToInsert.push(match);
-    const matchMessages = messagesByMatchId.get(match.id) || [];
-    messagesToInsert.push(...matchMessages);
+    const existingFingerprintCounts = new Map<string, number>();
+    for (const message of existingMatch.messages) {
+      const fingerprint = tinderMessageFingerprint(message);
+      existingFingerprintCounts.set(
+        fingerprint,
+        (existingFingerprintCounts.get(fingerprint) ?? 0) + 1,
+      );
+    }
+
+    const additionalMessages: MessageInsert[] = [];
+    for (const message of matchMessages) {
+      const fingerprint = tinderMessageFingerprint(message);
+      const existingCount = existingFingerprintCounts.get(fingerprint) ?? 0;
+      if (existingCount > 0) {
+        existingFingerprintCounts.set(fingerprint, existingCount - 1);
+      } else {
+        additionalMessages.push({
+          ...message,
+          matchId: existingMatch.id,
+        });
+      }
+    }
+
+    if (additionalMessages.length === 0) continue;
+
+    const additionalMessageIds = new Set(
+      additionalMessages.map((message) => message.id),
+    );
+    const sequencedMessages = [
+      ...existingMatch.messages,
+      ...additionalMessages,
+    ].sort(
+      (left, right) =>
+        left.sentDate.getTime() - right.sentDate.getTime() ||
+        left.id.localeCompare(right.id),
+    );
+
+    for (const [order, message] of sequencedMessages.entries()) {
+      const previous = sequencedMessages[order - 1];
+      const timeSinceLastMessage = previous
+        ? Math.floor(
+            (message.sentDate.getTime() - previous.sentDate.getTime()) / 1000,
+          )
+        : 0;
+      const timeSinceLastMessageRelative = previous
+        ? formatDistance(previous.sentDate, message.sentDate)
+        : null;
+      const metrics = {
+        order,
+        timeSinceLastMessage,
+        timeSinceLastMessageRelative,
+      };
+
+      if (additionalMessageIds.has(message.id)) {
+        const inserted = message as MessageInsert;
+        messagesToInsert.push({ ...inserted, ...metrics });
+      } else {
+        const existing = message as ExistingTinderMessage;
+        if (
+          existing.order !== order ||
+          existing.timeSinceLastMessage !== timeSinceLastMessage ||
+          existing.timeSinceLastMessageRelative !== timeSinceLastMessageRelative
+        ) {
+          messagesToUpdate.push({ id: existing.id, metrics });
+        }
+      }
+    }
+    matchesToUpdate.push({
+      id: existingMatch.id,
+      metrics: computeTinderMatchDerivedMetrics([
+        ...existingMatch.messages,
+        ...additionalMessages,
+      ]),
+    });
   }
 
-  return { matchesToInsert, messagesToInsert };
+  return {
+    matchesToInsert,
+    messagesToInsert,
+    matchesToUpdate,
+    messagesToUpdate,
+  };
 }

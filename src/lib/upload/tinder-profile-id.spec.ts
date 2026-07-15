@@ -24,6 +24,19 @@ describe("Tinder profile ID derivation", () => {
     expect(fromFields).toMatch(/^[a-f0-9]{64}$/);
   });
 
+  test("preserves the historical raw timestamp spelling contract", async () => {
+    const canonical = await deriveTinderProfileId({
+      birthDate: identity.User.birth_date,
+      createDate: "2018-07-03T14:25:00.000Z",
+    });
+    const equivalentOffset = await deriveTinderProfileId({
+      birthDate: identity.User.birth_date,
+      createDate: "2018-07-03T10:25:00-04:00",
+    });
+
+    expect(canonical).not.toBe(equivalentOffset);
+  });
+
   test("accepts only an export that derives the requested profile ID", async () => {
     const tinderId = await deriveTinderProfileIdFromExport(identity);
 

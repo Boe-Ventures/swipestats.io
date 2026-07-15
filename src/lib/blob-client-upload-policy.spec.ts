@@ -13,6 +13,7 @@ import {
 const PROFILE_ID = "a".repeat(64);
 const OTHER_PROFILE_ID = "b".repeat(64);
 const NOW = Date.UTC(2026, 6, 14, 12);
+const UPLOAD_ID = "123e4567-e89b-42d3-a456-426614174000";
 
 function payload(value: Record<string, unknown>): string {
   return JSON.stringify(value);
@@ -21,10 +22,11 @@ function payload(value: Record<string, unknown>): string {
 describe("client Blob upload policy", () => {
   test("gives data exports a server-owned JSON-only 200 MiB policy", () => {
     const policy = resolveClientUploadPolicy({
-      pathname: `tinder-data/${PROFILE_ID}/2026-07-14/data.json`,
+      pathname: `tinder-data/${PROFILE_ID}/${UPLOAD_ID}/data.json`,
       clientPayload: payload({
         resourceType: "tinder_data",
         tinderId: PROFILE_ID,
+        uploadId: UPLOAD_ID,
       }),
       userId: "anonymous-user",
       now: NOW,
@@ -39,16 +41,20 @@ describe("client Blob upload policy", () => {
     expect(JSON.parse(policy.tokenPayload)).toEqual({
       userId: "anonymous-user",
       resourceType: "tinder_data",
+      uploadId: UPLOAD_ID,
+      profileId: PROFILE_ID,
+      expectedPathname: `tinder-data/${PROFILE_ID}/${UPLOAD_ID}/data.json`,
     });
   });
 
   test("accepts the equivalent Hinge and Raya export path contracts", () => {
     expect(
       resolveClientUploadPolicy({
-        pathname: `hinge-data/${PROFILE_ID}/2026-07-14/data.json`,
+        pathname: `hinge-data/${PROFILE_ID}/${UPLOAD_ID}/data.json`,
         clientPayload: payload({
           resourceType: "hinge_data",
           hingeId: PROFILE_ID,
+          uploadId: UPLOAD_ID,
         }),
         userId: "anonymous-user",
       }).resourceType,
@@ -69,10 +75,11 @@ describe("client Blob upload policy", () => {
   test("rejects client attempts to widen types or size", () => {
     expect(() =>
       resolveClientUploadPolicy({
-        pathname: `tinder-data/${PROFILE_ID}/2026-07-14/data.json`,
+        pathname: `tinder-data/${PROFILE_ID}/${UPLOAD_ID}/data.json`,
         clientPayload: payload({
           resourceType: "tinder_data",
           tinderId: PROFILE_ID,
+          uploadId: UPLOAD_ID,
           allowedTypes: ["text/html"],
           maxSize: Number.MAX_SAFE_INTEGER,
         }),
@@ -111,14 +118,15 @@ describe("client Blob upload policy", () => {
     const context = payload({
       resourceType: "tinder_data",
       tinderId: PROFILE_ID,
+      uploadId: UPLOAD_ID,
     });
 
     for (const pathname of [
-      `tinder-data/${OTHER_PROFILE_ID}/2026-07-14/data.json`,
-      `tinder-data/${PROFILE_ID}/2026-02-31/data.json`,
-      `tinder-data/${PROFILE_ID}/2026-07-14/note.html`,
-      `tinder-data/${PROFILE_ID}/2026-07-14/nested/data.json`,
-      `../tinder-data/${PROFILE_ID}/2026-07-14/data.json`,
+      `tinder-data/${OTHER_PROFILE_ID}/${UPLOAD_ID}/data.json`,
+      `tinder-data/${PROFILE_ID}/00000000-0000-4000-8000-000000000000/data.json`,
+      `tinder-data/${PROFILE_ID}/${UPLOAD_ID}/note.html`,
+      `tinder-data/${PROFILE_ID}/${UPLOAD_ID}/nested/data.json`,
+      `../tinder-data/${PROFILE_ID}/${UPLOAD_ID}/data.json`,
     ]) {
       expect(() =>
         resolveClientUploadPolicy({

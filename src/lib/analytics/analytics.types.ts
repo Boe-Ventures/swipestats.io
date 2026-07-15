@@ -284,7 +284,6 @@ export type ServerEventPropertiesDefinition = {
     jsonSizeMB: number;
     consentPhotos: boolean;
     consentWork: boolean;
-    blobUrl?: string;
   };
 
   tinder_profile_updated: {
@@ -309,7 +308,6 @@ export type ServerEventPropertiesDefinition = {
     errorTable?: string;
     errorColumn?: string;
     errorDetail?: string;
-    blobUrl?: string;
     jsonSizeMB?: number;
   };
 
@@ -328,11 +326,12 @@ export type ServerEventPropertiesDefinition = {
     jsonSizeMB: number;
     consentPhotos: boolean;
     consentWork: boolean;
-    blobUrl?: string;
   };
 
   hinge_profile_updated: {
     hingeId: string;
+    incomingHingeId?: string;
+    historicalIdVersion?: boolean;
     matchCount: number;
     messageCount: number;
     photoCount: number;
@@ -369,7 +368,6 @@ export type ServerEventPropertiesDefinition = {
     errorTable?: string;
     errorColumn?: string;
     errorDetail?: string;
-    blobUrl?: string;
     jsonSizeMB?: number;
   };
 

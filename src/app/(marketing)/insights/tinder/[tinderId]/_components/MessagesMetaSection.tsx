@@ -1,9 +1,8 @@
 "use client";
 
 import {
-  CircleSlash,
-  Ghost,
   MessageCircle,
+  MessageCircleOff,
   MessagesSquare,
   Send,
   ArrowRight,
@@ -12,6 +11,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useTinderProfile } from "../TinderProfileProvider";
 import { MessagesMetaCard } from "../compare/_components/MessagesMetaCard";
+import {
+  formatMessageAverage,
+  formatRecordRate,
+  getTinderMessageUiMetrics,
+} from "./tinder-message-ui-metrics";
 
 export function MessagesMetaSection() {
   const { meta } = useTinderProfile();
@@ -22,22 +26,12 @@ export function MessagesMetaSection() {
 
   const globalMeta = meta;
 
-  // Calculate derived metrics
-  const avgMessagesPerConvo =
-    globalMeta.conversationsWithMessages > 0
-      ? (
-          globalMeta.messagesSentTotal / globalMeta.conversationsWithMessages
-        ).toFixed(1)
-      : "0";
-
-  const initiationRate =
-    globalMeta.conversationCount > 0
-      ? Math.round(
-          (globalMeta.conversationsWithMessages /
-            globalMeta.conversationCount) *
-            100,
-        )
-      : 0;
+  const messageMetrics = getTinderMessageUiMetrics(globalMeta);
+  const averageMessagesPerRecord = formatMessageAverage(
+    messageMetrics.averageMessagesPerMessagedRecord,
+  );
+  const medianMessagesPerRecord =
+    messageMetrics.medianMessagesPerMessagedRecord;
 
   return (
     <div id="messages-meta">
@@ -61,38 +55,53 @@ export function MessagesMetaSection() {
         </CardHeader>
         <CardContent className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           <MessagesMetaCard
-            title="Total conversations"
+            title="Conversation records"
             icon={MessagesSquare}
             stat={globalMeta.conversationCount.toString()}
-            from="From all your matches"
+            from="Conversation entries included in your export"
           />
 
           <MessagesMetaCard
-            title="With messages"
+            title="Records with messages"
             icon={MessageCircle}
             stat={globalMeta.conversationsWithMessages.toString()}
-            from={`${initiationRate}% initiation rate`}
+            from={
+              messageMetrics.messagedRecordRate === null
+                ? "Coverage unavailable; no conversation records"
+                : `${formatRecordRate(messageMetrics.messagedRecordRate)} include an exported message from you`
+            }
           />
 
           <MessagesMetaCard
-            title="Messages sent"
+            title="Usage messages sent"
             icon={Send}
             stat={globalMeta.messagesSentTotal.toLocaleString()}
-            from={`Avg ${avgMessagesPerConvo} per conversation`}
+            from="Aggregate from Tinder's daily Usage ledger"
           />
 
           <MessagesMetaCard
-            title="You ghosted"
-            icon={Ghost}
-            stat={globalMeta.ghostedCount.toString()}
-            from="Matches with no messages"
+            title="Messages per messaged record"
+            icon={MessageCircle}
+            stat={averageMessagesPerRecord}
+            from={
+              medianMessagesPerRecord === null
+                ? "Calculated only from retained message rows"
+                : `Average; median ${medianMessagesPerRecord} in retained message rows`
+            }
           />
 
           <MessagesMetaCard
-            title="Ghost rate"
-            icon={CircleSlash}
-            stat={`${globalMeta.conversationCount > 0 ? Math.round((globalMeta.ghostedCount / globalMeta.conversationCount) * 100) : 0}%`}
-            from="% of matches not messaged"
+            title="Not messaged"
+            icon={MessageCircleOff}
+            stat={messageMetrics.recordsWithoutMessages.toString()}
+            from="Conversation records with no exported message from you"
+          />
+
+          <MessagesMetaCard
+            title="Not messaged rate"
+            icon={MessageCircleOff}
+            stat={formatRecordRate(messageMetrics.recordsWithoutMessagesRate)}
+            from="This does not identify replies or ghosting"
           />
         </CardContent>
       </Card>

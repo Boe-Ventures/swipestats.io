@@ -47,8 +47,8 @@ const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? "https://swipestats.io";
 const LOADING_LINES = [
   "Warming up the grill…",
   "Crunching your swipe numbers…",
-  "Calculating your match rate…",
-  "Counting the ghosts…",
+  "Calculating your match yield…",
+  "Checking which matches you messaged…",
   "Measuring your app addiction…",
   "Doing the math on your love life…",
   "Preheating the burn unit…",
@@ -131,9 +131,7 @@ export function RoastDialog({ open, onOpenChange }: RoastDialogProps) {
   // The tone currently in flight (optimistic) or saved on the roast; drives the
   // selector's active state. Falls back to "mild" before anything is roasted.
   const activeTone: Tone =
-    generateMutation.variables?.tone ??
-    (roast?.tone as Tone | null) ??
-    "mild";
+    generateMutation.variables?.tone ?? (roast?.tone as Tone | null) ?? "mild";
 
   // Explicit tone clicks always re-roll (server reuses cache only for the same
   // tone); for the first-ever roast `regenerate` is a harmless no-op.

@@ -1,6 +1,33 @@
-import type { AnonymizedTinderDataJSON } from "@/lib/interfaces/TinderDataJSON";
+import type {
+  AnonymizedTinderDataJSON,
+  Usage,
+} from "@/lib/interfaces/TinderDataJSON";
+import { normalizeTinderDateValueMap } from "@/lib/profile.utils";
 import type { TinderUsageInsert } from "@/server/db/schema";
 import { computeUsageInput } from "./transform.service";
+
+export interface TinderUsageMetricPresence {
+  swipeLikes: boolean;
+  swipePasses: boolean;
+  superLikes: boolean;
+  matches: boolean;
+  messagesSent: boolean;
+  messagesReceived: boolean;
+}
+
+/** Preserve whether an optional provider category existed in this export. */
+export function getTinderUsageMetricPresence(
+  usage: Usage,
+): TinderUsageMetricPresence {
+  return {
+    swipeLikes: usage.swipes_likes !== undefined,
+    swipePasses: usage.swipes_passes !== undefined,
+    superLikes: usage.superlikes !== undefined,
+    matches: usage.matches !== undefined,
+    messagesSent: usage.messages_sent !== undefined,
+    messagesReceived: usage.messages_received !== undefined,
+  };
+}
 
 /**
  * Creates bulk usage records for real days only from the Tinder JSON.
@@ -15,16 +42,30 @@ export function createUsageRecords(
   tinderId: string,
   userBirthDate: Date,
 ): TinderUsageInsert[] {
+  const usage = {
+    appOpens: normalizeTinderDateValueMap(json.Usage.app_opens),
+    swipeLikes: normalizeTinderDateValueMap(json.Usage.swipes_likes ?? {}),
+    swipePasses: normalizeTinderDateValueMap(json.Usage.swipes_passes ?? {}),
+    matches: normalizeTinderDateValueMap(json.Usage.matches ?? {}),
+    messagesSent: normalizeTinderDateValueMap(json.Usage.messages_sent ?? {}),
+    messagesReceived: normalizeTinderDateValueMap(
+      json.Usage.messages_received ?? {},
+    ),
+    superLikes: json.Usage.superlikes
+      ? normalizeTinderDateValueMap(json.Usage.superlikes)
+      : undefined,
+  };
+
   // Collect all unique dates from all usage categories
   const allDatesSet = new Set<string>();
-  Object.keys(json.Usage.app_opens).forEach((d) => allDatesSet.add(d));
-  Object.keys(json.Usage.swipes_likes).forEach((d) => allDatesSet.add(d));
-  Object.keys(json.Usage.swipes_passes).forEach((d) => allDatesSet.add(d));
-  Object.keys(json.Usage.matches).forEach((d) => allDatesSet.add(d));
-  Object.keys(json.Usage.messages_sent).forEach((d) => allDatesSet.add(d));
-  Object.keys(json.Usage.messages_received).forEach((d) => allDatesSet.add(d));
-  if (json.Usage.superlikes) {
-    Object.keys(json.Usage.superlikes).forEach((d) => allDatesSet.add(d));
+  Object.keys(usage.appOpens).forEach((d) => allDatesSet.add(d));
+  Object.keys(usage.swipeLikes).forEach((d) => allDatesSet.add(d));
+  Object.keys(usage.swipePasses).forEach((d) => allDatesSet.add(d));
+  Object.keys(usage.matches).forEach((d) => allDatesSet.add(d));
+  Object.keys(usage.messagesSent).forEach((d) => allDatesSet.add(d));
+  Object.keys(usage.messagesReceived).forEach((d) => allDatesSet.add(d));
+  if (usage.superLikes) {
+    Object.keys(usage.superLikes).forEach((d) => allDatesSet.add(d));
   }
 
   // Sort dates chronologically
@@ -35,13 +76,13 @@ export function createUsageRecords(
   const usageInput = realDates.map((date) => {
     return computeUsageInput(
       {
-        appOpensCount: json.Usage.app_opens[date] ?? 0,
-        matchesCount: json.Usage.matches[date] ?? 0,
-        swipeLikesCount: json.Usage.swipes_likes[date] ?? 0,
-        swipeSuperLikesCount: json.Usage.superlikes?.[date] ?? 0,
-        swipePassesCount: json.Usage.swipes_passes[date] ?? 0,
-        messagesSentCount: json.Usage.messages_sent[date] ?? 0,
-        messagesReceivedCount: json.Usage.messages_received[date] ?? 0,
+        appOpensCount: usage.appOpens[date] ?? 0,
+        matchesCount: usage.matches[date] ?? 0,
+        swipeLikesCount: usage.swipeLikes[date] ?? 0,
+        swipeSuperLikesCount: usage.superLikes?.[date] ?? 0,
+        swipePassesCount: usage.swipePasses[date] ?? 0,
+        messagesSentCount: usage.messagesSent[date] ?? 0,
+        messagesReceivedCount: usage.messagesReceived[date] ?? 0,
       },
       date,
       tinderId,

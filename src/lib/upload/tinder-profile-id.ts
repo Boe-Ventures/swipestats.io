@@ -20,6 +20,10 @@ export async function deriveTinderProfileId({
   birthDate,
   createDate,
 }: TinderProfileIdentityFields): Promise<string> {
+  // REVIEW(provider assumption): Preserve the historical raw timestamp spelling
+  // contract. Equivalent spellings can hash differently, so upload routing
+  // compares provider instants and retains the existing public ID. Canonicalize
+  // only after an identity-alias migration exists.
   return createSHA256Hash(`${birthDate}-${createDate}`);
 }
 

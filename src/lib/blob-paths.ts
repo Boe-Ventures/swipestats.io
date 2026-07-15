@@ -50,3 +50,12 @@ export function resourceBlobPath(
 ): string {
   return `${resourceType}/${resourceId}/${safeBlobFilename(filename)}`;
 }
+
+/** One unique, cleanup-addressable namespace per provider-data upload lease. */
+export function transientDataBlobPath(
+  provider: "tinder" | "hinge",
+  profileId: string,
+  uploadId: string,
+): string {
+  return `${provider}-data/${profileId}/${uploadId}/data.json`;
+}

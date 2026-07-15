@@ -95,15 +95,18 @@ async function auditDomainRules(): Promise<AuditRow> {
       SELECT
         *,
         CASE
-          WHEN swipe_likes_total + swipe_passes_total > 0
+          WHEN tinder_profile_id IS NOT NULL
+            AND swipe_likes_total + swipe_passes_total > 0
             THEN swipe_likes_total::double precision /
               (swipe_likes_total + swipe_passes_total)
+          WHEN hinge_profile_id IS NOT NULL AND swipe_likes_total > 0 THEN 1
           ELSE 0
         END AS expected_like_rate,
         CASE
-          WHEN swipe_likes_total > 0
+          WHEN tinder_profile_id IS NOT NULL AND swipe_likes_total > 0
             THEN matches_total::double precision / swipe_likes_total
-          ELSE 0
+          WHEN tinder_profile_id IS NOT NULL THEN 0
+          ELSE NULL
         END AS expected_match_rate,
         CASE
           WHEN days_active > 0
@@ -139,7 +142,8 @@ async function auditDomainRules(): Promise<AuditRow> {
         WHERE abs(like_rate - expected_like_rate) > 1e-12
       )::int AS like_rate_formula_mismatches,
       count(*) FILTER (
-        WHERE abs(match_rate - expected_match_rate) > 1e-12
+        WHERE expected_match_rate IS NOT NULL
+          AND abs(match_rate - expected_match_rate) > 1e-12
       )::int AS match_rate_formula_mismatches,
       count(*) FILTER (
         WHERE abs(swipes_per_day - expected_swipes_per_day) > 1e-12
@@ -154,12 +158,10 @@ async function auditDomainRules(): Promise<AuditRow> {
       )::int AS hinge_like_rate_formula_mismatches,
       count(*) FILTER (
         WHERE tinder_profile_id IS NOT NULL
+          AND expected_match_rate IS NOT NULL
           AND abs(match_rate - expected_match_rate) > 1e-12
       )::int AS tinder_match_rate_formula_mismatches,
-      count(*) FILTER (
-        WHERE hinge_profile_id IS NOT NULL
-          AND abs(match_rate - expected_match_rate) > 1e-12
-      )::int AS hinge_match_rate_formula_mismatches,
+      NULL::int AS hinge_match_rate_formula_mismatches,
       count(*) FILTER (
         WHERE tinder_profile_id IS NOT NULL
           AND abs(swipes_per_day - expected_swipes_per_day) > 1e-12
@@ -172,6 +174,92 @@ async function auditDomainRules(): Promise<AuditRow> {
       count(*) FILTER (WHERE like_rate < 0 OR like_rate > 1)::int
         AS like_rates_outside_zero_one
     FROM checked
+  `);
+}
+
+async function auditTinderIdentityProvenance(): Promise<AuditRow> {
+  // REVIEW(provider assumption): historical Tinder exports can contain teen-era
+  // activity. Keep ages 13-17 visible as a separate policy/source anomaly;
+  // only a derived age below 13 (or above 100) is treated as implausible here.
+  return one<AuditRow>(sql`
+    WITH usage_bounds AS (
+      SELECT
+        tinder_profile_id,
+        min(left(date_stamp_raw, 10)::date)::timestamp AS first_observed_day,
+        max(left(date_stamp_raw, 10)::date)::timestamp AS last_observed_day,
+        count(*) FILTER (
+          WHERE user_age_this_day < 13 OR user_age_this_day > 100
+        )::bigint AS implausible_usage_age_rows,
+        count(*) FILTER (
+          WHERE user_age_this_day >= 13 AND user_age_this_day < 18
+        )::bigint AS below_adult_threshold_usage_age_rows
+      FROM tinder_usage
+      GROUP BY tinder_profile_id
+    )
+    SELECT
+      count(*)::int AS profiles,
+      count(*) FILTER (
+        WHERE profile.create_date_source = 'PROVIDER'
+      )::int AS provider_create_dates,
+      count(*) FILTER (
+        WHERE profile.create_date_source = 'INFERRED_FROM_USAGE'
+      )::int AS inferred_create_dates,
+      count(*) FILTER (
+        WHERE profile.create_date_source IS NULL
+      )::int AS unknown_legacy_create_date_sources,
+      count(*) FILTER (
+        WHERE profile.create_date_source IS NOT NULL
+          AND profile.create_date_source NOT IN (
+            'PROVIDER',
+            'INFERRED_FROM_USAGE'
+          )
+      )::int AS invalid_create_date_sources,
+      count(*) FILTER (
+        WHERE bounds.first_observed_day::date < profile.create_date::date
+      )::int AS activity_calendar_day_before_create_date,
+      count(*) FILTER (
+        WHERE profile.create_date_source = 'INFERRED_FROM_USAGE'
+          AND profile.create_date IS DISTINCT FROM bounds.first_observed_day
+      )::int AS inferred_date_not_first_observed_day,
+      count(*) FILTER (
+        WHERE profile.birth_date > profile.create_date
+      )::int AS birth_after_create_date,
+      count(*) FILTER (
+        WHERE profile.active_time IS NOT NULL
+          AND profile.active_time < profile.create_date
+      )::int AS active_time_before_create_date,
+      count(*) FILTER (
+        WHERE profile.birth_date > now() + interval '48 hours'
+      )::int AS clearly_future_birth_dates,
+      count(*) FILTER (
+        WHERE profile.create_date > now() + interval '48 hours'
+      )::int AS clearly_future_create_dates,
+      count(*) FILTER (
+        WHERE profile.active_time > now() + interval '48 hours'
+      )::int AS clearly_future_active_times,
+      count(*) FILTER (
+        WHERE profile.age_at_upload < 13 OR profile.age_at_upload > 100
+      )::int AS implausible_age_at_upload_profiles,
+      count(*) FILTER (
+        WHERE profile.age_at_last_usage < 13
+           OR profile.age_at_last_usage > 100
+      )::int AS implausible_age_at_last_usage_profiles,
+      count(*) FILTER (
+        WHERE bounds.implausible_usage_age_rows > 0
+      )::int AS profiles_with_implausible_usage_age,
+      coalesce(sum(bounds.implausible_usage_age_rows), 0)::bigint
+        AS implausible_usage_age_rows,
+      count(*) FILTER (
+        WHERE bounds.below_adult_threshold_usage_age_rows > 0
+      )::int AS profiles_with_below_adult_threshold_usage_age,
+      coalesce(
+        sum(bounds.below_adult_threshold_usage_age_rows),
+        0
+      )::bigint AS below_adult_threshold_usage_age_rows
+    FROM tinder_profile AS profile
+    LEFT JOIN usage_bounds AS bounds
+      ON bounds.tinder_profile_id = profile.tinder_id
+    WHERE profile.computed = false
   `);
 }
 
@@ -522,54 +610,116 @@ async function auditTinderCoreReconciliation(): Promise<{
   };
 }
 
-async function auditTinderConversationReconciliation(): Promise<AuditRow> {
-  return one<AuditRow>(sql`
-    WITH match_rows AS (
+/**
+ * REVIEW(provider assumption): Tinder's export contains the uploader's own
+ * messages. Cadence therefore means adjacent uploader-message gaps, not reply
+ * latency. Tinder's numeric `to` is a provider-local match reference, not a
+ * direction flag, so only missing or negative references are invalid here.
+ */
+export function buildTinderConversationReconciliationQuery(): SQL {
+  return sql`
+    WITH ordered_messages AS (
+      SELECT
+        source_match.id AS match_id,
+        source_match.tinder_profile_id,
+        message.sent_date,
+        message."to",
+        floor(extract(
+          epoch FROM (
+            message.sent_date - lag(message.sent_date) OVER (
+              PARTITION BY source_match.id
+              ORDER BY message.sent_date, message."order", message.id
+            )
+          )
+        ))::bigint AS gap_seconds
+      FROM match AS source_match
+      JOIN message ON message.match_id = source_match.id
+      WHERE source_match.tinder_profile_id IS NOT NULL
+        AND source_match.hinge_profile_id IS NULL
+    ),
+    match_rows AS (
       SELECT
         m.id,
         m.tinder_profile_id,
         m.total_message_count,
         m.response_time_median_seconds,
         m.conversation_duration_days,
-        count(msg.id)::int AS actual_message_rows
+        count(msg.match_id)::int AS actual_message_rows,
+        count(msg.match_id) FILTER (
+          WHERE msg."to" IS NULL OR msg."to" < 0
+        )::int AS invalid_message_reference_rows,
+        floor(
+          percentile_cont(0.5) WITHIN GROUP (
+            ORDER BY msg.gap_seconds
+          ) FILTER (WHERE msg.gap_seconds IS NOT NULL) + 0.5
+        )::int AS derived_response_time_median_seconds,
+        CASE
+          WHEN count(msg.match_id) > 0 THEN floor(
+            extract(epoch FROM (max(msg.sent_date) - min(msg.sent_date))) /
+              86400
+          )::int
+          ELSE NULL
+        END AS derived_conversation_duration_days
       FROM match m
-      LEFT JOIN message msg ON msg.match_id = m.id
+      LEFT JOIN ordered_messages msg ON msg.match_id = m.id
       WHERE m.tinder_profile_id IS NOT NULL
+        AND m.hinge_profile_id IS NULL
       GROUP BY m.id
+    ),
+    pooled_profile_gaps AS (
+      SELECT
+        tinder_profile_id,
+        floor(avg(gap_seconds) + 0.5)::int AS mean_response_time_seconds
+      FROM ordered_messages
+      WHERE gap_seconds IS NOT NULL
+      GROUP BY tinder_profile_id
     ),
     raw AS (
       SELECT
-        tinder_profile_id,
+        matches.tinder_profile_id,
         count(*)::int AS conversation_count,
-        count(*) FILTER (WHERE actual_message_rows > 0)::int
+        count(*) FILTER (WHERE matches.actual_message_rows > 0)::int
           AS conversations_with_messages,
-        count(*) FILTER (WHERE actual_message_rows = 0)::int AS ghosted_count,
-        round(percentile_cont(0.5) WITHIN GROUP (
-          ORDER BY response_time_median_seconds
-        ) FILTER (WHERE response_time_median_seconds IS NOT NULL))::int
+        count(*) FILTER (WHERE matches.actual_message_rows = 0)::int
+          AS ghosted_count,
+        floor(
+          percentile_cont(0.5) WITHIN GROUP (
+            ORDER BY matches.derived_response_time_median_seconds
+          ) FILTER (
+            WHERE matches.derived_response_time_median_seconds IS NOT NULL
+          ) + 0.5
+        )::int
           AS median_response_time_seconds,
-        round(avg(response_time_median_seconds) FILTER (
-          WHERE response_time_median_seconds IS NOT NULL
-        ))::int AS mean_response_time_seconds,
-        round(percentile_cont(0.5) WITHIN GROUP (
-          ORDER BY conversation_duration_days
-        ) FILTER (WHERE conversation_duration_days > 0))::int
+        pooled.mean_response_time_seconds,
+        floor(
+          percentile_cont(0.5) WITHIN GROUP (
+            ORDER BY matches.derived_conversation_duration_days
+          ) FILTER (
+            WHERE matches.derived_conversation_duration_days IS NOT NULL
+          ) + 0.5
+        )::int
           AS median_conversation_duration_days,
-        max(conversation_duration_days) FILTER (
-          WHERE conversation_duration_days > 0
+        max(matches.derived_conversation_duration_days) FILTER (
+          WHERE matches.derived_conversation_duration_days IS NOT NULL
         )::int AS longest_conversation_days,
-        avg(total_message_count) FILTER (
-          WHERE actual_message_rows > 0
+        avg(matches.actual_message_rows::double precision) FILTER (
+          WHERE matches.actual_message_rows > 0
         )::double precision AS average_messages_per_conversation,
-        round(percentile_cont(0.5) WITHIN GROUP (
-          ORDER BY total_message_count
-        ) FILTER (WHERE actual_message_rows > 0))::int
+        floor(
+          percentile_cont(0.5) WITHIN GROUP (
+            ORDER BY matches.actual_message_rows
+          ) FILTER (WHERE matches.actual_message_rows > 0) + 0.5
+        )::int
           AS median_messages_per_conversation,
         count(*) FILTER (
-          WHERE actual_message_rows <> total_message_count
-        )::int AS matches_whose_message_rows_disagree_with_total
-      FROM match_rows
-      GROUP BY tinder_profile_id
+          WHERE matches.actual_message_rows <> matches.total_message_count
+        )::int AS matches_whose_message_rows_disagree_with_total,
+        coalesce(sum(matches.invalid_message_reference_rows), 0)::int
+          AS invalid_message_reference_rows
+      FROM match_rows AS matches
+      LEFT JOIN pooled_profile_gaps AS pooled
+        ON pooled.tinder_profile_id = matches.tinder_profile_id
+      GROUP BY matches.tinder_profile_id, pooled.mean_response_time_seconds
     ),
     compared AS (
       SELECT
@@ -586,6 +736,8 @@ async function auditTinderConversationReconciliation(): Promise<AuditRow> {
         r.median_messages_per_conversation,
         coalesce(r.matches_whose_message_rows_disagree_with_total, 0)
           AS matches_whose_message_rows_disagree_with_total,
+        coalesce(r.invalid_message_reference_rows, 0)
+          AS invalid_message_reference_rows,
         m.conversation_count AS meta_conversation_count,
         m.conversations_with_messages AS meta_conversations_with_messages,
         m.ghosted_count AS meta_ghosted_count,
@@ -600,7 +752,9 @@ async function auditTinderConversationReconciliation(): Promise<AuditRow> {
           AS meta_median_messages_per_conversation
       FROM tinder_profile p
       LEFT JOIN raw r ON r.tinder_profile_id = p.tinder_id
-      LEFT JOIN profile_meta m ON m.tinder_profile_id = p.tinder_id
+      LEFT JOIN profile_meta m
+        ON m.tinder_profile_id = p.tinder_id
+       AND m.hinge_profile_id IS NULL
       WHERE p.computed = false
     )
     SELECT
@@ -645,6 +799,8 @@ async function auditTinderConversationReconciliation(): Promise<AuditRow> {
       )::int AS median_messages_mismatches,
       coalesce(sum(matches_whose_message_rows_disagree_with_total), 0)::int
         AS matches_whose_message_rows_disagree_with_total,
+      coalesce(sum(invalid_message_reference_rows), 0)::int
+        AS invalid_message_reference_rows,
       (SELECT count(*)::int
        FROM match_rows
        WHERE response_time_median_seconds < 0)
@@ -659,56 +815,228 @@ async function auditTinderConversationReconciliation(): Promise<AuditRow> {
          AND average_response_time_seconds < 0)
         AS profiles_with_negative_stored_response_time
     FROM compared
-  `);
+  `;
 }
 
-async function auditHingeCoreReconciliation(): Promise<AuditRow> {
-  return one<AuditRow>(sql`
-    WITH interactions AS (
+async function auditTinderConversationReconciliation(): Promise<AuditRow> {
+  return one<AuditRow>(buildTinderConversationReconciliationQuery());
+}
+
+/**
+ * REVIEW(provider assumption): Hinge chat rows are also uploader-authored
+ * (`to = 1`). Explicit match origin wins, including UNKNOWN; legacy outbound
+ * inference requires positive like evidence at or before the match timestamp.
+ */
+export function buildHingeCoreReconciliationQuery(): SQL {
+  return sql`
+    WITH event_times AS (
+      SELECT interaction.hinge_profile_id, interaction.timestamp AS event_time
+      FROM hinge_interaction AS interaction
+      UNION ALL
+      SELECT source_match.hinge_profile_id, source_match.matched_at
+      FROM match AS source_match
+      WHERE source_match.hinge_profile_id IS NOT NULL
+        AND source_match.matched_at IS NOT NULL
+      UNION ALL
+      SELECT source_match.hinge_profile_id, source_match.liked_at
+      FROM match AS source_match
+      WHERE source_match.hinge_profile_id IS NOT NULL
+        AND source_match.liked_at IS NOT NULL
+      UNION ALL
+      SELECT source_match.hinge_profile_id, source_match.initial_message_at
+      FROM match AS source_match
+      WHERE source_match.hinge_profile_id IS NOT NULL
+        AND source_match.initial_message_at IS NOT NULL
+      UNION ALL
+      SELECT source_match.hinge_profile_id, source_match.last_message_at
+      FROM match AS source_match
+      WHERE source_match.hinge_profile_id IS NOT NULL
+        AND source_match.last_message_at IS NOT NULL
+      UNION ALL
+      SELECT
+        source_match.hinge_profile_id,
+        (source_match.we_met ->> 'timestamp')::timestamptz
+          AT TIME ZONE 'UTC'
+      FROM match AS source_match
+      WHERE source_match.hinge_profile_id IS NOT NULL
+        AND source_match.we_met IS NOT NULL
+        AND pg_input_is_valid(
+          source_match.we_met ->> 'timestamp',
+          'timestamp with time zone'
+        )
+    ),
+    profile_bounds AS (
+      SELECT
+        profile.hinge_id,
+        least(
+          coalesce(profile.first_account_create_date, profile.create_date),
+          coalesce(
+            min(events.event_time),
+            coalesce(profile.first_account_create_date, profile.create_date)
+          )
+        ) AS first_activity,
+        greatest(
+          profile.create_date,
+          coalesce(profile.last_seen_at, profile.create_date),
+          coalesce(max(events.event_time), profile.create_date)
+        ) AS last_activity
+      FROM hinge_profile AS profile
+      LEFT JOIN event_times AS events
+        ON events.hinge_profile_id = profile.hinge_id
+      GROUP BY
+        profile.hinge_id,
+        profile.create_date,
+        profile.first_account_create_date,
+        profile.last_seen_at
+    ),
+    interaction_totals AS (
       SELECT
         hinge_profile_id,
         count(*) FILTER (WHERE type = 'LIKE_SENT')::int AS likes_sent,
-        count(*) FILTER (WHERE type = 'MATCH')::int AS match_interactions,
-        count(*) FILTER (
-          WHERE type = 'MATCH' AND thread_origin = 'OUTBOUND_LIKE'
-        )::int AS outbound_like_matches,
-        bool_or(type = 'MATCH' AND thread_origin IS NOT NULL)
-          AS has_classified_match_origins
+        count(DISTINCT (timestamp AT TIME ZONE 'UTC')::date)
+          FILTER (WHERE type = 'LIKE_SENT')::int AS active_like_days
       FROM hinge_interaction
       GROUP BY hinge_profile_id
     ),
+    explicit_origins AS (
+      SELECT
+        hinge_profile_id,
+        match_id,
+        count(DISTINCT thread_origin) FILTER (
+          WHERE thread_origin IN (
+            'OUTBOUND_LIKE', 'INBOUND_LIKE', 'UNKNOWN'
+          )
+        )::int AS explicit_origin_count,
+        CASE
+          WHEN count(DISTINCT thread_origin) FILTER (
+            WHERE thread_origin IN (
+              'OUTBOUND_LIKE', 'INBOUND_LIKE', 'UNKNOWN'
+            )
+          ) = 1
+          THEN min(thread_origin) FILTER (
+            WHERE thread_origin IN (
+              'OUTBOUND_LIKE', 'INBOUND_LIKE', 'UNKNOWN'
+            )
+          )
+          ELSE NULL
+        END AS thread_origin
+      FROM hinge_interaction
+      WHERE type = 'MATCH' AND match_id IS NOT NULL
+      GROUP BY hinge_profile_id, match_id
+    ),
+    linked_outbound AS (
+      SELECT DISTINCT interaction.hinge_profile_id, interaction.match_id
+      FROM hinge_interaction AS interaction
+      JOIN match AS source_match ON source_match.id = interaction.match_id
+      WHERE interaction.type = 'LIKE_SENT'
+        AND interaction.match_id IS NOT NULL
+        AND (
+          source_match.matched_at IS NULL
+          OR interaction.timestamp <= source_match.matched_at
+        )
+    ),
+    match_classification AS (
+      SELECT
+        source_match.hinge_profile_id,
+        source_match.id,
+        CASE
+          WHEN origin.explicit_origin_count = 1 THEN origin.thread_origin
+          WHEN origin.explicit_origin_count > 1 THEN 'UNKNOWN'
+          WHEN linked.match_id IS NOT NULL
+            OR (
+              source_match.liked_at IS NOT NULL
+              AND (
+                source_match.matched_at IS NULL
+                OR source_match.liked_at <= source_match.matched_at
+              )
+            ) THEN 'OUTBOUND_LIKE'
+          ELSE 'UNKNOWN'
+        END AS derived_origin
+      FROM match AS source_match
+      LEFT JOIN explicit_origins AS origin
+        ON origin.hinge_profile_id = source_match.hinge_profile_id
+       AND origin.match_id = source_match.id
+      LEFT JOIN linked_outbound AS linked
+        ON linked.hinge_profile_id = source_match.hinge_profile_id
+       AND linked.match_id = source_match.id
+      WHERE source_match.hinge_profile_id IS NOT NULL
+    ),
     match_counts AS (
-      SELECT hinge_profile_id, count(*)::int AS matches
-      FROM match
-      WHERE hinge_profile_id IS NOT NULL
+      SELECT
+        hinge_profile_id,
+        count(*)::int AS matches,
+        count(*) FILTER (
+          WHERE derived_origin = 'OUTBOUND_LIKE'
+        )::int AS outbound_matches,
+        count(*) FILTER (
+          WHERE derived_origin = 'INBOUND_LIKE'
+        )::int AS inbound_matches,
+        count(*) FILTER (
+          WHERE derived_origin = 'UNKNOWN'
+        )::int AS unknown_origin_matches
+      FROM match_classification
       GROUP BY hinge_profile_id
     ),
     message_counts AS (
-      SELECT hinge_profile_id,
-        count(*) FILTER (WHERE "to" = 1)::int AS messages_sent
-      FROM message
-      WHERE hinge_profile_id IS NOT NULL
-      GROUP BY hinge_profile_id
+      SELECT
+        source_match.hinge_profile_id,
+        count(message.id) FILTER (WHERE message."to" = 1)::int
+          AS messages_sent,
+        count(message.id) FILTER (
+          WHERE message."to" IS DISTINCT FROM 1
+        )::int AS non_outgoing_message_rows,
+        count(message.id) FILTER (
+          WHERE message.hinge_profile_id IS DISTINCT FROM
+            source_match.hinge_profile_id
+        )::int AS message_provider_link_mismatches
+      FROM match AS source_match
+      JOIN message ON message.match_id = source_match.id
+      WHERE source_match.hinge_profile_id IS NOT NULL
+      GROUP BY source_match.hinge_profile_id
     ),
     compared AS (
       SELECT
         p.hinge_id,
+        p.create_date,
+        p.first_account_create_date,
         coalesce(i.likes_sent, 0) AS likes_sent,
+        coalesce(i.active_like_days, 0) AS active_like_days,
         coalesce(mc.matches, 0) AS matches,
+        coalesce(mc.outbound_matches, 0) AS outbound_matches,
+        coalesce(mc.inbound_matches, 0) AS inbound_matches,
+        coalesce(mc.unknown_origin_matches, 0) AS unknown_origin_matches,
         coalesce(msg.messages_sent, 0) AS messages_sent,
+        coalesce(msg.non_outgoing_message_rows, 0)
+          AS non_outgoing_message_rows,
+        coalesce(msg.message_provider_link_mismatches, 0)
+          AS message_provider_link_mismatches,
+        bounds.first_activity AS expected_from,
+        bounds.last_activity AS expected_to,
+        greatest(
+          1,
+          (bounds.last_activity::date - bounds.first_activity::date) + 1
+        )::int AS expected_days_in_period,
         CASE
           WHEN coalesce(i.likes_sent, 0) = 0 THEN 0
-          WHEN coalesce(i.has_classified_match_origins, false)
-            THEN coalesce(i.outbound_like_matches, 0)::double precision /
-              i.likes_sent
-          ELSE coalesce(mc.matches, 0)::double precision / i.likes_sent
+          ELSE coalesce(mc.outbound_matches, 0)::double precision /
+            i.likes_sent
         END AS expected_match_rate,
+        CASE WHEN coalesce(i.likes_sent, 0) > 0 THEN 1 ELSE 0 END
+          AS expected_like_rate,
+        CASE
+          WHEN coalesce(i.active_like_days, 0) > 0
+            THEN i.likes_sent::double precision / i.active_like_days
+          ELSE 0
+        END AS expected_swipes_per_day,
         m.*
       FROM hinge_profile p
-      LEFT JOIN interactions i ON i.hinge_profile_id = p.hinge_id
+      JOIN profile_bounds bounds ON bounds.hinge_id = p.hinge_id
+      LEFT JOIN interaction_totals i ON i.hinge_profile_id = p.hinge_id
       LEFT JOIN match_counts mc ON mc.hinge_profile_id = p.hinge_id
       LEFT JOIN message_counts msg ON msg.hinge_profile_id = p.hinge_id
-      LEFT JOIN profile_meta m ON m.hinge_profile_id = p.hinge_id
+      LEFT JOIN profile_meta m
+        ON m.hinge_profile_id = p.hinge_id
+       AND m.tinder_profile_id IS NULL
     )
     SELECT
       count(*)::int AS profiles,
@@ -726,14 +1054,41 @@ async function auditHingeCoreReconciliation(): Promise<AuditRow> {
         WHERE abs(expected_match_rate - match_rate) > 1e-12
       )::int AS match_rate_mismatches,
       count(*) FILTER (
+        WHERE abs(expected_like_rate - like_rate) > 1e-12
+      )::int AS like_rate_mismatches,
+      count(*) FILTER (
+        WHERE active_like_days IS DISTINCT FROM days_active
+      )::int AS active_day_mismatches,
+      count(*) FILTER (
+        WHERE expected_from IS DISTINCT FROM "from"
+           OR expected_to IS DISTINCT FROM "to"
+           OR expected_days_in_period IS DISTINCT FROM days_in_period
+      )::int AS profile_period_mismatches,
+      count(*) FILTER (
+        WHERE first_account_create_date > create_date
+      )::int AS invalid_account_signup_order,
+      count(*) FILTER (
+        WHERE abs(expected_swipes_per_day - swipes_per_day) > 1e-12
+      )::int AS swipes_per_day_mismatches,
+      coalesce(sum(outbound_matches), 0)::int AS outbound_matches,
+      coalesce(sum(inbound_matches), 0)::int AS inbound_matches,
+      coalesce(sum(unknown_origin_matches), 0)::int
+        AS unknown_origin_matches,
+      coalesce(sum(non_outgoing_message_rows), 0)::int
+        AS non_outgoing_message_rows,
+      coalesce(sum(message_provider_link_mismatches), 0)::int
+        AS message_provider_link_mismatches,
+      count(*) FILTER (
         WHERE swipe_passes_total <> 0
            OR messages_received_total <> 0
            OR app_opens_total <> 0
-           OR days_active <> 0
-           OR like_rate <> 1
       )::int AS hinge_capability_placeholder_mismatches
     FROM compared
-  `);
+  `;
+}
+
+async function auditHingeCoreReconciliation(): Promise<AuditRow> {
+  return one<AuditRow>(buildHingeCoreReconciliationQuery());
 }
 
 function printHuman(result: Record<string, unknown>): void {
@@ -745,6 +1100,11 @@ function printHuman(result: Record<string, unknown>): void {
 
   printHeading("Stored domain rules");
   printRows(Object.entries(result.domainRules as Record<string, unknown>));
+
+  printHeading("Tinder identity provenance");
+  printRows(
+    Object.entries(result.tinderIdentityProvenance as Record<string, unknown>),
+  );
 
   const dateSerialization = result.tinderDateSerialization as {
     summary: Record<string, unknown>;
@@ -785,6 +1145,7 @@ async function main(): Promise<void> {
     inventory,
     grainAndCoverage,
     domainRules,
+    tinderIdentityProvenance,
     tinderDateSerialization,
     tinderCore,
     hingeCore,
@@ -792,6 +1153,7 @@ async function main(): Promise<void> {
     auditInventory(),
     auditGrainAndCoverage(),
     auditDomainRules(),
+    auditTinderIdentityProvenance(),
     auditTinderDateSerialization(),
     auditTinderCoreReconciliation(),
     auditHingeCoreReconciliation(),
@@ -802,10 +1164,11 @@ async function main(): Promise<void> {
     : await auditTinderConversationReconciliation();
 
   const result = {
-    auditVersion: "profile-meta-audit-v2",
+    auditVersion: "profile-meta-audit-v3",
     inventory,
     grainAndCoverage,
     domainRules,
+    tinderIdentityProvenance,
     tinderDateSerialization,
     tinderCore,
     tinderConversations,
@@ -824,7 +1187,19 @@ async function main(): Promise<void> {
       rayaCoverage:
         "profile_meta has no Raya foreign key; Raya is intentionally inventoried but cannot be reconciled here.",
       tinderConversationSemantics:
-        "The Tinder export path observes outgoing messages, so response-time fields are outgoing-message gap statistics, not reply times.",
+        "The Tinder export path observes uploader-authored messages, so response-time fields are uploader-message gap statistics, not reply times. Tinder message.to is a match reference, not direction.",
+      tinderCreateDateProvenance:
+        "New uploads distinguish provider signup timestamps from earliest-usage inference. Legacy null provenance is intentionally retained because equality with first observed activity is not enough evidence to backfill the source.",
+      tinderAgeInterpretation:
+        "Below-13 and over-100 derived ages are reported as implausible source identity. Ages from 13 through 17 are reported separately: historical Tinder exports can include teen-era activity, and later rows can reflect provider policy or identity inconsistencies, so the audit must not relabel them as mathematical corruption.",
+      tinderMergedAccountChronology:
+        "A profile can retain activity before its current create_date after an explicit cross-account absorption. The audit reports earlier calendar days for review rather than treating them as automatic corruption.",
+      pooledCadenceSemantics:
+        "Mean response time is the message-weighted mean across every adjacent outgoing-message gap, while average response time is the conversation-weighted median of per-conversation medians.",
+      hingeOriginSemantics:
+        "An explicit UNKNOWN origin remains unknown. Legacy linked likes and liked_at classify a match as outbound only when their timestamp is at or before matched_at.",
+      hingeMessageDirectionSemantics:
+        "Hinge GDPR chat rows are expected to be outgoing (to = 1). Non-outgoing or provider-link-inconsistent rows are reported separately and excluded from messages_sent_total reconciliation.",
     },
   };
 
@@ -832,7 +1207,9 @@ async function main(): Promise<void> {
   else printHuman(result);
 }
 
-main().catch((error: unknown) => {
-  console.error(error instanceof Error ? error.message : error);
-  process.exitCode = 1;
-});
+if (import.meta.main) {
+  main().catch((error: unknown) => {
+    console.error(error instanceof Error ? error.message : error);
+    process.exitCode = 1;
+  });
+}

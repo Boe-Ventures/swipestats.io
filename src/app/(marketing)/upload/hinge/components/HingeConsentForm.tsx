@@ -39,19 +39,9 @@ export function HingeConsentForm({ value, onChange }: HingeConsentFormProps) {
       terms: value.terms, // Preserve terms state (managed separately)
       sharePhotos: consents.includes("sharePhotos"),
       shareWorkInfo: consents.includes("shareWorkInfo"),
-      shareMatches: value.shareMatches, // Preserve these (not shown in this form)
-      shareMessages: value.shareMessages,
-      sharePrompts: value.sharePrompts,
     };
     onChange(newConsent);
-  }, [
-    consents,
-    onChange,
-    value.terms,
-    value.shareMatches,
-    value.shareMessages,
-    value.sharePrompts,
-  ]);
+  }, [consents, onChange, value.terms]);
 
   return (
     <FormProvider {...form}>

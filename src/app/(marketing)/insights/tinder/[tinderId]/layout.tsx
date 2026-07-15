@@ -38,6 +38,7 @@ export default async function TinderInsightsLayout({
       ageAtUpload: true,
       ageAtLastUsage: true,
       createDate: true,
+      createDateSource: true,
       activeTime: true,
       gender: true,
       genderStr: true,

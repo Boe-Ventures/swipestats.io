@@ -197,6 +197,15 @@ export const catalogSubmissionStatusEnum = pgEnum("catalog_submission_status", [
   "REJECTED",
   "WITHDRAWN",
 ]);
+
+export const transientUploadStatusEnum = pgEnum("TransientUploadStatus", [
+  "ISSUED",
+  "UPLOADED",
+  "PROCESSING",
+  "COMMITTED",
+  "CLEANED",
+  "ABANDONED",
+]);
 // Export TypeScript types
 export type DataProvider = (typeof dataProviderEnum.enumValues)[number];
 export type EventType = (typeof eventTypeEnum.enumValues)[number];
@@ -234,6 +243,8 @@ export type SwipeRankBuildScope =
   (typeof swipeRankBuildScopeEnum.enumValues)[number];
 export type SwipeRankSnapshotStatus =
   (typeof swipeRankSnapshotStatusEnum.enumValues)[number];
+export type TransientUploadStatus =
+  (typeof transientUploadStatusEnum.enumValues)[number];
 
 /** ISO 639-1 two-letter language code, e.g. "en", "no", "es" */
 export type LanguageCode = string;
@@ -455,6 +466,9 @@ export const tinderProfileTable = pgTable(
     ageAtUpload: t.integer().notNull(),
     ageAtLastUsage: t.integer().notNull(),
     createDate: t.timestamp().notNull(),
+    createDateSource: t
+      .text("create_date_source")
+      .$type<"PROVIDER" | "INFERRED_FROM_USAGE">(),
     activeTime: t.timestamp(),
     gender: genderEnum().notNull(),
     genderStr: t.text().notNull(),
@@ -492,7 +506,13 @@ export const tinderProfileTable = pgTable(
     lastDayOnApp: t.timestamp().notNull(),
     daysInProfilePeriod: t.integer().notNull(),
   }),
-  (table) => [uniqueIndex("tinder_profile_user_id_unique").on(table.userId)],
+  (table) => [
+    uniqueIndex("tinder_profile_user_id_unique").on(table.userId),
+    check(
+      "tinder_profile_create_date_source",
+      sql`${table.createDateSource} IS NULL OR ${table.createDateSource} IN ('PROVIDER', 'INFERRED_FROM_USAGE')`,
+    ),
+  ],
 );
 
 export type TinderProfile = typeof tinderProfileTable.$inferSelect;
@@ -581,7 +601,15 @@ export const hingeProfileTable = pgTable(
       .notNull(),
     birthDate: t.timestamp().notNull(),
     ageAtUpload: t.integer().notNull(),
+    // Signup of the currently represented Hinge account. Cross-account merge
+    // ordering must compare against this value, not the earliest history.
     createDate: t.timestamp().notNull(),
+    // Earliest known signup across accounts absorbed into this profile. Null
+    // is retained temporarily for legacy rows and read as createDate.
+    firstAccountCreateDate: t.timestamp(),
+    // Most recent provider-observed account activity from account.last_seen.
+    // Nullable for rows created before this field was retained.
+    lastSeenAt: t.timestamp(),
     heightCentimeters: t.integer().notNull(),
     gender: genderEnum().notNull(),
     genderStr: t.text().notNull(),
@@ -641,7 +669,13 @@ export const hingeProfileTable = pgTable(
     country: t.text(),
     userId: t.text().references(() => userTable.id, { onDelete: "cascade" }),
   }),
-  (table) => [uniqueIndex("hinge_profile_user_id_unique").on(table.userId)],
+  (table) => [
+    uniqueIndex("hinge_profile_user_id_unique").on(table.userId),
+    check(
+      "hinge_profile_account_signup_order",
+      sql`${table.firstAccountCreateDate} IS NULL OR ${table.firstAccountCreateDate} <= ${table.createDate}`,
+    ),
+  ],
 );
 
 export type HingeProfile = typeof hingeProfileTable.$inferSelect;
@@ -669,7 +703,8 @@ export type HingeInteractionInsert = typeof hingeInteractionTable.$inferInsert;
 export const hingePromptTable = pgTable("hinge_prompt", (t) => ({
   id: t.text().primaryKey(),
   type: t.text().notNull(),
-  prompt: t.text().notNull(),
+  providerPromptId: t.integer("provider_prompt_id"),
+  prompt: t.text(),
   answerText: t.text(), // For text-type prompts (now optional)
   answerOptions: t.text(), // Comma-separated options for poll prompts
   createdPromptAt: t.timestamp().notNull(),
@@ -858,53 +893,92 @@ export const mediaTable = pgTable(
 export type Media = typeof mediaTable.$inferSelect;
 export type MediaInsert = typeof mediaTable.$inferInsert;
 
-// ProfileMeta - Pre-computed aggregate statistics for profiles
-// Computed by computeProfileMeta() in meta.service.ts
-// IMPORTANT: All metrics exclude synthetic days (dateIsMissingFromOriginalData = true)
-// to avoid skewing statistics with inferred zero values
-export const profileMetaTable = pgTable("profile_meta", (t) => ({
-  id: t.text().primaryKey(),
-  tinderProfileId: t
-    .text()
-    .references(() => tinderProfileTable.tinderId, { onDelete: "cascade" }),
-  hingeProfileId: t
-    .text()
-    .references(() => hingeProfileTable.hingeId, { onDelete: "cascade" }),
+// ProfileMeta - one current, all-time aggregate row per provider profile.
+// Tinder rows are computed by computeProfileMeta() in meta.service.ts; Hinge
+// rows use createHingeProfileMeta() because the provider exports different
+// activity capabilities. Periodized analytics live in swipe_rank_period_fact.
+export const profileMetaTable = pgTable(
+  "profile_meta",
+  (t) => ({
+    id: t.text().primaryKey(),
+    tinderProfileId: t
+      .text()
+      .references(() => tinderProfileTable.tinderId, { onDelete: "cascade" }),
+    hingeProfileId: t
+      .text()
+      .references(() => hingeProfileTable.hingeId, { onDelete: "cascade" }),
 
-  // Time range
-  from: t.timestamp().notNull(),
-  to: t.timestamp().notNull(),
-  daysInPeriod: t.integer().notNull(),
-  daysActive: t.integer().notNull(), // Days with swipes (swipeLikes > 0 OR swipePasses > 0)
+    // Time range
+    from: t.timestamp().notNull(),
+    to: t.timestamp().notNull(),
+    daysInPeriod: t.integer().notNull(),
+    // Tinder: days with any swipe. Hinge: UTC days with a sent-like event.
+    daysActive: t.integer().notNull(),
 
-  // Core totals
-  swipeLikesTotal: t.integer().notNull(),
-  swipePassesTotal: t.integer().notNull(),
-  matchesTotal: t.integer().notNull(),
-  messagesSentTotal: t.integer().notNull(),
-  messagesReceivedTotal: t.integer().notNull(),
-  appOpensTotal: t.integer().notNull(),
+    // Core totals
+    swipeLikesTotal: t.integer().notNull(),
+    swipePassesTotal: t.integer().notNull(),
+    matchesTotal: t.integer().notNull(),
+    messagesSentTotal: t.integer().notNull(),
+    messagesReceivedTotal: t.integer().notNull(),
+    appOpensTotal: t.integer().notNull(),
 
-  // Core rates (pre-computed for faster queries)
-  likeRate: t.doublePrecision().notNull(), // swipeLikes / totalSwipes
-  matchRate: t.doublePrecision().notNull(), // matches / swipeLikes
-  swipesPerDay: t.doublePrecision().notNull(), // totalSwipes / daysActive (days with swipes)
+    // Core rates (pre-computed for faster queries)
+    // Tinder: likes / tracked swipes. Hinge: 1 when any likes exist because
+    // passes are absent from the export; consumers must keep provider context.
+    likeRate: t.doublePrecision().notNull(),
+    // Tinder: observed matches / right swipes. Hinge: outbound-like-linked
+    // matches / sent likes.
+    matchRate: t.doublePrecision().notNull(),
+    // Provider-tracked swipe-direction events / provider-specific active days.
+    swipesPerDay: t.doublePrecision().notNull(),
 
-  // Conversation stats (essential for "Your Chats" section)
-  conversationCount: t.integer().notNull(),
-  conversationsWithMessages: t.integer().notNull(),
-  ghostedCount: t.integer().notNull(), // matches with 0 messages
+    // Conversation stats (essential for "Your Chats" section)
+    conversationCount: t.integer().notNull(),
+    conversationsWithMessages: t.integer().notNull(),
+    // Legacy column name: provider conversation rows with no retained outgoing
+    // message. It does not establish that either person ghosted the other.
+    ghostedCount: t.integer().notNull(),
 
-  // Aggregate message metrics (computed from match-level data)
-  averageResponseTimeSeconds: t.integer(), // Median of per-conversation medians (robust to outliers)
-  meanResponseTimeSeconds: t.integer(), // True average (affected by outliers)
-  medianConversationDurationDays: t.integer(),
-  longestConversationDays: t.integer(),
-  averageMessagesPerConversation: t.doublePrecision(),
-  medianMessagesPerConversation: t.integer(), // Robust to outlier conversations
+    // Aggregate message metrics (computed from match-level data)
+    averageResponseTimeSeconds: t.integer(), // Median of per-conversation medians (robust to outliers)
+    meanResponseTimeSeconds: t.integer(), // True average (affected by outliers)
+    medianConversationDurationDays: t.integer(),
+    longestConversationDays: t.integer(),
+    averageMessagesPerConversation: t.doublePrecision(),
+    medianMessagesPerConversation: t.integer(), // Robust to outlier conversations
 
-  computedAt: t.timestamp().notNull(),
-}));
+    computedAt: t.timestamp().notNull(),
+  }),
+  (table) => [
+    uniqueIndex("profile_meta_tinder_profile_id_unique").on(
+      table.tinderProfileId,
+    ),
+    uniqueIndex("profile_meta_hinge_profile_id_unique").on(
+      table.hingeProfileId,
+    ),
+    check(
+      "profile_meta_exactly_one_provider",
+      sql`num_nonnulls(${table.tinderProfileId}, ${table.hingeProfileId}) = 1`,
+    ),
+    check(
+      "profile_meta_period_bounds",
+      sql`${table.from} <= ${table.to} AND ${table.daysInPeriod} >= 1 AND ${table.daysActive} >= 0 AND ${table.daysActive} <= ${table.daysInPeriod}`,
+    ),
+    check(
+      "profile_meta_nonnegative_core_metrics",
+      sql`${table.swipeLikesTotal} >= 0 AND ${table.swipePassesTotal} >= 0 AND ${table.matchesTotal} >= 0 AND ${table.messagesSentTotal} >= 0 AND ${table.messagesReceivedTotal} >= 0 AND ${table.appOpensTotal} >= 0 AND ${table.likeRate} >= 0 AND ${table.likeRate} <= 1 AND ${table.matchRate} >= 0 AND ${table.swipesPerDay} >= 0`,
+    ),
+    check(
+      "profile_meta_conversation_counts",
+      sql`${table.conversationCount} >= 0 AND ${table.conversationsWithMessages} >= 0 AND ${table.conversationsWithMessages} <= ${table.conversationCount} AND ${table.ghostedCount} = ${table.conversationCount} - ${table.conversationsWithMessages}`,
+    ),
+    check(
+      "profile_meta_nonnegative_conversation_metrics",
+      sql`(${table.averageResponseTimeSeconds} IS NULL OR ${table.averageResponseTimeSeconds} >= 0) AND (${table.meanResponseTimeSeconds} IS NULL OR ${table.meanResponseTimeSeconds} >= 0) AND (${table.medianConversationDurationDays} IS NULL OR ${table.medianConversationDurationDays} >= 0) AND (${table.longestConversationDays} IS NULL OR ${table.longestConversationDays} >= 0) AND (${table.averageMessagesPerConversation} IS NULL OR ${table.averageMessagesPerConversation} >= 0) AND (${table.medianMessagesPerConversation} IS NULL OR ${table.medianMessagesPerConversation} >= 0)`,
+    ),
+  ],
+);
 
 export type ProfileMeta = typeof profileMetaTable.$inferSelect;
 export type ProfileMetaInsert = typeof profileMetaTable.$inferInsert;
@@ -1679,6 +1753,92 @@ export type Inquiry = typeof inquiryTable.$inferSelect;
 export type InquiryInsert = typeof inquiryTable.$inferInsert;
 
 // ---- STORAGE TABLES -----------------------------------------------
+
+/**
+ * Short-lived ownership proof and cleanup ledger for sensitive provider
+ * exports uploaded directly from the browser. The provider payload itself
+ * never belongs in Postgres; this row binds its public transport URL to the
+ * authenticated session that requested the narrowly scoped upload token.
+ */
+export const transientUploadTable = pgTable(
+  "transient_upload",
+  (t) => ({
+    id: t.text().primaryKey(),
+    userId: t
+      .text()
+      // SET NULL preserves the only cleanup pointer when an account is deleted;
+      // expired/orphan cleanup does not depend on the user row still existing.
+      .references(() => userTable.id, { onDelete: "set null" }),
+    sessionId: t.text().notNull(),
+    dataProvider: dataProviderEnum().notNull(),
+    profileId: t.text().notNull(),
+    expectedPathname: t.text().notNull(),
+    blobUrl: t.text().unique(),
+    blobPathname: t.text(),
+    status: transientUploadStatusEnum().default("ISSUED").notNull(),
+    resultProfileId: t.text(),
+    expiresAt: t.timestamp({ withTimezone: true }).notNull(),
+    uploadedAt: t.timestamp({ withTimezone: true }),
+    processingStartedAt: t.timestamp({ withTimezone: true }),
+    committedAt: t.timestamp({ withTimezone: true }),
+    cleanedAt: t.timestamp({ withTimezone: true }),
+    cleanupAttemptedAt: t.timestamp({ withTimezone: true }),
+    cleanupAttempts: t.integer().default(0).notNull(),
+    lastCleanupError: t.text(),
+    createdAt: t
+      .timestamp({ withTimezone: true })
+      .$defaultFn(() => new Date())
+      .notNull(),
+    updatedAt: t
+      .timestamp({ withTimezone: true })
+      .$defaultFn(() => new Date())
+      .$onUpdate(() => new Date())
+      .notNull(),
+  }),
+  (t) => [
+    index("transient_upload_owner_idx").on(t.userId, t.sessionId),
+    index("transient_upload_expiry_idx").on(t.status, t.expiresAt),
+    uniqueIndex("transient_upload_binding_idx").on(
+      t.userId,
+      t.sessionId,
+      t.dataProvider,
+      t.profileId,
+      t.expectedPathname,
+    ),
+    check(
+      "transient_upload_provider",
+      sql`${t.dataProvider} IN ('TINDER', 'HINGE')`,
+    ),
+    check("transient_upload_cleanup_attempts", sql`${t.cleanupAttempts} >= 0`),
+    check(
+      "transient_upload_blob_state",
+      sql`${t.status} IN ('ISSUED', 'ABANDONED') OR (${t.blobUrl} IS NOT NULL AND ${t.blobPathname} IS NOT NULL AND ${t.uploadedAt} IS NOT NULL)`,
+    ),
+    check(
+      "transient_upload_processing_state",
+      sql`${t.status} <> 'PROCESSING' OR ${t.processingStartedAt} IS NOT NULL`,
+    ),
+    check(
+      "transient_upload_commit_state",
+      sql`${t.status} NOT IN ('COMMITTED', 'CLEANED') OR (${t.resultProfileId} IS NOT NULL AND ${t.committedAt} IS NOT NULL)`,
+    ),
+    check(
+      "transient_upload_cleaned_state",
+      sql`${t.status} <> 'CLEANED' OR ${t.cleanedAt} IS NOT NULL`,
+    ),
+    check(
+      "transient_upload_abandoned_state",
+      sql`${t.status} <> 'ABANDONED' OR (${t.resultProfileId} IS NULL AND ${t.committedAt} IS NULL)`,
+    ),
+    check(
+      "transient_upload_lease_bounds",
+      sql`${t.expiresAt} > ${t.createdAt}`,
+    ),
+  ],
+);
+
+export type TransientUpload = typeof transientUploadTable.$inferSelect;
+export type TransientUploadInsert = typeof transientUploadTable.$inferInsert;
 
 export const originalAnonymizedFileTable = pgTable(
   "original_anonymized_file",

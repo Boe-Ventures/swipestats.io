@@ -96,6 +96,9 @@ export async function POST(request: Request) {
     // Hinge
     const existing = await getHingeProfile(profileId);
 
+    // This preflight only chooses create vs additive reconciliation. Both
+    // mutation services acquire the canonical provider/profile advisory locks
+    // and re-check identity/ownership inside their database transaction.
     if (existing) {
       console.log(
         `🔄 [Admin] Additive update for existing Hinge profile: ${profileId}`,

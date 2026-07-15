@@ -11,6 +11,10 @@ import {
 import { getSession } from "@/server/better-auth/server";
 import { db } from "@/server/db";
 import { attachmentTable, RESOURCE_TYPES } from "@/server/db/schema";
+import {
+  bindTransientUploadFromCallback,
+  issueTransientUploadLease,
+} from "@/server/services/transient-upload.service";
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
@@ -30,6 +34,16 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           clientPayload,
           userId: session.user.id,
         });
+
+        if (policy.transientUpload) {
+          await issueTransientUploadLease({
+            ...policy.transientUpload,
+            userId: session.user.id,
+            sessionId: session.session.id,
+            dataProvider:
+              policy.resourceType === "tinder_data" ? "TINDER" : "HINGE",
+          });
+        }
 
         console.log("Client upload policy issued", {
           resourceType: policy.resourceType,
@@ -65,8 +79,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             userId?: string;
             resourceType?: string;
             resourceId?: string;
+            uploadId?: string;
           };
           const { userId, resourceType, resourceId } = payload;
+
+          if (
+            (resourceType === "tinder_data" || resourceType === "hinge_data") &&
+            payload.uploadId
+          ) {
+            await bindTransientUploadFromCallback({
+              id: payload.uploadId,
+              blobUrl: blob.url,
+              blobPathname: blob.pathname,
+            });
+            return;
+          }
 
           // Create a fallback attachment record if resource info provided
           if (resourceType && resourceId && userId) {

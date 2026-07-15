@@ -8,52 +8,125 @@ import type {
 } from "@/server/db/schema";
 import { createId } from "@/server/db/utils";
 import { classifyHingeThread } from "@/lib/utils/classifyHingeThread";
+import {
+  compareHingeTimestamps,
+  parseHingeTimestampToDate,
+} from "@/lib/hinge/timestamp";
+import { deriveHingeMatchConversationMetrics } from "./hinge-conversation-metrics";
 
-/**
- * Get the earliest timestamp from a conversation thread
- */
-function getEarliestTimestamp(thread: ConversationThread): Date | undefined {
-  const timestamps: Date[] = [];
+type NormalizedHingeMessage = {
+  sourceOrder: number;
+  sentDate: Date;
+  sentDateRaw: string;
+  content: string;
+  messageType: "TEXT" | "VOICE_NOTE";
+  type: "voice_note" | undefined;
+  gifUrl: string | null;
+};
 
-  if (thread.like?.[0]?.timestamp) {
-    timestamps.push(new Date(thread.like[0].timestamp));
-  }
-  if (thread.match?.[0]?.timestamp) {
-    timestamps.push(new Date(thread.match[0].timestamp));
-  }
-  if (thread.chats?.[0]?.timestamp) {
-    timestamps.push(new Date(thread.chats[0].timestamp));
-  }
+function normalizeHingeMessages(
+  thread: ConversationThread,
+  conversationIndex: number,
+): NormalizedHingeMessage[] {
+  const chats = Array.isArray(thread.chats) ? thread.chats : [];
+  const voiceNotes = Array.isArray(thread.voice_notes)
+    ? thread.voice_notes
+    : [];
+  const voiceNoteQueues = new Map<
+    string,
+    Array<{ url: string; voiceOrder: number }>
+  >();
+  voiceNotes.forEach((note, voiceOrder) => {
+    parseHingeTimestampToDate(
+      note.timestamp,
+      `Hinge voice-note timestamp at conversation ${conversationIndex}, voice note ${voiceOrder}`,
+    );
+    const queue = voiceNoteQueues.get(note.timestamp) ?? [];
+    queue.push({ url: note.url, voiceOrder });
+    voiceNoteQueues.set(note.timestamp, queue);
+  });
 
-  return timestamps.length > 0
-    ? new Date(Math.min(...timestamps.map((d) => d.getTime())))
-    : undefined;
-}
+  const normalized = chats.flatMap(
+    (chat, sourceOrder): NormalizedHingeMessage[] => {
+      const sentDate = parseHingeTimestampToDate(
+        chat.timestamp,
+        `Hinge message timestamp at conversation ${conversationIndex}, message ${sourceOrder}`,
+      );
 
-/**
- * Get the latest timestamp from a conversation thread
- */
-function getLatestTimestamp(thread: ConversationThread): Date | undefined {
-  const timestamps: Date[] = [];
+      const voiceNote = !chat.body
+        ? voiceNoteQueues.get(chat.timestamp)?.shift()
+        : undefined;
+      const voiceNoteUrl = voiceNote?.url ?? null;
+      if (!chat.body && !voiceNoteUrl) {
+        console.log(
+          `   ⚠️  Skipping message without body at conversation ${conversationIndex}, message ${sourceOrder}`,
+        );
+        return [];
+      }
 
-  if (Array.isArray(thread.chats) && thread.chats.length > 0) {
-    const lastChat = thread.chats[thread.chats.length - 1];
-    if (lastChat?.timestamp) {
-      timestamps.push(new Date(lastChat.timestamp));
+      const isVoiceNote = voiceNoteUrl !== null;
+      return [
+        {
+          sourceOrder,
+          sentDate,
+          sentDateRaw: chat.timestamp,
+          content: isVoiceNote ? "[Voice Note]" : chat.body,
+          messageType: isVoiceNote ? "VOICE_NOTE" : "TEXT",
+          type: isVoiceNote ? "voice_note" : undefined,
+          gifUrl: voiceNoteUrl,
+        },
+      ];
+    },
+  );
+
+  // REVIEW(provider assumption): Hinge can emit a voice_notes entry without a
+  // mirrored blank chat row. It is still an uploader-sent message and must be
+  // counted once; timestamp queues preserve duplicate occurrences.
+  for (const [timestamp, queue] of voiceNoteQueues) {
+    const sentDate = parseHingeTimestampToDate(
+      timestamp,
+      `Hinge standalone voice-note timestamp at conversation ${conversationIndex}`,
+    );
+    for (const note of queue) {
+      normalized.push({
+        sourceOrder: chats.length + note.voiceOrder,
+        sentDate,
+        sentDateRaw: timestamp,
+        content: "[Voice Note]",
+        messageType: "VOICE_NOTE",
+        type: "voice_note",
+        gifUrl: note.url,
+      });
     }
   }
 
-  if (thread.match?.[0]?.timestamp) {
-    timestamps.push(new Date(thread.match[0].timestamp));
-  }
+  return normalized.sort(
+    (a, b) =>
+      compareHingeTimestamps(a.sentDateRaw, b.sentDateRaw) ||
+      a.sourceOrder - b.sourceOrder,
+  );
+}
 
-  if (thread.we_met?.[0]?.timestamp) {
-    timestamps.push(new Date(thread.we_met[0].timestamp));
-  }
+function findLikeThatLedToMatch(
+  likes: NonNullable<ConversationThread["like"]>,
+  matchTimestamp: string,
+) {
+  const precedingLikes = likes.filter(
+    (like) => compareHingeTimestamps(like.timestamp, matchTimestamp) <= 0,
+  );
 
-  return timestamps.length > 0
-    ? new Date(Math.max(...timestamps.map((d) => d.getTime())))
-    : undefined;
+  // REVIEW(provider assumption): when one exported thread contains repeated
+  // likes, the latest like before the match is treated as the match-causing
+  // like. Every like is still counted; only likedAt/comment use this choice.
+  // A like timestamped after the match cannot have caused that match, so it is
+  // deliberately left unlinked instead of being used as a convenient fallback.
+  if (precedingLikes.length === 0) return undefined;
+
+  return precedingLikes.reduce((latest, like) =>
+    compareHingeTimestamps(like.timestamp, latest.timestamp) > 0
+      ? like
+      : latest,
+  );
 }
 
 /**
@@ -83,10 +156,10 @@ export function createHingeMessagesAndMatches(
 
   conversations.forEach((thread, i) => {
     try {
-      const likeEntry =
-        Array.isArray(thread.like) && thread.like.length > 0
-          ? thread.like[0]
-          : undefined;
+      const likeEntries = Array.isArray(thread.like) ? thread.like : [];
+      // REVIEW(provider assumption): Hinge documents one match event per
+      // exported thread. If that contract changes, multiple match events need
+      // distinct persisted threads rather than being folded into this one.
       const matchEntry =
         Array.isArray(thread.match) && thread.match.length > 0
           ? thread.match[0]
@@ -94,23 +167,34 @@ export function createHingeMessagesAndMatches(
       const hasBlock = Array.isArray(thread.block) && thread.block.length > 0;
       const classification = classifyHingeThread(thread);
 
-      let matchId: string | null = null;
+      if (!matchEntry && classification.hasChats) {
+        // REVIEW(provider assumption): Hinge message and voice-note events are
+        // match-scoped, but incomplete exports can omit the match event. We
+        // quarantine the upload instead of silently dropping messages or
+        // fabricating a match timestamp that would corrupt match-rate math.
+        throw new Error(
+          `Hinge conversation ${i} contains messages without a match event.`,
+        );
+      }
 
-      // 1. Process LIKE_SENT interaction (if you liked someone)
-      if (likeEntry) {
+      const matchId: string | null = matchEntry ? nanoid() : null;
+
+      // 1. Process every LIKE_SENT event. A thread can contain repeat likes.
+      for (const likeEntry of likeEntries) {
+        // REVIEW(provider assumption): the outer entry is the like action and
+        // its nested array describes the liked target/reaction. Only its first
+        // comment is representable in the current interaction row.
         const likeComment = likeEntry.like?.[0]?.comment;
-
-        // Generate matchId if this like resulted in a match
-        if (matchEntry) {
-          matchId = nanoid();
-        }
 
         interactionsInput.push({
           id: createId("hint"),
           type: "LIKE_SENT",
           threadOrigin: classification.origin,
           threadState: classification.state,
-          timestamp: new Date(likeEntry.timestamp),
+          timestamp: parseHingeTimestampToDate(
+            likeEntry.timestamp,
+            `Hinge like timestamp at conversation ${i}`,
+          ),
           timestampRaw: likeEntry.timestamp,
           comment: likeComment ?? null,
           hasComment: !!likeComment,
@@ -121,43 +205,58 @@ export function createHingeMessagesAndMatches(
 
       // 2. Process MATCH (only if mutual match occurred)
       if (matchEntry) {
-        // If we didn't generate matchId above (no like, so they initiated), generate it now
-        matchId ??= nanoid();
-
-        const totalMessageCount = thread.chats?.length ?? 0;
-        const firstMessageAt = getEarliestTimestamp(thread);
-        const lastMessageAt = getLatestTimestamp(thread);
+        const normalizedMessages = normalizeHingeMessages(thread, i);
+        const conversationMetrics = deriveHingeMatchConversationMetrics(
+          normalizedMessages.map((message) => ({
+            sentDate: message.sentDate,
+            messageType: message.messageType,
+            order: message.sourceOrder,
+          })),
+        );
+        // REVIEW(provider assumption): storage currently has one `weMet` object
+        // per match, so only the first provider response is retained. If Hinge
+        // begins exporting revisions here, this needs an event-grain table.
         const weMetData = thread.we_met?.[0];
-        const firstLikeReaction = likeEntry?.like?.[0];
+        const matchedLike =
+          likeEntries.length > 0
+            ? findLikeThatLedToMatch(likeEntries, matchEntry.timestamp)
+            : undefined;
+        const matchedLikeReaction = matchedLike?.like?.[0];
 
         matchesInput.push({
-          id: matchId,
+          id: matchId!,
           order: i,
-          totalMessageCount,
-          textCount: totalMessageCount,
-          gifCount: 0,
-          gestureCount: 0,
-          otherMessageTypeCount: 0,
+          ...conversationMetrics,
           primaryLanguage: null,
           languages: [],
-          initialMessageAt: firstMessageAt,
-          lastMessageAt: lastMessageAt,
           engagementScore: null,
           tinderMatchId: null,
           tinderProfileId: null,
           hingeProfileId,
           weMet: weMetData
-            ? { did_meet_subject: weMetData.did_meet_subject }
-            : null,
-          like: likeEntry
             ? {
-                timestamp: likeEntry.timestamp,
-                comment: firstLikeReaction?.comment ?? null,
+                timestamp: weMetData.timestamp,
+                did_meet_subject: weMetData.did_meet_subject,
+                was_my_type: weMetData.was_my_type ?? null,
+              }
+            : null,
+          like: matchedLike
+            ? {
+                timestamp: matchedLike.timestamp,
+                comment: matchedLikeReaction?.comment ?? null,
               }
             : null,
           match: { timestamp: matchEntry.timestamp },
-          likedAt: likeEntry ? new Date(likeEntry.timestamp) : null,
-          matchedAt: new Date(matchEntry.timestamp),
+          likedAt: matchedLike
+            ? parseHingeTimestampToDate(
+                matchedLike.timestamp,
+                `Hinge matched-like timestamp at conversation ${i}`,
+              )
+            : null,
+          matchedAt: parseHingeTimestampToDate(
+            matchEntry.timestamp,
+            `Hinge match timestamp at conversation ${i}`,
+          ),
         });
 
         // Create MATCH interaction
@@ -166,84 +265,47 @@ export function createHingeMessagesAndMatches(
           type: "MATCH",
           threadOrigin: classification.origin,
           threadState: classification.state,
-          timestamp: new Date(matchEntry.timestamp),
+          timestamp: parseHingeTimestampToDate(
+            matchEntry.timestamp,
+            `Hinge match timestamp at conversation ${i}`,
+          ),
           timestampRaw: matchEntry.timestamp,
           comment: null,
           hasComment: false,
-          matchId,
+          matchId: matchId!,
           hingeProfileId,
         });
-      }
 
-      // 3. Process MESSAGES (only for matched conversations)
-      if (
-        matchEntry &&
-        Array.isArray(thread.chats) &&
-        thread.chats.length > 0
-      ) {
-        // Create a map of voice note URLs by timestamp for quick lookup
-        const voiceNotesByTimestamp = new Map<string, string>();
-        if (Array.isArray(thread.voice_notes)) {
-          thread.voice_notes.forEach((vn) => {
-            if (vn.timestamp && vn.url) {
-              voiceNotesByTimestamp.set(vn.timestamp, vn.url);
-            }
-          });
-        }
-
-        thread.chats.forEach((chat, messageIndex) => {
-          const lastMessage = thread.chats![messageIndex - 1];
-
-          const currentTimestamp = new Date(chat.timestamp).getTime();
-          const lastTimestamp = lastMessage
-            ? new Date(lastMessage.timestamp).getTime()
-            : undefined;
-
-          const timeSinceLastMessage = lastTimestamp
-            ? Math.floor((currentTimestamp - lastTimestamp) / 1000)
+        // 3. Process normalized outgoing messages in chronological order.
+        normalizedMessages.forEach((message, messageIndex) => {
+          const previousMessage = normalizedMessages[messageIndex - 1];
+          const timeSinceLastMessage = previousMessage
+            ? Math.floor(
+                (message.sentDate.getTime() -
+                  previousMessage.sentDate.getTime()) /
+                  1000,
+              )
             : 0;
-
-          // Check if this is a voice note (has timestamp but no body)
-          const voiceNoteUrl = !chat.body
-            ? voiceNotesByTimestamp.get(chat.timestamp)
-            : null;
-
-          // Determine message type and content
-          let messageType: "TEXT" | "VOICE_NOTE" = "TEXT";
-          let content = chat.body || "";
-          let gifUrl: string | null = null;
-
-          if (voiceNoteUrl) {
-            messageType = "VOICE_NOTE";
-            content = "[Voice Note]";
-            gifUrl = voiceNoteUrl;
-          } else if (!chat.body) {
-            // Message with no body and no matching voice note - skip it
-            console.log(
-              `   ⚠️  Skipping message without body at conversation ${i}, message ${messageIndex}`,
-            );
-            return;
-          }
 
           // GDPR data only contains YOUR messages - all are outgoing
           messagesInput.push({
             id: nanoid(),
-            messageType,
+            messageType: message.messageType,
             to: 1, // Always 1 for Hinge (sent by user)
-            sentDate: new Date(chat.timestamp),
-            sentDateRaw: chat.timestamp,
-            content,
-            charCount: content.length,
-            contentRaw: content,
-            type: voiceNoteUrl ? "voice_note" : undefined,
-            gifUrl,
+            sentDate: message.sentDate,
+            sentDateRaw: message.sentDateRaw,
+            content: message.content,
+            charCount: message.content.length,
+            contentRaw: message.content,
+            type: message.type,
+            gifUrl: message.gifUrl,
             matchId: matchId!,
             tinderProfileId: null,
             hingeProfileId,
-            order: messageIndex,
+            order: message.sourceOrder,
             timeSinceLastMessage,
-            timeSinceLastMessageRelative: lastTimestamp
-              ? formatDistance(lastTimestamp, currentTimestamp)
+            timeSinceLastMessageRelative: previousMessage
+              ? formatDistance(previousMessage.sentDate, message.sentDate)
               : null,
             language: null,
             emotionScore: null,
@@ -256,8 +318,8 @@ export function createHingeMessagesAndMatches(
             type: "MESSAGE_SENT",
             threadOrigin: classification.origin,
             threadState: classification.state,
-            timestamp: new Date(chat.timestamp),
-            timestampRaw: chat.timestamp,
+            timestamp: message.sentDate,
+            timestampRaw: message.sentDateRaw,
             comment: null,
             hasComment: false,
             matchId: matchId!,
@@ -269,26 +331,38 @@ export function createHingeMessagesAndMatches(
       // 4. Process BLOCK interactions (REJECT or UNMATCH)
       if (hasBlock && thread.block) {
         thread.block.forEach((block) => {
-          // Determine if this is a REJECT (no match) or UNMATCH (had a match)
-          const interactionType = matchEntry ? "UNMATCH" : "REJECT";
+          const isPostMatchBlock =
+            matchEntry !== undefined &&
+            compareHingeTimestamps(block.timestamp, matchEntry.timestamp) >= 0;
+          // A pre-match removal cannot be an unmatch. A single exported thread
+          // can contain a reject followed by a later like and match.
+          // REVIEW(provider assumption): `block_type` is not currently modeled.
+          // We classify the action from chronology because the durable enum only
+          // distinguishes pre-match removal from post-match unmatch.
+          const interactionType = isPostMatchBlock ? "UNMATCH" : "REJECT";
 
           interactionsInput.push({
             id: createId("hint"),
             type: interactionType,
             threadOrigin: classification.origin,
             threadState: classification.state,
-            timestamp: new Date(block.timestamp),
+            timestamp: parseHingeTimestampToDate(
+              block.timestamp,
+              `Hinge block timestamp at conversation ${i}`,
+            ),
             timestampRaw: block.timestamp,
             comment: null,
             hasComment: false,
-            matchId: matchEntry ? matchId : null,
+            matchId: isPostMatchBlock ? matchId : null,
             hingeProfileId,
           });
         });
       }
     } catch (error) {
       console.error(`❌ Error processing conversation ${i}:`, error);
-      console.error(`   Thread data:`, JSON.stringify(thread, null, 2));
+      console.error(
+        "   Thread payload omitted because it may contain messages",
+      );
       throw error;
     }
   });

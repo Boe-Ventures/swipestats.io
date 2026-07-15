@@ -221,7 +221,7 @@ export function ComparisonDialog() {
                       <BarChart3 className="mt-0.5 h-4 w-4 shrink-0" />
                       <span>
                         <strong>Advanced Filters:</strong> Find profiles by
-                        demographics, location, and match rates
+                        demographics, location, and match yield
                       </span>
                     </li>
                     <li className="flex items-start gap-2">
@@ -262,7 +262,7 @@ export function ComparisonDialog() {
               topic="waitlist-directory-profiles"
               benefits={[
                 "Compare with 7,000+ verified real users",
-                "Filter by demographics and match rates",
+                "Filter by demographics and match yield",
                 "See how you stack up globally",
               ]}
             >

@@ -6,6 +6,7 @@ import type {
   TinderProfile,
   TinderUsage,
 } from "@/server/db/schema";
+import { normalizeTinderUsageDateKey } from "@/lib/profile.utils";
 import { getMedian } from "../meta-utils.service";
 
 export type TinderProfileWithUsageAndMatches = TinderProfile & {
@@ -326,20 +327,28 @@ export function computeProfileMeta(
   // so defaulting to profile.firstDayOnApp/lastDayOnApp can silently discard
   // real history. Explicit ranges still take precedence for period analysis.
   const observedTimes = profile.usage
-    .map((day) => day.dateStamp.getTime())
+    .map((day) =>
+      new Date(
+        `${normalizeTinderUsageDateKey(day.dateStampRaw)}T00:00:00.000Z`,
+      ).getTime(),
+    )
     .filter(Number.isFinite);
-  const observedFromMs = observedTimes.reduce(
-    (minimum, value) => Math.min(minimum, value),
-    profile.firstDayOnApp.getTime(),
-  );
-  const observedToMs = observedTimes.reduce(
-    (maximum, value) => Math.max(maximum, value),
-    profile.lastDayOnApp.getTime(),
-  );
-  // Preserve the app-open profile span when raw usage is sparse, but expand it
-  // if any retained additive-upload row lies outside that span.
+  const observedFromMs =
+    observedTimes.length > 0
+      ? Math.min(...observedTimes)
+      : profile.firstDayOnApp.getTime();
+  const observedToMs =
+    observedTimes.length > 0
+      ? Math.max(...observedTimes)
+      : profile.lastDayOnApp.getTime();
+  // Raw provider day keys are canonical when usage exists. Profile bounds are
+  // only a fallback for legacy profiles with no retained usage rows.
   const from = options?.from ?? new Date(observedFromMs);
   const to = options?.to ?? new Date(observedToMs);
+
+  if (from > to) {
+    throw new Error("ProfileMeta period start must not be after its end.");
+  }
 
   console.log(`   📊 Computing ProfileMeta...`);
   console.log(
@@ -352,9 +361,12 @@ export function computeProfileMeta(
   // USAGE TABLE: Core totals
   // ═══════════════════════════════════════════════════════════════════
   // Apply date range filter (all usage data is now real - no synthetic days)
-  const usageInRange = profile.usage.filter(
-    (day) => day.dateStamp >= from && day.dateStamp <= to,
-  );
+  const usageInRange = profile.usage.filter((day) => {
+    const observedDate = new Date(
+      `${normalizeTinderUsageDateKey(day.dateStampRaw)}T00:00:00.000Z`,
+    );
+    return observedDate >= from && observedDate <= to;
+  });
 
   console.log(`      - ${usageInRange.length} usage days in range`);
 
@@ -385,7 +397,19 @@ export function computeProfileMeta(
     },
   );
 
-  const daysInPeriod = differenceInDays(to, from) + 1;
+  // Count UTC calendar buckets rather than elapsed 24-hour blocks so daylight
+  // saving transitions cannot add or remove a day.
+  const fromUtcDay = Date.UTC(
+    from.getUTCFullYear(),
+    from.getUTCMonth(),
+    from.getUTCDate(),
+  );
+  const toUtcDay = Date.UTC(
+    to.getUTCFullYear(),
+    to.getUTCMonth(),
+    to.getUTCDate(),
+  );
+  const daysInPeriod = Math.floor((toUtcDay - fromUtcDay) / 86_400_000) + 1;
   const combinedSwipes = totals.swipeLikesTotal + totals.swipePassesTotal;
 
   // Compute rates
@@ -412,6 +436,9 @@ export function computeProfileMeta(
       })
     : profile.matches; // All-time: no filtering needed
 
+  // REVIEW(provider assumption): Tinder's Messages collection is treated as a
+  // conversation export, not a complete match ledger. A zero-message entry
+  // means no exported outgoing message; it does not prove who ghosted whom.
   // Compute conversation stats from matches
   const conversationCount = matchesInRange.length;
   const conversationsWithMessages = matchesInRange.filter(
@@ -427,30 +454,46 @@ export function computeProfileMeta(
   // Response time: both median and mean
   const responseTimesValid = matchesInRange
     .map((m) => m.responseTimeMedianSeconds)
-    .filter((t): t is number => t !== null && t !== undefined);
+    .filter((t): t is number => t !== null && t !== undefined && t >= 0);
   const averageResponseTimeSeconds =
     responseTimesValid.length > 0
       ? Math.round(getMedian(responseTimesValid))
       : null;
+  const pooledCadenceGaps = matchesInRange.flatMap((match) => {
+    const ordered = [...match.messages].sort(
+      (left, right) => left.sentDate.getTime() - right.sentDate.getTime(),
+    );
+    return ordered
+      .slice(1)
+      .map((message, index) =>
+        Math.floor(
+          (message.sentDate.getTime() - ordered[index]!.sentDate.getTime()) /
+            1000,
+        ),
+      );
+  });
+  // This is the true message-weighted mean across every adjacent outgoing
+  // message gap. It deliberately differs from the conversation-weighted
+  // median-of-medians stored in averageResponseTimeSeconds.
   const meanResponseTimeSeconds =
-    responseTimesValid.length > 0
+    pooledCadenceGaps.length > 0
       ? Math.round(
-          responseTimesValid.reduce((sum, t) => sum + t, 0) /
-            responseTimesValid.length,
+          pooledCadenceGaps.reduce((sum, gap) => sum + gap, 0) /
+            pooledCadenceGaps.length,
         )
       : null;
 
   // Conversation duration stats
   const durationsValid = matchesInRange
     .map((m) => m.conversationDurationDays)
-    .filter((d): d is number => d !== null && d !== undefined && d > 0);
+    .filter((d): d is number => d !== null && d !== undefined && d >= 0);
   const medianConversationDurationDays =
     durationsValid.length > 0 ? Math.round(getMedian(durationsValid)) : null;
   const longestConversationDays =
     durationsValid.length > 0 ? Math.max(...durationsValid) : null;
 
   // Average and median messages per conversation (only counting conversations with messages)
-  const messageCounts = matchesWithMessages.map((m) => m.totalMessageCount);
+  const messageCounts = matchesWithMessages.map((m) => m.messages.length);
   const averageMessagesPerConversation =
     messageCounts.length > 0
       ? messageCounts.reduce((sum, count) => sum + count, 0) /

@@ -15,22 +15,20 @@ Checks provider-key grain, missing and duplicate rows, formula invariants, raw
 Tinder usage totals, conversation aggregates, Hinge capability placeholders,
 profile-range exclusions, and all-time eligibility differences.
 
-### Hinge rates above 100%
+### Retired: legacy Hinge rates-above-100 audit
 
 ```sh
-bun run data-layer:audit-hinge-over-100
-bun run data-layer:audit-hinge-over-100 -- --json
-bun run data-layer:audit-hinge-over-100 -- --verify-blobs
-bun run data-layer:audit-hinge-over-100 -- \
-  --hinge-id <id> --show-ids --json
+bun run data-layer:audit-profile-meta -- --json
+bun run data-layer:repair-conversations -- --provider HINGE --json
 ```
 
-Reconstructs outbound- versus inbound-like match origins from persisted thread
-links, checks profile-meta totals, event grain, referential integrity, ranges,
-timestamps, low denominators, and upload history, and classifies each stored
-rate above 100%. `--verify-blobs` additionally compares the latest linked
-source export without printing blob URLs or message content. Database queries
-run in a read-only transaction.
+`data-layer:audit-hinge-over-100` remains as a non-mutating, non-querying
+fail-fast wrapper so old runbooks receive actionable guidance. Its linked-thread
+origin heuristic was superseded by the canonical persisted-origin model. Use
+the profile-meta audit for provider grain, formulas, and stored rates; use the
+conversation repair without `--apply` for a read-only comparison against
+canonical outbound-like yield. The retired per-profile and source-blob modes do
+not have a safe canonical equivalent.
 
 ## 2. Verify legacy cohort retirement
 
@@ -112,17 +110,137 @@ must always carry its source cutoff and sample size.
 
 ## Safety
 
-Every audit/probe command is read-only. `repair-profile-meta` is the sole write
-command and is a dry run unless `--apply` is passed. It repairs only Tinder
-profile ranges and usage-derived `profile_meta` fields, bumps the repaired
-source profile's `updated_at`, and creates a complete metadata row when one is
-missing. Existing conversation fields are preserved; conversation aggregates
-for a missing row are reconstructed from match/message relations. The write
-transaction takes the shared Tinder SwipeRank mutation lock and advances the
-privacy-safe source mutation journal, so later reconciliation can detect that
-facts may need rebuilding.
+Every active audit/probe command is read-only. Active repair commands are dry
+runs unless `--apply` is passed. `data-layer:repair-profile-meta` remains as a
+non-mutating, non-querying fail-fast wrapper because its legacy implementation
+mixed usage aggregation with superseded conversation formulas and could create
+metadata from stale derivatives.
 
 ```sh
-bun run data-layer:repair-profile-meta
-bun run data-layer:repair-profile-meta -- --tinder-id <id> --apply
+bun run data-layer:audit-profile-meta -- --json
+bun run data-layer:repair-tinder-dates -- --json
+bun run data-layer:repair-conversations -- --provider TINDER --json
 ```
+
+Run all three checks first. During a maintenance window, apply the two focused
+repairs and then rerun the audit:
+
+```sh
+bun run data-layer:repair-tinder-dates -- --apply --json
+bun run data-layer:repair-conversations -- --provider TINDER --apply --json
+bun run data-layer:audit-profile-meta -- --json
+bun run swipe-rank:launch -- --confirm-write
+```
+
+If the audit reports a missing `profile_meta` row, stop. The canonical repair
+scripts deliberately do not invent one from partial aggregates; regenerate it
+through the profile ingestion/service path instead. A targeted calendar repair
+can still use `--tinder-id <id>`, but conversation repair operates at provider
+grain.
+
+## 7. Repair legacy Tinder calendar dates
+
+```sh
+bun run data-layer:repair-tinder-dates
+bun run data-layer:repair-tinder-dates -- --json
+bun run data-layer:repair-tinder-dates -- --tinder-id <id> --apply
+```
+
+Older ingestion converted provider calendar keys through a local JavaScript
+timezone before storing `date_stamp`. The dry run measures that disagreement;
+`--apply` restores the `date_stamp_raw` calendar prefix at midnight, recomputes
+age-on-day from calendar dates (ignoring a provider birth timestamp's clock
+component), profile ranges, and usage-derived `profile_meta` values in one
+transaction, and journals the Tinder source mutation. The dry run reports both
+timestamp shifts and age mismatches. The repair changes SwipeRank age and
+profile-range inputs. Before treating SwipeRank as fresh, run the full build,
+independent validation, and activation gate immediately against the same
+database:
+
+```sh
+bun run swipe-rank:launch -- --confirm-write
+```
+
+## 8. Repair conversation derivatives
+
+```sh
+bun run data-layer:repair-conversations
+bun run data-layer:repair-conversations -- --provider TINDER --json
+bun run data-layer:repair-conversations -- --provider HINGE --apply
+```
+
+The dry run compares every stored match derivative with a fresh calculation
+from its persisted messages. `--apply` orders those messages chronologically,
+rebuilds counts, first/last timestamps, median and longest gaps, duration, and
+the corresponding all-time conversation metadata. It also replaces legacy
+Hinge all-match rates with outbound-like yield, retaining an inline review note
+for the legacy `liked_at` origin fallback. Apply mode takes exclusive provider
+advisory locks and verifies match, metadata, and Hinge-rate postconditions before
+commit. Tinder and Hinge upload transactions take the shared form of the same
+provider lock, so apply mode waits for in-flight writes and blocks new writes for
+that provider until the repair commits. A maintenance window is still prudent
+for operator visibility, but upload quiescence is no longer required for these
+cooperating runtime paths.
+
+## 9. Repair duplicate Hinge media URLs
+
+```sh
+bun run data-layer:repair-hinge-media -- --json
+bun run data-layer:repair-hinge-media -- --apply --json
+bun run data-layer:repair-hinge-media -- --json
+```
+
+The dry run counts duplicate `(hinge_profile_id, url)` groups. Apply mode takes
+the exclusive Hinge provider lock, retains one deterministic row per exact URL,
+merges complementary prompt/social/caption/type evidence, and deletes only
+surplus rows. Conflicting nonblank prompt/caption/type values abort for manual
+review, and postconditions assert both evidence preservation and zero remaining
+duplicates before commit. This repair does not change profile metadata because
+media counts are not stored in `profile_meta`.
+
+## 10. Audit progressive Hinge like-link collisions
+
+```sh
+bun run data-layer:audit-hinge-like-links -- --json
+bun run data-layer:audit-hinge-like-links -- --limit 25
+bun run data-layer:investigate-hinge-like-lineage -- --json
+```
+
+This read-only audit finds exact `(profile, timestamp, comment)` `LIKE_SENT`
+keys that contain both a pending row and a match-linked row. The initial review
+found nine suspicious historical keys, but identical occurrences can be real,
+so the script preserves multiplicity, fingerprints comments rather than
+printing their text, and never updates or deletes rows.
+
+The lineage investigation reads only retained Hinge snapshots for users in the
+collision set. It compares raw outer and nested reaction timestamps without
+emitting URLs, comments, or content, so provider microseconds remain available
+to distinguish real source multiplicity from progressive pending-to-linked
+history. A key is repairable only when complete lineage shows one exact source
+event moving monotonically from pending to linked. Non-monotonic histories,
+same-snapshot multiplicity, and distinct raw microsecond events remain
+read-only findings.
+
+## 11. Audit and clean transient provider uploads
+
+```sh
+bun run data-layer:cleanup-transient-uploads
+bun run data-layer:cleanup-transient-uploads -- --apply
+```
+
+Tinder and Hinge browser uploads receive a 24-hour, session-bound database
+lease. Processing explicitly registers the exact Vercel Blob URL by checking
+its metadata, then the provider transaction locks the lease and records
+`COMMITTED` before any deletion is attempted. Cleanup failures do not undo a
+successful profile commit: they remain visible as retryable ledger rows.
+
+The protected `/api/cron/transient-uploads` worker runs hourly and processes at
+most 50 leases per invocation. It deletes every object under the unique lease
+prefix, including callback-only orphans. The CLI is dry-run by default and its
+apply mode uses the same bounded worker in batches of at most 100. Account
+deletion nulls the owner foreign key instead of cascading this ledger, so an
+abandoned public object never loses its cleanup pointer.
+
+The installed Vercel Blob client supports public client uploads only. These
+leases minimize and account for that exposure window; moving provider exports
+to private object storage remains the stronger long-term boundary.

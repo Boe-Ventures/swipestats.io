@@ -3,6 +3,11 @@ import type { SwipestatsHingeProfilePayload } from "@/lib/interfaces/HingeDataJS
 import type { HingeConsentState } from "@/lib/interfaces/HingeConsent";
 import { format } from "date-fns";
 import { ProfilePhotoGrid } from "../../_components/ProfilePhotoGrid";
+import { mapHingeGender } from "@/lib/utils/gender";
+import {
+  compareHingeTimestamps,
+  tryParseHingeTimestampToDate,
+} from "@/lib/hinge/timestamp";
 
 interface HingeProfilePreviewProps {
   payload: SwipestatsHingeProfilePayload;
@@ -11,14 +16,14 @@ interface HingeProfilePreviewProps {
 }
 
 function getGenderDisplay(gender: string) {
-  const genderLower = gender.toLowerCase();
-  if (genderLower.includes("man") || genderLower.includes("male")) {
-    return { symbol: "♂", text: "Man" };
+  switch (mapHingeGender(gender)) {
+    case "MALE":
+      return { symbol: "♂", text: "Man" };
+    case "FEMALE":
+      return { symbol: "♀", text: "Woman" };
+    default:
+      return { symbol: "◦", text: "Person" };
   }
-  if (genderLower.includes("woman") || genderLower.includes("female")) {
-    return { symbol: "♀", text: "Woman" };
-  }
-  return { symbol: "◦", text: "Person" };
 }
 
 export function HingeProfilePreview({
@@ -36,17 +41,14 @@ export function HingeProfilePreview({
   );
 
   const signupDate = user.account?.signup_time
-    ? new Date(user.account.signup_time)
+    ? tryParseHingeTimestampToDate(user.account.signup_time)
     : null;
   const age = profile.age;
   const genderDisplay = getGenderDisplay(profile.gender ?? "Unknown");
 
   // Get only the 3 most recent prompts (by user_updated timestamp)
-  const activePrompts = prompts
-    .sort(
-      (a, b) =>
-        new Date(b.user_updated).getTime() - new Date(a.user_updated).getTime(),
-    )
+  const activePrompts = [...prompts]
+    .sort((a, b) => compareHingeTimestamps(b.user_updated, a.user_updated))
     .slice(0, 3);
 
   // Calculate stats

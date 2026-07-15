@@ -130,10 +130,12 @@ export function HingeDataExtractor({
             newFiles.user!,
             newFiles.matches!,
             newFiles.prompts,
-            newFiles.likes,
+            newFiles.media,
           ].filter((file): file is string => file !== undefined);
 
-          const payload = await extractHingeData(jsonStrings);
+          const payload = await extractHingeData(jsonStrings, {
+            prompts: newFiles.prompts !== undefined,
+          });
 
           // Track successful extraction (fires after anonymization completes)
           const totalSize = jsonStrings.reduce((sum, s) => sum + s.length, 0);

@@ -36,6 +36,7 @@ import {
   purgeTinderSwipeRankProfilesInTx,
 } from "@/server/services/swipe-rank/lifecycle.service";
 import { invalidatePublicSwipeRankCache } from "@/server/services/swipe-rank/public-cache";
+import { lockHingeAdminProfileMutationInTx } from "@/server/services/hinge/hinge-upload-lock";
 
 export const adminRouter = {
   // Delete a Tinder profile by tinderId (admin/dev only)
@@ -257,60 +258,74 @@ export const adminRouter = {
   // - matches, messages, prompts, blocks, etc.
   deleteHingeProfile: adminProcedure
     .input(z.object({ hingeId: z.string().min(1) }))
-    .mutation(async ({ ctx, input }) => {
-      // Verify profile exists
-      const profile = await ctx.db.query.hingeProfileTable.findFirst({
-        where: eq(hingeProfileTable.hingeId, input.hingeId),
-        columns: {
-          hingeId: true,
-          userId: true,
-        },
+    .mutation(async ({ input }) => {
+      const deletedProfile = await withTransaction(async (tx) => {
+        await lockHingeAdminProfileMutationInTx(tx, input.hingeId);
+
+        // Re-read only after the advisory locks. A concurrent upload or
+        // account-history merge must finish before this snapshot is trusted.
+        const profile = await tx.query.hingeProfileTable.findFirst({
+          where: eq(hingeProfileTable.hingeId, input.hingeId),
+          columns: {
+            hingeId: true,
+            userId: true,
+          },
+        });
+
+        if (!profile) return null;
+
+        // Original-file rows are user scoped rather than profile scoped. The
+        // unique active Hinge profile per user plus the profile lock prevents
+        // an upload/merge from changing that ownership while these exact rows
+        // are removed. Blob deletion is not transactional, so it deliberately
+        // happens before either database delete; a failure leaves the entire
+        // database state available for a safe retry.
+        if (profile.userId) {
+          const hingeFiles =
+            await tx.query.originalAnonymizedFileTable.findMany({
+              where: and(
+                eq(originalAnonymizedFileTable.userId, profile.userId),
+                eq(originalAnonymizedFileTable.dataProvider, "HINGE"),
+              ),
+              columns: { id: true, blobUrl: true },
+            });
+          const blobUrls = hingeFiles
+            .map((file) => file.blobUrl)
+            .filter((url): url is string => url !== null);
+          if (blobUrls.length > 0) {
+            console.log(
+              `🗑️ Deleting ${blobUrls.length} Hinge blob(s) for profile ${input.hingeId}`,
+            );
+            await BlobService.deleteBulkOrThrow(blobUrls);
+          }
+
+          const fileIds = hingeFiles.map((file) => file.id);
+          if (fileIds.length > 0) {
+            await tx
+              .delete(originalAnonymizedFileTable)
+              .where(inArray(originalAnonymizedFileTable.id, fileIds));
+          }
+        }
+
+        const deleted = await tx
+          .delete(hingeProfileTable)
+          .where(eq(hingeProfileTable.hingeId, input.hingeId))
+          .returning({ hingeId: hingeProfileTable.hingeId });
+        if (deleted.length !== 1) {
+          throw new Error(
+            `Failed to delete locked Hinge profile ${input.hingeId}.`,
+          );
+        }
+
+        return profile;
       });
 
-      if (!profile) {
+      if (!deletedProfile) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Profile not found",
         });
       }
-
-      // Fetch and delete user's Hinge data files + blobs (if user exists)
-      if (profile.userId) {
-        const hingeFiles =
-          await ctx.db.query.originalAnonymizedFileTable.findMany({
-            where: and(
-              eq(originalAnonymizedFileTable.userId, profile.userId),
-              eq(originalAnonymizedFileTable.dataProvider, "HINGE"),
-            ),
-            columns: { blobUrl: true },
-          });
-
-        // Delete blobs from Vercel storage
-        const blobUrls = hingeFiles
-          .map((f) => f.blobUrl)
-          .filter((url): url is string => url !== null);
-        if (blobUrls.length > 0) {
-          console.log(
-            `🗑️ Deleting ${blobUrls.length} Hinge blob(s) for profile ${input.hingeId}`,
-          );
-          await BlobService.deleteBulkOrThrow(blobUrls);
-        }
-
-        // Delete original file records
-        await ctx.db
-          .delete(originalAnonymizedFileTable)
-          .where(
-            and(
-              eq(originalAnonymizedFileTable.userId, profile.userId),
-              eq(originalAnonymizedFileTable.dataProvider, "HINGE"),
-            ),
-          );
-      }
-
-      // Delete profile - cascades will handle related tables
-      await ctx.db
-        .delete(hingeProfileTable)
-        .where(eq(hingeProfileTable.hingeId, input.hingeId));
 
       return {
         success: true,

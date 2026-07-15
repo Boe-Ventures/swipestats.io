@@ -78,6 +78,48 @@
       "when": 1784068839495,
       "tag": "0016_cloudy_the_professor",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1784071960200,
+      "tag": "0017_nebulous_vulcan",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1784074820318,
+      "tag": "0018_hinge-account-history",
+      "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1784076953535,
+      "tag": "0019_hinge-last-seen",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1784079461509,
+      "tag": "0020_low_golden_guardian",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1784080031692,
+      "tag": "0021_amused_wolfsbane",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1784088199272,
+      "tag": "0022_luxuriant_red_ghost",
+      "breakpoints": true
     }
   ]
 }

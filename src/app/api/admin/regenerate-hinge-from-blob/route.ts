@@ -1,15 +1,14 @@
 import { NextResponse } from "next/server";
-import { db } from "@/server/db";
-import { hingeProfileTable } from "@/server/db/schema";
-import { eq } from "drizzle-orm";
 import {
   createHingeProfile,
   getHingeProfile,
+  updateHingeProfile,
 } from "@/server/services/hinge/hinge.service";
 import { isAdminRequestAuthorized } from "@/lib/admin-request-auth";
 
 /**
- * Admin endpoint to regenerate a Hinge profile from blob by deleting and recreating.
+ * Admin endpoint to regenerate a Hinge profile from blob by atomically replacing
+ * its derived rows, or creating it when it does not exist.
  * Use this when you need to reprocess with updated extraction logic (e.g., new interaction types).
  *
  * POST /api/admin/regenerate-hinge-from-blob
@@ -44,33 +43,25 @@ export async function POST(request: Request) {
     // Step 1: Check if profile exists
     const existing = await getHingeProfile(hingeId);
 
-    if (existing) {
-      console.log(`🗑️  [Admin] Deleting existing Hinge profile: ${hingeId}`);
-      console.log(
-        `   This will cascade delete: interactions, prompts, matches, messages, media, events, profile_meta`,
-      );
-
-      // Delete the profile - cascade will handle all related data
-      await db
-        .delete(hingeProfileTable)
-        .where(eq(hingeProfileTable.hingeId, hingeId));
-
-      console.log(`✅ [Admin] Profile deleted successfully`);
-    } else {
-      console.log(`ℹ️  [Admin] No existing profile found for: ${hingeId}`);
-    }
-
-    // Step 2: Create fresh profile from blob
-    console.log(
-      `📝 [Admin] Creating fresh Hinge profile from blob: ${hingeId}`,
-    );
-    const result = await createHingeProfile({
-      hingeId,
-      blobUrl,
-      userId,
-      timezone,
-      country,
-    });
+    // This read only selects the maintenance operation. Both services acquire
+    // the provider lock and profile advisory lock, then validate the database
+    // identity/ownership under that lock. A concurrent state change therefore
+    // fails safely instead of leaving a delete/create gap.
+    const result = existing
+      ? await updateHingeProfile({
+          hingeId,
+          blobUrl,
+          userId,
+          timezone,
+          country,
+        })
+      : await createHingeProfile({
+          hingeId,
+          blobUrl,
+          userId,
+          timezone,
+          country,
+        });
 
     return NextResponse.json({
       success: true,

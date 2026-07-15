@@ -91,6 +91,31 @@ export async function lockTinderSwipeRankMutationsInTx(
   `);
 }
 
+export function tinderProfileUploadLockName(tinderId: string): string {
+  const normalizedId = tinderId.trim();
+  if (!normalizedId) {
+    throw new Error("Tinder profile upload lock requires a profile ID.");
+  }
+  return `tinder-profile-upload:${normalizedId}`;
+}
+
+/**
+ * Serialize additive uploads for one Tinder profile inside their transaction.
+ * The provider-wide shared lock protects SwipeRank snapshots but deliberately
+ * permits unrelated profiles to upload concurrently; this narrower exclusive
+ * lock closes the read/reconcile/insert race for the same profile.
+ */
+export async function lockTinderProfileUploadInTx(
+  tx: TransactionClient,
+  tinderId: string,
+): Promise<void> {
+  await tx.execute(sql`
+    SELECT pg_advisory_xact_lock(
+      hashtextextended(${tinderProfileUploadLockName(tinderId)}, 0)
+    )
+  `);
+}
+
 /**
  * Recompute one or more Tinder subjects without allowing analytical failures
  * to escape into the already-committed upload response.

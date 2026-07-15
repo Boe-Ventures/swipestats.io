@@ -65,14 +65,14 @@ const metricConfig: Record<
     description: "Left swipes over time",
   },
   messagesSent: {
-    label: "Messages Sent",
+    label: "Usage Messages Sent",
     color: "hsl(142, 71%, 45%)",
-    description: "Messages sent over time",
+    description: "Daily Usage-ledger messages sent over time",
   },
   messagesReceived: {
-    label: "Messages Received",
+    label: "Usage Messages Received",
     color: "hsl(217, 91%, 60%)",
-    description: "Messages received over time",
+    description: "Daily Usage-ledger messages received over time",
   },
 };
 
