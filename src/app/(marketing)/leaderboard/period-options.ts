@@ -129,13 +129,14 @@ export function resolveLeaderboardQuickJumps(
   today = new Date(),
 ): LeaderboardQuickJump[] {
   if (!observedPeriods) return [];
+  const observed = observedPeriods;
   const todayString = dateString(today);
 
   function newest(
     kind: SwipeRankPeriodKind,
     completedOnly: boolean,
   ): LeaderboardPeriodOption | undefined {
-    return observedPeriods
+    return observed
       .filter(
         (item) =>
           item.period.kind === kind &&

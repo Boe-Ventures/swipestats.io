@@ -1,4 +1,4 @@
-type SwipeRankGender = "MALE" | "FEMALE" | "OTHER" | "MORE" | "UNKNOWN";
+export type SwipeRankGender = "MALE" | "FEMALE" | "OTHER" | "MORE" | "UNKNOWN";
 
 export type SwipeRankOrientation =
   | "Straight"

@@ -47,6 +47,7 @@ import {
   type SwipeRankPeriodKind,
 } from "@/lib/swipe-rank/format";
 import { formatSwipeRankOrientation } from "@/lib/swipe-rank/orientation";
+import type { SwipeRankGender } from "@/lib/swipe-rank/orientation";
 import { cn } from "@/components/ui/lib/utils";
 import { useTRPC } from "@/trpc/react";
 
@@ -134,8 +135,8 @@ function OrientationPill({
   gender,
   interestedIn,
 }: {
-  gender: string | null;
-  interestedIn: string | null;
+  gender: SwipeRankGender | null;
+  interestedIn: SwipeRankGender | null;
 }) {
   const label = formatSwipeRankOrientation(gender, interestedIn);
   const className = {
