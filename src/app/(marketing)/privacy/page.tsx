@@ -336,8 +336,8 @@ export default function PrivacyPage() {
         <h3>Public SwipeRank entries</h3>
         <p>
           SwipeRank is a playful comparison between eligible Tinder uploads.
-          Every profile that meets the published activity thresholds may be
-          included automatically under a season-specific pseudonym. This public
+          Every profile that meets the published activity thresholds is included
+          automatically under a season-specific pseudonym. This public
           leaderboard is separate from your private insights and from the
           anonymized research datasets described below.
         </p>
