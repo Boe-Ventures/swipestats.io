@@ -80,14 +80,24 @@ function reportFailure(
 export async function lockTinderSwipeRankMutationsInTx(
   tx: TransactionClient,
 ): Promise<void> {
+  await lockTinderSwipeRankPolicyInTx(tx);
+  await tx.execute(sql`
+    INSERT INTO swipe_rank_source_mutation (data_provider, created_at)
+    VALUES ('TINDER', now())
+  `);
+}
+
+/**
+ * Serialize field-policy changes with full builds and snapshots without
+ * pretending that moderation changed source data or invalidating fact lineage.
+ */
+export async function lockTinderSwipeRankPolicyInTx(
+  tx: TransactionClient,
+): Promise<void> {
   await tx.execute(sql`
     SELECT pg_advisory_xact_lock_shared(
       hashtextextended(${swipeRankBuildLockName("TINDER")}, 0)
     )
-  `);
-  await tx.execute(sql`
-    INSERT INTO swipe_rank_source_mutation (data_provider, created_at)
-    VALUES ('TINDER', now())
   `);
 }
 

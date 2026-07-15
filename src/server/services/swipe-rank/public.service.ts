@@ -4,7 +4,7 @@ import { sql } from "drizzle-orm";
 
 import { env } from "@/env";
 import { db } from "@/server/db";
-import type { SwipeRankPeriodKind } from "@/server/db/schema";
+import type { Gender, SwipeRankPeriodKind } from "@/server/db/schema";
 
 import {
   SWIPE_RANK_METRIC_VERSION,
@@ -23,6 +23,19 @@ export interface PublicSwipeRankEntry {
   rank: number;
   topShare: number;
   matchYieldPercent: number;
+  matches: number;
+  rightSwipes: number;
+  activeDays: number;
+  age: number | null;
+  gender: Gender | null;
+  interestedIn: Gender | null;
+  city: string | null;
+  region: string | null;
+  country: string | null;
+  seasonsRanked: number;
+  observedHistoryDays: number;
+  photoUrl: string | null;
+  photoCount: number;
 }
 
 export interface PublicSwipeRankLeaderboard {
@@ -61,6 +74,19 @@ interface PublicLeaderboardQueryRow extends Record<string, unknown> {
   rank: number | string | null;
   field_size: number | string;
   metric_value: number | string | null;
+  match_rate_numerator: number | string | null;
+  match_rate_denominator: number | string | null;
+  active_days: number | string | null;
+  age_in_period: number | string | null;
+  gender: Gender | null;
+  interested_in: Gender | null;
+  city: string | null;
+  region: string | null;
+  country: string | null;
+  seasons_ranked: number | string | null;
+  observed_history_days: number | string | null;
+  photo_url: string | null;
+  photo_count: number | string | null;
   as_of: string | Date | null;
 }
 
@@ -90,22 +116,20 @@ function publicIdentitySecret(): string {
 }
 
 /**
- * A profile receives a different opaque identity in every season. The source
- * profile ID is never returned, and the HMAC prevents somebody who learns an
- * internal ID elsewhere from reproducing its public alias without the secret.
+ * A profile receives one opaque public identity across every season. The
+ * source profile ID is never returned, and the HMAC prevents somebody who
+ * learns an internal ID elsewhere from reproducing its alias without the
+ * server-side secret.
  */
 export function getPublicSwipeRankPseudonym(
   profileId: string,
-  period: SwipeRankPeriodBounds,
   secret: string,
 ): Pick<PublicSwipeRankEntry, "entryKey" | "alias"> {
   if (!secret) {
     throw new Error("SwipeRank public identity secret must not be empty.");
   }
   const digest = createHmac("sha256", secret)
-    .update(
-      `swipe-rank:${period.kind}:${period.start}:${period.end}:${profileId}`,
-    )
+    .update(`swipe-rank:profile:${profileId}`)
     .digest("hex");
   return {
     entryKey: `entry_${digest.slice(0, 32)}`,
@@ -151,22 +175,75 @@ export async function getPublicSwipeRankLeaderboard(input: {
   const metricVersion = input.metricVersion ?? SWIPE_RANK_METRIC_VERSION;
   const offset = (input.page - 1) * SWIPE_RANK_PUBLIC_PAGE_SIZE;
   const result = await db.execute<PublicLeaderboardQueryRow>(sql`
-    WITH eligible AS (
+    WITH season_counts AS (
+      SELECT
+        history.profile_id,
+        count(*)::bigint AS seasons_ranked
+      FROM swipe_rank_period_fact AS history
+      JOIN swipe_rank_profile AS history_profile
+        ON history_profile.id = history.profile_id
+      JOIN swipe_rank_build AS history_build
+        ON history_build.id = history.build_id
+       AND history_build.status = 'COMPLETE'
+      WHERE history_profile.data_provider = 'TINDER'
+        AND history_profile.is_synthetic = false
+        AND history_profile.is_swipe_rank_excluded = false
+        AND history.metric_version = ${metricVersion}
+        AND ${completedFullSwipeRankBuildSql("TINDER", metricVersion)}
+        AND history.period_kind = ${input.period.kind}
+        AND history.match_rate_denominator >= ${input.minimumRateDenominator}
+        AND history.active_days >= ${input.minimumActiveDays}
+        AND history.match_rate IS NOT NULL
+      GROUP BY history.profile_id
+    ), eligible_base AS (
       SELECT
         fact.match_rate,
+        fact.match_rate_numerator,
+        fact.match_rate_denominator,
+        fact.active_days,
+        fact.age_in_period,
         profile.id AS profile_id,
+        profile.gender,
+        profile.interested_in,
+        profile.city,
+        profile.region,
+        profile.country,
+        season_counts.seasons_ranked,
+        (
+          lifetime_fact.observed_last_date
+          - lifetime_fact.observed_first_date
+          + 1
+        )::integer AS observed_history_days,
+        profile_media.photo_url,
+        profile_media.photo_count,
         build.completed_at AS build_completed_at,
-        rank() OVER (ORDER BY fact.match_rate DESC) AS rank,
-        row_number() OVER (
-          ORDER BY fact.match_rate DESC, profile.id
-        ) AS row_number
+        fact.computed_at
       FROM swipe_rank_period_fact AS fact
       JOIN swipe_rank_profile AS profile ON profile.id = fact.profile_id
       JOIN swipe_rank_build AS build
         ON build.id = fact.build_id
        AND build.status = 'COMPLETE'
+      JOIN season_counts ON season_counts.profile_id = profile.id
+      JOIN swipe_rank_period_fact AS lifetime_fact
+        ON lifetime_fact.profile_id = profile.id
+       AND lifetime_fact.metric_version = fact.metric_version
+       AND lifetime_fact.period_kind = 'ALL_TIME'
+       AND lifetime_fact.period_start = date '0001-01-01'
+       AND lifetime_fact.period_end = date '9999-01-01'
+      JOIN swipe_rank_build AS lifetime_build
+        ON lifetime_build.id = lifetime_fact.build_id
+       AND lifetime_build.status = 'COMPLETE'
+      LEFT JOIN LATERAL (
+        SELECT
+          min(media.url) AS photo_url,
+          count(*)::bigint AS photo_count
+        FROM media
+        WHERE media.tinder_profile_id = profile.provider_profile_id
+          AND media.type = 'photo'
+      ) AS profile_media ON true
       WHERE profile.data_provider = 'TINDER'
         AND profile.is_synthetic = false
+        AND profile.is_swipe_rank_excluded = false
         AND fact.metric_version = ${metricVersion}
         AND ${completedFullSwipeRankBuildSql("TINDER", metricVersion)}
         AND fact.period_kind = ${input.period.kind}
@@ -175,6 +252,14 @@ export async function getPublicSwipeRankLeaderboard(input: {
         AND fact.match_rate_denominator >= ${input.minimumRateDenominator}
         AND fact.active_days >= ${input.minimumActiveDays}
         AND fact.match_rate IS NOT NULL
+    ), eligible AS (
+      SELECT
+        eligible_base.*,
+        rank() OVER (ORDER BY match_rate DESC) AS rank,
+        row_number() OVER (
+          ORDER BY match_rate DESC, profile_id
+        ) AS row_number
+      FROM eligible_base
     ), stats AS (
       SELECT
         ${completedFullSwipeRankBuildSql("TINDER", metricVersion)} AS ready,
@@ -196,7 +281,20 @@ export async function getPublicSwipeRankLeaderboard(input: {
       stats.as_of,
       paged.profile_id,
       paged.rank,
-      paged.match_rate AS metric_value
+      paged.match_rate AS metric_value,
+      paged.match_rate_numerator,
+      paged.match_rate_denominator,
+      paged.active_days,
+      paged.age_in_period,
+      paged.gender,
+      paged.interested_in,
+      paged.city,
+      paged.region,
+      paged.country,
+      paged.seasons_ranked,
+      paged.observed_history_days,
+      paged.photo_url,
+      paged.photo_count
     FROM stats
     LEFT JOIN paged ON true
     ORDER BY paged.row_number NULLS LAST
@@ -214,22 +312,37 @@ export async function getPublicSwipeRankLeaderboard(input: {
         if (
           row.profile_id === null ||
           row.rank === null ||
-          row.metric_value === null
+          row.metric_value === null ||
+          row.match_rate_numerator === null ||
+          row.match_rate_denominator === null ||
+          row.active_days === null ||
+          row.seasons_ranked === null ||
+          row.observed_history_days === null ||
+          row.photo_count === null
         ) {
           return [];
         }
         const rank = Number(row.rank);
         return [
           {
-            ...getPublicSwipeRankPseudonym(
-              row.profile_id,
-              input.period,
-              secret,
-            ),
+            ...getPublicSwipeRankPseudonym(row.profile_id, secret),
             rank,
             topShare: (rank / fieldSize) * 100,
             matchYieldPercent:
               Math.round(Number(row.metric_value) * 1_000) / 10,
+            matches: Number(row.match_rate_numerator),
+            rightSwipes: Number(row.match_rate_denominator),
+            activeDays: Number(row.active_days),
+            age: row.age_in_period === null ? null : Number(row.age_in_period),
+            gender: row.gender,
+            interestedIn: row.interested_in,
+            city: row.city,
+            region: row.region,
+            country: row.country,
+            seasonsRanked: Number(row.seasons_ranked),
+            observedHistoryDays: Number(row.observed_history_days),
+            photoUrl: row.photo_url,
+            photoCount: Number(row.photo_count),
           } satisfies PublicSwipeRankEntry,
         ];
       })
@@ -289,6 +402,7 @@ export async function listPublicSwipeRankPeriods(
        AND build.status = 'COMPLETE'
       WHERE profile.data_provider = 'TINDER'
         AND profile.is_synthetic = false
+        AND profile.is_swipe_rank_excluded = false
         AND fact.metric_version = ${metricVersion}
         AND ${completedFullSwipeRankBuildSql("TINDER", metricVersion)}
     ), summaries AS (

@@ -46,10 +46,23 @@ interface CountRow extends Record<string, unknown> {
   count: number | string;
 }
 
-export function globalSwipeRankCohortSpec() {
+interface ExcludedProfileRow extends Record<string, unknown> {
+  profile_id: string;
+}
+
+export function hashSwipeRankExclusionSet(profileIds: readonly string[]) {
+  return createHash("sha256")
+    .update([...profileIds].sort().join(":"))
+    .digest("hex");
+}
+
+export function globalSwipeRankCohortSpec(
+  exclusionSetHash = hashSwipeRankExclusionSet([]),
+) {
   return {
     dataProvider: "TINDER",
-    population: "REAL_PROFILES",
+    population: "REAL_NON_EXCLUDED_PROFILES",
+    moderation: { exclusionSetHash },
     dimensions: {},
   } as const;
 }
@@ -96,13 +109,24 @@ export async function createGlobalSwipeRankSnapshot(
   const metricVersion = input.metricVersion ?? SWIPE_RANK_METRIC_VERSION;
   const eligibility = getSwipeRankEligibility(input.period.kind);
   const eligibilityVersion = SWIPE_RANK_ELIGIBILITY_VERSION;
-  const cohortSpec = globalSwipeRankCohortSpec();
-  const cohortHash = hashSwipeRankCohortSpec(cohortSpec);
   const status = input.publish ? "PUBLISHED" : "DRAFT";
 
   return withAdvisoryLockTransaction(
     swipeRankBuildLockName("TINDER"),
     async (tx) => {
+      const excludedProfiles = await tx.execute<ExcludedProfileRow>(sql`
+        SELECT profile.id AS profile_id
+        FROM swipe_rank_profile profile
+        WHERE profile.data_provider = 'TINDER'
+          AND profile.is_swipe_rank_excluded = true
+        ORDER BY profile.id
+      `);
+      const cohortSpec = globalSwipeRankCohortSpec(
+        hashSwipeRankExclusionSet(
+          excludedProfiles.rows.map((row) => row.profile_id),
+        ),
+      );
+      const cohortHash = hashSwipeRankCohortSpec(cohortSpec);
       const factSet = await tx.execute<FactSetRow>(sql`
       WITH period_facts AS (
         SELECT fact.*
@@ -113,6 +137,7 @@ export async function createGlobalSwipeRankSnapshot(
          AND build.status = 'COMPLETE'
         WHERE profile.data_provider = 'TINDER'
           AND profile.is_synthetic = false
+          AND profile.is_swipe_rank_excluded = false
           AND fact.metric_version = ${metricVersion}
           AND fact.period_kind = ${input.period.kind}
           AND fact.period_start = ${input.period.start}::date
@@ -301,6 +326,7 @@ export async function createGlobalSwipeRankSnapshot(
         JOIN swipe_rank_profile profile ON profile.id = fact.profile_id
         WHERE profile.data_provider = 'TINDER'
           AND profile.is_synthetic = false
+          AND profile.is_swipe_rank_excluded = false
           AND fact.build_id = ${source.build_id}
           AND fact.metric_version = ${metricVersion}
           AND fact.period_kind = ${input.period.kind}

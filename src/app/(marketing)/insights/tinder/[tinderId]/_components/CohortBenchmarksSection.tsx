@@ -387,7 +387,7 @@ export function CohortBenchmarksSection() {
           <>
             <div className="grid gap-4 md:grid-cols-3">
               <BenchmarkMetric
-                label="Match yield"
+                label="Observed match rate"
                 description="Matches divided by ordinary right swipes"
                 value={benchmark.data.target.values.matchYield}
                 distribution={benchmark.data.cohort.metrics.matchYield}
@@ -427,7 +427,16 @@ export function CohortBenchmarksSection() {
               </div>
             )}
 
-            {!benchmark.data.target.eligibility.eligible && (
+            {benchmark.data.target.excludedFromSwipeRank && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+                This profile is not currently included in SwipeRank. Its own
+                values remain visible, but it receives no placement and is not
+                part of the comparison distribution.
+              </div>
+            )}
+
+            {!benchmark.data.target.excludedFromSwipeRank &&
+              !benchmark.data.target.eligibility.eligible && (
               <div className="rounded-lg border border-dashed p-4 text-sm">
                 Your period values are shown, but placement requires at least{" "}
                 {benchmark.data.eligibility.minimumRateDenominator.toLocaleString()}{" "}
@@ -435,9 +444,10 @@ export function CohortBenchmarksSection() {
                 {benchmark.data.eligibility.minimumActiveDays.toLocaleString()}{" "}
                 active days.
               </div>
-            )}
+              )}
 
-            {benchmark.data.target.eligibility.eligible &&
+            {!benchmark.data.target.excludedFromSwipeRank &&
+              benchmark.data.target.eligibility.eligible &&
               !benchmark.data.target.matchesFilters && (
                 <div className="rounded-lg border border-sky-200 bg-sky-50 p-4 text-sm text-sky-950">
                   You are outside this descriptor filter, so your own fact is

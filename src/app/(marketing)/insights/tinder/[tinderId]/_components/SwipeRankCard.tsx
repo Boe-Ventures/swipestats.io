@@ -281,12 +281,18 @@ export function SwipeRankCard() {
               </p>
               <Badge
                 className={
-                  selected.eligible
+                  selected.excludedFromSwipeRank
+                    ? "bg-amber-500 text-white"
+                    : selected.eligible
                     ? "bg-emerald-500 text-white"
                     : "bg-slate-700 text-slate-100"
                 }
               >
-                {selected.eligible ? "Eligible" : "Not ranked yet"}
+                {selected.excludedFromSwipeRank
+                  ? "Not included"
+                  : selected.eligible
+                    ? "Eligible"
+                    : "Not ranked yet"}
               </Badge>
             </div>
             <p className="mt-5 text-5xl font-bold tracking-tight tabular-nums">
@@ -302,7 +308,17 @@ export function SwipeRankCard() {
             </p>
           </div>
 
-          {selected.eligible ? (
+          {selected.excludedFromSwipeRank ? (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-5">
+              <p className="font-semibold text-amber-950">
+                This profile is not currently included in SwipeRank
+              </p>
+              <p className="mt-2 text-sm text-amber-800">
+                Your underlying activity and private insights remain available,
+                but this profile is omitted from live ranks and benchmarks.
+              </p>
+            </div>
+          ) : selected.eligible ? (
             <div className="grid gap-4 sm:grid-cols-2">
               <RankBlock
                 title="Global rank"

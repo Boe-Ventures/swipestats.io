@@ -5,6 +5,7 @@ process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/test";
 
 const {
   globalSwipeRankCohortSpec,
+  hashSwipeRankExclusionSet,
   hashSwipeRankCohortSpec,
   hasCoherentFullSwipeRankLineage,
 } = await import("./snapshot.service");
@@ -14,13 +15,27 @@ describe("SwipeRank snapshot identity", () => {
     const spec = globalSwipeRankCohortSpec();
     expect(spec).toEqual({
       dataProvider: "TINDER",
-      population: "REAL_PROFILES",
+      population: "REAL_NON_EXCLUDED_PROFILES",
+      moderation: { exclusionSetHash: hashSwipeRankExclusionSet([]) },
       dimensions: {},
     });
     expect(hashSwipeRankCohortSpec(spec)).toBe(
       hashSwipeRankCohortSpec(globalSwipeRankCohortSpec()),
     );
     expect(hashSwipeRankCohortSpec(spec)).toHaveLength(64);
+  });
+
+  test("moderation changes the edition identity without changing facts", () => {
+    const first = globalSwipeRankCohortSpec(
+      hashSwipeRankExclusionSet(["srp_one"]),
+    );
+    const second = globalSwipeRankCohortSpec(
+      hashSwipeRankExclusionSet(["srp_one", "srp_two"]),
+    );
+
+    expect(hashSwipeRankCohortSpec(first)).not.toBe(
+      hashSwipeRankCohortSpec(second),
+    );
   });
 
   test("different cohort specs cannot share an edition identity", () => {

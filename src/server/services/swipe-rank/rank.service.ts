@@ -41,6 +41,7 @@ export interface SwipeRankFactResult {
   observedDays: number;
   qualityFlags: string[];
   hasQualityAnomaly: boolean;
+  excludedFromSwipeRank: boolean;
   isStale: boolean;
   eligible: boolean;
   global: SwipeRankPlacement;
@@ -62,6 +63,7 @@ interface RankRow extends Record<string, unknown> {
   observed_days: number | string | null;
   quality_flags: string[] | null;
   has_quality_anomaly: boolean | null;
+  is_swipe_rank_excluded: boolean;
   is_stale: boolean | null;
   eligible: boolean;
   global_rank: number | string | null;
@@ -134,7 +136,8 @@ export async function getSwipeRankFromFacts(
         fact.*,
         srp.gender,
         srp.interested_in,
-        srp.provider_profile_id
+        srp.provider_profile_id,
+        srp.is_swipe_rank_excluded
       FROM swipe_rank_period_fact fact
       JOIN swipe_rank_profile srp ON srp.id = fact.profile_id
       JOIN swipe_rank_build build
@@ -154,6 +157,7 @@ export async function getSwipeRankFromFacts(
       WHERE match_rate_denominator >= ${input.minimumRateDenominator}
         AND active_days >= ${input.minimumActiveDays}
         AND match_rate IS NOT NULL
+        AND is_swipe_rank_excluded = false
     ),
     ranked AS (
       SELECT
@@ -256,6 +260,7 @@ export async function getSwipeRankFromFacts(
       target_fact.observed_days,
       target_fact.quality_flags,
       target_fact.has_quality_anomaly,
+      target.is_swipe_rank_excluded,
       (
         target_fact.id IS NOT NULL AND (
           target_source.source_fingerprint IS DISTINCT FROM target_fact.source_fingerprint
@@ -321,6 +326,7 @@ export async function getSwipeRankFromFacts(
     observedDays: numberOrZero(row.observed_days),
     qualityFlags: row.quality_flags ?? [],
     hasQualityAnomaly: row.has_quality_anomaly ?? false,
+    excludedFromSwipeRank: row.is_swipe_rank_excluded,
     isStale: row.is_stale ?? false,
     eligible: row.eligible,
     global: placement(

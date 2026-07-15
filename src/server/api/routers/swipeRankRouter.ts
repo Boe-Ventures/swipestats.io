@@ -1,6 +1,6 @@
 import { unstable_cache } from "next/cache";
 import { z } from "zod";
-import type { TRPCRouterRecord } from "@trpc/server";
+import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 
 import { genderEnum, swipeRankPeriodKindEnum } from "@/server/db/schema";
 import { assertAlignedPeriod } from "@/server/services/swipe-rank/periods";
@@ -18,6 +18,10 @@ import {
 } from "@/server/services/swipe-rank/product.service";
 import { getSwipeRankEligibility } from "@/server/services/swipe-rank/eligibility";
 import { SWIPE_RANK_PUBLIC_CACHE_TAG } from "@/server/services/swipe-rank/public-cache";
+import {
+  listTinderSwipeRankExclusions,
+  setTinderSwipeRankExclusion,
+} from "@/server/services/swipe-rank/exclusion.service";
 
 import {
   adminProcedure,
@@ -75,7 +79,7 @@ const periodSchema = z
 
 const cachedPublicSwipeRankLeaderboard = unstable_cache(
   getPublicSwipeRankLeaderboard,
-  ["swipe-rank-public-leaderboard-v2"],
+  ["swipe-rank-public-leaderboard-v4"],
   { revalidate: 60, tags: [SWIPE_RANK_PUBLIC_CACHE_TAG] },
 );
 const cachedPublicSwipeRankPeriods = unstable_cache(
@@ -118,7 +122,7 @@ export const swipeRankRouter = {
       });
     }),
 
-  /** Public: every eligible row, with season-scoped anonymous identities. */
+  /** Public: every eligible row, linked across seasons by a stable pseudonym. */
   publicLeaderboard: publicProcedure
     .input(
       z.object({
@@ -162,5 +166,35 @@ export const swipeRankRouter = {
     )
     .query(async ({ input }) => {
       return getAdminSwipeRankLeaderboard(input);
+    }),
+
+  /** Private admin: current manual removals from every live SwipeRank field. */
+  adminExclusions: adminProcedure.query(async () => {
+    return listTinderSwipeRankExclusions();
+  }),
+
+  /** Private admin: the browser form and CLI share the same service contract. */
+  setAdminExclusion: adminProcedure
+    .input(
+      z
+        .object({
+          providerProfileId: z.string().trim().min(1),
+          excluded: z.boolean(),
+          reason: z.string().trim().min(3).max(500).optional(),
+        })
+        .refine((value) => !value.excluded || value.reason !== undefined, {
+          path: ["reason"],
+          message: "A review reason is required to exclude a profile.",
+        }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const actorId = ctx.session?.user.id;
+      if (!actorId) {
+        throw new TRPCError({ code: "UNAUTHORIZED" });
+      }
+      return setTinderSwipeRankExclusion({
+        ...input,
+        actor: `admin:${actorId}`,
+      });
     }),
 } satisfies TRPCRouterRecord;

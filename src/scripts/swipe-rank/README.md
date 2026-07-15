@@ -15,10 +15,34 @@ bun run swipe-rank:survey -- --period-type month --last 12
 bun run swipe-rank:survey -- --period-type quarter --last 8
 bun run swipe-rank:survey -- --period-type year --json
 bun run swipe-rank:audit-over-100
+
+# List current exclusions (read-only).
+bun run swipe-rank:moderate -- --list
+
+# After inspecting the facts, admins and coding agents use the same locked
+# service as the admin platform. Never put sensitive data in the reason.
+bun run swipe-rank:moderate -- \
+  --tinder-id <id> \
+  --exclude \
+  --reason "Evidence-based review reason" \
+  --actor agent:codex \
+  --confirm-write
+
+bun run swipe-rank:moderate -- \
+  --tinder-id <id> \
+  --restore \
+  --actor agent:codex \
+  --confirm-write
 ```
 
 Both scripts use the repo's configured `DATABASE_URL`. They only run `SELECT`
 queries.
+
+The moderation list is also read-only. Exclude and restore operations require
+`--confirm-write`; they preserve the profile and its facts, change every live
+ranking field, and record the current reason, actor, and timestamp. Use
+`swipe-rank:inspect-facts` or `swipe-rank:audit-over-100` before excluding a
+profile. Restoring clears the active exclusion metadata.
 
 ## Versioned fact build
 

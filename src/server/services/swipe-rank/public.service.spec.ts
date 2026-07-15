@@ -11,6 +11,7 @@ await mock.module("@/env", () => ({
 
 await mock.module("@/server/db", () => ({
   db: { execute },
+  withTransaction: mock(),
   withAdvisoryLockTransaction: mock(),
 }));
 
@@ -35,6 +36,19 @@ function leaderboardRow(
     rank: null,
     field_size: "1406",
     metric_value: null,
+    match_rate_numerator: null,
+    match_rate_denominator: null,
+    active_days: null,
+    age_in_period: null,
+    gender: null,
+    interested_in: null,
+    city: null,
+    region: null,
+    country: null,
+    seasons_ranked: null,
+    observed_history_days: null,
+    photo_url: null,
+    photo_count: null,
     as_of: "2026-07-14T10:00:00.000Z",
     ...overrides,
   };
@@ -45,35 +59,26 @@ describe("SwipeRank public leaderboard", () => {
     execute.mockClear();
   });
 
-  test("creates deterministic, season-scoped opaque identities", () => {
+  test("creates deterministic, cross-season opaque identities", () => {
     const secret = "a sufficiently long test-only secret";
     const identity = getPublicSwipeRankPseudonym(
       "srp_internal-profile-id",
-      MONTH,
       secret,
     );
 
     expect(identity).toEqual(
-      getPublicSwipeRankPseudonym("srp_internal-profile-id", MONTH, secret),
+      getPublicSwipeRankPseudonym("srp_internal-profile-id", secret),
     );
     expect(identity.entryKey).toMatch(/^entry_[a-f0-9]{32}$/);
     expect(identity.alias).toMatch(/^Dater #[A-F0-9]{10}$/);
     expect(JSON.stringify(identity)).not.toContain("internal-profile-id");
     expect(
-      getPublicSwipeRankPseudonym(
-        "srp_internal-profile-id",
-        {
-          kind: "MONTH",
-          start: "2026-01-01",
-          end: "2026-02-01",
-        },
-        secret,
-      ),
-    ).not.toEqual(identity);
+      getPublicSwipeRankPseudonym("srp_internal-profile-id", secret),
+    ).toEqual(identity);
   });
 
   test("fails closed when no identity secret is supplied", () => {
-    expect(() => getPublicSwipeRankPseudonym("srp_one", MONTH, "")).toThrow(
+    expect(() => getPublicSwipeRankPseudonym("srp_one", "")).toThrow(
       "must not be empty",
     );
   });
@@ -85,6 +90,19 @@ describe("SwipeRank public leaderboard", () => {
           profile_id: "srp_internal-one",
           rank: "122",
           metric_value: "0.19862857142857143",
+          match_rate_numerator: "4345",
+          match_rate_denominator: "21875",
+          active_days: "615",
+          age_in_period: "33",
+          gender: "MALE",
+          interested_in: "FEMALE",
+          city: "Oslo",
+          region: "Oslo",
+          country: "NO",
+          seasons_ranked: "7",
+          observed_history_days: "4044",
+          photo_url: "https://example.com/photo.jpg",
+          photo_count: "4",
         }),
       ],
     });
@@ -107,26 +125,95 @@ describe("SwipeRank public leaderboard", () => {
     });
     const entry = result.entries[0]!;
     expect(Object.keys(entry).sort()).toEqual([
+      "activeDays",
+      "age",
       "alias",
+      "city",
+      "country",
       "entryKey",
+      "gender",
+      "interestedIn",
       "matchYieldPercent",
+      "matches",
+      "observedHistoryDays",
+      "photoCount",
+      "photoUrl",
       "rank",
+      "region",
+      "rightSwipes",
+      "seasonsRanked",
       "topShare",
     ]);
     expect(entry).toMatchObject({
       rank: 122,
       matchYieldPercent: 19.9,
+      matches: 4_345,
+      rightSwipes: 21_875,
+      activeDays: 615,
+      age: 33,
+      gender: "MALE",
+      interestedIn: "FEMALE",
+      city: "Oslo",
+      region: "Oslo",
+      country: "NO",
+      seasonsRanked: 7,
+      observedHistoryDays: 4_044,
+      photoUrl: "https://example.com/photo.jpg",
+      photoCount: 4,
     });
     expect(entry.topShare).toBeCloseTo((122 / 1406) * 100);
     expect(JSON.stringify(result)).not.toContain("srp_internal-one");
     expect(entry).not.toHaveProperty("profileId");
     expect(entry).not.toHaveProperty("providerProfileId");
     expect(entry).not.toHaveProperty("userId");
-    expect(entry).not.toHaveProperty("gender");
-    expect(entry).not.toHaveProperty("ageBand");
-    expect(entry).not.toHaveProperty("location");
+    expect(entry).not.toHaveProperty("tinderId");
     expect(entry).not.toHaveProperty("matchYieldNumerator");
     expect(entry).not.toHaveProperty("matchYieldDenominator");
+    expect(entry).not.toHaveProperty("hasQualityAnomaly");
+  });
+
+  test("publishes exact descriptors even for uncommon combinations", async () => {
+    execute.mockResolvedValueOnce({
+      rows: [
+        leaderboardRow({
+          profile_id: "srp_internal-one",
+          rank: "1",
+          metric_value: "0.5",
+          match_rate_numerator: "125",
+          match_rate_denominator: "250",
+          active_days: "20",
+          age_in_period: "58",
+          gender: "MORE",
+          interested_in: "OTHER",
+          city: "Reykjavík",
+          region: "Capital Region",
+          country: "IS",
+          seasons_ranked: "2",
+          observed_history_days: "800",
+          photo_count: "0",
+        }),
+      ],
+    });
+
+    const result = await getPublicSwipeRankLeaderboard({
+      period: MONTH,
+      minimumRateDenominator: 100,
+      minimumActiveDays: 5,
+      page: 1,
+    });
+
+    expect(result.entries[0]).toMatchObject({
+      age: 58,
+      gender: "MORE",
+      interestedIn: "OTHER",
+      city: "Reykjavík",
+      region: "Capital Region",
+      country: "IS",
+      seasonsRanked: 2,
+      observedHistoryDays: 800,
+      photoUrl: null,
+      photoCount: 0,
+    });
   });
 
   test("keeps empty later pages browseable with complete page metadata", async () => {

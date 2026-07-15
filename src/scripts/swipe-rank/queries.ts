@@ -208,6 +208,7 @@ export async function computeSwipeRanks(
         p.tinder_id,
         p.gender,
         p.interested_in,
+        registry.is_swipe_rank_excluded,
         max(u.user_age_this_day)::int AS age_in_period,
         min(u.date_stamp_raw) AS first_observed_date,
         max(u.date_stamp_raw) AS last_observed_date,
@@ -228,6 +229,9 @@ export async function computeSwipeRanks(
         ON (rp.start_date IS NULL OR u.date_stamp_raw >= rp.start_date)
        AND (rp.end_date IS NULL OR u.date_stamp_raw < rp.end_date)
       JOIN tinder_profile p ON p.tinder_id = u.tinder_profile_id
+      JOIN swipe_rank_profile registry
+        ON registry.data_provider = 'TINDER'
+       AND registry.provider_profile_id = p.tinder_id
       WHERE p.computed = false
       GROUP BY
         rp.period_order,
@@ -239,7 +243,8 @@ export async function computeSwipeRanks(
         rp.min_active_days,
         p.tinder_id,
         p.gender,
-        p.interested_in
+        p.interested_in,
+        registry.is_swipe_rank_excluded
     ),
     eligible AS (
       SELECT *
@@ -247,6 +252,7 @@ export async function computeSwipeRanks(
       WHERE likes >= min_likes
         AND active_days >= min_active_days
         AND match_rate IS NOT NULL
+        AND is_swipe_rank_excluded = false
     ),
     ranked AS (
       SELECT
@@ -436,7 +442,11 @@ export async function surveySeasons(
         END AS match_rate
       FROM tinder_usage u
       JOIN tinder_profile p ON p.tinder_id = u.tinder_profile_id
+      JOIN swipe_rank_profile registry
+        ON registry.data_provider = 'TINDER'
+       AND registry.provider_profile_id = p.tinder_id
       WHERE p.computed = false
+        AND registry.is_swipe_rank_excluded = false
       GROUP BY season, p.tinder_id
     )
     SELECT

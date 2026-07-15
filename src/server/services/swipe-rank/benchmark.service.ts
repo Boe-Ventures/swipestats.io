@@ -66,6 +66,7 @@ interface BenchmarkRow extends Record<string, unknown> {
   observed_days: NumericDatabaseValue;
   quality_flags: string[] | null;
   has_quality_anomaly: boolean | null;
+  is_swipe_rank_excluded: boolean;
   target_computed_at: Date | string | null;
   cohort_as_of: Date | string | null;
   cohort_size: NumericDatabaseValue;
@@ -261,6 +262,8 @@ export function assembleSwipeRankBenchmark(
     rateDenominator: numberOrZero(row.match_rate_denominator),
     activeDays: numberOrZero(row.active_days),
   });
+  const targetRankEligible =
+    targetEligibility.eligible && !row.is_swipe_rank_excluded;
   const targetDimensions = {
     gender: row.gender,
     interestedIn: row.interested_in,
@@ -273,7 +276,7 @@ export function assembleSwipeRankBenchmark(
     targetDimensions,
     filters,
   );
-  const includedInCohort = targetEligibility.eligible && matchesFilters;
+  const includedInCohort = targetRankEligible && matchesFilters;
   const cohortSize = numberOrZero(row.cohort_size);
   const insufficientSample =
     cohortSize < SWIPE_RANK_BENCHMARK_MINIMUM_SAMPLE_SIZE;
@@ -347,6 +350,8 @@ export function assembleSwipeRankBenchmark(
       observedDays: numberOrZero(row.observed_days),
       values: targetValues,
       eligibility: targetEligibility,
+      rankEligible: targetRankEligible,
+      excludedFromSwipeRank: row.is_swipe_rank_excluded,
       matchesFilters,
       includedInCohort,
       qualityFlags: row.quality_flags ?? [],
@@ -360,7 +365,7 @@ export function assembleSwipeRankBenchmark(
           equalCount: numberOrZero(row.match_rate_equal_count),
           atOrBelowCount: numberOrZero(row.match_rate_at_or_below_count),
           includedInCohort,
-          targetEligible: targetEligibility.eligible,
+          targetEligible: targetRankEligible,
           suppress:
             metricSampleSizes.matchYield <
             SWIPE_RANK_BENCHMARK_MINIMUM_SAMPLE_SIZE,
@@ -372,7 +377,7 @@ export function assembleSwipeRankBenchmark(
           equalCount: numberOrZero(row.like_rate_equal_count),
           atOrBelowCount: numberOrZero(row.like_rate_at_or_below_count),
           includedInCohort,
-          targetEligible: targetEligibility.eligible,
+          targetEligible: targetRankEligible,
           suppress:
             metricSampleSizes.likeRate <
             SWIPE_RANK_BENCHMARK_MINIMUM_SAMPLE_SIZE,
@@ -386,7 +391,7 @@ export function assembleSwipeRankBenchmark(
             row.swipes_per_active_day_at_or_below_count,
           ),
           includedInCohort,
-          targetEligible: targetEligibility.eligible,
+          targetEligible: targetRankEligible,
           suppress:
             metricSampleSizes.swipesPerActiveDay <
             SWIPE_RANK_BENCHMARK_MINIMUM_SAMPLE_SIZE,
@@ -458,6 +463,7 @@ export async function getTinderSwipeRankBenchmark(
        AND build.status = 'COMPLETE'
       WHERE srp.data_provider = 'TINDER'
         AND srp.is_synthetic = false
+        AND srp.is_swipe_rank_excluded = false
         AND fact.metric_version = ${SWIPE_RANK_METRIC_VERSION}
         AND ${completedFullSwipeRankBuildSql(
           "TINDER",
@@ -563,6 +569,7 @@ export async function getTinderSwipeRankBenchmark(
       target_fact.observed_days,
       target_fact.quality_flags,
       target_fact.has_quality_anomaly,
+      target.is_swipe_rank_excluded,
       target_fact.computed_at AS target_computed_at,
       distribution.*,
       placement.*

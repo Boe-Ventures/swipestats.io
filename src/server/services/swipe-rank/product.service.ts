@@ -43,6 +43,7 @@ interface AvailablePeriodRow extends LatestPeriodRow {
 interface ProfilePeriodRow extends LatestPeriodRow {
   gender: Gender | null;
   interested_in: Gender | null;
+  is_swipe_rank_excluded: boolean;
   match_rate_denominator: number | string | null;
   active_days: number | string;
 }
@@ -173,6 +174,7 @@ export async function listTinderSwipeRankProfilePeriods(
       fact.computed_at,
       srp.gender,
       srp.interested_in,
+      srp.is_swipe_rank_excluded,
       fact.match_rate_denominator,
       fact.active_days
     FROM swipe_rank_period_fact fact
@@ -207,6 +209,11 @@ export async function listTinderSwipeRankProfilePeriods(
         start: row.period_start,
         end: row.period_end,
       } satisfies SwipeRankPeriodBounds;
+      const eligibility = evaluateSwipeRankEligibility({
+        periodKind: period.kind,
+        rateDenominator: asNumber(row.match_rate_denominator),
+        activeDays: asNumber(row.active_days),
+      });
       return {
         period: {
           ...period,
@@ -214,11 +221,9 @@ export async function listTinderSwipeRankProfilePeriods(
         asOf: asDate(row.computed_at),
         gender: row.gender,
         interestedIn: row.interested_in,
-        eligibility: evaluateSwipeRankEligibility({
-          periodKind: period.kind,
-          rateDenominator: asNumber(row.match_rate_denominator),
-          activeDays: asNumber(row.active_days),
-        }),
+        excludedFromSwipeRank: row.is_swipe_rank_excluded,
+        eligibility,
+        rankEligible: eligibility.eligible && !row.is_swipe_rank_excluded,
       };
     }),
   };
@@ -236,14 +241,16 @@ export async function getTinderSwipeRankPlacement(
     period,
     ...threshold,
   });
+  const eligibility = evaluateSwipeRankEligibility({
+    periodKind: period.kind,
+    rateDenominator: fact.matchRateDenominator,
+    activeDays: fact.activeDays,
+  });
   return {
     ...fact,
     asOf: fact.computedAt,
-    eligibility: evaluateSwipeRankEligibility({
-      periodKind: period.kind,
-      rateDenominator: fact.matchRateDenominator,
-      activeDays: fact.activeDays,
-    }),
+    eligibility,
+    rankEligible: eligibility.eligible && !fact.excludedFromSwipeRank,
   };
 }
 
@@ -290,6 +297,7 @@ export async function listAdminSwipeRankPeriods(
      AND build.status = 'COMPLETE'
     WHERE srp.data_provider = 'TINDER'
       AND srp.is_synthetic = false
+      AND srp.is_swipe_rank_excluded = false
       AND fact.metric_version = ${SWIPE_RANK_METRIC_VERSION}
       AND ${completedFullSwipeRankBuildSql("TINDER", SWIPE_RANK_METRIC_VERSION)}
       ${filterSql}
@@ -353,6 +361,7 @@ export async function getAdminSwipeRankLeaderboard(
        AND build.status = 'COMPLETE'
       WHERE srp.data_provider = 'TINDER'
         AND srp.is_synthetic = false
+        AND srp.is_swipe_rank_excluded = false
         AND fact.metric_version = ${SWIPE_RANK_METRIC_VERSION}
         AND ${completedFullSwipeRankBuildSql(
           "TINDER",
@@ -380,6 +389,7 @@ export async function getAdminSwipeRankLeaderboard(
          AND build.status = 'COMPLETE'
         WHERE srp.data_provider = 'TINDER'
           AND srp.is_synthetic = false
+          AND srp.is_swipe_rank_excluded = false
           AND fact.metric_version = ${SWIPE_RANK_METRIC_VERSION}
           AND ${completedFullSwipeRankBuildSql(
             "TINDER",

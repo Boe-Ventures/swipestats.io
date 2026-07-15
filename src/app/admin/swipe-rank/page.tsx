@@ -2,18 +2,29 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   AlertTriangle,
   ArrowLeft,
+  Ban,
   ChevronLeft,
   ChevronRight,
   ExternalLink,
   Filter,
   Loader2,
+  RotateCcw,
   Trophy,
 } from "lucide-react";
 
+import {
+  AlertDialog,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,6 +50,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
 import { GENDERS } from "@/server/db/constants";
 import {
   DEFAULT_SWIPE_RANK_PERIOD_KIND,
@@ -60,6 +72,11 @@ type DraftFilters = {
   country: string;
   region: string;
   city: string;
+};
+
+type ModerationTarget = {
+  providerProfileId: string;
+  excluded: boolean;
 };
 
 const EMPTY_FILTERS: DraftFilters = {
@@ -97,7 +114,14 @@ export default function AdminSwipeRankPage() {
   const [filterError, setFilterError] = useState<string | null>(null);
   const [selectedPeriodKey, setSelectedPeriodKey] = useState("");
   const [page, setPage] = useState(1);
+  const [moderationTarget, setModerationTarget] =
+    useState<ModerationTarget | null>(null);
+  const [exclusionReason, setExclusionReason] = useState("");
   const limit = 50;
+
+  const exclusionsQuery = useQuery(
+    trpc.swipeRank.adminExclusions.queryOptions(),
+  );
 
   const periodsQuery = useQuery(
     trpc.swipeRank.adminAvailablePeriods.queryOptions({ filters }),
@@ -151,6 +175,35 @@ export default function AdminSwipeRankPage() {
     ),
   );
 
+  const exclusionMutation = useMutation(
+    trpc.swipeRank.setAdminExclusion.mutationOptions({
+      onSuccess: async () => {
+        setModerationTarget(null);
+        setExclusionReason("");
+        await Promise.all([
+          exclusionsQuery.refetch(),
+          periodsQuery.refetch(),
+          leaderboardQuery.refetch(),
+        ]);
+      },
+    }),
+  );
+
+  function openModeration(target: ModerationTarget) {
+    exclusionMutation.reset();
+    setExclusionReason("");
+    setModerationTarget(target);
+  }
+
+  function submitModeration() {
+    if (!moderationTarget) return;
+    exclusionMutation.mutate({
+      providerProfileId: moderationTarget.providerProfileId,
+      excluded: moderationTarget.excluded,
+      reason: moderationTarget.excluded ? exclusionReason.trim() : undefined,
+    });
+  }
+
   function applyFilters() {
     const next = normalizedFilters(draft);
     if (
@@ -186,8 +239,8 @@ export default function AdminSwipeRankPage() {
             SwipeRank Explorer
           </h1>
           <p className="mt-2 max-w-3xl text-gray-600">
-            Private, live rankings over versioned Tinder facts. Match yield is
-            matches divided by right swipes and is never capped at 100%.
+            Private, live rankings over versioned Tinder facts. Observed match
+            rate is matches divided by right swipes and is never capped at 100%.
           </p>
         </div>
       </div>
@@ -256,6 +309,59 @@ export default function AdminSwipeRankPage() {
           {filterError && <p className="text-sm text-red-600">{filterError}</p>}
         </CardContent>
       </Card>
+
+      {(exclusionsQuery.data?.length ?? 0) > 0 && (
+        <Card className="border-amber-200">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Ban className="h-4 w-4 text-amber-700" />
+              Excluded profiles
+            </CardTitle>
+            <CardDescription>
+              Facts stay intact for review. These profiles are omitted from all
+              live SwipeRank fields and benchmarks until restored.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {exclusionsQuery.data?.map((entry) => (
+              <div
+                key={entry.profileId}
+                className="flex flex-col gap-3 rounded-lg border bg-amber-50/50 p-3 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="min-w-0">
+                  <Link
+                    href={`/admin/insights/tinder/${entry.providerProfileId}`}
+                    className="block truncate font-mono text-xs text-blue-700 hover:underline"
+                  >
+                    {entry.providerProfileId}
+                  </Link>
+                  <p className="mt-1 text-sm text-gray-800">{entry.reason}</p>
+                  <p className="mt-1 text-xs text-gray-500">
+                    {entry.excludedAt
+                      ? new Date(entry.excludedAt).toLocaleString()
+                      : "Unknown time"}{" "}
+                    · {entry.excludedBy ?? "Unknown actor"}
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 gap-2"
+                  onClick={() =>
+                    openModeration({
+                      providerProfileId: entry.providerProfileId,
+                      excluded: false,
+                    })
+                  }
+                >
+                  <RotateCcw className="h-3.5 w-3.5" />
+                  Restore
+                </Button>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardContent className="flex flex-wrap items-end justify-between gap-4 p-5">
@@ -339,7 +445,8 @@ export default function AdminSwipeRankPage() {
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
                 <CardTitle>
-                  {formatSwipeRankPeriodLabel(leaderboard.period)} match yield
+                  {formatSwipeRankPeriodLabel(leaderboard.period)} observed
+                  match rate
                 </CardTitle>
                 <CardDescription className="mt-1">
                   Exact ranks inside the currently filtered eligible sample.
@@ -361,12 +468,15 @@ export default function AdminSwipeRankPage() {
                   <TableHead>Profile</TableHead>
                   <TableHead>Peer descriptors</TableHead>
                   <TableHead>Location</TableHead>
-                  <TableHead className="text-right">Match yield</TableHead>
+                  <TableHead className="text-right">
+                    Observed match rate
+                  </TableHead>
                   <TableHead className="text-right">
                     Matches / right swipes
                   </TableHead>
                   <TableHead className="text-right">Activity</TableHead>
                   <TableHead className="w-24">Quality</TableHead>
+                  <TableHead className="w-28">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -382,7 +492,7 @@ export default function AdminSwipeRankPage() {
                     </TableCell>
                     <TableCell>
                       <Link
-                        href={`/insights/tinder/${entry.providerProfileId}`}
+                        href={`/admin/insights/tinder/${entry.providerProfileId}`}
                         target="_blank"
                         className="inline-flex max-w-52 items-center gap-1 truncate font-mono text-xs text-blue-700 hover:underline"
                       >
@@ -434,6 +544,22 @@ export default function AdminSwipeRankPage() {
                         <Badge variant="outline">Clean</Badge>
                       )}
                     </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-1.5 text-amber-800"
+                        onClick={() =>
+                          openModeration({
+                            providerProfileId: entry.providerProfileId,
+                            excluded: true,
+                          })
+                        }
+                      >
+                        <Ban className="h-3.5 w-3.5" />
+                        Exclude
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -478,6 +604,84 @@ export default function AdminSwipeRankPage() {
           </div>
         </div>
       )}
+
+      <AlertDialog
+        open={moderationTarget !== null}
+        onOpenChange={(open) => {
+          if (!open && !exclusionMutation.isPending) {
+            setModerationTarget(null);
+            setExclusionReason("");
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {moderationTarget?.excluded
+                ? "Exclude from SwipeRank?"
+                : "Restore to SwipeRank?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {moderationTarget?.excluded
+                ? "The profile’s data and facts stay intact for review, but it will be removed from every live rank and benchmark."
+                : "The existing facts will immediately make this profile eligible for live fields again."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <p className="break-all rounded-md bg-gray-50 p-2 font-mono text-xs">
+            {moderationTarget?.providerProfileId}
+          </p>
+
+          {moderationTarget?.excluded && (
+            <div>
+              <label
+                htmlFor="swipe-rank-exclusion-reason"
+                className="mb-2 block text-sm font-medium"
+              >
+                Review reason
+              </label>
+              <Textarea
+                id="swipe-rank-exclusion-reason"
+                value={exclusionReason}
+                maxLength={500}
+                placeholder="Why should this profile be excluded?"
+                onChange={(event) => setExclusionReason(event.target.value)}
+              />
+              <p className="mt-1 text-right text-xs text-gray-500">
+                {exclusionReason.trim().length}/500
+              </p>
+            </div>
+          )}
+
+          {exclusionMutation.isError && (
+            <p className="text-sm text-red-700">
+              {exclusionMutation.error.message}
+            </p>
+          )}
+
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={exclusionMutation.isPending}>
+              Cancel
+            </AlertDialogCancel>
+            <Button
+              type="button"
+              variant={moderationTarget?.excluded ? "destructive" : "default"}
+              disabled={
+                exclusionMutation.isPending ||
+                (moderationTarget?.excluded === true &&
+                  exclusionReason.trim().length < 3)
+              }
+              onClick={submitModeration}
+            >
+              {exclusionMutation.isPending
+                ? "Saving…"
+                : moderationTarget?.excluded
+                  ? "Exclude profile"
+                  : "Restore profile"}
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

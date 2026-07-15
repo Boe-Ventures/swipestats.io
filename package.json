@@ -42,6 +42,7 @@
     "swipe-rank:backfill": "bun run src/scripts/swipe-rank/backfill-period-facts.ts",
     "swipe-rank:inspect-facts": "bun run src/scripts/swipe-rank/inspect-profile-facts.ts",
     "swipe-rank:launch": "bun run src/scripts/swipe-rank/launch.ts",
+    "swipe-rank:moderate": "bun run src/scripts/swipe-rank/moderate-profile.ts",
     "swipe-rank:profile": "bun run src/scripts/swipe-rank/rank-profile.ts",
     "swipe-rank:reconcile": "bun run src/scripts/swipe-rank/reconcile-period-facts.ts",
     "swipe-rank:snapshot": "bun run src/scripts/swipe-rank/snapshot-period.ts",

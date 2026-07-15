@@ -29,6 +29,7 @@ const benchmarkRow: Parameters<typeof assembleSwipeRankBenchmark>[1] = {
   observed_days: 20,
   quality_flags: ["MATCH_RATE_OVER_ONE"],
   has_quality_anomaly: true,
+  is_swipe_rank_excluded: false,
   target_computed_at: "2026-07-02T12:00:00.000Z",
   cohort_as_of: "2026-07-03T12:00:00.000Z",
   cohort_size: 25,
@@ -155,6 +156,7 @@ describe("SwipeRank benchmark service contract", () => {
     expect(result.target.values.matchYield).toBe(1.25);
     expect(result.target.hasQualityAnomaly).toBeTrue();
     expect(result.target.eligibility.eligible).toBeTrue();
+    expect(result.target.rankEligible).toBeTrue();
     expect(result.target.matchesFilters).toBeFalse();
     expect(result.target.includedInCohort).toBeFalse();
     expect(result.target.placements.matchYield).toMatchObject({
@@ -167,6 +169,19 @@ describe("SwipeRank benchmark service contract", () => {
     expect(result.cohort.sampleSize).toBe(25);
     expect(result.insufficientSample).toBeFalse();
     expect(result.minimumPrivateSampleSize).toBe(25);
+  });
+
+  test("keeps an excluded target out of every comparison placement", () => {
+    const result = assembleSwipeRankBenchmark(benchmarkInput, {
+      ...benchmarkRow,
+      is_swipe_rank_excluded: true,
+    });
+
+    expect(result.target.eligibility.eligible).toBeTrue();
+    expect(result.target.excludedFromSwipeRank).toBeTrue();
+    expect(result.target.rankEligible).toBeFalse();
+    expect(result.target.includedInCohort).toBeFalse();
+    expect(result.target.placements.matchYield.rank).toBeNull();
   });
 
   test("suppresses distributions and placements below the private sample floor", () => {

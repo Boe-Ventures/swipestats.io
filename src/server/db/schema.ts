@@ -1011,6 +1011,14 @@ export const swipeRankProfileTable = pgTable(
     country: t.text(),
     locationSource: t.text(),
     isSynthetic: t.boolean().default(false).notNull(),
+    /**
+     * Manual moderation gate for live SwipeRank fields. Facts stay intact so
+     * admins can review and restore a profile without recomputing history.
+     */
+    isSwipeRankExcluded: t.boolean().default(false).notNull(),
+    swipeRankExclusionReason: t.text(),
+    swipeRankExcludedAt: t.timestamp(),
+    swipeRankExcludedBy: t.text(),
     capabilities: t
       .jsonb()
       .$type<Record<string, boolean>>()
@@ -1045,6 +1053,24 @@ export const swipeRankProfileTable = pgTable(
     index("swipe_rank_profile_country_idx").on(
       table.dataProvider,
       table.country,
+    ),
+    index("swipe_rank_profile_exclusion_idx").on(
+      table.dataProvider,
+      table.isSwipeRankExcluded,
+    ),
+    check(
+      "swipe_rank_profile_exclusion_state",
+      sql`(
+        ${table.isSwipeRankExcluded} = false
+        AND ${table.swipeRankExclusionReason} IS NULL
+        AND ${table.swipeRankExcludedAt} IS NULL
+        AND ${table.swipeRankExcludedBy} IS NULL
+      ) OR (
+        ${table.isSwipeRankExcluded} = true
+        AND nullif(btrim(${table.swipeRankExclusionReason}), '') IS NOT NULL
+        AND ${table.swipeRankExcludedAt} IS NOT NULL
+        AND nullif(btrim(${table.swipeRankExcludedBy}), '') IS NOT NULL
+      )`,
     ),
   ],
 );
