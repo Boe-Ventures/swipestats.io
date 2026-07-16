@@ -21,18 +21,20 @@ export const amplitudeServerEnabled = Boolean(
   env.NEXT_PUBLIC_AMPLITUDE_API_KEY,
 );
 
-let initialized = false;
+let initializationPromise: Promise<void> | null = null;
 
 /** Lazily init the singleton; returns false (no-op) when unconfigured. */
-function ensureInitialized(): boolean {
+async function ensureInitialized(): Promise<boolean> {
   if (!amplitudeServerEnabled) return false;
-  if (!initialized) {
-    amplitude.init(env.NEXT_PUBLIC_AMPLITUDE_API_KEY!, {
-      serverZone: "EU",
-      flushQueueSize: 1, // send promptly — serverless has no background window
-    });
-    initialized = true;
+  if (!initializationPromise) {
+    initializationPromise = amplitude
+      .init(env.NEXT_PUBLIC_AMPLITUDE_API_KEY!, {
+        serverZone: "EU",
+        flushQueueSize: 1, // send promptly — serverless has no background window
+      })
+      .promise.then(() => undefined);
   }
+  await initializationPromise;
   return true;
 }
 
@@ -46,16 +48,16 @@ export async function trackAmplitudeServerEvent(
     ip?: string;
   },
 ): Promise<void> {
-  if (!ensureInitialized()) return;
   try {
-    amplitude.track({
+    if (!(await ensureInitialized())) return;
+    await amplitude.track({
       event_type: eventType,
       user_id: userId,
       event_properties: properties ? omitNullish(properties) : undefined,
       groups: options?.groups,
       time: options?.timestamp?.getTime(),
       ...(options?.ip ? { ip: options.ip } : {}),
-    });
+    }).promise;
     await amplitude.flush().promise;
   } catch (error) {
     console.error("❌ [Amplitude server] track failed:", error);
@@ -90,13 +92,13 @@ export async function identifyAmplitudeServerUser(
   userId: string,
   traits: UserTraits,
 ): Promise<void> {
-  if (!ensureInitialized()) return;
   try {
+    if (!(await ensureInitialized())) return;
     const identify = new amplitude.Identify();
     for (const [key, value] of Object.entries(omitNullish(traits))) {
       identify.set(key, value as string | number | boolean);
     }
-    amplitude.identify(identify, { user_id: userId });
+    await amplitude.identify(identify, { user_id: userId }).promise;
     await amplitude.flush().promise;
   } catch (error) {
     console.error("❌ [Amplitude server] identify failed:", error);
