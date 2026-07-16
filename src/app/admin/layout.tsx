@@ -1,7 +1,10 @@
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import { ShieldAlert } from "lucide-react";
+
 import { checkAdminAuth } from "@/lib/admin-auth";
+import { AUTH_RETURN_TO_HEADER, getSafeInternalPath } from "@/lib/auth-utils";
 
 export default async function AdminLayout({
   children,
@@ -11,7 +14,12 @@ export default async function AdminLayout({
   const { isAuthorized } = await checkAdminAuth();
 
   if (!isAuthorized) {
-    redirect("/signin");
+    const returnTo = getSafeInternalPath(
+      (await headers()).get(AUTH_RETURN_TO_HEADER),
+    );
+    redirect(
+      returnTo ? `/signin?returnTo=${encodeURIComponent(returnTo)}` : "/signin",
+    );
   }
 
   return (

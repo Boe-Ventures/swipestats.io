@@ -2,27 +2,26 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, Mail, UserCircle2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  Field,
-  FieldLabel,
-  FieldDescription,
-} from "@/components/ui/form-new";
+import { Field, FieldLabel, FieldDescription } from "@/components/ui/form-new";
 import { Checkbox } from "@/components/ui/checkbox";
 import { authClient } from "@/server/better-auth/client";
 import { generateUniqueAnonymousEmail } from "@/lib/utils/auth";
+import { getAuthPageHref, getCallbackURL } from "@/lib/auth-utils";
 import { useUsernameAvailability } from "@/hooks/useUsernameAvailability";
 import { UsernameField } from "@/components/auth/UsernameField";
 import { CollapsibleEmailField } from "@/components/auth/CollapsibleEmailField";
 
 export function SignUpForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackURL = getCallbackURL(searchParams);
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -65,7 +64,7 @@ export function SignUpForm() {
       if (signUpError) {
         setError(signUpError.message ?? "Failed to create account");
       } else if (data) {
-        router.push("/app/dashboard");
+        router.push(callbackURL);
         router.refresh();
       }
     } catch (err) {
@@ -94,7 +93,7 @@ export function SignUpForm() {
       if (error) {
         setError(error.message ?? "Failed to sign in anonymously");
       } else if (data) {
-        router.push("/app/dashboard");
+        router.push(callbackURL);
         router.refresh();
       }
     } catch (err) {
@@ -264,7 +263,7 @@ export function SignUpForm() {
         <div className="text-center text-sm text-gray-600">
           Already have an account?{" "}
           <Link
-            href="/signin"
+            href={getAuthPageHref("/signin", searchParams)}
             className="text-rose-600 hover:text-rose-500 hover:underline"
           >
             Sign in

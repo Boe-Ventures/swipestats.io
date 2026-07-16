@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, UserCircle2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -10,11 +10,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Field, FieldLabel } from "@/components/ui/form-new";
+import { getAuthPageHref, getCallbackURL } from "@/lib/auth-utils";
 import { authClient } from "@/server/better-auth/client";
 import { ForgotPasswordDialog } from "./ForgotPasswordDialog";
 
 export function SignInForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackURL = getCallbackURL(searchParams);
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -36,7 +39,7 @@ export function SignInForm() {
       if (error) {
         setError(error.message ?? "Failed to sign in");
       } else if (data) {
-        router.push("/app/dashboard");
+        router.push(callbackURL);
         router.refresh();
       }
     } catch (err) {
@@ -65,7 +68,7 @@ export function SignInForm() {
       if (error) {
         setError(error.message ?? "Failed to sign in anonymously");
       } else if (data) {
-        router.push("/app/dashboard");
+        router.push(callbackURL);
         router.refresh();
       }
     } catch (err) {
@@ -178,7 +181,7 @@ export function SignInForm() {
           <div className="text-center text-sm text-gray-600">
             Don&apos;t have an account?{" "}
             <Link
-              href="/signup"
+              href={getAuthPageHref("/signup", searchParams)}
               className="text-rose-600 hover:text-rose-500 hover:underline"
             >
               Sign up
