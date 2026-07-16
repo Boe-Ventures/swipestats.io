@@ -9,7 +9,8 @@ const PANEL_BG = "#0f0f0f";
 const PANEL_FG = "#ffffff";
 const MUTED_FG = "rgba(255, 255, 255, 0.6)";
 const BRAND_PINK = "#f43f5e"; // rose-500
-const BRAND_GRADIENT = "linear-gradient(135deg, #f43f5e 0%, #ec4899 50%, #a855f7 100%)";
+const BRAND_GRADIENT =
+  "linear-gradient(135deg, #f43f5e 0%, #ec4899 50%, #a855f7 100%)";
 
 export async function GET(request: NextRequest) {
   try {
@@ -240,11 +241,12 @@ export async function GET(request: NextRequest) {
 
           <div
             style={{
-              fontSize: 44,
+              fontSize: title.length > 44 ? 38 : 42,
               fontWeight: 700,
               lineHeight: 1.1,
               letterSpacing: "-0.03em",
               marginTop: 16,
+              maxWidth: 620,
               display: "flex",
               textAlign: "center",
             }}

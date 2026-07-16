@@ -5,11 +5,11 @@ import { env } from "@/env";
 import { posts as allPosts } from "@velite";
 import { BlogPageContent } from "./BlogPageContent";
 
-const ogImageUrl = `${env.NEXT_PUBLIC_BASE_URL}/api/og/blog?title=${encodeURIComponent("SwipeStats Blog")}&description=${encodeURIComponent("Data-driven dating insights")}`;
+const ogImageUrl = `${env.NEXT_PUBLIC_BASE_URL}/api/og?title=${encodeURIComponent("Dating Advice, Tested Against the Data")}&subtitle=${encodeURIComponent("Statistics, app reviews, prompts, and practical guides from SwipeStats.")}&path=%2Fblog&variant=hero&screenshot=${encodeURIComponent("/images/blog/thumbnails/tinder-statistics.jpg")}`;
 
 export const metadata = {
   // Root/marketing title.template appends " | SwipeStats", so don't repeat it here.
-  title: "Blog - Data-Driven Dating Insights",
+  title: "Dating App Data, Guides & Reviews",
   description:
     "Expert insights, data-driven strategies, and actionable advice for improving your online dating success.",
   keywords: [
@@ -23,9 +23,9 @@ export const metadata = {
     "dating profile tips",
   ],
   openGraph: {
-    title: "SwipeStats Blog - Data-Driven Dating Insights",
+    title: "Dating Advice, Tested Against the Data",
     description:
-      "Expert insights and data-driven strategies for online dating success.",
+      "Statistics, app reviews, prompts, and practical guides from SwipeStats.",
     type: "website",
     url: "/blog",
     siteName: "SwipeStats",
@@ -40,13 +40,14 @@ export const metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "SwipeStats Blog - Data-Driven Dating Insights",
+    title: "Dating Advice, Tested Against the Data",
     description:
-      "Expert insights and data-driven strategies for online dating success.",
+      "Statistics, app reviews, prompts, and practical guides from SwipeStats.",
     images: [ogImageUrl],
     creator: "@SwipeStats",
   },
   alternates: {
+    canonical: "/blog",
     types: {
       "application/rss+xml": "/blog/feed.xml",
     },
@@ -62,9 +63,9 @@ export default function BlogPage() {
 
   // Manually specify featured post slugs (up to 3)
   const FEATURED_SLUGS = [
-    "together-we-could-hinge-prompt",
     "tinder-statistics",
-    "best-rizz-pickup-lines",
+    "free-dating-apps-without-payment",
+    "best-hinge-openers",
   ];
 
   return (
@@ -72,8 +73,8 @@ export default function BlogPage() {
       <BlogPageContent
         allPosts={sortedPosts}
         featuredSlugs={FEATURED_SLUGS}
-        title="Data-Driven Dating Insights"
-        description="Expert insights and actionable strategies to help you succeed on dating apps."
+        title="Dating advice, tested against the data"
+        description="Statistics, app reviews, prompts, and practical guides grounded in what people actually do."
       />
     </Suspense>
   );

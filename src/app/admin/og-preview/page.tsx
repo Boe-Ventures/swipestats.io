@@ -46,11 +46,12 @@ type Preset = {
 const PRESETS: Preset[] = [
   {
     label: "Home (/)",
-    title: "Analyze Your Dating App Data",
-    subtitle: "Upload your Tinder or Hinge data and get insights into your dating patterns.",
+    title: "Your dating data, finally visualized",
+    subtitle:
+      "Every swipe, match, and message—turned into charts and ranked against 10,000+ profiles.",
     path: "/",
-    screenshot: "",
-    variant: "centered",
+    screenshot: "/images/og/screenshots/home-dashboard.jpg",
+    variant: "hero",
   },
   {
     label: "Home (minimal)",
@@ -61,36 +62,40 @@ const PRESETS: Preset[] = [
     variant: "centered",
   },
   {
-    label: "Hero (dashboard)",
-    title: "Analyze Your Dating App Data",
-    subtitle: "Upload your Tinder or Hinge data and get insights into your dating patterns.",
-    path: "/",
-    screenshot: "/SwipeStats-og.png",
+    label: "Upload",
+    title: "Visualize your dating data",
+    subtitle:
+      "Choose your app, upload anonymously, and see what your dating history reveals.",
+    path: "/upload",
+    screenshot: "/images/og/screenshots/upload-picker.jpg",
     variant: "hero",
   },
   {
-    label: "Hero (no screenshot)",
-    title: "Analyze Your Dating App Data",
-    subtitle: "Compare your swipes, matches, and messages with others worldwide.",
-    path: "/",
-    screenshot: "",
+    label: "Research",
+    title: "Dating data that’s almost impossible to get",
+    subtitle:
+      "Anonymized, consent-based behavior from 7,000+ real dating-app users.",
+    path: "/research",
+    screenshot: "/images/og/screenshots/research.jpg",
     variant: "hero",
   },
   {
-    label: "Split (dashboard)",
-    title: "Analyze Your Dating App Data",
-    subtitle: "Upload your Tinder or Hinge data and get insights into your dating patterns.",
-    path: "/",
-    screenshot: "/SwipeStats-og.png",
-    variant: "split",
+    label: "Dating services",
+    title: "Found the problem in your stats? Find the fix.",
+    subtitle:
+      "A curated directory of dating coaches, photographers, matchmakers, and tools.",
+    path: "/dating-services",
+    screenshot: "/images/og/screenshots/dating-services.jpg",
+    variant: "hero",
   },
   {
     label: "Blog post",
-    title: "Best Pickup Lines That Actually Work",
-    subtitle: "Data-driven analysis of what openers get the most responses.",
-    path: "/blog/best-pickup-lines",
-    screenshot: "",
-    variant: "centered",
+    title: "What 294 Million Tinder Swipes Reveal",
+    subtitle:
+      "Real match rates, gender gaps, and behavior from 7,079 profiles.",
+    path: "/blog/tinder-statistics",
+    screenshot: "/images/blog/thumbnails/tinder-statistics.jpg",
+    variant: "hero",
   },
   {
     label: "Tinder Stats",

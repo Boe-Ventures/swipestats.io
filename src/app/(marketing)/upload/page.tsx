@@ -1,5 +1,43 @@
 import { Suspense } from "react";
+import type { Metadata } from "next";
 import { UploadClient } from "./UploadClient";
+import { marketingOgImage } from "@/lib/og-images";
+
+const uploadOgImage = marketingOgImage({
+  title: "Visualize your dating data",
+  subtitle:
+    "Choose your app, upload anonymously, and see what your dating history reveals.",
+  path: "/upload",
+  screenshot: "/images/og/screenshots/upload-picker.jpg",
+});
+
+export const metadata: Metadata = {
+  title: "Upload Dating App Data",
+  description:
+    "Upload Tinder or Hinge data anonymously to visualize swipes, matches, messages, and dating patterns.",
+  alternates: { canonical: "/upload" },
+  openGraph: {
+    title: "Visualize Your Dating Data | SwipeStats",
+    description:
+      "Choose your app, upload anonymously, and see what your dating history reveals.",
+    url: "/upload",
+    images: [
+      {
+        url: uploadOgImage,
+        width: 1200,
+        height: 630,
+        alt: "SwipeStats upload flow",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Visualize Your Dating Data",
+    description:
+      "Choose your app, upload anonymously, and see what your dating history reveals.",
+    images: [uploadOgImage],
+  },
+};
 
 export default function UploadPage() {
   return (

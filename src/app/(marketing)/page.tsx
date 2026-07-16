@@ -19,9 +19,18 @@ import { FaqList } from "./_components/FaqList";
 import { InsightsShowcase } from "./InsightsShowcase";
 import NewsletterCTA from "./NewsletterCTA";
 import { ProfilePreviewsBanner } from "./ProfilePreviewsBanner";
+import { marketingOgImage } from "@/lib/og-images";
+
+const homeOgImage = marketingOgImage({
+  title: "Your dating data, finally visualized",
+  subtitle:
+    "Every swipe, match, and message—turned into charts and ranked against 10,000+ profiles.",
+  path: "/",
+  screenshot: "/images/og/screenshots/home-dashboard.jpg",
+});
 
 export const metadata: Metadata = {
-  title: "SwipeStats - Analyze Your Dating App Data",
+  title: "Analyze Your Dating App Data",
   description:
     "Upload your Tinder or Hinge data anonymously and get insights into your dating patterns. Compare your swipes, matches, and messages with others worldwide.",
   alternates: {
@@ -32,6 +41,21 @@ export const metadata: Metadata = {
     description:
       "Upload your Tinder or Hinge data anonymously and get insights into your dating patterns. Compare your swipes, matches, and messages with others worldwide.",
     url: "/",
+    images: [
+      {
+        url: homeOgImage,
+        width: 1200,
+        height: 630,
+        alt: "SwipeStats dating analytics dashboard",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Your dating data, finally visualized",
+    description:
+      "Every swipe, match, and message—turned into charts and ranked against 10,000+ profiles.",
+    images: [homeOgImage],
   },
 };
 

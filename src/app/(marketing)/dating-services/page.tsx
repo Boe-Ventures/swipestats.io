@@ -29,12 +29,42 @@ import {
   type CatalogCategoryKey,
 } from "@/lib/catalog";
 import { trpcApi } from "@/trpc/server";
+import { marketingOgImage } from "@/lib/og-images";
+
+const directoryOgImage = marketingOgImage({
+  title: "Found the problem in your stats? Find the fix.",
+  subtitle:
+    "A curated directory of dating coaches, photographers, matchmakers, and tools.",
+  path: "/dating-services",
+  screenshot: "/images/og/screenshots/dating-services.jpg",
+});
 
 export const metadata: Metadata = {
   title: "Dating Services Directory",
   description:
     "Find dating coaches, photographers, matchmakers, dating apps, profile feedback, and digital dating tools curated by SwipeStats.",
   alternates: { canonical: "/dating-services" },
+  openGraph: {
+    title: "Dating Services Directory | SwipeStats",
+    description:
+      "A curated directory of dating coaches, photographers, matchmakers, and tools.",
+    url: "/dating-services",
+    images: [
+      {
+        url: directoryOgImage,
+        width: 1200,
+        height: 630,
+        alt: "SwipeStats dating services directory",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Found the Problem in Your Stats? Find the Fix.",
+    description:
+      "A curated directory of dating coaches, photographers, matchmakers, and tools.",
+    images: [directoryOgImage],
+  },
 };
 
 const categoryIcons: Record<CatalogCategoryKey, LucideIcon> = {

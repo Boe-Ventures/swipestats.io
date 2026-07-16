@@ -31,6 +31,15 @@ import {
 import { CtaBand } from "../_components/CtaBand";
 import { InsightsShowcase } from "../InsightsShowcase";
 import { ResearchPricingSection } from "./ResearchPricingSection";
+import { marketingOgImage } from "@/lib/og-images";
+
+const researchOgImage = marketingOgImage({
+  title: "Dating data that’s almost impossible to get",
+  subtitle:
+    "Anonymized, consent-based behavior from 7,000+ real dating-app users.",
+  path: "/research",
+  screenshot: "/images/og/screenshots/research.jpg",
+});
 
 export const metadata: Metadata = {
   title: "Research Datasets",
@@ -44,6 +53,21 @@ export const metadata: Metadata = {
     description:
       "Anonymized, consent-based behavior from 7,000+ real dating-app users: swipes, matches, and messages. Ready to analyze, publish, and cite.",
     url: "/research",
+    images: [
+      {
+        url: researchOgImage,
+        width: 1200,
+        height: 630,
+        alt: "SwipeStats anonymized research dataset",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Dating Data That’s Almost Impossible to Get",
+    description:
+      "Anonymized, consent-based behavior from 7,000+ real dating-app users.",
+    images: [researchOgImage],
   },
 };
 

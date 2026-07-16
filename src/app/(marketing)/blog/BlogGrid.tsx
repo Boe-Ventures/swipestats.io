@@ -93,70 +93,85 @@ function BlogCardSimple({
   basePath?: string;
 }) {
   return (
-    <article className="flex max-w-xl flex-col items-start justify-between rounded-xl border border-gray-200 p-5 transition-shadow hover:shadow-md">
-      {post.category && (
-        <span className="rounded-md bg-linear-to-r from-pink-600 to-rose-600 px-3 py-1 text-xs font-bold text-white shadow-sm">
-          {post.category}
-        </span>
-      )}
-      <div className="group relative grow">
-        <h3 className="mt-3 text-lg leading-6 font-semibold text-gray-900 group-hover:text-gray-600">
-          <Link href={`${basePath}/${post.slug}`}>
-            <span className="absolute inset-0" />
-            {post.h1}
-          </Link>
-        </h3>
-        {(post.h1Subtitle || post.metaDescription) && (
-          <p className="mt-3 line-clamp-2 text-sm leading-6 text-gray-600">
-            {post.h1Subtitle || post.metaDescription}
-          </p>
-        )}
-      </div>
-      {post.tags.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {post.tags.slice(0, 3).map((tag: string) => (
-            <Link
-              key={tag}
-              href={`/blog?tag=${encodeURIComponent(tag)}`}
-              scroll={false}
-              className="relative z-10 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-700"
-            >
-              {tag}
-            </Link>
-          ))}
-        </div>
-      )}
-      <div className="relative mt-4 flex w-full items-center gap-x-3">
-        {AUTHORS[post.author].image ? (
+    <article className="flex max-w-xl flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white transition duration-200 hover:-translate-y-0.5 hover:shadow-lg">
+      {post.thumbnail && (
+        <Link
+          href={`${basePath}/${post.slug}`}
+          className="relative block aspect-3/2 overflow-hidden bg-gray-100"
+        >
           <Image
-            src={
-              AUTHORS[post.author].image.startsWith("/")
-                ? AUTHORS[post.author].image
-                : `/images/people/${AUTHORS[post.author].image}`
-            }
-            alt={AUTHORS[post.author].name}
-            width={32}
-            height={32}
-            className="size-8 rounded-full bg-gray-50 object-cover"
+            src={post.thumbnail}
+            alt={`Editorial illustration for ${post.h1}`}
+            fill
+            sizes="(min-width: 1024px) 33vw, 100vw"
+            className="object-cover transition duration-500 hover:scale-[1.025]"
           />
-        ) : (
-          <div className="flex size-8 items-center justify-center rounded-full bg-gray-50">
-            <span className="text-xs font-semibold text-gray-600">
-              {AUTHORS[post.author].name.charAt(0)}
-            </span>
+        </Link>
+      )}
+      <div className="flex flex-1 flex-col items-start p-5">
+        {post.category && (
+          <span className="rounded-md bg-linear-to-r from-pink-600 to-rose-600 px-3 py-1 text-xs font-bold text-white shadow-sm">
+            {post.category}
+          </span>
+        )}
+        <div className="group relative grow">
+          <h3 className="mt-3 text-lg leading-6 font-semibold text-gray-900 group-hover:text-rose-700">
+            <Link href={`${basePath}/${post.slug}`}>{post.h1}</Link>
+          </h3>
+          {(post.h1Subtitle || post.metaDescription) && (
+            <p className="mt-3 line-clamp-2 text-sm leading-6 text-gray-600">
+              {post.h1Subtitle || post.metaDescription}
+            </p>
+          )}
+        </div>
+        {post.tags.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {post.tags.slice(0, 3).map((tag: string) => (
+              <Link
+                key={tag}
+                href={`/blog?tag=${encodeURIComponent(tag)}`}
+                scroll={false}
+                className="relative z-10 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-700"
+              >
+                {tag}
+              </Link>
+            ))}
           </div>
         )}
-        <p className="text-sm font-medium text-gray-900">
-          <span className="absolute inset-0" />
-          {AUTHORS[post.author].name}
-        </p>
-        <span className="text-gray-300">·</span>
-        <time
-          dateTime={post.updatedAt || post.publishedAt}
-          className="text-sm text-gray-500"
-        >
-          {format(parseISO(post.updatedAt || post.publishedAt), "MMM dd, yyyy")}
-        </time>
+        <div className="relative mt-4 flex w-full items-center gap-x-3">
+          {AUTHORS[post.author].image ? (
+            <Image
+              src={
+                AUTHORS[post.author].image.startsWith("/")
+                  ? AUTHORS[post.author].image
+                  : `/images/people/${AUTHORS[post.author].image}`
+              }
+              alt={AUTHORS[post.author].name}
+              width={32}
+              height={32}
+              className="size-8 rounded-full bg-gray-50 object-cover"
+            />
+          ) : (
+            <div className="flex size-8 items-center justify-center rounded-full bg-gray-50">
+              <span className="text-xs font-semibold text-gray-600">
+                {AUTHORS[post.author].name.charAt(0)}
+              </span>
+            </div>
+          )}
+          <p className="text-sm font-medium text-gray-900">
+            {AUTHORS[post.author].name}
+          </p>
+          <span className="text-gray-300">·</span>
+          <time
+            dateTime={post.updatedAt || post.publishedAt}
+            className="text-sm text-gray-500"
+          >
+            {format(
+              parseISO(post.updatedAt || post.publishedAt),
+              "MMM dd, yyyy",
+            )}
+          </time>
+        </div>
       </div>
     </article>
   );
@@ -215,11 +230,17 @@ export function BlogGrid({
                   <div className="absolute inset-0 -z-10 rounded-xl ring-1 ring-gray-900/10 ring-inset" />
                   <div className="flex flex-wrap items-center gap-2 overflow-hidden text-sm leading-6 text-gray-300">
                     <time
-                      dateTime={featuredPosts[0].updatedAt || featuredPosts[0].publishedAt}
+                      dateTime={
+                        featuredPosts[0].updatedAt ||
+                        featuredPosts[0].publishedAt
+                      }
                       className="mr-4"
                     >
                       {format(
-                        parseISO(featuredPosts[0].updatedAt || featuredPosts[0].publishedAt),
+                        parseISO(
+                          featuredPosts[0].updatedAt ||
+                            featuredPosts[0].publishedAt,
+                        ),
                         "MMM dd, yyyy",
                       )}
                     </time>
@@ -287,8 +308,14 @@ export function BlogGrid({
                   <div className="absolute inset-0 -z-10 bg-linear-to-t from-gray-900 via-gray-900/70" />
                   <div className="absolute inset-0 -z-10 rounded-xl ring-1 ring-gray-900/10 ring-inset" />
                   <div className="flex flex-wrap items-center gap-2 overflow-hidden text-sm leading-6 text-gray-300">
-                    <time dateTime={post.updatedAt || post.publishedAt} className="mr-2">
-                      {format(parseISO(post.updatedAt || post.publishedAt), "MMM dd, yyyy")}
+                    <time
+                      dateTime={post.updatedAt || post.publishedAt}
+                      className="mr-2"
+                    >
+                      {format(
+                        parseISO(post.updatedAt || post.publishedAt),
+                        "MMM dd, yyyy",
+                      )}
                     </time>
                     {post.category && (
                       <span className="relative z-10 cursor-pointer rounded-full bg-rose-500/80 px-3 py-1.5 font-semibold text-white transition-colors hover:bg-rose-500">
