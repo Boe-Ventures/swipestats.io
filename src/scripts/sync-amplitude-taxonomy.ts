@@ -1,21 +1,9 @@
 /**
- * Sync the analytics tracking plan → Amplitude's Taxonomy API.
+ * Create or update the typed tracking plan in Amplitude's EU Taxonomy API.
  *
- * Source of truth: `analytics.registry.ts` (categories/descriptions) +
- * `analytics.properties.ts` (per-property type/required/description). This pushes
- * those definitions into Amplitude so the project's taxonomy reflects our
- * registry instead of drifting — the anti-drift payoff of the typed catalog.
- *
- * Run:  bun src/scripts/sync-amplitude-taxonomy.ts
- *
- * Credentials come from env and MUST be the same project's pair:
- *   NEXT_PUBLIC_AMPLITUDE_API_KEY  (project API key)
- *   AMPLITUDE_SECRET_KEY           (project secret key)
- * Local .env points at the DEV project; set prod keys to target prod.
- *
- * Idempotent-ish: re-running treats "already exists" as a skip. It's a CREATE
- * pass — updating existing definitions (PUT) + enum_values + PII classifications
- * are a deliberate v2 (kept out so the first push can't 400 on encoding).
+ * The event registry and property metadata are the source of truth. Re-running
+ * this script updates descriptions, categories, types, enum values, and required
+ * flags instead of treating an existing definition as synchronized.
  */
 import {
   CLIENT_EVENT_REGISTRY,
@@ -24,6 +12,7 @@ import {
 import {
   CLIENT_EVENT_PROPERTIES,
   SERVER_EVENT_PROPERTIES,
+  USER_TRAITS,
   type PropertyMeta,
 } from "@/lib/analytics/analytics.properties";
 
@@ -40,41 +29,104 @@ if (!API_KEY || !SECRET) {
 
 const AUTH = `Basic ${Buffer.from(`${API_KEY}:${SECRET}`).toString("base64")}`;
 
-async function post(
+type Method = "GET" | "POST" | "PUT";
+
+interface ApiResult {
+  ok: boolean;
+  exists: boolean;
+  status: number;
+  text: string;
+}
+
+async function request(
+  method: Method,
   path: string,
-  params: Record<string, string | undefined>,
-): Promise<{ ok: boolean; exists: boolean; status: number; text: string }> {
-  const body = new URLSearchParams();
-  for (const [k, v] of Object.entries(params)) {
-    if (v !== undefined) body.set(k, v);
+  params: Record<string, string | undefined> = {},
+): Promise<ApiResult> {
+  const values = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value !== undefined) values.set(key, value);
   }
-  const res = await fetch(`${BASE}${path}`, {
-    method: "POST",
-    headers: {
-      Authorization: AUTH,
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body,
-  });
-  const text = await res.text();
+
+  for (let attempt = 0; attempt < 8; attempt++) {
+    const url =
+      method === "GET" && values.size > 0
+        ? `${BASE}${path}?${values.toString()}`
+        : `${BASE}${path}`;
+    const response = await fetch(url, {
+      method,
+      headers: {
+        Authorization: AUTH,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      ...(method === "GET" ? {} : { body: values }),
+    });
+    const responseText = await response.text();
+
+    if ((response.status === 429 || response.status >= 500) && attempt < 7) {
+      const retryAfterSeconds = Number(response.headers.get("retry-after"));
+      const retryDelay = Number.isFinite(retryAfterSeconds)
+        ? retryAfterSeconds * 1_000
+        : Math.min(500 * 2 ** attempt, 8_000);
+      await new Promise((resolve) => setTimeout(resolve, retryDelay));
+      continue;
+    }
+
+    return {
+      ok:
+        response.ok &&
+        (/"success"\s*:\s*true/i.test(responseText) ||
+          responseText.trim() === "true"),
+      exists:
+        (response.status === 409 && /already exists/i.test(responseText)) ||
+        (response.ok && /"success"\s*:\s*false/i.test(responseText)),
+      status: response.status,
+      text: responseText,
+    };
+  }
+
+  throw new Error("Amplitude taxonomy retry loop ended unexpectedly");
+}
+
+async function upsert(
+  createPath: string,
+  createParams: Record<string, string | undefined>,
+  updatePath: string,
+  updateParams: Record<string, string | undefined>,
+): Promise<ApiResult> {
+  const created = await request("POST", createPath, createParams);
+  if (created.ok) return created;
+  if (!created.exists) return created;
+  return request("PUT", updatePath, updateParams);
+}
+
+function amplitudeType(meta: PropertyMeta): {
+  type: string;
+  isArray: boolean;
+} {
+  if (meta.type.endsWith("[]")) return { type: "string", isArray: true };
+  if (meta.values && meta.values.length > 0) {
+    return { type: "enum", isArray: false };
+  }
+  if (meta.type === "number") return { type: "number", isArray: false };
+  if (meta.type === "boolean") return { type: "boolean", isArray: false };
+  return { type: "string", isArray: false };
+}
+
+function propertyParams(
+  meta: PropertyMeta,
+): Record<string, string | undefined> {
+  const { type, isArray } = amplitudeType(meta);
   return {
-    ok: res.ok && /"success"\s*:\s*true/i.test(text),
-    exists: /exist/i.test(text),
-    status: res.status,
-    text,
+    description: meta.description,
+    type,
+    enum_values:
+      type === "enum" && meta.values ? meta.values.join(",") : undefined,
+    is_array_type: isArray ? "true" : "false",
   };
 }
 
-/** Map our display type → Amplitude property type (+ array flag). */
-function mapType(t: string): { type: string; isArray: boolean } {
-  if (t.endsWith("[]")) return { type: "string", isArray: true };
-  if (t === "number") return { type: "number", isArray: false };
-  if (t === "boolean") return { type: "boolean", isArray: false };
-  return { type: "string", isArray: false }; // string | enum | "string | null"
-}
-
 async function main() {
-  // 1) Categories
   const categories = new Set<string>();
   for (const meta of [
     ...Object.values(SERVER_EVENT_REGISTRY),
@@ -82,62 +134,147 @@ async function main() {
   ]) {
     categories.add(meta.category);
   }
-  let catOk = 0;
-  for (const category of categories) {
-    const r = await post("/category", { category_name: category });
-    if (r.ok || r.exists) catOk++;
-    else console.warn(`  ⚠ category "${category}": ${r.status} ${r.text}`);
-  }
-  console.log(`categories: ${catOk}/${categories.size}`);
 
-  // 2) Events + their properties
+  let categoriesSynced = 0;
+  const existingCategories = await request("GET", "/category");
+  if (!existingCategories.ok) {
+    throw new Error(
+      `Unable to read Amplitude categories: ${existingCategories.status} ${existingCategories.text}`,
+    );
+  }
+  const categoryIds = new Map(
+    (
+      JSON.parse(existingCategories.text) as {
+        data: { id: number; name: string }[];
+      }
+    ).data.map((category) => [category.name, category.id]),
+  );
+  for (const category of categories) {
+    const created = await request("POST", "/category", {
+      category_name: category,
+    });
+    let result = created;
+    if (created.exists) {
+      const id = categoryIds.get(category);
+      result = id
+        ? await request("PUT", `/category/${id}`, {
+            category_name: category,
+          })
+        : {
+            ok: false,
+            exists: false,
+            status: 404,
+            text: `Category ${category} was reported as existing but was not listed`,
+          };
+    }
+    if (result.ok) categoriesSynced++;
+    else {
+      console.warn(
+        `  ⚠ category "${category}": ${result.status} ${result.text}`,
+      );
+    }
+  }
+  console.log(`categories: ${categoriesSynced}/${categories.size}`);
+
   const sets = [
     { registry: SERVER_EVENT_REGISTRY, props: SERVER_EVENT_PROPERTIES },
     { registry: CLIENT_EVENT_REGISTRY, props: CLIENT_EVENT_PROPERTIES },
   ] as const;
 
-  let evOk = 0;
-  let evTotal = 0;
-  let propOk = 0;
-  let propTotal = 0;
+  let eventsSynced = 0;
+  let eventsTotal = 0;
+  let propertiesSynced = 0;
+  let propertiesTotal = 0;
 
   for (const { registry, props } of sets) {
     for (const [eventName, meta] of Object.entries(registry)) {
-      evTotal++;
-      const r = await post("/event", {
-        event_type: eventName,
-        category: meta.category,
-        description: meta.description,
-        is_active: "true",
-      });
-      if (r.ok || r.exists) evOk++;
-      else console.warn(`  ⚠ event "${eventName}": ${r.status} ${r.text}`);
+      eventsTotal++;
+      const result = await upsert(
+        "/event",
+        {
+          event_type: eventName,
+          category: meta.category,
+          description: meta.description,
+          is_active: "true",
+        },
+        `/event/${encodeURIComponent(eventName)}`,
+        {
+          category: meta.category,
+          description: meta.description,
+          is_active: "true",
+        },
+      );
+      if (result.ok) eventsSynced++;
+      else
+        console.warn(
+          `  ⚠ event "${eventName}": ${result.status} ${result.text}`,
+        );
 
-      const eventProps =
+      const eventProperties =
         (props as Record<string, Record<string, PropertyMeta>>)[eventName] ??
         {};
-      for (const [propName, pmeta] of Object.entries(eventProps)) {
-        propTotal++;
-        const { type, isArray } = mapType(pmeta.type);
-        const r2 = await post("/event-property", {
-          event_type: eventName,
-          event_property: propName,
-          description: pmeta.description,
-          type,
-          is_array_type: isArray ? "true" : undefined,
-          is_required: pmeta.required ? "true" : "false",
-        });
-        if (r2.ok || r2.exists) propOk++;
+      for (const [propertyName, propertyMeta] of Object.entries(
+        eventProperties,
+      )) {
+        propertiesTotal++;
+        const metadata = propertyParams(propertyMeta);
+        const propertyResult = await upsert(
+          "/event-property",
+          {
+            ...metadata,
+            event_type: eventName,
+            event_property: propertyName,
+            is_required: propertyMeta.required ? "true" : "false",
+          },
+          `/event-property/${encodeURIComponent(propertyName)}`,
+          {
+            ...metadata,
+            event_type: eventName,
+            is_required: propertyMeta.required ? "true" : "false",
+          },
+        );
+        if (propertyResult.ok) propertiesSynced++;
         else
           console.warn(
-            `  ⚠ property "${eventName}.${propName}": ${r2.status} ${r2.text}`,
+            `  ⚠ property "${eventName}.${propertyName}": ${propertyResult.status} ${propertyResult.text}`,
           );
       }
     }
   }
 
-  console.log(`events: ${evOk}/${evTotal}`);
-  console.log(`properties: ${propOk}/${propTotal}`);
+  const userProperties = Object.entries(USER_TRAITS);
+  let userPropertiesSynced = 0;
+  for (const [propertyName, propertyMeta] of userProperties) {
+    const taxonomyName = `gp:${propertyName}`;
+    const metadata = propertyParams(propertyMeta);
+    const result = await upsert(
+      "/user-property",
+      { ...metadata, user_property: taxonomyName },
+      `/user-property/${encodeURIComponent(taxonomyName)}`,
+      metadata,
+    );
+    if (result.ok) userPropertiesSynced++;
+    else
+      console.warn(
+        `  ⚠ user property "${propertyName}": ${result.status} ${result.text}`,
+      );
+  }
+
+  console.log(`events: ${eventsSynced}/${eventsTotal}`);
+  console.log(`properties: ${propertiesSynced}/${propertiesTotal}`);
+  console.log(
+    `user properties: ${userPropertiesSynced}/${userProperties.length}`,
+  );
+
+  if (
+    categoriesSynced !== categories.size ||
+    eventsSynced !== eventsTotal ||
+    propertiesSynced !== propertiesTotal ||
+    userPropertiesSynced !== userProperties.length
+  ) {
+    throw new Error("Amplitude taxonomy synchronization was incomplete");
+  }
+
   console.log("✅ taxonomy sync complete");
 }
 

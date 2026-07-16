@@ -903,8 +903,8 @@ export type ClientEventPropertiesMap =
 
 export interface AnalyticsMetadata {
   timestamp?: Date;
-  groups?: never;
-  // no groups in swipestats yet
+  /** Event-level analytics groups (ready for future org/cohort resources). */
+  groups?: Record<string, string>;
   ip?: string; // Client IP for PostHog GeoIP (auto-extracted if not provided)
   isAnonymous?: boolean; // Skip certain providers (like email) for anonymous users
   // Server-only: the user's consent, passed from `ctx.analyticsConsent` so

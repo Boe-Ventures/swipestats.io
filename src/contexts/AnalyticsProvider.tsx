@@ -273,9 +273,19 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
         trackEvent: <T extends ClientAnalyticsEventName>(
           eventName: T,
           properties?: ClientEventPropertiesDefinition[T],
+          meta?: AnalyticsMetadata,
         ) => {
           try {
-            posthog.capture(eventName, properties as Record<string, unknown>);
+            posthog.capture(
+              eventName,
+              meta?.groups
+                ? {
+                    ...(properties as Record<string, unknown>),
+                    $groups: meta.groups,
+                  }
+                : (properties as Record<string, unknown>),
+              { timestamp: meta?.timestamp },
+            );
           } catch (error) {
             console.error("❌ [Analytics] PostHog track failed:", error);
           }
@@ -317,8 +327,13 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
         trackEvent: <T extends ClientAnalyticsEventName>(
           eventName: T,
           properties?: ClientEventPropertiesDefinition[T],
+          meta?: AnalyticsMetadata,
         ) => {
-          amplitudeTrack(eventName, properties as Record<string, unknown>);
+          amplitudeTrack(
+            eventName,
+            properties as Record<string, unknown>,
+            meta,
+          );
         },
         identify: (userId, traits) => {
           amplitudeIdentify(userId, traits);
@@ -425,15 +440,12 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
   }, [realUser, preferences, syncConsentToDb]);
 
   // ── Consent mutations ─────────────────────────────────────────────────
-  const setConsent = useCallback(
-    (partial: Partial<ConsentPreferences>) => {
-      const record = setStoredConsent(partial);
-      setPreferences(record.preferences);
-      setShowBanner(false);
-      // The sync effect mirrors this to user.analyticsConsent when logged in.
-    },
-    [],
-  );
+  const setConsent = useCallback((partial: Partial<ConsentPreferences>) => {
+    const record = setStoredConsent(partial);
+    setPreferences(record.preferences);
+    setShowBanner(false);
+    // The sync effect mirrors this to user.analyticsConsent when logged in.
+  }, []);
 
   const acceptAll = useCallback(() => setConsent(ALL_ON), [setConsent]);
   const rejectNonEssential = useCallback(

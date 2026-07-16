@@ -18,6 +18,7 @@ import {
 } from "@/server/clients/posthog.client";
 import { trackSlackEvent } from "@/server/clients/slack.client";
 import {
+  aliasAmplitudeServerUser,
   identifyAmplitudeServerUser,
   trackAmplitudeServerEvent,
 } from "@/server/clients/amplitude.server";
@@ -61,7 +62,7 @@ interface ServerAnalyticsProvider {
     userId: string,
     traits: UserTraits,
   ) => Promise<unknown> | void;
-  /** Merge an anonymous user's history into the real user (PostHog only). */
+  /** Merge an anonymous user's history into the real user. */
   aliasServerUser?: (
     anonymousUserId: string,
     newUserId: string,
@@ -113,10 +114,15 @@ const serverAnalyticsProviders: ServerAnalyticsProvider[] = [
         userId,
         event,
         properties as Record<string, unknown>,
-        meta?.ip,
+        {
+          timestamp: meta?.timestamp,
+          groups: meta?.groups,
+          ip: meta?.ip,
+        },
       ),
     identifyServerUser: (userId, traits) =>
       identifyAmplitudeServerUser(userId, traits),
+    aliasServerUser: aliasAmplitudeServerUser,
   },
   {
     id: "slack",
@@ -223,7 +229,7 @@ export function identifyServerUser(userId: string, traits: UserTraits): void {
 
 /**
  * Merge an anonymous user's analytics history into the real user on conversion
- * (PostHog alias). Gated on the ANON user's consent — they're the one whose
+ * (PostHog alias + Amplitude user mapping). Gated on the ANON user's consent — they're the one whose
  * tracked history we're merging; without their analytics consent there's
  * nothing to merge anyway. Fire-and-forget via waitUntil.
  */

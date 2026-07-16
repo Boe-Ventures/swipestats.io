@@ -26,8 +26,8 @@ let initialized = false;
 
 /**
  * Initialize (once) and opt the user in. Call ONLY from a consent-granted code
- * path. `initAll` brings up analytics + Session Replay; deviceId is seeded from
- * PostHog for cross-tool identity stitching.
+ * path. `initAll` brings up analytics + Session Replay. Amplitude owns its
+ * device id; user identity is joined explicitly with `setUserId`.
  *
  * GPC is honored at the consent-default layer (AnalyticsProvider): under GPC the
  * `analytics` category defaults off and the banner is skipped, so this only runs
@@ -56,9 +56,7 @@ export function enableAmplitude(): void {
         // default; tighten masking here if we ever surface PII on screen.
         sessionReplay: { sampleRate: 1 },
       })
-      .catch((error) =>
-        console.error("❌ [Amplitude] initAll failed:", error),
-      );
+      .catch((error) => console.error("❌ [Amplitude] initAll failed:", error));
     console.info("🟢 [Amplitude] Initialized (EU, analytics + replay)");
   }
 
@@ -75,10 +73,19 @@ export function disableAmplitude(): void {
 export function amplitudeTrack(
   eventName: string,
   properties?: Record<string, unknown>,
+  meta?: {
+    timestamp?: Date;
+    groups?: Record<string, string | string[]>;
+  },
 ): void {
   if (!amplitudeEnabled) return;
   try {
-    amplitude.track(eventName, properties);
+    amplitude.track({
+      event_type: eventName,
+      event_properties: properties,
+      groups: meta?.groups,
+      time: meta?.timestamp?.getTime(),
+    });
   } catch (error) {
     console.error("❌ [Amplitude] track failed:", error);
   }

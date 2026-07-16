@@ -40,7 +40,11 @@ export async function trackAmplitudeServerEvent(
   userId: string,
   eventType: string,
   properties?: Record<string, unknown>,
-  ip?: string,
+  options?: {
+    timestamp?: Date;
+    groups?: Record<string, string | string[]>;
+    ip?: string;
+  },
 ): Promise<void> {
   if (!ensureInitialized()) return;
   try {
@@ -48,11 +52,37 @@ export async function trackAmplitudeServerEvent(
       event_type: eventType,
       user_id: userId,
       event_properties: properties ? omitNullish(properties) : undefined,
-      ...(ip ? { ip } : {}),
+      groups: options?.groups,
+      time: options?.timestamp?.getTime(),
+      ...(options?.ip ? { ip: options.ip } : {}),
     });
     await amplitude.flush().promise;
   } catch (error) {
     console.error("❌ [Amplitude server] track failed:", error);
+  }
+}
+
+/** Map a durable anonymous user_id into the authenticated user_id in EU. */
+export async function aliasAmplitudeServerUser(
+  anonymousUserId: string,
+  newUserId: string,
+): Promise<void> {
+  if (!amplitudeServerEnabled) return;
+  try {
+    const url = new URL("https://api.eu.amplitude.com/usermap");
+    url.searchParams.set("api_key", env.NEXT_PUBLIC_AMPLITUDE_API_KEY!);
+    url.searchParams.set(
+      "mapping",
+      JSON.stringify([{ user_id: anonymousUserId, global_user_id: newUserId }]),
+    );
+    const response = await fetch(url, { method: "POST" });
+    if (!response.ok) {
+      throw new Error(
+        `Amplitude user mapping failed (${response.status}): ${await response.text()}`,
+      );
+    }
+  } catch (error) {
+    console.error("❌ [Amplitude server] alias failed:", error);
   }
 }
 
