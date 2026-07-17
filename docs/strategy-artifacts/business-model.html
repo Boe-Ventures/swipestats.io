@@ -1,0 +1,1269 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; style-src 'unsafe-inline' blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; img-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; font-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; media-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; worker-src blob:; connect-src blob: data:; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>Swipestats Business Model</title>
+<style>:root{color-scheme:light dark;background:light-dark(rgb(255 255 255), rgb(24 24 24))}html,body{margin:0}body{box-sizing:border-box;padding:1rem;background:inherit}iframe{display:block;width:100%;max-width:736px;height:calc(100vh - 2rem);margin:0 auto;border:0}</style>
+</head>
+<body>
+<iframe sandbox="allow-scripts" referrerpolicy="no-referrer" title="Swipestats Business Model" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;meta name=&quot;referrer&quot; content=&quot;no-referrer&quot;&gt;
+&lt;meta http-equiv=&quot;Content-Security-Policy&quot; content=&quot;default-src &#x27;none&#x27;; script-src &#x27;unsafe-inline&#x27; &#x27;unsafe-eval&#x27; &#x27;wasm-unsafe-eval&#x27; blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; style-src &#x27;unsafe-inline&#x27; blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; img-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; font-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; media-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; worker-src blob:; connect-src blob: data:; frame-src &#x27;none&#x27;; object-src &#x27;none&#x27;; base-uri &#x27;none&#x27;; form-action &#x27;none&#x27;&quot;&gt;
+&lt;title&gt;Swipestats Business Model&lt;/title&gt;
+&lt;style&gt;:root {
+  color-scheme: light dark;
+  background-color: var(--background) !important;
+
+  /* Agent-facing contract; keep in sync with SKILL.md. */
+  --background: light-dark(rgb(255 255 255), rgb(24 24 24));
+  --foreground: light-dark(rgb(26 28 31), rgb(255 255 255));
+  --card: color-mix(in oklab, var(--foreground) 5%, transparent);
+  --card-foreground: var(--foreground);
+  --popover: light-dark(rgb(255 255 255), rgb(45 45 45));
+  --popover-foreground: var(--foreground);
+  --primary: light-dark(rgb(51 156 255), rgb(131 195 255));
+  --primary-foreground: light-dark(rgb(255 255 255), rgb(13 13 13));
+  --secondary: light-dark(rgb(255 255 255 / 96%), rgb(54 54 54 / 96%));
+  --secondary-foreground: var(--foreground);
+  --muted: color-mix(in srgb, var(--foreground) 10%, transparent);
+  --muted-foreground: light-dark(
+    rgb(26 28 31 / 49.4%),
+    rgb(255 255 255 / 49.8%)
+  );
+  --accent: light-dark(rgb(229 242 255), rgb(13 39 63));
+  --accent-foreground: var(--primary);
+  --destructive: light-dark(rgb(226 85 7), rgb(255 133 73));
+  --border: light-dark(rgb(26 28 31 / 8%), rgb(255 255 255 / 8.2%));
+  --input: light-dark(
+    rgb(26 28 31 / 11.8%),
+    color-mix(in oklab, rgb(0 0 0) 10%, transparent)
+  );
+  --ring: light-dark(rgb(51 156 255), rgb(131 195 255 / 76%));
+  --font-size-base: 14px;
+  --viz-series-1: var(--primary);
+  --viz-series-2: light-dark(rgb(243 136 59), rgb(245 154 86));
+  --viz-series-3: light-dark(rgb(93 201 119), rgb(116 213 139));
+  --viz-series-4: light-dark(rgb(235 119 177), rgb(240 143 192));
+  --viz-series-5: light-dark(rgb(155 121 236), rgb(170 145 239));
+  --viz-series-6: light-dark(rgb(58 185 177), rgb(90 203 194));
+
+  /* Internal implementation variables; not part of the agent contract. */
+  --font-sans: -apple-system, system-ui, &quot;Segoe UI&quot;, sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;,
+    monospace;
+  --font-size-normal: max(11px, var(--font-size-base));
+  --font-size-tooltip: calc(var(--font-size-base) - 1px);
+  --font-size-small: max(11px, calc(var(--font-size-base) - 2px));
+  --font-size-h1: calc(var(--font-size-normal) * 1.7142857143);
+  --font-size-h2: calc(var(--font-size-normal) * 1.4285714286);
+  --font-size-h3: calc(var(--font-size-normal) * 1.2857142857);
+  --font-weight-normal: 430;
+  --font-weight-medium: 500;
+  --line-height-normal: calc(var(--font-size-normal) * 1.5);
+  --line-height-tooltip: calc(var(--font-size-tooltip) * 1.4285714286);
+  --line-height-small: calc(var(--font-size-small) + 4px);
+  --radius: 12.5px;
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-2xl: calc(var(--radius) * 1.6);
+  --radius-full: 9999px;
+  --shadow-sm: 0 1px 2px -1px rgb(0 0 0 / 8%);
+  --checkmark-image: url(&quot;data:image/svg+xml,%3Csvg xmlns=&#x27;http://www.w3.org/2000/svg&#x27; viewBox=&#x27;0 0 17 17&#x27;%3E%3Cpath d=&#x27;M12.8961 3.64101C13.1297 3.41418 13.4984 3.37523 13.7779 3.56581C14.0571 3.75635 14.1554 4.11331 14.0299 4.41347L13.9615 4.53847L7.71151 13.7045C7.59411 13.8767 7.4063 13.9877 7.19881 14.0072C6.99136 14.0267 6.78564 13.9533 6.63826 13.806L2.88826 10.056L2.79842 9.9457C2.6192 9.67407 2.64927 9.30496 2.88826 9.06581C3.12738 8.82669 3.49647 8.79676 3.76815 8.97597L3.8785 9.06581L7.03084 12.2182L12.8053 3.74941L12.8961 3.64101Z&#x27;/%3E%3C/svg%3E&quot;);
+
+  /* Legacy aliases; not part of the current agent contract. */
+  --viz-bg: transparent;
+  --viz-panel: var(--card);
+  --viz-border: var(--border);
+  --viz-text: var(--foreground);
+  --viz-muted: var(--muted-foreground);
+  --viz-accent: var(--primary);
+  --viz-accent-text: var(--primary-foreground);
+  --viz-accent-bg: var(--accent);
+  --viz-font-size: var(--font-size-base);
+  --viz-warning: var(--destructive);
+  --color-background-primary: var(--background);
+  --color-text-primary: var(--foreground);
+  --color-border-secondary: var(--border);
+}
+
+:root[data-theme=&quot;light&quot;] {
+  color-scheme: light;
+}
+
+:root[data-theme=&quot;dark&quot;] {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html &gt; body {
+  margin: 0;
+  padding: 5px;
+  color: var(--foreground);
+  background: transparent !important;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-normal);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height-normal);
+}
+
+a {
+  color: color-mix(in srgb, var(--viz-accent) 80%, var(--viz-text) 20%);
+  cursor: pointer;
+  font-weight: var(--viz-font-weight-medium);
+  text-decoration: none;
+  text-underline-offset: 2px;
+}
+
+a:is(:hover, :focus-visible) {
+  text-decoration-line: underline;
+  text-decoration-style: dashed;
+  text-decoration-thickness: 0.5px;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+  margin-block: 0;
+}
+
+h1 {
+  font-size: var(--font-size-h1);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+h2 {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+h3,
+h4,
+h5,
+h6 {
+  font-size: var(--font-size-h3);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.3;
+}
+
+b,
+strong,
+th {
+  font-weight: var(--font-weight-medium);
+}
+
+code:not(pre code) {
+  display: inline;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  corner-shape: superellipse(1.5);
+  background: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  overflow-wrap: anywhere;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  word-break: break-word;
+}
+
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--foreground);
+  font: inherit;
+  text-align: start;
+}
+
+.table :is(th, td) {
+  padding-block: 10px;
+  padding-inline: 0 24px;
+  overflow-wrap: anywhere;
+  border-bottom: 1px solid var(--border);
+  text-align: start;
+  vertical-align: top;
+}
+
+.table-responsive &gt; .table :is(th, td) {
+  overflow-wrap: break-word;
+}
+
+.table :is(th, td):last-child {
+  padding-inline-end: 0;
+}
+
+.table :is(caption, thead th) {
+  font-weight: 600;
+}
+
+.table thead th {
+  padding-block: 8px;
+  border-bottom-color: color-mix(in srgb, var(--foreground) 16%, transparent);
+}
+
+.table tbody tr:last-child :is(th, td) {
+  border-bottom: 0;
+}
+
+.table.table-sm :is(th, td) {
+  padding-block: 6px;
+}
+
+.table.table-sm :is(th, td):not(:last-child) {
+  padding-inline-end: 16px;
+}
+
+.table :is(.text-end, [align=&quot;right&quot;]) {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.table :is(.text-center, [align=&quot;center&quot;]) {
+  text-align: center;
+}
+
+.table .text-nowrap {
+  white-space: nowrap;
+}
+
+#widget {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 0;
+  background: transparent !important;
+}
+
+.card {
+  min-width: 0;
+  padding: 12px;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  border-radius: var(--radius-2xl);
+  corner-shape: superellipse(1.5);
+  color: var(--card-foreground);
+  background: var(--card);
+}
+
+#widget &gt; :not(.card) {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.tooltip {
+  position: fixed;
+  z-index: 50;
+  top: 0;
+  left: 0;
+  width: max-content;
+  max-width: min(
+    20rem,
+    var(--tooltip-available-width, calc(100vw - 10px)),
+    calc(100vw - 10px)
+  );
+  max-height: min(
+    var(--tooltip-available-height, calc(100vh - 10px)),
+    calc(100vh - 10px)
+  );
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  corner-shape: superellipse(1.5);
+  color: var(--popover-foreground);
+  background: var(--popover);
+  box-shadow: none;
+  font-size: var(--font-size-tooltip);
+  line-height: var(--line-height-tooltip);
+  overflow-wrap: break-word;
+  white-space: normal;
+  pointer-events: none;
+  user-select: none;
+}
+
+.viz-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(max(180px, 24%), 1fr));
+  gap: 10px;
+}
+
+.viz-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.viz-stat-value {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+.viz-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.viz-badge {
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  color: var(--accent-foreground);
+  background: var(--accent);
+  font-weight: var(--font-weight-medium);
+}
+
+small,
+.text-small,
+.viz-badge {
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-small);
+}
+
+.text-muted {
+  color: var(--muted-foreground);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.viz-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.viz-controls &gt; .form-label {
+  display: grid;
+  min-width: min(100%, 260px);
+  flex: 1 1 280px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 2px 12px;
+  margin-bottom: 0;
+}
+
+.viz-controls &gt; .form-label &gt; :is(.form-control, .form-range, .form-select) {
+  grid-column: 1 / -1;
+}
+
+.btn,
+.form-check-input,
+.form-control,
+.form-range,
+.form-select {
+  font: inherit;
+}
+
+.btn {
+  appearance: button;
+  display: inline-flex;
+  inline-size: fit-content;
+  max-inline-size: 100%;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0 8px;
+  -webkit-app-region: no-drag;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: superellipse(1.5);
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+  cursor: var(--cursor-interaction, pointer);
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+.btn:is(.btn-block, .viz-tile) {
+  inline-size: 100%;
+}
+
+.btn.viz-tile {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+a.btn {
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn:not(:disabled):hover {
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.btn-primary {
+  border-color: transparent;
+  color: var(--primary-foreground);
+  background: var(--foreground);
+  background-clip: padding-box;
+}
+
+.btn-primary .text-muted {
+  color: color-mix(in srgb, var(--primary-foreground) 50%, transparent);
+}
+
+.btn-primary:not(:disabled):hover {
+  background: color-mix(in srgb, var(--foreground) 80%, transparent);
+  background-clip: padding-box;
+}
+
+.btn-ghost {
+  border-color: transparent;
+  color: var(--muted-foreground);
+  background: transparent;
+}
+
+.btn-ghost:not(:disabled):hover {
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+[data-lucide] {
+  stroke-width: 1.6;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--foreground);
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  min-height: 28px;
+  padding: 0 8px;
+  outline: none;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: superellipse(1.5);
+  color: var(--foreground);
+  background: var(--secondary);
+}
+
+.form-control::placeholder {
+  color: var(--muted-foreground);
+}
+
+.form-control[type=&quot;file&quot;] {
+  padding: 0;
+  overflow: hidden;
+  cursor: var(--cursor-interaction, pointer);
+}
+
+.form-control[type=&quot;file&quot;]::file-selector-button {
+  min-height: 26px;
+  margin-right: 8px;
+  padding: 0 8px;
+  border: 0;
+  border-right: 1px solid var(--input);
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+  cursor: inherit;
+  font: inherit;
+}
+
+.form-control[type=&quot;file&quot;]:not(:disabled):hover::file-selector-button {
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.form-control-color[type=&quot;color&quot;] {
+  width: 40px;
+  height: 28px;
+  padding: 3px;
+  cursor: var(--cursor-interaction, pointer);
+}
+
+.form-control-color[type=&quot;color&quot;]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.form-control-color[type=&quot;color&quot;]::-webkit-color-swatch {
+  border: 0;
+  border-radius: calc(var(--radius-lg) - 4px);
+  corner-shape: superellipse(1.5);
+}
+
+textarea.form-control {
+  height: auto;
+  min-height: 72px;
+  padding: 8px 10px;
+  resize: vertical;
+}
+
+.form-control:focus-visible {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-control:disabled,
+.form-select:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.form-select {
+  appearance: none;
+  display: block;
+  width: 100%;
+  min-height: 28px;
+  margin: 0;
+  padding: 0 32px 0 8px;
+  outline: none;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: superellipse(1.5);
+  color: var(--foreground);
+  background-color: var(--secondary);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted-foreground) 50%),
+    linear-gradient(135deg, var(--muted-foreground) 50%, transparent 50%);
+  background-position:
+    calc(100% - 14px) 50%,
+    calc(100% - 10px) 50%;
+  background-repeat: no-repeat;
+  background-size: 4px 4px;
+  cursor: var(--cursor-interaction, default);
+}
+
+.form-select:not(:disabled):hover {
+  background-color: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.form-select:focus-visible {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-check {
+  display: flex;
+  min-height: 20px;
+  align-items: center;
+  gap: 6px;
+}
+
+.form-check-input {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  margin: 0;
+  border: 1px solid var(--input);
+  color: var(--primary-foreground);
+  background-color: transparent;
+  cursor: var(--cursor-interaction, default);
+  transition:
+    background-color 150ms,
+    border-color 150ms,
+    box-shadow 150ms;
+}
+
+.form-check:not(.form-switch) .form-check-input[type=&quot;checkbox&quot;] {
+  border-color: var(--input);
+  border-radius: var(--radius-sm);
+  corner-shape: superellipse(1.5);
+  background-color: var(--secondary);
+  box-shadow: var(--shadow-sm);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input:not(:disabled):not(:checked):hover {
+  background-color: var(--card);
+}
+
+.form-check:not(.form-switch) .form-check-input[type=&quot;checkbox&quot;]:checked {
+  border-color: var(--primary);
+  background-color: var(--primary);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input[type=&quot;checkbox&quot;]:checked::before {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--primary-foreground);
+  content: &quot;&quot;;
+  mask: var(--checkmark-image) center / 12px 12px no-repeat;
+}
+
+.form-check-input[type=&quot;radio&quot;] {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-full);
+}
+
+.form-check-input[type=&quot;radio&quot;]:checked {
+  border: 2px solid var(--primary);
+  background:
+    radial-gradient(circle, var(--primary-foreground) 0 2.5px, transparent 3px),
+    var(--primary);
+}
+
+.form-check:not(.form-switch) .form-check-input:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.form-check:not(.form-switch) .form-check-input:disabled {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.form-check:not(.form-switch) .form-check-input:disabled + .form-check-label {
+  cursor: not-allowed;
+}
+
+.form-switch .form-check-input:disabled,
+.form-switch .form-check-input:disabled + .form-check-label {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.form-check-label {
+  color: var(--foreground);
+  cursor: var(--cursor-interaction, default);
+}
+
+.form-switch .form-check-input {
+  position: relative;
+  width: 32px;
+  height: 20px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--muted);
+  box-shadow: none;
+  transition: background-color 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.form-switch .form-check-input::before {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  box-sizing: border-box;
+  border: 1px solid light-dark(var(--primary-foreground), var(--foreground));
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+  box-shadow: var(--shadow-sm);
+  content: &quot;&quot;;
+  transform: translate(2px, -50%);
+  transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.form-switch .form-check-input:checked {
+  background: var(--primary);
+}
+
+.form-switch .form-check-input:checked::before {
+  transform: translate(14px, -50%);
+}
+
+.form-switch .form-check-input:focus-visible {
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+.form-range {
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 28px;
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  outline: none;
+  border: 0;
+  accent-color: var(--primary);
+  background: linear-gradient(
+      color-mix(in srgb, var(--foreground) 7%, transparent),
+      color-mix(in srgb, var(--foreground) 7%, transparent)
+    )
+    center / 100% 2px no-repeat;
+}
+
+.form-range::-webkit-slider-runnable-track {
+  height: 28px;
+  background: transparent;
+}
+
+.form-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+}
+
+.form-range:focus-visible::-webkit-slider-thumb {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-range::-moz-range-track {
+  height: 28px;
+  background: transparent;
+}
+
+.form-range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+}
+
+.form-range:focus-visible::-moz-range-thumb {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-range:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.btn:not(.btn-primary, .viz-tile):is(
+    [aria-pressed=&quot;true&quot;],
+    [aria-selected=&quot;true&quot;],
+    .is-selected
+  ) {
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+
+.btn.viz-tile:is([aria-pressed=&quot;true&quot;], [aria-selected=&quot;true&quot;], .is-selected) {
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 1px var(--primary);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+#widget &gt; svg {
+  width: 100%;
+}
+
+.text-warning,
+.text-destructive {
+  color: var(--destructive);
+}
+
+html&gt;body{padding:0}&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div id=&quot;swipestats-business-model-v1&quot;&gt;
+  &lt;style&gt;
+    #swipestats-business-model-v1 { display: grid; gap: 1rem; color: var(--foreground); }
+    #swipestats-business-model-v1 .legend { display: flex; flex-wrap: wrap; gap: .75rem; color: var(--muted-foreground); }
+    #swipestats-business-model-v1 .key { display: inline-flex; align-items: center; gap: .35rem; }
+    #swipestats-business-model-v1 .dot { width: .65rem; height: .65rem; border-radius: 999px; background: var(--border); }
+    #swipestats-business-model-v1 .dot[data-status=&quot;current&quot;] { background: var(--viz-series-1); }
+    #swipestats-business-model-v1 .dot[data-status=&quot;hypothesis&quot;] { background: var(--viz-series-2); }
+    #swipestats-business-model-v1 .dot[data-status=&quot;tension&quot;] { background: var(--viz-series-3); }
+    #swipestats-business-model-v1 .canvas { display: grid; grid-template-columns: repeat(10, minmax(0, 1fr)); grid-template-rows: repeat(2, minmax(11rem, auto)) minmax(10rem, auto); border: 1px solid var(--border); overflow: hidden; }
+    #swipestats-business-model-v1 .block { min-width: 0; padding: .75rem; border-right: 1px solid var(--border); border-bottom: 1px solid var(--border); }
+    #swipestats-business-model-v1 .block h3 { margin: 0 0 .65rem; display: flex; gap: .4rem; align-items: center; }
+    #swipestats-business-model-v1 .claims { display: grid; gap: .4rem; }
+    #swipestats-business-model-v1 .claim { width: 100%; justify-content: flex-start; text-align: left; align-items: flex-start; white-space: normal; }
+    #swipestats-business-model-v1 .claim[data-status=&quot;current&quot;] { background: color-mix(in srgb, var(--viz-series-1) 12%, transparent); }
+    #swipestats-business-model-v1 .claim[data-status=&quot;hypothesis&quot;] { background: color-mix(in srgb, var(--viz-series-2) 12%, transparent); }
+    #swipestats-business-model-v1 .claim[data-status=&quot;tension&quot;] { background: color-mix(in srgb, var(--viz-series-3) 12%, transparent); }
+    #swipestats-business-model-v1 .partners { grid-column: 1 / 3; grid-row: 1 / 3; }
+    #swipestats-business-model-v1 .activities { grid-column: 3 / 5; grid-row: 1; }
+    #swipestats-business-model-v1 .resources { grid-column: 3 / 5; grid-row: 2; }
+    #swipestats-business-model-v1 .value { grid-column: 5 / 7; grid-row: 1 / 3; }
+    #swipestats-business-model-v1 .relationships { grid-column: 7 / 9; grid-row: 1; }
+    #swipestats-business-model-v1 .channels { grid-column: 7 / 9; grid-row: 2; }
+    #swipestats-business-model-v1 .segments { grid-column: 9 / 11; grid-row: 1 / 3; border-right: 0; }
+    #swipestats-business-model-v1 .costs { grid-column: 1 / 6; grid-row: 3; border-bottom: 0; }
+    #swipestats-business-model-v1 .revenue { grid-column: 6 / 11; grid-row: 3; border-right: 0; border-bottom: 0; }
+    #swipestats-business-model-v1 .detail { display: grid; gap: .5rem; }
+    #swipestats-business-model-v1 .detail-head { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+    #swipestats-business-model-v1 .detail-head strong { font-weight: 500; }
+    #swipestats-business-model-v1 .detail-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; }
+    #swipestats-business-model-v1 .detail-grid p { margin: .2rem 0 0; }
+    @media (max-width: 640px) {
+      #swipestats-business-model-v1 .canvas { display: block; }
+      #swipestats-business-model-v1 .block { border-right: 0; border-bottom: 1px solid var(--border); }
+      #swipestats-business-model-v1 .detail-grid { grid-template-columns: 1fr; }
+    }
+  &lt;/style&gt;
+
+  &lt;div class=&quot;legend text-small&quot; aria-label=&quot;Claim status legend&quot;&gt;
+    &lt;span class=&quot;key&quot;&gt;&lt;span class=&quot;dot&quot; data-status=&quot;current&quot;&gt;&lt;/span&gt;Current evidence&lt;/span&gt;
+    &lt;span class=&quot;key&quot;&gt;&lt;span class=&quot;dot&quot; data-status=&quot;hypothesis&quot;&gt;&lt;/span&gt;Strategic hypothesis&lt;/span&gt;
+    &lt;span class=&quot;key&quot;&gt;&lt;span class=&quot;dot&quot; data-status=&quot;tension&quot;&gt;&lt;/span&gt;Model tension&lt;/span&gt;
+  &lt;/div&gt;
+
+  &lt;div class=&quot;canvas&quot; role=&quot;group&quot; aria-label=&quot;SwipeStats business model canvas&quot;&gt;
+    &lt;section class=&quot;block partners&quot;&gt;&lt;h3&gt;&lt;i data-lucide=&quot;handshake&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;Key partners&lt;/h3&gt;&lt;div class=&quot;claims&quot;&gt;
+      &lt;button class=&quot;btn viz-tile claim&quot; type=&quot;button&quot; data-status=&quot;tension&quot;
+        data-title=&quot;Dating apps and data-export systems&quot;
+        data-evidence=&quot;Tinder, Hinge, Raya, and future providers determine what users can export, how long it takes, and which facts exist.&quot;
+        data-tension=&quot;SwipeStats cannot promise metrics that the provider export does not contain.&quot;
+        data-test=&quot;Maintain a provider capability matrix tied to every visible claim.&quot;&gt;Dating apps and export systems&lt;/button&gt;
+      &lt;button class=&quot;btn viz-tile claim&quot; type=&quot;button&quot; data-status=&quot;current&quot;
+        data-title=&quot;Researchers, journalists, creators, and sponsors&quot;
+        data-evidence=&quot;The research surface already sells datasets and cites academic, press, and creator use.&quot;
+        data-tension=&quot;Commercial reuse must preserve consent, anonymity, and dataset credibility.&quot;
+        data-test=&quot;Track qualified dataset and sponsorship demand separately from consumer conversion.&quot;&gt;Research, media, and sponsors&lt;/button&gt;
+    &lt;/div&gt;&lt;/section&gt;
+
+    &lt;section class=&quot;block activities&quot;&gt;&lt;h3&gt;&lt;i data-lucide=&quot;workflow&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;Key activities&lt;/h3&gt;&lt;div class=&quot;claims&quot;&gt;
+      &lt;button class=&quot;btn viz-tile claim&quot; type=&quot;button&quot; data-status=&quot;current&quot;
+        data-title=&quot;Acquire, sanitize, and normalize exports&quot;
+        data-evidence=&quot;Provider-specific importers strip identifiers and project Tinder, Hinge, and Raya data into honest shared views.&quot;
+        data-tension=&quot;A common frame must not flatten away provider-native truth.&quot;
+        data-test=&quot;Measure import success, excluded fields, duplicates, and unsupported metric attempts.&quot;&gt;Sanitize and normalize exports&lt;/button&gt;
+      &lt;button class=&quot;btn viz-tile claim&quot; type=&quot;button&quot; data-status=&quot;current&quot;
+        data-title=&quot;Publish intent-matched content and tools&quot;
+        data-evidence=&quot;SEO content routes readers toward insights, profile tools, prompts, roasts, directory, and research.&quot;
+        data-tension=&quot;Generic upload CTAs waste immediate intent and increase bounce.&quot;
+        data-test=&quot;Compare product entry and activation by article intent and CTA destination.&quot;&gt;Publish content and tools&lt;/button&gt;
+    &lt;/div&gt;&lt;/section&gt;
+
+    &lt;section class=&quot;block resources&quot;&gt;&lt;h3&gt;&lt;i data-lucide=&quot;database&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;Key resources&lt;/h3&gt;&lt;div class=&quot;claims&quot;&gt;
+      &lt;button class=&quot;btn viz-tile claim&quot; type=&quot;button&quot; data-status=&quot;current&quot;
+        data-title=&quot;Anonymous longitudinal dataset and benchmarks&quot;
+        data-evidence=&quot;SwipeStats markets comparisons against 10,000+ anonymous profiles and offers research datasets.&quot;
+        data-tension=&quot;Coverage, cohort composition, denominator, and tenure determine whether a benchmark is meaningful.&quot;
+        data-test=&quot;Expose sample size, cohort definition, raw counts, and collection window beside every ranking.&quot;&gt;Dataset and benchmarks&lt;/button&gt;
+      &lt;button class=&quot;btn viz-tile claim&quot; type=&quot;button&quot; data-status=&quot;current&quot;
+        data-title=&quot;High-intent media and distribution&quot;
+        data-evidence=&quot;The blog, search traffic, newsletter, share links, and open-source reputation create multiple entry paths.&quot;
+        data-tension=&quot;Traffic is an asset only when each intent finds a useful next step.&quot;
+        data-test=&quot;Measure value events per landing intent, not only aggregate sessions.&quot;&gt;Media and distribution&lt;/button&gt;
+    &lt;/div&gt;&lt;/section&gt;
+
+    &lt;section class=&quot;block value&quot;&gt;&lt;h3&gt;&lt;i data-lucide=&quot;sparkles&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;Value propositions&lt;/h3&gt;&lt;div class=&quot;claims&quot;&gt;
+      &lt;button class=&quot;btn viz-tile claim&quot; type=&quot;button&quot; data-status=&quot;current&quot;
+        data-title=&quot;Private evidence about your own dating activity&quot;
+        data-evidence=&quot;Users can turn exports into charts, match and swipe patterns, cohort comparisons, and longitudinal views.&quot;
+        data-tension=&quot;Insight quality is bounded by delayed, incomplete, provider-specific exports.&quot;
+        data-test=&quot;Measure whether users can answer a real question they had before upload.&quot;&gt;Private personal insights&lt;/button&gt;
+      &lt;button class=&quot;btn viz-tile claim&quot; type=&quot;button&quot; data-status=&quot;hypothesis&quot;
+        data-title=&quot;Immediate profile and conversation improvement&quot;
+        data-evidence=&quot;Profile Compare, profile roast, prompt tools, and deterministic Conversation Replay create direct-use product paths.&quot;
+        data-tension=&quot;AI advice can become generic or overclaim reciprocity when incoming message text is absent.&quot;
+        data-test=&quot;Measure useful edits and repeat use with transparent evidence labels.&quot;&gt;Immediate improvement tools&lt;/button&gt;
+      &lt;button class=&quot;btn viz-tile claim&quot; type=&quot;button&quot; data-status=&quot;current&quot;
+        data-title=&quot;A licensable view of dating behavior&quot;
+        data-evidence=&quot;Researchers and creators can buy aggregated, anonymized profile data at several package sizes.&quot;
+        data-tension=&quot;Research value depends on documentation, provenance, representativeness, and reuse rights.&quot;
+        data-test=&quot;Interview buyers about the exact analysis they can complete without custom support.&quot;&gt;Research-ready dating data&lt;/button&gt;
+    &lt;/div&gt;&lt;/section&gt;
+
+    &lt;section class=&quot;block relationships&quot;&gt;&lt;h3&gt;&lt;i data-lucide=&quot;users&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;Customer relationships&lt;/h3&gt;&lt;div class=&quot;claims&quot;&gt;
+      &lt;button class=&quot;btn viz-tile claim&quot; type=&quot;button&quot; data-status=&quot;current&quot;
+        data-title=&quot;Anonymous self-service&quot;
+        data-evidence=&quot;The homepage promises free upload, browser-side identifier removal, no required account, and open-source transparency.&quot;
+        data-tension=&quot;Users must wait for exports and trust the sanitization boundary before seeing value.&quot;
+        data-test=&quot;Measure request-to-return, return-to-upload, and first-insight completion.&quot;&gt;Anonymous self-service&lt;/button&gt;
+      &lt;button class=&quot;btn viz-tile claim&quot; type=&quot;button&quot; data-status=&quot;hypothesis&quot;
+        data-title=&quot;Feedback, sharing, and longitudinal return&quot;
+        data-evidence=&quot;Public profile comparison, friend feedback, newsletters, and repeat uploads can create ongoing relationships.&quot;
+        data-tension=&quot;Sharing and retention must not undermine privacy or create vanity metrics.&quot;
+        data-test=&quot;Track repeat evidence updates and useful feedback, not raw share counts.&quot;&gt;Feedback and longitudinal return&lt;/button&gt;
+    &lt;/div&gt;&lt;/section&gt;
+
+    &lt;section class=&quot;block channels&quot;&gt;&lt;h3&gt;&lt;i data-lucide=&quot;route&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;Channels&lt;/h3&gt;&lt;div class=&quot;claims&quot;&gt;
+      &lt;button class=&quot;btn viz-tile claim&quot; type=&quot;button&quot; data-status=&quot;current&quot;
+        data-title=&quot;Search and intent-matched editorial routes&quot;
+        data-evidence=&quot;High-performing posts can use manual product cards while the long tail receives automatic fallback CTAs.&quot;
+        data-tension=&quot;One upload CTA cannot serve statistics, prompt, profile, app-review, and research intent equally.&quot;
+        data-test=&quot;Map the top search clusters to explicit immediate or delayed product routes.&quot;&gt;Search and editorial routes&lt;/button&gt;
+      &lt;button class=&quot;btn viz-tile claim&quot; type=&quot;button&quot; data-status=&quot;current&quot;
+        data-title=&quot;Upload, share, directory, newsletter, and research surfaces&quot;
+        data-evidence=&quot;SwipeStats already has dedicated entry surfaces for private data, public feedback, discovery, reminders, and dataset purchase.&quot;
+        data-tension=&quot;The portfolio can feel fragmented without one clear promise per route.&quot;
+        data-test=&quot;Test whether visitors can choose the right path without reading product architecture.&quot;&gt;Product and sharing surfaces&lt;/button&gt;
+    &lt;/div&gt;&lt;/section&gt;
+
+    &lt;section class=&quot;block segments&quot;&gt;&lt;h3&gt;&lt;i data-lucide=&quot;contact-round&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;Customer segments&lt;/h3&gt;&lt;div class=&quot;claims&quot;&gt;
+      &lt;button class=&quot;btn viz-tile claim&quot; type=&quot;button&quot; data-status=&quot;current&quot;
+        data-title=&quot;Dating-intent readers seeking help now&quot;
+        data-evidence=&quot;Search readers often arrive with a prompt, profile, opener, app, or dating question that does not require an export.&quot;
+        data-tension=&quot;Sending them to delayed upload creates unnecessary friction.&quot;
+        data-test=&quot;Offer one immediate tool per high-intent cluster and measure completion.&quot;&gt;Immediate-intent readers&lt;/button&gt;
+      &lt;button class=&quot;btn viz-tile claim&quot; type=&quot;button&quot; data-status=&quot;current&quot;
+        data-title=&quot;Private-data users with an export&quot;
+        data-evidence=&quot;Tinder, Hinge, and Raya users can upload provider-native data for personal analytics and comparison.&quot;
+        data-tension=&quot;The user may disappear during the export waiting period.&quot;
+        data-test=&quot;Use reminders and education to measure request-to-upload recovery.&quot;&gt;Uploaded-data users&lt;/button&gt;
+      &lt;button class=&quot;btn viz-tile claim&quot; type=&quot;button&quot; data-status=&quot;current&quot;
+        data-title=&quot;Researchers, creators, journalists, and sponsors&quot;
+        data-evidence=&quot;The site offers packaged datasets and measured sponsorship inventory to commercial and research buyers.&quot;
+        data-tension=&quot;This is a different purchase, support, and trust model from consumer analytics.&quot;
+        data-test=&quot;Keep a separate funnel and unit economics for data and media buyers.&quot;&gt;Data and media buyers&lt;/button&gt;
+    &lt;/div&gt;&lt;/section&gt;
+
+    &lt;section class=&quot;block costs&quot;&gt;&lt;h3&gt;&lt;i data-lucide=&quot;receipt&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;Cost structure&lt;/h3&gt;&lt;div class=&quot;claims&quot;&gt;
+      &lt;button class=&quot;btn viz-tile claim&quot; type=&quot;button&quot; data-status=&quot;current&quot;
+        data-title=&quot;Content, provider maintenance, storage, and analytics&quot;
+        data-evidence=&quot;The business maintains a large content library, multiple importers, blob/database infrastructure, and analytical surfaces.&quot;
+        data-tension=&quot;Long-tail traffic and old providers create maintenance work without guaranteed activation.&quot;
+        data-test=&quot;Attribute maintenance cost and value events by provider and content cluster.&quot;&gt;Content and product infrastructure&lt;/button&gt;
+      &lt;button class=&quot;btn viz-tile claim&quot; type=&quot;button&quot; data-status=&quot;tension&quot;
+        data-title=&quot;Privacy, evidence quality, and AI review&quot;
+        data-evidence=&quot;Anonymization, ownership checks, metric definitions, and grounded AI outputs are central to user trust.&quot;
+        data-tension=&quot;Stronger claims are more marketable but more expensive to validate and riskier to get wrong.&quot;
+        data-test=&quot;Audit every headline metric and generated claim against raw source capability.&quot;&gt;Privacy and evidence quality&lt;/button&gt;
+    &lt;/div&gt;&lt;/section&gt;
+
+    &lt;section class=&quot;block revenue&quot;&gt;&lt;h3&gt;&lt;i data-lucide=&quot;badge-dollar-sign&quot; aria-hidden=&quot;true&quot;&gt;&lt;/i&gt;Revenue streams&lt;/h3&gt;&lt;div class=&quot;claims&quot;&gt;
+      &lt;button class=&quot;btn viz-tile claim&quot; type=&quot;button&quot; data-status=&quot;current&quot;
+        data-title=&quot;Plus and Elite product plans&quot;
+        data-evidence=&quot;Current configuration includes monthly and lifetime Plus/Elite pricing around rankings, roast, message intelligence, directory, and optimization.&quot;
+        data-tension=&quot;Configured tiers do not prove which product outcome earns payment.&quot;
+        data-test=&quot;Tie conversion to the specific completed job, not a generic feature bundle.&quot;&gt;Consumer plans&lt;/button&gt;
+      &lt;button class=&quot;btn viz-tile claim&quot; type=&quot;button&quot; data-status=&quot;current&quot;
+        data-title=&quot;Research dataset licensing&quot;
+        data-evidence=&quot;The research page offers small, full, and university/enterprise packages.&quot;
+        data-tension=&quot;Higher-value buyers may require provenance, licensing clarity, and custom support.&quot;
+        data-test=&quot;Measure margin and repeat demand by buyer use case.&quot;&gt;Dataset licensing&lt;/button&gt;
+      &lt;button class=&quot;btn viz-tile claim&quot; type=&quot;button&quot; data-status=&quot;hypothesis&quot;
+        data-title=&quot;Sponsorship and outcome-specific products&quot;
+        data-evidence=&quot;Measured sponsor placements and direct-use product surfaces create monetization beyond upload subscriptions.&quot;
+        data-tension=&quot;Commercial placements can damage editorial trust if intent matching is weak.&quot;
+        data-test=&quot;Compare sponsor and direct-product revenue per eligible content visit.&quot;&gt;Sponsors and direct-use products&lt;/button&gt;
+    &lt;/div&gt;&lt;/section&gt;
+  &lt;/div&gt;
+
+  &lt;section class=&quot;card detail&quot; aria-live=&quot;polite&quot; aria-label=&quot;Selected business model claim&quot;&gt;
+    &lt;div class=&quot;detail-head&quot;&gt;&lt;span class=&quot;viz-badge&quot; id=&quot;swipestats-bmc-status&quot;&gt;Current product evidence&lt;/span&gt;&lt;strong id=&quot;swipestats-bmc-title&quot;&gt;Private evidence about your own dating activity&lt;/strong&gt;&lt;/div&gt;
+    &lt;div class=&quot;detail-grid&quot;&gt;
+      &lt;div&gt;&lt;span class=&quot;text-small text-muted&quot;&gt;Evidence&lt;/span&gt;&lt;p id=&quot;swipestats-bmc-evidence&quot;&gt;Users can turn exports into charts, match and swipe patterns, cohort comparisons, and longitudinal views.&lt;/p&gt;&lt;/div&gt;
+      &lt;div&gt;&lt;span class=&quot;text-small text-muted&quot;&gt;Tension&lt;/span&gt;&lt;p id=&quot;swipestats-bmc-tension&quot;&gt;Insight quality is bounded by delayed, incomplete, provider-specific exports.&lt;/p&gt;&lt;/div&gt;
+      &lt;div&gt;&lt;span class=&quot;text-small text-muted&quot;&gt;Next test&lt;/span&gt;&lt;p id=&quot;swipestats-bmc-test&quot;&gt;Measure whether users can answer a real question they had before upload.&lt;/p&gt;&lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/section&gt;
+
+  &lt;script&gt;
+    (() =&gt; {
+      const root = document.getElementById(&quot;swipestats-business-model-v1&quot;);
+      if (!root) return;
+      const labels = { current: &quot;Current product evidence&quot;, hypothesis: &quot;Strategic hypothesis&quot;, tension: &quot;Model tension&quot; };
+      const status = root.querySelector(&quot;#swipestats-bmc-status&quot;);
+      const title = root.querySelector(&quot;#swipestats-bmc-title&quot;);
+      const evidence = root.querySelector(&quot;#swipestats-bmc-evidence&quot;);
+      const tension = root.querySelector(&quot;#swipestats-bmc-tension&quot;);
+      const test = root.querySelector(&quot;#swipestats-bmc-test&quot;);
+      root.querySelectorAll(&quot;.claim&quot;).forEach((button) =&gt; button.addEventListener(&quot;click&quot;, () =&gt; {
+        root.querySelectorAll(&quot;.claim&quot;).forEach((item) =&gt; item.classList.remove(&quot;is-selected&quot;));
+        button.classList.add(&quot;is-selected&quot;);
+        status.textContent = labels[button.dataset.status] || &quot;Claim&quot;;
+        title.textContent = button.dataset.title;
+        evidence.textContent = button.dataset.evidence;
+        tension.textContent = button.dataset.tension;
+        test.textContent = button.dataset.test;
+      }));
+    })();
+  &lt;/script&gt;
+&lt;/div&gt;
+
+&lt;script src=&quot;https://unpkg.com/@floating-ui/core@1.7.3/dist/floating-ui.core.umd.min.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://unpkg.com/@floating-ui/dom@1.7.4/dist/floating-ui.dom.umd.min.js&quot;&gt;&lt;/script&gt;
+&lt;script&gt;
+(() =&gt; {
+  if (window.FloatingUIDOM == null) {
+    return;
+  }
+  const { autoUpdate, computePosition, flip, offset, shift, size } =
+    window.FloatingUIDOM;
+  const tooltipPlacements = new Set([&quot;top&quot;, &quot;right&quot;, &quot;bottom&quot;, &quot;left&quot;]);
+  const tooltipId = `codex-visualization-tooltip-${
+    window.crypto?.randomUUID?.() ?? Date.now().toString(36)
+  }`;
+  const tooltipGap = 5;
+  const hoverDelay = 700;
+  const skipDelay = 300;
+  let activeTrigger = null;
+  let pendingTrigger = null;
+  let tooltip = null;
+  let openTimeout = null;
+  let autoUpdateCleanup = null;
+  let positionRequest = 0;
+  let skipDelayUntil = 0;
+
+  const getTrigger = (target) =&gt;
+    target?.nodeType === Node.ELEMENT_NODE
+      ? target.closest(&quot;[data-tooltip]&quot;)
+      : null;
+  const containsTarget = (trigger, target) =&gt;
+    target?.nodeType != null &amp;&amp; trigger.contains(target);
+  const getContent = (trigger) =&gt;
+    trigger.getAttribute(&quot;data-tooltip&quot;)?.trim() ?? &quot;&quot;;
+  const getPlacement = (trigger) =&gt; {
+    const placement = trigger.getAttribute(&quot;data-tooltip-placement&quot;);
+    return tooltipPlacements.has(placement) ? placement : &quot;top&quot;;
+  };
+  const getTooltip = () =&gt; {
+    if (tooltip == null) {
+      tooltip = document.createElement(&quot;div&quot;);
+      tooltip.id = tooltipId;
+      tooltip.className = &quot;tooltip&quot;;
+      tooltip.setAttribute(&quot;role&quot;, &quot;tooltip&quot;);
+    }
+    return tooltip;
+  };
+  const setDescribedBy = (trigger, described) =&gt; {
+    const ids = new Set(
+      (trigger.getAttribute(&quot;aria-describedby&quot;) ?? &quot;&quot;)
+        .split(/\s+/)
+        .filter(Boolean),
+    );
+    if (described) {
+      ids.add(tooltipId);
+    } else {
+      ids.delete(tooltipId);
+    }
+    if (ids.size === 0) {
+      trigger.removeAttribute(&quot;aria-describedby&quot;);
+    } else {
+      trigger.setAttribute(&quot;aria-describedby&quot;, [...ids].join(&quot; &quot;));
+    }
+  };
+  const clearOpenTimeout = () =&gt; {
+    if (openTimeout != null) {
+      window.clearTimeout(openTimeout);
+      openTimeout = null;
+    }
+    pendingTrigger = null;
+  };
+  const closeTooltip = (activateSkipDelay = true) =&gt; {
+    clearOpenTimeout();
+    positionRequest += 1;
+    autoUpdateCleanup?.();
+    autoUpdateCleanup = null;
+    if (activeTrigger == null) {
+      return;
+    }
+    setDescribedBy(activeTrigger, false);
+    activeTrigger = null;
+    tooltip?.remove();
+    if (activateSkipDelay) {
+      skipDelayUntil = Date.now() + skipDelay;
+    }
+  };
+  const updatePosition = (trigger, floating) =&gt; {
+    const request = ++positionRequest;
+    void computePosition(trigger, floating, {
+      middleware: [
+        offset(tooltipGap),
+        flip({ padding: tooltipGap }),
+        shift({ padding: tooltipGap }),
+        size({
+          padding: tooltipGap,
+          apply({ availableHeight, availableWidth, elements }) {
+            elements.floating.style.setProperty(
+              &quot;--tooltip-available-width&quot;,
+              `${Math.max(0, availableWidth)}px`,
+            );
+            elements.floating.style.setProperty(
+              &quot;--tooltip-available-height&quot;,
+              `${Math.max(0, availableHeight)}px`,
+            );
+          },
+        }),
+      ],
+      placement: getPlacement(trigger),
+      strategy: &quot;fixed&quot;,
+    })
+      .then(({ x, y }) =&gt; {
+        if (activeTrigger !== trigger || request !== positionRequest) {
+          return;
+        }
+        const scale = window.devicePixelRatio || 1;
+        floating.style.transform = `translate(${Math.round(x * scale) / scale}px, ${Math.round(y * scale) / scale}px)`;
+        floating.style.visibility = &quot;visible&quot;;
+      })
+      .catch(() =&gt; {
+        if (activeTrigger === trigger &amp;&amp; request === positionRequest) {
+          closeTooltip(false);
+        }
+      });
+  };
+  const openTooltip = (trigger) =&gt; {
+    const content = getContent(trigger);
+    if (!trigger.isConnected || content.length === 0) {
+      return;
+    }
+    clearOpenTimeout();
+    if (activeTrigger === trigger) {
+      return;
+    }
+    closeTooltip();
+    const floating = getTooltip();
+    floating.textContent = content;
+    floating.style.visibility = &quot;hidden&quot;;
+    floating.style.transform = &quot;translate(0, 0)&quot;;
+    document.body.appendChild(floating);
+    activeTrigger = trigger;
+    setDescribedBy(trigger, true);
+    autoUpdateCleanup = autoUpdate(trigger, floating, () =&gt; {
+      updatePosition(trigger, floating);
+    });
+  };
+  const requestOpen = (trigger, immediate = false) =&gt; {
+    if (
+      getContent(trigger).length === 0 ||
+      activeTrigger === trigger ||
+      pendingTrigger === trigger
+    ) {
+      return;
+    }
+    clearOpenTimeout();
+    pendingTrigger = trigger;
+    const delay =
+      immediate || activeTrigger != null || Date.now() &lt; skipDelayUntil
+        ? 0
+        : hoverDelay;
+    if (delay === 0) {
+      openTooltip(trigger);
+      return;
+    }
+    openTimeout = window.setTimeout(() =&gt; {
+      openTimeout = null;
+      pendingTrigger = null;
+      openTooltip(trigger);
+    }, delay);
+  };
+  const handlePointerOpen = (event) =&gt; {
+    if (event.pointerType === &quot;touch&quot;) {
+      return;
+    }
+    const trigger = getTrigger(event.target);
+    if (trigger == null || containsTarget(trigger, event.relatedTarget)) {
+      return;
+    }
+    requestOpen(trigger);
+  };
+  const handleLeave = (event) =&gt; {
+    const trigger = getTrigger(event.target);
+    if (trigger == null || containsTarget(trigger, event.relatedTarget)) {
+      return;
+    }
+    if (activeTrigger === trigger || pendingTrigger === trigger) {
+      closeTooltip();
+    }
+  };
+  const handleFocusIn = (event) =&gt; {
+    const trigger = getTrigger(event.target);
+    if (trigger?.matches(&quot;:focus-visible&quot;)) {
+      requestOpen(trigger, true);
+    }
+  };
+  const handleKeyDown = (event) =&gt; {
+    if (event.key === &quot;Escape&quot;) {
+      closeTooltip();
+    }
+  };
+  const handleContextMenu = (event) =&gt; {
+    const trigger = getTrigger(event.target);
+    if (activeTrigger === trigger || pendingTrigger === trigger) {
+      closeTooltip();
+    }
+  };
+  const destroy = () =&gt; {
+    closeTooltip(false);
+    document.removeEventListener(&quot;pointerover&quot;, handlePointerOpen);
+    document.removeEventListener(&quot;pointerout&quot;, handleLeave);
+    document.removeEventListener(&quot;focusin&quot;, handleFocusIn);
+    document.removeEventListener(&quot;focusout&quot;, handleLeave);
+    document.removeEventListener(&quot;keydown&quot;, handleKeyDown);
+    document.removeEventListener(&quot;contextmenu&quot;, handleContextMenu);
+    tooltip = null;
+  };
+
+  document.addEventListener(&quot;pointerover&quot;, handlePointerOpen);
+  document.addEventListener(&quot;pointerout&quot;, handleLeave);
+  document.addEventListener(&quot;focusin&quot;, handleFocusIn);
+  document.addEventListener(&quot;focusout&quot;, handleLeave);
+  document.addEventListener(&quot;keydown&quot;, handleKeyDown);
+  document.addEventListener(&quot;contextmenu&quot;, handleContextMenu);
+  window.addEventListener(&quot;pagehide&quot;, destroy, { once: true });
+})();
+&lt;/script&gt;
+&lt;script id=&quot;codex-visualization-lucide&quot; async src=&quot;https://unpkg.com/lucide@1.17.0/dist/umd/lucide.js&quot;&gt;&lt;/script&gt;
+&lt;script&gt;
+(() =&gt; {
+  const initialize = () =&gt; {
+    globalThis.lucide?.createIcons({ attrs: { width: 16, height: 16 } });
+  };
+  if (globalThis.lucide != null) {
+    initialize();
+    return;
+  }
+  document
+    .getElementById(&quot;codex-visualization-lucide&quot;)
+    ?.addEventListener(&quot;load&quot;, initialize, { once: true });
+})();
+&lt;/script&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe>
+</body>
+</html>
