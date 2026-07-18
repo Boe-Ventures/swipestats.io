@@ -5,22 +5,23 @@ import { AUTHOR_KEYS } from "./src/lib/blog-authors";
 
 // Helper function to check if thumbnail exists
 function checkThumbnailExists(slug: string): string | null {
-  const thumbnailPath = join(
+  const thumbnailBase = join(
     process.cwd(),
     "public",
     "images",
     "blog",
     "thumbnails",
-    `${slug}.png`,
+    slug,
   );
-  if (existsSync(thumbnailPath)) {
-    return `/images/blog/thumbnails/${slug}.png`;
+
+  // Prefer modern, optimized editorial covers while keeping compatibility
+  // with the older PNG/JPEG library.
+  for (const extension of ["webp", "png", "jpg", "jpeg"]) {
+    if (existsSync(`${thumbnailBase}.${extension}`)) {
+      return `/images/blog/thumbnails/${slug}.${extension}`;
+    }
   }
-  // Also check for jpg
-  const jpgPath = thumbnailPath.replace(".png", ".jpg");
-  if (existsSync(jpgPath)) {
-    return `/images/blog/thumbnails/${slug}.jpg`;
-  }
+
   return null;
 }
 
@@ -37,6 +38,10 @@ const posts = defineCollection({
       // SEO metadata (for <head>)
       metaTitle: s.string().max(60),
       metaDescription: s.string().max(160),
+
+      // Social metadata can be shorter and more conversational than search copy.
+      ogTitle: s.string().max(80).optional(),
+      ogDescription: s.string().max(120).optional(),
 
       // Publishing & updates
       publishedAt: s.isodate(),

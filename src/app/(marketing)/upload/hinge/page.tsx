@@ -2,6 +2,15 @@ import type { Metadata } from "next";
 
 import { HingeUploadPage } from "./HingeUploadPage";
 import { hingeUploadCache } from "./searchParams";
+import { marketingOgImage } from "@/lib/og-images";
+
+const hingeUploadOgImage = marketingOgImage({
+  title: "Upload your Hinge data",
+  subtitle:
+    "Turn your private export into anonymous insights about likes, matches, and conversations.",
+  path: "/upload/hinge",
+  screenshot: "/images/og/screenshots/upload-hinge.jpg",
+});
 
 // Use ISR for SEO - static by default, but can handle dynamic searchParams
 // This allows the page to be statically generated but still handle ?update=true
@@ -20,6 +29,21 @@ export const metadata: Metadata = {
     description:
       "Upload your Hinge data anonymously and compare it to demographics from around the world!",
     url: "/upload/hinge",
+    images: [
+      {
+        url: hingeUploadOgImage,
+        width: 1200,
+        height: 630,
+        alt: "SwipeStats Hinge data upload",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Upload Your Hinge Data",
+    description:
+      "Turn your private export into anonymous insights about likes, matches, and conversations.",
+    images: [hingeUploadOgImage],
   },
 };
 

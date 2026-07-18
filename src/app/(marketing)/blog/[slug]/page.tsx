@@ -30,6 +30,21 @@ function getPostBySlug(slug: string) {
   return posts.find((post) => post.slug === slug);
 }
 
+function BlogCover({ src, title }: { src: string; title: string }) {
+  return (
+    <figure className="mx-auto mt-10 max-w-5xl overflow-hidden rounded-3xl border border-gray-200 bg-gray-100 shadow-[0_18px_55px_rgba(15,23,42,0.12)]">
+      <Image
+        src={src}
+        alt={`Editorial illustration for ${title}`}
+        width={1536}
+        height={1024}
+        className="aspect-3/2 w-full object-cover"
+        priority
+      />
+    </figure>
+  );
+}
+
 export async function generateMetadata({
   params,
 }: {
@@ -42,16 +57,28 @@ export async function generateMetadata({
     return {};
   }
 
-  // Generate OG image using new route
-  const ogImageUrl = `${env.NEXT_PUBLIC_BASE_URL}/api/og/blog?title=${encodeURIComponent(post.metaTitle)}&description=${encodeURIComponent(post.metaDescription || "")}`;
+  const ogTitle = post.ogTitle || post.metaTitle;
+  const ogDescription =
+    post.ogDescription || post.h1Subtitle || post.metaDescription;
+  const ogParams = new URLSearchParams({
+    title: ogTitle,
+    subtitle: ogDescription,
+    path: `/blog/${post.slug}`,
+    variant: "hero",
+  });
+  if (post.thumbnail) {
+    ogParams.set("screenshot", post.thumbnail.replace(/\.webp$/, ".jpg"));
+  }
+  const ogImageUrl = `${env.NEXT_PUBLIC_BASE_URL}/api/og?${ogParams.toString()}`;
 
   return {
     title: post.metaTitle,
     description: post.metaDescription,
     openGraph: {
-      title: post.metaTitle,
-      description: post.metaDescription,
+      title: ogTitle,
+      description: ogDescription,
       type: "article",
+      url: `/blog/${post.slug}`,
       publishedTime: post.publishedAt,
       modifiedTime: post.updatedAt,
       authors: [AUTHORS[post.author].name],
@@ -60,14 +87,14 @@ export async function generateMetadata({
           url: ogImageUrl,
           width: 1200,
           height: 630,
-          alt: post.metaTitle,
+          alt: ogTitle,
         },
       ],
     },
     twitter: {
       card: "summary_large_image",
-      title: post.metaTitle,
-      description: post.metaDescription,
+      title: ogTitle,
+      description: ogDescription,
       images: [ogImageUrl],
     },
     alternates: {
@@ -179,6 +206,8 @@ export default async function BlogPostPage({
             )}
           </div>
 
+          {meta.thumbnail && <BlogCover src={meta.thumbnail} title={meta.h1} />}
+
           {/* Article content */}
           <div className="mt-16 max-w-none">
             <Prose>
@@ -188,7 +217,9 @@ export default async function BlogPostPage({
                   .filter((p) => p.slug !== meta.slug && p.isPublished)
                   .filter(
                     (p) =>
-                      (p.category && meta.category && p.category === meta.category) ||
+                      (p.category &&
+                        meta.category &&
+                        p.category === meta.category) ||
                       p.tags.some((tag) => meta.tags.includes(tag)),
                   )}
               />
@@ -278,7 +309,6 @@ export default async function BlogPostPage({
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
           <NewsletterCTA />
         </div>
-
       </div>
     );
   }
@@ -328,6 +358,8 @@ export default async function BlogPostPage({
             )}
           </div>
         </div>
+
+        {meta.thumbnail && <BlogCover src={meta.thumbnail} title={meta.h1} />}
       </div>
 
       {/* Main Content with Sidebar */}
@@ -344,7 +376,9 @@ export default async function BlogPostPage({
                     .filter((p) => p.slug !== meta.slug && p.isPublished)
                     .filter(
                       (p) =>
-                        (p.category && meta.category && p.category === meta.category) ||
+                        (p.category &&
+                          meta.category &&
+                          p.category === meta.category) ||
                         p.tags.some((tag) => meta.tags.includes(tag)),
                     )}
                 />
