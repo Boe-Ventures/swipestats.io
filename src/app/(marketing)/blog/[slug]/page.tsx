@@ -363,7 +363,11 @@ export default async function BlogPostPage({
       </div>
 
       {/* Main Content with Sidebar */}
-      <div className="container mx-auto max-w-7xl px-6 lg:px-8">
+      <div
+        className={`container mx-auto max-w-7xl px-6 lg:px-8 ${
+          meta.thumbnail ? "mt-12" : ""
+        }`}
+      >
         <div className="flex gap-8 pb-16">
           {/* Main Content */}
           <div className="mx-auto w-full max-w-3xl flex-1">
