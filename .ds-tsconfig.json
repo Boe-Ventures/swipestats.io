@@ -1,0 +1,10 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "next/image": ["./src/components/ui/.ds-next-image.ts"],
+      "@/*": ["./src/*"],
+      "@velite": ["./.velite"]
+    }
+  }
+}

@@ -1,0 +1,6 @@
+/* design-sync: the app sets these via next/font on <html>; the DS bundle ships
+   the families as @font-face (fonts/fonts.css) and maps the vars here. */
+:root {
+  --font-inter: "Inter";
+  --font-geist-mono: "Geist Mono";
+}
