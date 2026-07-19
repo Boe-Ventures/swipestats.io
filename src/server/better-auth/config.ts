@@ -19,6 +19,26 @@ import {
 import { EmailVerificationInline } from "../../../emails/EmailVerificationInline";
 import { resend } from "@/server/clients/resend.client";
 
+const developmentTrustedOrigins =
+  env.NODE_ENV === "development"
+    ? [
+        // Direct Next.js dev servers on any available loopback port.
+        "http://localhost:*",
+        "https://localhost:*",
+        "http://127.0.0.1:*",
+        "https://127.0.0.1:*",
+
+        // Portless uses stable HTTPS names such as swipestats.localhost and
+        // branch-name.swipestats.localhost for linked worktrees.
+        "http://*.localhost",
+        "https://*.localhost",
+
+        // LocalCan local/public development proxies.
+        "https://*.local",
+        "https://swipestats-*.localcan.dev",
+      ]
+    : [];
+
 export const auth = betterAuth({
   // Base URL for generating verification links and OAuth redirects
   baseURL: env.NEXT_PUBLIC_BASE_URL,
@@ -279,9 +299,7 @@ export const auth = betterAuth({
     },
   },
   trustedOrigins: [
-    "http://localhost:3000",
-    "https://swipestats-21.localcan.dev",
-    "https://swipestats-42.beta.localcan.dev",
+    ...developmentTrustedOrigins,
     // Trust all of THIS project's Vercel preview + per-deployment URLs. The
     // stable branch alias is already covered via baseURL (VERCEL_BRANCH_URL),
     // but the per-deployment hash URLs are not — this wildcard covers both.

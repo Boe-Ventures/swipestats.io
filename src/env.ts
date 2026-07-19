@@ -87,8 +87,11 @@ export const env = createEnv({
     SLACK_WEBHOOK_RICH_MESSAGE_TEST:
       process.env.SLACK_WEBHOOK_RICH_MESSAGE_TEST,
     AMPLITUDE_SECRET_KEY: process.env.AMPLITUDE_SECRET_KEY,
-    // Priority: explicit override > true production > branch URL > localhost default
+    // Priority: Portless > explicit override > true production > branch URL >
+    // localhost default. Portless sets PORTLESS_URL before spawning Next.js;
+    // it must win over a localhost URL that may already be present in .env.
     NEXT_PUBLIC_BASE_URL:
+      process.env.PORTLESS_URL ??
       process.env.NEXT_PUBLIC_BASE_URL ??
       (process.env.VERCEL_ENV === "production"
         ? "https://www.swipestats.io"
