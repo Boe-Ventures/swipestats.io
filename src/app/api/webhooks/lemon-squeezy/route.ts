@@ -19,6 +19,10 @@ import {
 } from "@/server/services/datasetExport.service";
 import { trackServerEvent } from "@/server/services/analytics.service";
 
+// Premium dataset exports are streamed in the background after the webhook
+// response and can legitimately take several minutes.
+export const maxDuration = 800;
+
 // Enhanced logging helper
 function formatDate(dateString: string | null | undefined): string {
   if (!dateString) return "N/A";
