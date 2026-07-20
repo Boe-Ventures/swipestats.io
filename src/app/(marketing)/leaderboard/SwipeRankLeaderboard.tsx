@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button, ButtonLink } from "@/components/ui/button";
 import {
   Card,
@@ -71,14 +70,6 @@ const KIND_NOUNS: Record<SwipeRankPeriodKind, string> = {
   ALL_TIME: "all-time season",
 };
 
-const AVATAR_STYLES = [
-  "border-amber-200 bg-amber-50 text-amber-800",
-  "border-rose-200 bg-rose-50 text-rose-700",
-  "border-sky-200 bg-sky-50 text-sky-700",
-  "border-violet-200 bg-violet-50 text-violet-700",
-  "border-emerald-200 bg-emerald-50 text-emerald-700",
-] as const;
-
 const UNKNOWN_GENDER_PRESENTATION = {
   short: "?",
   label: "Not reported",
@@ -111,25 +102,6 @@ const GENDER_PRESENTATION: Record<
   },
   UNKNOWN: UNKNOWN_GENDER_PRESENTATION,
 };
-
-function formatTopShare(value: number) {
-  return `Top ${value.toLocaleString(undefined, {
-    minimumFractionDigits: value < 1 ? 1 : 0,
-    maximumFractionDigits: 1,
-  })}%`;
-}
-
-function avatarCode(alias: string) {
-  const digest = alias.split("#")[1];
-  return `D${digest?.slice(0, 1) ?? "?"}`;
-}
-
-function avatarStyle(entryKey: string) {
-  const bucket = Number.parseInt(entryKey.slice(-2), 16);
-  return AVATAR_STYLES[
-    Number.isNaN(bucket) ? 0 : bucket % AVATAR_STYLES.length
-  ];
-}
 
 function OrientationPill({
   gender,
@@ -312,7 +284,7 @@ export function SwipeRankLeaderboard() {
       </section>
 
       <div className="mx-auto max-w-[1440px] space-y-7 px-4 py-9 sm:px-6 lg:px-8">
-        <Card className="overflow-hidden border-slate-200 shadow-sm">
+        <Card className="gap-0 overflow-hidden border-slate-200 py-0 shadow-sm">
           <CardContent className="p-0">
             {quickJumps.length > 0 && (
               <div className="border-b bg-gradient-to-r from-rose-50/80 via-white to-violet-50/60 p-4 sm:p-5">
@@ -464,7 +436,7 @@ export function SwipeRankLeaderboard() {
         )}
 
         {data && (
-          <Card className="overflow-hidden border-slate-300 shadow-sm">
+          <Card className="gap-0 overflow-hidden border-slate-300 py-0 shadow-sm">
             <CardHeader className="border-b border-slate-800 bg-slate-950 py-5 text-white">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1">
@@ -561,15 +533,10 @@ export function SwipeRankLeaderboard() {
                                 </TableRow>
                               )}
                               <TableRow
-                                className={cn(
-                                  "group h-[96px] bg-white hover:bg-rose-50/30",
-                                  entry.rank === 1 && "bg-amber-50/40",
-                                  entry.rank === 2 && "bg-slate-50/70",
-                                  entry.rank === 3 && "bg-orange-50/30",
-                                )}
+                                className="group h-[96px] bg-white hover:bg-rose-50/30"
                               >
                                 <TableCell className="px-7">
-                                  <div className="flex items-center gap-3">
+                                  <div className="flex items-center">
                                     <span
                                       className={cn(
                                         "flex h-11 min-w-11 items-center justify-center rounded-xl border text-base font-bold tabular-nums",
@@ -586,67 +553,39 @@ export function SwipeRankLeaderboard() {
                                         ? entry.rank.toLocaleString()
                                         : `#${entry.rank.toLocaleString()}`}
                                     </span>
-                                    <span className="text-muted-foreground font-mono text-[11px] font-semibold whitespace-nowrap uppercase">
-                                      {formatTopShare(entry.topShare)}
-                                    </span>
                                   </div>
                                 </TableCell>
                                 <TableCell>
-                                  <div className="flex items-center gap-4">
-                                    <div className="relative shrink-0">
-                                      <Avatar className="h-14 w-14 border-2 border-white/80 shadow-sm">
-                                        {entry.photoUrl && (
-                                          <AvatarImage
-                                            src={entry.photoUrl}
-                                            alt=""
-                                          />
-                                        )}
-                                        <AvatarFallback
-                                          className={cn(
-                                            "text-sm font-bold",
-                                            avatarStyle(entry.entryKey),
-                                          )}
-                                        >
-                                          {avatarCode(entry.alias)}
-                                        </AvatarFallback>
-                                      </Avatar>
-                                      {entry.photoCount > 1 && (
-                                        <span className="absolute -right-1 -bottom-1 rounded-full border bg-white px-1.5 py-0.5 text-[10px] font-bold text-slate-700 shadow-sm">
-                                          +{entry.photoCount - 1}
-                                        </span>
-                                      )}
-                                    </div>
-                                    <div className="min-w-0">
-                                      <p className="font-semibold">
-                                        {genderLabel(entry.gender)}
-                                        {entry.age === null
-                                          ? ""
-                                          : `, ${entry.age}`}{" "}
-                                        <span className="text-muted-foreground font-normal">
-                                          ·{" "}
-                                          {formatLocation(
-                                            entry.city,
-                                            entry.region,
-                                            entry.country,
-                                          )}
-                                        </span>
-                                      </p>
-                                      <p className="text-muted-foreground mt-1 font-mono text-xs">
-                                        {entry.alias} ·{" "}
-                                        {formatObservedTenure(
-                                          entry.observedHistoryDays,
-                                        )}{" "}
+                                  <div className="min-w-0">
+                                    <p className="font-semibold">
+                                      {genderLabel(entry.gender)}
+                                      {entry.age === null
+                                        ? ""
+                                        : `, ${entry.age}`}{" "}
+                                      <span className="text-muted-foreground font-normal">
                                         ·{" "}
-                                        {eligibleSeasonCopy(
-                                          entry.seasonsRanked,
-                                          selected.kind,
+                                        {formatLocation(
+                                          entry.city,
+                                          entry.region,
+                                          entry.country,
                                         )}
-                                      </p>
-                                      <p className="mt-1 text-xs text-slate-400">
-                                        {entry.activeDays.toLocaleString()}{" "}
-                                        active days in this season
-                                      </p>
-                                    </div>
+                                      </span>
+                                    </p>
+                                    <p className="text-muted-foreground mt-1 font-mono text-xs">
+                                      {entry.alias} ·{" "}
+                                      {formatObservedTenure(
+                                        entry.observedHistoryDays,
+                                      )}{" "}
+                                      ·{" "}
+                                      {eligibleSeasonCopy(
+                                        entry.seasonsRanked,
+                                        selected.kind,
+                                      )}
+                                    </p>
+                                    <p className="mt-1 text-xs text-slate-400">
+                                      {entry.activeDays.toLocaleString()} active
+                                      days in this season
+                                    </p>
                                   </div>
                                 </TableCell>
                                 <TableCell>
