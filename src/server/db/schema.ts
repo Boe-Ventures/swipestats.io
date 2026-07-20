@@ -973,10 +973,8 @@ export const profileMetaTable = pgTable(
       "profile_meta_conversation_counts",
       sql`${table.conversationCount} >= 0 AND ${table.conversationsWithMessages} >= 0 AND ${table.conversationsWithMessages} <= ${table.conversationCount} AND ${table.ghostedCount} = ${table.conversationCount} - ${table.conversationsWithMessages}`,
     ),
-    check(
-      "profile_meta_nonnegative_conversation_metrics",
-      sql`(${table.averageResponseTimeSeconds} IS NULL OR ${table.averageResponseTimeSeconds} >= 0) AND (${table.meanResponseTimeSeconds} IS NULL OR ${table.meanResponseTimeSeconds} >= 0) AND (${table.medianConversationDurationDays} IS NULL OR ${table.medianConversationDurationDays} >= 0) AND (${table.longestConversationDays} IS NULL OR ${table.longestConversationDays} >= 0) AND (${table.averageMessagesPerConversation} IS NULL OR ${table.averageMessagesPerConversation} >= 0) AND (${table.medianMessagesPerConversation} IS NULL OR ${table.medianMessagesPerConversation} >= 0)`,
-    ),
+    // Historical imports can contain negative response intervals. Add a check
+    // only after those rows and the source calculation have been normalized.
   ],
 );
 

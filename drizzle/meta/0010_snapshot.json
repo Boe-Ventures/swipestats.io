@@ -1,5 +1,5 @@
 {
-  "id": "615fb91d-498c-4e0a-84c4-5da08124ee2c",
+  "id": "6726ca09-b548-4920-b66f-f6d6bf7b814d",
   "prevId": "e933a701-0c5c-42a5-841a-a7e8dbc32a21",
   "version": "7",
   "dialect": "postgresql",
@@ -4708,10 +4708,6 @@
         "profile_meta_conversation_counts": {
           "name": "profile_meta_conversation_counts",
           "value": "\"profile_meta\".\"conversation_count\" >= 0 AND \"profile_meta\".\"conversations_with_messages\" >= 0 AND \"profile_meta\".\"conversations_with_messages\" <= \"profile_meta\".\"conversation_count\" AND \"profile_meta\".\"ghosted_count\" = \"profile_meta\".\"conversation_count\" - \"profile_meta\".\"conversations_with_messages\""
-        },
-        "profile_meta_nonnegative_conversation_metrics": {
-          "name": "profile_meta_nonnegative_conversation_metrics",
-          "value": "(\"profile_meta\".\"average_response_time_seconds\" IS NULL OR \"profile_meta\".\"average_response_time_seconds\" >= 0) AND (\"profile_meta\".\"mean_response_time_seconds\" IS NULL OR \"profile_meta\".\"mean_response_time_seconds\" >= 0) AND (\"profile_meta\".\"median_conversation_duration_days\" IS NULL OR \"profile_meta\".\"median_conversation_duration_days\" >= 0) AND (\"profile_meta\".\"longest_conversation_days\" IS NULL OR \"profile_meta\".\"longest_conversation_days\" >= 0) AND (\"profile_meta\".\"average_messages_per_conversation\" IS NULL OR \"profile_meta\".\"average_messages_per_conversation\" >= 0) AND (\"profile_meta\".\"median_messages_per_conversation\" IS NULL OR \"profile_meta\".\"median_messages_per_conversation\" >= 0)"
         }
       },
       "isRLSEnabled": false

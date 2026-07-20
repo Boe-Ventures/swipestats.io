@@ -21,20 +21,16 @@ describe("profile_meta constraints", () => {
     expect(core).toContain('"likerate" <= 1');
   });
 
-  test("keeps nullable conversation derivatives nonnegative", () => {
+  test("keeps conversation counts internally consistent", () => {
     const conversation = profileMetaCheckSql(
-      "profile_meta_nonnegative_conversation_metrics",
+      "profile_meta_conversation_counts",
     );
-    for (const column of [
-      "averageresponsetimeseconds",
-      "meanresponsetimeseconds",
-      "medianconversationdurationdays",
-      "longestconversationdays",
-      "averagemessagesperconversation",
-      "medianmessagesperconversation",
-    ]) {
-      expect(conversation).toContain(`"${column}" is null`);
-      expect(conversation).toContain(`"${column}" >= 0`);
-    }
+    expect(conversation).toContain('"conversationcount" >= 0');
+    expect(conversation).toContain(
+      '"conversationswithmessages" <= "profile_meta"."conversationcount"',
+    );
+    expect(conversation).toContain(
+      '"ghostedcount" = "profile_meta"."conversationcount" - "profile_meta"."conversationswithmessages"',
+    );
   });
 });
