@@ -5,10 +5,10 @@ import type {
 } from "@/server/db/schema";
 
 /**
- * Full profile with usage data and metadata for insights display
+ * Public comparison projection with usage data and aggregate metadata.
  * Note: profileMeta is an array from the DB relation, but we typically only store one
  */
-export type TinderProfileWithUsage = TinderProfile & {
+export type TinderProfileWithUsage = Pick<TinderProfile, "tinderId"> & {
   usage: TinderUsage[];
   profileMeta: ProfileMeta[]; // Array from many() relation
 };

@@ -39,6 +39,20 @@ export default async function AdminLayout({
                 <ShieldAlert className="h-3 w-3" />
                 ADMIN MODE
               </div>
+              <nav className="hidden items-center gap-1 border-l pl-4 sm:flex">
+                <Link
+                  href="/admin/swipe-rank"
+                  className="rounded-md px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-950"
+                >
+                  SwipeRank
+                </Link>
+                <Link
+                  href="/admin/media-review"
+                  className="rounded-md px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-950"
+                >
+                  Media review
+                </Link>
+              </nav>
             </div>
             <Link
               href="/app/dashboard"

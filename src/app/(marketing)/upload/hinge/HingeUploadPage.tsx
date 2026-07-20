@@ -15,21 +15,12 @@ import type { SwipestatsHingeProfilePayload } from "@/lib/interfaces/HingeDataJS
 import type { HingeConsentState } from "@/lib/interfaces/HingeConsent";
 import { DEFAULT_HINGE_CONSENT } from "@/lib/interfaces/HingeConsent";
 import { env } from "@/env";
+import { deriveApproximateHingeBirthDate } from "@/lib/hinge/age";
+import { parseHingeTimestampToDate } from "@/lib/hinge/timestamp";
 
 interface HingeUploadPageProps {
   isUpdate: boolean;
   isDebug: boolean;
-}
-
-/**
- * Derive birthDate from age and signup time (same logic as hinge-transform.service.ts)
- * This is needed for identity mismatch detection
- */
-function deriveBirthDateFromJson(age: number, signupTime: string): string {
-  const signupDate = new Date(signupTime);
-  const birthYear = signupDate.getFullYear() - age;
-  // Use January 1st as a default since we don't have the exact date
-  return new Date(birthYear, 0, 1).toISOString();
 }
 
 export function HingeUploadPage({ isUpdate, isDebug }: HingeUploadPageProps) {
@@ -48,15 +39,14 @@ export function HingeUploadPage({ isUpdate, isDebug }: HingeUploadPageProps) {
   const hingeId = payload?.hingeId;
   const showDevTools = !env.NEXT_PUBLIC_IS_PRODUCTION;
 
-  // Derive birthDate for identity mismatch detection
+  // Keep the server's approximation for low-confidence diagnostic context only.
   const birthDate = useMemo(() => {
-    if (!payload?.anonymizedHingeJson.User.profile.age) return undefined;
-    if (!payload?.anonymizedHingeJson.User.account.signup_time)
-      return undefined;
-    return deriveBirthDateFromJson(
-      payload.anonymizedHingeJson.User.profile.age,
-      payload.anonymizedHingeJson.User.account.signup_time,
-    );
+    if (!payload) return undefined;
+    const { account, profile } = payload.anonymizedHingeJson.User;
+    return deriveApproximateHingeBirthDate(
+      profile.age,
+      account.last_seen,
+    ).toISOString();
   }, [payload]);
 
   // Fetch upload context to determine scenario (new/additive/merge)
@@ -99,7 +89,7 @@ export function HingeUploadPage({ isUpdate, isDebug }: HingeUploadPageProps) {
     ) {
       return false;
     }
-    const newSignupTime = new Date(
+    const newSignupTime = parseHingeTimestampToDate(
       payload.anonymizedHingeJson.User.account.signup_time,
     );
     const existingCreateDate = new Date(uploadContext.userProfile.createDate);
@@ -278,7 +268,7 @@ export function HingeUploadPage({ isUpdate, isDebug }: HingeUploadPageProps) {
                     ).toLocaleDateString()}
                     <br />
                     This file created:{" "}
-                    {new Date(
+                    {parseHingeTimestampToDate(
                       payload.anonymizedHingeJson.User.account.signup_time,
                     ).toLocaleDateString()}
                   </p>
@@ -330,18 +320,6 @@ export function HingeUploadPage({ isUpdate, isDebug }: HingeUploadPageProps) {
               >
                 Sign In
               </Link>
-            </div>
-          )}
-
-          {uploadContext?.scenario === "can_claim" && (
-            <div className="mt-6 rounded-lg border-2 border-blue-300 bg-blue-50 p-4">
-              <h3 className="mb-1 text-sm font-semibold text-blue-900">
-                Welcome Back!
-              </h3>
-              <p className="text-xs text-blue-700">
-                This looks like your profile from a previous session. Click
-                upload to claim it and update your data.
-              </p>
             </div>
           )}
 

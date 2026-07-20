@@ -30,6 +30,11 @@ import {
   aggregateUsageData,
   type TimeGranularity,
 } from "@/lib/utils/aggregateUsage";
+import {
+  calculatePooledMatchRatePercent,
+  filterMatchRateComparisonUsage,
+  type MatchRateComparisonTimeRange,
+} from "@/lib/utils/matchRateComparison";
 import { getProfileColor, getProfileLabel } from "../utils/profileColors";
 
 export function MatchRateComparisonChart() {
@@ -47,7 +52,8 @@ export function MatchRateComparisonChart() {
     () => [profileWithUsage, ...comparisonProfiles],
     [profileWithUsage, comparisonProfiles],
   );
-  const [timeRange, setTimeRange] = React.useState("all");
+  const [timeRange, setTimeRange] =
+    React.useState<MatchRateComparisonTimeRange>("all");
   const [granularity, setGranularity] =
     React.useState<TimeGranularity>("monthly");
   const [visibleProfiles, setVisibleProfiles] = React.useState<Set<string>>(
@@ -57,22 +63,36 @@ export function MatchRateComparisonChart() {
   // Show loading state when data is being fetched
   const isLoading = usageLoading || comparisonLoading;
 
-  // Aggregate data for ALL profiles and calculate match rate
-  const allProfilesData = React.useMemo(() => {
+  // Select source rows before aggregation so partial periods are not included
+  // or excluded based only on their display-period start date.
+  const selectedProfileUsage = React.useMemo(() => {
+    const referenceDate = new Date();
     return profiles.map((profile) => ({
       tinderId: profile.tinderId,
-      data: profile.usage?.length
+      usage: filterMatchRateComparisonUsage(
+        profile.usage ?? [],
+        timeRange,
+        referenceDate,
+      ),
+    }));
+  }, [profiles, timeRange]);
+
+  // Aggregate the already-filtered source rows for chart display.
+  const allProfilesData = React.useMemo(() => {
+    return selectedProfileUsage.map((profile) => ({
+      tinderId: profile.tinderId,
+      data: profile.usage.length
         ? aggregateUsageData(profile.usage, granularity).map((period) => ({
             period: period.period,
             periodDisplay: period.periodDisplay,
             matchRate:
               period.swipeLikes > 0
                 ? (period.matches / period.swipeLikes) * 100
-                : 0,
+                : null,
           }))
         : [],
     }));
-  }, [profiles, granularity]);
+  }, [selectedProfileUsage, granularity]);
 
   // Merge all profiles' data into single dataset
   const mergedData = React.useMemo(() => {
@@ -89,7 +109,7 @@ export function MatchRateComparisonChart() {
 
     // Create merged data points
     return allPeriods.map((period) => {
-      const dataPoint: Record<string, string | number> = {
+      const dataPoint: Record<string, string | number | null> = {
         period,
         periodDisplay: "",
       };
@@ -104,7 +124,7 @@ export function MatchRateComparisonChart() {
             dataPoint.periodDisplay = item.periodDisplay;
           }
         } else {
-          dataPoint[profileData.tinderId] = 0;
+          dataPoint[profileData.tinderId] = null;
         }
       });
 
@@ -112,61 +132,17 @@ export function MatchRateComparisonChart() {
     });
   }, [allProfilesData]);
 
-  // Filter by time range
-  const filteredData = React.useMemo(() => {
-    if (mergedData.length === 0) return [];
-
-    if (timeRange === "all") return mergedData;
-
-    const referenceDate = new Date();
-    let daysToSubtract = 90;
-    if (timeRange === "30d") {
-      daysToSubtract = 30;
-    } else if (timeRange === "7d") {
-      daysToSubtract = 7;
-    }
-
-    const startDate = new Date(referenceDate);
-    startDate.setDate(startDate.getDate() - daysToSubtract);
-
-    return mergedData.filter((item) => {
-      const period = item.period as string;
-      let itemDate: Date;
-
-      if (period.includes("-W")) {
-        const [year, weekStr] = period.split("-W");
-        const weekNum = parseInt(weekStr ?? "1", 10);
-        const yearNum = parseInt(year ?? "2024", 10);
-        itemDate = new Date(yearNum, 0, 1 + (weekNum - 1) * 7);
-      } else if (period.includes("-Q")) {
-        const [year, quarterStr] = period.split("-Q");
-        const quarter = parseInt(quarterStr ?? "1", 10);
-        const yearNum = parseInt(year ?? "2024", 10);
-        itemDate = new Date(yearNum, (quarter - 1) * 3, 1);
-      } else if (period.length === 4) {
-        itemDate = new Date(parseInt(period, 10), 0, 1);
-      } else if (period.length === 7) {
-        itemDate = new Date(period + "-01");
-      } else {
-        itemDate = new Date(period);
-      }
-
-      return itemDate >= startDate;
-    });
-  }, [mergedData, timeRange]);
-
-  // Calculate average match rates per profile
+  // Pool raw matches and right swipes. Averaging period rates would overweight
+  // low-volume periods and previously discarded genuine zero-match periods.
   const profileAverages = React.useMemo(() => {
-    const averages: Record<string, number> = {};
-    profiles.forEach((profile) => {
-      const values = filteredData
-        .map((item) => (item[profile.tinderId] as number) ?? 0)
-        .filter((v) => v > 0); // Only count non-zero periods
-      const sum = values.reduce((acc, val) => acc + val, 0);
-      averages[profile.tinderId] = values.length > 0 ? sum / values.length : 0;
+    const averages: Record<string, number | null> = {};
+    selectedProfileUsage.forEach((profile) => {
+      averages[profile.tinderId] = calculatePooledMatchRatePercent(
+        profile.usage,
+      );
     });
     return averages;
-  }, [filteredData, profiles]);
+  }, [selectedProfileUsage]);
 
   const toggleProfile = (tinderId: string) => {
     setVisibleProfiles((prev) => {
@@ -194,7 +170,7 @@ export function MatchRateComparisonChart() {
       <Card className="overflow-hidden shadow-lg transition-shadow duration-300 hover:shadow-xl">
         <CardHeader>
           <CardTitle className="text-xl font-semibold">
-            Match Rate Over Time
+            Match Yield Over Time
           </CardTitle>
           <CardDescription>
             {granularity.charAt(0).toUpperCase() + granularity.slice(1)} match
@@ -211,7 +187,7 @@ export function MatchRateComparisonChart() {
                 Loading data...
               </h3>
               <p className="text-muted-foreground max-w-sm text-sm">
-                Calculating match rates
+                Calculating match yield
               </p>
             </div>
           </div>
@@ -228,7 +204,7 @@ export function MatchRateComparisonChart() {
       <Card className="overflow-hidden shadow-lg transition-shadow duration-300 hover:shadow-xl">
         <CardHeader>
           <CardTitle className="text-xl font-semibold">
-            Match Rate Over Time
+            Match Yield Over Time
           </CardTitle>
           <CardDescription>
             {granularity.charAt(0).toUpperCase() + granularity.slice(1)} match
@@ -274,7 +250,7 @@ export function MatchRateComparisonChart() {
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="space-y-1">
             <CardTitle className="text-xl font-semibold">
-              Match Rate Over Time
+              Match Yield Over Time
             </CardTitle>
             <CardDescription>
               {granularity.charAt(0).toUpperCase() + granularity.slice(1)} match
@@ -302,7 +278,12 @@ export function MatchRateComparisonChart() {
                 <SelectItem value="yearly">Yearly</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={timeRange} onValueChange={setTimeRange}>
+            <Select
+              value={timeRange}
+              onValueChange={(value) =>
+                setTimeRange(value as MatchRateComparisonTimeRange)
+              }
+            >
               <SelectTrigger
                 className="w-[140px]"
                 aria-label="Select time range"
@@ -312,7 +293,7 @@ export function MatchRateComparisonChart() {
               <SelectContent>
                 <SelectItem value="7d">Last 7 days</SelectItem>
                 <SelectItem value="30d">Last 30 days</SelectItem>
-                <SelectItem value="90d">Last 3 months</SelectItem>
+                <SelectItem value="90d">Last 90 days</SelectItem>
                 <SelectItem value="all">All time</SelectItem>
               </SelectContent>
             </Select>
@@ -325,7 +306,7 @@ export function MatchRateComparisonChart() {
             const isVisible = visibleProfiles.has(profile.tinderId);
             const color = getProfileColor(index);
             const label = getProfileLabel(profile.tinderId, tinderId, index);
-            const average = profileAverages[profile.tinderId] ?? 0;
+            const average = profileAverages[profile.tinderId];
 
             return (
               <button
@@ -349,7 +330,9 @@ export function MatchRateComparisonChart() {
                   }}
                 />
                 <span>{label}</span>
-                <span className="tabular-nums">{average.toFixed(1)}%</span>
+                <span className="tabular-nums">
+                  {average == null ? "N/A" : `${average.toFixed(1)}%`}
+                </span>
               </button>
             );
           })}
@@ -378,7 +361,7 @@ export function MatchRateComparisonChart() {
       </CardHeader>
 
       <CardContent className="px-6 pt-6 pr-6">
-        {filteredData.length === 0 ? (
+        {mergedData.length === 0 ? (
           // Empty State
           <div className="flex min-h-[300px] flex-col items-center justify-center space-y-4 text-center">
             <div className="bg-muted rounded-full p-4">
@@ -419,7 +402,7 @@ export function MatchRateComparisonChart() {
             config={chartConfig}
             className="aspect-auto h-[300px] w-full"
           >
-            <AreaChart accessibilityLayer data={filteredData}>
+            <AreaChart accessibilityLayer data={mergedData}>
               <defs>
                 {profiles.map((profile, index) => {
                   const color = getProfileColor(index);
@@ -456,7 +439,9 @@ export function MatchRateComparisonChart() {
                 content={
                   <ChartTooltipContent
                     indicator="dot"
-                    formatter={(value) => `${value}%`}
+                    formatter={(value) =>
+                      typeof value === "number" ? `${value.toFixed(1)}%` : "N/A"
+                    }
                   />
                 }
               />

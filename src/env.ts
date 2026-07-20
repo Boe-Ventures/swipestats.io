@@ -11,6 +11,9 @@ export const env = createEnv({
       process.env.NODE_ENV === "production"
         ? z.string()
         : z.string().optional(),
+    // Optional dedicated HMAC key for season-scoped public SwipeRank aliases.
+    // Falls back to BETTER_AUTH_SECRET so existing environments keep working.
+    SWIPE_RANK_PUBLIC_ID_SECRET: z.string().min(32).optional(),
     DATABASE_URL: z.string().url(),
     NODE_ENV: z
       .enum(["development", "test", "production"])
@@ -70,6 +73,7 @@ export const env = createEnv({
    */
   runtimeEnv: {
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
+    SWIPE_RANK_PUBLIC_ID_SECRET: process.env.SWIPE_RANK_PUBLIC_ID_SECRET,
     DATABASE_URL: process.env.DATABASE_URL,
     NODE_ENV: process.env.NODE_ENV,
     RESEND_API_KEY: process.env.RESEND_API_KEY,

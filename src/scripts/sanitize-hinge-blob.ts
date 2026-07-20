@@ -35,7 +35,7 @@ async function sanitizeHingeBlob(blobUrl: string) {
   console.log("✅ Downloaded successfully");
   console.log("📊 Original stats:");
   console.log(`  - Matches: ${data.Matches.length}`);
-  console.log(`  - Prompts: ${data.Prompts.length}`);
+  console.log(`  - Prompts: ${data.Prompts?.length ?? 0}`);
   console.log(`  - Media: ${data.Media?.length ?? 0}`);
 
   // Count original messages

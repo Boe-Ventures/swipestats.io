@@ -19,6 +19,7 @@ import {
   buildRoastBenchmarks,
   STATS_ROAST_MODEL,
   type RoastBenchmark,
+  type RoastBenchmarkDistribution,
 } from "@/server/services/roast.service";
 import {
   roastProfile,
@@ -27,7 +28,6 @@ import {
   ROAST_TONES,
   type RoastTone,
 } from "@/server/services/profile-roast.service";
-import { getProviderMeta } from "@/server/services/providers";
 import { trackServerEvent } from "@/server/services/analytics.service";
 import {
   upsertAiOutput,
@@ -39,7 +39,9 @@ import {
   loadOwnedColumnLight,
 } from "@/server/services/comparison-column.service";
 import { readPhotoAnalysis } from "@/lib/photo-analysis";
-import { getCohortStats } from "@/server/services/cohort/cohort.service";
+import { getTinderSwipeRankBenchmark } from "@/server/services/swipe-rank/benchmark.service";
+import { allTimePeriod } from "@/server/services/swipe-rank/periods";
+import type { SwipeRankFilters } from "@/server/services/swipe-rank/product.service";
 import { ProfileComparisonService } from "@/server/services/profile-comparison.service";
 import { env } from "@/env";
 import {
@@ -57,21 +59,35 @@ function isOutdated(row: AiOutputRow): boolean {
 }
 
 /**
- * System cohort id + human label for a profile's gender on a provider, used to
- * pull percentile benchmarks for the stats roast. Falls back to the all-gender
- * cohort when gender is unknown/non-binary (no dedicated cohort exists).
+ * Human label for the fact-backed peer field used by the stats roast.
  */
-function resolveCohort(
-  providerKey: string,
-  gender: string | undefined,
-): { cohortId: string; cohortLabel: string } {
-  const p = providerKey.toLowerCase(); // "tinder" | "hinge"
-  const providerName = getProviderMeta(providerKey).name;
-  if (gender === "MALE")
-    return { cohortId: `${p}_male`, cohortLabel: `men on ${providerName}` };
-  if (gender === "FEMALE")
-    return { cohortId: `${p}_female`, cohortLabel: `women on ${providerName}` };
-  return { cohortId: `${p}_all`, cohortLabel: `everyone on ${providerName}` };
+function swipeRankCohortLabel(gender: string | undefined): string {
+  if (gender === "MALE") return "men on Tinder";
+  if (gender === "FEMALE") return "women on Tinder";
+  return "eligible Tinder uploads";
+}
+
+function roastDistribution(
+  benchmark: Awaited<ReturnType<typeof getTinderSwipeRankBenchmark>>,
+): RoastBenchmarkDistribution {
+  const { matchYield, likeRate, swipesPerActiveDay } = benchmark.cohort.metrics;
+  return {
+    matchRateP10: matchYield.p10,
+    matchRateP25: matchYield.p25,
+    matchRateP50: matchYield.p50,
+    matchRateP75: matchYield.p75,
+    matchRateP90: matchYield.p90,
+    likeRateP10: likeRate.p10,
+    likeRateP25: likeRate.p25,
+    likeRateP50: likeRate.p50,
+    likeRateP75: likeRate.p75,
+    likeRateP90: likeRate.p90,
+    swipesPerDayP10: swipesPerActiveDay.p10,
+    swipesPerDayP25: swipesPerActiveDay.p25,
+    swipesPerDayP50: swipesPerActiveDay.p50,
+    swipesPerDayP75: swipesPerActiveDay.p75,
+    swipesPerDayP90: swipesPerActiveDay.p90,
+  };
 }
 
 /** Stats roast lives in ai_output keyed by (kind, subjectId, scope=""). */
@@ -188,6 +204,7 @@ export const roastRouter = {
       // Verify ownership and gather gender/provider in one pass.
       let gender: string | undefined;
       let providerKey = "TINDER";
+      let swipeRankFilters: SwipeRankFilters | undefined;
       if (tinderProfileId) {
         const tp = await ctx.db.query.tinderProfileTable.findFirst({
           where: eq(tinderProfileTable.tinderId, tinderProfileId),
@@ -197,6 +214,10 @@ export const roastRouter = {
         }
         gender = tp.gender;
         providerKey = "TINDER";
+        swipeRankFilters = {
+          gender: tp.gender,
+          interestedIn: tp.interestedIn,
+        };
       } else {
         const hp = await ctx.db.query.hingeProfileTable.findFirst({
           where: eq(hingeProfileTable.hingeId, hingeProfileId!),
@@ -237,17 +258,27 @@ export const roastRouter = {
         });
       }
 
-      // Pull cohort percentiles so the roast knows what's actually good vs bad
-      // (otherwise it dunks on elite numbers). Best-effort.
+      // Pull percentiles from the same activated all-time facts as SwipeRank so
+      // roast wording cannot drift from the product leaderboard. Hinge does not
+      // yet have a provider-correct period fact model, so it remains
+      // deliberately unbenchmarked. This lookup is best-effort.
       let benchmarks: RoastBenchmark[] = [];
-      const { cohortId, cohortLabel } = resolveCohort(providerKey, gender);
-      const cohortStats = await getCohortStats(cohortId);
-      if (cohortStats) {
-        benchmarks = buildRoastBenchmarks(
-          profileMeta,
-          cohortStats,
-          cohortLabel,
-        );
+      if (tinderProfileId) {
+        try {
+          const swipeRankBenchmark = await getTinderSwipeRankBenchmark({
+            providerProfileId: tinderProfileId,
+            period: allTimePeriod(),
+            filters: swipeRankFilters,
+          });
+          benchmarks = buildRoastBenchmarks(
+            profileMeta,
+            roastDistribution(swipeRankBenchmark),
+            swipeRankCohortLabel(gender),
+          );
+        } catch {
+          // A missing/unactivated build must not block the otherwise valid
+          // roast. The generated copy simply receives no comparison claims.
+        }
       }
 
       const output = await generateRoast({

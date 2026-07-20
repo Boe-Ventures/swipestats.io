@@ -71,6 +71,13 @@
       "when": 1784117890407,
       "tag": "0009_nebulous_queen_noir",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1784540213445,
+      "tag": "0010_swipe_rank_and_upload_pipeline",
+      "breakpoints": true
     }
   ]
 }

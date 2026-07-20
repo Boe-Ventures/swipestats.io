@@ -3,47 +3,24 @@ import { z } from "zod";
 
 import { eq, desc, and } from "drizzle-orm";
 import { eventTable, eventTypeEnum } from "@/server/db/schema";
-import { protectedProcedure, publicProcedure } from "../trpc";
+import { protectedProcedure } from "../trpc";
 import type { TRPCRouterRecord } from "@trpc/server";
 import { createId } from "@/server/db/utils";
 import { trackServerEvent } from "@/server/services/analytics.service";
 
 export const eventRouter = {
-  // List events for a user (public - anyone can see events when viewing a profile)
-  // If userId provided, fetch for that user; otherwise fetch for current authenticated user
-  list: publicProcedure
-    .input(
-      z
-        .object({
-          userId: z.string().optional(),
-        })
-        .optional(),
-    )
-    .query(async ({ ctx, input }) => {
-      // Determine which user's events to fetch
-      let targetUserId: string | undefined;
+  // Life events and locations are private to the authenticated owner.
+  list: protectedProcedure.query(async ({ ctx }) => {
+    const events = await ctx.db.query.eventTable.findMany({
+      where: eq(eventTable.userId, ctx.session.user.id),
+      orderBy: [desc(eventTable.startDate)],
+      with: {
+        location: true,
+      },
+    });
 
-      if (input?.userId) {
-        // Explicit userId provided - fetch for that user (public viewing)
-        targetUserId = input.userId;
-      } else if (ctx.session?.user?.id) {
-        // No userId provided but user is authenticated - fetch their own events
-        targetUserId = ctx.session.user.id;
-      } else {
-        // No userId and not authenticated - return empty array
-        return [];
-      }
-
-      const events = await ctx.db.query.eventTable.findMany({
-        where: eq(eventTable.userId, targetUserId),
-        orderBy: [desc(eventTable.startDate)],
-        with: {
-          location: true,
-        },
-      });
-
-      return events;
-    }),
+    return events;
+  }),
 
   // Create new event
   create: protectedProcedure

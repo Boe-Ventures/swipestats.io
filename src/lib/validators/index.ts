@@ -94,6 +94,5 @@ export * from "./common";
 
 // Domain-specific validators
 export * from "./newsletter";
-export * from "./cohort";
 export * from "./billing";
 export * from "./custom-data";

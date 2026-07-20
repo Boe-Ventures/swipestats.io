@@ -47,6 +47,7 @@ export function SwipeStatsTooltipContent({
 
   // Calculate totals and derived metrics
   const totalSwipes = (data.swipeLikes ?? 0) + (data.swipePasses ?? 0);
+  const totalMessages = (data.messagesSent ?? 0) + (data.messagesReceived ?? 0);
   const matchRate =
     data.swipeLikes && data.matches
       ? ((data.matches / data.swipeLikes) * 100).toFixed(1)
@@ -55,9 +56,11 @@ export function SwipeStatsTooltipContent({
     totalSwipes > 0
       ? (((data.swipeLikes ?? 0) / totalSwipes) * 100).toFixed(1)
       : "0.0";
-  const responseRate =
-    data.messagesReceived && data.messagesSent
-      ? ((data.messagesSent / data.messagesReceived) * 100).toFixed(1)
+  // Tinder's daily aggregates do not pair sent and received messages, so they
+  // cannot establish a reply rate. The bounded sent share is descriptive only.
+  const sentMessageShare =
+    totalMessages > 0
+      ? (((data.messagesSent ?? 0) / totalMessages) * 100).toFixed(1)
       : "0.0";
 
   return (
@@ -168,12 +171,10 @@ export function SwipeStatsTooltipContent({
           <>
             <div className="mt-2 flex items-center justify-between gap-4 pt-1">
               <span className="text-muted-foreground/70 text-xs font-semibold tracking-wider uppercase">
-                Messages
+                Usage message ledger
               </span>
               <span className="text-muted-foreground text-xs font-medium tabular-nums">
-                {(
-                  (data.messagesSent ?? 0) + (data.messagesReceived ?? 0)
-                ).toLocaleString()}
+                {totalMessages.toLocaleString()}
               </span>
             </div>
 
@@ -184,7 +185,9 @@ export function SwipeStatsTooltipContent({
                     className="h-2 w-2 rounded-full"
                     style={{ backgroundColor: "var(--chart-1)" }}
                   />
-                  <span className="text-muted-foreground text-sm">Sent</span>
+                  <span className="text-muted-foreground text-sm">
+                    Usage sent
+                  </span>
                 </div>
                 <span className="text-sm font-medium tabular-nums">
                   {data.messagesSent.toLocaleString()}
@@ -200,7 +203,7 @@ export function SwipeStatsTooltipContent({
                     style={{ backgroundColor: "var(--chart-2)" }}
                   />
                   <span className="text-muted-foreground text-sm">
-                    Received
+                    Usage received
                   </span>
                 </div>
                 <span className="text-sm font-medium tabular-nums">
@@ -215,7 +218,7 @@ export function SwipeStatsTooltipContent({
         {data.matches !== undefined && data.swipeLikes !== undefined && (
           <div className="border-border/50 mt-2 space-y-1 border-t pt-2">
             <div className="flex items-center justify-between gap-4">
-              <span className="text-muted-foreground text-xs">Match Rate</span>
+              <span className="text-muted-foreground text-xs">Match yield</span>
               <span className="text-xs font-medium tabular-nums">
                 {matchRate}%
               </span>
@@ -232,13 +235,13 @@ export function SwipeStatsTooltipContent({
             )}
             {data.messagesSent !== undefined &&
               data.messagesReceived !== undefined &&
-              data.messagesReceived > 0 && (
+              totalMessages > 0 && (
                 <div className="flex items-center justify-between gap-4">
                   <span className="text-muted-foreground text-xs">
-                    Response Rate
+                    Usage sent share
                   </span>
                   <span className="text-xs font-medium tabular-nums">
-                    {responseRate}%
+                    {sentMessageShare}%
                   </span>
                 </div>
               )}

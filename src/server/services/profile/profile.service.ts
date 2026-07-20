@@ -1,7 +1,7 @@
-import { eq } from "drizzle-orm";
+import { and, eq, sql } from "drizzle-orm";
 
-import type { TinderPhoto } from "@/lib/interfaces/TinderDataJSON";
-import { withTransaction, db } from "@/server/db";
+import type { TinderPhotoData } from "@/lib/interfaces/TinderDataJSON";
+import { withTransaction, db, type TransactionClient } from "@/server/db";
 import {
   matchTable,
   mediaTable,
@@ -15,11 +15,65 @@ import {
   type MediaInsert,
 } from "@/server/db/schema";
 import { createId } from "@/server/db/utils";
+import { canDeleteClaimedAnonymousUser } from "./claim-ownership";
 import { computeProfileMeta } from "./meta.service";
 import { createMessagesAndMatches } from "./messages.service";
 import { transformTinderJsonToProfile } from "./transform.service";
-import { parseAnonymizedTinderData } from "./validation.service";
+import { loadVerifiedAnonymizedTinderData } from "./validation.service";
 import { createUsageRecords } from "./usage.service";
+import {
+  lockTinderProfileUploadInTx,
+  lockTinderSwipeRankMutationsInTx,
+  purgeTinderSwipeRankProfilesInTx,
+  scheduleTinderSwipeRankRefresh,
+  transferTinderSwipeRankOwnershipInTx,
+} from "../swipe-rank/lifecycle.service";
+import { invalidatePublicSwipeRankCache } from "../swipe-rank/public-cache";
+import {
+  cleanupCommittedTransientUpload,
+  lockTransientUploadForMutationInTx,
+  markTransientUploadCommittedInTx,
+  type TransientUploadBinding,
+} from "../transient-upload.service";
+
+interface RemainingAnonymousUserDataRow extends Record<string, unknown> {
+  has_remaining_data: boolean;
+}
+
+/**
+ * Account/session rows are intentionally absent: those are authentication
+ * internals that should cascade when an otherwise-empty anonymous user is
+ * removed. Every product/provider ownership edge is checked so claiming one
+ * Tinder profile cannot cascade unrelated anonymous-session data.
+ */
+async function hasRemainingAnonymousUserData(
+  tx: TransactionClient,
+  userId: string,
+): Promise<boolean | undefined> {
+  const result = await tx.execute<RemainingAnonymousUserDataRow>(sql`
+    SELECT
+      EXISTS (SELECT 1 FROM tinder_profile WHERE user_id = ${userId})
+      OR EXISTS (SELECT 1 FROM hinge_profile WHERE user_id = ${userId})
+      OR EXISTS (SELECT 1 FROM raya_profile WHERE user_id = ${userId})
+      OR EXISTS (SELECT 1 FROM swipe_rank_profile WHERE user_id = ${userId})
+      OR EXISTS (SELECT 1 FROM event WHERE user_id = ${userId})
+      OR EXISTS (SELECT 1 FROM custom_data WHERE user_id = ${userId})
+      OR EXISTS (
+        SELECT 1 FROM original_anonymized_file WHERE user_id = ${userId}
+      )
+      OR EXISTS (SELECT 1 FROM purchase WHERE user_id = ${userId})
+      OR EXISTS (SELECT 1 FROM post WHERE created_by_id = ${userId})
+      OR EXISTS (SELECT 1 FROM attachment WHERE uploaded_by = ${userId})
+      OR EXISTS (SELECT 1 FROM profile_comparison WHERE user_id = ${userId})
+      OR EXISTS (
+        SELECT 1 FROM profile_comparison_feedback WHERE author_id = ${userId}
+      )
+      OR EXISTS (SELECT 1 FROM ai_output WHERE user_id = ${userId})
+      AS has_remaining_data
+  `);
+
+  return result.rows[0]?.has_remaining_data;
+}
 
 /**
  * Result type returned from Tinder profile creation/update operations
@@ -95,6 +149,8 @@ export async function transferProfileOwnership(
   console.log(`   To user: ${newUserId}`);
 
   await withTransaction(async (tx) => {
+    await lockTinderSwipeRankMutationsInTx(tx);
+    await lockTinderProfileUploadInTx(tx, tinderId);
     // Verify old user is anonymous (safety check)
     const oldUser = await tx.query.userTable.findFirst({
       where: eq(userTable.id, oldUserId),
@@ -107,51 +163,83 @@ export async function transferProfileOwnership(
     }
 
     // Transfer profile ownership
-    await tx
+    const transferredProfiles = await tx
       .update(tinderProfileTable)
       .set({ userId: newUserId })
-      .where(eq(tinderProfileTable.tinderId, tinderId));
+      .where(
+        and(
+          eq(tinderProfileTable.tinderId, tinderId),
+          eq(tinderProfileTable.userId, oldUserId),
+        ),
+      )
+      .returning({ tinderId: tinderProfileTable.tinderId });
+
+    if (transferredProfiles.length !== 1) {
+      throw new Error(
+        `Cannot transfer profile ${tinderId}: it is no longer owned by anonymous user ${oldUserId}`,
+      );
+    }
+
+    await transferTinderSwipeRankOwnershipInTx(tx, {
+      providerProfileId: tinderId,
+      fromUserId: oldUserId,
+      toUserId: newUserId,
+    });
 
     console.log(`   ✓ Profile ownership transferred`);
 
-    // Transfer original files for this profile
-    // Note: We need to identify files by checking if they contain this tinderId
-    // Since originalAnonymizedFileTable doesn't have a direct tinderId column,
-    // we'll transfer all files from the old user to avoid orphaning data
+    // The table has no profile ID, but the one-profile-per-provider invariant
+    // lets us safely transfer this account's Tinder references. Never move
+    // Hinge/Raya uploads when only the Tinder profile was claimed.
     const originalFiles = await tx.query.originalAnonymizedFileTable.findMany({
-      where: eq(originalAnonymizedFileTable.userId, oldUserId),
+      where: and(
+        eq(originalAnonymizedFileTable.userId, oldUserId),
+        eq(originalAnonymizedFileTable.dataProvider, "TINDER"),
+      ),
     });
 
     if (originalFiles.length > 0) {
       await tx
         .update(originalAnonymizedFileTable)
         .set({ userId: newUserId })
-        .where(eq(originalAnonymizedFileTable.userId, oldUserId));
+        .where(
+          and(
+            eq(originalAnonymizedFileTable.userId, oldUserId),
+            eq(originalAnonymizedFileTable.dataProvider, "TINDER"),
+          ),
+        );
 
       console.log(`   ✓ Transferred ${originalFiles.length} original file(s)`);
     }
 
-    // Check if old user has any remaining profiles
-    const remainingProfiles = await tx.query.tinderProfileTable.findMany({
-      where: eq(tinderProfileTable.userId, oldUserId),
-    });
-
-    // Clean up orphaned anonymous user if they have no other data
-    if (remainingProfiles.length === 0) {
+    // Clean up only a genuinely empty anonymous account. Checking every
+    // product ownership edge prevents this user deletion from cascading a
+    // Hinge/Raya upload, comparison, purchase, artifact, or other saved data.
+    const hasRemainingData = await hasRemainingAnonymousUserData(tx, oldUserId);
+    if (canDeleteClaimedAnonymousUser(hasRemainingData)) {
       await tx.delete(userTable).where(eq(userTable.id, oldUserId));
       console.log(`   ✓ Deleted orphaned anonymous user ${oldUserId}`);
+    } else {
+      console.log(
+        `   ℹ Kept anonymous user ${oldUserId}; it still owns other data`,
+      );
     }
   });
 
+  invalidatePublicSwipeRankCache();
+  // A claim can commit even if the subsequent additive upload fails. Refresh
+  // ownership now; a successful additive update will schedule a second refresh
+  // for the changed usage facts.
+  scheduleTinderSwipeRankRefresh([tinderId]);
   console.log(`✅ Profile ownership transfer complete`);
 }
 
 /**
  * Transform Tinder photos to database media insert format
- * Handles both old format (string URLs) and new format (TinderPhoto objects)
+ * Handles both old format (string URLs) and allowlisted photo objects.
  */
 export function transformTinderPhotosToMedia(
-  photos: string[] | TinderPhoto[],
+  photos: string[] | TinderPhotoData[],
   tinderProfileId: string,
 ): MediaInsert[] {
   if (!Array.isArray(photos) || photos.length === 0) {
@@ -197,26 +285,39 @@ export async function createTinderProfile(data: {
   userId: string;
   timezone?: string;
   country?: string;
+  consentPhotos?: boolean;
+  consentWork?: boolean;
+  consumeBlob?: boolean;
+  transientUpload?: TransientUploadBinding;
 }): Promise<TinderProfileResult> {
   const startTime = Date.now();
 
   console.log(`\n🚀 Starting profile creation for ${data.tinderId}`);
   console.log(`   User ID: ${data.userId}`);
-  console.log(`   Blob URL: ${data.blobUrl}`);
   console.log(`   Timezone: ${data.timezone ?? "not provided"}`);
   console.log(`   Country: ${data.country ?? "not provided"}`);
 
   // 1. Fetch JSON from blob storage
   const fetchStart = Date.now();
   console.log(`\n📥 [1/6] Fetching Tinder data from blob storage...`);
-  const { fetchBlobJson } = await import("../blob.service");
-  const blobJson = await fetchBlobJson<unknown>(data.blobUrl);
-  const anonymizedTinderJson = parseAnonymizedTinderData(blobJson);
+  const anonymizedTinderJson = await loadVerifiedAnonymizedTinderData(
+    data.blobUrl,
+    data.tinderId,
+    {
+      photos: data.consentPhotos ?? true,
+      work: data.consentWork ?? true,
+    },
+    { consume: data.consumeBlob ?? false },
+  );
   console.log(`✅ Blob fetched in ${Date.now() - fetchStart}ms`);
 
   // Log JSON size
   const jsonString = JSON.stringify(anonymizedTinderJson);
-  const jsonSizeMB = (jsonString.length / 1024 / 1024).toFixed(2);
+  const jsonSizeMB = (
+    Buffer.byteLength(jsonString, "utf8") /
+    1024 /
+    1024
+  ).toFixed(2);
   console.log(`   JSON size: ${jsonSizeMB} MB`);
 
   // 2. Transform JSON data to database format
@@ -272,6 +373,9 @@ export async function createTinderProfile(data: {
   const txStart = Date.now();
   console.log(`\n💾 [6/6] Starting database transaction...`);
   const profile = await withTransaction(async (tx) => {
+    await lockTransientUploadForMutationInTx(tx, data.transientUpload);
+    await lockTinderSwipeRankMutationsInTx(tx);
+    await lockTinderProfileUploadInTx(tx, data.tinderId);
     // Insert original file reference (blob URL only - no raw JSON)
     const fileStart = Date.now();
     const fileId = createId("oaf");
@@ -280,7 +384,7 @@ export async function createTinderProfile(data: {
       dataProvider: "TINDER",
       swipestatsVersion: "SWIPESTATS_4",
       file: null, // No longer storing raw JSON
-      blobUrl: data.blobUrl,
+      blobUrl: null, // Verified upload blobs are transient and consumed.
       userId: data.userId,
     });
     console.log(
@@ -410,10 +514,21 @@ export async function createTinderProfile(data: {
       `   ✓ Profile meta inserted (${Date.now() - metaInsertStart}ms)`,
     );
 
+    await markTransientUploadCommittedInTx(
+      tx,
+      data.transientUpload,
+      data.tinderId,
+    );
     return profile!;
   });
 
   console.log(`\n✅ Transaction completed in ${Date.now() - txStart}ms`);
+
+  // The source transaction is already committed. Ranking is deliberately
+  // deferred and internally guarded so it can never turn a successful upload
+  // into a reported failure.
+  scheduleTinderSwipeRankRefresh([data.tinderId]);
+  await cleanupCommittedTransientUpload(data.transientUpload?.id);
 
   // Compute metrics for analytics
   const totalTime = Date.now() - startTime;
@@ -432,7 +547,7 @@ export async function createTinderProfile(data: {
   // authoritative source. Messages.length only counts conversation records,
   // which can be 0 even when the user has matches (e.g. unmatched before messaging).
   const usageMatchTotal = Object.values(
-    anonymizedTinderJson.Usage.matches,
+    anonymizedTinderJson.Usage.matches ?? {},
   ).reduce((sum, v) => sum + v, 0);
 
   return {
@@ -460,6 +575,8 @@ export async function resetTinderProfile(tinderId: string): Promise<void> {
   console.log(`\n🗑️  Resetting profile: ${tinderId}`);
 
   await withTransaction(async (tx) => {
+    await lockTinderSwipeRankMutationsInTx(tx);
+    await lockTinderProfileUploadInTx(tx, tinderId);
     // Delete in order: messages → matches → usage → media → profileMeta → profile
     // messages first because they have onDelete: "restrict" on matchId
     await tx
@@ -473,6 +590,7 @@ export async function resetTinderProfile(tinderId: string): Promise<void> {
     await tx
       .delete(profileMetaTable)
       .where(eq(profileMetaTable.tinderProfileId, tinderId));
+    await purgeTinderSwipeRankProfilesInTx(tx, [tinderId]);
     // The stats roast (ai_output.tinderProfileId FK, onDelete cascade) goes when
     // the profile row below is deleted — no explicit delete needed.
     await tx
@@ -480,5 +598,6 @@ export async function resetTinderProfile(tinderId: string): Promise<void> {
       .where(eq(tinderProfileTable.tinderId, tinderId));
   });
 
+  invalidatePublicSwipeRankCache();
   console.log(`✅ Profile reset complete: ${tinderId}\n`);
 }

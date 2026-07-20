@@ -1,4 +1,6 @@
+import { sql as drizzleSql } from "drizzle-orm";
 import type { NeonDatabase } from "drizzle-orm/neon-serverless";
+import type { PgTransactionConfig } from "drizzle-orm/pg-core";
 import { neon, neonConfig, Pool } from "@neondatabase/serverless";
 import { drizzle } from "drizzle-orm/neon-http";
 import { drizzle as drizzleWs } from "drizzle-orm/neon-serverless";
@@ -66,14 +68,51 @@ const createTransactionClient = () => {
 // Helper function to run transactions with automatic cleanup (fully typed)
 export async function withTransaction<T>(
   callback: (tx: TransactionClient) => Promise<T>,
+  config?: PgTransactionConfig,
 ): Promise<T> {
   const { db: wsDb, cleanup } = createTransactionClient();
 
   try {
-    return await wsDb.transaction(callback);
+    return await wsDb.transaction(callback, config);
   } finally {
     await cleanup();
   }
+}
+
+/**
+ * Wait for a PostgreSQL transaction advisory lock as the first statement.
+ *
+ * DATABASE_URL may point at Neon's PgBouncer transaction pool, where
+ * session-level advisory locks are unsafe because successive transactions can
+ * use different PostgreSQL backends. A transaction-scoped lock is pinned to
+ * this transaction. READ COMMITTED is deliberate: if the first lock statement
+ * blocks, later statements take their snapshots only after the predecessor has
+ * committed. Source writers take the matching shared lock before mutation, so
+ * the source remains stable for the rest of this exclusive transaction.
+ */
+export async function withAdvisoryLockTransaction<T>(
+  lockName: string,
+  callback: (tx: TransactionClient) => Promise<T>,
+  config?: PgTransactionConfig,
+): Promise<T> {
+  if (
+    config?.isolationLevel &&
+    config.isolationLevel.toLowerCase() !== "read committed"
+  ) {
+    throw new Error(
+      "Advisory-locked transactions require READ COMMITTED isolation.",
+    );
+  }
+
+  return withTransaction(
+    async (tx) => {
+      await tx.execute(drizzleSql`
+        SELECT pg_advisory_xact_lock(hashtextextended(${lockName}, 0))
+      `);
+      return callback(tx);
+    },
+    { ...config, isolationLevel: "read committed" },
+  );
 }
 
 // Helper for queries that exceed Neon's HTTP 64MB response limit.

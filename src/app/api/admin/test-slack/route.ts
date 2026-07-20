@@ -3,20 +3,19 @@ import { eq } from "drizzle-orm";
 
 import { db } from "@/server/db";
 import { tinderProfileTable, userTable, mediaTable } from "@/server/db/schema";
-import { env } from "@/env";
 import { sendEvent } from "@/server/clients/slack.client";
+import { isAdminRequestAuthorized } from "@/lib/admin-request-auth";
 
 /**
  * Test endpoint for debugging Slack message formatting
- * POST /api/admin/test-slack?token=xxx&tinderId=xxx
+ * POST /api/admin/test-slack?tinderId=xxx
+ * Authorization: Bearer $ADMIN_TOKEN (or a verified admin browser session)
  */
 export async function POST(request: Request) {
   const { searchParams } = new URL(request.url);
-  const token = searchParams.get("token");
   const tinderId = searchParams.get("tinderId");
 
-  // Verify admin token
-  if (!token || token !== env.ADMIN_TOKEN) {
+  if (!(await isAdminRequestAuthorized(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

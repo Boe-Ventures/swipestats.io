@@ -20,6 +20,15 @@ export interface TinderPhoto {
   fb_id?: string;
 }
 
+/** Photo shape retained in the strict public upload contract. */
+export interface AnonymizedTinderPhoto {
+  type?: string;
+  url: string;
+  prompt_text?: string | null;
+}
+
+export type TinderPhotoData = TinderPhoto | AnonymizedTinderPhoto;
+
 interface TinderDataJSONBase {
   Usage: Usage;
   Campaigns: Campaigns;
@@ -52,8 +61,11 @@ interface TinderDataJSONBase {
   ShareMyDate?: boolean;
 }
 
-export interface AnonymizedTinderDataJSON extends TinderDataJSONBase {
+export interface AnonymizedTinderDataJSON {
+  Usage: Usage;
   User: AnonymizedTinderUser;
+  Messages: TinderJsonMatch[];
+  Photos: string[] | AnonymizedTinderPhoto[];
 }
 
 export interface FullTinderDataJSON extends TinderDataJSONBase {
@@ -62,14 +74,14 @@ export interface FullTinderDataJSON extends TinderDataJSONBase {
 
 export interface Usage {
   app_opens: DateValueMap;
-  swipes_likes: DateValueMap;
-  swipes_passes: DateValueMap;
+  swipes_likes?: DateValueMap;
+  swipes_passes?: DateValueMap;
   superlikes?: DateValueMap;
-  matches: DateValueMap;
-  messages_sent: DateValueMap;
-  messages_received: DateValueMap;
-  advertising_id: Record<string, string>;
-  idfa: Record<string, string>;
+  matches?: DateValueMap;
+  messages_sent?: DateValueMap;
+  messages_received?: DateValueMap;
+  advertising_id?: Record<string, string>;
+  idfa?: Record<string, string>;
 }
 export const TinderJsonGenderValues = [
   "M",
@@ -81,7 +93,7 @@ export const TinderJsonGenderValues = [
 export type TinderJsonGender = (typeof TinderJsonGenderValues)[number];
 interface TinderUserBase {
   // TODO: Probably move all Date to DateString
-  active_time: Date;
+  active_time?: DateString;
   // Tinder omits discovery age preferences from some exports.
   age_filter_max?: number;
   age_filter_min?: number;
@@ -197,7 +209,25 @@ interface Descriptor {
   visibility: string; // "public" - all observed descriptors have been public
 }
 
-export interface AnonymizedTinderUser extends TinderUserBase {
+export interface AnonymizedTinderUser {
+  active_time?: DateString;
+  age_filter_max?: number;
+  age_filter_min?: number;
+  birth_date: DateString;
+  create_date: DateString;
+  /** True only when SwipeStats inferred create_date from observed app opens. */
+  create_date_inferred?: boolean;
+  gender: TinderJsonGender;
+  gender_filter: TinderJsonGender;
+  interested_in: TinderJsonGender;
+  bio?: string;
+  city?: City | string;
+  education?: string;
+  jobs?: Job[];
+  schools?: School[];
+  user_interests?: string[];
+  sexual_orientations?: string[] | string;
+  descriptors?: Descriptor[];
   instagram: boolean;
   spotify: boolean;
   country?: { code: string } | string;
@@ -424,8 +454,9 @@ export type Spotify =
   | Record<string, never>; // Empty object in newer exports
 
 export interface Message {
-  to: number; // match id - 1
-  from: string; // "You"
+  // Zero-based provider-local match reference; not message direction.
+  to: number;
+  from?: string; // "You" in raw exports; removed from the public blob
   message?: string; // should maybe clean this from HTML to string. Lot's of "don&rsquo;t"
   sent_date: string; // not iso string, but close "Tue, 30 Nov 2021 05:08:21 GMT" // new Date() actually works well to parse it
   // Undefined is text. Tinder also emits undocumented values such as song,
@@ -441,20 +472,19 @@ export interface TinderJsonMatch {
 
 // Type guards to detect which format is being used
 export function isNewPhotoFormat(
-  photos: string[] | TinderPhoto[],
-): photos is TinderPhoto[] {
+  photos: string[] | TinderPhotoData[],
+): photos is TinderPhotoData[] {
   return (
     Array.isArray(photos) &&
     photos.length > 0 &&
     typeof photos[0] === "object" &&
     photos[0] !== null &&
-    "id" in photos[0] &&
     "url" in photos[0]
   );
 }
 
 export function isOldPhotoFormat(
-  photos: string[] | TinderPhoto[],
+  photos: string[] | TinderPhotoData[],
 ): photos is string[] {
   return (
     Array.isArray(photos) &&

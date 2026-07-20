@@ -4,7 +4,7 @@ import * as React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { format } from "date-fns";
+import { addDays, format, subYears } from "date-fns";
 import {
   Bar,
   CartesianGrid,
@@ -47,11 +47,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import {
-  Controller,
-  FormProvider,
-  Field,
-} from "@/components/ui/form-new";
+import { Controller, FormProvider, Field } from "@/components/ui/form-new";
 import type { DateRange } from "react-day-picker";
 import { useTinderProfile } from "../../TinderProfileProvider";
 import { SwipeStatsTooltipContent } from "./SwipeStatsTooltipContent";
@@ -59,9 +55,13 @@ import { GranularitySelector } from "./GranularitySelector";
 import { AddEventDialog } from "@/app/app/events/AddEventDialog";
 import {
   aggregateUsageData,
+  alignUsageToComparisonPeriod,
   filterUsageByDateRange,
+  fillUsagePeriodRange,
+  calculateInclusiveDateRange,
   calculatePreviousPeriod,
-  type TimeGranularity,
+  getUsagePeriodDisplay,
+  getUsagePeriodKey,
   type AggregatedUsageData,
 } from "@/lib/utils/aggregateUsage";
 
@@ -87,24 +87,19 @@ function calculateDateRangeFromPreset(
   if (preset === "all" || preset === "custom") return undefined;
 
   const now = new Date();
-  const from = new Date(now);
 
   switch (preset) {
     case "7d":
-      from.setDate(now.getDate() - 7);
-      break;
+      return calculateInclusiveDateRange(7, now);
     case "30d":
-      from.setDate(now.getDate() - 30);
-      break;
+      return calculateInclusiveDateRange(30, now);
     case "90d":
-      from.setMonth(now.getMonth() - 3);
-      break;
+      return calculateInclusiveDateRange(90, now);
     case "1y":
-      from.setFullYear(now.getFullYear() - 1);
-      break;
+      // A calendar year is variable-length; move one day past the prior
+      // anniversary because both range endpoints are included.
+      return { from: addDays(subYears(now, 1), 1), to: now };
   }
-
-  return { from, to: now };
 }
 
 // Helper to format date range for display
@@ -139,11 +134,11 @@ const chartConfig = {
     color: "hsl(245, 58%, 51%)",
   },
   messagesSent: {
-    label: "Messages Sent",
+    label: "Usage Messages Sent",
     color: "hsl(142, 71%, 45%)",
   },
   messagesReceived: {
-    label: "Messages Received",
+    label: "Usage Messages Received",
     color: "hsl(217, 91%, 60%)",
   },
 } satisfies ChartConfig;
@@ -197,7 +192,10 @@ export function MasterActivityChart() {
       ? filterUsageByDateRange(usage, fromDate, toDate)
       : usage;
 
-    return aggregateUsageData(filtered, granularity);
+    const aggregated = aggregateUsageData(filtered, granularity);
+    return dateRange?.from
+      ? fillUsagePeriodRange(aggregated, granularity, fromDate, toDate)
+      : aggregated;
   }, [usage, granularity, dateRange]);
 
   // Aggregate previous period data
@@ -215,74 +213,31 @@ export function MasterActivityChart() {
       previousPeriod.to,
     );
 
-    return aggregateUsageData(filtered, granularity);
+    const aggregated = aggregateUsageData(
+      alignUsageToComparisonPeriod(
+        filtered,
+        previousPeriod.from,
+        dateRange.from,
+      ),
+      granularity,
+    );
+    return fillUsagePeriodRange(
+      aggregated,
+      granularity,
+      dateRange.from,
+      toDate,
+    );
   }, [usage, granularity, dateRange, showPreviousPeriod]);
 
   // Helper to convert event date to period display format
   const dateToPeriodDisplay = React.useCallback(
-    (date: Date): string | null => {
-      switch (granularity) {
-        case "daily":
-          return date.toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            year: "numeric",
-          });
-        case "weekly": {
-          const dayOfWeek = date.getDay();
-          const startOfWeek = new Date(date);
-          startOfWeek.setDate(date.getDate() - dayOfWeek);
-          return `Week of ${startOfWeek.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
-        }
-        case "monthly":
-          return date.toLocaleDateString("en-US", {
-            month: "short",
-            year: "numeric",
-          });
-        case "quarterly": {
-          const year = date.getFullYear();
-          const quarter = Math.floor(date.getMonth() / 3) + 1;
-          return `${year} Q${quarter}`;
-        }
-        case "yearly":
-          return date.getFullYear().toString();
-        default:
-          return null;
-      }
-    },
+    (date: Date): string => getUsagePeriodDisplay(date, granularity),
     [granularity],
   );
 
   // Helper to convert event date to period key (matches chartData period values)
   const dateToPeriodKey = React.useCallback(
-    (date: Date): string | null => {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, "0");
-      const day = String(date.getDate()).padStart(2, "0");
-
-      switch (granularity) {
-        case "daily":
-          return `${year}-${month}-${day}`;
-        case "weekly": {
-          const startOfYear = new Date(year, 0, 1);
-          const dayOfYear = Math.floor(
-            (date.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000),
-          );
-          const weekNum = Math.ceil((dayOfYear + startOfYear.getDay() + 1) / 7);
-          return `${year}-W${String(weekNum).padStart(2, "0")}`;
-        }
-        case "monthly":
-          return `${year}-${month}`;
-        case "quarterly": {
-          const quarter = Math.floor(date.getMonth() / 3) + 1;
-          return `${year}-Q${quarter}`;
-        }
-        case "yearly":
-          return `${year}`;
-        default:
-          return null;
-      }
-    },
+    (date: Date): string => getUsagePeriodKey(date, granularity),
     [granularity],
   );
 
@@ -293,21 +248,46 @@ export function MasterActivityChart() {
       AggregatedUsageData & { prev?: AggregatedUsageData }
     >();
 
-    // Add current period data
+    const previousByPeriod = new Map(
+      previousData.map((item) => [item.period, item]),
+    );
+
     currentData.forEach((item) => {
-      periodMap.set(item.period, { ...item });
+      periodMap.set(item.period, {
+        ...item,
+        prev: previousByPeriod.get(item.period),
+      });
     });
 
-    // Add previous period data
+    // A current window can have no activity in a bucket where its prior window
+    // did. Keep that bucket on the target calendar without adding to totals.
     previousData.forEach((item) => {
-      const existing = periodMap.get(item.period);
-      if (existing) {
-        existing.prev = item;
-      } else {
-        // Previous period might have periods not in current period
-        periodMap.set(item.period, { ...item, prev: item });
-      }
+      if (periodMap.has(item.period)) return;
+      periodMap.set(item.period, {
+        period: item.period,
+        periodDisplay: item.periodDisplay,
+        matches: 0,
+        swipeLikes: 0,
+        swipePasses: 0,
+        appOpens: 0,
+        messagesSent: 0,
+        messagesReceived: 0,
+        swipesCombined: 0,
+        matchRate: 0,
+        likeRatio: 0,
+        prev: item,
+      });
     });
+
+    const currentPeriodKeys = Array.from(periodMap.keys()).sort();
+    const firstCurrentPeriod = currentPeriodKeys[0];
+    const lastCurrentPeriod = currentPeriodKeys.at(-1);
+    const fallsInsideCurrentPeriod = (key: string | null): key is string =>
+      key !== null &&
+      firstCurrentPeriod !== undefined &&
+      lastCurrentPeriod !== undefined &&
+      key >= firstCurrentPeriod &&
+      key <= lastCurrentPeriod;
 
     // Add placeholder periods for events that fall outside existing data
     // This allows Recharts to position reference lines/areas correctly
@@ -322,7 +302,7 @@ export function MasterActivityChart() {
 
       // Add start period if missing
       if (
-        startPeriodKey &&
+        fallsInsideCurrentPeriod(startPeriodKey) &&
         startPeriodDisplay &&
         !periodMap.has(startPeriodKey)
       ) {
@@ -342,7 +322,11 @@ export function MasterActivityChart() {
       }
 
       // Add end period if missing
-      if (endPeriodKey && endPeriodDisplay && !periodMap.has(endPeriodKey)) {
+      if (
+        fallsInsideCurrentPeriod(endPeriodKey) &&
+        endPeriodDisplay &&
+        !periodMap.has(endPeriodKey)
+      ) {
         periodMap.set(endPeriodKey, {
           period: endPeriodKey,
           periodDisplay: endPeriodDisplay,
@@ -379,7 +363,7 @@ export function MasterActivityChart() {
 
   // Calculate period totals for metric cards
   const periodTotals = React.useMemo(() => {
-    return chartData.reduce(
+    return currentData.reduce(
       (acc, item) => ({
         matches: acc.matches + item.matches,
         swipeLikes: acc.swipeLikes + item.swipeLikes,
@@ -397,7 +381,7 @@ export function MasterActivityChart() {
         messagesReceived: 0,
       },
     );
-  }, [chartData]);
+  }, [currentData]);
 
   const toggleMetric = (metric: string) => {
     setVisibleMetrics((prev) => {
@@ -411,41 +395,6 @@ export function MasterActivityChart() {
     });
   };
 
-  // Helper to parse period display back to date (for date range filtering)
-  const parsePeriodDisplay = React.useCallback(
-    (periodDisplay: string, granularity: TimeGranularity): Date | null => {
-      try {
-        switch (granularity) {
-          case "daily":
-            return new Date(periodDisplay);
-          case "weekly": {
-            // "Week of Jan 1, 2024" -> extract date
-            const match = /Week of (.+)/.exec(periodDisplay);
-            return match?.[1] ? new Date(match[1]) : null;
-          }
-          case "monthly":
-            // "Jan 2024" -> convert to first day of month
-            return new Date(periodDisplay + " 1");
-          case "quarterly": {
-            // "2024 Q1" -> convert to first day of quarter
-            const [year, quarter] = periodDisplay.split(" Q");
-            if (!year || !quarter) return null;
-            const month = (parseInt(quarter) - 1) * 3;
-            return new Date(parseInt(year), month, 1);
-          }
-          case "yearly":
-            // "2024" -> convert to first day of year
-            return new Date(parseInt(periodDisplay), 0, 1);
-          default:
-            return null;
-        }
-      } catch {
-        return null;
-      }
-    },
-    [],
-  );
-
   // Filter and format events for the current date range
   const visibleEvents = React.useMemo(() => {
     if (!events.length || !chartData.length) return [];
@@ -454,17 +403,6 @@ export function MasterActivityChart() {
     const lastDataPoint = chartData[chartData.length - 1];
 
     if (!firstDataPoint || !lastDataPoint) return [];
-
-    const firstDataDate = parsePeriodDisplay(
-      firstDataPoint.periodDisplay,
-      granularity,
-    );
-    const lastDataDate = parsePeriodDisplay(
-      lastDataPoint.periodDisplay,
-      granularity,
-    );
-
-    if (!firstDataDate || !lastDataDate) return [];
 
     const mappedEvents = events
       .map((event) => {
@@ -484,19 +422,15 @@ export function MasterActivityChart() {
         // Only show events that have a valid start period
         if (!event.startPeriodKey) return false;
 
-        // Check if event overlaps with visible data range
-        const eventStartDate = new Date(event.startDate);
-        const eventEndDate = event.endDate
-          ? new Date(event.endDate)
-          : eventStartDate;
-
-        // Event must overlap with data range
-        // Event overlaps if: event_start <= data_end AND event_end >= data_start
-        return eventStartDate <= lastDataDate && eventEndDate >= firstDataDate;
+        const eventEndPeriod = event.endPeriodKey ?? event.startPeriodKey;
+        return (
+          event.startPeriodKey <= lastDataPoint.period &&
+          eventEndPeriod >= firstDataPoint.period
+        );
       });
 
     return mappedEvents;
-  }, [events, chartData, dateToPeriodKey, granularity, parsePeriodDisplay]);
+  }, [events, chartData, dateToPeriodKey]);
 
   if (!usage?.length) {
     return (
@@ -520,7 +454,7 @@ export function MasterActivityChart() {
               </CardTitle>
               <CardDescription>
                 {granularity.charAt(0).toUpperCase() + granularity.slice(1)}{" "}
-                matches, swipes, app opens, and messages
+                aggregates from Tinder&apos;s daily Usage ledger
               </CardDescription>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
@@ -573,7 +507,7 @@ export function MasterActivityChart() {
                           <SelectContent>
                             <SelectItem value="7d">Last 7 days</SelectItem>
                             <SelectItem value="30d">Last 30 days</SelectItem>
-                            <SelectItem value="90d">Last 3 months</SelectItem>
+                            <SelectItem value="90d">Last 90 days</SelectItem>
                             <SelectItem value="1y">Last year</SelectItem>
                             <SelectItem value="all">All time</SelectItem>
                             <SelectItem value="custom">Custom range</SelectItem>
@@ -599,8 +533,7 @@ export function MasterActivityChart() {
                                 aria-invalid={fieldState.invalid}
                                 className={cn(
                                   "w-[240px] justify-start pl-3 text-left font-normal",
-                                  !field.value?.from &&
-                                    "text-muted-foreground",
+                                  !field.value?.from && "text-muted-foreground",
                                 )}
                               >
                                 {formatDateRange(field.value)}
@@ -637,7 +570,10 @@ export function MasterActivityChart() {
                 control={form.control}
                 name="showPreviousPeriod"
                 render={({ field, fieldState }) => (
-                  <Field orientation="horizontal" data-invalid={fieldState.invalid}>
+                  <Field
+                    orientation="horizontal"
+                    data-invalid={fieldState.invalid}
+                  >
                     <Switch
                       id={field.name}
                       checked={field.value}

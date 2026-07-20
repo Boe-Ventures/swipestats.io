@@ -109,8 +109,9 @@ The database uses Drizzle ORM with PostgreSQL. Key tables:
 **Analytics**:
 
 - `profile_meta` - Pre-computed profile statistics
-- `cohort_definition` - Cohort filters (e.g., "tinder_male")
-- `cohort_stats` - Percentile distributions for cohort comparisons
+- `swipe_rank_profile` - Provider profile registry and comparison descriptors
+- `swipe_rank_period_fact` - Versioned month/quarter/year/all-time metrics
+- `swipe_rank_build` - Atomic recomputation and activation history
 
 **Profile Comparison Feature**:
 
@@ -186,12 +187,10 @@ Both flows:
 
 ### Cohort System
 
-Pre-computed percentile distributions for comparing users:
-
-- System cohorts: gender + data provider (e.g., "tinder_male")
-- User can create custom cohorts with additional filters
-- CohortStats stores P10, P25, P50, P75, P90, mean for key metrics
-- Enables "You're in the top 10%" type comparisons
+Comparisons use activated SwipeRank period facts rather than a second aggregate
+cache. Gender, interest, age, and location filters are evaluated dynamically;
+private distributions are suppressed below the configured sample floor. Frozen
+editorial cohorts are stored as versioned snapshot specifications.
 
 ### Blog Content
 
@@ -209,6 +208,7 @@ Required variables (see `.env.example`):
 
 - `DATABASE_URL` - PostgreSQL connection string
 - `BETTER_AUTH_SECRET` - Auth encryption key (production only)
+- `SWIPE_RANK_PUBLIC_ID_SECRET` - Optional dedicated SwipeRank pseudonym key
 - `NEXT_PUBLIC_BASE_URL` - Application URL
 - `LEMON_SQUEEZY_API_KEY` - Billing integration
 - `LEMON_SQUEEZY_WEBHOOK_SECRET` - Webhook verification

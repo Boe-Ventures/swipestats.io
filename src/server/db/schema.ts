@@ -138,6 +138,30 @@ export const catalogEntryStatusEnum = pgEnum("catalog_entry_status", [
   "ARCHIVED",
 ]);
 
+export const swipeRankPeriodKindEnum = pgEnum("SwipeRankPeriodKind", [
+  "MONTH",
+  "QUARTER",
+  "YEAR",
+  "ALL_TIME",
+]);
+
+export const swipeRankBuildStatusEnum = pgEnum("SwipeRankBuildStatus", [
+  "RUNNING",
+  "COMPLETE",
+  "FAILED",
+]);
+
+export const swipeRankBuildScopeEnum = pgEnum("SwipeRankBuildScope", [
+  "FULL",
+  "PROFILE",
+]);
+
+export const swipeRankSnapshotStatusEnum = pgEnum("SwipeRankSnapshotStatus", [
+  "DRAFT",
+  "PUBLISHED",
+  "ARCHIVED",
+]);
+
 export const catalogVerificationStatusEnum = pgEnum(
   "catalog_verification_status",
   ["UNVERIFIED", "VERIFIED"],
@@ -174,6 +198,14 @@ export const catalogSubmissionStatusEnum = pgEnum("catalog_submission_status", [
   "WITHDRAWN",
 ]);
 
+export const transientUploadStatusEnum = pgEnum("TransientUploadStatus", [
+  "ISSUED",
+  "UPLOADED",
+  "PROCESSING",
+  "COMMITTED",
+  "CLEANED",
+  "ABANDONED",
+]);
 // Export TypeScript types
 export type DataProvider = (typeof dataProviderEnum.enumValues)[number];
 export type EventType = (typeof eventTypeEnum.enumValues)[number];
@@ -203,6 +235,16 @@ export type CatalogRequestVisibility =
   (typeof catalogRequestVisibilityEnum.enumValues)[number];
 export type CatalogSubmissionStatus =
   (typeof catalogSubmissionStatusEnum.enumValues)[number];
+export type SwipeRankPeriodKind =
+  (typeof swipeRankPeriodKindEnum.enumValues)[number];
+export type SwipeRankBuildStatus =
+  (typeof swipeRankBuildStatusEnum.enumValues)[number];
+export type SwipeRankBuildScope =
+  (typeof swipeRankBuildScopeEnum.enumValues)[number];
+export type SwipeRankSnapshotStatus =
+  (typeof swipeRankSnapshotStatusEnum.enumValues)[number];
+export type TransientUploadStatus =
+  (typeof transientUploadStatusEnum.enumValues)[number];
 
 /** ISO 639-1 two-letter language code, e.g. "en", "no", "es" */
 export type LanguageCode = string;
@@ -424,6 +466,9 @@ export const tinderProfileTable = pgTable(
     ageAtUpload: t.integer().notNull(),
     ageAtLastUsage: t.integer().notNull(),
     createDate: t.timestamp().notNull(),
+    createDateSource: t
+      .text("create_date_source")
+      .$type<"PROVIDER" | "INFERRED_FROM_USAGE">(),
     activeTime: t.timestamp(),
     gender: genderEnum().notNull(),
     genderStr: t.text().notNull(),
@@ -461,7 +506,13 @@ export const tinderProfileTable = pgTable(
     lastDayOnApp: t.timestamp().notNull(),
     daysInProfilePeriod: t.integer().notNull(),
   }),
-  (table) => [uniqueIndex("tinder_profile_user_id_unique").on(table.userId)],
+  (table) => [
+    uniqueIndex("tinder_profile_user_id_unique").on(table.userId),
+    check(
+      "tinder_profile_create_date_source",
+      sql`${table.createDateSource} IS NULL OR ${table.createDateSource} IN ('PROVIDER', 'INFERRED_FROM_USAGE')`,
+    ),
+  ],
 );
 
 export type TinderProfile = typeof tinderProfileTable.$inferSelect;
@@ -550,7 +601,15 @@ export const hingeProfileTable = pgTable(
       .notNull(),
     birthDate: t.timestamp().notNull(),
     ageAtUpload: t.integer().notNull(),
+    // Signup of the currently represented Hinge account. Cross-account merge
+    // ordering must compare against this value, not the earliest history.
     createDate: t.timestamp().notNull(),
+    // Earliest known signup across accounts absorbed into this profile. Null
+    // is retained temporarily for legacy rows and read as createDate.
+    firstAccountCreateDate: t.timestamp(),
+    // Most recent provider-observed account activity from account.last_seen.
+    // Nullable for rows created before this field was retained.
+    lastSeenAt: t.timestamp(),
     heightCentimeters: t.integer().notNull(),
     gender: genderEnum().notNull(),
     genderStr: t.text().notNull(),
@@ -610,7 +669,13 @@ export const hingeProfileTable = pgTable(
     country: t.text(),
     userId: t.text().references(() => userTable.id, { onDelete: "cascade" }),
   }),
-  (table) => [uniqueIndex("hinge_profile_user_id_unique").on(table.userId)],
+  (table) => [
+    uniqueIndex("hinge_profile_user_id_unique").on(table.userId),
+    check(
+      "hinge_profile_account_signup_order",
+      sql`${table.firstAccountCreateDate} IS NULL OR ${table.firstAccountCreateDate} <= ${table.createDate}`,
+    ),
+  ],
 );
 
 export type HingeProfile = typeof hingeProfileTable.$inferSelect;
@@ -638,7 +703,8 @@ export type HingeInteractionInsert = typeof hingeInteractionTable.$inferInsert;
 export const hingePromptTable = pgTable("hinge_prompt", (t) => ({
   id: t.text().primaryKey(),
   type: t.text().notNull(),
-  prompt: t.text().notNull(),
+  providerPromptId: t.integer("provider_prompt_id"),
+  prompt: t.text(),
   answerText: t.text(), // For text-type prompts (now optional)
   answerOptions: t.text(), // Comma-separated options for poll prompts
   createdPromptAt: t.timestamp().notNull(),
@@ -827,56 +893,521 @@ export const mediaTable = pgTable(
 export type Media = typeof mediaTable.$inferSelect;
 export type MediaInsert = typeof mediaTable.$inferInsert;
 
-// ProfileMeta - Pre-computed aggregate statistics for profiles
-// Computed by computeProfileMeta() in meta.service.ts
-// IMPORTANT: All metrics exclude synthetic days (dateIsMissingFromOriginalData = true)
-// to avoid skewing statistics with inferred zero values
-export const profileMetaTable = pgTable("profile_meta", (t) => ({
-  id: t.text().primaryKey(),
-  tinderProfileId: t
-    .text()
-    .references(() => tinderProfileTable.tinderId, { onDelete: "cascade" }),
-  hingeProfileId: t
-    .text()
-    .references(() => hingeProfileTable.hingeId, { onDelete: "cascade" }),
+// ProfileMeta - one current, all-time aggregate row per provider profile.
+// Tinder rows are computed by computeProfileMeta() in meta.service.ts; Hinge
+// rows use createHingeProfileMeta() because the provider exports different
+// activity capabilities. Periodized analytics live in swipe_rank_period_fact.
+export const profileMetaTable = pgTable(
+  "profile_meta",
+  (t) => ({
+    id: t.text().primaryKey(),
+    tinderProfileId: t
+      .text()
+      .references(() => tinderProfileTable.tinderId, { onDelete: "cascade" }),
+    hingeProfileId: t
+      .text()
+      .references(() => hingeProfileTable.hingeId, { onDelete: "cascade" }),
 
-  // Time range
-  from: t.timestamp().notNull(),
-  to: t.timestamp().notNull(),
-  daysInPeriod: t.integer().notNull(),
-  daysActive: t.integer().notNull(), // Days with swipes (swipeLikes > 0 OR swipePasses > 0)
+    // Time range
+    from: t.timestamp().notNull(),
+    to: t.timestamp().notNull(),
+    daysInPeriod: t.integer().notNull(),
+    // Tinder: days with any swipe. Hinge: UTC days with a sent-like event.
+    daysActive: t.integer().notNull(),
 
-  // Core totals
-  swipeLikesTotal: t.integer().notNull(),
-  swipePassesTotal: t.integer().notNull(),
-  matchesTotal: t.integer().notNull(),
-  messagesSentTotal: t.integer().notNull(),
-  messagesReceivedTotal: t.integer().notNull(),
-  appOpensTotal: t.integer().notNull(),
+    // Core totals
+    swipeLikesTotal: t.integer().notNull(),
+    swipePassesTotal: t.integer().notNull(),
+    matchesTotal: t.integer().notNull(),
+    messagesSentTotal: t.integer().notNull(),
+    messagesReceivedTotal: t.integer().notNull(),
+    appOpensTotal: t.integer().notNull(),
 
-  // Core rates (pre-computed for faster queries)
-  likeRate: t.doublePrecision().notNull(), // swipeLikes / totalSwipes
-  matchRate: t.doublePrecision().notNull(), // matches / swipeLikes
-  swipesPerDay: t.doublePrecision().notNull(), // totalSwipes / daysActive (days with swipes)
+    // Core rates (pre-computed for faster queries)
+    // Tinder: likes / tracked swipes. Hinge: 1 when any likes exist because
+    // passes are absent from the export; consumers must keep provider context.
+    likeRate: t.doublePrecision().notNull(),
+    // Tinder: observed matches / right swipes. Hinge: outbound-like-linked
+    // matches / sent likes.
+    matchRate: t.doublePrecision().notNull(),
+    // Provider-tracked swipe-direction events / provider-specific active days.
+    swipesPerDay: t.doublePrecision().notNull(),
 
-  // Conversation stats (essential for "Your Chats" section)
-  conversationCount: t.integer().notNull(),
-  conversationsWithMessages: t.integer().notNull(),
-  ghostedCount: t.integer().notNull(), // matches with 0 messages
+    // Conversation stats (essential for "Your Chats" section)
+    conversationCount: t.integer().notNull(),
+    conversationsWithMessages: t.integer().notNull(),
+    // Legacy column name: provider conversation rows with no retained outgoing
+    // message. It does not establish that either person ghosted the other.
+    ghostedCount: t.integer().notNull(),
 
-  // Aggregate message metrics (computed from match-level data)
-  averageResponseTimeSeconds: t.integer(), // Median of per-conversation medians (robust to outliers)
-  meanResponseTimeSeconds: t.integer(), // True average (affected by outliers)
-  medianConversationDurationDays: t.integer(),
-  longestConversationDays: t.integer(),
-  averageMessagesPerConversation: t.doublePrecision(),
-  medianMessagesPerConversation: t.integer(), // Robust to outlier conversations
+    // Aggregate message metrics (computed from match-level data)
+    averageResponseTimeSeconds: t.integer(), // Median of per-conversation medians (robust to outliers)
+    meanResponseTimeSeconds: t.integer(), // True average (affected by outliers)
+    medianConversationDurationDays: t.integer(),
+    longestConversationDays: t.integer(),
+    averageMessagesPerConversation: t.doublePrecision(),
+    medianMessagesPerConversation: t.integer(), // Robust to outlier conversations
 
-  computedAt: t.timestamp().notNull(),
-}));
+    computedAt: t.timestamp().notNull(),
+  }),
+  (table) => [
+    uniqueIndex("profile_meta_tinder_profile_id_unique").on(
+      table.tinderProfileId,
+    ),
+    uniqueIndex("profile_meta_hinge_profile_id_unique").on(
+      table.hingeProfileId,
+    ),
+    check(
+      "profile_meta_exactly_one_provider",
+      sql`num_nonnulls(${table.tinderProfileId}, ${table.hingeProfileId}) = 1`,
+    ),
+    check(
+      "profile_meta_period_bounds",
+      sql`${table.from} <= ${table.to} AND ${table.daysInPeriod} >= 1 AND ${table.daysActive} >= 0 AND ${table.daysActive} <= ${table.daysInPeriod}`,
+    ),
+    check(
+      "profile_meta_nonnegative_core_metrics",
+      sql`${table.swipeLikesTotal} >= 0 AND ${table.swipePassesTotal} >= 0 AND ${table.matchesTotal} >= 0 AND ${table.messagesSentTotal} >= 0 AND ${table.messagesReceivedTotal} >= 0 AND ${table.appOpensTotal} >= 0 AND ${table.likeRate} >= 0 AND ${table.likeRate} <= 1 AND ${table.matchRate} >= 0 AND ${table.swipesPerDay} >= 0`,
+    ),
+    check(
+      "profile_meta_conversation_counts",
+      sql`${table.conversationCount} >= 0 AND ${table.conversationsWithMessages} >= 0 AND ${table.conversationsWithMessages} <= ${table.conversationCount} AND ${table.ghostedCount} = ${table.conversationCount} - ${table.conversationsWithMessages}`,
+    ),
+    // Historical imports can contain negative response intervals. Add a check
+    // only after those rows and the source calculation have been normalized.
+  ],
+);
 
 export type ProfileMeta = typeof profileMetaTable.$inferSelect;
 export type ProfileMetaInsert = typeof profileMetaTable.$inferInsert;
+
+// ---- SWIPE RANK ANALYTICS ----------------------------------------
+
+/**
+ * Provider-neutral subject registry for versioned period analytics.
+ *
+ * Provider-native source tables remain authoritative. This registry gives the
+ * analytical layer one stable FK without pretending that every provider has
+ * the same raw capabilities.
+ */
+export const swipeRankProfileTable = pgTable(
+  "swipe_rank_profile",
+  (t) => ({
+    id: t
+      .text()
+      .primaryKey()
+      .$defaultFn(() => createId("srp")),
+    dataProvider: dataProviderEnum().notNull(),
+    providerProfileId: t.text().notNull(),
+    userId: t.text().references(() => userTable.id, { onDelete: "set null" }),
+    gender: genderEnum(),
+    interestedIn: genderEnum(),
+    // Current comparison dimensions, not historical period location. Tinder
+    // sync prefers the user record and falls back field-by-field to profile.
+    city: t.text(),
+    region: t.text(),
+    country: t.text(),
+    locationSource: t.text(),
+    isSynthetic: t.boolean().default(false).notNull(),
+    /**
+     * Manual moderation gate for live SwipeRank fields. Facts stay intact so
+     * admins can review and restore a profile without recomputing history.
+     */
+    isSwipeRankExcluded: t.boolean().default(false).notNull(),
+    swipeRankExclusionReason: t.text(),
+    swipeRankExcludedAt: t.timestamp(),
+    swipeRankExcludedBy: t.text(),
+    capabilities: t
+      .jsonb()
+      .$type<Record<string, boolean>>()
+      .default({})
+      .notNull(),
+    sourceProfileUpdatedAt: t.timestamp().notNull(),
+    sourceFileCreatedAt: t.timestamp(),
+    createdAt: t
+      .timestamp()
+      .$defaultFn(() => new Date())
+      .notNull(),
+    updatedAt: t
+      .timestamp()
+      .$defaultFn(() => new Date())
+      .$onUpdate(() => new Date())
+      .notNull(),
+  }),
+  (table) => [
+    uniqueIndex("swipe_rank_profile_provider_profile_idx").on(
+      table.dataProvider,
+      table.providerProfileId,
+    ),
+    uniqueIndex("swipe_rank_profile_provider_user_idx").on(
+      table.dataProvider,
+      table.userId,
+    ),
+    index("swipe_rank_profile_dimensions_idx").on(
+      table.dataProvider,
+      table.gender,
+      table.interestedIn,
+    ),
+    index("swipe_rank_profile_country_idx").on(
+      table.dataProvider,
+      table.country,
+    ),
+    index("swipe_rank_profile_exclusion_idx").on(
+      table.dataProvider,
+      table.isSwipeRankExcluded,
+    ),
+    check(
+      "swipe_rank_profile_exclusion_state",
+      sql`(
+        ${table.isSwipeRankExcluded} = false
+        AND ${table.swipeRankExclusionReason} IS NULL
+        AND ${table.swipeRankExcludedAt} IS NULL
+        AND ${table.swipeRankExcludedBy} IS NULL
+      ) OR (
+        ${table.isSwipeRankExcluded} = true
+        AND nullif(btrim(${table.swipeRankExclusionReason}), '') IS NOT NULL
+        AND ${table.swipeRankExcludedAt} IS NOT NULL
+        AND nullif(btrim(${table.swipeRankExcludedBy}), '') IS NOT NULL
+      )`,
+    ),
+  ],
+);
+
+export type SwipeRankProfile = typeof swipeRankProfileTable.$inferSelect;
+export type SwipeRankProfileInsert = typeof swipeRankProfileTable.$inferInsert;
+
+/**
+ * Privacy-safe source mutation journal used to prove snapshot lineage.
+ *
+ * Rows contain no user or provider identifier. The monotonically increasing
+ * ID changes whenever an application transaction mutates Tinder source or
+ * ownership state; a FULL fact build records the latest visible ID.
+ */
+export const swipeRankSourceMutationTable = pgTable(
+  "swipe_rank_source_mutation",
+  (t) => ({
+    id: t.bigserial({ mode: "number" }).primaryKey(),
+    dataProvider: dataProviderEnum().notNull(),
+    createdAt: t
+      .timestamp()
+      .$defaultFn(() => new Date())
+      .notNull(),
+  }),
+  (table) => [
+    index("swipe_rank_source_mutation_provider_idx").on(
+      table.dataProvider,
+      table.id,
+    ),
+  ],
+);
+
+/** One auditable invocation of a fact recomputation. */
+export const swipeRankBuildTable = pgTable(
+  "swipe_rank_build",
+  (t) => ({
+    id: t
+      .text()
+      .primaryKey()
+      .$defaultFn(() => createId("srb")),
+    dataProvider: dataProviderEnum().notNull(),
+    metricVersion: t.text().notNull(),
+    scope: swipeRankBuildScopeEnum().notNull(),
+    status: swipeRankBuildStatusEnum().default("RUNNING").notNull(),
+    sourceWatermark: t
+      .jsonb()
+      .$type<Record<string, string | number | null>>()
+      .default({})
+      .notNull(),
+    startedAt: t
+      .timestamp()
+      .$defaultFn(() => new Date())
+      .notNull(),
+    completedAt: t.timestamp(),
+    /** Set only after an independent full-build validation succeeds. */
+    activatedAt: t.timestamp(),
+    /** Privacy-safe failure category; never persist query text, params, or IDs. */
+    failureCode: t.text(),
+  }),
+  (table) => [
+    index("swipe_rank_build_provider_version_idx").on(
+      table.dataProvider,
+      table.metricVersion,
+      table.startedAt,
+    ),
+    index("swipe_rank_build_status_idx").on(table.status, table.startedAt),
+    check(
+      "swipe_rank_build_completion_state",
+      sql`(${table.status} = 'RUNNING' AND ${table.completedAt} IS NULL) OR (${table.status} <> 'RUNNING' AND ${table.completedAt} IS NOT NULL)`,
+    ),
+    check(
+      "swipe_rank_build_activation_state",
+      sql`${table.activatedAt} IS NULL OR (${table.scope} = 'FULL' AND ${table.status} = 'COMPLETE' AND ${table.completedAt} IS NOT NULL)`,
+    ),
+  ],
+);
+
+export type SwipeRankBuild = typeof swipeRankBuildTable.$inferSelect;
+export type SwipeRankBuildInsert = typeof swipeRankBuildTable.$inferInsert;
+
+/**
+ * Versioned period facts. Periods are half-open [periodStart, periodEnd).
+ * MONTH is the canonical stored grain; broader grains are sums of month facts.
+ * ALL_TIME uses the fixed [0001-01-01, 9999-01-01) sentinel interval.
+ */
+export const swipeRankPeriodFactTable = pgTable(
+  "swipe_rank_period_fact",
+  (t) => ({
+    id: t
+      .text()
+      .primaryKey()
+      .$defaultFn(() => createId("srf")),
+    profileId: t
+      .text()
+      .notNull()
+      .references(() => swipeRankProfileTable.id, { onDelete: "cascade" }),
+    buildId: t
+      .text()
+      .notNull()
+      .references(() => swipeRankBuildTable.id, { onDelete: "restrict" }),
+    metricVersion: t.text().notNull(),
+    periodKind: swipeRankPeriodKindEnum().notNull(),
+    periodStart: t.date().notNull(),
+    periodEnd: t.date().notNull(),
+    observedFirstDate: t.date().notNull(),
+    observedLastDate: t.date().notNull(),
+    sourceRowCount: t.bigint({ mode: "number" }).notNull(),
+    observedDays: t.integer().notNull(),
+    activeDays: t.integer().notNull(),
+    ageInPeriod: t.integer(),
+    swipeLikes: t.bigint({ mode: "number" }),
+    swipePasses: t.bigint({ mode: "number" }),
+    swipeSuperLikes: t.bigint({ mode: "number" }),
+    matches: t.bigint({ mode: "number" }),
+    messagesSent: t.bigint({ mode: "number" }),
+    messagesReceived: t.bigint({ mode: "number" }),
+    appOpens: t.bigint({ mode: "number" }),
+    matchRateNumerator: t.bigint({ mode: "number" }),
+    matchRateDenominator: t.bigint({ mode: "number" }),
+    likeRateNumerator: t.bigint({ mode: "number" }),
+    likeRateDenominator: t.bigint({ mode: "number" }),
+    matchRate: t
+      .doublePrecision()
+      .generatedAlwaysAs(
+        sql`CASE WHEN match_rate_denominator > 0 THEN match_rate_numerator::double precision / match_rate_denominator END`,
+      ),
+    likeRate: t
+      .doublePrecision()
+      .generatedAlwaysAs(
+        sql`CASE WHEN like_rate_denominator > 0 THEN like_rate_numerator::double precision / like_rate_denominator END`,
+      ),
+    swipesPerActiveDay: t
+      .doublePrecision()
+      .generatedAlwaysAs(
+        sql`CASE WHEN active_days > 0 AND swipe_likes IS NOT NULL AND swipe_passes IS NOT NULL THEN (swipe_likes + swipe_passes)::double precision / active_days END`,
+      ),
+    qualityFlags: t.jsonb().$type<string[]>().default([]).notNull(),
+    hasQualityAnomaly: t.boolean().default(false).notNull(),
+    sourceProfileUpdatedAt: t.timestamp().notNull(),
+    sourceFileCreatedAt: t.timestamp(),
+    sourceFingerprint: t.text().notNull(),
+    computedAt: t
+      .timestamp()
+      .$defaultFn(() => new Date())
+      .notNull(),
+  }),
+  (table) => [
+    uniqueIndex("swipe_rank_fact_profile_period_version_idx").on(
+      table.profileId,
+      table.periodKind,
+      table.periodStart,
+      table.metricVersion,
+    ),
+    index("swipe_rank_fact_period_rank_idx").on(
+      table.periodKind,
+      table.periodStart,
+      table.metricVersion,
+      table.matchRate,
+    ),
+    index("swipe_rank_fact_profile_version_idx").on(
+      table.profileId,
+      table.metricVersion,
+      table.periodKind,
+      table.periodStart,
+    ),
+    index("swipe_rank_fact_build_idx").on(table.buildId),
+    index("swipe_rank_fact_anomaly_idx").on(
+      table.hasQualityAnomaly,
+      table.periodKind,
+      table.periodStart,
+    ),
+    check(
+      "swipe_rank_fact_period_bounds",
+      sql`${table.periodStart} < ${table.periodEnd}`,
+    ),
+    check(
+      "swipe_rank_fact_period_alignment",
+      sql`(${table.periodKind} = 'MONTH' AND ${table.periodStart} = date_trunc('month', ${table.periodStart})::date AND ${table.periodEnd} = (${table.periodStart} + interval '1 month')::date) OR (${table.periodKind} = 'QUARTER' AND extract(month from ${table.periodStart}) IN (1, 4, 7, 10) AND extract(day from ${table.periodStart}) = 1 AND ${table.periodEnd} = (${table.periodStart} + interval '3 months')::date) OR (${table.periodKind} = 'YEAR' AND extract(month from ${table.periodStart}) = 1 AND extract(day from ${table.periodStart}) = 1 AND ${table.periodEnd} = (${table.periodStart} + interval '1 year')::date) OR (${table.periodKind} = 'ALL_TIME' AND ${table.periodStart} = date '0001-01-01' AND ${table.periodEnd} = date '9999-01-01')`,
+    ),
+    check(
+      "swipe_rank_fact_observed_bounds",
+      sql`${table.observedFirstDate} <= ${table.observedLastDate} AND ${table.observedFirstDate} >= ${table.periodStart} AND ${table.observedLastDate} < ${table.periodEnd}`,
+    ),
+    check(
+      "swipe_rank_fact_day_counts",
+      sql`${table.sourceRowCount} > 0 AND ${table.observedDays} > 0 AND ${table.activeDays} >= 0 AND ${table.activeDays} <= ${table.observedDays}`,
+    ),
+    check(
+      "swipe_rank_fact_nonnegative_metrics",
+      sql`coalesce(${table.swipeLikes}, 0) >= 0 AND coalesce(${table.swipePasses}, 0) >= 0 AND coalesce(${table.swipeSuperLikes}, 0) >= 0 AND coalesce(${table.matches}, 0) >= 0 AND coalesce(${table.messagesSent}, 0) >= 0 AND coalesce(${table.messagesReceived}, 0) >= 0 AND coalesce(${table.appOpens}, 0) >= 0 AND coalesce(${table.matchRateNumerator}, 0) >= 0 AND coalesce(${table.matchRateDenominator}, 0) >= 0 AND coalesce(${table.likeRateNumerator}, 0) >= 0 AND coalesce(${table.likeRateDenominator}, 0) >= 0`,
+    ),
+    check(
+      "swipe_rank_fact_rate_inputs",
+      sql`(${table.matchRateNumerator} IS NULL) = (${table.matchRateDenominator} IS NULL) AND (${table.likeRateNumerator} IS NULL) = (${table.likeRateDenominator} IS NULL)`,
+    ),
+    check(
+      "swipe_rank_fact_quality_state",
+      sql`${table.hasQualityAnomaly} = (jsonb_array_length(${table.qualityFlags}) > 0)`,
+    ),
+  ],
+);
+
+export type SwipeRankPeriodFact = typeof swipeRankPeriodFactTable.$inferSelect;
+export type SwipeRankPeriodFactInsert =
+  typeof swipeRankPeriodFactTable.$inferInsert;
+
+/** An immutable leaderboard edition built from one completed fact build. */
+export const swipeRankSnapshotTable = pgTable(
+  "swipe_rank_snapshot",
+  (t) => ({
+    id: t
+      .text()
+      .primaryKey()
+      .$defaultFn(() => createId("srs")),
+    dataProvider: dataProviderEnum().notNull(),
+    buildId: t
+      .text()
+      .notNull()
+      .references(() => swipeRankBuildTable.id, { onDelete: "restrict" }),
+    metricKey: t.text().notNull(),
+    metricVersion: t.text().notNull(),
+    eligibilityVersion: t.text().notNull(),
+    periodKind: swipeRankPeriodKindEnum().notNull(),
+    periodStart: t.date().notNull(),
+    periodEnd: t.date().notNull(),
+    cohortSpec: t
+      .jsonb()
+      .$type<Record<string, unknown>>()
+      .default({})
+      .notNull(),
+    cohortHash: t.text().notNull(),
+    minimumRateDenominator: t.integer().default(0).notNull(),
+    minimumActiveDays: t.integer().default(0).notNull(),
+    fieldSize: t.integer().notNull(),
+    status: swipeRankSnapshotStatusEnum().default("DRAFT").notNull(),
+    sourceCutoff: t.timestamp().notNull(),
+    createdAt: t
+      .timestamp()
+      .$defaultFn(() => new Date())
+      .notNull(),
+    publishedAt: t.timestamp(),
+  }),
+  (table) => [
+    uniqueIndex("swipe_rank_snapshot_edition_idx").on(
+      table.dataProvider,
+      table.metricKey,
+      table.metricVersion,
+      table.eligibilityVersion,
+      table.periodKind,
+      table.periodStart,
+      table.cohortHash,
+      table.buildId,
+    ),
+    index("swipe_rank_snapshot_status_idx").on(
+      table.status,
+      table.periodKind,
+      table.periodStart,
+    ),
+    check(
+      "swipe_rank_snapshot_period_bounds",
+      sql`${table.periodStart} < ${table.periodEnd}`,
+    ),
+    check(
+      "swipe_rank_snapshot_period_alignment",
+      sql`(${table.periodKind} = 'MONTH' AND ${table.periodStart} = date_trunc('month', ${table.periodStart})::date AND ${table.periodEnd} = (${table.periodStart} + interval '1 month')::date) OR (${table.periodKind} = 'QUARTER' AND extract(month from ${table.periodStart}) IN (1, 4, 7, 10) AND extract(day from ${table.periodStart}) = 1 AND ${table.periodEnd} = (${table.periodStart} + interval '3 months')::date) OR (${table.periodKind} = 'YEAR' AND extract(month from ${table.periodStart}) = 1 AND extract(day from ${table.periodStart}) = 1 AND ${table.periodEnd} = (${table.periodStart} + interval '1 year')::date) OR (${table.periodKind} = 'ALL_TIME' AND ${table.periodStart} = date '0001-01-01' AND ${table.periodEnd} = date '9999-01-01')`,
+    ),
+    check(
+      "swipe_rank_snapshot_nonnegative_thresholds",
+      sql`${table.minimumRateDenominator} >= 0 AND ${table.minimumActiveDays} >= 0 AND ${table.fieldSize} >= 0`,
+    ),
+    check(
+      "swipe_rank_snapshot_publication_state",
+      sql`(${table.status} = 'PUBLISHED' AND ${table.publishedAt} IS NOT NULL) OR (${table.status} <> 'PUBLISHED')`,
+    ),
+  ],
+);
+
+export type SwipeRankSnapshot = typeof swipeRankSnapshotTable.$inferSelect;
+export type SwipeRankSnapshotInsert =
+  typeof swipeRankSnapshotTable.$inferInsert;
+
+/**
+ * Frozen ranks for a snapshot; no public identity fields are copied here.
+ *
+ * Deleting the source profile removes its per-person frozen row. Other ranks
+ * and the aggregate edition field size remain historical; no exact numerator,
+ * denominator, or quality record survives for the erased person.
+ */
+export const swipeRankEntryTable = pgTable(
+  "swipe_rank_entry",
+  (t) => ({
+    id: t
+      .text()
+      .primaryKey()
+      .$defaultFn(() => createId("sre")),
+    snapshotId: t
+      .text()
+      .notNull()
+      .references(() => swipeRankSnapshotTable.id, { onDelete: "cascade" }),
+    profileId: t
+      .text()
+      .notNull()
+      .references(() => swipeRankProfileTable.id, { onDelete: "cascade" }),
+    rank: t.integer().notNull(),
+    tieCount: t.integer().notNull(),
+    fieldSize: t.integer().notNull(),
+    percentile: t.doublePrecision().notNull(),
+    topShare: t.doublePrecision().notNull(),
+    metricNumerator: t.bigint({ mode: "number" }).notNull(),
+    metricDenominator: t.bigint({ mode: "number" }).notNull(),
+    metricValue: t.doublePrecision().notNull(),
+    qualityFlags: t.jsonb().$type<string[]>().default([]).notNull(),
+    createdAt: t
+      .timestamp()
+      .$defaultFn(() => new Date())
+      .notNull(),
+  }),
+  (table) => [
+    uniqueIndex("swipe_rank_entry_snapshot_profile_idx").on(
+      table.snapshotId,
+      table.profileId,
+    ),
+    index("swipe_rank_entry_snapshot_rank_idx").on(
+      table.snapshotId,
+      table.rank,
+    ),
+    check(
+      "swipe_rank_entry_rank_bounds",
+      sql`${table.rank} > 0 AND ${table.tieCount} > 0 AND ${table.fieldSize} > 0 AND ${table.rank} <= ${table.fieldSize} AND ${table.tieCount} <= ${table.fieldSize}`,
+    ),
+    check(
+      "swipe_rank_entry_rate_bounds",
+      sql`${table.metricNumerator} >= 0 AND ${table.metricDenominator} > 0 AND ${table.metricValue} >= 0 AND ${table.percentile} >= 0 AND ${table.percentile} <= 100 AND ${table.topShare} >= 0 AND ${table.topShare} <= 100`,
+    ),
+  ],
+);
+
+export type SwipeRankEntry = typeof swipeRankEntryTable.$inferSelect;
+export type SwipeRankEntryInsert = typeof swipeRankEntryTable.$inferInsert;
 
 // ---- SUPPORT TABLES -----------------------------------------------
 
@@ -1246,6 +1777,92 @@ export type Inquiry = typeof inquiryTable.$inferSelect;
 export type InquiryInsert = typeof inquiryTable.$inferInsert;
 
 // ---- STORAGE TABLES -----------------------------------------------
+
+/**
+ * Short-lived ownership proof and cleanup ledger for sensitive provider
+ * exports uploaded directly from the browser. The provider payload itself
+ * never belongs in Postgres; this row binds its public transport URL to the
+ * authenticated session that requested the narrowly scoped upload token.
+ */
+export const transientUploadTable = pgTable(
+  "transient_upload",
+  (t) => ({
+    id: t.text().primaryKey(),
+    userId: t
+      .text()
+      // SET NULL preserves the only cleanup pointer when an account is deleted;
+      // expired/orphan cleanup does not depend on the user row still existing.
+      .references(() => userTable.id, { onDelete: "set null" }),
+    sessionId: t.text().notNull(),
+    dataProvider: dataProviderEnum().notNull(),
+    profileId: t.text().notNull(),
+    expectedPathname: t.text().notNull(),
+    blobUrl: t.text().unique(),
+    blobPathname: t.text(),
+    status: transientUploadStatusEnum().default("ISSUED").notNull(),
+    resultProfileId: t.text(),
+    expiresAt: t.timestamp({ withTimezone: true }).notNull(),
+    uploadedAt: t.timestamp({ withTimezone: true }),
+    processingStartedAt: t.timestamp({ withTimezone: true }),
+    committedAt: t.timestamp({ withTimezone: true }),
+    cleanedAt: t.timestamp({ withTimezone: true }),
+    cleanupAttemptedAt: t.timestamp({ withTimezone: true }),
+    cleanupAttempts: t.integer().default(0).notNull(),
+    lastCleanupError: t.text(),
+    createdAt: t
+      .timestamp({ withTimezone: true })
+      .$defaultFn(() => new Date())
+      .notNull(),
+    updatedAt: t
+      .timestamp({ withTimezone: true })
+      .$defaultFn(() => new Date())
+      .$onUpdate(() => new Date())
+      .notNull(),
+  }),
+  (t) => [
+    index("transient_upload_owner_idx").on(t.userId, t.sessionId),
+    index("transient_upload_expiry_idx").on(t.status, t.expiresAt),
+    uniqueIndex("transient_upload_binding_idx").on(
+      t.userId,
+      t.sessionId,
+      t.dataProvider,
+      t.profileId,
+      t.expectedPathname,
+    ),
+    check(
+      "transient_upload_provider",
+      sql`${t.dataProvider} IN ('TINDER', 'HINGE')`,
+    ),
+    check("transient_upload_cleanup_attempts", sql`${t.cleanupAttempts} >= 0`),
+    check(
+      "transient_upload_blob_state",
+      sql`${t.status} IN ('ISSUED', 'ABANDONED') OR (${t.blobUrl} IS NOT NULL AND ${t.blobPathname} IS NOT NULL AND ${t.uploadedAt} IS NOT NULL)`,
+    ),
+    check(
+      "transient_upload_processing_state",
+      sql`${t.status} <> 'PROCESSING' OR ${t.processingStartedAt} IS NOT NULL`,
+    ),
+    check(
+      "transient_upload_commit_state",
+      sql`${t.status} NOT IN ('COMMITTED', 'CLEANED') OR (${t.resultProfileId} IS NOT NULL AND ${t.committedAt} IS NOT NULL)`,
+    ),
+    check(
+      "transient_upload_cleaned_state",
+      sql`${t.status} <> 'CLEANED' OR ${t.cleanedAt} IS NOT NULL`,
+    ),
+    check(
+      "transient_upload_abandoned_state",
+      sql`${t.status} <> 'ABANDONED' OR (${t.resultProfileId} IS NULL AND ${t.committedAt} IS NULL)`,
+    ),
+    check(
+      "transient_upload_lease_bounds",
+      sql`${t.expiresAt} > ${t.createdAt}`,
+    ),
+  ],
+);
+
+export type TransientUpload = typeof transientUploadTable.$inferSelect;
+export type TransientUploadInsert = typeof transientUploadTable.$inferInsert;
 
 export const originalAnonymizedFileTable = pgTable(
   "original_anonymized_file",
@@ -1732,29 +2349,26 @@ export type AiOutputRowInsert = typeof aiOutputTable.$inferInsert;
 // by content id; image URLs are resolved live on read (not frozen), so the roast
 // always renders against the current profile.
 
-// ---- COHORT SYSTEM TABLES -----------------------------------------
+// ---- LEGACY COHORT TABLES ----------------------------------------
+//
+// SwipeRank supersedes these tables for product reads. Keep their schema in the
+// first SwipeRank release so the previous production build remains rollback-safe;
+// a later cleanup migration can remove them after the new reads are established.
 
-// Cohort definition - what filters constitute a cohort
 export const cohortDefinitionTable = pgTable("cohort_definition", (t) => ({
-  id: t.text().primaryKey(), // e.g., "tinder_male", "user_abc123_custom1"
+  id: t.text().primaryKey(),
   name: t.text().notNull(),
   description: t.text(),
-
-  // Filters
   dataProvider: dataProviderEnum(),
   gender: genderEnum(),
   ageMin: t.integer(),
   ageMax: t.integer(),
   country: t.text(),
   region: t.text(),
-
-  // Ownership
   type: t.text().$type<"SYSTEM" | "USER_CUSTOM">().default("SYSTEM").notNull(),
   createdByUserId: t
     .text()
     .references(() => userTable.id, { onDelete: "cascade" }),
-
-  // Metadata
   profileCount: t.integer().default(0).notNull(),
   lastComputedAt: t.timestamp(),
   createdAt: t
@@ -1766,7 +2380,6 @@ export const cohortDefinitionTable = pgTable("cohort_definition", (t) => ({
 export type CohortDefinition = typeof cohortDefinitionTable.$inferSelect;
 export type CohortDefinitionInsert = typeof cohortDefinitionTable.$inferInsert;
 
-// Cohort stats - pre-computed percentile distributions
 export const cohortStatsTable = pgTable(
   "cohort_stats",
   (t) => ({
@@ -1778,39 +2391,28 @@ export const cohortStatsTable = pgTable(
       .text()
       .notNull()
       .references(() => cohortDefinitionTable.id, { onDelete: "cascade" }),
-
-    // Period (e.g., "all-time", "2024", "2023")
     period: t.text().notNull().default("all-time"),
     periodStart: t.timestamp(),
     periodEnd: t.timestamp(),
-
-    // Sample size
     profileCount: t.integer().notNull(),
-
-    // Like Rate (pickiness) - full distribution
     likeRateP10: t.doublePrecision(),
     likeRateP25: t.doublePrecision(),
     likeRateP50: t.doublePrecision(),
     likeRateP75: t.doublePrecision(),
     likeRateP90: t.doublePrecision(),
     likeRateMean: t.doublePrecision(),
-
-    // Match Rate (desirability) - full distribution
     matchRateP10: t.doublePrecision(),
     matchRateP25: t.doublePrecision(),
     matchRateP50: t.doublePrecision(),
     matchRateP75: t.doublePrecision(),
     matchRateP90: t.doublePrecision(),
     matchRateMean: t.doublePrecision(),
-
-    // Swipes Per Day (activity) - full distribution
     swipesPerDayP10: t.doublePrecision(),
     swipesPerDayP25: t.doublePrecision(),
     swipesPerDayP50: t.doublePrecision(),
     swipesPerDayP75: t.doublePrecision(),
     swipesPerDayP90: t.doublePrecision(),
     swipesPerDayMean: t.doublePrecision(),
-
     computedAt: t.timestamp().notNull(),
   }),
   (t) => ({
@@ -1856,6 +2458,7 @@ export const userRelations = relations(userTable, ({ one, many }) => ({
     relationName: "catalogClaimReviewer",
   }),
   catalogRequests: many(catalogRequestTable),
+  swipeRankProfiles: many(swipeRankProfileTable),
 }));
 
 export const accountRelations = relations(accountTable, ({ one }) => ({
@@ -1980,6 +2583,65 @@ export const profileMetaRelations = relations(profileMetaTable, ({ one }) => ({
     references: [hingeProfileTable.hingeId],
   }),
 }));
+
+export const swipeRankProfileRelations = relations(
+  swipeRankProfileTable,
+  ({ one, many }) => ({
+    user: one(userTable, {
+      fields: [swipeRankProfileTable.userId],
+      references: [userTable.id],
+    }),
+    periodFacts: many(swipeRankPeriodFactTable),
+    leaderboardEntries: many(swipeRankEntryTable),
+  }),
+);
+
+export const swipeRankBuildRelations = relations(
+  swipeRankBuildTable,
+  ({ many }) => ({
+    periodFacts: many(swipeRankPeriodFactTable),
+    snapshots: many(swipeRankSnapshotTable),
+  }),
+);
+
+export const swipeRankPeriodFactRelations = relations(
+  swipeRankPeriodFactTable,
+  ({ one }) => ({
+    profile: one(swipeRankProfileTable, {
+      fields: [swipeRankPeriodFactTable.profileId],
+      references: [swipeRankProfileTable.id],
+    }),
+    build: one(swipeRankBuildTable, {
+      fields: [swipeRankPeriodFactTable.buildId],
+      references: [swipeRankBuildTable.id],
+    }),
+  }),
+);
+
+export const swipeRankSnapshotRelations = relations(
+  swipeRankSnapshotTable,
+  ({ one, many }) => ({
+    build: one(swipeRankBuildTable, {
+      fields: [swipeRankSnapshotTable.buildId],
+      references: [swipeRankBuildTable.id],
+    }),
+    entries: many(swipeRankEntryTable),
+  }),
+);
+
+export const swipeRankEntryRelations = relations(
+  swipeRankEntryTable,
+  ({ one }) => ({
+    snapshot: one(swipeRankSnapshotTable, {
+      fields: [swipeRankEntryTable.snapshotId],
+      references: [swipeRankSnapshotTable.id],
+    }),
+    profile: one(swipeRankProfileTable, {
+      fields: [swipeRankEntryTable.profileId],
+      references: [swipeRankProfileTable.id],
+    }),
+  }),
+);
 
 export const jobRelations = relations(jobTable, ({ one }) => ({
   tinderProfile: one(tinderProfileTable, {
@@ -2155,7 +2817,6 @@ export const profileComparisonFeedbackRelations = relations(
   }),
 );
 
-// Cohort system relations
 export const cohortDefinitionRelations = relations(
   cohortDefinitionTable,
   ({ one, many }) => ({

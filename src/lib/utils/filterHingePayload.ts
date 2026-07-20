@@ -1,32 +1,36 @@
-import type { SwipestatsHingeProfilePayload } from "@/lib/interfaces/HingeDataJSON";
+import type {
+  AnonymizedHingeDataJSON,
+  SwipestatsHingeProfilePayload,
+} from "@/lib/interfaces/HingeDataJSON";
 import type { HingeConsentState } from "@/lib/interfaces/HingeConsent";
 
-/**
- * Filter Hinge payload based on user consent
- * Removes data that the user has opted not to share
- */
-export function filterPayloadByConsent(
-  payload: SwipestatsHingeProfilePayload,
-  consent: HingeConsentState,
-): SwipestatsHingeProfilePayload {
-  const filtered = { ...payload };
+type HingeOptionalDataConsent = Pick<
+  HingeConsentState,
+  "sharePhotos" | "shareWorkInfo"
+>;
 
-  // If user doesn't consent to share photos, remove media
+/**
+ * Enforce optional-data consent on the canonical payload. This runs both in the
+ * browser and again on the server because request flags cannot prove that a
+ * caller actually removed the corresponding fields before upload.
+ */
+export function filterHingeJsonByConsent(
+  hingeJson: AnonymizedHingeDataJSON,
+  consent: HingeOptionalDataConsent,
+): AnonymizedHingeDataJSON {
+  let filtered = hingeJson;
+
   if (!consent.sharePhotos) {
-    filtered.anonymizedHingeJson = {
-      ...filtered.anonymizedHingeJson,
-      Media: [],
-    };
+    filtered = { ...filtered, Media: [] };
   }
 
-  // If user doesn't consent to share work info, clear job-related fields
   if (!consent.shareWorkInfo) {
-    filtered.anonymizedHingeJson = {
-      ...filtered.anonymizedHingeJson,
+    filtered = {
+      ...filtered,
       User: {
-        ...filtered.anonymizedHingeJson.User,
+        ...filtered.User,
         profile: {
-          ...filtered.anonymizedHingeJson.User.profile,
+          ...filtered.User.profile,
           job_title: "",
           job_title_displayed: false,
           workplaces: "",
@@ -36,32 +40,22 @@ export function filterPayloadByConsent(
     };
   }
 
-  // If user doesn't consent to share matches, remove them
-  if (!consent.shareMatches) {
-    filtered.anonymizedHingeJson = {
-      ...filtered.anonymizedHingeJson,
-      Matches: [],
-    };
-  }
-
-  // If user doesn't consent to share messages, filter them out from matches
-  if (!consent.shareMessages) {
-    filtered.anonymizedHingeJson = {
-      ...filtered.anonymizedHingeJson,
-      Matches: filtered.anonymizedHingeJson.Matches.map((match) => ({
-        ...match,
-        chats: [], // Remove all chat messages
-      })),
-    };
-  }
-
-  // If user doesn't consent to share prompts, remove them
-  if (!consent.sharePrompts) {
-    filtered.anonymizedHingeJson = {
-      ...filtered.anonymizedHingeJson,
-      Prompts: [],
-    };
-  }
-
   return filtered;
+}
+
+/**
+ * Filter Hinge payload based on user consent
+ * Removes data that the user has opted not to share
+ */
+export function filterPayloadByConsent(
+  payload: SwipestatsHingeProfilePayload,
+  consent: HingeConsentState,
+): SwipestatsHingeProfilePayload {
+  return {
+    ...payload,
+    anonymizedHingeJson: filterHingeJsonByConsent(
+      payload.anonymizedHingeJson,
+      consent,
+    ),
+  };
 }

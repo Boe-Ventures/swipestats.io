@@ -3,7 +3,7 @@ import { eq } from "drizzle-orm";
 
 import { db } from "@/server/db";
 import { hingeProfileTable } from "@/server/db/schema";
-import { env } from "@/env";
+import { isAdminRequestAuthorized } from "@/lib/admin-request-auth";
 
 export async function GET(
   request: Request,
@@ -15,11 +15,7 @@ export async function GET(
     return NextResponse.json({ error: "hingeId is required" }, { status: 400 });
   }
 
-  // Verify admin token from query params
-  const { searchParams } = new URL(request.url);
-  const token = searchParams.get("token");
-
-  if (!token || token !== env.ADMIN_TOKEN) {
+  if (!(await isAdminRequestAuthorized(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 

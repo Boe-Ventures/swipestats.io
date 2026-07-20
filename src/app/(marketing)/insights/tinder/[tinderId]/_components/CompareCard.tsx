@@ -30,7 +30,7 @@ export function CompareCard() {
         </div>
 
         <p className="text-muted-foreground mt-3 text-sm">
-          Compare your swipe analytics and match rates with other Tinder
+          Compare your swipe analytics and match yield with other Tinder
           profiles
         </p>
       </CardHeader>

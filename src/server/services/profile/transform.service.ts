@@ -1,8 +1,11 @@
-import { differenceInDays, differenceInYears } from "date-fns";
 import he from "he";
 
 import type { AnonymizedTinderDataJSON } from "@/lib/interfaces/TinderDataJSON";
-import { getFirstAndLastDayOnApp } from "@/lib/profile.utils";
+import {
+  differenceInUtcCalendarYears,
+  getTinderObservedUsageRange,
+  normalizeTinderUsageDateKey,
+} from "@/lib/profile.utils";
 import type {
   TinderProfileInsert,
   TinderUsageInsert,
@@ -24,18 +27,21 @@ export function transformTinderJsonToProfile(
   const user = json.User;
   const usage = json.Usage;
 
-  // Calculate first and last day on app from usage data
-  const { firstDayOnApp, lastDayOnApp } = getFirstAndLastDayOnApp(
-    usage.app_opens,
-  );
+  // Include every observed usage map. Tinder can report a swipe, match, or
+  // message on a date that is absent from app_opens.
+  const { firstDayOnApp, lastDayOnApp } = getTinderObservedUsageRange(usage);
 
-  // Calculate days in profile period
-  const daysInProfilePeriod = differenceInDays(lastDayOnApp, firstDayOnApp) + 1;
+  // These bounds are provider calendar keys normalized to UTC midnight, so an
+  // exact UTC-day difference avoids server-timezone and DST dependence.
+  const daysInProfilePeriod =
+    Math.floor(
+      (lastDayOnApp.getTime() - firstDayOnApp.getTime()) / 86_400_000,
+    ) + 1;
 
   // Calculate ages
   const birthDate = new Date(user.birth_date);
-  const ageAtUpload = differenceInYears(new Date(), birthDate);
-  const ageAtLastUsage = differenceInYears(lastDayOnApp, birthDate);
+  const ageAtUpload = differenceInUtcCalendarYears(new Date(), birthDate);
+  const ageAtLastUsage = differenceInUtcCalendarYears(lastDayOnApp, birthDate);
 
   // Extract job and school info
   const firstJob = user.jobs?.[0];
@@ -58,16 +64,24 @@ export function transformTinderJsonToProfile(
     ageAtUpload,
     ageAtLastUsage,
     createDate: new Date(user.create_date),
+    createDateSource:
+      user.create_date_inferred === true
+        ? "INFERRED_FROM_USAGE"
+        : user.create_date_inferred === false
+          ? "PROVIDER"
+          : null,
     activeTime: user.active_time ? new Date(user.active_time) : null,
     gender: mapTinderGender(user.gender),
     genderStr: user.gender,
     bio: user.bio ? he.decode(user.bio) : null, // Decode HTML entities
     bioOriginal: user.bio ?? null,
     city,
-    country: options.country ?? country,
+    // Provider-authored profile geography is closer to the dating context;
+    // request IP geography is only a fallback and may reflect travel or a VPN.
+    country: country ?? options.country ?? null,
     region,
     userInterests: user.user_interests ?? null,
-    interests: user.interests ?? null,
+    interests: null,
     sexualOrientations: user.sexual_orientations ?? null,
     descriptors: user.descriptors ?? null,
     instagramConnected: user.instagram ?? false,
@@ -78,7 +92,7 @@ export function transformTinderJsonToProfile(
     companyDisplayed: firstJob?.company?.displayed ?? null,
     school: firstSchool?.name ?? null,
     schoolDisplayed: firstSchool?.displayed ?? null,
-    college: user.college ?? null,
+    college: null,
     jobsRaw: user.jobs ?? null,
     schoolsRaw: user.schools ?? null,
     educationLevel: user.education ?? null,
@@ -112,6 +126,9 @@ export function computeUsageInput(
   tinderProfileId: string,
   userBirthDate: Date,
 ): TinderUsageInsert {
+  // REVIEW(provider assumption): Tinder's matches and right swipes are
+  // independent daily event buckets. Their ratio is observed match yield, not
+  // a causal per-swipe conversion probability, and may legitimately exceed 1.
   const matchRate = params.swipeLikesCount
     ? params.matchesCount / params.swipeLikesCount
     : 0;
@@ -133,12 +150,16 @@ export function computeUsageInput(
       params.appOpensCount
     : 0;
 
+  // REVIEW(provider assumption): Tinder provides aggregate sent/received
+  // counts without message pairing. This legacy column is sent / received
+  // activity, not the probability that either person replied.
   const responseRate = params.messagesReceivedCount
     ? params.messagesSentCount / params.messagesReceivedCount
     : 0;
 
-  const dateStamp = new Date(dateStampRaw);
-  const userAgeThisDay = differenceInYears(dateStamp, userBirthDate);
+  const normalizedDateStampRaw = normalizeTinderUsageDateKey(dateStampRaw);
+  const dateStamp = new Date(`${normalizedDateStampRaw}T00:00:00.000Z`);
+  const userAgeThisDay = differenceInUtcCalendarYears(dateStamp, userBirthDate);
 
   return {
     appOpens: params.appOpensCount,
@@ -153,7 +174,7 @@ export function computeUsageInput(
     messagesReceived: params.messagesReceivedCount,
 
     dateStamp,
-    dateStampRaw,
+    dateStampRaw: normalizedDateStampRaw,
 
     matchRate: matchRate,
     likeRate: likeRate,

@@ -4,6 +4,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MessageCircle, MessagesSquare, Send, UserRoundX } from "lucide-react";
 
 import { useTinderProfile } from "../../TinderProfileProvider";
+import {
+  formatRecordRate,
+  getTinderMessageUiMetrics,
+} from "../../_components/tinder-message-ui-metrics";
 
 interface StatCardProps {
   title: string;
@@ -32,37 +36,37 @@ export function MessagesMetaSection() {
 
   if (!meta) return null;
 
-  const conversationCount = Math.max(meta.conversationCount, 1);
-  const noSentMessages = Math.max(
-    0,
-    meta.conversationCount - meta.conversationsWithMessages,
-  );
+  const messageMetrics = getTinderMessageUiMetrics(meta);
 
   return (
     <section className="space-y-4">
       <h2 className="text-2xl font-bold">Messaging overview</h2>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          title="Total matches"
+          title="Conversation records"
           value={meta.conversationCount}
           description="Conversations in your export"
           icon={MessagesSquare}
         />
         <StatCard
-          title="Messages sent"
+          title="Usage messages sent"
           value={meta.messagesSentTotal.toLocaleString()}
-          description="Outgoing messages available for replay"
+          description="Aggregate from Tinder's daily Usage ledger"
           icon={Send}
         />
         <StatCard
-          title="Matches you messaged"
+          title="Records with messages"
           value={meta.conversationsWithMessages}
-          description={`${Math.round((meta.conversationsWithMessages / conversationCount) * 100)}% of matches`}
+          description={
+            messageMetrics.messagedRecordRate === null
+              ? "Coverage unavailable; no conversation records"
+              : `${formatRecordRate(messageMetrics.messagedRecordRate)} of conversation records`
+          }
           icon={MessageCircle}
         />
         <StatCard
-          title="No messages sent"
-          value={noSentMessages}
+          title="Records without messages"
+          value={messageMetrics.recordsWithoutMessages}
           description="This does not tell us who replied or ghosted"
           icon={UserRoundX}
         />

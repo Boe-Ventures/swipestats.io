@@ -2,9 +2,13 @@ import { useState, useEffect } from "react";
 import type { SwipestatsProfilePayload } from "@/lib/interfaces/TinderDataJSON";
 import type { TinderConsentState } from "@/lib/interfaces/TinderConsent";
 import { Badge } from "@/components/ui/badge";
-import { differenceInYears, format } from "date-fns";
+import { format } from "date-fns";
 import he from "he";
 import { ProfilePhotoGrid } from "../../_components/ProfilePhotoGrid";
+import {
+  differenceInUtcCalendarYears,
+  getTinderObservedUsageRange,
+} from "@/lib/profile.utils";
 
 interface TinderProfilePreviewProps {
   payload: SwipestatsProfilePayload;
@@ -46,9 +50,14 @@ export function TinderProfilePreview({
   );
 
   const createDate = new Date(user.create_date);
-  const activeDate = new Date(user.active_time);
+  const observedUsageRange = getTinderObservedUsageRange(
+    payload.anonymizedTinderJson.Usage,
+  );
+  const activeDate = user.active_time
+    ? new Date(user.active_time)
+    : observedUsageRange.lastDayOnApp;
   const birthDate = new Date(user.birth_date);
-  const age = differenceInYears(new Date(), birthDate);
+  const age = differenceInUtcCalendarYears(new Date(), birthDate);
   const genderDisplay = getGenderDisplay(user.gender);
   const city =
     typeof user.city === "string" ? user.city : (user.city?.name ?? null);
@@ -126,7 +135,10 @@ export function TinderProfilePreview({
             )}
           </div>
           <div className="text-left text-xs text-gray-500 sm:text-right">
-            <div>Joined {format(createDate, "MMM d, yyyy")}</div>
+            <div>
+              {user.create_date_inferred ? "Observed since" : "Joined"}{" "}
+              {format(createDate, "MMM d, yyyy")}
+            </div>
             <div>Last active {format(activeDate, "MMM d, yyyy")}</div>
           </div>
         </div>
@@ -146,7 +158,9 @@ export function TinderProfilePreview({
             {user.interested_in && getInterestedInText(user.interested_in)}
             {user.age_filter_min !== undefined &&
               user.age_filter_max !== undefined &&
-              ` ages ${user.age_filter_min}-${user.age_filter_max}`}
+              (user.age_filter_max === 1000
+                ? ` ages ${user.age_filter_min}+`
+                : ` ages ${user.age_filter_min}-${user.age_filter_max}`)}
           </p>
         </div>
 

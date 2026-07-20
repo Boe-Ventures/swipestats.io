@@ -1,10 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { useTRPC } from "@/trpc/react";
 import { useQuery } from "@tanstack/react-query";
-import { useTinderProfile } from "../TinderProfileProvider";
-import { CohortBenchmarkCard } from "./CohortBenchmarkCard";
+import {
+  AlertTriangle,
+  CalendarClock,
+  SlidersHorizontal,
+  Users,
+} from "lucide-react";
+
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -12,396 +25,482 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Button } from "@/components/ui/button";
-import { Crown } from "lucide-react";
-import { useSubscription } from "@/hooks/useSubscription";
-import { useUpgrade } from "@/contexts/UpgradeContext";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  formatMatchYield,
+  formatSwipeRankPeriodLabel,
+  swipeRankPeriodKey,
+} from "@/lib/swipe-rank/format";
+import { useTRPC } from "@/trpc/react";
 
-export function CohortBenchmarksSection() {
-  const { meta } = useTinderProfile();
-  const trpc = useTRPC();
-  const { effectiveTier } = useSubscription();
-  const { openUpgradeModal } = useUpgrade();
+import { useTinderProfile } from "../TinderProfileProvider";
 
-  const hasPremiumAccess =
-    effectiveTier === "PLUS" || effectiveTier === "ELITE";
+type Gender = "MALE" | "FEMALE" | "OTHER" | "MORE" | "UNKNOWN";
+type CohortMode = "GLOBAL" | "PEER";
+type PeriodKind = "MONTH" | "QUARTER" | "YEAR" | "ALL_TIME";
 
-  // Period selector state
-  const [selectedPeriod, setSelectedPeriod] = useState("all-time");
+const PERIOD_KIND_LABELS: Record<PeriodKind, string> = {
+  MONTH: "Month",
+  QUARTER: "Quarter",
+  YEAR: "Year",
+  ALL_TIME: "All time",
+};
 
-  // Fetch cohort stats with new IDs
-  const maleStatsQuery = useQuery(
-    trpc.cohort.getStats.queryOptions(
-      { cohortId: "tinder_male", period: selectedPeriod },
-      { staleTime: 1000 * 60 * 60 },
-    ),
+interface PercentileDistribution {
+  p10: number | null;
+  p25: number | null;
+  p50: number | null;
+  p75: number | null;
+  p90: number | null;
+  sampleSize: number | null;
+  suppressed: boolean;
+}
+
+interface ComparisonPlacement {
+  rank: number | null;
+  fieldSize: number | null;
+  percentile: number | null;
+  includedInCohort: boolean;
+  isHypothetical: boolean;
+  suppressed: boolean;
+}
+
+const FALLBACK_PERIOD = {
+  kind: "ALL_TIME",
+  start: "0001-01-01",
+  end: "9999-01-01",
+} as const;
+
+const BENCHMARK_REFRESH_INTERVAL_MS = 30_000;
+const EMPTY_INVENTORY_POLL_INTERVAL_MS = 3_000;
+
+function isGender(value: string | null): value is Gender {
+  return (
+    value === "MALE" ||
+    value === "FEMALE" ||
+    value === "OTHER" ||
+    value === "MORE" ||
+    value === "UNKNOWN"
   );
+}
 
-  const femaleStatsQuery = useQuery(
-    trpc.cohort.getStats.queryOptions(
-      { cohortId: "tinder_female", period: selectedPeriod },
-      { staleTime: 1000 * 60 * 60 },
-    ),
+function formatPercent(value: number | null) {
+  if (value === null) return "—";
+  return (
+    (value * 100).toLocaleString(undefined, {
+      minimumFractionDigits: 1,
+      maximumFractionDigits: 1,
+    }) + "%"
   );
+}
 
-  if (!meta) return null;
+function formatNumber(value: number | null) {
+  if (value === null) return "—";
+  return value.toLocaleString(undefined, {
+    minimumFractionDigits: value < 10 ? 1 : 0,
+    maximumFractionDigits: 1,
+  });
+}
 
-  const globalMeta = meta;
+function formatOrdinal(value: number) {
+  const tens = value % 100;
+  if (tens >= 11 && tens <= 13) return value + "th";
+  switch (value % 10) {
+    case 1:
+      return value + "st";
+    case 2:
+      return value + "nd";
+    case 3:
+      return value + "rd";
+    default:
+      return value + "th";
+  }
+}
 
-  const maleStats = maleStatsQuery.data;
-  const femaleStats = femaleStatsQuery.data;
-
-  if (!maleStats || !femaleStats) return null;
-
-  // Helper function to format values based on format type
-  const formatValue = (value: number, format: "percentage" | "number") => {
-    switch (format) {
-      case "percentage":
-        return `${(value * 100).toFixed(1)}%`;
-      case "number":
-        const rounded = Math.round(value);
-        // Remove commas for values < 1000
-        return rounded < 1000 ? rounded.toString() : rounded.toLocaleString();
-      default:
-        return value.toString();
-    }
-  };
-
-  // Collect percentile data for both genders
-  const malePercentileData = [
-    {
-      metric: "Match Rate",
-      format: "percentage" as const,
-      percentiles: {
-        p10: maleStats.matchRateP10,
-        p25: maleStats.matchRateP25,
-        p50: maleStats.matchRateP50,
-        p75: maleStats.matchRateP75,
-        p90: maleStats.matchRateP90,
-      },
-    },
-    {
-      metric: "Like Rate",
-      format: "percentage" as const,
-      percentiles: {
-        p10: maleStats.likeRateP10,
-        p25: maleStats.likeRateP25,
-        p50: maleStats.likeRateP50,
-        p75: maleStats.likeRateP75,
-        p90: maleStats.likeRateP90,
-      },
-    },
-    {
-      metric: "Swipes Per Day",
-      format: "number" as const,
-      percentiles: {
-        p10: maleStats.swipesPerDayP10,
-        p25: maleStats.swipesPerDayP25,
-        p50: maleStats.swipesPerDayP50,
-        p75: maleStats.swipesPerDayP75,
-        p90: maleStats.swipesPerDayP90,
-      },
-    },
-  ];
-
-  const femalePercentileData = [
-    {
-      metric: "Match Rate",
-      format: "percentage" as const,
-      percentiles: {
-        p10: femaleStats.matchRateP10,
-        p25: femaleStats.matchRateP25,
-        p50: femaleStats.matchRateP50,
-        p75: femaleStats.matchRateP75,
-        p90: femaleStats.matchRateP90,
-      },
-    },
-    {
-      metric: "Like Rate",
-      format: "percentage" as const,
-      percentiles: {
-        p10: femaleStats.likeRateP10,
-        p25: femaleStats.likeRateP25,
-        p50: femaleStats.likeRateP50,
-        p75: femaleStats.likeRateP75,
-        p90: femaleStats.likeRateP90,
-      },
-    },
-    {
-      metric: "Swipes Per Day",
-      format: "number" as const,
-      percentiles: {
-        p10: femaleStats.swipesPerDayP10,
-        p25: femaleStats.swipesPerDayP25,
-        p50: femaleStats.swipesPerDayP50,
-        p75: femaleStats.swipesPerDayP75,
-        p90: femaleStats.swipesPerDayP90,
-      },
-    },
-  ];
+function BenchmarkMetric({
+  label,
+  description,
+  value,
+  distribution,
+  placement,
+  suppressed,
+  format,
+}: {
+  label: string;
+  description: string;
+  value: number | null;
+  distribution: PercentileDistribution;
+  placement: ComparisonPlacement;
+  suppressed: boolean;
+  format: (value: number | null) => string;
+}) {
+  const percentileRows = [
+    ["P10", distribution.p10],
+    ["P25", distribution.p25],
+    ["Median", distribution.p50],
+    ["P75", distribution.p75],
+    ["P90", distribution.p90],
+  ] as const;
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-2xl">How You Compare</CardTitle>
-          <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all-time">All-Time</SelectItem>
-              <SelectItem value="2025">2025</SelectItem>
-              <SelectItem value="2024">2024</SelectItem>
-              <SelectItem value="2023">2023</SelectItem>
-              <SelectItem value="2022">2022</SelectItem>
-              <SelectItem value="2021">2021</SelectItem>
-              <SelectItem value="2020">2020</SelectItem>
-            </SelectContent>
-          </Select>
+    <div className="rounded-xl border bg-white p-5">
+      <div>
+        <h3 className="font-semibold">{label}</h3>
+        <p className="text-muted-foreground mt-1 text-xs">{description}</p>
+      </div>
+
+      <div className="mt-4 rounded-lg bg-slate-950 p-4 text-white">
+        <p className="text-xs font-medium text-slate-400">You</p>
+        <p className="mt-1 text-3xl font-bold tabular-nums">{format(value)}</p>
+        {placement.rank !== null && placement.fieldSize !== null && (
+          <p className="mt-2 text-xs text-slate-300">
+            {placement.isHypothetical ? "Would place" : "Places"} #
+            {placement.rank.toLocaleString()} against{" "}
+            {placement.fieldSize.toLocaleString()} profiles
+            {placement.percentile !== null && (
+              <>
+                {" "}
+                · {formatOrdinal(Math.round(placement.percentile))} percentile
+              </>
+            )}
+          </p>
+        )}
+      </div>
+
+      {suppressed ? (
+        <p className="text-muted-foreground mt-4 rounded-lg bg-slate-50 p-3 text-xs">
+          Distribution hidden until this field reaches the privacy minimum.
+        </p>
+      ) : (
+        <div className="mt-4 space-y-2 text-sm">
+          {percentileRows.map(([name, percentileValue]) => (
+            <div key={name} className="flex items-center justify-between gap-4">
+              <span className="text-muted-foreground">{name}</span>
+              <span className="font-mono font-semibold tabular-nums">
+                {format(percentileValue)}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function CohortBenchmarksSection() {
+  const trpc = useTRPC();
+  const { tinderId } = useTinderProfile();
+  const [selectedKind, setSelectedKind] = useState<PeriodKind>("MONTH");
+  const [selectedPeriodKey, setSelectedPeriodKey] = useState("");
+  const [cohortMode, setCohortMode] = useState<CohortMode>("GLOBAL");
+
+  const inventory = useQuery(
+    trpc.swipeRank.availablePeriods.queryOptions(
+      { tinderId },
+      {
+        refetchOnWindowFocus: true,
+        refetchInterval: (query) =>
+          query.state.data?.periods.length
+            ? BENCHMARK_REFRESH_INTERVAL_MS
+            : EMPTY_INVENTORY_POLL_INTERVAL_MS,
+      },
+    ),
+  );
+  const periods = inventory.data?.periods ?? [];
+  const effectiveKind = periods.some(
+    (item) => item.period.kind === selectedKind,
+  )
+    ? selectedKind
+    : periods[0]?.period.kind;
+  const kindPeriods = periods.filter(
+    (item) => item.period.kind === effectiveKind,
+  );
+  const selected =
+    kindPeriods.find(
+      (item) => swipeRankPeriodKey(item.period) === selectedPeriodKey,
+    ) ?? kindPeriods[0];
+  const peerFilters =
+    selected && isGender(selected.gender) && isGender(selected.interestedIn)
+      ? {
+          gender: selected.gender,
+          interestedIn: selected.interestedIn,
+        }
+      : null;
+  const effectiveMode =
+    cohortMode === "PEER" && peerFilters ? "PEER" : "GLOBAL";
+  const benchmark = useQuery(
+    trpc.swipeRank.benchmark.queryOptions(
+      {
+        tinderId,
+        period: selected?.period ?? FALLBACK_PERIOD,
+        filters:
+          effectiveMode === "PEER" ? (peerFilters ?? undefined) : undefined,
+      },
+      {
+        enabled: Boolean(selected),
+        refetchOnWindowFocus: true,
+        refetchInterval: BENCHMARK_REFRESH_INTERVAL_MS,
+      },
+    ),
+  );
+
+  if (inventory.isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <Skeleton className="h-7 w-48" />
+          <Skeleton className="h-4 w-80" />
+        </CardHeader>
+        <CardContent className="grid gap-4 md:grid-cols-3">
+          <Skeleton className="h-80 w-full" />
+          <Skeleton className="h-80 w-full" />
+          <Skeleton className="h-80 w-full" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (inventory.isError) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>How you compare</CardTitle>
+          <CardDescription>
+            Your private benchmark could not be loaded right now.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
+  if (!selected) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>How you compare</CardTitle>
+          <CardDescription>
+            Period benchmarks will appear after your first SwipeRank fact build.
+          </CardDescription>
+        </CardHeader>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="overflow-hidden">
+      <CardHeader className="border-b">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-2xl">
+              <SlidersHorizontal className="h-5 w-5" />
+              How you compare
+            </CardTitle>
+            <CardDescription className="mt-2 max-w-2xl">
+              Period-correct distributions from eligible Tinder SwipeRank facts.
+              Your values remain visible even when you compare against a field
+              you are not part of.
+            </CardDescription>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Select
+              value={effectiveKind}
+              onValueChange={(value) => {
+                setSelectedKind(value as PeriodKind);
+                setSelectedPeriodKey("");
+              }}
+            >
+              <SelectTrigger className="w-[135px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {Object.entries(PERIOD_KIND_LABELS).map(([value, label]) => (
+                  <SelectItem
+                    key={value}
+                    value={value}
+                    disabled={
+                      !periods.some((item) => item.period.kind === value)
+                    }
+                  >
+                    {label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select
+              value={swipeRankPeriodKey(selected.period)}
+              onValueChange={setSelectedPeriodKey}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {kindPeriods.map((item) => (
+                  <SelectItem
+                    key={swipeRankPeriodKey(item.period)}
+                    value={swipeRankPeriodKey(item.period)}
+                  >
+                    {formatSwipeRankPeriodLabel(item.period)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <div className="flex rounded-md border p-1">
+              <Button
+                type="button"
+                size="sm"
+                variant={effectiveMode === "GLOBAL" ? "secondary" : "ghost"}
+                onClick={() => setCohortMode("GLOBAL")}
+              >
+                Global
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={effectiveMode === "PEER" ? "secondary" : "ghost"}
+                disabled={!peerFilters}
+                onClick={() => setCohortMode("PEER")}
+              >
+                Same gender + interest
+              </Button>
+            </div>
+          </div>
         </div>
       </CardHeader>
 
-      <CardContent className="space-y-6">
-        {/* Benchmark cards - 3 hero metrics only */}
-        <div className="grid gap-6 md:grid-cols-3">
-          <CohortBenchmarkCard
-            metric="Match Rate"
-            yourValue={globalMeta.matchRate}
-            cohorts={[
-              {
-                name: "Men (median)",
-                value: maleStats.matchRateP50 ?? 0,
-              },
-              {
-                name: "Women (median)",
-                value: femaleStats.matchRateP50 ?? 0,
-              },
-            ]}
-            format="percentage"
-            description="How often your right swipes become matches"
-          />
-
-          <CohortBenchmarkCard
-            metric="Like Rate"
-            yourValue={globalMeta.likeRate}
-            cohorts={[
-              {
-                name: "Men (median)",
-                value: maleStats.likeRateP50 ?? 0,
-              },
-              {
-                name: "Women (median)",
-                value: femaleStats.likeRateP50 ?? 0,
-              },
-            ]}
-            format="percentage"
-            description="How often you swipe right (pickiness)"
-          />
-
-          <CohortBenchmarkCard
-            metric="Swipes Per Day"
-            yourValue={globalMeta.swipesPerDay}
-            cohorts={[
-              {
-                name: "Men (median)",
-                value: maleStats.swipesPerDayP50 ?? 0,
-              },
-              {
-                name: "Women (median)",
-                value: femaleStats.swipesPerDayP50 ?? 0,
-              },
-            ]}
-            format="number"
-            description="Average swipes per calendar day"
-          />
-        </div>
-
-        <Separator className="my-6" />
-
-        {/* Shared Premium Section - Percentile Distribution */}
-        <div className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Crown className="h-5 w-5" />
-            <h3 className="text-lg font-semibold">Percentile Distribution</h3>
+      <CardContent className="space-y-5 p-6">
+        {benchmark.isLoading && (
+          <div className="grid gap-4 md:grid-cols-3">
+            <Skeleton className="h-80 w-full" />
+            <Skeleton className="h-80 w-full" />
+            <Skeleton className="h-80 w-full" />
           </div>
+        )}
 
-          {hasPremiumAccess ? (
-            <div className="space-y-8">
-              {/* Men Section */}
-              <div className="space-y-4">
-                <h4 className="text-sm font-semibold">Men</h4>
-                <div className="grid gap-6 md:grid-cols-3">
-                  {malePercentileData.map((data) => (
-                    <div key={data.metric} className="space-y-3">
-                      <h5 className="text-muted-foreground text-sm font-medium">
-                        {data.metric}
-                      </h5>
-                      <div className="space-y-2 text-sm">
-                        {data.percentiles.p90 !== undefined &&
-                          data.percentiles.p90 !== null && (
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">
-                                Top 10% (P90)
-                              </span>
-                              <span className="font-mono font-semibold">
-                                {formatValue(data.percentiles.p90, data.format)}
-                              </span>
-                            </div>
-                          )}
-                        {data.percentiles.p75 !== undefined &&
-                          data.percentiles.p75 !== null && (
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">
-                                Top 25% (P75)
-                              </span>
-                              <span className="font-mono font-semibold">
-                                {formatValue(data.percentiles.p75, data.format)}
-                              </span>
-                            </div>
-                          )}
-                        {data.percentiles.p50 !== undefined &&
-                          data.percentiles.p50 !== null && (
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">
-                                Median (P50)
-                              </span>
-                              <span className="font-mono font-semibold">
-                                {formatValue(data.percentiles.p50, data.format)}
-                              </span>
-                            </div>
-                          )}
-                        {data.percentiles.p25 !== undefined &&
-                          data.percentiles.p25 !== null && (
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">
-                                Bottom 25% (P25)
-                              </span>
-                              <span className="font-mono font-semibold">
-                                {formatValue(data.percentiles.p25, data.format)}
-                              </span>
-                            </div>
-                          )}
-                        {data.percentiles.p10 !== undefined &&
-                          data.percentiles.p10 !== null && (
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">
-                                Bottom 10% (P10)
-                              </span>
-                              <span className="font-mono font-semibold">
-                                {formatValue(data.percentiles.p10, data.format)}
-                              </span>
-                            </div>
-                          )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+        {benchmark.isError && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+            This benchmark could not be computed for the selected period.
+          </div>
+        )}
 
-              <Separator />
-
-              {/* Women Section */}
-              <div className="space-y-4">
-                <h4 className="text-sm font-semibold">Women</h4>
-                <div className="grid gap-6 md:grid-cols-3">
-                  {femalePercentileData.map((data) => (
-                    <div key={data.metric} className="space-y-3">
-                      <h5 className="text-muted-foreground text-sm font-medium">
-                        {data.metric}
-                      </h5>
-                      <div className="space-y-2 text-sm">
-                        {data.percentiles.p90 !== undefined &&
-                          data.percentiles.p90 !== null && (
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">
-                                Top 10% (P90)
-                              </span>
-                              <span className="font-mono font-semibold">
-                                {formatValue(data.percentiles.p90, data.format)}
-                              </span>
-                            </div>
-                          )}
-                        {data.percentiles.p75 !== undefined &&
-                          data.percentiles.p75 !== null && (
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">
-                                Top 25% (P75)
-                              </span>
-                              <span className="font-mono font-semibold">
-                                {formatValue(data.percentiles.p75, data.format)}
-                              </span>
-                            </div>
-                          )}
-                        {data.percentiles.p50 !== undefined &&
-                          data.percentiles.p50 !== null && (
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">
-                                Median (P50)
-                              </span>
-                              <span className="font-mono font-semibold">
-                                {formatValue(data.percentiles.p50, data.format)}
-                              </span>
-                            </div>
-                          )}
-                        {data.percentiles.p25 !== undefined &&
-                          data.percentiles.p25 !== null && (
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">
-                                Bottom 25% (P25)
-                              </span>
-                              <span className="font-mono font-semibold">
-                                {formatValue(data.percentiles.p25, data.format)}
-                              </span>
-                            </div>
-                          )}
-                        {data.percentiles.p10 !== undefined &&
-                          data.percentiles.p10 !== null && (
-                            <div className="flex justify-between">
-                              <span className="text-muted-foreground">
-                                Bottom 10% (P10)
-                              </span>
-                              <span className="font-mono font-semibold">
-                                {formatValue(data.percentiles.p10, data.format)}
-                              </span>
-                            </div>
-                          )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+        {benchmark.data && (
+          <>
+            <div className="grid gap-4 md:grid-cols-3">
+              <BenchmarkMetric
+                label="Observed match rate"
+                description="Matches divided by ordinary right swipes"
+                value={benchmark.data.target.values.matchYield}
+                distribution={benchmark.data.cohort.metrics.matchYield}
+                placement={benchmark.data.target.placements.matchYield}
+                suppressed={benchmark.data.cohort.metrics.matchYield.suppressed}
+                format={formatMatchYield}
+              />
+              <BenchmarkMetric
+                label="Like rate"
+                description="Right swipes divided by ordinary swipes"
+                value={benchmark.data.target.values.likeRate}
+                distribution={benchmark.data.cohort.metrics.likeRate}
+                placement={benchmark.data.target.placements.likeRate}
+                suppressed={benchmark.data.cohort.metrics.likeRate.suppressed}
+                format={formatPercent}
+              />
+              <BenchmarkMetric
+                label="Swipes per active day"
+                description="Ordinary swipes on days with swipe activity"
+                value={benchmark.data.target.values.swipesPerActiveDay}
+                distribution={benchmark.data.cohort.metrics.swipesPerActiveDay}
+                placement={benchmark.data.target.placements.swipesPerActiveDay}
+                suppressed={
+                  benchmark.data.cohort.metrics.swipesPerActiveDay.suppressed
+                }
+                format={formatNumber}
+              />
             </div>
-          ) : (
-            <div className="rounded-lg border bg-linear-to-r from-pink-50 to-rose-50 p-6 dark:from-pink-950/50 dark:to-rose-950/50">
-              <div className="space-y-4">
+
+            {benchmark.data.insufficientSample && (
+              <div className="rounded-lg border border-violet-200 bg-violet-50 p-4 text-sm text-violet-950">
+                This field has fewer than{" "}
+                {benchmark.data.minimumPrivateSampleSize.toLocaleString()}{" "}
+                eligible profiles. To protect individual privacy, its exact
+                size, distributions, and placements are hidden. Your own period
+                values remain visible.
+              </div>
+            )}
+
+            {benchmark.data.target.excludedFromSwipeRank && (
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+                This profile is not currently included in SwipeRank. Its own
+                values remain visible, but it receives no placement and is not
+                part of the comparison distribution.
+              </div>
+            )}
+
+            {!benchmark.data.target.excludedFromSwipeRank &&
+              !benchmark.data.target.eligibility.eligible && (
+              <div className="rounded-lg border border-dashed p-4 text-sm">
+                Your period values are shown, but placement requires at least{" "}
+                {benchmark.data.eligibility.minimumRateDenominator.toLocaleString()}{" "}
+                right swipes and{" "}
+                {benchmark.data.eligibility.minimumActiveDays.toLocaleString()}{" "}
+                active days.
+              </div>
+              )}
+
+            {!benchmark.data.target.excludedFromSwipeRank &&
+              benchmark.data.target.eligibility.eligible &&
+              !benchmark.data.target.matchesFilters && (
+                <div className="rounded-lg border border-sky-200 bg-sky-50 p-4 text-sm text-sky-950">
+                  You are outside this descriptor filter, so your own fact is
+                  not inserted into the distribution.{" "}
+                  {benchmark.data.insufficientSample
+                    ? "Placement is hidden until the comparison field reaches the privacy minimum."
+                    : "The placement shown is a hypothetical position against its eligible sample."}
+                </div>
+              )}
+
+            {benchmark.data.target.hasQualityAnomaly && (
+              <div className="flex gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                 <div>
-                  <h4 className="mb-2 font-semibold">
-                    Unlock Percentile Rankings
-                  </h4>
-                  <p className="text-muted-foreground text-sm">
-                    See your exact percentile rank and full distribution across
-                    all metrics for both men and women with SwipeStats Plus
+                  <p className="font-medium">Unusual source totals</p>
+                  <p className="mt-1 text-amber-800">
+                    Match yield is shown as reported and is never capped at
+                    100%. Quality flags:{" "}
+                    {benchmark.data.target.qualityFlags.join(", ")}.
                   </p>
                 </div>
-                <Button
-                  onClick={() =>
-                    openUpgradeModal({
-                      tier: "PLUS",
-                      feature: "Percentile Distribution",
-                    })
-                  }
-                  className="w-full sm:w-auto"
-                >
-                  <Crown className="mr-2 h-4 w-4" />
-                  Upgrade to Plus
-                </Button>
               </div>
+            )}
+
+            <div className="text-muted-foreground flex flex-wrap items-center gap-x-5 gap-y-2 border-t pt-4 text-xs">
+              <span className="flex items-center gap-1.5">
+                <Users className="h-3.5 w-3.5" />
+                Eligible sample{" "}
+                {benchmark.data.insufficientSample
+                  ? `<${benchmark.data.minimumPrivateSampleSize.toLocaleString()}`
+                  : benchmark.data.cohort.sampleSize?.toLocaleString()}{" "}
+                · minimum{" "}
+                {benchmark.data.eligibility.minimumRateDenominator.toLocaleString()}{" "}
+                right swipes +{" "}
+                {benchmark.data.eligibility.minimumActiveDays.toLocaleString()}{" "}
+                active days
+              </span>
+              <span className="flex items-center gap-1.5">
+                <CalendarClock className="h-3.5 w-3.5" />
+                As of{" "}
+                {benchmark.data.cohort.asOf
+                  ? new Date(benchmark.data.cohort.asOf).toLocaleString(
+                      undefined,
+                      { dateStyle: "medium", timeStyle: "short" },
+                    )
+                  : "—"}
+              </span>
+              <Badge variant="outline">
+                {effectiveMode === "PEER" ? "Same gender + interest" : "Global"}
+              </Badge>
             </div>
-          )}
-        </div>
+          </>
+        )}
       </CardContent>
     </Card>
   );

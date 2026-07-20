@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 import { env } from "@/env";
+import { isAdminRequestAuthorized } from "@/lib/admin-request-auth";
 
 /**
  * TEMPORARY DEBUG ENDPOINT
  * Remove after diagnosing production environment detection issue
  */
-export async function GET() {
+export async function GET(request: Request) {
+  if (!(await isAdminRequestAuthorized(request))) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   console.log("🐛 [DEBUG-ENV] Endpoint called");
 
   const debugInfo = {

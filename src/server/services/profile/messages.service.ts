@@ -8,6 +8,7 @@ import type {
   MessageInsert,
   MessageType,
 } from "@/server/db/schema";
+import { getMedian } from "../meta-utils.service";
 
 /**
  * Determines message type from Tinder JSON message
@@ -34,9 +35,99 @@ function getMessageType(msg: TinderJsonMatch["messages"][number]): MessageType {
   }
 }
 
-/**
- * Transforms Tinder JSON matches and messages into database insert format
- */
+type TinderMetricMessage = Pick<MessageInsert, "messageType" | "sentDate">;
+
+export type TinderMatchDerivedMetrics = Pick<
+  MatchInsert,
+  | "totalMessageCount"
+  | "initialMessageAt"
+  | "lastMessageAt"
+  | "textCount"
+  | "gifCount"
+  | "gestureCount"
+  | "otherMessageTypeCount"
+  | "responseTimeMedianSeconds"
+  | "conversationDurationDays"
+  | "messageImbalanceRatio"
+  | "longestGapHours"
+  | "didMatchReply"
+  | "lastMessageFrom"
+>;
+
+/** Compute Tinder match metrics from validated, chronologically sortable rows. */
+export function computeTinderMatchDerivedMetrics(
+  input: TinderMetricMessage[],
+): TinderMatchDerivedMetrics {
+  const messages = [...input].sort(
+    (a, b) => a.sentDate.getTime() - b.sentDate.getTime(),
+  );
+  const totalMessageCount = messages.length;
+  const firstMessageSentAt = messages[0]?.sentDate;
+  const lastMessageSentAt = messages.at(-1)?.sentDate;
+
+  const messageCounts = messages.reduce(
+    (acc, message) => {
+      acc[message.messageType] = (acc[message.messageType] ?? 0) + 1;
+      return acc;
+    },
+    {} as Partial<Record<MessageType, number>>,
+  );
+
+  const gapsSeconds = messages
+    .slice(1)
+    .map((message, index) =>
+      Math.floor(
+        (message.sentDate.getTime() - messages[index]!.sentDate.getTime()) /
+          1000,
+      ),
+    );
+
+  // REVIEW(provider assumption): Tinder exports uploader-sent messages only.
+  // These legacy "response time" fields therefore measure gaps between the
+  // uploader's messages; they must not be interpreted as reply latency.
+  const responseTimeMedianSeconds =
+    gapsSeconds.length > 0 ? Math.round(getMedian(gapsSeconds)) : null;
+  const conversationDurationDays =
+    firstMessageSentAt && lastMessageSentAt
+      ? Math.floor(
+          (lastMessageSentAt.getTime() - firstMessageSentAt.getTime()) /
+            (1000 * 60 * 60 * 24),
+        )
+      : null;
+
+  return {
+    totalMessageCount,
+    initialMessageAt: firstMessageSentAt,
+    lastMessageAt: lastMessageSentAt,
+    textCount: messageCounts.TEXT ?? 0,
+    gifCount: messageCounts.GIF ?? 0,
+    gestureCount: messageCounts.GESTURE ?? 0,
+    otherMessageTypeCount:
+      (messageCounts.CONTACT_CARD ?? 0) +
+      (messageCounts.ACTIVITY ?? 0) +
+      (messageCounts.OTHER ?? 0),
+    responseTimeMedianSeconds,
+    conversationDurationDays,
+    messageImbalanceRatio: null,
+    longestGapHours:
+      gapsSeconds.length > 0
+        ? Math.floor(Math.max(...gapsSeconds) / 3600)
+        : null,
+    // Incoming message bodies are absent, so reply behavior is unknown.
+    didMatchReply: null,
+    lastMessageFrom: totalMessageCount > 0 ? "USER" : null,
+  };
+}
+
+function parseMessageTimestamp(sentDate: string): number {
+  const timestamp = Date.parse(sentDate);
+  if (!Number.isFinite(timestamp)) {
+    throw new Error(`Invalid Tinder message sent_date: ${sentDate}`);
+  }
+  return timestamp;
+}
+
+/** Transforms Tinder matches and outgoing messages into database rows. */
 export function createMessagesAndMatches(
   tjms: TinderJsonMatch[],
   tinderProfileId: string,
@@ -45,162 +136,81 @@ export function createMessagesAndMatches(
   messagesInput: MessageInsert[];
 } {
   console.log(`   💬 Processing ${tjms.length} raw matches from JSON...`);
-  const sortedMatches = [...tjms].reverse(); // Chronological order (copy to avoid mutating input)
+  const sortedMatches = [...tjms].reverse().map((match) => ({
+    ...match,
+    messages: [...match.messages].sort(
+      (a, b) =>
+        parseMessageTimestamp(a.sent_date) - parseMessageTimestamp(b.sent_date),
+    ),
+  }));
 
-  const matchesInput: MatchInsert[] = sortedMatches.map((tjm, i) => {
-    const totalMessageCount = tjm.messages.length;
+  const matchesInput: MatchInsert[] = [];
+  const messagesInput: MessageInsert[] = [];
 
-    const firstMessage = tjm.messages[0];
-    const firstMessageSentAt = firstMessage?.sent_date
-      ? new Date(firstMessage.sent_date)
-      : undefined;
+  sortedMatches.forEach((tjm, matchIndex) => {
+    const matchId = nanoid();
+    const matchMessages = tjm.messages.map((message, messageIndex) => {
+      const timestampOfCurrentMessage = parseMessageTimestamp(
+        message.sent_date,
+      );
+      const previousMessage = tjm.messages[messageIndex - 1];
+      const timestampOfPreviousMessage = previousMessage
+        ? parseMessageTimestamp(previousMessage.sent_date)
+        : undefined;
+      const content = message.message ? he.decode(message.message) : "";
 
-    const lastMessage = tjm.messages.at(-1);
-    const lastMessageSentAt = lastMessage?.sent_date
-      ? new Date(lastMessage.sent_date)
-      : undefined;
+      return {
+        id: nanoid(),
+        messageType: getMessageType(message),
+        to: message.to,
+        sentDate: new Date(timestampOfCurrentMessage),
+        sentDateRaw: message.sent_date,
+        content,
+        charCount: content.length,
+        contentRaw: message.message ?? "",
+        type: message.type === undefined ? undefined : String(message.type),
+        gifUrl: message.fixed_height ?? null,
+        matchId,
+        tinderProfileId,
+        hingeProfileId: null,
+        order: messageIndex,
+        timeSinceLastMessage:
+          timestampOfPreviousMessage === undefined
+            ? 0
+            : Math.floor(
+                (timestampOfCurrentMessage - timestampOfPreviousMessage) / 1000,
+              ),
+        timeSinceLastMessageRelative:
+          timestampOfPreviousMessage === undefined
+            ? null
+            : formatDistance(
+                timestampOfPreviousMessage,
+                timestampOfCurrentMessage,
+              ),
+        language: null,
+        emotionScore: null,
+        contentSanitized: null,
+      } satisfies MessageInsert;
+    });
 
-    // Count message types
-    const messageCounts = tjm.messages.reduce(
-      (acc, cur) => {
-        const type = getMessageType(cur);
-        acc[type] = (acc[type] || 0) + 1;
-        return acc;
-      },
-      {
-        TEXT: 0,
-        GIF: 0,
-        GESTURE: 0,
-        CONTACT_CARD: 0,
-        ACTIVITY: 0,
-        OTHER: 0,
-      } as Record<string, number>,
-    );
-
-    // Compute server-side metrics for cohort comparison
-    // Note: GDPR data only has outgoing messages, so some metrics will be limited
-
-    // Response time calculation (time between consecutive messages)
-    const responseTimes: number[] = [];
-    for (let j = 1; j < tjm.messages.length; j++) {
-      const prevMsg = tjm.messages[j - 1];
-      const currMsg = tjm.messages[j];
-      if (prevMsg?.sent_date && currMsg?.sent_date) {
-        const timeDiff =
-          new Date(currMsg.sent_date).getTime() -
-          new Date(prevMsg.sent_date).getTime();
-        responseTimes.push(Math.floor(timeDiff / 1000)); // Convert to seconds
-      }
-    }
-    const responseTimeMedianSeconds =
-      responseTimes.length > 0
-        ? responseTimes.sort((a, b) => a - b)[
-            Math.floor(responseTimes.length / 2)
-          ] || null
-        : null;
-
-    // Conversation duration in days
-    const conversationDurationDays =
-      firstMessageSentAt && lastMessageSentAt
-        ? Math.floor(
-            (lastMessageSentAt.getTime() - firstMessageSentAt.getTime()) /
-              (1000 * 60 * 60 * 24),
-          )
-        : null;
-
-    // Message imbalance ratio (for Tinder GDPR, all messages are sent by user)
-    const messageImbalanceRatio = totalMessageCount > 0 ? null : null; // Always null for GDPR data
-
-    // Longest gap between messages in hours
-    const longestGapHours =
-      responseTimes.length > 0
-        ? Math.floor(Math.max(...responseTimes) / 3600) // Convert seconds to hours
-        : null;
-
-    // Did match reply (always false for GDPR data since we only have outgoing)
-    const didMatchReply = false;
-
-    // Who sent last message (always 'USER' for GDPR data)
-    const lastMessageFrom = totalMessageCount > 0 ? "USER" : null;
-
-    return {
-      id: nanoid(),
+    const metrics = computeTinderMatchDerivedMetrics(matchMessages);
+    matchesInput.push({
+      id: matchId,
       tinderMatchId: tjm.match_id,
       tinderProfileId,
-      totalMessageCount: totalMessageCount,
-      order: i,
-      initialMessageAt: firstMessageSentAt,
-      lastMessageAt: lastMessageSentAt,
-      textCount: messageCounts.TEXT ?? 0,
-      gifCount: messageCounts.GIF ?? 0,
-      gestureCount: messageCounts.GESTURE ?? 0,
-      otherMessageTypeCount:
-        (messageCounts.CONTACT_CARD ?? 0) +
-        (messageCounts.ACTIVITY ?? 0) +
-        (messageCounts.OTHER ?? 0),
+      order: matchIndex,
+      ...metrics,
       primaryLanguage: null,
       languages: [],
       engagementScore: null,
-      // Server-computed metrics
-      responseTimeMedianSeconds,
-      conversationDurationDays,
-      messageImbalanceRatio,
-      longestGapHours,
-      didMatchReply,
-      lastMessageFrom,
       weMet: null,
       like: null,
       match: null,
       likedAt: null,
       matchedAt: null,
       hingeProfileId: null,
-    };
-  });
-
-  const messagesInput: MessageInsert[] = sortedMatches.flatMap((tjm, i) => {
-    const match = matchesInput[i]!;
-    return tjm.messages
-      .filter((msg) => !!msg.sent_date) // Filter out invalid messages
-      .map((msg, messageIndex) => {
-        const lastMessage = tjm.messages[messageIndex - 1];
-
-        const timestampOfCurrentMessage = new Date(msg.sent_date).getTime();
-        const timestampOfLastMessage = lastMessage
-          ? new Date(lastMessage.sent_date).getTime()
-          : undefined;
-        const timeSinceLastMessage = timestampOfLastMessage
-          ? Math.floor(
-              (timestampOfCurrentMessage - timestampOfLastMessage) / 1000,
-            ) // Seconds
-          : 0;
-
-        const messageType = getMessageType(msg);
-        const content = msg.message ? he.decode(msg.message) : "";
-
-        return {
-          id: nanoid(),
-          messageType,
-          to: msg.to,
-          sentDate: new Date(msg.sent_date),
-          sentDateRaw: msg.sent_date,
-          content,
-          charCount: content?.length ?? 0,
-          contentRaw: msg.message ?? "",
-          type: msg.type ? String(msg.type) : undefined,
-          gifUrl: msg.fixed_height ?? null,
-          matchId: match.id,
-          tinderProfileId,
-          hingeProfileId: null,
-          order: messageIndex,
-          timeSinceLastMessage: timeSinceLastMessage,
-          timeSinceLastMessageRelative: timestampOfLastMessage
-            ? formatDistance(timestampOfLastMessage, timestampOfCurrentMessage)
-            : null,
-          language: null,
-          emotionScore: null,
-          contentSanitized: null,
-        };
-      });
+    });
+    messagesInput.push(...matchMessages);
   });
 
   // Calculate statistics

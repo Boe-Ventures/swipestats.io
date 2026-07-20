@@ -1,7 +1,8 @@
-import { differenceInYears } from "date-fns";
 import type { AnonymizedHingeDataJSON } from "@/lib/interfaces/HingeDataJSON";
 import type { HingeProfileInsert } from "@/server/db/schema";
 import { mapHingeGender } from "@/lib/utils/gender";
+import { deriveApproximateHingeBirthDate } from "@/lib/hinge/age";
+import { parseHingeTimestampToDate } from "@/lib/hinge/timestamp";
 
 /**
  * Safely parse JSON-encoded string arrays from Hinge export
@@ -22,22 +23,15 @@ function parseJsonArray(value: string | undefined): string[] | null {
  * Hinge uses "Yes"/"No" strings in the export
  */
 function parseBooleanString(value: string | undefined): boolean {
+  // REVIEW(provider assumption): these Hinge lifestyle answers are stored in
+  // legacy boolean columns. Only an explicit affirmative value maps to true;
+  // categories such as "Sometimes" currently collapse together with "No" and
+  // missing. Preserving the provider category requires a future schema change.
   return value === "Yes" || value === "yes" || value === "true";
 }
 
 function isNonEmptyString(value: string | undefined): value is string {
   return typeof value === "string" && value.length > 0;
-}
-
-/**
- * Derive birth date from age and signup time
- * This is an approximation since we don't have exact birth date
- */
-function deriveBirthDate(age: number, signupTime: string): Date {
-  const signupDate = new Date(signupTime);
-  const birthYear = signupDate.getFullYear() - age;
-  // Use January 1st as a default since we don't have the exact date
-  return new Date(birthYear, 0, 1);
 }
 
 /**
@@ -56,11 +50,27 @@ export function transformHingeJsonToProfile(
   const profile = user.profile;
   const account = user.account;
   const preferences = user.preferences;
+  const exportedCountry = user.location?.country?.trim();
+  const identityGender = mapHingeGender(profile.gender_identity ?? "");
+  const broadGender = mapHingeGender(profile.gender ?? "");
+  // Hinge can export a custom identity label (for example "Agender") beside a
+  // broad provider gender. Preserve the label below, but use the broad value for
+  // the finite cohort enum when the custom label has no direct mapping.
+  const gender = identityGender === "UNKNOWN" ? broadGender : identityGender;
 
-  // Derive birth date from age
-  const birthDate = deriveBirthDate(profile.age, account.signup_time);
-  const createDate = new Date(account.signup_time);
-  const ageAtUpload = differenceInYears(new Date(), birthDate);
+  const birthDate = deriveApproximateHingeBirthDate(
+    profile.age,
+    account.last_seen,
+  );
+  const createDate = parseHingeTimestampToDate(
+    account.signup_time,
+    "Hinge signup timestamp",
+  );
+  const lastSeenAt = parseHingeTimestampToDate(
+    account.last_seen,
+    "Hinge last-seen timestamp",
+  );
+  const ageAtUpload = profile.age;
 
   // Parse JSON-encoded arrays
   const ethnicities = parseJsonArray(profile.ethnicities);
@@ -91,8 +101,14 @@ export function transformHingeJsonToProfile(
     birthDate,
     ageAtUpload,
     createDate,
+    firstAccountCreateDate: createDate,
+    lastSeenAt,
+    // REVIEW(provider assumption): the non-null legacy profile columns below
+    // use neutral-looking sentinels when an export omits a value. In cohort
+    // work, 0/18/99/300/empty string must be treated as unavailable rather than
+    // a measured preference or attribute until these columns become nullable.
     heightCentimeters: profile.height_centimeters ?? 0,
-    gender: mapHingeGender(profile.gender_identity ?? profile.gender ?? ""),
+    gender,
     genderStr: profile.gender ?? "unknown",
     genderIdentity: profile.gender_identity ?? profile.gender ?? "unknown",
     genderIdentityDisplayed: profile.gender_identity_displayed ?? false,
@@ -147,6 +163,8 @@ export function transformHingeJsonToProfile(
     devicePlatforms: devicePlatforms.length > 0 ? devicePlatforms : [],
     deviceOsVersions: deviceOsVersions.length > 0 ? deviceOsVersions : [],
     appVersions: appVersions.length > 0 ? appVersions : [],
-    country: options.country ?? user.location?.country ?? null,
+    // The export is provider-authored profile data; the request country is only
+    // a browser-derived fallback and must not overwrite it.
+    country: exportedCountry || options.country || null,
   };
 }

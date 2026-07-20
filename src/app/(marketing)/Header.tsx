@@ -39,6 +39,7 @@ const navigation = {
     },
   ],
   simple: [
+    { name: "SwipeRank", href: "/leaderboard" },
     { name: "Research", href: "/research" },
     { name: "Blog", href: "/blog" },
     { name: "FAQ", href: "/#faq" },

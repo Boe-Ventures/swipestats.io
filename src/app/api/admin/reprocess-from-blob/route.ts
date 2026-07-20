@@ -10,20 +10,18 @@ import {
   getHingeProfile,
 } from "@/server/services/hinge/hinge.service";
 import { additiveUpdateHingeProfile } from "@/server/services/hinge/hinge-additive.service";
-import { env } from "@/env";
+import { isAdminRequestAuthorized } from "@/lib/admin-request-auth";
 
 /**
  * Admin endpoint to re-trigger profile extraction from an existing blob URL.
  * Automatically determines create vs additive update based on existing profile state.
  *
- * POST /api/admin/reprocess-from-blob?token=xxx
+ * POST /api/admin/reprocess-from-blob
+ * Authorization: Bearer $ADMIN_TOKEN (or a verified admin browser session)
  * Body: { provider, profileId, userId, blobUrl, timezone?, country? }
  */
 export async function POST(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const token = searchParams.get("token");
-
-  if (!token || token !== env.ADMIN_TOKEN) {
+  if (!(await isAdminRequestAuthorized(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -78,9 +76,7 @@ export async function POST(request: Request) {
         });
       }
 
-      console.log(
-        `📝 [Admin] Creating new Tinder profile: ${profileId}`,
-      );
+      console.log(`📝 [Admin] Creating new Tinder profile: ${profileId}`);
       const result = await createTinderProfile({
         tinderId: profileId,
         blobUrl,
@@ -100,6 +96,9 @@ export async function POST(request: Request) {
     // Hinge
     const existing = await getHingeProfile(profileId);
 
+    // This preflight only chooses create vs additive reconciliation. Both
+    // mutation services acquire the canonical provider/profile advisory locks
+    // and re-check identity/ownership inside their database transaction.
     if (existing) {
       console.log(
         `🔄 [Admin] Additive update for existing Hinge profile: ${profileId}`,
@@ -120,9 +119,7 @@ export async function POST(request: Request) {
       });
     }
 
-    console.log(
-      `📝 [Admin] Creating new Hinge profile: ${profileId}`,
-    );
+    console.log(`📝 [Admin] Creating new Hinge profile: ${profileId}`);
     const result = await createHingeProfile({
       hingeId: profileId,
       blobUrl,

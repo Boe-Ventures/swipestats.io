@@ -187,7 +187,7 @@ export function ComparisonTooltipContent({
         data.swipeLikes !== undefined && (
           <div className="border-border/50 mt-2 space-y-1 border-t pt-2">
             <div className="flex items-center justify-between gap-4">
-              <span className="text-muted-foreground text-xs">Match Rate</span>
+              <span className="text-muted-foreground text-xs">Match yield</span>
               <span className="text-xs font-medium tabular-nums">
                 {data.swipeLikes > 0
                   ? ((data.matches / data.swipeLikes) * 100).toFixed(1)

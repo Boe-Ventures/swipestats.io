@@ -24,7 +24,6 @@ interface GlobalMeta {
   swipePassesTotal: number;
   swipeLikesTotal: number;
   matchesTotal: number;
-  noMatchesTotal: number;
   conversationsWithMessages: number;
 }
 
@@ -59,8 +58,6 @@ export function TinderInsightsFunnelSVG({
   const maxWidth = 320; // Maximum width for widest stage
   const combinedSwipesTotal =
     (globalMeta.swipeLikesTotal ?? 0) + (globalMeta.swipePassesTotal ?? 0);
-  const noMatchesTotal =
-    (globalMeta.swipeLikesTotal ?? 0) - (globalMeta.matchesTotal ?? 0);
   const maxValue = combinedSwipesTotal || 1; // Avoid division by zero
 
   // Calculate viewBox dimensions based on content
@@ -102,17 +99,8 @@ export function TinderInsightsFunnelSVG({
     maxValue,
     maxWidth,
   );
-  const _noMatchWidth = calculateStageWidth(noMatchesTotal, maxValue, maxWidth);
   const chatsWidth = calculateStageWidth(
     globalMeta.conversationsWithMessages ?? 0,
-    maxValue,
-    maxWidth,
-  );
-  const noChats =
-    (globalMeta.matchesTotal ?? 0) -
-    (globalMeta.conversationsWithMessages ?? 0);
-  const _noChatsWidth = calculateStageWidth(
-    noChats > 0 ? noChats : 0,
     maxValue,
     maxWidth,
   );
@@ -164,9 +152,12 @@ export function TinderInsightsFunnelSVG({
     prevStageHalfWidth: totalSwipesWidth / 2,
   });
 
-  // Row 2 (Y=812): Matches and No Match (dropout)
+  // REVIEW(provider assumption): Usage matches/right swipes and the Messages
+  // collection are independent, non-exhaustive ledgers. Show observed counts,
+  // but do not manufacture complements such as "no match" or "no chats" by
+  // subtracting one ledger from another.
+  // Row 2 (Y=812): observed matches
   const matchesX = 550;
-  const noMatchX = 800;
   const row2Y = 812;
 
   stages.push({
@@ -181,29 +172,14 @@ export function TinderInsightsFunnelSVG({
     prevStageHalfWidth: rightSwipesWidth / 2,
   });
 
-  stages.push({
-    id: "no-match",
-    value: noMatchesTotal,
-    label: "no match",
-    labelPosition: "right",
-    x: noMatchX,
-    y: row2Y,
-    showPath: true,
-    prevStageX: rightSwipesX,
-    prevStageHalfWidth: rightSwipesWidth / 2,
-    isDropout: true,
-    dropoutSide: "right",
-  });
-
-  // Row 3 (Y=1068): Chats and No Chats (dropout)
+  // Row 3 (Y=1068): conversation records with outgoing messages
   const chatsX = 400;
-  const noChatsX = 600;
   const row3Y = 1068;
 
   stages.push({
     id: "chats",
     value: globalMeta.conversationsWithMessages ?? 0,
-    label: "chats",
+    label: "messaged records",
     labelPosition: "left",
     x: chatsX,
     y: row3Y,
@@ -212,23 +188,9 @@ export function TinderInsightsFunnelSVG({
     prevStageHalfWidth: matchesWidth / 2,
   });
 
-  if (noChats > 0) {
-    stages.push({
-      id: "no-chats",
-      value: noChats,
-      label: "no chats",
-      labelPosition: "right",
-      x: noChatsX,
-      y: row3Y,
-      showPath: true,
-      prevStageX: matchesX,
-      prevStageHalfWidth: matchesWidth / 2,
-      isDropout: true,
-      dropoutSide: "right",
-    });
-  }
-
-  // Row 4 (Y=1324): Dates and Never Met (dropout) - only if custom data exists
+  // Self-reported outcome counts can overlap (for example, a relationship can
+  // also be a sexual encounter), so they are displayed without residuals.
+  // Row 4 (Y=1324): reported dates - only if custom data exists
   if (hasCustomData && customData) {
     const datesWidth = calculateStageWidth(
       customData.dateAttended ?? 0,
@@ -236,10 +198,7 @@ export function TinderInsightsFunnelSVG({
       maxWidth,
     );
     const datesX = 300;
-    const neverMetX = 500;
     const row4Y = 1324;
-    const neverMet =
-      globalMeta.conversationsWithMessages - (customData.dateAttended ?? 0);
 
     stages.push({
       id: "dates",
@@ -253,30 +212,11 @@ export function TinderInsightsFunnelSVG({
       prevStageHalfWidth: chatsWidth / 2,
     });
 
-    if (neverMet > 0) {
-      stages.push({
-        id: "never-met",
-        value: neverMet,
-        label: "never met",
-        labelPosition: "right",
-        x: neverMetX,
-        y: row4Y,
-        showPath: true,
-        prevStageX: chatsX,
-        prevStageHalfWidth: chatsWidth / 2,
-        isDropout: true,
-        dropoutSide: "right",
-      });
-    }
-
-    // Row 5 (Y=1580): Relationships, Casual Sex, No Spark (all shown, may be 0)
+    // Row 5 (Y=1580): independently reported outcomes
     const relationshipsValue = customData.relationshipsStarted ?? 0;
-    const casualValue = customData.sleptWithEventually ?? 0;
-    const noSparkValue =
-      (customData.dateAttended ?? 0) - relationshipsValue - casualValue;
+    const sexualEncountersValue = customData.sleptWithEventually ?? 0;
     const relationshipsX = 200;
-    const casualX = 400;
-    const noSparkX = 550;
+    const sexualEncountersX = 450;
     const row5Y = 1580;
 
     stages.push({
@@ -292,32 +232,16 @@ export function TinderInsightsFunnelSVG({
     });
 
     stages.push({
-      id: "casual-sex",
-      value: casualValue,
-      label: "casual sex",
+      id: "sexual-encounters",
+      value: sexualEncountersValue,
+      label: "sexual encounters",
       labelPosition: "below",
-      x: casualX,
+      x: sexualEncountersX,
       y: row5Y,
       showPath: true,
       prevStageX: datesX,
       prevStageHalfWidth: datesWidth / 2,
     });
-
-    if (noSparkValue > 0) {
-      stages.push({
-        id: "no-spark",
-        value: noSparkValue,
-        label: "no spark",
-        labelPosition: "right",
-        x: noSparkX,
-        y: row5Y,
-        showPath: true,
-        prevStageX: datesX,
-        prevStageHalfWidth: datesWidth / 2,
-        isDropout: true,
-        dropoutSide: "right",
-      });
-    }
   }
 
   return (
@@ -326,7 +250,7 @@ export function TinderInsightsFunnelSVG({
         viewBox={`0 ${viewBoxStartY} ${viewBoxWidth} ${viewBoxHeight}`}
         className="h-auto w-full"
         role="img"
-        aria-label="Dating funnel visualization"
+        aria-label="Observed Tinder activity and reported outcomes"
         style={{ maxHeight: "1200px" }}
       >
         <title>Your Tinder Insights</title>

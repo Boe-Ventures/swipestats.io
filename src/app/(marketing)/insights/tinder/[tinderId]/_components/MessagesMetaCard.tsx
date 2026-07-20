@@ -19,6 +19,11 @@ import {
   Trophy,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import {
+  formatMessageAverage,
+  formatSendingGap,
+  getTinderMessageUiMetrics,
+} from "./tinder-message-ui-metrics";
 
 interface MetricRowProps {
   icon: typeof MessagesSquare;
@@ -58,31 +63,17 @@ export function MessagesMetaCard() {
     router.push(`/insights/tinder/${tinderId}/messages`);
   };
 
-  // Calculate derived metrics
-  const medianMessagesPerConvo = globalMeta.medianMessagesPerConversation ?? 0;
-  const avgMessagesPerConvo = globalMeta.averageMessagesPerConversation
-    ? globalMeta.averageMessagesPerConversation.toFixed(1)
-    : globalMeta.conversationsWithMessages > 0
-      ? (
-          globalMeta.messagesSentTotal / globalMeta.conversationsWithMessages
-        ).toFixed(1)
-      : "0";
+  const messageMetrics = getTinderMessageUiMetrics(globalMeta);
+  const averageMessagesPerRecord = formatMessageAverage(
+    messageMetrics.averageMessagesPerMessagedRecord,
+  );
+  const medianMessagesPerRecord =
+    messageMetrics.medianMessagesPerMessagedRecord;
 
-  // Format response time
-  const formatResponseTime = (seconds: number | null) => {
-    if (!seconds) return null;
-    if (seconds < 60) return `${seconds}s`;
-    if (seconds < 3600) return `${Math.round(seconds / 60)}m`;
-    if (seconds < 86400) return `${Math.round(seconds / 3600)}h`;
-    return `${Math.round(seconds / 86400)}d`;
-  };
-
-  const medianResponseTime = formatResponseTime(
+  const medianSendingGap = formatSendingGap(
     globalMeta.averageResponseTimeSeconds, // Currently stores median
   );
-  const meanResponseTime = formatResponseTime(
-    globalMeta.meanResponseTimeSeconds,
-  );
+  const meanSendingGap = formatSendingGap(globalMeta.meanResponseTimeSeconds);
   const medianConvoDuration = globalMeta.medianConversationDurationDays;
   const longestConvo = globalMeta.longestConversationDays;
 
@@ -113,30 +104,40 @@ export function MessagesMetaCard() {
         <div className="space-y-0">
           <MetricRow
             icon={MessagesSquare}
-            label="Total conversations"
+            label="Conversation records"
             value={globalMeta.conversationCount}
-            description="From all your matches"
+            description="Conversation entries included in your export"
           />
           <MetricRow
             icon={MessageCircle}
-            label="Conversations with messages"
+            label="Records with messages"
             value={globalMeta.conversationsWithMessages}
-            description="That had actual messages"
+            description="Entries with an exported message from you"
           />
           <MetricRow
             icon={Send}
-            label="Messages sent"
+            label="Usage messages sent"
             value={globalMeta.messagesSentTotal.toLocaleString()}
-            description={`Typical: ${medianMessagesPerConvo}, Avg: ${avgMessagesPerConvo} per conversation`}
+            description="Aggregate from Tinder's daily Usage ledger"
           />
-          {medianResponseTime && (
+          <MetricRow
+            icon={MessageCircle}
+            label="Messages per messaged record"
+            value={averageMessagesPerRecord}
+            description={
+              medianMessagesPerRecord === null
+                ? "Calculated only from retained message rows"
+                : `Average in retained message rows; median ${medianMessagesPerRecord}`
+            }
+          />
+          {medianSendingGap && (
             <MetricRow
               icon={Clock}
               label="Sending cadence"
-              value={medianResponseTime}
+              value={medianSendingGap}
               description={
-                meanResponseTime
-                  ? `Typical: ${medianResponseTime}, Avg: ${meanResponseTime} between your messages`
+                meanSendingGap
+                  ? `Typical: ${medianSendingGap}, Avg: ${meanSendingGap} between your messages`
                   : "Median time between your outgoing messages"
               }
             />
@@ -145,7 +146,7 @@ export function MessagesMetaCard() {
             medianConvoDuration !== undefined && (
               <MetricRow
                 icon={CalendarRange}
-                label="Median conversation"
+                label="Median outgoing span"
                 value={`${medianConvoDuration} days`}
                 description="Typical span of your outgoing messages"
               />
@@ -153,7 +154,7 @@ export function MessagesMetaCard() {
           {longestConvo !== null && longestConvo !== undefined && (
             <MetricRow
               icon={Trophy}
-              label="Longest conversation"
+              label="Longest outgoing span"
               value={`${longestConvo} days`}
               description="Longest span of your outgoing messages"
             />

@@ -2,6 +2,7 @@
 
 import { useState, useRef } from "react";
 import JSZip from "jszip";
+import { findUniqueTinderDataJsonPath } from "@/lib/upload/tinder-zip";
 import { FileUploadZone } from "../../_components/FileUploadZone";
 import { InfoAlert, PrimaryAlert } from "@/components/ui/alert";
 import type { SwipestatsProfilePayload } from "@/lib/interfaces/TinderDataJSON";
@@ -12,7 +13,7 @@ import { isGenderDataUnknown } from "@/lib/utils/gender";
 
 interface TinderDataExtractorProps {
   onExtracted: (payload: SwipestatsProfilePayload) => void;
-  onError: (error: string) => void;
+  onError: (error: string | null) => void;
 }
 
 export function TinderDataExtractor({
@@ -29,6 +30,7 @@ export function TinderDataExtractor({
     isProcessingRef.current = true;
     setIsProcessing(true);
     setError(null);
+    onError(null);
 
     // Track file processing start
     trackEvent("upload_file_processing_started", {
@@ -51,29 +53,29 @@ export function TinderDataExtractor({
           const zip = new JSZip();
           const zipContent = await zip.loadAsync(file);
 
-          // Find data.json in the ZIP
-          let dataJsonFile = zipContent.file("data.json");
-          if (!dataJsonFile) {
-            // Try finding it in subdirectories
-            const files = Object.keys(zipContent.files);
-            const dataJsonPath = files.find((path) =>
-              path.toLowerCase().endsWith("data.json"),
+          let dataJsonFile;
+          try {
+            const dataJsonPath = findUniqueTinderDataJsonPath(
+              Object.keys(zipContent.files),
             );
-            if (dataJsonPath) {
-              dataJsonFile = zipContent.file(dataJsonPath);
-            }
-          }
-
-          if (!dataJsonFile) {
+            dataJsonFile = zipContent.file(dataJsonPath);
+          } catch (selectionError) {
             trackEvent("upload_file_read_failed", {
               provider: "tinder",
               fileSize: file.size,
               fileType: ".zip",
               errorType: "zip_extraction",
-              errorMessage: "Could not find data.json in ZIP archive",
+              errorMessage:
+                selectionError instanceof Error
+                  ? selectionError.message
+                  : "Could not select data.json in ZIP archive",
               filesInZip: Object.keys(zipContent.files).length,
             });
-            throw new Error("Could not find data.json in ZIP archive");
+            throw selectionError;
+          }
+
+          if (!dataJsonFile) {
+            throw new Error("Could not read data.json from ZIP archive");
           }
 
           jsonContent = await dataJsonFile.async("text");
@@ -107,7 +109,8 @@ export function TinderDataExtractor({
       trackEvent("upload_preview_loaded", {
         provider: "tinder",
         tinderId: payload.tinderId,
-        fileSizeMB: jsonContent.length / 1024 / 1024,
+        // JavaScript string length counts UTF-16 code units, not uploaded bytes.
+        fileSizeMB: new Blob([jsonContent]).size / 1024 / 1024,
         matchCount: payload.anonymizedTinderJson.Messages.length,
         messageCount: payload.anonymizedTinderJson.Messages.reduce(
           (sum, m) => sum + m.messages.length,
@@ -125,6 +128,9 @@ export function TinderDataExtractor({
         ),
       });
 
+      // A failed first attempt must not leave the parent page disabled after a
+      // valid replacement file is extracted.
+      onError(null);
       onExtracted(payload);
     } catch (err) {
       console.error("Error processing Tinder file:", err);

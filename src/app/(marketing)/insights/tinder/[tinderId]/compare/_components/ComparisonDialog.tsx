@@ -1,15 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import {
-  Plus,
-  Loader2,
-  Heart,
-  Sparkles,
-  Crown,
-  BarChart3,
-  Check,
-} from "lucide-react";
+import { Plus, Loader2, Heart, Sparkles, Crown, BarChart3 } from "lucide-react";
 
 import { SimpleDialog } from "@/components/ui/dialog";
 import { Button, ButtonLink } from "@/components/ui/button";
@@ -25,12 +17,9 @@ import {
   isDemoProfile,
   getDemoProfileLabel,
 } from "@/lib/constants/demoProfiles";
-import { cn } from "@/components/ui";
-import { Separator } from "@/components/ui/separator";
 
 export function ComparisonDialog() {
   const [open, setOpen] = useState(false);
-  const [showAllCohorts, setShowAllCohorts] = useState(false);
   const [showMoreProfiles, setShowMoreProfiles] = useState(false);
   const { tinderId, meta } = useTinderProfile();
   const { addComparisonId, comparisonIds } = useComparison();
@@ -54,39 +43,6 @@ export function ComparisonDialog() {
       sortBy: "newest",
     }),
   );
-
-  // Fetch synthetic cohort profiles
-  const { data: syntheticProfiles } = useQuery(
-    trpc.cohort.listSyntheticProfiles.queryOptions(),
-  );
-
-  // Organize cohorts: filter out "Everyone", prioritize "Men" and "Women", sort rest alphabetically
-  const organizedCohorts = useMemo(() => {
-    if (!syntheticProfiles) return { primary: [], rest: [] };
-
-    // Filter out "Everyone" cohort
-    const filtered = syntheticProfiles.filter(
-      (p) => p.cohortName !== "Everyone",
-    );
-
-    // Separate primary cohorts (Men, Women)
-    const primaryNames = ["Men", "Women"];
-    const primary = primaryNames
-      .map((name) => filtered.find((p) => p.cohortName === name))
-      .filter(Boolean) as typeof syntheticProfiles;
-
-    // Get remaining cohorts and sort alphabetically
-    const rest = filtered
-      .filter((p) => !primaryNames.includes(p.cohortName))
-      .sort((a, b) => a.cohortName.localeCompare(b.cohortName));
-
-    return { primary, rest };
-  }, [syntheticProfiles]);
-
-  // Show primary cohorts + limited rest by default, toggle to show all
-  const displayedCohorts = showAllCohorts
-    ? [...organizedCohorts.primary, ...organizedCohorts.rest]
-    : organizedCohorts.primary;
 
   // Combine demo profiles with real profiles
   // Free users only see demo profiles, premium users see all
@@ -265,7 +221,7 @@ export function ComparisonDialog() {
                       <BarChart3 className="mt-0.5 h-4 w-4 shrink-0" />
                       <span>
                         <strong>Advanced Filters:</strong> Find profiles by
-                        demographics, location, and match rates
+                        demographics, location, and match yield
                       </span>
                     </li>
                     <li className="flex items-start gap-2">
@@ -298,128 +254,6 @@ export function ComparisonDialog() {
             </div>
           ) : null}
 
-          <Separator className="my-2" />
-
-          {/* Cohort Averages Section */}
-          {syntheticProfiles && syntheticProfiles.length > 0 && (
-            <>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-sm font-semibold">Cohort Averages</h3>
-                    <p className="text-muted-foreground text-xs">
-                      Compare against aggregated data from similar users
-                    </p>
-                  </div>
-                  <BarChart3 className="text-primary h-5 w-5" />
-                </div>
-
-                {hasPremiumAccess ? (
-                  <div className="space-y-3">
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      {displayedCohorts?.map((profile) => {
-                        const isSelected = comparisonIds.includes(
-                          profile.tinderId,
-                        );
-                        return (
-                          <button
-                            key={profile.tinderId}
-                            onClick={() => handleAddProfile(profile.tinderId)}
-                            className={cn(
-                              "rounded-lg border p-4 text-left transition-all",
-                              isSelected
-                                ? "border-primary bg-primary/5"
-                                : "hover:border-primary/50",
-                            )}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="bg-muted flex h-10 w-10 items-center justify-center rounded-full">
-                                <BarChart3 className="h-5 w-5" />
-                              </div>
-                              <div className="flex-1">
-                                <div className="font-medium">
-                                  {profile.cohortName}
-                                </div>
-                                <div className="text-muted-foreground text-xs">
-                                  Based on{" "}
-                                  {profile.profileCount.toLocaleString()}{" "}
-                                  profiles
-                                </div>
-                              </div>
-                            </div>
-                            <div className="mt-3 flex gap-4 text-sm">
-                              <div>
-                                <span className="text-muted-foreground">
-                                  Match Rate:
-                                </span>{" "}
-                                <span className="font-medium">
-                                  {profile.matchRate
-                                    ? (profile.matchRate * 100).toFixed(1)
-                                    : "N/A"}
-                                  %
-                                </span>
-                              </div>
-                              <div>
-                                <span className="text-muted-foreground">
-                                  Matches:
-                                </span>{" "}
-                                <span className="font-medium">
-                                  {profile.matchesTotal?.toLocaleString() ??
-                                    "N/A"}
-                                </span>
-                              </div>
-                            </div>
-                            {isSelected && (
-                              <div className="text-primary mt-2 flex items-center gap-1 text-xs">
-                                <Check className="h-3 w-3" /> Selected
-                              </div>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {organizedCohorts.rest.length > 0 && (
-                      <button
-                        onClick={() => setShowAllCohorts(!showAllCohorts)}
-                        className="text-muted-foreground hover:text-foreground text-sm transition-colors"
-                      >
-                        {showAllCohorts
-                          ? "Show Less"
-                          : `View All ${organizedCohorts.primary.length + organizedCohorts.rest.length} Cohorts`}
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  <div className="rounded-lg border bg-linear-to-r from-pink-50 to-rose-50 p-6 dark:from-pink-950/50 dark:to-rose-950/50">
-                    <div className="space-y-4">
-                      <div>
-                        <h4 className="mb-2 font-semibold">
-                          Unlock Cohort Comparisons
-                        </h4>
-                        <p className="text-muted-foreground text-sm">
-                          Compare your stats against aggregated data from
-                          similar users and see how you stack up
-                        </p>
-                      </div>
-                      <Button
-                        onClick={() =>
-                          openUpgradeModal({
-                            tier: "PLUS",
-                            feature: "Cohort Comparisons",
-                          })
-                        }
-                        className="w-full"
-                      >
-                        <Crown className="mr-2 h-4 w-4" />
-                        Upgrade to Plus
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </>
-          )}
           {/* Locked Premium Profiles - Coming Soon - Commented out for now */}
           {/* {!hasPremiumAccess && (
             <ComingSoonWrapper
@@ -428,7 +262,7 @@ export function ComparisonDialog() {
               topic="waitlist-directory-profiles"
               benefits={[
                 "Compare with 7,000+ verified real users",
-                "Filter by demographics and match rates",
+                "Filter by demographics and match yield",
                 "See how you stack up globally",
               ]}
             >
