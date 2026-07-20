@@ -1,19 +1,23 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import {
   AlertTriangle,
+  ArrowRight,
   ArrowLeft,
   Ban,
+  CalendarDays,
   ChevronLeft,
   ChevronRight,
   Eye,
   ExternalLink,
   Filter,
+  History,
   Loader2,
   RotateCcw,
+  Sparkles,
   Trophy,
 } from "lucide-react";
 
@@ -53,6 +57,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/components/ui/lib/utils";
 import { GENDERS } from "@/server/db/constants";
 import {
   DEFAULT_SWIPE_RANK_PERIOD_KIND,
@@ -60,7 +65,10 @@ import {
   formatSwipeRankPeriodLabel,
   swipeRankPeriodKey,
 } from "@/lib/swipe-rank/format";
+import { formatSwipeRankOrientation } from "@/lib/swipe-rank/orientation";
 import { useTRPC, type RouterInputs } from "@/trpc/react";
+
+import { resolveLeaderboardQuickJumps } from "../../(marketing)/leaderboard/period-options";
 
 type AdminFilters = NonNullable<
   RouterInputs["swipeRank"]["adminAvailablePeriods"]["filters"]
@@ -90,6 +98,22 @@ const EMPTY_FILTERS: DraftFilters = {
   region: "",
   city: "",
 };
+
+const PERCENTILE_BANDS = [1, 5, 10, 25, 50, 100] as const;
+
+function percentileBand(rank: number, fieldSize: number): number {
+  return (
+    PERCENTILE_BANDS.find(
+      (limit) => rank <= Math.max(1, Math.floor((fieldSize * limit) / 100)),
+    ) ?? 100
+  );
+}
+
+function quickJumpIcon(key: string) {
+  if (key === "ALL_TIME") return History;
+  if (key === "LAST_QUARTER") return Sparkles;
+  return CalendarDays;
+}
 
 function normalizedFilters(draft: DraftFilters): AdminFilters {
   return {
@@ -159,6 +183,13 @@ export default function AdminSwipeRankPage() {
         (item) => swipeRankPeriodKey(item.period) === selectedPeriodKey,
       ),
     [periods, selectedPeriodKey],
+  );
+  const quickJumps = useMemo(
+    () =>
+      resolveLeaderboardQuickJumps(
+        periods.filter((item) => item.eligibleCount > 0),
+      ),
+    [periods],
   );
 
   const leaderboardQuery = useQuery(
@@ -366,7 +397,59 @@ export default function AdminSwipeRankPage() {
         </Card>
       )}
 
-      <Card>
+      <Card className="gap-0 overflow-hidden py-0">
+        {quickJumps.length > 0 && (
+          <div className="border-b bg-gradient-to-r from-rose-50/80 via-white to-slate-50 px-5 py-4">
+            <div className="mb-3 flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-rose-500" />
+              <p className="text-sm font-semibold text-slate-900">
+                Quick jumps
+              </p>
+              <p className="text-xs text-slate-500">
+                The leaderboards worth opening first
+              </p>
+            </div>
+            <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+              {quickJumps.map((jump) => {
+                const Icon = quickJumpIcon(jump.key);
+                const key = swipeRankPeriodKey(jump.period);
+                const active = key === selectedPeriodKey;
+                return (
+                  <button
+                    key={jump.key}
+                    type="button"
+                    className={cn(
+                      "group flex items-center gap-3 rounded-xl border bg-white px-3 py-2.5 text-left shadow-sm transition hover:border-rose-200 hover:bg-rose-50/30",
+                      active && "border-rose-300 bg-rose-50/60",
+                    )}
+                    onClick={() => {
+                      setSelectedPeriodKey(key);
+                      setPage(1);
+                    }}
+                  >
+                    <span
+                      className={cn(
+                        "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500",
+                        active && "bg-white text-rose-500",
+                      )}
+                    >
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block text-sm font-semibold">
+                        {jump.label}
+                      </span>
+                      <span className="block truncate text-xs text-slate-500">
+                        {formatSwipeRankPeriodLabel(jump.period)}
+                      </span>
+                    </span>
+                    <ArrowRight className="h-4 w-4 text-slate-400 transition-transform group-hover:translate-x-0.5" />
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
         <CardContent className="flex flex-wrap items-end justify-between gap-4 p-5">
           <div className="min-w-[280px]">
             <label
@@ -443,19 +526,19 @@ export default function AdminSwipeRankPage() {
       )}
 
       {leaderboard && leaderboard.entries.length > 0 && (
-        <Card>
-          <CardHeader className="border-b">
+        <Card className="gap-0 overflow-hidden py-0">
+          <CardHeader className="border-b bg-slate-950 py-5 text-white">
             <div className="flex flex-wrap items-end justify-between gap-3">
               <div>
                 <CardTitle>
-                  {formatSwipeRankPeriodLabel(leaderboard.period)} observed
-                  match rate
+                  {formatSwipeRankPeriodLabel(leaderboard.period)} leaderboard
                 </CardTitle>
-                <CardDescription className="mt-1">
-                  Exact ranks inside the currently filtered eligible sample.
+                <CardDescription className="mt-1 text-slate-400">
+                  Exact ranks in the filtered sample, grouped into percentile
+                  bands.
                 </CardDescription>
               </div>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-slate-400">
                 As of{" "}
                 {leaderboard.asOf
                   ? new Date(leaderboard.asOf).toLocaleString()
@@ -464,153 +547,218 @@ export default function AdminSwipeRankPage() {
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-20">Rank</TableHead>
-                  <TableHead>Profile & media</TableHead>
-                  <TableHead>Peer descriptors</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead className="text-right">
-                    Observed match rate
-                  </TableHead>
-                  <TableHead className="text-right">
-                    Matches / right swipes
-                  </TableHead>
-                  <TableHead className="text-right">Activity</TableHead>
-                  <TableHead className="w-24">Quality</TableHead>
-                  <TableHead className="w-28">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {leaderboard.entries.map((entry) => (
-                  <TableRow key={entry.profileId}>
-                    <TableCell>
-                      <p className="font-bold tabular-nums">#{entry.rank}</p>
-                      {entry.tieCount > 1 && (
-                        <p className="text-xs text-gray-500">
-                          {entry.tieCount}-way tie
-                        </p>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex min-w-56 items-center gap-3">
-                        <Link
-                          href={`/admin/insights/tinder/${entry.providerProfileId}`}
-                          target="_blank"
-                          className="relative shrink-0"
-                          aria-label="Open profile inspector"
-                        >
-                          <Avatar className="h-12 w-12 rounded-lg border bg-gray-100">
-                            {entry.photoUrl && (
-                              <AvatarImage
-                                src={entry.photoUrl}
-                                alt=""
-                                className="rounded-lg"
-                              />
-                            )}
-                            <AvatarFallback className="rounded-lg font-mono text-xs">
-                              No photo
-                            </AvatarFallback>
-                          </Avatar>
-                          {entry.photoCount > 1 && (
-                            <span className="absolute -right-1 -bottom-1 rounded-full border bg-white px-1 text-[10px] font-bold shadow-sm">
-                              +{entry.photoCount - 1}
-                            </span>
-                          )}
-                        </Link>
-                        <div className="min-w-0">
-                          <Link
-                            href={`/admin/insights/tinder/${entry.providerProfileId}`}
-                            target="_blank"
-                            className="inline-flex max-w-48 items-center gap-1 truncate font-mono text-xs text-blue-700 hover:underline"
-                          >
-                            {entry.providerProfileId}
-                            <ExternalLink className="h-3 w-3 shrink-0" />
-                          </Link>
-                          <p className="mt-1 text-xs text-gray-500">
-                            {entry.photoCount.toLocaleString()} stored photo
-                            {entry.photoCount === 1 ? "" : "s"}
-                          </p>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      <p>
-                        {entry.gender ?? "Unknown"} →{" "}
-                        {entry.interestedIn ?? "Unknown"}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Age {entry.ageInPeriod ?? "—"}
-                      </p>
-                    </TableCell>
-                    <TableCell className="text-sm">
-                      {[entry.city, entry.region, entry.country]
-                        .filter(Boolean)
-                        .join(", ") || "—"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <p className="font-semibold tabular-nums">
-                        {formatMatchYield(entry.matchRate)}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        Top {entry.topShare?.toFixed(1) ?? "—"}%
-                      </p>
-                    </TableCell>
-                    <TableCell className="text-right text-sm tabular-nums">
-                      {entry.matchRateNumerator.toLocaleString()} /{" "}
-                      {entry.matchRateDenominator.toLocaleString()}
-                    </TableCell>
-                    <TableCell className="text-right text-sm">
-                      <p>{entry.activeDays} active days</p>
-                      <p className="text-xs text-gray-500">
-                        {entry.observedDays} observed
-                      </p>
-                    </TableCell>
-                    <TableCell>
-                      {entry.hasQualityAnomaly ? (
-                        <Badge
-                          title={entry.qualityFlags.join(", ")}
-                          className="bg-amber-100 text-amber-900 hover:bg-amber-100"
-                        >
-                          Review
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline">Clean</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col gap-2">
-                        <ButtonLink
-                          href={`/admin/insights/tinder/${entry.providerProfileId}`}
-                          target="_blank"
-                          variant="outline"
-                          size="xs"
-                          className="gap-1.5"
-                        >
-                          <Eye className="h-3.5 w-3.5" />
-                          View
-                        </ButtonLink>
-                        <Button
-                          variant="outline"
-                          size="xs"
-                          className="gap-1.5 text-amber-800"
-                          onClick={() =>
-                            openModeration({
-                              providerProfileId: entry.providerProfileId,
-                              excluded: true,
-                            })
-                          }
-                        >
-                          <Ban className="h-3.5 w-3.5" />
-                          Ban
-                        </Button>
-                      </div>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table className="min-w-[1180px]">
+                <TableHeader>
+                  <TableRow className="bg-slate-50/80 hover:bg-slate-50/80">
+                    <TableHead className="w-20">Rank</TableHead>
+                    <TableHead>Profile & images</TableHead>
+                    <TableHead>Orientation</TableHead>
+                    <TableHead>Location</TableHead>
+                    <TableHead className="text-right">
+                      Observed match rate
+                    </TableHead>
+                    <TableHead className="text-right">
+                      Matches / right swipes
+                    </TableHead>
+                    <TableHead className="text-right">Activity</TableHead>
+                    <TableHead className="w-24">Quality</TableHead>
+                    <TableHead className="w-28">Actions</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {leaderboard.entries.map((entry, index) => {
+                    const band = percentileBand(
+                      entry.rank,
+                      leaderboard.fieldSize,
+                    );
+                    const previousBand =
+                      index === 0
+                        ? null
+                        : percentileBand(
+                            leaderboard.entries[index - 1]!.rank,
+                            leaderboard.fieldSize,
+                          );
+                    const showBand = index === 0 || band !== previousBand;
+                    return (
+                      <Fragment key={entry.profileId}>
+                        {showBand && (
+                          <TableRow className="border-y bg-slate-50 hover:bg-slate-50">
+                            <TableCell
+                              colSpan={9}
+                              className="py-2 font-mono text-[11px] tracking-[0.12em] uppercase"
+                            >
+                              <span className="font-bold text-slate-900">
+                                {band === 100 ? "Full field" : `Top ${band}%`}
+                              </span>
+                              <span className="ml-3 text-slate-400">
+                                up to{" "}
+                                {Math.min(
+                                  leaderboard.fieldSize,
+                                  Math.max(
+                                    1,
+                                    Math.floor(
+                                      (leaderboard.fieldSize * band) / 100,
+                                    ),
+                                  ),
+                                ).toLocaleString()}{" "}
+                                entries
+                              </span>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                        <TableRow className="h-[88px] bg-white hover:bg-rose-50/30">
+                          <TableCell>
+                            <p
+                              className={cn(
+                                "flex h-10 min-w-10 items-center justify-center rounded-xl border font-bold tabular-nums",
+                                entry.rank === 1
+                                  ? "border-amber-300 bg-amber-50 text-amber-800"
+                                  : entry.rank === 2
+                                    ? "border-slate-300 bg-white text-slate-700"
+                                    : entry.rank === 3
+                                      ? "border-orange-200 bg-orange-50 text-orange-800"
+                                      : "border-transparent",
+                              )}
+                            >
+                              {entry.rank <= 3
+                                ? entry.rank.toLocaleString()
+                                : `#${entry.rank.toLocaleString()}`}
+                            </p>
+                            {entry.tieCount > 1 && (
+                              <p className="text-xs text-gray-500">
+                                {entry.tieCount}-way tie
+                              </p>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex min-w-56 items-center gap-3">
+                              <Link
+                                href={`/admin/insights/tinder/${entry.providerProfileId}`}
+                                target="_blank"
+                                className="relative shrink-0"
+                                aria-label="Open profile inspector"
+                              >
+                                <Avatar className="h-12 w-12 rounded-lg border bg-gray-100">
+                                  {entry.photoUrl && (
+                                    <AvatarImage
+                                      src={entry.photoUrl}
+                                      alt=""
+                                      className="rounded-lg"
+                                    />
+                                  )}
+                                  <AvatarFallback className="rounded-lg font-mono text-xs">
+                                    No image
+                                  </AvatarFallback>
+                                </Avatar>
+                                {entry.photoCount > 1 && (
+                                  <span className="absolute -right-1 -bottom-1 rounded-full border bg-white px-1 text-[10px] font-bold shadow-sm">
+                                    +{entry.photoCount - 1}
+                                  </span>
+                                )}
+                              </Link>
+                              <div className="min-w-0">
+                                <Link
+                                  href={`/admin/insights/tinder/${entry.providerProfileId}`}
+                                  target="_blank"
+                                  className="inline-flex max-w-48 items-center gap-1 truncate font-mono text-xs text-blue-700 hover:underline"
+                                >
+                                  {entry.providerProfileId}
+                                  <ExternalLink className="h-3 w-3 shrink-0" />
+                                </Link>
+                                <p className="mt-1 text-xs text-gray-500">
+                                  {entry.photoCount.toLocaleString()} stored
+                                  image
+                                  {entry.photoCount === 1 ? "" : "s"}
+                                </p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            <Badge
+                              variant="outline"
+                              title="Inferred from current gender and interested-in preference"
+                            >
+                              {formatSwipeRankOrientation(
+                                entry.gender,
+                                entry.interestedIn,
+                              )}
+                            </Badge>
+                            <p className="text-xs text-gray-500">
+                              {entry.gender
+                                ? entry.gender.charAt(0) +
+                                  entry.gender.slice(1).toLowerCase()
+                                : "Unknown"}
+                              , age {entry.ageInPeriod ?? "—"}
+                            </p>
+                          </TableCell>
+                          <TableCell className="text-sm">
+                            {[entry.city, entry.region, entry.country]
+                              .filter(Boolean)
+                              .join(", ") || "—"}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <p className="font-semibold tabular-nums">
+                              {formatMatchYield(entry.matchRate)}
+                            </p>
+                          </TableCell>
+                          <TableCell className="text-right text-sm tabular-nums">
+                            {entry.matchRateNumerator.toLocaleString()} /{" "}
+                            {entry.matchRateDenominator.toLocaleString()}
+                          </TableCell>
+                          <TableCell className="text-right text-sm">
+                            <p>{entry.activeDays} active days</p>
+                            <p className="text-xs text-gray-500">
+                              {entry.observedDays} observed
+                            </p>
+                          </TableCell>
+                          <TableCell>
+                            {entry.hasQualityAnomaly ? (
+                              <Badge
+                                title={entry.qualityFlags.join(", ")}
+                                className="bg-amber-100 text-amber-900 hover:bg-amber-100"
+                              >
+                                Review
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline">Clean</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col gap-2">
+                              <ButtonLink
+                                href={`/admin/insights/tinder/${entry.providerProfileId}`}
+                                target="_blank"
+                                variant="outline"
+                                size="xs"
+                                className="gap-1.5"
+                              >
+                                <Eye className="h-3.5 w-3.5" />
+                                View
+                              </ButtonLink>
+                              <Button
+                                variant="outline"
+                                size="xs"
+                                className="gap-1.5 text-amber-800"
+                                onClick={() =>
+                                  openModeration({
+                                    providerProfileId: entry.providerProfileId,
+                                    excluded: true,
+                                  })
+                                }
+                              >
+                                <Ban className="h-3.5 w-3.5" />
+                                Ban
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      </Fragment>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
           </CardContent>
         </Card>
       )}

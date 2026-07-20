@@ -239,7 +239,7 @@ export async function getPublicSwipeRankLeaderboard(input: {
           count(*)::bigint AS photo_count
         FROM media
         WHERE media.tinder_profile_id = profile.provider_profile_id
-          AND media.type = 'photo'
+          AND media.type IN ('image', 'photo')
       ) AS profile_media ON true
       WHERE profile.data_provider = 'TINDER'
         AND profile.is_synthetic = false
