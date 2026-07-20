@@ -30,18 +30,22 @@ conversation repair without `--apply` for a read-only comparison against
 canonical outbound-like yield. The retired per-profile and source-blob modes do
 not have a safe canonical equivalent.
 
-## 2. Verify legacy cohort retirement
+## 2. Verify legacy cohort cleanup after the rollback window
 
 ```sh
 bun run data-layer:audit-cohorts
 bun run data-layer:audit-cohorts -- --json
 ```
 
-Proves that the obsolete `cohort_definition` and `cohort_stats` tables are
-absent, that no fake `cohort_*` Tinder profiles remain, and that the activated
-SwipeRank replacement has versioned facts. Saved editorial cohort definitions
-live on immutable SwipeRank snapshots; live age, gender, interest, and location
-comparisons use descriptor filters against the same fact build as ranking.
+Run this after the follow-up cleanup migration, not as a first-release launch
+gate. The initial SwipeRank migration deliberately preserves the obsolete
+`cohort_definition` and `cohort_stats` tables so the previous production build
+remains rollback-safe, while all new product reads use SwipeRank. This command
+then proves those tables are absent, no fake `cohort_*` Tinder profiles remain,
+and the activated replacement has versioned facts. Saved editorial cohort
+definitions live on immutable SwipeRank snapshots; live age, gender, interest,
+and location comparisons use descriptor filters against the same fact build as
+ranking.
 
 ## 3. Probe a descriptor-defined cohort
 

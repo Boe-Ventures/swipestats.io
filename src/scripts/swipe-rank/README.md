@@ -46,7 +46,7 @@ profile. Restoring clears the active exclusion metadata.
 
 ## Versioned fact build
 
-Migrations `0008` onward add the provider-neutral profile registry, auditable
+Migration `0010_swipe_rank_and_upload_pipeline` adds the provider-neutral profile registry, auditable
 build records and activation state, period facts, and leaderboard
 snapshot/entry tables. They do not change or periodize legacy `profile_meta`.
 

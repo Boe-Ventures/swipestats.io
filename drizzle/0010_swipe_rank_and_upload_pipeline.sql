@@ -2,18 +2,20 @@ CREATE TYPE "public"."SwipeRankBuildScope" AS ENUM('FULL', 'PROFILE');--> statem
 CREATE TYPE "public"."SwipeRankBuildStatus" AS ENUM('RUNNING', 'COMPLETE', 'FAILED');--> statement-breakpoint
 CREATE TYPE "public"."SwipeRankPeriodKind" AS ENUM('MONTH', 'QUARTER', 'YEAR', 'ALL_TIME');--> statement-breakpoint
 CREATE TYPE "public"."SwipeRankSnapshotStatus" AS ENUM('DRAFT', 'PUBLISHED', 'ARCHIVED');--> statement-breakpoint
+CREATE TYPE "public"."TransientUploadStatus" AS ENUM('ISSUED', 'UPLOADED', 'PROCESSING', 'COMMITTED', 'CLEANED', 'ABANDONED');--> statement-breakpoint
 CREATE TABLE "swipe_rank_build" (
 	"id" text PRIMARY KEY NOT NULL,
 	"data_provider" "DataProvider" NOT NULL,
 	"metric_version" text NOT NULL,
 	"scope" "SwipeRankBuildScope" NOT NULL,
 	"status" "SwipeRankBuildStatus" DEFAULT 'RUNNING' NOT NULL,
-	"requested_profile_ids" jsonb DEFAULT '[]'::jsonb NOT NULL,
 	"source_watermark" jsonb DEFAULT '{}'::jsonb NOT NULL,
 	"started_at" timestamp NOT NULL,
 	"completed_at" timestamp,
-	"error" text,
-	CONSTRAINT "swipe_rank_build_completion_state" CHECK (("swipe_rank_build"."status" = 'RUNNING' AND "swipe_rank_build"."completed_at" IS NULL) OR ("swipe_rank_build"."status" <> 'RUNNING' AND "swipe_rank_build"."completed_at" IS NOT NULL))
+	"activated_at" timestamp,
+	"failure_code" text,
+	CONSTRAINT "swipe_rank_build_completion_state" CHECK (("swipe_rank_build"."status" = 'RUNNING' AND "swipe_rank_build"."completed_at" IS NULL) OR ("swipe_rank_build"."status" <> 'RUNNING' AND "swipe_rank_build"."completed_at" IS NOT NULL)),
+	CONSTRAINT "swipe_rank_build_activation_state" CHECK ("swipe_rank_build"."activated_at" IS NULL OR ("swipe_rank_build"."scope" = 'FULL' AND "swipe_rank_build"."status" = 'COMPLETE' AND "swipe_rank_build"."completed_at" IS NOT NULL))
 );
 --> statement-breakpoint
 CREATE TABLE "swipe_rank_entry" (
@@ -89,11 +91,26 @@ CREATE TABLE "swipe_rank_profile" (
 	"country" text,
 	"location_source" text,
 	"is_synthetic" boolean DEFAULT false NOT NULL,
+	"is_swipe_rank_excluded" boolean DEFAULT false NOT NULL,
+	"swipe_rank_exclusion_reason" text,
+	"swipe_rank_excluded_at" timestamp,
+	"swipe_rank_excluded_by" text,
 	"capabilities" jsonb DEFAULT '{}'::jsonb NOT NULL,
 	"source_profile_updated_at" timestamp NOT NULL,
 	"source_file_created_at" timestamp,
 	"created_at" timestamp NOT NULL,
-	"updated_at" timestamp NOT NULL
+	"updated_at" timestamp NOT NULL,
+	CONSTRAINT "swipe_rank_profile_exclusion_state" CHECK ((
+        "swipe_rank_profile"."is_swipe_rank_excluded" = false
+        AND "swipe_rank_profile"."swipe_rank_exclusion_reason" IS NULL
+        AND "swipe_rank_profile"."swipe_rank_excluded_at" IS NULL
+        AND "swipe_rank_profile"."swipe_rank_excluded_by" IS NULL
+      ) OR (
+        "swipe_rank_profile"."is_swipe_rank_excluded" = true
+        AND nullif(btrim("swipe_rank_profile"."swipe_rank_exclusion_reason"), '') IS NOT NULL
+        AND "swipe_rank_profile"."swipe_rank_excluded_at" IS NOT NULL
+        AND nullif(btrim("swipe_rank_profile"."swipe_rank_excluded_by"), '') IS NOT NULL
+      ))
 );
 --> statement-breakpoint
 CREATE TABLE "swipe_rank_snapshot" (
@@ -112,7 +129,6 @@ CREATE TABLE "swipe_rank_snapshot" (
 	"minimum_active_days" integer DEFAULT 0 NOT NULL,
 	"field_size" integer NOT NULL,
 	"status" "SwipeRankSnapshotStatus" DEFAULT 'DRAFT' NOT NULL,
-	"is_public" boolean DEFAULT false NOT NULL,
 	"source_cutoff" timestamp NOT NULL,
 	"created_at" timestamp NOT NULL,
 	"published_at" timestamp,
@@ -122,12 +138,56 @@ CREATE TABLE "swipe_rank_snapshot" (
 	CONSTRAINT "swipe_rank_snapshot_publication_state" CHECK (("swipe_rank_snapshot"."status" = 'PUBLISHED' AND "swipe_rank_snapshot"."published_at" IS NOT NULL) OR ("swipe_rank_snapshot"."status" <> 'PUBLISHED'))
 );
 --> statement-breakpoint
+CREATE TABLE "swipe_rank_source_mutation" (
+	"id" bigserial PRIMARY KEY NOT NULL,
+	"data_provider" "DataProvider" NOT NULL,
+	"created_at" timestamp NOT NULL
+);
+--> statement-breakpoint
+CREATE TABLE "transient_upload" (
+	"id" text PRIMARY KEY NOT NULL,
+	"user_id" text,
+	"session_id" text NOT NULL,
+	"data_provider" "DataProvider" NOT NULL,
+	"profile_id" text NOT NULL,
+	"expected_pathname" text NOT NULL,
+	"blob_url" text,
+	"blob_pathname" text,
+	"status" "TransientUploadStatus" DEFAULT 'ISSUED' NOT NULL,
+	"result_profile_id" text,
+	"expires_at" timestamp with time zone NOT NULL,
+	"uploaded_at" timestamp with time zone,
+	"processing_started_at" timestamp with time zone,
+	"committed_at" timestamp with time zone,
+	"cleaned_at" timestamp with time zone,
+	"cleanup_attempted_at" timestamp with time zone,
+	"cleanup_attempts" integer DEFAULT 0 NOT NULL,
+	"last_cleanup_error" text,
+	"created_at" timestamp with time zone NOT NULL,
+	"updated_at" timestamp with time zone NOT NULL,
+	CONSTRAINT "transient_upload_blobUrl_unique" UNIQUE("blob_url"),
+	CONSTRAINT "transient_upload_provider" CHECK ("transient_upload"."data_provider" IN ('TINDER', 'HINGE')),
+	CONSTRAINT "transient_upload_cleanup_attempts" CHECK ("transient_upload"."cleanup_attempts" >= 0),
+	CONSTRAINT "transient_upload_blob_state" CHECK ("transient_upload"."status" IN ('ISSUED', 'ABANDONED') OR ("transient_upload"."blob_url" IS NOT NULL AND "transient_upload"."blob_pathname" IS NOT NULL AND "transient_upload"."uploaded_at" IS NOT NULL)),
+	CONSTRAINT "transient_upload_processing_state" CHECK ("transient_upload"."status" <> 'PROCESSING' OR "transient_upload"."processing_started_at" IS NOT NULL),
+	CONSTRAINT "transient_upload_commit_state" CHECK ("transient_upload"."status" NOT IN ('COMMITTED', 'CLEANED') OR ("transient_upload"."result_profile_id" IS NOT NULL AND "transient_upload"."committed_at" IS NOT NULL)),
+	CONSTRAINT "transient_upload_cleaned_state" CHECK ("transient_upload"."status" <> 'CLEANED' OR "transient_upload"."cleaned_at" IS NOT NULL),
+	CONSTRAINT "transient_upload_abandoned_state" CHECK ("transient_upload"."status" <> 'ABANDONED' OR ("transient_upload"."result_profile_id" IS NULL AND "transient_upload"."committed_at" IS NULL)),
+	CONSTRAINT "transient_upload_lease_bounds" CHECK ("transient_upload"."expires_at" > "transient_upload"."created_at")
+);
+--> statement-breakpoint
+ALTER TABLE "hinge_prompt" ALTER COLUMN "prompt" DROP NOT NULL;--> statement-breakpoint
+ALTER TABLE "hinge_profile" ADD COLUMN "first_account_create_date" timestamp;--> statement-breakpoint
+ALTER TABLE "hinge_profile" ADD COLUMN "last_seen_at" timestamp;--> statement-breakpoint
+ALTER TABLE "hinge_prompt" ADD COLUMN "provider_prompt_id" integer;--> statement-breakpoint
+ALTER TABLE "tinder_profile" ADD COLUMN "create_date_source" text;--> statement-breakpoint
 ALTER TABLE "swipe_rank_entry" ADD CONSTRAINT "swipe_rank_entry_snapshot_id_swipe_rank_snapshot_id_fk" FOREIGN KEY ("snapshot_id") REFERENCES "public"."swipe_rank_snapshot"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "swipe_rank_entry" ADD CONSTRAINT "swipe_rank_entry_profile_id_swipe_rank_profile_id_fk" FOREIGN KEY ("profile_id") REFERENCES "public"."swipe_rank_profile"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "swipe_rank_period_fact" ADD CONSTRAINT "swipe_rank_period_fact_profile_id_swipe_rank_profile_id_fk" FOREIGN KEY ("profile_id") REFERENCES "public"."swipe_rank_profile"("id") ON DELETE cascade ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "swipe_rank_period_fact" ADD CONSTRAINT "swipe_rank_period_fact_build_id_swipe_rank_build_id_fk" FOREIGN KEY ("build_id") REFERENCES "public"."swipe_rank_build"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "swipe_rank_profile" ADD CONSTRAINT "swipe_rank_profile_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "swipe_rank_snapshot" ADD CONSTRAINT "swipe_rank_snapshot_build_id_swipe_rank_build_id_fk" FOREIGN KEY ("build_id") REFERENCES "public"."swipe_rank_build"("id") ON DELETE restrict ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "transient_upload" ADD CONSTRAINT "transient_upload_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE set null ON UPDATE no action;--> statement-breakpoint
 CREATE INDEX "swipe_rank_build_provider_version_idx" ON "swipe_rank_build" USING btree ("data_provider","metric_version","started_at");--> statement-breakpoint
 CREATE INDEX "swipe_rank_build_status_idx" ON "swipe_rank_build" USING btree ("status","started_at");--> statement-breakpoint
 CREATE UNIQUE INDEX "swipe_rank_entry_snapshot_profile_idx" ON "swipe_rank_entry" USING btree ("snapshot_id","profile_id");--> statement-breakpoint
@@ -141,5 +201,19 @@ CREATE UNIQUE INDEX "swipe_rank_profile_provider_profile_idx" ON "swipe_rank_pro
 CREATE UNIQUE INDEX "swipe_rank_profile_provider_user_idx" ON "swipe_rank_profile" USING btree ("data_provider","user_id");--> statement-breakpoint
 CREATE INDEX "swipe_rank_profile_dimensions_idx" ON "swipe_rank_profile" USING btree ("data_provider","gender","interested_in");--> statement-breakpoint
 CREATE INDEX "swipe_rank_profile_country_idx" ON "swipe_rank_profile" USING btree ("data_provider","country");--> statement-breakpoint
+CREATE INDEX "swipe_rank_profile_exclusion_idx" ON "swipe_rank_profile" USING btree ("data_provider","is_swipe_rank_excluded");--> statement-breakpoint
 CREATE UNIQUE INDEX "swipe_rank_snapshot_edition_idx" ON "swipe_rank_snapshot" USING btree ("data_provider","metric_key","metric_version","eligibility_version","period_kind","period_start","cohort_hash","build_id");--> statement-breakpoint
-CREATE INDEX "swipe_rank_snapshot_public_idx" ON "swipe_rank_snapshot" USING btree ("is_public","status","period_kind","period_start");
+CREATE INDEX "swipe_rank_snapshot_status_idx" ON "swipe_rank_snapshot" USING btree ("status","period_kind","period_start");--> statement-breakpoint
+CREATE INDEX "swipe_rank_source_mutation_provider_idx" ON "swipe_rank_source_mutation" USING btree ("data_provider","id");--> statement-breakpoint
+CREATE INDEX "transient_upload_owner_idx" ON "transient_upload" USING btree ("user_id","session_id");--> statement-breakpoint
+CREATE INDEX "transient_upload_expiry_idx" ON "transient_upload" USING btree ("status","expires_at");--> statement-breakpoint
+CREATE UNIQUE INDEX "transient_upload_binding_idx" ON "transient_upload" USING btree ("user_id","session_id","data_provider","profile_id","expected_pathname");--> statement-breakpoint
+CREATE UNIQUE INDEX "profile_meta_tinder_profile_id_unique" ON "profile_meta" USING btree ("tinder_profile_id");--> statement-breakpoint
+CREATE UNIQUE INDEX "profile_meta_hinge_profile_id_unique" ON "profile_meta" USING btree ("hinge_profile_id");--> statement-breakpoint
+ALTER TABLE "hinge_profile" ADD CONSTRAINT "hinge_profile_account_signup_order" CHECK ("hinge_profile"."first_account_create_date" IS NULL OR "hinge_profile"."first_account_create_date" <= "hinge_profile"."create_date");--> statement-breakpoint
+ALTER TABLE "profile_meta" ADD CONSTRAINT "profile_meta_exactly_one_provider" CHECK (num_nonnulls("profile_meta"."tinder_profile_id", "profile_meta"."hinge_profile_id") = 1);--> statement-breakpoint
+ALTER TABLE "profile_meta" ADD CONSTRAINT "profile_meta_period_bounds" CHECK ("profile_meta"."from" <= "profile_meta"."to" AND "profile_meta"."days_in_period" >= 1 AND "profile_meta"."days_active" >= 0 AND "profile_meta"."days_active" <= "profile_meta"."days_in_period");--> statement-breakpoint
+ALTER TABLE "profile_meta" ADD CONSTRAINT "profile_meta_nonnegative_core_metrics" CHECK ("profile_meta"."swipe_likes_total" >= 0 AND "profile_meta"."swipe_passes_total" >= 0 AND "profile_meta"."matches_total" >= 0 AND "profile_meta"."messages_sent_total" >= 0 AND "profile_meta"."messages_received_total" >= 0 AND "profile_meta"."app_opens_total" >= 0 AND "profile_meta"."like_rate" >= 0 AND "profile_meta"."like_rate" <= 1 AND "profile_meta"."match_rate" >= 0 AND "profile_meta"."swipes_per_day" >= 0);--> statement-breakpoint
+ALTER TABLE "profile_meta" ADD CONSTRAINT "profile_meta_conversation_counts" CHECK ("profile_meta"."conversation_count" >= 0 AND "profile_meta"."conversations_with_messages" >= 0 AND "profile_meta"."conversations_with_messages" <= "profile_meta"."conversation_count" AND "profile_meta"."ghosted_count" = "profile_meta"."conversation_count" - "profile_meta"."conversations_with_messages");--> statement-breakpoint
+ALTER TABLE "profile_meta" ADD CONSTRAINT "profile_meta_nonnegative_conversation_metrics" CHECK (("profile_meta"."average_response_time_seconds" IS NULL OR "profile_meta"."average_response_time_seconds" >= 0) AND ("profile_meta"."mean_response_time_seconds" IS NULL OR "profile_meta"."mean_response_time_seconds" >= 0) AND ("profile_meta"."median_conversation_duration_days" IS NULL OR "profile_meta"."median_conversation_duration_days" >= 0) AND ("profile_meta"."longest_conversation_days" IS NULL OR "profile_meta"."longest_conversation_days" >= 0) AND ("profile_meta"."average_messages_per_conversation" IS NULL OR "profile_meta"."average_messages_per_conversation" >= 0) AND ("profile_meta"."median_messages_per_conversation" IS NULL OR "profile_meta"."median_messages_per_conversation" >= 0));--> statement-breakpoint
+ALTER TABLE "tinder_profile" ADD CONSTRAINT "tinder_profile_create_date_source" CHECK ("tinder_profile"."create_date_source" IS NULL OR "tinder_profile"."create_date_source" IN ('PROVIDER', 'INFERRED_FROM_USAGE'));

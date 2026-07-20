@@ -2351,6 +2351,80 @@ export type AiOutputRowInsert = typeof aiOutputTable.$inferInsert;
 // by content id; image URLs are resolved live on read (not frozen), so the roast
 // always renders against the current profile.
 
+// ---- LEGACY COHORT TABLES ----------------------------------------
+//
+// SwipeRank supersedes these tables for product reads. Keep their schema in the
+// first SwipeRank release so the previous production build remains rollback-safe;
+// a later cleanup migration can remove them after the new reads are established.
+
+export const cohortDefinitionTable = pgTable("cohort_definition", (t) => ({
+  id: t.text().primaryKey(),
+  name: t.text().notNull(),
+  description: t.text(),
+  dataProvider: dataProviderEnum(),
+  gender: genderEnum(),
+  ageMin: t.integer(),
+  ageMax: t.integer(),
+  country: t.text(),
+  region: t.text(),
+  type: t.text().$type<"SYSTEM" | "USER_CUSTOM">().default("SYSTEM").notNull(),
+  createdByUserId: t
+    .text()
+    .references(() => userTable.id, { onDelete: "cascade" }),
+  profileCount: t.integer().default(0).notNull(),
+  lastComputedAt: t.timestamp(),
+  createdAt: t
+    .timestamp()
+    .$defaultFn(() => new Date())
+    .notNull(),
+}));
+
+export type CohortDefinition = typeof cohortDefinitionTable.$inferSelect;
+export type CohortDefinitionInsert = typeof cohortDefinitionTable.$inferInsert;
+
+export const cohortStatsTable = pgTable(
+  "cohort_stats",
+  (t) => ({
+    id: t
+      .text()
+      .primaryKey()
+      .$defaultFn(() => createId("cst")),
+    cohortId: t
+      .text()
+      .notNull()
+      .references(() => cohortDefinitionTable.id, { onDelete: "cascade" }),
+    period: t.text().notNull().default("all-time"),
+    periodStart: t.timestamp(),
+    periodEnd: t.timestamp(),
+    profileCount: t.integer().notNull(),
+    likeRateP10: t.doublePrecision(),
+    likeRateP25: t.doublePrecision(),
+    likeRateP50: t.doublePrecision(),
+    likeRateP75: t.doublePrecision(),
+    likeRateP90: t.doublePrecision(),
+    likeRateMean: t.doublePrecision(),
+    matchRateP10: t.doublePrecision(),
+    matchRateP25: t.doublePrecision(),
+    matchRateP50: t.doublePrecision(),
+    matchRateP75: t.doublePrecision(),
+    matchRateP90: t.doublePrecision(),
+    matchRateMean: t.doublePrecision(),
+    swipesPerDayP10: t.doublePrecision(),
+    swipesPerDayP25: t.doublePrecision(),
+    swipesPerDayP50: t.doublePrecision(),
+    swipesPerDayP75: t.doublePrecision(),
+    swipesPerDayP90: t.doublePrecision(),
+    swipesPerDayMean: t.doublePrecision(),
+    computedAt: t.timestamp().notNull(),
+  }),
+  (t) => ({
+    cohortPeriodIdx: uniqueIndex("cohort_period_idx").on(t.cohortId, t.period),
+  }),
+);
+
+export type CohortStats = typeof cohortStatsTable.$inferSelect;
+export type CohortStatsInsert = typeof cohortStatsTable.$inferInsert;
+
 // ---- RELATIONS ----------------------------------------------------
 
 export const userRelations = relations(userTable, ({ one, many }) => ({
@@ -2376,6 +2450,7 @@ export const userRelations = relations(userTable, ({ one, many }) => ({
   purchases: many(purchaseTable),
   profileComparisons: many(profileComparisonTable),
   uploadedAttachments: many(attachmentTable),
+  cohortDefinitions: many(cohortDefinitionTable),
   aiOutputs: many(aiOutputTable),
   catalogMemberships: many(catalogEntryMemberTable),
   submittedCatalogClaims: many(catalogEntryClaimTable, {
@@ -2743,6 +2818,24 @@ export const profileComparisonFeedbackRelations = relations(
     }),
   }),
 );
+
+export const cohortDefinitionRelations = relations(
+  cohortDefinitionTable,
+  ({ one, many }) => ({
+    createdBy: one(userTable, {
+      fields: [cohortDefinitionTable.createdByUserId],
+      references: [userTable.id],
+    }),
+    stats: many(cohortStatsTable),
+  }),
+);
+
+export const cohortStatsRelations = relations(cohortStatsTable, ({ one }) => ({
+  cohort: one(cohortDefinitionTable, {
+    fields: [cohortStatsTable.cohortId],
+    references: [cohortDefinitionTable.id],
+  }),
+}));
 
 export const aiOutputRelations = relations(aiOutputTable, ({ one }) => ({
   user: one(userTable, {

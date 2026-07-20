@@ -1,1 +1,0 @@
-ALTER TABLE "hinge_profile" ADD COLUMN "last_seen_at" timestamp;
