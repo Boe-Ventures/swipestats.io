@@ -33,6 +33,8 @@ const agentDiscoveryLinkHeader = [
 ].join(", ");
 
 const config: NextConfig = {
+  allowedDevOrigins: ["swipestats.localhost", "*.swipestats.localhost"],
+
   /** Enable MDX pages */
   pageExtensions: ["ts", "tsx", "md", "mdx"],
 

@@ -11,7 +11,9 @@ SwipeStats is a dating app analytics platform that helps users understand their 
 ```bash
 # Development
 bun install          # Install dependencies
-bun dev              # Start dev server (uses Turbopack)
+bun dev              # Start at https://swipestats.localhost:1355 via Portless
+bun dev:direct       # Start Next directly (used internally by Portless)
+bun dev:turbo        # Optional direct Turbopack server
 
 # Build & Run
 bun build            # Build Velite + Next and apply committed Drizzle migrations
