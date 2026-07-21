@@ -12,6 +12,7 @@ interface BlogPageContentProps {
   featuredSlugs: string[];
   title: string;
   description: string;
+  showHeader?: boolean;
 }
 
 // Filter function to match posts against search query
@@ -47,6 +48,7 @@ export function BlogPageContent({
   featuredSlugs,
   title,
   description,
+  showHeader = true,
 }: BlogPageContentProps) {
   const [searchQuery] = useQueryState("q", { defaultValue: "" });
   const [selectedTag] = useQueryState("tag", { defaultValue: "" });
@@ -83,6 +85,7 @@ export function BlogPageContent({
       posts={regularPosts}
       title={title}
       description={description}
+      showHeader={showHeader}
       showFeatured={featuredPosts.length > 0}
       featuredPosts={featuredPosts}
       searchComponent={

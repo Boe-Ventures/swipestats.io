@@ -7,6 +7,10 @@ import { BlogPageContent } from "./BlogPageContent";
 
 const ogImageUrl = `${env.NEXT_PUBLIC_BASE_URL}/api/og?title=${encodeURIComponent("Dating Advice, Tested Against the Data")}&subtitle=${encodeURIComponent("Statistics, app reviews, prompts, and practical guides from SwipeStats.")}&path=%2Fblog&variant=hero&screenshot=${encodeURIComponent("/images/blog/thumbnails/tinder-statistics.jpg")}`;
 
+const pageTitle = "Dating advice, tested against the data";
+const pageDescription =
+  "Statistics, app reviews, prompts, and practical guides grounded in what people actually do.";
+
 export const metadata = {
   // Root/marketing title.template appends " | SwipeStats", so don't repeat it here.
   title: "Dating App Data, Guides & Reviews",
@@ -68,14 +72,51 @@ export default function BlogPage() {
     "best-hinge-openers",
   ];
 
+  const blogJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Blog",
+    name: "SwipeStats Blog",
+    description: pageDescription,
+    url: `${env.NEXT_PUBLIC_BASE_URL}/blog`,
+    publisher: {
+      "@type": "Organization",
+      name: "SwipeStats",
+      url: env.NEXT_PUBLIC_BASE_URL,
+    },
+    blogPost: sortedPosts.map((post) => ({
+      "@type": "BlogPosting",
+      headline: post.h1,
+      url: `${env.NEXT_PUBLIC_BASE_URL}/blog/${post.slug}`,
+      datePublished: post.publishedAt,
+      dateModified: post.updatedAt || post.publishedAt,
+    })),
+  };
+
   return (
-    <Suspense fallback={<div className="container py-12">Loading...</div>}>
-      <BlogPageContent
-        allPosts={sortedPosts}
-        featuredSlugs={FEATURED_SLUGS}
-        title="Dating advice, tested against the data"
-        description="Statistics, app reviews, prompts, and practical guides grounded in what people actually do."
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(blogJsonLd) }}
       />
-    </Suspense>
+      <div className="mx-auto max-w-7xl px-4 pt-6 sm:px-6 sm:pt-12 lg:px-8">
+        <div className="space-y-2">
+          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
+            {pageTitle}
+          </h1>
+          <p className="text-muted-foreground text-base sm:text-lg">
+            {pageDescription}
+          </p>
+        </div>
+      </div>
+      <Suspense fallback={<div className="container py-12">Loading...</div>}>
+        <BlogPageContent
+          allPosts={sortedPosts}
+          featuredSlugs={FEATURED_SLUGS}
+          title={pageTitle}
+          description={pageDescription}
+          showHeader={false}
+        />
+      </Suspense>
+    </>
   );
 }

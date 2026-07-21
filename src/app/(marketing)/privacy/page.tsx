@@ -44,17 +44,20 @@ export default function PrivacyPage() {
             comparisons
           </li>
           <li>
-            We never sell your personal data — only anonymized, aggregated
-            research datasets
+            We never sell your personal data. We license only anonymized,
+            aggregated research datasets
           </li>
           <li>
             Our data extraction code is{" "}
             <SmartLink href="https://github.com/Boe-Ventures/swipestats.io/blob/main/src/lib/upload/extract-tinder-data.ts">
               open source
             </SmartLink>{" "}
-            — you can see exactly what we strip and what we keep
+            so you can see exactly what we strip and what we keep
           </li>
-          <li>You can delete your data at any time</li>
+          <li>
+            You can delete your SwipeStats account and uploaded product data at
+            any time
+          </li>
         </ul>
         <p>Now, here&apos;s the full policy:</p>
 
@@ -163,7 +166,7 @@ export default function PrivacyPage() {
 
         <p>
           We generate a unique, hashed profile ID from your birth date and
-          account creation date — this means your profile can&apos;t be linked
+          account creation date. This means your profile can&apos;t be linked
           back to your real identity.
         </p>
         <p>
@@ -176,7 +179,7 @@ export default function PrivacyPage() {
 
         <p>
           <strong>Payment info:</strong> Card details are processed by
-          LemonSqueezy (a Stripe company) — we never see or store your full card
+          LemonSqueezy (a Stripe company). We never see or store your full card
           number. We keep billing address and transaction history.
         </p>
 
@@ -247,7 +250,7 @@ export default function PrivacyPage() {
         <p>
           Withdrawing consent doesn&apos;t affect anything we did before you
           withdrew it. And data that&apos;s already been anonymized into
-          aggregate research can&apos;t be deleted — because it&apos;s no longer
+          aggregate research can&apos;t be deleted because it&apos;s no longer
           linked to you in any way.
         </p>
 
@@ -355,9 +358,9 @@ export default function PrivacyPage() {
           </li>
         </ul>
         <p>
-          Our anonymization meets the GDPR Recital 26 standard — the data
-          &quot;does not relate to an identified or identifiable natural
-          person.&quot;
+          We design our anonymization process around the GDPR Recital 26 test:
+          whether a person remains reasonably identifiable from the released
+          data.
         </p>
 
         <h3>What this means for you</h3>
@@ -419,6 +422,12 @@ export default function PrivacyPage() {
               <td>Usage analytics, session replays</td>
               <td>Product analytics and debugging</td>
               <td>Data anonymization, DPA</td>
+            </tr>
+            <tr>
+              <td>Amplitude</td>
+              <td>Usage analytics, session replays</td>
+              <td>Product analytics and debugging</td>
+              <td>EU data residency, DPA</td>
             </tr>
             <tr>
               <td>Research partners</td>
@@ -540,7 +549,9 @@ export default function PrivacyPage() {
             </tr>
             <tr>
               <td>Backup copies</td>
-              <td>Automatically deleted after a reasonable period</td>
+              <td>
+                Expire according to our infrastructure providers&apos; schedules
+              </td>
             </tr>
           </tbody>
         </table>
@@ -550,13 +561,20 @@ export default function PrivacyPage() {
         </p>
         <ul>
           <li>
-            Personal data is removed from our active systems within a reasonable
-            timeframe
+            Your account and uploaded product data are removed from SwipeStats
           </li>
-          <li>Backups are purged on a regular schedule</li>
           <li>
-            Anonymized data stays — because it&apos;s no longer linked to you
+            We submit an erasure request for analytics tied to your user ID in
+            Amplitude
           </li>
+          <li>
+            PostHog records and other retained provider data are handled through
+            a verified request to{" "}
+            <SmartLink href="mailto:privacy@swipestats.io">
+              privacy@swipestats.io
+            </SmartLink>
+          </li>
+          <li>Anonymized data stays because it is no longer linked to you</li>
         </ul>
 
         <h2>9. What are my privacy rights?</h2>
@@ -651,16 +669,16 @@ export default function PrivacyPage() {
             <strong>Correct</strong> inaccurate personal information
           </li>
           <li>
-            <strong>Opt out of sale/sharing</strong> — we don&apos;t sell
+            <strong>Opt out of sale/sharing:</strong> We don&apos;t sell
             personal info or share it for behavioral advertising, so this
             doesn&apos;t apply
           </li>
           <li>
-            <strong>Limit sensitive info use</strong> — you can restrict how we
+            <strong>Limit sensitive info use:</strong> You can restrict how we
             use sensitive personal information
           </li>
           <li>
-            <strong>Non-discrimination</strong> — we won&apos;t treat you
+            <strong>Non-discrimination:</strong> We won&apos;t treat you
             differently for exercising your rights
           </li>
         </ul>
@@ -710,7 +728,7 @@ export default function PrivacyPage() {
             </tr>
             <tr>
               <td>Advertising</td>
-              <td>Third-party / cross-site ad pixels — we run none today</td>
+              <td>Third-party / cross-site ad pixels. We run none today.</td>
               <td>Yes</td>
             </tr>
           </tbody>
@@ -720,14 +738,14 @@ export default function PrivacyPage() {
         <p>
           Nothing non-essential runs until you choose. The first time you visit,
           a banner lets you <strong>Accept all</strong>,{" "}
-          <strong>Reject all</strong>, or pick category by category — and we
+          <strong>Reject all</strong>, or pick category by category. We
           don&apos;t set analytics, functional, or advertising cookies before
           you do.
         </p>
         <p>
-          Operational records — creating your account, processing a payment,
-          keeping the service secure — run under legitimate interest (GDPR Art.
-          6(1)(f)) and don&apos;t rely on cookies.
+          Operational records for account creation, payment processing, and
+          service security run under legitimate interest (GDPR Art. 6(1)(f)) and
+          don&apos;t rely on cookies.
         </p>
 
         <h3>Session replays</h3>
@@ -742,18 +760,18 @@ export default function PrivacyPage() {
         <ul>
           <li>
             Anytime via{" "}
-            <SmartLink href="/cookies">Cookie preferences</SmartLink> — change
-            or withdraw any category.
+            <SmartLink href="/cookies">Cookie preferences</SmartLink>. You can
+            change or withdraw any category.
           </li>
           <li>
-            Through your browser settings — most browsers let you block or
-            delete cookies.
+            Through your browser settings. Most browsers let you block or delete
+            cookies.
           </li>
         </ul>
 
         <h3>Do you respond to privacy signals?</h3>
         <p>
-          Yes — we honor <strong>Global Privacy Control</strong> (GPC) as an
+          Yes. We honor <strong>Global Privacy Control</strong> (GPC) as an
           automatic opt-out from analytics and advertising. (&quot;Do Not
           Track&quot; never got an agreed standard; GPC did, so we respect that
           one.)
@@ -786,7 +804,7 @@ export default function PrivacyPage() {
           shared devices.
         </p>
         <p>
-          No system is 100% secure — we can&apos;t guarantee absolute security,
+          No system is 100% secure. We can&apos;t guarantee absolute security,
           but we take it seriously.
         </p>
 
@@ -808,7 +826,7 @@ export default function PrivacyPage() {
         <h2>13. What about links to other sites?</h2>
         <p>
           We may link to third-party sites. We&apos;re not responsible for their
-          privacy practices — check their own policies.
+          privacy practices. Check their own policies.
         </p>
 
         <h2>14. What happens if there&apos;s a data breach?</h2>

@@ -193,9 +193,9 @@ export default async function AccountPage() {
               <CardContent>
                 <div className="flex flex-col space-y-4">
                   <p className="text-sm">
-                    Once you delete your account, there is no going back. All
-                    your data including dating app profiles, matches, and
-                    messages will be permanently removed.
+                    Once you delete your account, there is no going back. Your
+                    SwipeStats account, dating app profiles, matches, messages,
+                    and uploaded files will be permanently removed.
                   </p>
                   <DeleteAccountButton />
                 </div>
