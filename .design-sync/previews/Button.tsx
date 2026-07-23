@@ -34,8 +34,8 @@ export const AsLink = () => (
     <ButtonLink href="/upload" size="sm">
       ButtonLink to /upload
     </ButtonLink>
-    <Button asChild size="sm" variant="outline">
-      <a href="/insights">asChild anchor</a>
+    <Button render={<a href="/insights" />} size="sm" variant="outline">
+      Base UI render anchor
     </Button>
   </div>
 );
