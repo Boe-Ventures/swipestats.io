@@ -75,10 +75,8 @@ export default async function RayaInsightsPage({
               {profile.daysInProfilePeriod.toLocaleString()} days
             </p>
           </div>
-          <Button asChild variant="outline">
-            <Link href="/upload/raya">
-              <RefreshCw className="h-4 w-4" /> Refresh data
-            </Link>
+          <Button render={<Link href="/upload/raya" />} variant="outline">
+            <RefreshCw className="h-4 w-4" /> Refresh data
           </Button>
         </header>
 

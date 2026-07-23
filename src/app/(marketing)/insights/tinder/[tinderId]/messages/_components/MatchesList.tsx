@@ -200,7 +200,9 @@ export function MatchesList() {
           <span className="text-muted-foreground text-sm">Sort by:</span>
           <Select
             value={sortBy}
-            onValueChange={(value) => setSortBy(value as SortOption)}
+            onValueChange={(nextSort) => {
+              if (nextSort !== null) setSortBy(nextSort);
+            }}
           >
             <SelectTrigger className="w-[180px]">
               <SelectValue />

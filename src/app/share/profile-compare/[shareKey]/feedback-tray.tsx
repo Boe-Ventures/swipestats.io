@@ -85,8 +85,11 @@ export function FeedbackTray({ comparison }: FeedbackTrayProps) {
   // A few distinct authors to preview as stacked avatars in the collapsed bar.
   const previewAuthors = useMemo(() => {
     const seen = new Set<string>();
-    const authors: { id: string; name?: string | null; image?: string | null }[] =
-      [];
+    const authors: {
+      id: string;
+      name?: string | null;
+      image?: string | null;
+    }[] = [];
     for (const item of feed) {
       const key = item.authorId ?? item.id;
       if (seen.has(key)) continue;
@@ -207,7 +210,9 @@ export function FeedbackTray({ comparison }: FeedbackTrayProps) {
                   size="sm"
                   onClick={handleSubmit}
                   disabled={
-                    createFeedback.isPending || !comment.trim() || !firstColumnId
+                    createFeedback.isPending ||
+                    !comment.trim() ||
+                    !firstColumnId
                   }
                   className="shrink-0"
                 >
@@ -222,60 +227,62 @@ export function FeedbackTray({ comparison }: FeedbackTrayProps) {
 
             {/* Always-visible bar */}
             <div className="flex items-center gap-3 py-3">
-              <CollapsibleTrigger asChild>
-                <button
-                  type="button"
-                  className="hover:bg-muted/60 -ml-2 flex min-w-0 items-center gap-3 rounded-md px-2 py-1.5 text-left transition-colors"
-                >
-                  <span className="bg-rose-500/10 text-rose-600 dark:text-rose-400 flex h-8 w-8 shrink-0 items-center justify-center rounded-full">
-                    <MessageSquare className="h-4 w-4" />
-                  </span>
-                  <span className="flex min-w-0 flex-col">
-                    <span className="flex items-center gap-2 text-sm font-semibold">
-                      Feedback
-                      <span className="text-muted-foreground font-normal">
-                        {feed.length}
+              <CollapsibleTrigger
+                render={
+                  <button
+                    type="button"
+                    className="hover:bg-muted/60 -ml-2 flex min-w-0 items-center gap-3 rounded-md px-2 py-1.5 text-left transition-colors"
+                  >
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-rose-500/10 text-rose-600 dark:text-rose-400">
+                      <MessageSquare className="h-4 w-4" />
+                    </span>
+                    <span className="flex min-w-0 flex-col">
+                      <span className="flex items-center gap-2 text-sm font-semibold">
+                        Feedback
+                        <span className="text-muted-foreground font-normal">
+                          {feed.length}
+                        </span>
+                        {newCount > 0 && (
+                          <Badge
+                            variant="secondary"
+                            className="bg-rose-100 px-1.5 py-0 text-[10px] text-rose-600 dark:bg-rose-950 dark:text-rose-300"
+                          >
+                            {newCount} new
+                          </Badge>
+                        )}
                       </span>
-                      {newCount > 0 && (
-                        <Badge
-                          variant="secondary"
-                          className="bg-rose-100 px-1.5 py-0 text-[10px] text-rose-600 dark:bg-rose-950 dark:text-rose-300"
-                        >
-                          {newCount} new
-                        </Badge>
-                      )}
+                      <span className="text-muted-foreground hidden truncate text-xs sm:block">
+                        {feed.length === 0
+                          ? "Tap to leave a comment"
+                          : open
+                            ? "Tap to collapse"
+                            : "Tap to read all comments"}
+                      </span>
                     </span>
-                    <span className="text-muted-foreground hidden truncate text-xs sm:block">
-                      {feed.length === 0
-                        ? "Tap to leave a comment"
-                        : open
-                          ? "Tap to collapse"
-                          : "Tap to read all comments"}
-                    </span>
-                  </span>
-                  {previewAuthors.length > 0 && (
-                    <span className="hidden items-center -space-x-2 pl-1 sm:flex">
-                      {previewAuthors.map((a) => (
-                        <Avatar
-                          key={a.id}
-                          className="ring-background h-6 w-6 ring-2"
-                        >
-                          <AvatarImage src={a.image ?? undefined} />
-                          <AvatarFallback className="text-[9px]">
-                            {initials(a.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                      ))}
-                    </span>
-                  )}
-                  <ChevronDown
-                    className={cn(
-                      "text-muted-foreground ml-1 h-4 w-4 shrink-0 transition-transform",
-                      open && "rotate-180",
+                    {previewAuthors.length > 0 && (
+                      <span className="hidden items-center -space-x-2 pl-1 sm:flex">
+                        {previewAuthors.map((a) => (
+                          <Avatar
+                            key={a.id}
+                            className="ring-background h-6 w-6 ring-2"
+                          >
+                            <AvatarImage src={a.image ?? undefined} />
+                            <AvatarFallback className="text-[9px]">
+                              {initials(a.name)}
+                            </AvatarFallback>
+                          </Avatar>
+                        ))}
+                      </span>
                     )}
-                  />
-                </button>
-              </CollapsibleTrigger>
+                    <ChevronDown
+                      className={cn(
+                        "text-muted-foreground ml-1 h-4 w-4 shrink-0 transition-transform",
+                        open && "rotate-180",
+                      )}
+                    />
+                  </button>
+                }
+              />
 
               {/* Quick composer on desktop; phones use the composer inside the
                   expanded panel so the collapsed bar stays compact */}
@@ -300,7 +307,9 @@ export function FeedbackTray({ comparison }: FeedbackTrayProps) {
                   size="sm"
                   onClick={handleSubmit}
                   disabled={
-                    createFeedback.isPending || !comment.trim() || !firstColumnId
+                    createFeedback.isPending ||
+                    !comment.trim() ||
+                    !firstColumnId
                   }
                   className="shrink-0"
                 >

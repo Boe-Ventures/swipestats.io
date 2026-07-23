@@ -22,6 +22,7 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuTrigger,
@@ -223,26 +224,37 @@ export default function PhotoGalleryPage() {
         <div className="flex items-center gap-2">
           {analyzedCount > 0 && (
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" disabled={composeMutation.isPending}>
-                  {composeMutation.isPending ? (
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  ) : (
-                    <Wand2 className="mr-2 h-4 w-4" />
-                  )}
-                  {composeMutation.isPending ? "Building…" : "Build a profile"}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Compose a profile with AI</DropdownMenuLabel>
-                {COMPOSE_PROVIDERS.map((app) => (
-                  <DropdownMenuItem
-                    key={app.key}
-                    onClick={() => handleCompose(app.key)}
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    disabled={composeMutation.isPending}
                   >
-                    {app.label}
-                  </DropdownMenuItem>
-                ))}
+                    {composeMutation.isPending ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Wand2 className="mr-2 h-4 w-4" />
+                    )}
+                    {composeMutation.isPending
+                      ? "Building…"
+                      : "Build a profile"}
+                  </Button>
+                }
+              />
+              <DropdownMenuContent align="end">
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel>
+                    Compose a profile with AI
+                  </DropdownMenuLabel>
+                  {COMPOSE_PROVIDERS.map((app) => (
+                    <DropdownMenuItem
+                      key={app.key}
+                      onClick={() => handleCompose(app.key)}
+                    >
+                      {app.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuGroup>
               </DropdownMenuContent>
             </DropdownMenu>
           )}

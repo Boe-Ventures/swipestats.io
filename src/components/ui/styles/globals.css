@@ -55,7 +55,9 @@
   --popover: oklch(0.21 0.006 285.885);
   --popover-foreground: oklch(0.985 0 0);
   /* SwipeStats brand colors - brighter rose for dark mode */
-  --primary: oklch(0.712 0.194 13.428); /* rose-400 for better visibility in dark mode */
+  --primary: oklch(
+    0.712 0.194 13.428
+  ); /* rose-400 for better visibility in dark mode */
   --primary-foreground: oklch(0.985 0 0);
   --secondary: oklch(0.25 0.02 280);
   --secondary-foreground: oklch(0.95 0.01 0);
@@ -273,13 +275,13 @@
       height: 0;
     }
     to {
-      height: var(--radix-accordion-content-height);
+      height: var(--accordion-panel-height);
     }
   }
 
   @keyframes accordion-up {
     from {
-      height: var(--radix-accordion-content-height);
+      height: var(--accordion-panel-height);
     }
     to {
       height: 0;

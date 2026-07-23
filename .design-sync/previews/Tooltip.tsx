@@ -12,9 +12,7 @@ export const Hint = () => (
   <div className="flex justify-center pt-16">
     <TooltipProvider>
       <Tooltip open>
-        <TooltipTrigger asChild>
-          <Button variant="outline">Tooltip</Button>
-        </TooltipTrigger>
+        <TooltipTrigger render={<Button variant="outline">Tooltip</Button>} />
         <TooltipContent>Helpful hint</TooltipContent>
       </Tooltip>
     </TooltipProvider>

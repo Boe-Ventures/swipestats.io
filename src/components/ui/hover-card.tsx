@@ -1,19 +1,14 @@
 "use client";
 
-import type * as React from "react";
-import * as HoverCardPrimitive from "@radix-ui/react-hover-card";
+import { PreviewCard as HoverCardPrimitive } from "@base-ui/react/preview-card";
 
 import { cn } from "./index";
 
-function HoverCard({
-  ...props
-}: React.ComponentProps<typeof HoverCardPrimitive.Root>) {
+function HoverCard({ ...props }: HoverCardPrimitive.Root.Props) {
   return <HoverCardPrimitive.Root data-slot="hover-card" {...props} />;
 }
 
-function HoverCardTrigger({
-  ...props
-}: React.ComponentProps<typeof HoverCardPrimitive.Trigger>) {
+function HoverCardTrigger({ ...props }: HoverCardPrimitive.Trigger.Props) {
   return (
     <HoverCardPrimitive.Trigger data-slot="hover-card-trigger" {...props} />
   );
@@ -22,21 +17,33 @@ function HoverCardTrigger({
 function HoverCardContent({
   className,
   align = "center",
+  alignOffset = 0,
+  side = "bottom",
   sideOffset = 4,
   ...props
-}: React.ComponentProps<typeof HoverCardPrimitive.Content>) {
+}: HoverCardPrimitive.Popup.Props &
+  Pick<
+    HoverCardPrimitive.Positioner.Props,
+    "align" | "alignOffset" | "side" | "sideOffset"
+  >) {
   return (
     <HoverCardPrimitive.Portal data-slot="hover-card-portal">
-      <HoverCardPrimitive.Content
-        data-slot="hover-card-content"
+      <HoverCardPrimitive.Positioner
         align={align}
+        alignOffset={alignOffset}
+        side={side}
         sideOffset={sideOffset}
-        className={cn(
-          "bg-popover text-popover-foreground data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 z-50 w-64 origin-(--radix-hover-card-content-transform-origin) rounded-md border p-4 shadow-md outline-hidden",
-          className,
-        )}
-        {...props}
-      />
+        className="isolate z-50"
+      >
+        <HoverCardPrimitive.Popup
+          data-slot="hover-card-content"
+          className={cn(
+            "bg-popover text-popover-foreground z-50 w-64 origin-(--transform-origin) rounded-md border p-4 shadow-md outline-hidden transition-[opacity,transform] data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0",
+            className,
+          )}
+          {...props}
+        />
+      </HoverCardPrimitive.Positioner>
     </HoverCardPrimitive.Portal>
   );
 }

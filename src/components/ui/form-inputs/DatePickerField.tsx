@@ -81,24 +81,26 @@ export function DatePickerField<
               </FieldLabel>
             )}
             <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  {...controlA11y}
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-between pl-3 text-left font-normal",
-                    !field.value && "text-muted-foreground",
-                  )}
-                  disabled={disabled}
-                >
-                  {field.value ? (
-                    format(field.value, "PPP")
-                  ) : (
-                    <span>{placeholder}</span>
-                  )}
-                  <CalendarIcon className="h-4 w-4 opacity-50" />
-                </Button>
-              </PopoverTrigger>
+              <PopoverTrigger
+                render={
+                  <Button
+                    {...controlA11y}
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-between pl-3 text-left font-normal",
+                      !field.value && "text-muted-foreground",
+                    )}
+                    disabled={disabled}
+                  >
+                    {field.value ? (
+                      format(field.value, "PPP")
+                    ) : (
+                      <span>{placeholder}</span>
+                    )}
+                    <CalendarIcon className="h-4 w-4 opacity-50" />
+                  </Button>
+                }
+              />
               <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
                   mode="single"
@@ -221,16 +223,18 @@ function NaturalDatePickerInput({
         }}
       />
       <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="ghost"
-            className="absolute top-1/2 right-2 size-6 -translate-y-1/2"
-            disabled={disabled}
-          >
-            <CalendarIcon className="size-3.5" />
-            <span className="sr-only">Select date</span>
-          </Button>
-        </PopoverTrigger>
+        <PopoverTrigger
+          render={
+            <Button
+              variant="ghost"
+              className="absolute top-1/2 right-2 size-6 -translate-y-1/2"
+              disabled={disabled}
+            >
+              <CalendarIcon className="size-3.5" />
+              <span className="sr-only">Select date</span>
+            </Button>
+          }
+        />
         <PopoverContent className="w-auto overflow-hidden p-0" align="end">
           <Calendar
             mode="single"
@@ -352,16 +356,18 @@ export function Calendar29() {
           }}
         />
         <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              id="date-picker"
-              variant="ghost"
-              className="absolute top-1/2 right-2 size-6 -translate-y-1/2"
-            >
-              <CalendarIcon className="size-3.5" />
-              <span className="sr-only">Select date</span>
-            </Button>
-          </PopoverTrigger>
+          <PopoverTrigger
+            render={
+              <Button
+                id="date-picker"
+                variant="ghost"
+                className="absolute top-1/2 right-2 size-6 -translate-y-1/2"
+              >
+                <CalendarIcon className="size-3.5" />
+                <span className="sr-only">Select date</span>
+              </Button>
+            }
+          />
           <PopoverContent className="w-auto overflow-hidden p-0" align="end">
             <Calendar
               mode="single"

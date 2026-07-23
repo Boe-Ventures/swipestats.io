@@ -58,38 +58,40 @@ export function Combobox({
     return (
       <div className={className}>
         <Popover open={open} onOpenChange={setOpen}>
-          <PopoverTrigger asChild>
-            <Button
-              {...triggerProps}
-              variant="outline"
-              role="combobox"
-              aria-expanded={open}
-              className={cn(
-                "w-full justify-between",
-                triggerClassName,
-                triggerProps?.className,
-              )}
-              disabled={disabled}
-            >
-              {selectedOption ? selectedOption.label : placeholder}
-              <svg
-                className="ml-2 h-4 w-4 shrink-0 opacity-50"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+          <PopoverTrigger
+            render={
+              <Button
+                {...triggerProps}
+                variant="outline"
+                role="combobox"
+                aria-expanded={open}
+                className={cn(
+                  "w-full justify-between",
+                  triggerClassName,
+                  triggerProps?.className,
+                )}
+                disabled={disabled}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8 9l4-4 4 4m0 6l-4 4-4-4"
-                />
-              </svg>
-            </Button>
-          </PopoverTrigger>
+                {selectedOption ? selectedOption.label : placeholder}
+                <svg
+                  className="ml-2 h-4 w-4 shrink-0 opacity-50"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8 9l4-4 4 4m0 6l-4 4-4-4"
+                  />
+                </svg>
+              </Button>
+            }
+          />
           <PopoverContent
             className={cn("p-0", contentClassName)}
-            style={{ width: "var(--radix-popper-anchor-width)" }}
+            style={{ width: "var(--anchor-width)" }}
             align="start"
           >
             <OptionsList
@@ -118,6 +120,8 @@ export function Combobox({
               triggerClassName,
               triggerProps?.className,
             )}
+            role="combobox"
+            aria-expanded={open}
             disabled={disabled}
           >
             {selectedOption ? selectedOption.label : placeholder}

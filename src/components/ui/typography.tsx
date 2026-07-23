@@ -110,7 +110,7 @@ export function TypographyInlineCode({
     <code
       className={`bg-muted relative rounded px-[0.3rem] py-[0.2rem] font-mono text-sm font-semibold ${className}`}
     >
-      {children || "@radix-ui/react-alert-dialog"}
+      {children || "@base-ui/react/alert-dialog"}
     </code>
   );
 }

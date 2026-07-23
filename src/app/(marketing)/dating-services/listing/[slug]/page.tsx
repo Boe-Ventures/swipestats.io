@@ -253,23 +253,27 @@ export default async function CatalogListingPage({ params }: ListingPageProps) {
 
               <div className="mt-6 grid gap-3">
                 {primaryLink && (
-                  <Button asChild size="lg" className="w-full">
-                    <a
-                      href={primaryLink.url}
-                      target={
-                        primaryLink.url.startsWith("/") ? undefined : "_blank"
-                      }
-                      rel={
-                        primaryLink.type === "affiliate"
-                          ? "noopener noreferrer sponsored"
-                          : "noopener noreferrer"
-                      }
-                    >
-                      {entry.data.primaryCtaLabel ??
-                        primaryLink.label ??
-                        "Visit provider"}
-                      <ArrowUpRight className="h-4 w-4" />
-                    </a>
+                  <Button
+                    size="lg"
+                    className="w-full"
+                    render={
+                      <a
+                        href={primaryLink.url}
+                        target={
+                          primaryLink.url.startsWith("/") ? undefined : "_blank"
+                        }
+                        rel={
+                          primaryLink.type === "affiliate"
+                            ? "noopener noreferrer sponsored"
+                            : "noopener noreferrer"
+                        }
+                      />
+                    }
+                  >
+                    {entry.data.primaryCtaLabel ??
+                      primaryLink.label ??
+                      "Visit provider"}
+                    <ArrowUpRight className="h-4 w-4" />
                   </Button>
                 )}
                 <CatalogRequestDialog

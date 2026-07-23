@@ -14,9 +14,7 @@ import {
 // Rendered statically open (cardMode single) — right-side sheet.
 export const Filters = () => (
   <Sheet open>
-    <SheetTrigger asChild>
-      <Button variant="outline">Open sheet</Button>
-    </SheetTrigger>
+    <SheetTrigger render={<Button variant="outline">Open sheet</Button>} />
     <SheetContent onOpenAutoFocus={(e) => e.preventDefault()}>
       <SheetHeader>
         <SheetTitle>Filters</SheetTitle>

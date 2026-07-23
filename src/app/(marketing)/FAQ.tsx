@@ -94,14 +94,14 @@ export function FAQ() {
           <p className="mb-10 text-lg leading-8 text-gray-600">
             Everything you need to know about SwipeStats
           </p>
-          <Accordion type="single" collapsible>
+          <Accordion>
             {faqs.map((faq, index) => (
               <AccordionItem
                 key={faq.question}
                 value={`item-${index}`}
                 className="border-b border-gray-200 py-6 first:pt-0"
               >
-                <AccordionTrigger className="group cursor-pointer text-left text-lg leading-7 font-semibold text-gray-900 transition-colors hover:text-rose-600 hover:no-underline data-[state=open]:text-rose-600">
+                <AccordionTrigger className="group cursor-pointer text-left text-lg leading-7 font-semibold text-gray-900 transition-colors hover:text-rose-600 hover:no-underline data-panel-open:text-rose-600">
                   {faq.question}
                 </AccordionTrigger>
                 <AccordionContent className="mt-3 pr-12 pb-3 text-base leading-7 text-gray-600">

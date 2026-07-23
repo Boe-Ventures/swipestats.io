@@ -327,9 +327,9 @@ export function CompareMetricChart({ metric, title }: CompareMetricChartProps) {
           <div className="flex gap-2">
             <Select
               value={granularity}
-              onValueChange={(value) =>
-                setGranularity(value as TimeGranularity)
-              }
+              onValueChange={(nextGranularity) => {
+                if (nextGranularity !== null) setGranularity(nextGranularity);
+              }}
             >
               <SelectTrigger
                 className="w-[120px]"
@@ -345,7 +345,12 @@ export function CompareMetricChart({ metric, title }: CompareMetricChartProps) {
                 <SelectItem value="yearly">Yearly</SelectItem>
               </SelectContent>
             </Select>
-            <Select value={timeRange} onValueChange={setTimeRange}>
+            <Select
+              value={timeRange}
+              onValueChange={(nextValue) =>
+                nextValue !== null && setTimeRange(nextValue)
+              }
+            >
               <SelectTrigger
                 className="w-[140px]"
                 aria-label="Select time range"
