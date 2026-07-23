@@ -1,6 +1,11 @@
 "use client";
 
-import { useState, type FormEvent, type ReactNode } from "react";
+import {
+  isValidElement,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from "react";
 import { CheckCircle2, Loader2, Mail } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
@@ -116,7 +121,11 @@ export function InquiryDialog({
 
   return (
     <Dialog open={dialogOpen} onOpenChange={handleOpenChange}>
-      {trigger && <DialogTrigger asChild>{trigger}</DialogTrigger>}
+      {isValidElement(trigger) ? (
+        <DialogTrigger render={trigger} />
+      ) : (
+        trigger && <DialogTrigger>{trigger}</DialogTrigger>
+      )}
       <DialogContent
         data-inquiry-dialog={kind.toLowerCase()}
         className="rounded-2xl border-gray-200 bg-white sm:max-w-lg"
