@@ -5,9 +5,7 @@ import { Button, Popover, PopoverContent, PopoverTrigger } from "swipestats";
 export const AnonymityNote = () => (
   <div className="flex justify-center pt-8">
     <Popover open>
-      <PopoverTrigger asChild>
-        <Button variant="outline">Popover</Button>
-      </PopoverTrigger>
+      <PopoverTrigger render={<Button variant="outline">Popover</Button>} />
       <PopoverContent onOpenAutoFocus={(e) => e.preventDefault()}>
         <div className="flex flex-col gap-2">
           <p className="text-sm font-medium">Anonymous by default</p>

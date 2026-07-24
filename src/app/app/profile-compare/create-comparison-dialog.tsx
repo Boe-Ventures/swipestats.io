@@ -244,9 +244,10 @@ export function CreateComparisonDialog({
                           </Badge>
                           <Select
                             value={app}
-                            onValueChange={(value) =>
-                              handleChangeColumn(index, value)
-                            }
+                            onValueChange={(value) => {
+                              if (value !== null)
+                                handleChangeColumn(index, value);
+                            }}
                           >
                             <SelectTrigger className="flex-1">
                               <SelectValue />

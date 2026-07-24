@@ -205,15 +205,17 @@ export function ProfileCard({
           {/* No overlap warning badge */}
           {showNoOverlapWarning && (
             <Tooltip>
-              <TooltipTrigger asChild>
-                <Badge
-                  variant="outline"
-                  className="gap-1 border-yellow-200 bg-yellow-100 text-yellow-700 dark:border-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
-                >
-                  <Calendar className="h-3 w-3" />
-                  No overlap
-                </Badge>
-              </TooltipTrigger>
+              <TooltipTrigger
+                render={
+                  <Badge
+                    variant="outline"
+                    className="gap-1 border-yellow-200 bg-yellow-100 text-yellow-700 dark:border-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300"
+                  >
+                    <Calendar className="h-3 w-3" />
+                    No overlap
+                  </Badge>
+                }
+              />
               <TooltipContent>
                 <p>Not active during the same time period as your profile</p>
               </TooltipContent>

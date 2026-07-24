@@ -47,11 +47,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import {
-  Controller,
-  FormProvider,
-  Field,
-} from "@/components/ui/form-new";
+import { Controller, FormProvider, Field } from "@/components/ui/form-new";
 import type { DateRange } from "react-day-picker";
 import { useHingeInsights } from "../../HingeInsightsProvider";
 import { GranularitySelector } from "../../../../tinder/[tinderId]/_components/charts/GranularitySelector";
@@ -678,22 +674,24 @@ export function MasterHingeActivityChart() {
                       render={({ field, fieldState }) => (
                         <Field data-invalid={fieldState.invalid}>
                           <Popover>
-                            <PopoverTrigger asChild>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                id={field.name}
-                                aria-invalid={fieldState.invalid}
-                                className={cn(
-                                  "w-[240px] justify-start pl-3 text-left font-normal",
-                                  !field.value?.from &&
-                                    "text-muted-foreground",
-                                )}
-                              >
-                                {formatDateRange(field.value)}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
-                            </PopoverTrigger>
+                            <PopoverTrigger
+                              render={
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  id={field.name}
+                                  aria-invalid={fieldState.invalid}
+                                  className={cn(
+                                    "w-[240px] justify-start pl-3 text-left font-normal",
+                                    !field.value?.from &&
+                                      "text-muted-foreground",
+                                  )}
+                                >
+                                  {formatDateRange(field.value)}
+                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                              }
+                            />
                             <PopoverContent
                               className="w-auto p-0"
                               align="start"
@@ -724,7 +722,10 @@ export function MasterHingeActivityChart() {
                 control={form.control}
                 name="showPreviousPeriod"
                 render={({ field, fieldState }) => (
-                  <Field orientation="horizontal" data-invalid={fieldState.invalid}>
+                  <Field
+                    orientation="horizontal"
+                    data-invalid={fieldState.invalid}
+                  >
                     <Switch
                       id={field.name}
                       checked={field.value}

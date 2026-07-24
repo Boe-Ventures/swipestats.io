@@ -1137,7 +1137,9 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
               </Label>
               <Select
                 value={newColumnProvider}
-                onValueChange={setNewColumnProvider}
+                onValueChange={(nextValue) =>
+                  nextValue !== null && setNewColumnProvider(nextValue)
+                }
               >
                 <SelectTrigger id="provider" className="w-full">
                   <SelectValue />

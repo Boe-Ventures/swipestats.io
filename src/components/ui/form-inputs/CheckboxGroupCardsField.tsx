@@ -95,12 +95,12 @@ export function CheckboxGroupCardsField<
                       // revisit if the extra has-[:checked] is needed, the blue bg stopped working out of nowhere and this was a quick fix
                       layout === "grid"
                         ? cn(
-                            "border-input hover:border-ring focus-within:border-ring focus-within:ring-ring/50 has-[:checked]:border-primary has-[:checked]:bg-primary/5 has-[:checked]:ring-primary/20 has-[*[data-state=checked]]:border-primary has-[*[data-state=checked]]:bg-primary/5 has-[*[data-state=checked]]:ring-primary/20 relative flex cursor-pointer gap-3 rounded-lg border p-4 shadow-sm transition-all focus-within:ring-[3px] has-[*[data-state=checked]]:ring-[3px] has-[:checked]:ring-[3px]",
+                            "border-input hover:border-ring focus-within:border-ring focus-within:ring-ring/50 has-[:checked]:border-primary has-[:checked]:bg-primary/5 has-[:checked]:ring-primary/20 has-data-checked:border-primary has-data-checked:bg-primary/5 has-data-checked:ring-primary/20 relative flex cursor-pointer gap-3 rounded-lg border p-4 shadow-sm transition-all focus-within:ring-[3px] has-data-checked:ring-[3px] has-[:checked]:ring-[3px]",
                             option.description
                               ? "min-h-[80px] items-start"
                               : "min-h-[60px] items-center",
                           )
-                        : "border-input hover:border-ring focus-within:border-ring focus-within:ring-ring/50 has-[:checked]:border-primary has-[:checked]:bg-primary/5 has-[:checked]:ring-primary/20 has-[*[data-state=checked]]:border-primary has-[*[data-state=checked]]:bg-primary/5 has-[*[data-state=checked]]:ring-primary/20 relative flex cursor-pointer items-center gap-3 rounded-lg border p-4 shadow-sm transition-all focus-within:ring-[3px] has-[*[data-state=checked]]:ring-[3px] has-[:checked]:ring-[3px]",
+                        : "border-input hover:border-ring focus-within:border-ring focus-within:ring-ring/50 has-[:checked]:border-primary has-[:checked]:bg-primary/5 has-[:checked]:ring-primary/20 has-data-checked:border-primary has-data-checked:bg-primary/5 has-data-checked:ring-primary/20 relative flex cursor-pointer items-center gap-3 rounded-lg border p-4 shadow-sm transition-all focus-within:ring-[3px] has-data-checked:ring-[3px] has-[:checked]:ring-[3px]",
                       cardClassName,
                     )}
                   >

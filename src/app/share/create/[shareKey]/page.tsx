@@ -184,8 +184,8 @@ export default function FriendCreationPage() {
                   <span className="text-foreground font-medium">
                     {ownerLabel}
                   </span>
-                  &apos;s library to show how their {providerConfig.name} profile
-                  should look.
+                  &apos;s library to show how their {providerConfig.name}{" "}
+                  profile should look.
                 </p>
                 <div className="flex flex-wrap items-center gap-2 pt-1">
                   <span className="text-muted-foreground text-xs font-medium">
@@ -193,9 +193,7 @@ export default function FriendCreationPage() {
                   </span>
                   <Select
                     value={activeProvider}
-                    onValueChange={(v) =>
-                      setProviderOverride(v as DataProvider)
-                    }
+                    onValueChange={setProviderOverride}
                   >
                     <SelectTrigger
                       size="sm"

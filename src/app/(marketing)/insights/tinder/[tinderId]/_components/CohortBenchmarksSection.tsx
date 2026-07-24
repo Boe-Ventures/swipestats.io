@@ -147,7 +147,12 @@ export function CohortBenchmarksSection() {
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="text-2xl">How You Compare</CardTitle>
-          <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+          <Select
+            value={selectedPeriod}
+            onValueChange={(nextValue) =>
+              nextValue !== null && setSelectedPeriod(nextValue)
+            }
+          >
             <SelectTrigger className="w-[180px]">
               <SelectValue />
             </SelectTrigger>

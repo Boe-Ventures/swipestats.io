@@ -370,7 +370,15 @@ export function MyAreaChart({
           )}
 
           {enableTimeFilter && (
-            <Select value={timeRange} onValueChange={handleTimeRangeChange}>
+            <Select
+              value={timeRange}
+              items={timeRangeOptions}
+              onValueChange={(nextTimeRange) => {
+                if (typeof nextTimeRange === "string") {
+                  handleTimeRangeChange(nextTimeRange);
+                }
+              }}
+            >
               <SelectTrigger
                 className="hidden w-[160px] rounded-lg sm:ml-auto sm:flex"
                 aria-label="Select time range"

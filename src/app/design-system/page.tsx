@@ -66,9 +66,9 @@ import {
   DropdownMenu,
   DropdownMenuTrigger,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import {
   Sheet,
@@ -148,7 +148,7 @@ function Tag({ surface }: { surface: Surface }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full px-2 py-0.5 font-mono text-[10.5px] font-medium uppercase tracking-[0.06em] ring-1 ring-inset",
+        "inline-flex items-center rounded-full px-2 py-0.5 font-mono text-[10.5px] font-medium tracking-[0.06em] uppercase ring-1 ring-inset",
         surfaceStyles[surface],
       )}
     >
@@ -157,12 +157,7 @@ function Tag({ surface }: { surface: Surface }) {
   );
 }
 
-type StatusKind =
-  | "current"
-  | "golden"
-  | "shadcn"
-  | "candidate"
-  | "not-built";
+type StatusKind = "current" | "golden" | "shadcn" | "candidate" | "not-built";
 
 function Status({ kind }: { kind: StatusKind }) {
   const map = {
@@ -305,9 +300,10 @@ export default function DesignSystemPage() {
             Live today, next to golden
           </h1>
           <p className="mt-5 text-[clamp(17px,2vw,20px)] leading-[1.6] text-gray-600">
-            The real in-production components rendered next to their golden-system
-            equivalents. Use the <strong>Stack / Grid / Scroll</strong> toggle on
-            each section to compare them the way that reads best.
+            The real in-production components rendered next to their
+            golden-system equivalents. Use the{" "}
+            <strong>Stack / Grid / Scroll</strong> toggle on each section to
+            compare them the way that reads best.
           </p>
         </div>
 
@@ -434,7 +430,10 @@ export default function DesignSystemPage() {
                   Primary
                 </button>
                 <button
-                  className={marketingButton({ variant: "primary", size: "lg" })}
+                  className={marketingButton({
+                    variant: "primary",
+                    size: "lg",
+                  })}
                 >
                   Primary lg
                   <ArrowRightIcon className="h-4 w-4" />
@@ -478,7 +477,7 @@ export default function DesignSystemPage() {
                 label="Links & loading · the canonical pattern"
                 surface="shared"
                 status="golden"
-                note="ButtonLink = link styled as a button (icon+text safe). Button loading renders <Spinner>. asChild merges styles onto any element. SmartLink = inline text link."
+                note="ButtonLink = link styled as a button (icon+text safe). Button loading renders <Spinner>. The render prop composes another element. SmartLink = inline text link."
               >
                 <ButtonLink href="/upload" size="sm">
                   <ArrowRightIcon className="h-4 w-4" />
@@ -487,8 +486,12 @@ export default function DesignSystemPage() {
                 <Button size="sm" loading>
                   Loading
                 </Button>
-                <Button asChild size="sm" variant="outline">
-                  <a href="#ds-links">asChild &lt;a&gt;</a>
+                <Button
+                  render={<a href="#ds-links" />}
+                  size="sm"
+                  variant="outline"
+                >
+                  render &lt;a&gt;
                 </Button>
                 <span className="text-sm text-gray-600">
                   Inline <SmartLink href="/privacy">SmartLink</SmartLink> in
@@ -606,7 +609,7 @@ export default function DesignSystemPage() {
                       <div className="font-mono text-[10.5px] tracking-[0.05em] text-gray-500 uppercase">
                         {k}
                       </div>
-                      <div className="mt-1.5 text-[24px] font-bold tracking-[-0.03em] tabular-nums text-gray-900">
+                      <div className="mt-1.5 text-[24px] font-bold tracking-[-0.03em] text-gray-900 tabular-nums">
                         {v}
                       </div>
                     </div>
@@ -663,7 +666,8 @@ export default function DesignSystemPage() {
             <p className="mt-1.5 max-w-[760px] text-[14px] text-gray-600">
               These render with zero data. The golden marketing system sits on
               top of this layer; the app surface uses it directly. Rendered live
-              from <span className="font-mono text-[13px]">src/components/ui</span>.
+              from{" "}
+              <span className="font-mono text-[13px]">src/components/ui</span>.
             </p>
           </div>
 
@@ -722,7 +726,7 @@ export default function DesignSystemPage() {
                       <RadioGroupItem value="hinge" /> Hinge
                     </label>
                   </RadioGroup>
-                  <ToggleGroup type="single" defaultValue="week">
+                  <ToggleGroup defaultValue={["week"]}>
                     <ToggleGroupItem value="day">Day</ToggleGroupItem>
                     <ToggleGroupItem value="week">Week</ToggleGroupItem>
                     <ToggleGroupItem value="month">Month</ToggleGroupItem>
@@ -777,7 +781,9 @@ export default function DesignSystemPage() {
                   <InfoAlert>Your export is processing.</InfoAlert>
                   <SuccessAlert>Insights are ready to view.</SuccessAlert>
                   <WarningAlert>Bumble can take up to 30 days.</WarningAlert>
-                  <ErrorAlert>Couldn&apos;t parse the uploaded file.</ErrorAlert>
+                  <ErrorAlert>
+                    Couldn&apos;t parse the uploaded file.
+                  </ErrorAlert>
                 </div>
               </Specimen>
               <Specimen
@@ -863,9 +869,9 @@ export default function DesignSystemPage() {
                   <p className="text-sm text-gray-600">Dialog body content.</p>
                 </SimpleDialog>
                 <Sheet>
-                  <SheetTrigger asChild>
-                    <Button variant="outline">Open sheet</Button>
-                  </SheetTrigger>
+                  <SheetTrigger
+                    render={<Button variant="outline">Open sheet</Button>}
+                  />
                   <SheetContent>
                     <SheetHeader>
                       <SheetTitle>Filters</SheetTitle>
@@ -894,30 +900,31 @@ export default function DesignSystemPage() {
                 note="popover.tsx · tooltip.tsx · dropdown-menu.tsx"
               >
                 <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline">Popover</Button>
-                  </PopoverTrigger>
+                  <PopoverTrigger
+                    render={<Button variant="outline">Popover</Button>}
+                  />
                   <PopoverContent>
                     <p className="text-sm text-gray-600">Popover content.</p>
                   </PopoverContent>
                 </Popover>
                 <TooltipProvider>
                   <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button variant="outline">Tooltip</Button>
-                    </TooltipTrigger>
+                    <TooltipTrigger
+                      render={<Button variant="outline">Tooltip</Button>}
+                    />
                     <TooltipContent>Helpful hint</TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
                 <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="outline">Menu</Button>
-                  </DropdownMenuTrigger>
+                  <DropdownMenuTrigger
+                    render={<Button variant="outline">Menu</Button>}
+                  />
                   <DropdownMenuContent>
-                    <DropdownMenuLabel>Account</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem>Profile</DropdownMenuItem>
-                    <DropdownMenuItem>Settings</DropdownMenuItem>
+                    <DropdownMenuGroup>
+                      <DropdownMenuLabel>Account</DropdownMenuLabel>
+                      <DropdownMenuItem>Profile</DropdownMenuItem>
+                      <DropdownMenuItem>Settings</DropdownMenuItem>
+                    </DropdownMenuGroup>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </Specimen>
@@ -925,9 +932,9 @@ export default function DesignSystemPage() {
                 label="Accordion"
                 surface="shared"
                 status="shadcn"
-                note="accordion.tsx (radix · distinct from the golden FaqList)"
+                note="accordion.tsx (Base UI · distinct from the golden FaqList)"
               >
-                <Accordion type="single" collapsible className="w-full">
+                <Accordion className="w-full">
                   <AccordionItem value="a">
                     <AccordionTrigger>Is my data anonymous?</AccordionTrigger>
                     <AccordionContent>
@@ -936,7 +943,9 @@ export default function DesignSystemPage() {
                   </AccordionItem>
                   <AccordionItem value="b">
                     <AccordionTrigger>Does it cost anything?</AccordionTrigger>
-                    <AccordionContent>Seeing your insights is free.</AccordionContent>
+                    <AccordionContent>
+                      Seeing your insights is free.
+                    </AccordionContent>
                   </AccordionItem>
                 </Accordion>
               </Specimen>
@@ -952,13 +961,22 @@ export default function DesignSystemPage() {
                     <TabsTrigger value="usage">Daily usage</TabsTrigger>
                     <TabsTrigger value="chats">Conversations</TabsTrigger>
                   </TabsList>
-                  <TabsContent value="overview" className="pt-3 text-sm text-gray-600">
+                  <TabsContent
+                    value="overview"
+                    className="pt-3 text-sm text-gray-600"
+                  >
                     Overview panel.
                   </TabsContent>
-                  <TabsContent value="usage" className="pt-3 text-sm text-gray-600">
+                  <TabsContent
+                    value="usage"
+                    className="pt-3 text-sm text-gray-600"
+                  >
                     Daily usage panel.
                   </TabsContent>
-                  <TabsContent value="chats" className="pt-3 text-sm text-gray-600">
+                  <TabsContent
+                    value="chats"
+                    className="pt-3 text-sm text-gray-600"
+                  >
                     Conversations panel.
                   </TabsContent>
                 </Tabs>
@@ -1062,7 +1080,12 @@ export default function DesignSystemPage() {
                   <StatTiles
                     items={[
                       { k: "Total swipes", v: "38,608" },
-                      { k: "Matches", v: "4,345", d: "↑ 12% vs cohort", trend: "up" },
+                      {
+                        k: "Matches",
+                        v: "4,345",
+                        d: "↑ 12% vs cohort",
+                        trend: "up",
+                      },
                       { k: "Ghosted", v: "42%", d: "↓ worse", trend: "down" },
                       { k: "Avg response", v: "1h 9m" },
                     ]}
@@ -1088,8 +1111,18 @@ export default function DesignSystemPage() {
                   <Funnel
                     steps={[
                       { label: "Swiped right", value: "21,875", width: "100%" },
-                      { label: "Matches", value: "4,345", width: "62%", drop: "−80% drop-off" },
-                      { label: "Chats", value: "1,265", width: "32%", drop: "−71%" },
+                      {
+                        label: "Matches",
+                        value: "4,345",
+                        width: "62%",
+                        drop: "−80% drop-off",
+                      },
+                      {
+                        label: "Chats",
+                        value: "1,265",
+                        width: "32%",
+                        drop: "−71%",
+                      },
                       {
                         label: "No reply",
                         value: "3,080",
@@ -1135,7 +1168,10 @@ export default function DesignSystemPage() {
                     }
                   />
                   <Panel>
-                    <PanelHeader title="Conversation outcomes" meta="386 chats" />
+                    <PanelHeader
+                      title="Conversation outcomes"
+                      meta="386 chats"
+                    />
                     <p className="text-[13px] text-gray-500">
                       Panel chrome: title + mono meta, neutral surface, subtle
                       border.
@@ -1309,28 +1345,80 @@ export default function DesignSystemPage() {
                       ["Spinner + Button (shadcn spec)", "shared", "golden"],
                       ["Eyebrow / SectionHead / GridBg", "shared", "golden"],
                       ["NewsletterSignup", "marketing", "golden"],
-                      ["CtaBand (research + how-to + golden)", "marketing", "golden"],
+                      [
+                        "CtaBand (research + how-to + golden)",
+                        "marketing",
+                        "golden",
+                      ],
                       ["FaqList", "shared", "golden"],
-                      ["Blog CTAs (Sticky/Cta/CTA/Newsletter)", "blog", "golden"],
+                      [
+                        "Blog CTAs (Sticky/Cta/CTA/Newsletter)",
+                        "blog",
+                        "golden",
+                      ],
                       ["Compare dialogs → Field/Controller", "app", "golden"],
-                      ["Form controls (input/select/toggles)", "shared", "shadcn"],
-                      ["Feedback (alert/toast/skeleton/empty)", "shared", "shadcn"],
-                      ["Overlays (dialog/sheet/popover/menu)", "shared", "shadcn"],
+                      [
+                        "Form controls (input/select/toggles)",
+                        "shared",
+                        "shadcn",
+                      ],
+                      [
+                        "Feedback (alert/toast/skeleton/empty)",
+                        "shared",
+                        "shadcn",
+                      ],
+                      [
+                        "Overlays (dialog/sheet/popover/menu)",
+                        "shared",
+                        "shadcn",
+                      ],
                       ["Card / Badge / Avatar", "shared", "shadcn"],
                       ["StatTiles", "shared", "candidate"],
                       ["Provider / pricing cards", "marketing", "candidate"],
-                      ["Insights cards (CohortBenchmark/Percentile)", "app", "candidate"],
-                      ["File-upload / dropzone + stepper", "upload", "candidate"],
+                      [
+                        "Insights cards (CohortBenchmark/Percentile)",
+                        "app",
+                        "candidate",
+                      ],
+                      [
+                        "File-upload / dropzone + stepper",
+                        "upload",
+                        "candidate",
+                      ],
                       ["Auth forms (sign-in/up/reset)", "app", "candidate"],
-                      ["App-mode (HeroStats/CohortBadge/StatTiles/Panel)", "app", "golden"],
-                      ["App shell (GoldenAppHeader / Sidebar)", "app", "golden"],
-                      ["Data-viz (Funnel / PercentileBars + chart palette)", "app", "golden"],
-                      ["Premium gate (LockedValue / UpsellCard)", "app", "golden"],
+                      [
+                        "App-mode (HeroStats/CohortBadge/StatTiles/Panel)",
+                        "app",
+                        "golden",
+                      ],
+                      [
+                        "App shell (GoldenAppHeader / Sidebar)",
+                        "app",
+                        "golden",
+                      ],
+                      [
+                        "Data-viz (Funnel / PercentileBars + chart palette)",
+                        "app",
+                        "golden",
+                      ],
+                      [
+                        "Premium gate (LockedValue / UpsellCard)",
+                        "app",
+                        "golden",
+                      ],
                       ["Blog: Prose / Tldr / PullStat", "blog", "golden"],
                       ["ErrorState + golden 404", "shared", "golden"],
-                      ["Live charts (Recharts) golden re-theme · Mapbox", "app", "candidate"],
+                      [
+                        "Live charts (Recharts) golden re-theme · Mapbox",
+                        "app",
+                        "candidate",
+                      ],
                       ["Dark-mode + a11y token axes", "shared", "candidate"],
-                      ["3 dashboards → 1 (stray -2/-3 deleted)", "app", "golden"],
+                      [
+                        "3 dashboards → 1 (stray -2/-3 deleted)",
+                        "app",
+                        "golden",
+                      ],
                     ] as [string, Surface, StatusKind][]
                   ).map(([name, surface, status]) => (
                     <TableRow key={name}>
