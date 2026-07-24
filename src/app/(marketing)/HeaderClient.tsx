@@ -77,7 +77,7 @@ export default function HeaderClient({ navigation }: HeaderClientProps) {
               href="/signin"
               variant="ghost"
               size="sm"
-              className="h-7 px-2 py-1.5 text-xs font-semibold text-gray-900"
+              className="hidden h-7 px-2 py-1.5 text-xs font-semibold text-gray-900 min-[375px]:inline-flex"
             >
               Sign in
             </ButtonLink>

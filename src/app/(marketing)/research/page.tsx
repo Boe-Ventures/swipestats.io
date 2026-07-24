@@ -522,44 +522,51 @@ function SchemaSection() {
                 5 of 7,214
               </span>
             </div>
-            <table className="w-full border-collapse text-[14px]">
-              <thead>
-                <tr>
-                  {["gender", "age", "likeRate", "matchRate", "ghosted"].map(
-                    (h, i) => (
-                      <th
-                        key={h}
-                        className={cn(
-                          "border-b border-gray-200 bg-gray-50 px-4 py-3 font-mono text-[12px] font-medium tracking-[0.04em] text-gray-500 uppercase",
-                          i === 0 ? "text-left" : "text-right",
-                        )}
-                      >
-                        {h}
-                      </th>
-                    ),
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r, ri) => (
-                  <tr key={ri} className="hover:bg-gray-50">
-                    {r.map((c, ci) => (
-                      <td
-                        key={ci}
-                        className={cn(
-                          "border-b border-gray-200 px-4 py-3",
-                          ci === 0
-                            ? "font-mono text-[13px] font-medium text-gray-900"
-                            : "text-right font-mono text-gray-700 tabular-nums",
-                        )}
-                      >
-                        {c}
-                      </td>
-                    ))}
+            <div
+              className="max-w-full overflow-x-auto"
+              role="region"
+              aria-label="Sample profile metadata rows"
+              tabIndex={0}
+            >
+              <table className="w-full min-w-[414px] border-collapse text-[14px]">
+                <thead>
+                  <tr>
+                    {["gender", "age", "likeRate", "matchRate", "ghosted"].map(
+                      (h, i) => (
+                        <th
+                          key={h}
+                          className={cn(
+                            "border-b border-gray-200 bg-gray-50 px-4 py-3 font-mono text-[12px] font-medium tracking-[0.04em] text-gray-500 uppercase",
+                            i === 0 ? "text-left" : "text-right",
+                          )}
+                        >
+                          {h}
+                        </th>
+                      ),
+                    )}
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {rows.map((r, ri) => (
+                    <tr key={ri} className="hover:bg-gray-50">
+                      {r.map((c, ci) => (
+                        <td
+                          key={ci}
+                          className={cn(
+                            "border-b border-gray-200 px-4 py-3",
+                            ci === 0
+                              ? "font-mono text-[13px] font-medium text-gray-900"
+                              : "text-right font-mono text-gray-700 tabular-nums",
+                          )}
+                        >
+                          {c}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           <div>
@@ -646,7 +653,10 @@ function DashboardSection() {
             target="_blank"
             className={marketingButton({ variant: "ghost", size: "lg" })}
           >
-            Download the free sample profile
+            <span className="min-[360px]:hidden">Download free sample</span>
+            <span className="hidden min-[360px]:inline">
+              Download the free sample profile
+            </span>
             <ArrowRightIcon className="h-4 w-4" />
           </Link>
         </div>
