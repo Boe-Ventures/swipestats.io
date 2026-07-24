@@ -653,7 +653,10 @@ function DashboardSection() {
             target="_blank"
             className={marketingButton({ variant: "ghost", size: "lg" })}
           >
-            Download the free sample profile
+            <span className="min-[360px]:hidden">Download free sample</span>
+            <span className="hidden min-[360px]:inline">
+              Download the free sample profile
+            </span>
             <ArrowRightIcon className="h-4 w-4" />
           </Link>
         </div>

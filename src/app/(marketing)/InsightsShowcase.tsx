@@ -21,7 +21,7 @@ function ShowcaseSkeleton() {
       <Card className="shadow-lg">
         <CardHeader>
           <Skeleton className="h-6 w-40" />
-          <Skeleton className="h-4 w-64" />
+          <Skeleton className="h-4 w-full max-w-64" />
         </CardHeader>
         <CardContent>
           <Skeleton className="h-[400px] w-full" />
