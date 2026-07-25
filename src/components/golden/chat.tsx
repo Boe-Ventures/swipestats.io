@@ -17,10 +17,14 @@ import {
  * Golden CHAT primitives — the streaming-assistant dialect.
  *
  * Built against the AI SDK's `UIMessage` shape (`role` + `parts`) so a live
- * `useChat()` result drops straight in:
+ * `useChat()` result drops straight in — verified to compile against
+ * `@ai-sdk/react` v7's return type:
  *
  *   const { messages, status } = useChat({ transport });
  *   <ChatTranscript messages={messages} status={status} />
+ *
+ * The props stay structural rather than importing `UIMessage` directly so the
+ * design-system fixtures type-check without casting.
  *
  * The waiting behaviour is the part worth getting right, and it lives in
  * `@/lib/chat-turn-state`. A streaming turn is not one wait but three — before

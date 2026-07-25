@@ -206,7 +206,7 @@ Original URL: ${url}`;
       schema: blogPostMetadataSchema,
     }),
     prompt: metadataPrompt,
-    experimental_telemetry: {
+    telemetry: {
       isEnabled: true,
       functionId: "blog-metadata-extraction",
     },
@@ -285,7 +285,7 @@ Generate ONLY the MDX body content starting with the TLDR component.`;
   const mdxResult = streamText({
     model: ADVANCED_EXTRACTION_MODEL,
     prompt: mdxPrompt,
-    experimental_telemetry: {
+    telemetry: {
       isEnabled: true,
       functionId: "blog-mdx-generation",
     },

@@ -54,6 +54,8 @@ bun email:dev        # Email preview server
 - **Content**: Velite for MDX blog posts
 - **Email**: React Email with Resend
 - **Billing**: LemonSqueezy subscriptions
+- **AI**: Vercel AI SDK v7 (`ai`) with `@ai-sdk/anthropic`; `@ai-sdk/react` for
+  streaming chat UI
 - **Package Manager**: Bun
 
 ### Directory Structure
