@@ -118,6 +118,7 @@ import {
   LockedValue,
   UpsellCard,
   ErrorState,
+  ChatTranscript,
 } from "@/components/golden";
 import { LayoutSwitch } from "./LayoutSwitch";
 import { ToastDemo } from "./Demos";
@@ -173,6 +174,93 @@ function Status({ kind }: { kind: StatusKind }) {
     </span>
   );
 }
+
+/* chat fixtures ------------------------------------------------------------
+   Deterministic transcripts covering each waiting state. Kept as plain data so
+   the section renders the real ChatTranscript without touching the network. */
+
+const CHAT_ASK = {
+  id: "chat-user-1",
+  role: "user",
+  parts: [
+    { type: "text", text: "How does my match rate compare to other users?" },
+  ],
+};
+
+const CHAT_AWAITING_FIRST_TOKEN = [
+  CHAT_ASK,
+  // Exactly what the stream produces before the model emits anything.
+  { id: "chat-shell", role: "assistant", parts: [{ type: "step-start" }] },
+];
+
+const CHAT_STREAMING_PROSE = [
+  CHAT_ASK,
+  {
+    id: "chat-prose",
+    role: "assistant",
+    parts: [
+      {
+        type: "text",
+        text: "Your match rate sits in the **top 20%** for your cohort. Looking at how that",
+      },
+    ],
+  },
+];
+
+const CHAT_TOOL_RUNNING = [
+  CHAT_ASK,
+  {
+    id: "chat-tool-running",
+    role: "assistant",
+    parts: [
+      { type: "text", text: "Let me pull your numbers against the cohort." },
+      { type: "tool-cohortBenchmark", state: "input-available" },
+    ],
+  },
+];
+
+const CHAT_BETWEEN_STEPS = [
+  CHAT_ASK,
+  {
+    id: "chat-between",
+    role: "assistant",
+    parts: [
+      { type: "text", text: "Let me pull your numbers against the cohort." },
+      { type: "tool-cohortBenchmark", state: "output-available" },
+    ],
+  },
+];
+
+const CHAT_AWAITING_APPROVAL = [
+  {
+    id: "chat-user-2",
+    role: "user",
+    parts: [{ type: "text", text: "Delete my uploaded data." }],
+  },
+  {
+    id: "chat-approval",
+    role: "assistant",
+    parts: [
+      { type: "text", text: "This removes your upload permanently." },
+      { type: "tool-deleteProfileData", state: "approval-requested" },
+    ],
+  },
+];
+
+const CHAT_SETTLED = [
+  CHAT_ASK,
+  {
+    id: "chat-settled",
+    role: "assistant",
+    parts: [
+      { type: "tool-cohortBenchmark", state: "output-available" },
+      {
+        type: "text",
+        text: "You match at **12.4%**, against a cohort median of 7.1%. Your response time is the bigger lever — replies under an hour more than double your conversation length.",
+      },
+    ],
+  },
+];
 
 function Specimen({
   label,
@@ -1320,10 +1408,101 @@ export default function DesignSystemPage() {
             </LayoutSwitch>
           </section>
 
-          {/* ============================ COVERAGE */}
+          {/* ============================ CHAT */}
           <section>
             <SectionTitle
               n="12"
+              title="Chat & streaming assistant"
+              sub="Waiting states for a streaming AI turn, rendered through the real ChatTranscript. A turn is not one wait but three — before the reply exists, while a tool runs, and between steps — and the transcript has to stay alive through all of them. Fixtures only; no request is made."
+            />
+            <LayoutSwitch defaultLayout="grid">
+              <Specimen
+                label="<ChatTranscript> · awaiting first token"
+                surface="app"
+                status="golden"
+                note="The SDK creates the assistant message when the stream opens, before any token arrives. The empty shell is skipped and the pending turn holds the space — gating on status alone leaves a bare avatar over blank space here."
+              >
+                <div className="w-full max-w-md">
+                  <ChatTranscript
+                    messages={CHAT_AWAITING_FIRST_TOKEN}
+                    status="streaming"
+                  />
+                </div>
+              </Specimen>
+
+              <Specimen
+                label="<ChatTranscript> · streaming prose"
+                surface="app"
+                status="golden"
+                note="Once prose is arriving it is its own progress indicator, so the pending turn stands down."
+              >
+                <div className="w-full max-w-md">
+                  <ChatTranscript
+                    messages={CHAT_STREAMING_PROSE}
+                    status="streaming"
+                  />
+                </div>
+              </Specimen>
+
+              <Specimen
+                label="<ChatToolCard> · running"
+                surface="app"
+                status="golden"
+                note="A tool card renders in every lifecycle state on purpose — an in-flight tool that draws nothing is indistinguishable from a stall."
+              >
+                <div className="w-full max-w-md">
+                  <ChatTranscript
+                    messages={CHAT_TOOL_RUNNING}
+                    status="streaming"
+                  />
+                </div>
+              </Specimen>
+
+              <Specimen
+                label="<ChatMidTurnShimmer> · between steps"
+                surface="app"
+                status="golden"
+                note="The gap after a tool settles while the model composes its next step. Lighter than the pending turn because the reply is already visibly under way."
+              >
+                <div className="w-full max-w-md">
+                  <ChatTranscript
+                    messages={CHAT_BETWEEN_STEPS}
+                    status="streaming"
+                  />
+                </div>
+              </Specimen>
+
+              <Specimen
+                label="<ChatToolCard> · awaiting approval"
+                surface="app"
+                status="golden"
+                note="No spinner here on purpose: the wait belongs to the user, not the model, so nagging would be wrong."
+              >
+                <div className="w-full max-w-md">
+                  <ChatTranscript
+                    messages={CHAT_AWAITING_APPROVAL}
+                    status="streaming"
+                  />
+                </div>
+              </Specimen>
+
+              <Specimen
+                label="<ChatTranscript> · settled turn"
+                surface="app"
+                status="golden"
+                note="src/components/golden/chat.tsx + src/lib/chat-turn-state.ts. Takes the useChat() shape directly: <ChatTranscript messages={messages} status={status} />."
+              >
+                <div className="w-full max-w-md">
+                  <ChatTranscript messages={CHAT_SETTLED} status="ready" />
+                </div>
+              </Specimen>
+            </LayoutSwitch>
+          </section>
+
+          {/* ============================ COVERAGE */}
+          <section>
+            <SectionTitle
+              n="13"
               title="Coverage & extraction backlog"
               sub="From a full sweep of 160 marketing + 49 app + 53 shadcn files (389 patterns). This table is itself rendered on the shadcn <Table> primitive (dogfooding)."
             />
@@ -1408,6 +1587,11 @@ export default function DesignSystemPage() {
                       ],
                       ["Blog: Prose / Tldr / PullStat", "blog", "golden"],
                       ["ErrorState + golden 404", "shared", "golden"],
+                      [
+                        "Chat (ChatTranscript + turn-state waiting rules)",
+                        "app",
+                        "golden",
+                      ],
                       [
                         "Live charts (Recharts) golden re-theme · Mapbox",
                         "app",
