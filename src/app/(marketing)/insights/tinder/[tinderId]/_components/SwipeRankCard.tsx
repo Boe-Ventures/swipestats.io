@@ -229,7 +229,7 @@ export function SwipeRankCard() {
             <Select
               value={effectiveKind}
               onValueChange={(value) => {
-                setSelectedKind(value as PeriodKind);
+                setSelectedKind(value!);
                 setSelectedPeriodKey("");
               }}
             >
@@ -252,7 +252,7 @@ export function SwipeRankCard() {
             </Select>
             <Select
               value={swipeRankPeriodKey(selectedPeriod.period)}
-              onValueChange={setSelectedPeriodKey}
+              onValueChange={(next) => next !== null && setSelectedPeriodKey(next)}
             >
               <SelectTrigger className="w-[190px] bg-white">
                 <SelectValue />

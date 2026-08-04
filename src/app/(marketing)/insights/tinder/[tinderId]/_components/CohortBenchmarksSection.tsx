@@ -306,7 +306,7 @@ export function CohortBenchmarksSection() {
             <Select
               value={effectiveKind}
               onValueChange={(value) => {
-                setSelectedKind(value as PeriodKind);
+                setSelectedKind(value!);
                 setSelectedPeriodKey("");
               }}
             >
@@ -329,7 +329,7 @@ export function CohortBenchmarksSection() {
             </Select>
             <Select
               value={swipeRankPeriodKey(selected.period)}
-              onValueChange={setSelectedPeriodKey}
+              onValueChange={(next) => next !== null && setSelectedPeriodKey(next)}
             >
               <SelectTrigger className="w-[180px]">
                 <SelectValue />

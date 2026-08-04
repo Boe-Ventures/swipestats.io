@@ -461,6 +461,7 @@ export default function AdminSwipeRankPage() {
             <Select
               value={selectedPeriodKey}
               onValueChange={(value) => {
+                if (value === null) return;
                 setSelectedPeriodKey(value);
                 setPage(1);
               }}
@@ -910,7 +911,10 @@ function FilterSelect({
       >
         {label}
       </label>
-      <Select value={value} onValueChange={onChange}>
+      <Select
+        value={value}
+        onValueChange={(next) => next !== null && onChange(next)}
+      >
         <SelectTrigger id={controlId}>
           <SelectValue />
         </SelectTrigger>

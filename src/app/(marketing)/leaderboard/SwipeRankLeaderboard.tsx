@@ -350,7 +350,7 @@ export function SwipeRankLeaderboard() {
                 <Select
                   value={kind}
                   onValueChange={(value) =>
-                    chooseKind(value as SwipeRankPeriodKind)
+                    chooseKind(value!)
                   }
                 >
                   <SelectTrigger
@@ -370,6 +370,7 @@ export function SwipeRankLeaderboard() {
                 <Select
                   value={swipeRankPeriodKey(selected)}
                   onValueChange={(value) => {
+                    if (value === null) return;
                     setSelectedKey(value);
                     setPage(1);
                   }}
