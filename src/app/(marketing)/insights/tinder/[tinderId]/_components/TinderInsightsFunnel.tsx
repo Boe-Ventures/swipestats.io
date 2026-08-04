@@ -92,12 +92,10 @@ export function TinderInsightsFunnel({
   // Compute derived values for the funnel SVG
   const combinedSwipesTotal =
     (meta.swipeLikesTotal ?? 0) + (meta.swipePassesTotal ?? 0);
-  const noMatchesTotal = (meta.swipeLikesTotal ?? 0) - (meta.matchesTotal ?? 0);
 
   const globalMeta = {
     ...meta,
     combinedSwipesTotal,
-    noMatchesTotal,
   };
 
   const customData = customDataQuery.data;
@@ -112,8 +110,8 @@ export function TinderInsightsFunnel({
               <CardTitle>Your Tinder Insights</CardTitle>
               <CardDescription>
                 {hasCustomData
-                  ? "Visualize your complete path from swipes to relationships"
-                  : "Your dating funnel from swipes to conversations"}
+                  ? "Observed app activity alongside your reported outcomes"
+                  : "Observed swipes, matches, and exported conversations"}
               </CardDescription>
             </div>
             {!readonly && (

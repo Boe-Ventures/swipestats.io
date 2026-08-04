@@ -16,6 +16,13 @@ import { protectedProcedure } from "../trpc";
 import type { TRPCRouterRecord } from "@trpc/server";
 import { BlobService } from "@/server/services/blob.service";
 import { getContinentFromCountry } from "@/lib/utils/continent";
+import { withTransaction } from "@/server/db";
+import {
+  lockTinderSwipeRankMutationsInTx,
+  purgeTinderSwipeRankUserInTx,
+  updateTinderSwipeRankUserLocation,
+} from "@/server/services/swipe-rank/lifecycle.service";
+import { invalidatePublicSwipeRankCache } from "@/server/services/swipe-rank/public-cache";
 import { requestAmplitudeUserDeletion } from "@/server/clients/amplitude.server";
 
 export const userRouter = {
@@ -38,25 +45,14 @@ export const userRouter = {
     const timeZone = headersList.get("x-vercel-ip-timezone") ?? null;
     const continent = country ? getContinentFromCountry(country) : null;
 
-    // Update user location in database
-    const [updatedUser] = await ctx.db
-      .update(userTable)
-      .set({
-        city,
-        country,
-        region,
-        timeZone,
-        continent,
-      })
-      .where(eq(userTable.id, ctx.session.user.id))
-      .returning();
-
-    if (!updatedUser) {
-      throw new TRPCError({
-        code: "NOT_FOUND",
-        message: "User not found",
-      });
-    }
+    const updatedUser = await updateTinderSwipeRankUserLocation({
+      userId: ctx.session.user.id,
+      city,
+      country,
+      region,
+      timeZone,
+      continent,
+    });
 
     return updatedUser;
   }),
@@ -156,21 +152,11 @@ export const userRouter = {
         ? getContinentFromCountry(input.country)
         : undefined;
 
-      const [updatedUser] = await ctx.db
-        .update(userTable)
-        .set({
-          ...input,
-          continent,
-        })
-        .where(eq(userTable.id, ctx.session.user.id))
-        .returning();
-
-      if (!updatedUser) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "User not found",
-        });
-      }
+      const updatedUser = await updateTinderSwipeRankUserLocation({
+        userId: ctx.session.user.id,
+        ...input,
+        continent,
+      });
 
       return updatedUser;
     }),
@@ -239,8 +225,15 @@ export const userRouter = {
       });
     }
 
-    // Delete user (cascade will handle related records including originalAnonymizedFileTable)
-    await ctx.db.delete(userTable).where(eq(userTable.id, userId));
+    // Purge the Tinder analytical registry before the user cascade removes the
+    // provider source. This removes live facts and the person's frozen entry
+    // rows, and rolls back with account deletion if either step fails.
+    await withTransaction(async (tx) => {
+      await lockTinderSwipeRankMutationsInTx(tx);
+      await purgeTinderSwipeRankUserInTx(tx, userId);
+      await tx.delete(userTable).where(eq(userTable.id, userId));
+    });
+    invalidatePublicSwipeRankCache();
 
     return { success: true, deletedUserId: userId };
   }),

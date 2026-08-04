@@ -14,10 +14,10 @@
  * USAGE
  * ============================================================================
  *
- *   # Full migration (all 4 steps)
+ *   # Full migration (both steps)
  *   OLD_DATABASE_URL=<old> DATABASE_URL=<new> bun run src/scripts/migration/run.ts
  *
- *   # Stats only (steps 2-4, skip data migration)
+ *   # Stats only (step 2, skip data migration)
  *   DATABASE_URL=<db> bun run src/scripts/migration/run.ts --stats-only
  *
  *   # With options
@@ -48,13 +48,8 @@
  *           - Aggregated statistics for each profile
  *           - Enables quick analytics queries
  *
- *   Step 3: Seed Cohorts
- *           - System cohort definitions (gender, age brackets)
- *           - Required for "How You Compare" feature
- *
- *   Step 4: Compute Cohort Statistics
- *           - Percentile distributions for all cohorts
- *           - Multi-period support (all-time + yearly)
+ *   SwipeRank period facts and descriptor cohorts are built separately with:
+ *     bun run swipe-rank:launch -- --confirm-write
  *
  * ============================================================================
  * POST-MIGRATION
@@ -68,8 +63,6 @@
 
 import { migrateData } from "./steps/migrate-data";
 import { computeAllProfileMeta } from "./steps/compute-profile-meta";
-import { seedCohorts } from "./steps/seed-cohorts";
-import { computeAllCohortStats } from "./steps/compute-cohort-stats";
 import {
   printHeader,
   printStep,
@@ -126,7 +119,7 @@ async function main() {
   console.log("");
   console.log("Configuration:");
   console.log(
-    `  Mode: ${statsOnly ? "Stats Only (steps 2-4)" : "Full Migration (steps 1-4)"}`,
+    `  Mode: ${statsOnly ? "Stats Only (step 2)" : "Full Migration (steps 1-2)"}`,
   );
   if (!statsOnly) {
     console.log(`  PROFILE_LIMIT: ${PROFILE_LIMIT || "all"}`);
@@ -145,7 +138,7 @@ async function main() {
     // ============================================================================
 
     if (!statsOnly) {
-      printHeader("Step 1/4: Migrate Core Data");
+      printHeader("Step 1/2: Migrate Core Data");
 
       console.log("Migrating:");
       console.log("  - Users (synthetic anonymous users)");
@@ -173,7 +166,7 @@ async function main() {
       );
     } else {
       console.log(
-        "Step 1/4: Migrate Core Data - SKIPPED (--stats-only mode)\n",
+        "Step 1/2: Migrate Core Data - SKIPPED (--stats-only mode)\n",
       );
     }
 
@@ -183,8 +176,8 @@ async function main() {
 
     printHeader(
       statsOnly
-        ? "Step 1/3: Compute ProfileMeta"
-        : "Step 2/4: Compute ProfileMeta",
+        ? "Step 1/1: Compute ProfileMeta"
+        : "Step 2/2: Compute ProfileMeta",
     );
 
     console.log("Computing metadata for all profiles...");
@@ -201,53 +194,6 @@ async function main() {
     );
 
     // ============================================================================
-    // STEP 3: Seed Cohorts
-    // ============================================================================
-
-    printHeader(
-      statsOnly
-        ? "Step 2/3: Seed System Cohorts"
-        : "Step 3/4: Seed System Cohorts",
-    );
-
-    console.log("Creating cohort definitions...");
-    console.log("  - 3 basic cohorts (All, Men, Women)");
-    console.log("  - 9 age bracket cohorts (18-24, 25-34, 35-44, 45+)");
-    console.log("");
-
-    printStep("Running cohort seeding...");
-    const step3Start = Date.now();
-
-    await seedCohorts();
-
-    printSuccess(
-      `Cohort seeding complete (${formatDuration(Date.now() - step3Start)})`,
-    );
-
-    // ============================================================================
-    // STEP 4: Compute Cohort Statistics
-    // ============================================================================
-
-    printHeader(
-      statsOnly
-        ? "Step 3/3: Compute Cohort Statistics"
-        : "Step 4/4: Compute Cohort Statistics",
-    );
-
-    console.log("Computing percentile benchmarks for all cohorts...");
-    console.log("  This enables the 'How You Compare' feature");
-    console.log("");
-
-    printStep("Running cohort statistics computation...");
-    const step4Start = Date.now();
-
-    await computeAllCohortStats();
-
-    printSuccess(
-      `Cohort statistics complete (${formatDuration(Date.now() - step4Start)})`,
-    );
-
-    // ============================================================================
     // COMPLETION
     // ============================================================================
 
@@ -258,9 +204,9 @@ async function main() {
     console.log(`Total time: ${formatDuration(totalDuration)}`);
     console.log("");
     console.log("Next steps:");
-    console.log("  1. Start your dev server: bun dev");
-    console.log("  2. Visit any profile insights page");
-    console.log("  3. Verify the 'How You Compare' section shows correct data");
+    console.log("  1. Run: bun run swipe-rank:launch -- --confirm-write");
+    console.log("  2. Start your dev server: bun dev");
+    console.log("  3. Verify SwipeRank and private benchmarks");
     console.log("");
     printSuccess("Your database is ready to use!");
   } catch (error) {

@@ -12,7 +12,6 @@ import { customDataRouter } from "@/server/api/routers/customDataRouter";
 import { newsletterRouter } from "@/server/api/routers/newsletterRouter";
 import { billingRouter } from "@/server/api/routers/billingRouter";
 import { researchRouter } from "@/server/api/routers/researchRouter";
-import { cohortRouter } from "@/server/api/routers/cohortRouter";
 import { matchRouter } from "@/server/api/routers/matchRouter";
 import { roastRouter } from "@/server/api/routers/roastRouter";
 import { promptSuggestRouter } from "@/server/api/routers/promptSuggestRouter";
@@ -21,6 +20,7 @@ import { profileComposeRouter } from "@/server/api/routers/profileComposeRouter"
 import { consentRouter } from "@/server/api/routers/consentRouter";
 import { catalogRouter } from "@/server/api/routers/catalogRouter";
 import { inquiryRouter } from "@/server/api/routers/inquiryRouter";
+import { swipeRankRouter } from "@/server/api/routers/swipeRankRouter";
 import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
 
 /**
@@ -43,7 +43,6 @@ export const appRouter = createTRPCRouter({
   newsletter: newsletterRouter,
   billing: billingRouter,
   research: researchRouter,
-  cohort: cohortRouter,
   match: matchRouter,
   roast: roastRouter,
   promptSuggest: promptSuggestRouter,
@@ -52,6 +51,7 @@ export const appRouter = createTRPCRouter({
   consent: consentRouter,
   catalog: catalogRouter,
   inquiry: inquiryRouter,
+  swipeRank: swipeRankRouter,
 });
 
 // export type definition of API

@@ -3,16 +3,33 @@ import type {
   Match,
   Message,
   ProfileMeta,
-  HingePrompt,
+  HingeInteraction,
 } from "@/server/db/schema";
+
+export type HingeInsightsMessage = Pick<Message, "sentDate">;
+
+export type HingeInsightsMatch = Pick<
+  Match,
+  "id" | "matchedAt" | "likedAt" | "weMet"
+> & {
+  messages: HingeInsightsMessage[];
+};
+
+export type HingeInsightsInteraction = Pick<
+  HingeInteraction,
+  "type" | "timestamp" | "matchId" | "threadOrigin" | "threadState"
+>;
 
 /**
  * Full Hinge profile with stats and related data for insights display
  */
-export type HingeProfileWithStats = HingeProfile & {
-  matches: (Match & { messages: Message[] })[];
+export type HingeProfileWithStats = Pick<
+  HingeProfile,
+  "hingeId" | "gender" | "ageAtUpload" | "selfieVerified" | "country"
+> & {
+  matches: HingeInsightsMatch[];
+  interactions: HingeInsightsInteraction[];
   profileMeta: ProfileMeta[];
-  prompts: HingePrompt[];
 };
 
 /**

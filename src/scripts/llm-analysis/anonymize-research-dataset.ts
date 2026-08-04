@@ -29,6 +29,7 @@ import {
   existsSync,
 } from "fs";
 import path from "path";
+import { getTinderExportMessageAuthor } from "@/lib/tinder-message-semantics";
 
 // ════════════════════════════════════════════════════════════════════
 // CONFIG
@@ -243,7 +244,7 @@ Messages: [index] USER/MATCH: message text. The prefix is metadata — your reda
 
 function formatConversationForLLM(messages: ExportedMessage[]): string {
   const lines = messages.map((m, idx) => {
-    const direction = m.to === 0 ? "USER" : "MATCH";
+    const direction = getTinderExportMessageAuthor(m.to);
     if (m.messageType !== "TEXT") {
       return `[${idx}] ${direction}: [${m.messageType}]`;
     }

@@ -3,11 +3,15 @@ import { eq } from "drizzle-orm";
 
 import { db } from "@/server/db";
 import { tinderProfileTable } from "@/server/db/schema";
+import { isAdminRequestAuthorized } from "@/lib/admin-request-auth";
 
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ tinderId: string }> },
 ) {
+  if (!(await isAdminRequestAuthorized(request))) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
   const { tinderId } = await params;
 
   if (!tinderId) {

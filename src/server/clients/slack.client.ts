@@ -374,7 +374,6 @@ export function sendEvent(params: {
     processingTimeMs,
     tinderId,
     hingeId,
-    blobUrl,
     ...otherFields
   } = fields;
 
@@ -414,7 +413,9 @@ export function sendEvent(params: {
 
   // Any other fields (excluding tinderId since we'll use it for buttons)
   Object.entries(otherFields)
-    .filter(([_, value]) => value !== undefined)
+    // Raw storage addresses must never enter operator notifications, even if a
+    // future caller bypasses the typed analytics property registry.
+    .filter(([key, value]) => key !== "blobUrl" && value !== undefined)
     .forEach(([key, value]) => {
       lines.push(`*${formatFieldName(key)}:* ${value}`);
     });
@@ -463,12 +464,6 @@ export function sendEvent(params: {
         `${baseUrl}/admin/insights/hinge/${hingeId}`,
         "primary",
       ),
-    );
-  }
-
-  if (blobUrl) {
-    actionButtons.push(
-      createButtonElement("View Raw Data", "view_blob", String(blobUrl)),
     );
   }
 
@@ -760,7 +755,6 @@ export async function trackSlackEvent<T extends ServerAnalyticsEventName>(
           photos: props.photoCount,
           usageDays: props.usageDays,
           processingTimeMs: props.processingTimeMs,
-          blobUrl: props.blobUrl,
         },
         eventName: event,
         imageUrls: media
@@ -836,7 +830,6 @@ export async function trackSlackEvent<T extends ServerAnalyticsEventName>(
           table: sanitizeSlackText(props.errorTable),
           column: sanitizeSlackText(props.errorColumn),
           detail: sanitizeSlackText(props.errorDetail),
-          blobUrl: props.blobUrl,
           jsonSizeMB: props.jsonSizeMB,
         },
       });
@@ -886,7 +879,6 @@ export async function trackSlackEvent<T extends ServerAnalyticsEventName>(
           prompts: props.promptCount,
           interactions: props.interactionCount,
           processingTimeMs: props.processingTimeMs,
-          blobUrl: props.blobUrl,
         },
         eventName: event,
         imageUrls: media
@@ -963,7 +955,6 @@ export async function trackSlackEvent<T extends ServerAnalyticsEventName>(
           table: sanitizeSlackText(props.errorTable),
           column: sanitizeSlackText(props.errorColumn),
           detail: sanitizeSlackText(props.errorDetail),
-          blobUrl: props.blobUrl,
           jsonSizeMB: props.jsonSizeMB,
         },
       });

@@ -27,10 +27,11 @@ export default async function HingeInsightsLayout({
   const { hingeId } = await params;
   const session = await getSession();
 
-  // Light query - profile + meta only
+  // Only ownership is needed server-side. The client fetches a deliberately
+  // narrow insights projection that excludes account, identity, and content.
   const profile = await db.query.hingeProfileTable.findFirst({
     where: eq(hingeProfileTable.hingeId, hingeId),
-    with: { profileMeta: true },
+    columns: { userId: true },
   });
 
   if (!profile) notFound();
@@ -41,7 +42,6 @@ export default async function HingeInsightsLayout({
 
   return (
     <HingeInsightsProvider
-      initialProfile={profile}
       hingeId={hingeId}
       readonly={!isOwner}
       isOwner={isOwner}

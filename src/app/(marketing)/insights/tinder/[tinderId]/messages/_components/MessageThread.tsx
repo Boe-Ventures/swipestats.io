@@ -5,6 +5,7 @@ import { format, formatDistanceStrict } from "date-fns";
 import { cn } from "@/components/ui/lib/utils";
 import { Image as ImageIcon, Music, Heart, Activity } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { getTinderExportMessageAuthor } from "@/lib/tinder-message-semantics";
 
 interface MessageThreadProps {
   messages: Message[];
@@ -14,7 +15,7 @@ export function MessageThread({ messages }: MessageThreadProps) {
   return (
     <div className="space-y-4">
       {messages.map((message, index) => {
-        const isSent = message.to === 1;
+        const isSent = getTinderExportMessageAuthor(message.to) === "USER";
         const prevMessage = index > 0 ? messages[index - 1] : null;
         const timeSincePrev = prevMessage
           ? message.sentDate.getTime() - prevMessage.sentDate.getTime()
@@ -108,7 +109,8 @@ export function MessageThread({ messages }: MessageThreadProps) {
       {/* Message Count Summary */}
       <div className="border-t pt-4">
         <p className="text-muted-foreground text-center text-sm">
-          {messages.length} total messages in this conversation
+          {messages.length} exported{" "}
+          {messages.length === 1 ? "message" : "messages"} from you
         </p>
       </div>
     </div>

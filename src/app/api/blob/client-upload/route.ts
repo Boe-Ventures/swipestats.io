@@ -4,15 +4,21 @@ import { handleUpload } from "@vercel/blob/client";
 import { z } from "zod";
 
 import type { HandleUploadBody } from "@vercel/blob/client";
+import {
+  CLIENT_UPLOAD_PUBLIC_CONFIG,
+  resolveClientUploadPolicy,
+} from "@/lib/blob-client-upload-policy";
 import { getSession } from "@/server/better-auth/server";
 import { db } from "@/server/db";
 import { attachmentTable, RESOURCE_TYPES } from "@/server/db/schema";
-import { ALLOWED_FILE_TYPES } from "@/server/services/blob.service";
+import {
+  bindTransientUploadFromCallback,
+  issueTransientUploadLease,
+} from "@/server/services/transient-upload.service";
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
-  const body = (await request.json()) as HandleUploadBody;
-
   try {
+    const body = (await request.json()) as HandleUploadBody;
     const jsonResponse = await handleUpload({
       body,
       request,
@@ -23,79 +29,33 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           throw new Error("Unauthorized - please log in to upload files");
         }
 
-        console.log(`🔐 Generating upload token for: ${pathname}`);
-        console.log(`👤 User: ${session.user.id}`);
-        console.log(`📦 Client payload:`, clientPayload);
-
-        // Parse and validate client payload
-        const uploadContextSchema = z.object({
-          resourceType: z.enum(RESOURCE_TYPES).optional(),
-          resourceId: z.string().optional(),
-          allowedTypes: z.array(z.string()).optional(),
-          maxSize: z.number().optional(),
+        const policy = resolveClientUploadPolicy({
+          pathname,
+          clientPayload,
+          userId: session.user.id,
         });
 
-        let uploadContext = uploadContextSchema.parse({});
-
-        if (clientPayload) {
-          try {
-            uploadContext = uploadContextSchema.parse(
-              JSON.parse(clientPayload),
-            );
-          } catch (error) {
-            console.warn("⚠️ Failed to parse client payload:", error);
-          }
+        if (policy.transientUpload) {
+          await issueTransientUploadLease({
+            ...policy.transientUpload,
+            userId: session.user.id,
+            sessionId: session.session.id,
+            dataProvider:
+              policy.resourceType === "tinder_data" ? "TINDER" : "HINGE",
+          });
         }
 
-        // Determine allowed content types based on context
-        let allowedContentTypes: string[] = [
-          ...ALLOWED_FILE_TYPES.IMAGE,
-          ...ALLOWED_FILE_TYPES.VIDEO,
-          ...ALLOWED_FILE_TYPES.AUDIO,
-        ];
-
-        // Override allowed types if specified in context
-        if (
-          uploadContext.allowedTypes &&
-          uploadContext.allowedTypes.length > 0
-        ) {
-          allowedContentTypes = uploadContext.allowedTypes;
-        } else if (uploadContext.resourceType) {
-          // Set default allowed types based on resource type
-          switch (uploadContext.resourceType) {
-            case "profile_comparison":
-            case "comparison_column":
-            case "user_photo":
-              // For profile photos, allow images and video
-              allowedContentTypes = [
-                ...ALLOWED_FILE_TYPES.IMAGE,
-                ...ALLOWED_FILE_TYPES.VIDEO,
-                ...ALLOWED_FILE_TYPES.AUDIO,
-              ];
-              break;
-            case "tinder_data":
-            case "hinge_data":
-            case "raya_data":
-              // For data exports, allow JSON files
-              allowedContentTypes = ["application/json"];
-              break;
-            default:
-              // Keep default broad allowlist
-              break;
-          }
-        }
-
-        console.log(`✅ Allowed content types:`, allowedContentTypes);
+        console.log("Client upload policy issued", {
+          resourceType: policy.resourceType,
+          maximumSizeInBytes: policy.maximumSizeInBytes,
+        });
 
         return {
-          allowedContentTypes,
-          addRandomSuffix: true,
-          tokenPayload: JSON.stringify({
-            userId: session.user.id,
-            userEmail: session.user.email,
-            uploadedAt: new Date().toISOString(),
-            ...uploadContext,
-          }),
+          allowedContentTypes: policy.allowedContentTypes,
+          maximumSizeInBytes: policy.maximumSizeInBytes,
+          validUntil: policy.validUntil,
+          addRandomSuffix: policy.addRandomSuffix,
+          tokenPayload: policy.tokenPayload,
         };
       },
       onUploadCompleted: async ({ blob, tokenPayload }) => {
@@ -111,8 +71,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         // means we only create a placeholder row if the client mutation hasn't
         // already written the real one — no double-inserts, and the client's
         // good data is never clobbered.
-        console.log(`✅ Client upload completed:`, blob.url);
-        console.log(`📦 Token payload:`, tokenPayload);
+        console.log("Client upload completed");
 
         try {
           // Parse token payload to get upload context
@@ -120,8 +79,21 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
             userId?: string;
             resourceType?: string;
             resourceId?: string;
+            uploadId?: string;
           };
           const { userId, resourceType, resourceId } = payload;
+
+          if (
+            (resourceType === "tinder_data" || resourceType === "hinge_data") &&
+            payload.uploadId
+          ) {
+            await bindTransientUploadFromCallback({
+              id: payload.uploadId,
+              blobUrl: blob.url,
+              blobPathname: blob.pathname,
+            });
+            return;
+          }
 
           // Create a fallback attachment record if resource info provided
           if (resourceType && resourceId && userId) {
@@ -187,7 +159,6 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : "Upload failed",
-        details: error instanceof Error ? error.stack : undefined,
       },
       { status: 400 },
     );
@@ -202,15 +173,8 @@ export async function GET(_request: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // Return upload configuration/limits for the frontend
     return NextResponse.json({
-      maxFileSize: 100 * 1024 * 1024, // 100MB for client uploads
-      allowedTypes: {
-        images: ALLOWED_FILE_TYPES.IMAGE,
-        videos: ALLOWED_FILE_TYPES.VIDEO,
-        audio: ALLOWED_FILE_TYPES.AUDIO,
-      },
-      userId: session.user.id,
+      resources: CLIENT_UPLOAD_PUBLIC_CONFIG,
     });
   } catch (error) {
     console.error("❌ Get upload config failed:", error);

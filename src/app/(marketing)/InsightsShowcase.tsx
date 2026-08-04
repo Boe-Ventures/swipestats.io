@@ -8,8 +8,12 @@ import { ProfileOverview } from "./insights/tinder/[tinderId]/_components/Profil
 import { MessagesMetaCard } from "./insights/tinder/[tinderId]/_components/MessagesMetaCard";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Event } from "@/server/db/schema";
-import type { TinderProfileWithUsage } from "@/lib/types/profile";
+import type {
+  Event,
+  ProfileMeta,
+  TinderProfile,
+  TinderUsage,
+} from "@/server/db/schema";
 
 /**
  * Loading skeleton that matches the showcase layout
@@ -62,8 +66,13 @@ function ShowcaseSkeleton() {
   );
 }
 
+type ShowcaseTinderProfile = TinderProfile & {
+  usage: TinderUsage[];
+  profileMeta: ProfileMeta[];
+};
+
 type DemoData = {
-  profile: TinderProfileWithUsage;
+  profile: ShowcaseTinderProfile;
   events: Event[];
 };
 
@@ -154,7 +163,7 @@ export function InsightsShowcase() {
             createdAt: new Date(m.createdAt),
             updatedAt: new Date(m.updatedAt),
           })),
-        } as unknown as TinderProfileWithUsage;
+        } as unknown as ShowcaseTinderProfile;
 
         // Convert date strings for events
         const eventsWithDates = events.map((e) => ({

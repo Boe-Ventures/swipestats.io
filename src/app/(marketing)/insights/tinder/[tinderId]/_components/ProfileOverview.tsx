@@ -83,7 +83,12 @@ export function ProfileOverview({ className }: { className?: string }) {
           )}
           <div className="flex items-center gap-1">
             <CalendarIcon className="h-4 w-4" />
-            <span>Joined {format(profile.createDate, "MMM d, yyyy")}</span>
+            <span>
+              {profile.createDateSource === "INFERRED_FROM_USAGE"
+                ? "Observed since"
+                : "Joined"}{" "}
+              {format(profile.createDate, "MMM d, yyyy")}
+            </span>
           </div>
         </div>
       </CardHeader>
@@ -111,7 +116,7 @@ export function ProfileOverview({ className }: { className?: string }) {
             }
           />
           <StatItem
-            label="Messages Sent"
+            label="Usage Messages Sent"
             value={
               globalMeta?.messagesSentTotal != null
                 ? globalMeta.messagesSentTotal.toLocaleString()
@@ -119,7 +124,7 @@ export function ProfileOverview({ className }: { className?: string }) {
             }
           />
           <StatItem
-            label="Match Rate"
+            label="Match yield"
             value={
               globalMeta?.matchRate != null
                 ? `${(globalMeta.matchRate * 100).toFixed(1)}%`

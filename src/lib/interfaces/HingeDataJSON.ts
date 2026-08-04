@@ -379,7 +379,9 @@ export type HingeDataFilePart =
 interface HingeDataJSONBase {
   // Core Hinge data structure based on actual export format
   User: UserData;
-  Prompts: PromptEntryList;
+  // Presence matters for additive uploads: omitted means "not included in this
+  // export", while an explicitly uploaded empty prompts.json means "clear".
+  Prompts?: PromptEntryList;
   Matches: Conversations;
   // These may not exist in all exports
   Media?: HingeMedia[];
@@ -388,7 +390,7 @@ interface HingeDataJSONBase {
 
 export interface AnonymizedHingeDataJSON extends Omit<
   HingeDataJSONBase,
-  "User"
+  "User" | "Subscriptions"
 > {
   User: AnonymizedHingeUser;
 }
@@ -399,30 +401,26 @@ export interface FullHingeDataJSON extends HingeDataJSONBase {
 
 // Create anonymized user interface based on the actual UserData structure
 export interface AnonymizedHingeUser {
-  preferences: Preferences;
-  identity: Omit<
-    Identity,
-    | "email"
-    | "phone_number"
-    | "phone_carrier"
-    | "phone_line_type"
-    | "phone_is_prepaid"
-  > & {
-    has_email: boolean;
-    has_phone: boolean;
-    has_phone_carrier: boolean;
-    instagram_authorized: boolean;
+  preferences: Partial<Preferences>;
+  identity: {
+    phone_country_code?: string;
+    phone_country_calling_code?: string;
+    has_email?: boolean;
+    has_phone?: boolean;
+    has_phone_carrier?: boolean;
+    instagram_authorized?: boolean;
   };
-  account: Account;
-  installs: Omit<
-    Install,
-    "ip_address" | "idfa" | "idfv" | "adid" | "user_agent"
+  account: Pick<Account, "signup_time" | "last_seen">;
+  installs: { install_time?: string }[];
+  devices?: Pick<
+    Device,
+    "device_platform" | "device_os_versions" | "app_version"
   >[];
-  devices?: Omit<Device, "device_id" | "user_agent">[];
-  location?: Pick<Location, "country">;
-  profile: Omit<Profile, "first_name" | "last_name"> & {
-    has_first_name: boolean;
-    has_last_name: boolean;
+  location?: { country?: string };
+  profile: Partial<Omit<Profile, "first_name" | "last_name" | "age">> & {
+    age: number;
+    has_first_name?: boolean;
+    has_last_name?: boolean;
   };
 }
 

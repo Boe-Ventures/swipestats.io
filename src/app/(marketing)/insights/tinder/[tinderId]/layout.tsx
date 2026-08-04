@@ -27,17 +27,69 @@ export default async function TinderInsightsLayout({
   const { tinderId } = await params;
   const session = await getSession();
 
-  // Light query - profile + meta only, no usage
-  const profile = await db.query.tinderProfileTable.findFirst({
+  // Explicit presentation projection: never serialize birth date, owner ID,
+  // raw/internal fields, or other ownership material into a public RSC payload.
+  const profileRow = await db.query.tinderProfileTable.findFirst({
     where: eq(tinderProfileTable.tinderId, tinderId),
+    columns: {
+      userId: true,
+      tinderId: true,
+      computed: true,
+      ageAtUpload: true,
+      ageAtLastUsage: true,
+      createDate: true,
+      createDateSource: true,
+      activeTime: true,
+      gender: true,
+      genderStr: true,
+      bio: true,
+      city: true,
+      country: true,
+      region: true,
+      userInterests: true,
+      interests: true,
+      instagramConnected: true,
+      spotifyConnected: true,
+      jobTitle: true,
+      jobTitleDisplayed: true,
+      company: true,
+      companyDisplayed: true,
+      school: true,
+      schoolDisplayed: true,
+      college: true,
+      jobsRaw: true,
+      schoolsRaw: true,
+      educationLevel: true,
+      ageFilterMin: true,
+      ageFilterMax: true,
+      interestedIn: true,
+      interestedInStr: true,
+      genderFilter: true,
+      genderFilterStr: true,
+      firstDayOnApp: true,
+      lastDayOnApp: true,
+      daysInProfilePeriod: true,
+    },
     with: { profileMeta: true },
   });
 
-  if (!profile) notFound();
+  if (!profileRow) notFound();
 
   // Determine ownership for readonly flag
-  const isOwner = session?.user?.id === profile.userId;
+  const isOwner = session?.user?.id === profileRow.userId;
   const isAnonymous = session?.user?.isAnonymous ?? false;
+  const { userId: _ownerId, ...profile } = profileRow;
+  if (!isOwner) {
+    // Public viewers need only the account month shown in the profile card.
+    // Do not expose the exact account-creation timestamp used in ID derivation.
+    profile.createDate = new Date(
+      Date.UTC(
+        profile.createDate.getUTCFullYear(),
+        profile.createDate.getUTCMonth(),
+        1,
+      ),
+    );
+  }
 
   return (
     <TinderProfileProvider

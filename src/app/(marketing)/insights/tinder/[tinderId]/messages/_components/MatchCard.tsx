@@ -49,10 +49,12 @@ export function MatchCard({ match }: MatchCardProps) {
         <div className="flex items-start justify-between gap-4">
           <div className="flex-1 space-y-2">
             <div className="flex items-center gap-2">
-              <CardTitle className="text-lg">Match #{match.order}</CardTitle>
+              <CardTitle className="text-lg">
+                Match #{match.order + 1}
+              </CardTitle>
               {!hasMessages && (
                 <Badge variant="secondary" className="text-xs">
-                  No messages
+                  No exported messages
                 </Badge>
               )}
             </div>
@@ -69,7 +71,7 @@ export function MatchCard({ match }: MatchCardProps) {
                 <div className="flex items-center gap-1">
                   <Clock className="h-3 w-3" />
                   <span>
-                    Last message {format(match.lastMessageAt, "MMM d, yyyy")}
+                    Last sent {format(match.lastMessageAt, "MMM d, yyyy")}
                   </span>
                 </div>
               )}
@@ -114,7 +116,7 @@ export function MatchCard({ match }: MatchCardProps) {
               className="shrink-0"
             >
               <MessageCircle className="mr-2 h-4 w-4" />
-              {match.totalMessageCount} messages
+              {match.totalMessageCount} sent
               {isExpanded ? (
                 <ChevronUp className="ml-2 h-4 w-4" />
               ) : (
@@ -136,7 +138,7 @@ export function MatchCard({ match }: MatchCardProps) {
             <MessageThread messages={messages} />
           ) : (
             <p className="text-muted-foreground py-4 text-center">
-              No messages found for this match.
+              No exported messages found for this match.
             </p>
           )}
         </CardContent>

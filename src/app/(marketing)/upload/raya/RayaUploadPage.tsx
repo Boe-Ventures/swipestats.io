@@ -157,7 +157,10 @@ export function RayaUploadPage() {
         {
           access: "public",
           handleUploadUrl: "/api/blob/client-upload",
-          clientPayload: JSON.stringify({ resourceType: "raya_data" }),
+          clientPayload: JSON.stringify({
+            resourceType: "raya_data",
+            rayaId: payload.rayaId,
+          }),
         },
       );
 

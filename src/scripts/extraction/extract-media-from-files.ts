@@ -29,10 +29,7 @@ import { count } from "drizzle-orm";
 import { createHash } from "node:crypto";
 import ws from "ws";
 import * as schema from "@/server/db/schema";
-import type {
-  AnonymizedTinderDataJSON,
-  TinderPhoto,
-} from "@/lib/interfaces/TinderDataJSON";
+import type { AnonymizedTinderDataJSON } from "@/lib/interfaces/TinderDataJSON";
 import {
   isNewPhotoFormat,
   isOldPhotoFormat,
@@ -107,10 +104,7 @@ interface PhotoStats {
 // ---- UTILITIES ----------------------------------------------------
 
 function log(message: string) {
-  const timestamp = new Date()
-    .toISOString()
-    .replace("T", " ")
-    .substring(0, 19);
+  const timestamp = new Date().toISOString().replace("T", " ").substring(0, 19);
   console.log(`[${timestamp}] ${message}`);
 }
 
@@ -171,7 +165,9 @@ async function extractMedia() {
   log(`Configuration:`);
   log(`  RECORD_LIMIT: ${RECORD_LIMIT ?? "all (no limit)"}`);
   log(`  VERBOSE: ${VERBOSE}`);
-  log(`  DATABASE_URL: ${process.env.DATABASE_URL ? "set" : "NOT SET (skipping new DB cross-reference)"}`);
+  log(
+    `  DATABASE_URL: ${process.env.DATABASE_URL ? "set" : "NOT SET (skipping new DB cross-reference)"}`,
+  );
   console.log("");
 
   // ---- Connect to old database (WebSocket pool for large JSONB)
@@ -203,11 +199,15 @@ async function extractMedia() {
     };
 
     console.log("  Old DB OriginalAnonymizedFile counts:");
-    console.log(`    Total:         ${parseInt(counts.total).toLocaleString()}`);
+    console.log(
+      `    Total:         ${parseInt(counts.total).toLocaleString()}`,
+    );
     console.log(
       `    Tinder:        ${parseInt(counts.tinder).toLocaleString()}`,
     );
-    console.log(`    Hinge:         ${parseInt(counts.hinge).toLocaleString()}`);
+    console.log(
+      `    Hinge:         ${parseInt(counts.hinge).toLocaleString()}`,
+    );
     console.log(
       `    With file:     ${parseInt(counts.with_file).toLocaleString()}`,
     );
@@ -386,7 +386,9 @@ async function extractMedia() {
 
           // Metadata
           if (photo.prompt_text) stats.newFormatWithPrompt++;
-          if (photo.selfie_verified) stats.newFormatWithSelfieVerified++;
+          if ("selfie_verified" in photo && photo.selfie_verified) {
+            stats.newFormatWithSelfieVerified++;
+          }
         }
 
         if (VERBOSE) {
@@ -497,9 +499,7 @@ async function extractMedia() {
           }
         }
 
-        console.log(
-          `  Of the ${tinderIds.length} profiles from old files:`,
-        );
+        console.log(`  Of the ${tinderIds.length} profiles from old files:`);
         console.log(
           `    ${profilesWithNewMedia} already have media in NEW media table`,
         );
@@ -511,34 +511,52 @@ async function extractMedia() {
         );
       }
     } else {
-      log(
-        "\nPhase 4: Skipped (DATABASE_URL not set - cannot check new DB)",
-      );
+      log("\nPhase 4: Skipped (DATABASE_URL not set - cannot check new DB)");
     }
 
     // ---- SUMMARY ----
-    console.log(
-      `\n${"═".repeat(65)}`,
-    );
+    console.log(`\n${"═".repeat(65)}`);
     console.log("📊 FULL SUMMARY");
     console.log(`${"═".repeat(65)}`);
 
     console.log("\n📁 Files:");
-    console.log(`  Total Tinder files scanned:  ${stats.totalFiles.toLocaleString()}`);
-    console.log(`  Files with photos:           ${stats.filesWithPhotos.toLocaleString()}`);
-    console.log(`  Files with no Photos field:  ${stats.filesWithNoPhotosField.toLocaleString()}`);
-    console.log(`  Files with empty Photos[]:   ${stats.filesWithEmptyPhotos.toLocaleString()}`);
+    console.log(
+      `  Total Tinder files scanned:  ${stats.totalFiles.toLocaleString()}`,
+    );
+    console.log(
+      `  Files with photos:           ${stats.filesWithPhotos.toLocaleString()}`,
+    );
+    console.log(
+      `  Files with no Photos field:  ${stats.filesWithNoPhotosField.toLocaleString()}`,
+    );
+    console.log(
+      `  Files with empty Photos[]:   ${stats.filesWithEmptyPhotos.toLocaleString()}`,
+    );
 
     console.log("\n📐 Format Breakdown:");
-    console.log(`  New format (TinderPhoto[]):  ${stats.newFormatFiles.toLocaleString()} files → ${stats.totalNewFormatPhotos.toLocaleString()} photos`);
-    console.log(`  Old format (string[]):       ${stats.oldFormatFiles.toLocaleString()} files → ${stats.totalOldFormatPhotos.toLocaleString()} photos`);
-    console.log(`  Unknown format:              ${stats.unknownFormatFiles.toLocaleString()} files`);
+    console.log(
+      `  New format (TinderPhoto[]):  ${stats.newFormatFiles.toLocaleString()} files → ${stats.totalNewFormatPhotos.toLocaleString()} photos`,
+    );
+    console.log(
+      `  Old format (string[]):       ${stats.oldFormatFiles.toLocaleString()} files → ${stats.totalOldFormatPhotos.toLocaleString()} photos`,
+    );
+    console.log(
+      `  Unknown format:              ${stats.unknownFormatFiles.toLocaleString()} files`,
+    );
 
     console.log("\n🔗 New Format URL Analysis (our focus):");
-    console.log(`  HTTPS URLs:      ${stats.newFormatWithHttpsUrl.toLocaleString()}`);
-    console.log(`  Non-HTTPS URLs:  ${stats.newFormatWithNonHttpsUrl.toLocaleString()}`);
-    console.log(`  With prompt:     ${stats.newFormatWithPrompt.toLocaleString()}`);
-    console.log(`  Selfie verified: ${stats.newFormatWithSelfieVerified.toLocaleString()}`);
+    console.log(
+      `  HTTPS URLs:      ${stats.newFormatWithHttpsUrl.toLocaleString()}`,
+    );
+    console.log(
+      `  Non-HTTPS URLs:  ${stats.newFormatWithNonHttpsUrl.toLocaleString()}`,
+    );
+    console.log(
+      `  With prompt:     ${stats.newFormatWithPrompt.toLocaleString()}`,
+    );
+    console.log(
+      `  Selfie verified: ${stats.newFormatWithSelfieVerified.toLocaleString()}`,
+    );
 
     if (stats.newFormatUrlDomains.size > 0) {
       printMap(stats.newFormatUrlDomains, "New Format URL Domains");
@@ -549,8 +567,12 @@ async function extractMedia() {
     }
 
     console.log("\n🔗 Old Format URL Analysis (for reference):");
-    console.log(`  HTTPS URLs:      ${stats.oldFormatWithHttpsUrl.toLocaleString()}`);
-    console.log(`  Non-HTTPS URLs:  ${stats.oldFormatWithNonHttpsUrl.toLocaleString()}`);
+    console.log(
+      `  HTTPS URLs:      ${stats.oldFormatWithHttpsUrl.toLocaleString()}`,
+    );
+    console.log(
+      `  Non-HTTPS URLs:  ${stats.oldFormatWithNonHttpsUrl.toLocaleString()}`,
+    );
 
     if (stats.oldFormatUrlDomains.size > 0) {
       printMap(stats.oldFormatUrlDomains, "Old Format URL Domains");
@@ -584,10 +606,13 @@ async function extractMedia() {
     console.log(`  Oldest: ${stats.oldestFile}`);
     console.log(`  Newest: ${stats.newestFile}`);
 
-    console.log(`\n🔑 Tinder IDs extracted: ${stats.tinderIdsFromFiles.size.toLocaleString()}`);
+    console.log(
+      `\n🔑 Tinder IDs extracted: ${stats.tinderIdsFromFiles.size.toLocaleString()}`,
+    );
 
     // Migration estimate
-    const totalPhotosToMigrate = stats.totalNewFormatPhotos + stats.totalOldFormatPhotos;
+    const totalPhotosToMigrate =
+      stats.totalNewFormatPhotos + stats.totalOldFormatPhotos;
     console.log("\n🚀 Migration Estimate:");
     console.log(
       `  Total photos in JSON blobs:  ${totalPhotosToMigrate.toLocaleString()}`,
@@ -598,9 +623,7 @@ async function extractMedia() {
     console.log(
       `  Old format (string URLs):    ${stats.totalOldFormatPhotos.toLocaleString()} (${stats.oldFormatWithHttpsUrl} with https)`,
     );
-    console.log(
-      `  Source: All from JSON blobs (old Media table is empty)`,
-    );
+    console.log(`  Source: All from JSON blobs (old Media table is empty)`);
 
     console.log(`\n${"═".repeat(65)}\n`);
   } finally {

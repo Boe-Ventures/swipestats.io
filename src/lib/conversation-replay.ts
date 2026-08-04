@@ -89,7 +89,9 @@ function buildMetric(
 
   return {
     matchId: conversation.id,
-    matchOrder: conversation.order,
+    // Match.order is persisted as a zero-based sequence; the replay label is
+    // a human-facing ordinal.
+    matchOrder: conversation.order + 1,
     messageCount: messages.length,
     activeDays,
     durationDays: Math.floor(durationMs / DAY_MS),

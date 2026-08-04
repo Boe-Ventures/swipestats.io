@@ -33,8 +33,9 @@ interface FunnelStage {
 }
 
 /**
- * Dating funnel visualization showing conversion from swipes to conversations
- * with integrated real-world outcomes tracking
+ * Legacy activity visualization. Tinder's Usage and Messages collections are
+ * separate ledgers, so only ratios whose numerator and denominator both come
+ * from Usage are presented as conversions.
  */
 export function DatingFunnel() {
   const { meta, tinderId, readonly } = useTinderProfile();
@@ -139,13 +140,8 @@ export function DatingFunnel() {
       color: "from-slate-600 to-slate-700",
     },
     {
-      stage: "Conversations",
+      stage: "Messaged conversation records",
       value: globalMeta.conversationsWithMessages,
-      percent:
-        globalMeta.matchesTotal > 0
-          ? (globalMeta.conversationsWithMessages / globalMeta.matchesTotal) *
-            100
-          : 0,
       icon: MessageCircle,
       color: "from-slate-700 to-slate-800",
     },
@@ -159,36 +155,18 @@ export function DatingFunnel() {
           {
             stage: "Dates",
             value: customDataQuery.data?.dateAttended ?? 0,
-            percent:
-              globalMeta.conversationsWithMessages > 0
-                ? ((customDataQuery.data?.dateAttended ?? 0) /
-                    globalMeta.conversationsWithMessages) *
-                  100
-                : 0,
             icon: Calendar,
             color: "from-slate-700 to-slate-800",
           },
           {
             stage: "Sex",
             value: customDataQuery.data?.sleptWithEventually ?? 0,
-            percent:
-              (customDataQuery.data?.dateAttended ?? 0) > 0
-                ? ((customDataQuery.data?.sleptWithEventually ?? 0) /
-                    (customDataQuery.data?.dateAttended ?? 1)) *
-                  100
-                : 0,
             icon: Sparkles,
             color: "from-pink-600 to-pink-700",
           },
           {
             stage: "Relationships",
             value: customDataQuery.data?.relationshipsStarted ?? 0,
-            percent:
-              (customDataQuery.data?.sleptWithEventually ?? 0) > 0
-                ? ((customDataQuery.data?.relationshipsStarted ?? 0) /
-                    (customDataQuery.data?.sleptWithEventually ?? 1)) *
-                  100
-                : 0,
             icon: Heart,
             color: "from-slate-800 to-slate-900",
           },
@@ -210,12 +188,13 @@ export function DatingFunnel() {
                 Your Dating Funnel
               </CardTitle>
               <p className="text-muted-foreground mt-1 text-sm">
-                Conversion rates through each stage
+                Observed counts; conversation records come from a separate
+                export ledger
               </p>
             </div>
             <div className="text-right">
               <div className="text-2xl font-bold">{matchRate.toFixed(1)}%</div>
-              <div className="text-muted-foreground text-xs">Match Rate</div>
+              <div className="text-muted-foreground text-xs">Match yield</div>
             </div>
           </div>
         </CardHeader>

@@ -11,9 +11,49 @@ import type {
 } from "@/server/db/schema";
 import { getGlobalMeta } from "@/lib/types/profile";
 
+export type TinderInsightsProfile = Pick<
+  TinderProfile,
+  | "tinderId"
+  | "computed"
+  | "ageAtUpload"
+  | "ageAtLastUsage"
+  | "createDate"
+  | "createDateSource"
+  | "activeTime"
+  | "gender"
+  | "genderStr"
+  | "bio"
+  | "city"
+  | "country"
+  | "region"
+  | "userInterests"
+  | "interests"
+  | "instagramConnected"
+  | "spotifyConnected"
+  | "jobTitle"
+  | "jobTitleDisplayed"
+  | "company"
+  | "companyDisplayed"
+  | "school"
+  | "schoolDisplayed"
+  | "college"
+  | "jobsRaw"
+  | "schoolsRaw"
+  | "educationLevel"
+  | "ageFilterMin"
+  | "ageFilterMax"
+  | "interestedIn"
+  | "interestedInStr"
+  | "genderFilter"
+  | "genderFilterStr"
+  | "firstDayOnApp"
+  | "lastDayOnApp"
+  | "daysInProfilePeriod"
+> & { profileMeta: ProfileMeta[] };
+
 type TinderProfileContextValue = {
   tinderId: string;
-  profile: TinderProfile & { profileMeta: ProfileMeta[] };
+  profile: TinderInsightsProfile;
   usage: TinderUsage[];
   meta: ProfileMeta | null;
   events: Event[];
@@ -40,7 +80,7 @@ export function useTinderProfile() {
 type Props = {
   children: ReactNode;
   tinderId: string;
-  initialProfile: TinderProfile & { profileMeta: ProfileMeta[] };
+  initialProfile: TinderInsightsProfile;
   initialUsage?: TinderUsage[]; // Optional for demo/showcase mode
   initialEvents?: Event[]; // Optional for demo/showcase mode
   readonly?: boolean;
@@ -72,17 +112,13 @@ export function TinderProfileProvider({
     ),
   );
 
-  // Client-side events fetch (public - works for any profile)
-  // Fetches events for the profile owner (userId from profile)
-  // Disabled if initialEvents provided (demo mode)
+  // Events are private to the signed-in owner; public insight viewers receive
+  // no owner identifier and never query another person's life events.
   const eventsQuery = useQuery(
-    trpc.event.list.queryOptions(
-      { userId: initialProfile.userId ?? undefined },
-      {
-        refetchOnWindowFocus: false,
-        enabled: !initialEvents && !!initialProfile.userId, // Skip if provided (demo mode) or no userId
-      },
-    ),
+    trpc.event.list.queryOptions(undefined, {
+      refetchOnWindowFocus: false,
+      enabled: !initialEvents && isOwner,
+    }),
   );
 
   const usage = initialUsage ?? usageQuery.data ?? [];

@@ -56,10 +56,13 @@ export function CompareInsightsContent() {
 
         {/* Messages Sent/Received - 2 columns */}
         <div className="grid gap-10 md:grid-cols-2">
-          <CompareMetricChart metric="messagesSent" title="Messages Sent" />
+          <CompareMetricChart
+            metric="messagesSent"
+            title="Usage Messages Sent"
+          />
           <CompareMetricChart
             metric="messagesReceived"
-            title="Messages Received"
+            title="Usage Messages Received"
           />
         </div>
 
@@ -72,13 +75,6 @@ export function CompareInsightsContent() {
         </div>
 
         <DataRequestCTA />
-
-        {/* Row 3: Cohort Benchmarks + Match Rate Card */}
-        {/* <div className="grid gap-10 md:grid-cols-2">
-          <CohortBenchmarksCard />
-          <MatchRateCard />
-        </div>
-        */}
       </div>
     </main>
   );

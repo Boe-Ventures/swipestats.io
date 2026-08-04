@@ -158,11 +158,6 @@ export const SERVER_EVENT_PROPERTIES: EventPropertyRegistry<ServerEventPropertie
       jsonSizeMB: { type: "number", required: true },
       consentPhotos: { type: "boolean", required: true },
       consentWork: { type: "boolean", required: true },
-      blobUrl: {
-        type: "string",
-        required: false,
-        description: "Anonymized raw upload, when stored.",
-      },
     },
     tinder_profile_updated: {
       tinderId: { type: "string", required: true },
@@ -206,11 +201,6 @@ export const SERVER_EVENT_PROPERTIES: EventPropertyRegistry<ServerEventPropertie
       errorTable: { type: "string", required: false },
       errorColumn: { type: "string", required: false },
       errorDetail: { type: "string", required: false },
-      blobUrl: {
-        type: "string",
-        required: false,
-        description: "Uploaded blob URL if the upload made it to storage.",
-      },
       jsonSizeMB: { type: "number", required: false },
     },
 
@@ -227,14 +217,21 @@ export const SERVER_EVENT_PROPERTIES: EventPropertyRegistry<ServerEventPropertie
       jsonSizeMB: { type: "number", required: true },
       consentPhotos: { type: "boolean", required: true },
       consentWork: { type: "boolean", required: true },
-      blobUrl: {
-        type: "string",
-        required: false,
-        description: "Anonymized raw upload, when stored.",
-      },
     },
     hinge_profile_updated: {
       hingeId: { type: "string", required: true },
+      incomingHingeId: {
+        type: "string",
+        required: false,
+        description:
+          "Newly derived id when a historical id version is retained.",
+      },
+      historicalIdVersion: {
+        type: "boolean",
+        required: false,
+        description:
+          "True when exact signup equality routed this to additive update.",
+      },
       matchCount: {
         type: "number",
         required: true,
@@ -293,11 +290,6 @@ export const SERVER_EVENT_PROPERTIES: EventPropertyRegistry<ServerEventPropertie
       errorTable: { type: "string", required: false },
       errorColumn: { type: "string", required: false },
       errorDetail: { type: "string", required: false },
-      blobUrl: {
-        type: "string",
-        required: false,
-        description: "Uploaded blob URL if the upload made it to storage.",
-      },
       jsonSizeMB: { type: "number", required: false },
     },
 

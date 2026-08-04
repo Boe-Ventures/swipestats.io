@@ -12,6 +12,8 @@ import { isGenderDataUnknown } from "@/lib/utils/gender";
 import type { TinderConsentState } from "@/lib/interfaces/TinderConsent";
 import { filterPayloadByConsent } from "@/lib/utils/filterTinderPayload";
 import { useAnalytics } from "@/contexts/AnalyticsProvider";
+import { shouldReuseTransientUpload } from "@/lib/upload/transient-upload";
+import { transientDataBlobPath } from "@/lib/blob-paths";
 
 interface TinderSubmitButtonProps {
   payload: SwipestatsProfilePayload;
@@ -25,7 +27,6 @@ interface TinderSubmitButtonProps {
       | "new_user"
       | "same_tinderId"
       | "different_tinderId"
-      | "can_claim"
       | "needs_signin"
       | "owned_by_other";
     identityMismatch?: boolean;
@@ -46,7 +47,11 @@ export function TinderSubmitButton({
   const [uploadState, setUploadState] = useState<
     "idle" | "uploading" | "processing"
   >("idle");
-  const [uploadedBlobUrl, setUploadedBlobUrl] = useState<string | null>(null);
+  const [uploadedBlob, setUploadedBlob] = useState<{
+    uploadId: string;
+    url: string;
+    serializedPayload: string;
+  } | null>(null);
 
   // Use Better Auth's built-in session hook
   const { data: session } = authClient.useSession();
@@ -58,8 +63,12 @@ export function TinderSubmitButton({
     onSuccess: (data: { tinderId: string }) => {
       router.push(`/insights/tinder/${data.tinderId}`);
     },
-    onError: (error: { message?: string }) => {
+    onError: (error: { message?: string; data?: { code?: string } | null }) => {
       console.error("Error uploading profile:", error);
+      // The owner-bound lease makes a pre-commit processing retry safe.
+      if (!shouldReuseTransientUpload(error)) setUploadedBlob(null);
+      setUploadState("idle");
+      setIsCreatingSession(false);
       const message =
         error.message || "Failed to upload profile. Please try again.";
       alert(message);
@@ -77,10 +86,20 @@ export function TinderSubmitButton({
     trpc.profile.mergeAccounts.mutationOptions(mutationOptions),
   );
 
+  const scenario = uploadContext?.scenario;
+  const isActionableScenario =
+    scenario === "new_profile" ||
+    scenario === "new_user" ||
+    scenario === "same_tinderId" ||
+    scenario === "different_tinderId";
+
   const handleSubmit = async () => {
     // The button is already disabled while loading; this guards the function
     // itself against a same-frame double-fire before the disabled state applies.
     if (!canSubmit || isLoading) return;
+    // Never create a session or public transport blob for a state that cannot
+    // reach a processing endpoint (for example owned_by_other/needs_signin).
+    if (!isActionableScenario) return;
 
     // Track submit click
     const photoCount = Array.isArray(payload.anonymizedTinderJson.Photos)
@@ -112,6 +131,7 @@ export function TinderSubmitButton({
           },
         });
         if (error) {
+          setIsCreatingSession(false);
           alert("Failed to create session. Please try again.");
           return;
         }
@@ -119,24 +139,30 @@ export function TinderSubmitButton({
       }
 
       // Step 2: Upload to blob (skip if already uploaded)
-      let blobUrl = uploadedBlobUrl;
+      // Consent and profile enhancements can change after a failed processing
+      // attempt. Reuse a transport blob only when it contains the exact
+      // allowlisted payload currently shown in the preview.
+      const filteredPayload = filterPayloadByConsent(payload, consent);
+      const serializedPayload = JSON.stringify(
+        filteredPayload.anonymizedTinderJson,
+      );
+      let blobUrl =
+        uploadedBlob?.serializedPayload === serializedPayload
+          ? uploadedBlob.url
+          : null;
+      const uploadId = blobUrl ? uploadedBlob!.uploadId : crypto.randomUUID();
       if (!blobUrl) {
         setUploadState("uploading");
         console.log("📤 Uploading to blob storage...");
 
-        // Filter payload based on consent before uploading
-        const filteredPayload = filterPayloadByConsent(payload, consent);
-
         // Create JSON blob
-        const jsonBlob = new Blob(
-          [JSON.stringify(filteredPayload.anonymizedTinderJson)],
-          { type: "application/json" },
-        );
+        const jsonBlob = new Blob([serializedPayload], {
+          type: "application/json",
+        });
 
         // Upload to Vercel Blob with structured path
-        const date = new Date().toISOString().split("T")[0]; // YYYY-MM-DD
         const result = await upload(
-          `tinder-data/${filteredPayload.tinderId}/${date}/data.json`,
+          transientDataBlobPath("tinder", filteredPayload.tinderId, uploadId),
           jsonBlob,
           {
             access: "public",
@@ -144,21 +170,27 @@ export function TinderSubmitButton({
             clientPayload: JSON.stringify({
               resourceType: "tinder_data",
               tinderId: filteredPayload.tinderId,
+              uploadId,
             }),
           },
         );
 
         blobUrl = result.url;
-        setUploadedBlobUrl(blobUrl);
-        console.log("✅ Blob uploaded:", blobUrl);
+        setUploadedBlob({
+          uploadId,
+          url: blobUrl,
+          serializedPayload,
+        });
+        console.log("✅ Tinder data uploaded to temporary storage");
       } else {
-        console.log("♻️ Using cached blob URL:", blobUrl);
+        console.log("♻️ Reusing the temporary Tinder upload");
       }
 
       // Step 3: Process profile
       setUploadState("processing");
       const uploadData = {
         tinderId: payload.tinderId,
+        uploadId,
         blobUrl,
         timezone,
         country,
@@ -167,11 +199,9 @@ export function TinderSubmitButton({
       };
 
       // Route to appropriate endpoint based on scenario
-      const scenario = uploadContext?.scenario;
-
       if (scenario === "new_profile" || scenario === "new_user") {
         createMutation.mutate(uploadData);
-      } else if (scenario === "same_tinderId" || scenario === "can_claim") {
+      } else if (scenario === "same_tinderId") {
         updateMutation.mutate(uploadData);
       } else if (scenario === "different_tinderId") {
         mergeMutation.mutate(uploadData);
@@ -187,7 +217,7 @@ export function TinderSubmitButton({
 
       if (errorMessage.toLowerCase().includes("upload")) {
         // Blob upload failed - clear cache and show error
-        setUploadedBlobUrl(null);
+        setUploadedBlob(null);
         alert("Upload failed. Please check your connection and try again.");
       } else {
         // Processing failed - keep blob URL cached for retry
@@ -205,8 +235,8 @@ export function TinderSubmitButton({
     isGenderDataUnknown(user.gender_filter);
 
   const termsAccepted = consent.terms;
-  const hasUploadContext = !!uploadContext?.scenario;
-  const canSubmit = !hasUnknownGender && !disabled && termsAccepted && hasUploadContext;
+  const canSubmit =
+    !hasUnknownGender && !disabled && termsAccepted && isActionableScenario;
   const isLoading =
     isCreatingSession ||
     uploadState !== "idle" ||

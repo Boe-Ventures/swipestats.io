@@ -15,16 +15,13 @@ import { useComparison } from "../../ComparisonProvider";
 import { getProfileColor, getProfileLabel } from "../utils/profileColors";
 import { getGlobalMeta } from "@/lib/types/profile";
 import type { ProfileMeta } from "@/server/db/schema";
+import {
+  formatMessageAverage,
+  formatSendingGap,
+  getTinderMessageUiMetrics,
+} from "../../_components/tinder-message-ui-metrics";
 
 // Formatting utilities
-function formatResponseTime(seconds: number | null | undefined): string {
-  if (!seconds) return "-";
-  if (seconds < 60) return `${seconds}s`;
-  if (seconds < 3600) return `${Math.round(seconds / 60)}m`;
-  if (seconds < 86400) return `${Math.round(seconds / 3600)}h`;
-  return `${Math.round(seconds / 86400)}d`;
-}
-
 function formatNumber(num: number | null | undefined): string {
   if (num === null || num === undefined) return "-";
   return num.toLocaleString();
@@ -48,50 +45,50 @@ interface MetricDefinition {
 
 const METRICS: MetricDefinition[] = [
   {
-    label: "Total conversations",
-    description: "From all your matches",
+    label: "Conversation records",
+    description: "Conversation entries included in the export",
     getValue: (meta) => formatNumber(meta.conversationCount),
   },
   {
-    label: "Conversations with messages",
-    description: "From matches in your data export",
+    label: "Records with messages",
+    description: "Entries with an exported message from the uploader",
     getValue: (meta) => formatNumber(meta.conversationsWithMessages),
   },
   {
-    label: "Messages sent",
-    description: "Total messages you sent",
+    label: "Usage messages sent",
+    description: "Aggregate from Tinder's daily Usage ledger",
+    getValue: (meta) => formatNumber(meta.messagesSentTotal),
+  },
+  {
+    label: "Messages per messaged record",
+    description: "Calculated from exported message threads",
     getValue: (meta) => {
-      const medianMessages = meta.medianMessagesPerConversation;
-      const avgMessages = meta.averageMessagesPerConversation;
-      const total = formatNumber(meta.messagesSentTotal);
-
-      if (
-        medianMessages !== null &&
-        medianMessages !== undefined &&
-        avgMessages !== null &&
-        avgMessages !== undefined
-      ) {
-        return `${total} (Typical: ${medianMessages}, Avg: ${avgMessages.toFixed(1)})`;
-      }
-      return total;
+      const metrics = getTinderMessageUiMetrics(meta);
+      const average = formatMessageAverage(
+        metrics.averageMessagesPerMessagedRecord,
+      );
+      return metrics.medianMessagesPerMessagedRecord === null
+        ? average
+        : `Median ${metrics.medianMessagesPerMessagedRecord}, avg ${average}`;
     },
   },
   {
-    label: "Response time",
-    description: "Time between messages",
+    label: "Sending cadence",
+    description: "Time between the uploader's outgoing messages",
     getValue: (meta) => {
-      const median = formatResponseTime(meta.averageResponseTimeSeconds);
-      const mean = formatResponseTime(meta.meanResponseTimeSeconds);
+      const median =
+        formatSendingGap(meta.averageResponseTimeSeconds) ?? "Unavailable";
+      const mean = formatSendingGap(meta.meanResponseTimeSeconds);
 
-      if (median !== "-" && mean !== "-") {
+      if (median !== "Unavailable" && mean !== null) {
         return `${median} (Typical: ${median}, Avg: ${mean})`;
       }
       return median;
     },
   },
   {
-    label: "Median conversation",
-    description: "Typical conversation length",
+    label: "Median outgoing span",
+    description: "Typical span of exported outgoing messages",
     getValue: (meta) => {
       const days = meta.medianConversationDurationDays;
       return days !== null && days !== undefined
@@ -100,8 +97,8 @@ const METRICS: MetricDefinition[] = [
     },
   },
   {
-    label: "Longest conversation",
-    description: "Your record conversation",
+    label: "Longest outgoing span",
+    description: "Longest span of exported outgoing messages",
     getValue: (meta) => {
       const days = meta.longestConversationDays;
       return days !== null && days !== undefined

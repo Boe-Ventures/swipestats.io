@@ -123,9 +123,6 @@ export function mergeTinderProfiles(
       olderProfile.Usage.superlikes,
       newerProfile.Usage.superlikes,
     ),
-    // Use advertising IDs from newer profile only
-    advertising_id: newerProfile.Usage.advertising_id,
-    idfa: newerProfile.Usage.idfa,
   };
 
   console.log("\n💬 Merging Messages/Matches...");
@@ -145,29 +142,9 @@ export function mergeTinderProfiles(
     // Merged messages/matches
     Messages: mergedMessages,
 
-    // Everything else from NEW profile
+    // Only the strict public upload contract is emitted. Provider metadata
+    // outside these four sections is intentionally excluded.
     Photos: newerProfile.Photos,
-    Spotify: newerProfile.Spotify,
-    Campaigns: newerProfile.Campaigns,
-    Experiences: newerProfile.Experiences,
-    Purchases: {
-      // Optionally merge subscription history from both
-      subscription: [
-        ...(olderProfile.Purchases?.subscription ?? []),
-        ...(newerProfile.Purchases?.subscription ?? []),
-      ],
-      consumable: [
-        ...(olderProfile.Purchases?.consumable ?? []),
-        ...(newerProfile.Purchases?.consumable ?? []),
-      ],
-      boost_tracking: newerProfile.Purchases?.boost_tracking ?? [],
-      super_like_tracking: newerProfile.Purchases?.super_like_tracking ?? [],
-    },
-    SwipeNotes: newerProfile.SwipeNotes,
-    RoomsAndInteractions: newerProfile.RoomsAndInteractions,
-    StudentVerifications: newerProfile.StudentVerifications,
-    SwipeParty: newerProfile.SwipeParty,
-    SocialGraph: newerProfile.SocialGraph,
   };
 
   return merged;

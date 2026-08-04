@@ -1,4 +1,4 @@
-import { and, eq } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 
 import type { AnonymizedHingeDataJSON } from "@/lib/interfaces/HingeDataJSON";
 import { withTransaction, type TransactionClient } from "@/server/db";
@@ -12,11 +12,13 @@ import {
   profileMetaTable,
   originalAnonymizedFileTable,
   customDataTable,
-  type MatchInsert,
-  type MessageInsert,
-  type HingeInteractionInsert,
 } from "@/server/db/schema";
 import { createId } from "@/server/db/utils";
+import {
+  getEarliestHingeAccountSignup,
+  getForwardHingeAccountMergePeriod,
+} from "@/lib/hinge/account-period";
+import { fetchVerifiedHingeBlob } from "./hinge-blob.service";
 import { transformHingeJsonToProfile } from "./hinge-transform.service";
 import { createHingeMessagesAndMatches } from "./hinge-messages.service";
 import { createHingeProfileMeta } from "./hinge-meta.service";
@@ -24,29 +26,30 @@ import {
   transformHingePromptsForDb,
   type HingeProfileResult,
 } from "./hinge.service";
-
-/**
- * Transform Hinge media to database media insert format
- */
-function transformHingeMediaToDb(
-  media: { type?: string; url: string; prompt?: string | null }[],
-  hingeProfileId: string,
-) {
-  if (!Array.isArray(media) || media.length === 0) {
-    return [];
-  }
-
-  return media.map((m) => ({
-    id: createId("media"),
-    type: m.type || "photo",
-    url: m.url,
-    prompt: m.prompt || null,
-    caption: null,
-    fromSoMe: null,
-    hingeProfileId,
-    tinderProfileId: null,
-  }));
-}
+import {
+  appendHingeCrossAccountMatchOrders,
+  prepareHingeAdditiveRows,
+  getHingeMatchTimestampIdentity,
+  type ExistingMatchByMatchedAt,
+  type InteractionBackfill,
+  type MatchBackfill,
+  type MessageBackfill,
+  type MessageSequenceUpdate,
+} from "./hinge-additive-rows";
+import { filterHingeJsonByConsent } from "@/lib/utils/filterHingePayload";
+import {
+  lockHingeProfileUploadsInTx,
+  lockHingeProviderMutationsInTx,
+} from "./hinge-upload-lock";
+import { transformHingeMediaToDb } from "./hinge-media.service";
+import { shouldApplyHingeProfileSnapshot } from "./hinge-profile-snapshot";
+import { hingeProfileOwnedBy } from "./hinge-ownership";
+import {
+  cleanupCommittedTransientUpload,
+  lockTransientUploadForMutationInTx,
+  markTransientUploadCommittedInTx,
+  type TransientUploadBinding,
+} from "../transient-upload.service";
 
 /**
  * Helper: Recompute profile meta in transaction
@@ -87,112 +90,73 @@ async function recomputeHingeProfileMetaInTx(
   });
 }
 
-type ExistingMatchByMatchedAt = Map<number, string>;
-
-function getMessageKey(
-  message: Pick<MessageInsert, "matchId" | "sentDate">,
-): string {
-  return `${message.matchId}:${message.sentDate.getTime()}`;
-}
-
-function getInteractionKey(
-  interaction: Pick<HingeInteractionInsert, "type" | "timestamp">,
-): string {
-  return `${interaction.type}:${interaction.timestamp.getTime()}`;
-}
-
-function prepareHingeAdditiveRows(
-  existingMatchesByMatchedAt: ExistingMatchByMatchedAt,
-  existingMessageKeys: Set<string>,
-  existingInteractionKeys: Set<string>,
-  newMatches: MatchInsert[],
-  newMessages: MessageInsert[],
-  newInteractions: HingeInteractionInsert[],
-): {
-  matchesToInsert: MatchInsert[];
-  messagesToInsert: MessageInsert[];
-  interactionsToInsert: HingeInteractionInsert[];
-  remappedInteractionsInput: HingeInteractionInsert[];
-} {
-  const matchesToInsert: MatchInsert[] = [];
-  const generatedToDbMatchId = new Map<string, string>();
-
-  for (const match of newMatches) {
-    const existingMatchId = match.matchedAt
-      ? existingMatchesByMatchedAt.get(match.matchedAt.getTime())
-      : undefined;
-
-    if (existingMatchId) {
-      generatedToDbMatchId.set(match.id, existingMatchId);
-      continue;
-    }
-
-    matchesToInsert.push(match);
-  }
-
-  const remapMatchId = (matchId: string | null | undefined) =>
-    matchId ? (generatedToDbMatchId.get(matchId) ?? matchId) : matchId;
-
-  const remappedMessagesInput = newMessages.map((message) => ({
-    ...message,
-    matchId: remapMatchId(message.matchId)!,
-  }));
-  const messagesToInsert = remappedMessagesInput.filter(
-    (message) => !existingMessageKeys.has(getMessageKey(message)),
-  );
-
-  const remappedInteractionsInput = newInteractions.map((interaction) => ({
-    ...interaction,
-    matchId: remapMatchId(interaction.matchId) ?? null,
-  }));
-  const interactionsToInsert = remappedInteractionsInput.filter(
-    (interaction) =>
-      !existingInteractionKeys.has(getInteractionKey(interaction)),
-  );
-
-  return {
-    matchesToInsert,
-    messagesToInsert,
-    interactionsToInsert,
-    remappedInteractionsInput,
-  };
-}
-
-async function backfillExistingHingeClassifications(
+async function refreshExistingHingeRows(
   tx: TransactionClient,
-  hingeId: string,
-  existingMatchesByMatchedAt: ExistingMatchByMatchedAt,
-  existingInteractionKeys: Set<string>,
-  matchesInput: MatchInsert[],
-  interactionsInput: HingeInteractionInsert[],
-): Promise<{ matchCount: number; interactionCount: number }> {
+  matchBackfills: MatchBackfill[],
+  messageBackfills: MessageBackfill[],
+  messageSequenceUpdates: MessageSequenceUpdate[],
+  interactionBackfills: InteractionBackfill[],
+): Promise<{
+  matchCount: number;
+  messageCount: number;
+  interactionCount: number;
+}> {
   let matchCount = 0;
+  let messageCount = 0;
   let interactionCount = 0;
 
-  for (const match of matchesInput) {
-    if (!match.matchedAt) continue;
-
-    const existingMatchId = existingMatchesByMatchedAt.get(
-      match.matchedAt.getTime(),
-    );
-    if (!existingMatchId) continue;
-
+  for (const { id, row: match } of matchBackfills) {
     await tx
       .update(matchTable)
       .set({
+        order: match.order,
+        totalMessageCount: match.totalMessageCount,
+        textCount: match.textCount,
+        gifCount: match.gifCount,
+        gestureCount: match.gestureCount,
+        otherMessageTypeCount: match.otherMessageTypeCount,
+        initialMessageAt: match.initialMessageAt,
+        lastMessageAt: match.lastMessageAt,
+        responseTimeMedianSeconds: match.responseTimeMedianSeconds,
+        conversationDurationDays: match.conversationDurationDays,
+        messageImbalanceRatio: match.messageImbalanceRatio,
+        longestGapHours: match.longestGapHours,
+        didMatchReply: match.didMatchReply,
+        lastMessageFrom: match.lastMessageFrom,
         like: match.like,
         likedAt: match.likedAt,
         weMet: match.weMet,
       })
-      .where(eq(matchTable.id, existingMatchId));
+      .where(eq(matchTable.id, id));
     matchCount++;
   }
 
-  for (const interaction of interactionsInput) {
-    if (!existingInteractionKeys.has(getInteractionKey(interaction))) {
-      continue;
-    }
+  for (const { id, row: message } of messageBackfills) {
+    await tx
+      .update(messageTable)
+      .set({
+        messageType: message.messageType,
+        to: message.to,
+        sentDateRaw: message.sentDateRaw,
+        content: message.content,
+        charCount: message.charCount,
+        contentRaw: message.contentRaw,
+        type: message.type,
+        gifUrl: message.gifUrl,
+        order: message.order,
+        timeSinceLastMessage: message.timeSinceLastMessage,
+        timeSinceLastMessageRelative: message.timeSinceLastMessageRelative,
+      })
+      .where(eq(messageTable.id, id));
+    messageCount++;
+  }
 
+  for (const { id, metrics } of messageSequenceUpdates) {
+    await tx.update(messageTable).set(metrics).where(eq(messageTable.id, id));
+    messageCount++;
+  }
+
+  for (const { id, row: interaction } of interactionBackfills) {
     await tx
       .update(hingeInteractionTable)
       .set({
@@ -200,17 +164,11 @@ async function backfillExistingHingeClassifications(
         threadOrigin: interaction.threadOrigin,
         threadState: interaction.threadState,
       })
-      .where(
-        and(
-          eq(hingeInteractionTable.hingeProfileId, hingeId),
-          eq(hingeInteractionTable.type, interaction.type),
-          eq(hingeInteractionTable.timestamp, interaction.timestamp),
-        ),
-      );
+      .where(eq(hingeInteractionTable.id, id));
     interactionCount++;
   }
 
-  return { matchCount, interactionCount };
+  return { matchCount, messageCount, interactionCount };
 }
 
 /**
@@ -219,11 +177,11 @@ async function backfillExistingHingeClassifications(
  *
  * Flow:
  * 1. Update profile metadata (demographics, preferences, etc.)
- * 2. Filter to only NEW matches (by matchedAt timestamp)
+ * 2. Pair existing matches by timestamp and multiplicity; insert the remainder
  * 3. Insert new matches + their messages
- * 4. Insert new interactions (LIKE_SENT, REJECT, UNMATCH) - use timestamp dedup
+ * 4. Merge interactions with occurrence-aware timestamp deduplication
  * 5. Replace prompts (delete old, insert new - represents current state)
- * 6. Merge media (insert new photos, keep existing)
+ * 6. Merge media, or delete prior photos when consent is withdrawn
  * 7. Recompute ProfileMeta from all matches/interactions
  * 8. Store original file
  */
@@ -233,25 +191,37 @@ export async function additiveUpdateHingeProfile(data: {
   userId: string;
   timezone?: string;
   country?: string;
+  consentPhotos?: boolean;
+  consentWork?: boolean;
+  consumeBlob?: boolean;
+  verifiedJson?: AnonymizedHingeDataJSON;
+  transientUpload?: TransientUploadBinding;
 }): Promise<HingeProfileResult> {
   const startTime = Date.now();
 
   console.log(`\n📊 Additive update for Hinge profile: ${data.hingeId}`);
   console.log(`   User ID: ${data.userId}`);
-  console.log(`   Blob URL: ${data.blobUrl}`);
 
   // Fetch JSON from blob storage
   const fetchStart = Date.now();
-  const { fetchBlobJson } = await import("../blob.service");
-  const anonymizedHingeJson = await fetchBlobJson<AnonymizedHingeDataJSON>(
-    data.blobUrl,
-  );
+  const verifiedHingeJson =
+    data.verifiedJson ??
+    (await fetchVerifiedHingeBlob(data.blobUrl, data.hingeId, {
+      consume: data.consumeBlob ?? false,
+    }));
+  const anonymizedHingeJson = filterHingeJsonByConsent(verifiedHingeJson, {
+    sharePhotos: data.consentPhotos ?? true,
+    shareWorkInfo: data.consentWork ?? true,
+  });
   console.log(`   ✓ Blob fetched (${Date.now() - fetchStart}ms)`);
 
   const jsonString = JSON.stringify(anonymizedHingeJson);
   const jsonSizeMB = (jsonString.length / 1024 / 1024).toFixed(2);
 
   const result = await withTransaction(async (tx) => {
+    await lockTransientUploadForMutationInTx(tx, data.transientUpload);
+    await lockHingeProviderMutationsInTx(tx);
+    await lockHingeProfileUploadsInTx(tx, [data.hingeId]);
     // 1. Update profile metadata
     const transformStart = Date.now();
     const profileData = transformHingeJsonToProfile(anonymizedHingeJson, {
@@ -260,6 +230,37 @@ export async function additiveUpdateHingeProfile(data: {
       timezone: data.timezone,
       country: data.country,
     });
+    const existingProfileState = await tx.query.hingeProfileTable.findFirst({
+      where: hingeProfileOwnedBy(data.hingeId, data.userId),
+      columns: {
+        createDate: true,
+        firstAccountCreateDate: true,
+        lastSeenAt: true,
+        workplaces: true,
+        workplacesDisplayed: true,
+        jobTitle: true,
+        jobTitleDisplayed: true,
+      },
+    });
+    if (!existingProfileState) {
+      throw new Error(
+        `Failed to update Hinge profile ${data.hingeId}: ownership changed before processing.`,
+      );
+    }
+    const firstAccountCreateDate = getEarliestHingeAccountSignup(
+      existingProfileState,
+      profileData.createDate,
+    );
+    const applyCurrentSnapshot = shouldApplyHingeProfileSnapshot(
+      existingProfileState.lastSeenAt,
+      profileData.lastSeenAt!,
+    );
+    const profilePrivacyChanged =
+      data.consentWork === false &&
+      ((existingProfileState.workplaces?.length ?? 0) > 0 ||
+        existingProfileState.workplacesDisplayed ||
+        existingProfileState.jobTitle.length > 0 ||
+        existingProfileState.jobTitleDisplayed);
     console.log(
       `   ✓ Profile data transformed (${Date.now() - transformStart}ms)`,
     );
@@ -268,11 +269,26 @@ export async function additiveUpdateHingeProfile(data: {
     const [updatedProfile] = await tx
       .update(hingeProfileTable)
       .set({
-        ...profileData,
+        ...(applyCurrentSnapshot
+          ? profileData
+          : data.consentWork === false
+            ? {
+                workplaces: [],
+                workplacesDisplayed: false,
+                jobTitle: "",
+                jobTitleDisplayed: false,
+              }
+            : {}),
+        firstAccountCreateDate,
         updatedAt: new Date(),
       })
-      .where(eq(hingeProfileTable.hingeId, data.hingeId))
+      .where(hingeProfileOwnedBy(data.hingeId, data.userId))
       .returning();
+    if (!updatedProfile) {
+      throw new Error(
+        `Failed to update Hinge profile ${data.hingeId}: ownership changed before processing.`,
+      );
+    }
     console.log(
       `   ✓ Profile metadata updated (${Date.now() - updateStart}ms)`,
     );
@@ -285,38 +301,76 @@ export async function additiveUpdateHingeProfile(data: {
     // Fetch existing match timestamps for deduplication
     const existingMatches = await tx.query.matchTable.findMany({
       where: eq(matchTable.hingeProfileId, data.hingeId),
-      columns: { id: true, matchedAt: true },
+      columns: {
+        id: true,
+        matchedAt: true,
+        order: true,
+        like: true,
+        match: true,
+        likedAt: true,
+        weMet: true,
+      },
+      orderBy: (matches, { asc }) => [asc(matches.order)],
     });
-    const existingMatchesByMatchedAt = new Map(
-      existingMatches
-        .filter((m) => m.matchedAt)
-        .map((m) => [m.matchedAt!.getTime(), m.id]),
-    );
+    const existingMatchesByMatchedAt: ExistingMatchByMatchedAt = new Map();
+    for (const match of existingMatches) {
+      const key = getHingeMatchTimestampIdentity(match);
+      if (!key) continue;
+      const ids = existingMatchesByMatchedAt.get(key) ?? [];
+      ids.push({
+        id: match.id,
+        like: match.like,
+        match: match.match,
+        likedAt: match.likedAt,
+        matchedAt: match.matchedAt,
+        weMet: match.weMet,
+      });
+      existingMatchesByMatchedAt.set(key, ids);
+    }
     const existingMessages = await tx.query.messageTable.findMany({
       where: eq(messageTable.hingeProfileId, data.hingeId),
-      columns: { matchId: true, sentDate: true },
+      columns: {
+        id: true,
+        matchId: true,
+        sentDate: true,
+        sentDateRaw: true,
+        messageType: true,
+        contentRaw: true,
+        order: true,
+        timeSinceLastMessage: true,
+        timeSinceLastMessageRelative: true,
+      },
+      orderBy: (messages, { asc }) => [asc(messages.id)],
     });
-    const existingMessageKeys = new Set(
-      existingMessages.map((message) => getMessageKey(message)),
-    );
 
     const existingInteractions = await tx.query.hingeInteractionTable.findMany({
       where: eq(hingeInteractionTable.hingeProfileId, data.hingeId),
-      columns: { type: true, timestamp: true },
+      columns: {
+        id: true,
+        type: true,
+        timestamp: true,
+        timestampRaw: true,
+        matchId: true,
+        comment: true,
+        threadOrigin: true,
+        threadState: true,
+      },
+      orderBy: (interactions, { asc }) => [asc(interactions.id)],
     });
-    const existingInteractionKeys = new Set(
-      existingInteractions.map((interaction) => getInteractionKey(interaction)),
-    );
 
     const {
       matchesToInsert,
       messagesToInsert,
       interactionsToInsert,
-      remappedInteractionsInput,
+      matchBackfills,
+      messageBackfills,
+      messageSequenceUpdates,
+      interactionBackfills,
+      matchEvidenceConflicts,
     } = prepareHingeAdditiveRows(
       existingMatchesByMatchedAt,
-      existingMessageKeys,
-      existingInteractionKeys,
+      existingMessages,
+      existingInteractions,
       matchesInput,
       messagesInput,
       interactionsInput,
@@ -343,6 +397,9 @@ export async function additiveUpdateHingeProfile(data: {
     console.log(
       `   ✓ Matches merged: ${matchesToInsert.length} new matches, ${messagesToInsert.length} messages (${Date.now() - matchStart}ms)`,
     );
+    if (matchEvidenceConflicts.length > 0) {
+      console.warn("Hinge additive evidence conflicts", matchEvidenceConflicts);
+    }
 
     // 3. Process new interactions (additive - historical events)
     const interactionStart = Date.now();
@@ -358,53 +415,74 @@ export async function additiveUpdateHingeProfile(data: {
     );
 
     const backfillStart = Date.now();
-    const backfilled = await backfillExistingHingeClassifications(
+    const refreshed = await refreshExistingHingeRows(
       tx,
-      data.hingeId,
-      existingMatchesByMatchedAt,
-      existingInteractionKeys,
-      matchesInput,
-      remappedInteractionsInput,
+      matchBackfills,
+      messageBackfills,
+      messageSequenceUpdates,
+      interactionBackfills,
     );
     console.log(
-      `   ✓ Existing rows classified: ${backfilled.matchCount} matches, ${backfilled.interactionCount} interactions (${Date.now() - backfillStart}ms)`,
+      `   ✓ Existing rows refreshed: ${refreshed.matchCount} matches, ${refreshed.messageCount} messages, ${refreshed.interactionCount} interactions (${Date.now() - backfillStart}ms)`,
     );
 
-    // 4. Replace prompts (current profile state)
+    // 4. Replace prompts only when prompts.json was actually included.
+    // REVIEW(provider assumption): a Hinge export can omit optional sidecars;
+    // omission is not evidence that the user's current prompt set is empty.
     const promptStart = Date.now();
-    await tx
-      .delete(hingePromptTable)
-      .where(eq(hingePromptTable.hingeProfileId, data.hingeId));
+    let promptsInput: ReturnType<typeof transformHingePromptsForDb> = [];
+    if (anonymizedHingeJson.Prompts !== undefined) {
+      await tx
+        .delete(hingePromptTable)
+        .where(eq(hingePromptTable.hingeProfileId, data.hingeId));
 
-    const promptsInput = transformHingePromptsForDb(
-      anonymizedHingeJson.Prompts,
-      data.hingeId,
-    );
-    if (promptsInput.length > 0) {
-      await tx.insert(hingePromptTable).values(promptsInput);
+      promptsInput = transformHingePromptsForDb(
+        anonymizedHingeJson.Prompts,
+        data.hingeId,
+      );
+      if (promptsInput.length > 0) {
+        await tx.insert(hingePromptTable).values(promptsInput);
+      }
     }
     console.log(
-      `   ✓ Prompts replaced: ${promptsInput.length} (${Date.now() - promptStart}ms)`,
+      anonymizedHingeJson.Prompts === undefined
+        ? `   ✓ Prompts preserved (sidecar omitted) (${Date.now() - promptStart}ms)`
+        : `   ✓ Prompts replaced: ${promptsInput.length} (${Date.now() - promptStart}ms)`,
     );
 
-    // 5. Merge media (add new, keep existing)
+    // 5. Merge media, or honor a later withdrawal by deleting prior rows.
     const mediaStart = Date.now();
-    const existingMedia = await tx.query.mediaTable.findMany({
-      where: eq(mediaTable.hingeProfileId, data.hingeId),
-      columns: { url: true },
-    });
-    const existingMediaUrls = new Set(existingMedia.map((m) => m.url));
+    let removedPhotoCount = 0;
+    let existingPhotoCount = 0;
+    let newMediaInput: ReturnType<typeof transformHingeMediaToDb> = [];
 
-    const newMediaInput = transformHingeMediaToDb(
-      anonymizedHingeJson.Media ?? [],
-      data.hingeId,
-    ).filter((m) => !existingMediaUrls.has(m.url));
+    if (data.consentPhotos === false) {
+      const removedMedia = await tx
+        .delete(mediaTable)
+        .where(eq(mediaTable.hingeProfileId, data.hingeId))
+        .returning({ id: mediaTable.id });
+      removedPhotoCount = removedMedia.length;
+    } else {
+      const existingMedia = await tx.query.mediaTable.findMany({
+        where: eq(mediaTable.hingeProfileId, data.hingeId),
+        columns: { url: true },
+      });
+      existingPhotoCount = existingMedia.length;
+      const existingMediaUrls = new Set(
+        existingMedia.map((media) => media.url),
+      );
 
-    if (newMediaInput.length > 0) {
-      await tx.insert(mediaTable).values(newMediaInput);
+      newMediaInput = transformHingeMediaToDb(
+        anonymizedHingeJson.Media ?? [],
+        data.hingeId,
+      ).filter((media) => !existingMediaUrls.has(media.url));
+
+      if (newMediaInput.length > 0) {
+        await tx.insert(mediaTable).values(newMediaInput);
+      }
     }
     console.log(
-      `   ✓ Media merged: ${newMediaInput.length} new photos (${Date.now() - mediaStart}ms)`,
+      `   ✓ Media reconciled: ${newMediaInput.length} new, ${removedPhotoCount} removed (${Date.now() - mediaStart}ms)`,
     );
 
     // 6. Recompute profile meta
@@ -418,7 +496,7 @@ export async function additiveUpdateHingeProfile(data: {
       dataProvider: "HINGE",
       swipestatsVersion: "SWIPESTATS_4",
       file: null, // No longer storing raw JSON
-      blobUrl: data.blobUrl,
+      blobUrl: null, // Verified upload blobs are transient and consumed.
       userId: data.userId,
     });
 
@@ -426,16 +504,21 @@ export async function additiveUpdateHingeProfile(data: {
     if (
       matchesToInsert.length === 0 &&
       messagesToInsert.length === 0 &&
-      interactionsToInsert.length === 0
+      interactionsToInsert.length === 0 &&
+      removedPhotoCount === 0 &&
+      newMediaInput.length === 0 &&
+      !profilePrivacyChanged
     ) {
       console.log(
         `   ℹ️  No new data detected - upload was idempotent (same file re-uploaded)`,
       );
     }
 
-    if (!updatedProfile) {
-      throw new Error(`Failed to update profile: ${data.hingeId}`);
-    }
+    await markTransientUploadCommittedInTx(
+      tx,
+      data.transientUpload,
+      data.hingeId,
+    );
 
     return {
       profile: updatedProfile,
@@ -443,14 +526,19 @@ export async function additiveUpdateHingeProfile(data: {
       messageCount: messagesToInsert.length,
       interactionCount: interactionsToInsert.length,
       photoCount: newMediaInput.length,
+      hasPhotos: existingPhotoCount + newMediaInput.length > 0,
       promptCount: promptsInput.length,
       // Same export re-uploaded: nothing new merged in.
       isNoOp:
         matchesToInsert.length === 0 &&
         messagesToInsert.length === 0 &&
-        interactionsToInsert.length === 0,
+        interactionsToInsert.length === 0 &&
+        removedPhotoCount === 0 &&
+        newMediaInput.length === 0 &&
+        !profilePrivacyChanged,
     };
   });
+  await cleanupCommittedTransientUpload(data.transientUpload?.id);
 
   const totalTime = Date.now() - startTime;
   console.log(`\n✅ Additive update complete for Hinge ${data.hingeId}`);
@@ -468,7 +556,7 @@ export async function additiveUpdateHingeProfile(data: {
       photoCount: result.photoCount,
       promptCount: result.promptCount,
       interactionCount: result.interactionCount,
-      hasPhotos: result.photoCount > 0,
+      hasPhotos: result.hasPhotos,
       jsonSizeMB: parseFloat(jsonSizeMB),
     },
   };
@@ -499,6 +587,11 @@ export async function absorbHingeProfileIntoNew(data: {
   userId: string;
   timezone?: string;
   country?: string;
+  consentPhotos?: boolean;
+  consentWork?: boolean;
+  consumeBlob?: boolean;
+  verifiedJson?: AnonymizedHingeDataJSON;
+  transientUpload?: TransientUploadBinding;
 }): Promise<HingeProfileResult> {
   const startTime = Date.now();
 
@@ -506,14 +599,18 @@ export async function absorbHingeProfileIntoNew(data: {
     `\n🔄 Cross-account merge: ${data.oldHingeId} → ${data.newHingeId}`,
   );
   console.log(`   User ID: ${data.userId}`);
-  console.log(`   Blob URL: ${data.blobUrl}`);
 
   // Fetch JSON from blob storage
   const fetchStart = Date.now();
-  const { fetchBlobJson } = await import("../blob.service");
-  const anonymizedHingeJson = await fetchBlobJson<AnonymizedHingeDataJSON>(
-    data.blobUrl,
-  );
+  const verifiedHingeJson =
+    data.verifiedJson ??
+    (await fetchVerifiedHingeBlob(data.blobUrl, data.newHingeId, {
+      consume: data.consumeBlob ?? false,
+    }));
+  const anonymizedHingeJson = filterHingeJsonByConsent(verifiedHingeJson, {
+    sharePhotos: data.consentPhotos ?? true,
+    shareWorkInfo: data.consentWork ?? true,
+  });
   console.log(`   ✓ Blob fetched (${Date.now() - fetchStart}ms)`);
 
   const jsonString = JSON.stringify(anonymizedHingeJson);
@@ -521,23 +618,43 @@ export async function absorbHingeProfileIntoNew(data: {
   console.log(`   JSON size: ${jsonSizeMB} MB`);
 
   const result = await withTransaction(async (tx) => {
+    await lockTransientUploadForMutationInTx(tx, data.transientUpload);
+    await lockHingeProviderMutationsInTx(tx);
+    await lockHingeProfileUploadsInTx(tx, [data.oldHingeId, data.newHingeId]);
     // 1. Get old profile for reference
     const fetchOldStart = Date.now();
     const oldProfile = await tx.query.hingeProfileTable.findFirst({
-      where: eq(hingeProfileTable.hingeId, data.oldHingeId),
+      where: hingeProfileOwnedBy(data.oldHingeId, data.userId),
     });
 
     if (!oldProfile) {
-      throw new Error(`Old profile not found: ${data.oldHingeId}`);
+      throw new Error(
+        `Cross-account merge rejected: source profile ${data.oldHingeId} was not found for this user; ownership may have changed before processing.`,
+      );
+    }
+    const existingTargetProfile = await tx.query.hingeProfileTable.findFirst({
+      where: eq(hingeProfileTable.hingeId, data.newHingeId),
+      columns: { hingeId: true },
+    });
+    if (existingTargetProfile) {
+      throw new Error(
+        `Cross-account merge rejected: target profile ${data.newHingeId} already exists.`,
+      );
     }
     console.log(`   ✓ Fetched old profile (${Date.now() - fetchOldStart}ms)`);
 
     // 2. Temporarily clear userId on old profile to free unique constraint
     const unlinkStart = Date.now();
-    await tx
+    const [unlinkedProfile] = await tx
       .update(hingeProfileTable)
       .set({ userId: null })
-      .where(eq(hingeProfileTable.hingeId, data.oldHingeId));
+      .where(hingeProfileOwnedBy(data.oldHingeId, data.userId))
+      .returning({ hingeId: hingeProfileTable.hingeId });
+    if (!unlinkedProfile) {
+      throw new Error(
+        `Cross-account merge rejected: source profile ${data.oldHingeId} ownership changed before it could be unlinked.`,
+      );
+    }
     console.log(
       `   ✓ Unlinked old profile from user (${Date.now() - unlinkStart}ms)`,
     );
@@ -551,11 +668,10 @@ export async function absorbHingeProfileIntoNew(data: {
       country: data.country,
     });
 
-    // Use the earlier createDate between old and new profiles
-    const combinedCreateDate =
-      oldProfile.createDate < newProfileData.createDate
-        ? oldProfile.createDate
-        : newProfileData.createDate;
+    const accountPeriod = getForwardHingeAccountMergePeriod(
+      oldProfile,
+      newProfileData.createDate,
+    );
 
     console.log(`   ✓ Profile transformed (${Date.now() - transformStart}ms)`);
 
@@ -565,9 +681,14 @@ export async function absorbHingeProfileIntoNew(data: {
       .insert(hingeProfileTable)
       .values({
         ...newProfileData,
-        createDate: combinedCreateDate,
+        // Keep the new/current account signup for the next order check while
+        // separately retaining the earliest signup across absorbed history.
+        ...accountPeriod,
       })
       .returning();
+    if (!insertedProfile) {
+      throw new Error(`Failed to insert profile: ${data.newHingeId}`);
+    }
     console.log(`   ✓ New profile inserted (${Date.now() - profileStart}ms)`);
 
     // 5. Transfer all data from old → new profile ID
@@ -588,15 +709,37 @@ export async function absorbHingeProfileIntoNew(data: {
       .set({ hingeProfileId: data.newHingeId })
       .where(eq(hingeInteractionTable.hingeProfileId, data.oldHingeId));
 
-    await tx
-      .update(mediaTable)
-      .set({ hingeProfileId: data.newHingeId })
-      .where(eq(mediaTable.hingeProfileId, data.oldHingeId));
+    let transferredPhotoCount = 0;
+    let transferredPromptCount = 0;
+    if (data.consentPhotos === false) {
+      await tx
+        .delete(mediaTable)
+        .where(eq(mediaTable.hingeProfileId, data.oldHingeId));
+    } else {
+      const transferredMedia = await tx
+        .update(mediaTable)
+        .set({ hingeProfileId: data.newHingeId })
+        .where(eq(mediaTable.hingeProfileId, data.oldHingeId))
+        .returning({ id: mediaTable.id });
+      transferredPhotoCount = transferredMedia.length;
+    }
 
     await tx
       .update(customDataTable)
       .set({ hingeProfileId: data.newHingeId })
       .where(eq(customDataTable.hingeProfileId, data.oldHingeId));
+
+    // Preserve historical prompts across an account-history merge when the
+    // new upload omitted prompts.json. If the sidecar is present, its current
+    // state replaces the old account's rows after the old profile is deleted.
+    if (anonymizedHingeJson.Prompts === undefined) {
+      const transferredPrompts = await tx
+        .update(hingePromptTable)
+        .set({ hingeProfileId: data.newHingeId })
+        .where(eq(hingePromptTable.hingeProfileId, data.oldHingeId))
+        .returning({ id: hingePromptTable.id });
+      transferredPromptCount = transferredPrompts.length;
+    }
 
     console.log(
       `   ✓ Transferred all data to new profile (${Date.now() - transferStart}ms)`,
@@ -604,9 +747,15 @@ export async function absorbHingeProfileIntoNew(data: {
 
     // 6. Delete old profile (cascade will handle profileMeta, prompts)
     const deleteStart = Date.now();
-    await tx
+    const deletedProfiles = await tx
       .delete(hingeProfileTable)
-      .where(eq(hingeProfileTable.hingeId, data.oldHingeId));
+      .where(eq(hingeProfileTable.hingeId, data.oldHingeId))
+      .returning({ hingeId: hingeProfileTable.hingeId });
+    if (deletedProfiles.length !== 1) {
+      throw new Error(
+        `Cross-account merge failed: source profile ${data.oldHingeId} disappeared before deletion.`,
+      );
+    }
     console.log(`   ✓ Deleted old profile (${Date.now() - deleteStart}ms)`);
 
     // 7. Insert new matches + messages (NO dedup - different accounts have different match semantics)
@@ -617,14 +766,23 @@ export async function absorbHingeProfileIntoNew(data: {
         data.newHingeId,
       );
 
-    if (matchesInput.length > 0) {
+    const retainedMatchOrders = await tx
+      .select({ order: matchTable.order })
+      .from(matchTable)
+      .where(eq(matchTable.hingeProfileId, data.newHingeId));
+    const rebasedMatchesInput = appendHingeCrossAccountMatchOrders(
+      retainedMatchOrders.map((match) => match.order),
+      matchesInput,
+    );
+
+    if (rebasedMatchesInput.length > 0) {
       const BATCH_SIZE = 500;
-      for (let i = 0; i < matchesInput.length; i += BATCH_SIZE) {
-        const batch = matchesInput.slice(i, i + BATCH_SIZE);
+      for (let i = 0; i < rebasedMatchesInput.length; i += BATCH_SIZE) {
+        const batch = rebasedMatchesInput.slice(i, i + BATCH_SIZE);
         await tx.insert(matchTable).values(batch);
       }
       console.log(
-        `   ✓ ${matchesInput.length} new matches inserted (${Date.now() - matchStart}ms)`,
+        `   ✓ ${rebasedMatchesInput.length} new matches inserted (${Date.now() - matchStart}ms)`,
       );
     }
 
@@ -650,7 +808,7 @@ export async function absorbHingeProfileIntoNew(data: {
     // 9. Insert prompts
     const promptsStart = Date.now();
     const promptsInput = transformHingePromptsForDb(
-      anonymizedHingeJson.Prompts,
+      anonymizedHingeJson.Prompts ?? [],
       data.newHingeId,
     );
     if (promptsInput.length > 0) {
@@ -662,10 +820,15 @@ export async function absorbHingeProfileIntoNew(data: {
 
     // 10. Insert new photos
     const photosStart = Date.now();
+    const retainedMedia = await tx.query.mediaTable.findMany({
+      where: eq(mediaTable.hingeProfileId, data.newHingeId),
+      columns: { url: true },
+    });
+    const retainedMediaUrls = new Set(retainedMedia.map((media) => media.url));
     const photosInput = transformHingeMediaToDb(
       anonymizedHingeJson.Media ?? [],
       data.newHingeId,
-    );
+    ).filter((media) => !retainedMediaUrls.has(media.url));
     if (photosInput.length > 0) {
       await tx.insert(mediaTable).values(photosInput);
       console.log(
@@ -684,13 +847,15 @@ export async function absorbHingeProfileIntoNew(data: {
       dataProvider: "HINGE",
       swipestatsVersion: "SWIPESTATS_4",
       file: null, // No longer storing raw JSON
-      blobUrl: data.blobUrl,
+      blobUrl: null, // Verified upload blobs are transient and consumed.
       userId: data.userId,
     });
 
-    if (!insertedProfile) {
-      throw new Error(`Failed to insert profile: ${data.newHingeId}`);
-    }
+    await markTransientUploadCommittedInTx(
+      tx,
+      data.transientUpload,
+      data.newHingeId,
+    );
 
     return {
       profile: insertedProfile,
@@ -698,9 +863,11 @@ export async function absorbHingeProfileIntoNew(data: {
       messageCount: messagesInput.length,
       interactionCount: interactionsInput.length,
       photoCount: photosInput.length,
-      promptCount: promptsInput.length,
+      hasPhotos: transferredPhotoCount + photosInput.length > 0,
+      promptCount: transferredPromptCount + promptsInput.length,
     };
   });
+  await cleanupCommittedTransientUpload(data.transientUpload?.id);
 
   const totalTime = Date.now() - startTime;
   console.log(
@@ -719,7 +886,7 @@ export async function absorbHingeProfileIntoNew(data: {
       photoCount: result.photoCount,
       promptCount: result.promptCount,
       interactionCount: result.interactionCount,
-      hasPhotos: result.photoCount > 0,
+      hasPhotos: result.hasPhotos,
       jsonSizeMB: parseFloat(jsonSizeMB),
     },
   };

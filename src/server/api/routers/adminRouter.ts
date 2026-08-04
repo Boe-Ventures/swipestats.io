@@ -1,9 +1,19 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { and, eq, inArray, isNotNull, isNull, desc, count } from "drizzle-orm";
+import {
+  and,
+  eq,
+  inArray,
+  isNotNull,
+  isNull,
+  desc,
+  count,
+  sql,
+} from "drizzle-orm";
 import {
   tinderProfileTable,
   hingeProfileTable,
+  profileMetaTable,
   mediaTable,
   originalAnonymizedFileTable,
   userTable,
@@ -20,6 +30,13 @@ import {
   listComparisonsForAdmin,
   getComparisonForAdmin,
 } from "@/server/services/profile-comparison.service";
+import { withTransaction } from "@/server/db";
+import {
+  lockTinderSwipeRankMutationsInTx,
+  purgeTinderSwipeRankProfilesInTx,
+} from "@/server/services/swipe-rank/lifecycle.service";
+import { invalidatePublicSwipeRankCache } from "@/server/services/swipe-rank/public-cache";
+import { lockHingeAdminProfileMutationInTx } from "@/server/services/hinge/hinge-upload-lock";
 
 export const adminRouter = {
   // Delete a Tinder profile by tinderId (admin/dev only)
@@ -63,10 +80,7 @@ export const adminRouter = {
           console.log(
             `🗑️ Deleting ${blobUrls.length} Tinder blob(s) for profile ${input.tinderId}`,
           );
-          await BlobService.deleteBulk(blobUrls).catch((error) => {
-            console.error("⚠️ Failed to delete some blobs:", error);
-            // Don't fail profile deletion if blob cleanup fails
-          });
+          await BlobService.deleteBulkOrThrow(blobUrls);
         }
 
         // Delete original file records
@@ -80,10 +94,17 @@ export const adminRouter = {
           );
       }
 
-      // Delete profile - cascades will handle related tables
-      await ctx.db
-        .delete(tinderProfileTable)
-        .where(eq(tinderProfileTable.tinderId, input.tinderId));
+      // Keep the provider source and analytical subject deletion atomic.
+      // Live facts cascade from the SwipeRank registry; frozen snapshot rows
+      // detach, and source children cascade from tinder_profile.
+      await withTransaction(async (tx) => {
+        await lockTinderSwipeRankMutationsInTx(tx);
+        await purgeTinderSwipeRankProfilesInTx(tx, [input.tinderId]);
+        await tx
+          .delete(tinderProfileTable)
+          .where(eq(tinderProfileTable.tinderId, input.tinderId));
+      });
+      invalidatePublicSwipeRankCache();
 
       return {
         success: true,
@@ -118,68 +139,193 @@ export const adminRouter = {
       return profile ?? null;
     }),
 
+  // List recently uploaded profiles, including the original file link for
+  // authenticated admin tooling. Blob URLs must never be exposed by the public
+  // directory router.
+  listRecentProfiles: adminProcedure
+    .input(
+      z.object({
+        platform: z.enum(["tinder", "hinge"]).nullish(),
+        limit: z.number().int().min(1).max(50).default(10),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const latestTinderFile = ctx.db
+        .select({
+          userId: originalAnonymizedFileTable.userId,
+          blobUrl: originalAnonymizedFileTable.blobUrl,
+          rowNum:
+            sql<number>`row_number() over (partition by ${originalAnonymizedFileTable.userId} order by ${originalAnonymizedFileTable.createdAt} desc)`.as(
+              "row_num",
+            ),
+        })
+        .from(originalAnonymizedFileTable)
+        .where(eq(originalAnonymizedFileTable.dataProvider, "TINDER"))
+        .as("admin_latest_tinder_file");
+
+      const latestHingeFile = ctx.db
+        .select({
+          userId: originalAnonymizedFileTable.userId,
+          blobUrl: originalAnonymizedFileTable.blobUrl,
+          rowNum:
+            sql<number>`row_number() over (partition by ${originalAnonymizedFileTable.userId} order by ${originalAnonymizedFileTable.createdAt} desc)`.as(
+              "row_num",
+            ),
+        })
+        .from(originalAnonymizedFileTable)
+        .where(eq(originalAnonymizedFileTable.dataProvider, "HINGE"))
+        .as("admin_latest_hinge_file");
+
+      const tinderQuery = ctx.db
+        .select({
+          id: tinderProfileTable.tinderId,
+          platform: sql<"tinder">`'tinder'`,
+          ageAtUpload: tinderProfileTable.ageAtUpload,
+          gender: tinderProfileTable.gender,
+          city: tinderProfileTable.city,
+          country: tinderProfileTable.country,
+          createdAt: tinderProfileTable.createdAt,
+          matchesTotal: profileMetaTable.matchesTotal,
+          swipeLikesTotal: profileMetaTable.swipeLikesTotal,
+          matchRate: profileMetaTable.matchRate,
+          blobUrl: latestTinderFile.blobUrl,
+        })
+        .from(tinderProfileTable)
+        .leftJoin(
+          profileMetaTable,
+          and(
+            eq(profileMetaTable.tinderProfileId, tinderProfileTable.tinderId),
+            isNull(profileMetaTable.hingeProfileId),
+          ),
+        )
+        .leftJoin(
+          latestTinderFile,
+          and(
+            eq(latestTinderFile.userId, tinderProfileTable.userId),
+            eq(latestTinderFile.rowNum, 1),
+          ),
+        )
+        .where(eq(tinderProfileTable.computed, false))
+        .orderBy(desc(tinderProfileTable.createdAt))
+        .limit(input.limit);
+
+      const hingeQuery = ctx.db
+        .select({
+          id: hingeProfileTable.hingeId,
+          platform: sql<"hinge">`'hinge'`,
+          ageAtUpload: hingeProfileTable.ageAtUpload,
+          gender: hingeProfileTable.gender,
+          city: sql<string | null>`null`,
+          country: hingeProfileTable.country,
+          createdAt: hingeProfileTable.createdAt,
+          matchesTotal: profileMetaTable.matchesTotal,
+          swipeLikesTotal: profileMetaTable.swipeLikesTotal,
+          matchRate: profileMetaTable.matchRate,
+          blobUrl: latestHingeFile.blobUrl,
+        })
+        .from(hingeProfileTable)
+        .leftJoin(
+          profileMetaTable,
+          and(
+            eq(profileMetaTable.hingeProfileId, hingeProfileTable.hingeId),
+            isNull(profileMetaTable.tinderProfileId),
+          ),
+        )
+        .leftJoin(
+          latestHingeFile,
+          and(
+            eq(latestHingeFile.userId, hingeProfileTable.userId),
+            eq(latestHingeFile.rowNum, 1),
+          ),
+        )
+        .orderBy(desc(hingeProfileTable.createdAt))
+        .limit(input.limit);
+
+      const [tinderProfiles, hingeProfiles] = await Promise.all([
+        input.platform === "hinge" ? Promise.resolve([]) : tinderQuery,
+        input.platform === "tinder" ? Promise.resolve([]) : hingeQuery,
+      ]);
+
+      return {
+        profiles: [...tinderProfiles, ...hingeProfiles]
+          .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+          .slice(0, input.limit),
+      };
+    }),
+
   // Delete a Hinge profile by hingeId (admin/dev only)
   // Cascades will automatically delete related data:
   // - matches, messages, prompts, blocks, etc.
   deleteHingeProfile: adminProcedure
     .input(z.object({ hingeId: z.string().min(1) }))
-    .mutation(async ({ ctx, input }) => {
-      // Verify profile exists
-      const profile = await ctx.db.query.hingeProfileTable.findFirst({
-        where: eq(hingeProfileTable.hingeId, input.hingeId),
-        columns: {
-          hingeId: true,
-          userId: true,
-        },
+    .mutation(async ({ input }) => {
+      const deletedProfile = await withTransaction(async (tx) => {
+        await lockHingeAdminProfileMutationInTx(tx, input.hingeId);
+
+        // Re-read only after the advisory locks. A concurrent upload or
+        // account-history merge must finish before this snapshot is trusted.
+        const profile = await tx.query.hingeProfileTable.findFirst({
+          where: eq(hingeProfileTable.hingeId, input.hingeId),
+          columns: {
+            hingeId: true,
+            userId: true,
+          },
+        });
+
+        if (!profile) return null;
+
+        // Original-file rows are user scoped rather than profile scoped. The
+        // unique active Hinge profile per user plus the profile lock prevents
+        // an upload/merge from changing that ownership while these exact rows
+        // are removed. Blob deletion is not transactional, so it deliberately
+        // happens before either database delete; a failure leaves the entire
+        // database state available for a safe retry.
+        if (profile.userId) {
+          const hingeFiles =
+            await tx.query.originalAnonymizedFileTable.findMany({
+              where: and(
+                eq(originalAnonymizedFileTable.userId, profile.userId),
+                eq(originalAnonymizedFileTable.dataProvider, "HINGE"),
+              ),
+              columns: { id: true, blobUrl: true },
+            });
+          const blobUrls = hingeFiles
+            .map((file) => file.blobUrl)
+            .filter((url): url is string => url !== null);
+          if (blobUrls.length > 0) {
+            console.log(
+              `🗑️ Deleting ${blobUrls.length} Hinge blob(s) for profile ${input.hingeId}`,
+            );
+            await BlobService.deleteBulkOrThrow(blobUrls);
+          }
+
+          const fileIds = hingeFiles.map((file) => file.id);
+          if (fileIds.length > 0) {
+            await tx
+              .delete(originalAnonymizedFileTable)
+              .where(inArray(originalAnonymizedFileTable.id, fileIds));
+          }
+        }
+
+        const deleted = await tx
+          .delete(hingeProfileTable)
+          .where(eq(hingeProfileTable.hingeId, input.hingeId))
+          .returning({ hingeId: hingeProfileTable.hingeId });
+        if (deleted.length !== 1) {
+          throw new Error(
+            `Failed to delete locked Hinge profile ${input.hingeId}.`,
+          );
+        }
+
+        return profile;
       });
 
-      if (!profile) {
+      if (!deletedProfile) {
         throw new TRPCError({
           code: "NOT_FOUND",
           message: "Profile not found",
         });
       }
-
-      // Fetch and delete user's Hinge data files + blobs (if user exists)
-      if (profile.userId) {
-        const hingeFiles =
-          await ctx.db.query.originalAnonymizedFileTable.findMany({
-            where: and(
-              eq(originalAnonymizedFileTable.userId, profile.userId),
-              eq(originalAnonymizedFileTable.dataProvider, "HINGE"),
-            ),
-            columns: { blobUrl: true },
-          });
-
-        // Delete blobs from Vercel storage
-        const blobUrls = hingeFiles
-          .map((f) => f.blobUrl)
-          .filter((url): url is string => url !== null);
-        if (blobUrls.length > 0) {
-          console.log(
-            `🗑️ Deleting ${blobUrls.length} Hinge blob(s) for profile ${input.hingeId}`,
-          );
-          await BlobService.deleteBulk(blobUrls).catch((error) => {
-            console.error("⚠️ Failed to delete some blobs:", error);
-            // Don't fail profile deletion if blob cleanup fails
-          });
-        }
-
-        // Delete original file records
-        await ctx.db
-          .delete(originalAnonymizedFileTable)
-          .where(
-            and(
-              eq(originalAnonymizedFileTable.userId, profile.userId),
-              eq(originalAnonymizedFileTable.dataProvider, "HINGE"),
-            ),
-          );
-      }
-
-      // Delete profile - cascades will handle related tables
-      await ctx.db
-        .delete(hingeProfileTable)
-        .where(eq(hingeProfileTable.hingeId, input.hingeId));
 
       return {
         success: true,
@@ -370,10 +516,7 @@ export const adminRouter = {
               .from(tinderProfileTable)
               .innerJoin(userTable, eq(tinderProfileTable.userId, userTable.id))
               .where(
-                and(
-                  eq(userTable.country, country),
-                  isNotNull(locationField),
-                ),
+                and(eq(userTable.country, country), isNotNull(locationField)),
               )
               .groupBy(locationField, tinderProfileTable.gender);
 
@@ -390,10 +533,7 @@ export const adminRouter = {
               .from(hingeProfileTable)
               .innerJoin(userTable, eq(hingeProfileTable.userId, userTable.id))
               .where(
-                and(
-                  eq(userTable.country, country),
-                  isNotNull(locationField),
-                ),
+                and(eq(userTable.country, country), isNotNull(locationField)),
               )
               .groupBy(locationField, hingeProfileTable.gender);
 

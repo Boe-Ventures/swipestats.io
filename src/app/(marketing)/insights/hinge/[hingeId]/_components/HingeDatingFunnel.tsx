@@ -82,8 +82,15 @@ export function HingeDatingFunnel() {
             <MetricRow
               label="Accepted incoming likes"
               value={stats.inboundMatches}
-              description="Matches without a preceding like from you"
+              description="Matches explicitly marked as incoming"
             />
+            {stats.unclassifiedOriginMatches > 0 && (
+              <MetricRow
+                label="Direction unavailable"
+                value={stats.unclassifiedOriginMatches}
+                description={`${Math.round(stats.originClassificationCoverage * 100)}% of match directions classified`}
+              />
+            )}
             <MetricRow
               label="Removed before match"
               value={stats.removedWithoutMatch}

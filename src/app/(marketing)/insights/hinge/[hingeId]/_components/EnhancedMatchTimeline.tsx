@@ -11,6 +11,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip } from "@/components/ui/chart";
+import {
+  getHingePeriodDisplayFromKey,
+  getHingePeriodKey,
+} from "@/lib/utils/aggregateHingeData";
 
 import { useHingeInsights } from "../HingeInsightsProvider";
 import { useMemo, useState } from "react";
@@ -27,7 +31,6 @@ const chartConfig = {
 interface MatchDataPoint {
   date: string;
   matches: number;
-  timestamp: number;
 }
 
 export function EnhancedMatchTimeline() {
@@ -44,19 +47,10 @@ export function EnhancedMatchTimeline() {
       if (!match.matchedAt) return;
 
       const date = new Date(match.matchedAt);
-      let key: string;
-
-      switch (granularity) {
-        case "week": {
-          const weekStart = new Date(date);
-          weekStart.setDate(date.getDate() - date.getDay()); // Start of week (Sunday)
-          key = weekStart.toISOString().split("T")[0]!;
-          break;
-        }
-        case "month":
-          key = date.toISOString().substring(0, 7); // YYYY-MM
-          break;
-      }
+      const key = getHingePeriodKey(
+        date,
+        granularity === "week" ? "weekly" : "monthly",
+      );
 
       dataMap.set(key, (dataMap.get(key) || 0) + 1);
     });
@@ -66,30 +60,23 @@ export function EnhancedMatchTimeline() {
       .map(([date, count]) => ({
         date,
         matches: count,
-        timestamp: new Date(date).getTime(),
       }))
-      .sort((a, b) => a.timestamp - b.timestamp);
+      .sort((a, b) => a.date.localeCompare(b.date));
 
     return result;
   }, [profile?.matches, granularity]);
 
   const formatXAxis = (dateStr: string) => {
-    const date = new Date(dateStr);
-    switch (granularity) {
-      case "week":
-        return date.toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-        });
-      case "month":
-        return date.toLocaleDateString("en-US", {
-          month: "short",
-          year: "2-digit",
-        });
-    }
+    return getHingePeriodDisplayFromKey(
+      dateStr,
+      granularity === "week" ? "weekly" : "monthly",
+    );
   };
 
-  const totalMatches = profile?.matches?.length || 0;
+  const totalMatches = aggregatedData.reduce(
+    (total, period) => total + period.matches,
+    0,
+  );
   const avgPerPeriod =
     aggregatedData.length > 0
       ? (totalMatches / aggregatedData.length).toFixed(1)
@@ -214,7 +201,7 @@ export function EnhancedMatchTimeline() {
           </div>
           <div className="text-center">
             <p className="text-muted-foreground text-xs">
-              Avg per {granularity}
+              Avg per active {granularity}
             </p>
             <p className="text-lg font-semibold">{avgPerPeriod}</p>
           </div>

@@ -62,8 +62,8 @@ export function calculateStageWidth(
   maxValue: number,
   maxWidth: number,
 ): number {
-  if (maxValue === 0) return 0;
-  return (value / maxValue) * maxWidth;
+  if (maxValue <= 0 || maxWidth <= 0) return 0;
+  return Math.max(0, Math.min(value / maxValue, 1)) * maxWidth;
 }
 
 /**

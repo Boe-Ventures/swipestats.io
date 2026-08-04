@@ -46,6 +46,7 @@ describe("buildConversationReplay", () => {
     ]);
 
     expect(replay.highlights.mostMessages?.matchId).toBe("busy");
+    expect(replay.highlights.mostMessages?.matchOrder).toBe(3);
     expect(replay.highlights.longestRunning?.matchId).toBe("revisited");
     expect(replay.highlights.mostRevisited?.matchId).toBe("revisited");
     expect(replay.highlights.longestRunning?.durationDays).toBe(3);

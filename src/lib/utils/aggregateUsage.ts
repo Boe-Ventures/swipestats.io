@@ -21,6 +21,232 @@ export type AggregatedUsageData = {
   likeRatio: number;
 };
 
+const CALENDAR_DATE_KEY_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
+const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
+
+function parseCalendarDateKey(dateKey: string): {
+  year: number;
+  month: number;
+  day: number;
+} {
+  const match = CALENDAR_DATE_KEY_PATTERN.exec(dateKey);
+  if (!match) throw new Error(`Invalid calendar date: ${dateKey}`);
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const normalized = new Date(Date.UTC(year, month - 1, day));
+
+  if (
+    normalized.getUTCFullYear() !== year ||
+    normalized.getUTCMonth() + 1 !== month ||
+    normalized.getUTCDate() !== day
+  ) {
+    throw new Error(`Invalid calendar date: ${dateKey}`);
+  }
+
+  return { year, month, day };
+}
+
+function isCalendarDateKey(dateKey: string): boolean {
+  try {
+    parseCalendarDateKey(dateKey);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function utcDateToCalendarDateKey(date: Date): string {
+  if (!Number.isFinite(date.getTime())) throw new Error("Invalid date");
+  return date.toISOString().slice(0, 10);
+}
+
+/**
+ * Tinder usage is keyed by a provider calendar day. Historical `dateStamp`
+ * values were serialized through local time and can point at the prior UTC
+ * day, so the source key must win whenever it contains a valid date prefix.
+ */
+function getUsageCalendarDateKey(day: TinderUsage): string {
+  const sourceDate = day.dateStampRaw?.slice(0, 10);
+  if (sourceDate && isCalendarDateKey(sourceDate)) return sourceDate;
+
+  return utcDateToCalendarDateKey(day.dateStamp);
+}
+
+function calendarDateKeyToUtcDate(dateKey: string): Date {
+  const { year, month, day } = parseCalendarDateKey(dateKey);
+  return new Date(Date.UTC(year, month - 1, day));
+}
+
+function calendarDateKeyToLocalDate(dateKey: string): Date {
+  const { year, month, day } = parseCalendarDateKey(dateKey);
+  return new Date(year, month - 1, day);
+}
+
+function localDateToCalendarDateKey(date: Date): string {
+  if (!Number.isFinite(date.getTime())) throw new Error("Invalid date");
+
+  return `${String(date.getFullYear()).padStart(4, "0")}-${String(
+    date.getMonth() + 1,
+  ).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function addCalendarDays(dateKey: string, days: number): string {
+  const date = calendarDateKeyToUtcDate(dateKey);
+  date.setUTCDate(date.getUTCDate() + days);
+  return utcDateToCalendarDateKey(date);
+}
+
+/** Return the exact bucket key used by Tinder aggregation for a UI date. */
+export function getUsagePeriodKey(
+  date: Date,
+  granularity: TimeGranularity,
+): string {
+  const dateKey = localDateToCalendarDateKey(date);
+  const { year, month } = parseCalendarDateKey(dateKey);
+
+  switch (granularity) {
+    case "daily":
+      return dateKey;
+    case "weekly":
+      return getISOWeekKey(dateKey);
+    case "monthly":
+      return dateKey.slice(0, 7);
+    case "quarterly":
+      return `${year}-Q${Math.floor((month - 1) / 3) + 1}`;
+    case "yearly":
+      return String(year);
+  }
+}
+
+/** Return the exact bucket label used by Tinder aggregation for a UI date. */
+export function getUsagePeriodDisplay(
+  date: Date,
+  granularity: TimeGranularity,
+): string {
+  const period = getUsagePeriodKey(date, granularity);
+  return getUsagePeriodDisplayFromKey(period, granularity);
+}
+
+export function getUsagePeriodDisplayFromKey(
+  period: string,
+  granularity: TimeGranularity,
+): string {
+  switch (granularity) {
+    case "daily":
+      return formatCalendarDate(period, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+    case "weekly":
+      return `Week of ${formatCalendarDate(
+        utcDateToCalendarDateKey(weekKeyToDate(period)),
+        { month: "short", day: "numeric", year: "numeric" },
+      )}`;
+    case "monthly":
+      return formatCalendarDate(`${period}-01`, {
+        month: "short",
+        year: "numeric",
+      });
+    case "quarterly":
+      return period.replace("-", " ");
+    case "yearly":
+      return period;
+  }
+}
+
+/** Fill the complete selected window, including inactive leading/trailing buckets. */
+export function fillUsagePeriodRange(
+  data: AggregatedUsageData[],
+  granularity: TimeGranularity,
+  from: Date,
+  to: Date,
+): AggregatedUsageData[] {
+  const firstPeriod = getUsagePeriodKey(from, granularity);
+  const lastPeriod = getUsagePeriodKey(to, granularity);
+  if (lastPeriod < firstPeriod) return [];
+
+  let periods: string[];
+  switch (granularity) {
+    case "daily":
+      periods = generateDayRange(firstPeriod, lastPeriod);
+      break;
+    case "weekly":
+      periods = generateWeekRange(firstPeriod, lastPeriod);
+      break;
+    case "monthly":
+      periods = generateMonthRange(firstPeriod, lastPeriod);
+      break;
+    case "quarterly":
+      periods = generateQuarterRange(firstPeriod, lastPeriod);
+      break;
+    case "yearly": {
+      periods = [];
+      for (let year = Number(firstPeriod); year <= Number(lastPeriod); year++) {
+        periods.push(String(year));
+      }
+      break;
+    }
+  }
+
+  const observed = new Map(data.map((period) => [period.period, period]));
+  return periods.map(
+    (period) =>
+      observed.get(period) ?? {
+        period,
+        periodDisplay: getUsagePeriodDisplayFromKey(period, granularity),
+        ...emptyAggregation(),
+      },
+  );
+}
+
+/**
+ * Move source rows onto the corresponding elapsed day in a comparison window.
+ * Coarse buckets are then rebuilt on the target calendar, avoiding lossy
+ * array-index pairing when adjacent windows cross different month boundaries.
+ */
+export function alignUsageToComparisonPeriod(
+  usage: TinderUsage[],
+  sourceFrom: Date,
+  targetFrom: Date,
+): TinderUsage[] {
+  const sourceStart = localDateToCalendarDateKey(sourceFrom);
+  const targetStart = localDateToCalendarDateKey(targetFrom);
+
+  return usage.map((day) => {
+    const offset = differenceInCalendarDays(
+      sourceStart,
+      getUsageCalendarDateKey(day),
+    );
+    const targetDate = addCalendarDays(targetStart, offset);
+    return {
+      ...day,
+      dateStampRaw: targetDate,
+      dateStamp: calendarDateKeyToUtcDate(targetDate),
+    };
+  });
+}
+
+function differenceInCalendarDays(from: string, to: string): number {
+  return Math.round(
+    (calendarDateKeyToUtcDate(to).getTime() -
+      calendarDateKeyToUtcDate(from).getTime()) /
+      MILLISECONDS_PER_DAY,
+  );
+}
+
+function formatCalendarDate(
+  dateKey: string,
+  options: Intl.DateTimeFormatOptions,
+): string {
+  return calendarDateKeyToUtcDate(dateKey).toLocaleDateString("en-US", {
+    ...options,
+    timeZone: "UTC",
+  });
+}
+
 /**
  * Main aggregation function that dispatches to specific granularity handlers
  */
@@ -49,9 +275,12 @@ function aggregateToDaily(usage: TinderUsage[]): AggregatedUsageData[] {
   if (usage.length === 0) return [];
 
   // Build a map of existing days
-  const dailyMap = new Map<string, TinderUsage>();
+  const dailyMap = new Map<string, TinderUsage[]>();
   usage.forEach((day) => {
-    dailyMap.set(day.dateStampRaw, day);
+    const dateKey = getUsageCalendarDateKey(day);
+    const existing = dailyMap.get(dateKey) ?? [];
+    existing.push(day);
+    dailyMap.set(dateKey, existing);
   });
 
   // Find date range from actual data
@@ -63,37 +292,24 @@ function aggregateToDaily(usage: TinderUsage[]): AggregatedUsageData[] {
   const allDays = generateDayRange(firstDate, lastDate);
 
   return allDays.map((dateKey) => {
-    const day = dailyMap.get(dateKey);
-    const date = new Date(dateKey);
+    const days = dailyMap.get(dateKey);
+    const periodDisplay = formatCalendarDate(dateKey, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
 
-    if (day) {
-      const totalSwipes = day.swipeLikes + day.swipePasses;
+    if (days?.length) {
       return {
-        period: day.dateStampRaw,
-        periodDisplay: date.toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        }),
-        matches: day.matches,
-        swipeLikes: day.swipeLikes,
-        swipePasses: day.swipePasses,
-        appOpens: day.appOpens,
-        messagesSent: day.messagesSent,
-        messagesReceived: day.messagesReceived,
-        swipesCombined: day.swipesCombined,
-        matchRate: day.swipeLikes > 0 ? day.matches / day.swipeLikes : 0,
-        likeRatio: totalSwipes > 0 ? day.swipeLikes / totalSwipes : 0,
+        period: dateKey,
+        periodDisplay,
+        ...aggregateDays(days),
       };
     } else {
       // Gap day - return zeros
       return {
         period: dateKey,
-        periodDisplay: date.toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        }),
+        periodDisplay,
         ...emptyAggregation(),
       };
     }
@@ -109,8 +325,7 @@ function aggregateToWeekly(usage: TinderUsage[]): AggregatedUsageData[] {
   const weeklyMap = new Map<string, TinderUsage[]>();
 
   usage.forEach((day) => {
-    const date = new Date(day.dateStamp);
-    const weekKey = getISOWeekKey(date);
+    const weekKey = getISOWeekKey(getUsageCalendarDateKey(day));
 
     if (!weeklyMap.has(weekKey)) {
       weeklyMap.set(weekKey, []);
@@ -130,15 +345,12 @@ function aggregateToWeekly(usage: TinderUsage[]): AggregatedUsageData[] {
     const days = weeklyMap.get(weekKey);
 
     if (days && days.length > 0) {
-      // Get start of week for display
-      const firstDay = new Date(days[0]!.dateStamp);
-      const dayOfWeek = firstDay.getDay();
-      const startOfWeek = new Date(firstDay);
-      startOfWeek.setDate(firstDay.getDate() - dayOfWeek);
-
       return {
         period: weekKey,
-        periodDisplay: `Week of ${startOfWeek.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`,
+        periodDisplay: `Week of ${formatCalendarDate(
+          utcDateToCalendarDateKey(weekKeyToDate(weekKey)),
+          { month: "short", day: "numeric", year: "numeric" },
+        )}`,
         ...aggregateDays(days),
       };
     } else {
@@ -146,7 +358,10 @@ function aggregateToWeekly(usage: TinderUsage[]): AggregatedUsageData[] {
       const startOfWeek = weekKeyToDate(weekKey);
       return {
         period: weekKey,
-        periodDisplay: `Week of ${startOfWeek.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`,
+        periodDisplay: `Week of ${formatCalendarDate(
+          utcDateToCalendarDateKey(startOfWeek),
+          { month: "short", day: "numeric", year: "numeric" },
+        )}`,
         ...emptyAggregation(),
       };
     }
@@ -162,7 +377,7 @@ function aggregateToMonthly(usage: TinderUsage[]): AggregatedUsageData[] {
   const monthlyMap = new Map<string, TinderUsage[]>();
 
   usage.forEach((day) => {
-    const monthKey = day.dateStampRaw.slice(0, 7); // "YYYY-MM"
+    const monthKey = getUsageCalendarDateKey(day).slice(0, 7); // "YYYY-MM"
 
     if (!monthlyMap.has(monthKey)) {
       monthlyMap.set(monthKey, []);
@@ -180,25 +395,22 @@ function aggregateToMonthly(usage: TinderUsage[]): AggregatedUsageData[] {
 
   return allMonths.map((monthKey) => {
     const days = monthlyMap.get(monthKey);
-    const date = new Date(monthKey + "-01");
+    const periodDisplay = formatCalendarDate(`${monthKey}-01`, {
+      month: "short",
+      year: "numeric",
+    });
 
     if (days && days.length > 0) {
       return {
         period: monthKey,
-        periodDisplay: date.toLocaleDateString("en-US", {
-          month: "short",
-          year: "numeric",
-        }),
+        periodDisplay,
         ...aggregateDays(days),
       };
     } else {
       // Gap month - return zeros
       return {
         period: monthKey,
-        periodDisplay: date.toLocaleDateString("en-US", {
-          month: "short",
-          year: "numeric",
-        }),
+        periodDisplay,
         ...emptyAggregation(),
       };
     }
@@ -214,9 +426,8 @@ function aggregateToQuarterly(usage: TinderUsage[]): AggregatedUsageData[] {
   const quarterlyMap = new Map<string, TinderUsage[]>();
 
   usage.forEach((day) => {
-    const date = new Date(day.dateStamp);
-    const year = date.getFullYear();
-    const quarter = Math.floor(date.getMonth() / 3) + 1;
+    const { year, month } = parseCalendarDateKey(getUsageCalendarDateKey(day));
+    const quarter = Math.floor((month - 1) / 3) + 1;
     const quarterKey = `${year}-Q${quarter}`;
 
     if (!quarterlyMap.has(quarterKey)) {
@@ -261,7 +472,7 @@ function aggregateToYearly(usage: TinderUsage[]): AggregatedUsageData[] {
   const yearlyMap = new Map<string, TinderUsage[]>();
 
   usage.forEach((day) => {
-    const yearKey = day.dateStampRaw.slice(0, 4); // "YYYY"
+    const yearKey = getUsageCalendarDateKey(day).slice(0, 4); // "YYYY"
 
     if (!yearlyMap.has(yearKey)) {
       yearlyMap.set(yearKey, []);
@@ -336,33 +547,45 @@ function aggregateDays(
 }
 
 /**
- * Helper: Get ISO week key in format "YYYY-W##"
+ * Helper: Get ISO week-year key in format "YYYY-W##".
  */
-function getISOWeekKey(date: Date): string {
-  const year = date.getFullYear();
-  const startOfYear = new Date(year, 0, 1);
-  const dayOfYear = Math.floor(
-    (date.getTime() - startOfYear.getTime()) / (24 * 60 * 60 * 1000),
+function getISOWeekKey(dateKey: string): string {
+  const date = calendarDateKeyToUtcDate(dateKey);
+  const isoDay = date.getUTCDay() || 7;
+
+  // ISO week-year is the calendar year containing this week's Thursday.
+  date.setUTCDate(date.getUTCDate() + 4 - isoDay);
+  const weekYear = date.getUTCFullYear();
+  const firstDayOfWeekYear = new Date(Date.UTC(weekYear, 0, 1));
+  const week = Math.ceil(
+    ((date.getTime() - firstDayOfWeekYear.getTime()) / MILLISECONDS_PER_DAY +
+      1) /
+      7,
   );
-  const weekNum = Math.ceil((dayOfYear + startOfYear.getDay() + 1) / 7);
-  return `${year}-W${String(weekNum).padStart(2, "0")}`;
+
+  return `${weekYear}-W${String(week).padStart(2, "0")}`;
 }
 
 /**
  * Helper: Convert week key back to date (start of that week)
  */
 function weekKeyToDate(weekKey: string): Date {
-  const [yearStr, weekStr] = weekKey.split("-W");
-  const year = parseInt(yearStr!);
-  const week = parseInt(weekStr!);
+  const match = /^(\d{4})-W(\d{2})$/.exec(weekKey);
+  if (!match) throw new Error(`Invalid ISO week: ${weekKey}`);
 
-  // Get Jan 1 of the year
-  const jan1 = new Date(year, 0, 1);
-  // Calculate days to add (week number * 7, adjusted for Jan 1's day of week)
-  const daysToAdd = (week - 1) * 7 - jan1.getDay();
+  const year = Number(match[1]);
+  const week = Number(match[2]);
+  const januaryFourth = new Date(Date.UTC(year, 0, 4));
+  const januaryFourthIsoDay = januaryFourth.getUTCDay() || 7;
+  januaryFourth.setUTCDate(
+    januaryFourth.getUTCDate() - januaryFourthIsoDay + 1 + (week - 1) * 7,
+  );
 
-  const result = new Date(year, 0, 1 + daysToAdd);
-  return result;
+  if (getISOWeekKey(utcDateToCalendarDateKey(januaryFourth)) !== weekKey) {
+    throw new Error(`Invalid ISO week: ${weekKey}`);
+  }
+
+  return januaryFourth;
 }
 
 /**
@@ -370,12 +593,12 @@ function weekKeyToDate(weekKey: string): Date {
  */
 function generateDayRange(startDate: string, endDate: string): string[] {
   const days: string[] = [];
-  const current = new Date(startDate);
-  const end = new Date(endDate);
+  const current = calendarDateKeyToUtcDate(startDate);
+  const end = calendarDateKeyToUtcDate(endDate);
 
   while (current <= end) {
-    days.push(current.toISOString().split("T")[0]!);
-    current.setDate(current.getDate() + 1);
+    days.push(utcDateToCalendarDateKey(current));
+    current.setUTCDate(current.getUTCDate() + 1);
   }
 
   return days;
@@ -450,8 +673,8 @@ function generateWeekRange(startWeek: string, endWeek: string): string[] {
   const end = weekKeyToDate(endWeek);
 
   while (current <= end) {
-    weeks.push(getISOWeekKey(current));
-    current.setDate(current.getDate() + 7);
+    weeks.push(getISOWeekKey(utcDateToCalendarDateKey(current)));
+    current.setUTCDate(current.getUTCDate() + 7);
   }
 
   return weeks;
@@ -478,41 +701,62 @@ function emptyAggregation(): Omit<
 }
 
 /**
- * Filter usage data by date range (inclusive)
+ * Filter source calendar-day usage by a local UI date range (inclusive).
  */
 export function filterUsageByDateRange(
   usage: TinderUsage[],
   from: Date,
   to: Date,
 ): TinderUsage[] {
-  // Normalize dates to start/end of day for comparison
-  const fromTime = new Date(from);
-  fromTime.setHours(0, 0, 0, 0);
-
-  const toTime = new Date(to);
-  toTime.setHours(23, 59, 59, 999);
+  const fromKey = localDateToCalendarDateKey(from);
+  const toKey = localDateToCalendarDateKey(to);
+  if (toKey < fromKey) return [];
 
   return usage.filter((day) => {
-    const dayDate = new Date(day.dateStamp);
-    return dayDate >= fromTime && dayDate <= toTime;
+    const dayKey = getUsageCalendarDateKey(day);
+    return dayKey >= fromKey && dayKey <= toKey;
   });
+}
+
+/** Return exactly `dayCount` local calendar days, including `to`. */
+export function calculateInclusiveDateRange(
+  dayCount: number,
+  to = new Date(),
+): { from: Date; to: Date } {
+  if (!Number.isInteger(dayCount) || dayCount < 1) {
+    throw new Error("dayCount must be a positive integer");
+  }
+
+  const toKey = localDateToCalendarDateKey(to);
+  const fromKey = addCalendarDays(toKey, -(dayCount - 1));
+
+  return {
+    from: calendarDateKeyToLocalDate(fromKey),
+    to: calendarDateKeyToLocalDate(toKey),
+  };
 }
 
 /**
  * Calculate the previous period dates given a current period
- * Returns a period with the same duration, ending just before the current period starts
+ * Returns the same number of inclusive calendar days, ending on the calendar
+ * day immediately before the current period starts.
  */
 export function calculatePreviousPeriod(
   from: Date,
   to: Date,
 ): { from: Date; to: Date } {
-  const durationMs = to.getTime() - from.getTime();
+  const fromKey = localDateToCalendarDateKey(from);
+  const toKey = localDateToCalendarDateKey(to);
+  const durationDays = differenceInCalendarDays(fromKey, toKey) + 1;
+  if (durationDays < 1) {
+    throw new Error("Current period must end on or after it starts");
+  }
 
-  const previousTo = new Date(from.getTime() - 1); // End 1ms before current period starts
-  const previousFrom = new Date(previousTo.getTime() - durationMs);
+  const previousToKey = addCalendarDays(fromKey, -1);
+  const previousFromKey = addCalendarDays(previousToKey, -(durationDays - 1));
 
   return {
-    from: previousFrom,
-    to: previousTo,
+    from: calendarDateKeyToLocalDate(previousFromKey),
+    to: calendarDateKeyToLocalDate(previousToKey),
   };
 }

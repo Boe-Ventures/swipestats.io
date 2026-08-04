@@ -175,7 +175,7 @@ export function MultiProfileComparisonTooltip({
         {matchRate !== null && (
           <div className="border-border/30 mt-1.5 space-y-0.5 border-t pt-1.5 pl-4">
             <div className="flex items-center justify-between gap-4">
-              <span className="text-muted-foreground text-xs">Match Rate</span>
+              <span className="text-muted-foreground text-xs">Match yield</span>
               <span className="text-xs font-medium tabular-nums">
                 {matchRate.toFixed(1)}%
               </span>

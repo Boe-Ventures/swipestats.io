@@ -52,6 +52,31 @@ export const MAX_FILE_SIZES = {
   AUDIO: 25 * 1024 * 1024, // 25MB
 } as const;
 
+const MAX_DATA_BLOB_BYTES = 200 * 1024 * 1024;
+const BLOB_FETCH_TIMEOUT_MS = 30_000;
+
+/** Only URLs issued by Vercel Blob may be fetched by server upload handlers. */
+export function isTrustedVercelBlobUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return (
+      url.protocol === "https:" &&
+      (url.hostname === "blob.vercel-storage.com" ||
+        url.hostname.endsWith(".blob.vercel-storage.com")) &&
+      url.username === "" &&
+      url.password === ""
+    );
+  } catch {
+    return false;
+  }
+}
+
+function assertTrustedVercelBlobUrl(url: string): void {
+  if (!isTrustedVercelBlobUrl(url)) {
+    throw new Error("Blob URL must be an HTTPS Vercel Blob URL.");
+  }
+}
+
 export function validateFileType(
   contentType: string,
   allowedTypes: string[],
@@ -296,6 +321,40 @@ export async function deleteBulkBlobs(
   return { success, failed };
 }
 
+export class IncompleteBlobDeletionError extends Error {
+  constructor(
+    public readonly failedCount: number,
+    public readonly requestedCount: number,
+  ) {
+    super(
+      `Failed to delete ${failedCount} of ${requestedCount} stored file${requestedCount === 1 ? "" : "s"}. Database records were preserved; retry the deletion.`,
+    );
+    this.name = "IncompleteBlobDeletionError";
+  }
+}
+
+/**
+ * Turn the bulk API's partial-success result into an all-or-error contract for
+ * destructive flows. Callers must run this before deleting the database rows
+ * that retain the URLs needed for a later retry.
+ */
+export function assertBulkBlobDeletionSucceeded(result: {
+  success: string[];
+  failed: { url: string; error: string }[];
+}): void {
+  if (result.failed.length > 0) {
+    throw new IncompleteBlobDeletionError(
+      result.failed.length,
+      result.success.length + result.failed.length,
+    );
+  }
+}
+
+export async function deleteBulkBlobsOrThrow(urls: string[]): Promise<void> {
+  const result = await deleteBulkBlobs(urls);
+  assertBulkBlobDeletionSucceeded(result);
+}
+
 /**
  * Upload a JSON file to Vercel Blob
  */
@@ -343,9 +402,13 @@ export async function uploadHingeDataJson(
  */
 export async function fetchBlob(url: string): Promise<Response> {
   try {
+    assertTrustedVercelBlobUrl(url);
     // console.log(`📥 Fetching blob from: ${url}`);
 
-    const response = await fetch(url);
+    const response = await fetch(url, {
+      redirect: "error",
+      signal: AbortSignal.timeout(BLOB_FETCH_TIMEOUT_MS),
+    });
 
     if (!response.ok) {
       throw new Error(
@@ -369,8 +432,30 @@ export async function fetchBlob(url: string): Promise<Response> {
 export async function fetchBlobJson<T = unknown>(url: string): Promise<T> {
   const response = await fetchBlob(url);
   try {
-    const json = (await response.json()) as T;
-    return json;
+    const declaredSize = Number(response.headers.get("content-length"));
+    if (Number.isFinite(declaredSize) && declaredSize > MAX_DATA_BLOB_BYTES) {
+      throw new Error("Blob JSON exceeds the 200 MiB processing limit.");
+    }
+    if (!response.body) {
+      throw new Error("Blob JSON response has no body.");
+    }
+
+    const reader = response.body.getReader();
+    const chunks: Uint8Array[] = [];
+    let totalBytes = 0;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      totalBytes += value.byteLength;
+      if (totalBytes > MAX_DATA_BLOB_BYTES) {
+        await reader.cancel();
+        throw new Error("Blob JSON exceeds the 200 MiB processing limit.");
+      }
+      chunks.push(value);
+    }
+
+    const body = Buffer.concat(chunks).toString("utf8");
+    return JSON.parse(body) as T;
   } catch (error) {
     console.error("❌ Failed to parse blob JSON:", error);
     throw new Error(
@@ -393,6 +478,7 @@ export const BlobService = {
   delete: deleteBlob,
   copy: copyBlob,
   deleteBulk: deleteBulkBlobs,
+  deleteBulkOrThrow: deleteBulkBlobsOrThrow,
   // Utility functions
   validateFileType,
   validateFileSize,

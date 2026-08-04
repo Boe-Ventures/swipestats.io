@@ -96,7 +96,10 @@ export function SwipestatsProfilePreview() {
           </div>
           <div className="text-left text-xs text-gray-500 sm:text-right dark:text-gray-400">
             <div>
-              Joined {format(myTinderProfile.createDate, "MMM d, yyyy")}
+              {myTinderProfile.createDateSource === "INFERRED_FROM_USAGE"
+                ? "Observed since"
+                : "Joined"}{" "}
+              {format(myTinderProfile.createDate, "MMM d, yyyy")}
             </div>
           </div>
         </div>

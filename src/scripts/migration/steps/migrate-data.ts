@@ -174,8 +174,7 @@ async function selectProfiles(
 }> {
   log("Selecting profiles to migrate...");
 
-  // Only migrate real user profiles (computed = false)
-  // Synthetic profiles should be regenerated using generate-cohort-profiles.ts
+  // Only migrate real user profiles (computed = false).
   // IMPORTANT: With 1:1 user-to-profile constraint, we MUST deduplicate by userId
   // Keep only the MOST RECENT profile per user (by lastDayOnApp)
   const profilesRaw = (await oldSql`

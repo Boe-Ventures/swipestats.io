@@ -66,8 +66,7 @@ export async function computeAllProfileMeta(
   const force = options?.force ?? process.env.FORCE === "true";
 
   try {
-    // Get all profiles (only real user profiles exist after migration)
-    // Synthetic profiles are generated separately via generate-cohort-profiles.ts
+    // Only real provider profiles participate in metadata computation.
     const profiles = await db.query.tinderProfileTable.findMany({
       where: eq(tinderProfileTable.computed, false),
     });

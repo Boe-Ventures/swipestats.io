@@ -5,14 +5,15 @@ import type {
   UserData,
   PromptEntryList,
   Conversations,
-  AnonymizedHingeUser,
   HingeValidationData,
 } from "@/lib/interfaces/HingeDataJSON";
 
 // HingeDataFilePart is documented in HingeDataJSON.ts but we use `unknown[]`
 // at runtime since JSON.parse() doesn't provide type guarantees
-import { createSHA256Hash } from "@/lib/utils/hash";
-import { omit } from "@/lib/utils/object";
+import { isPlausibleHingeAge } from "@/lib/hinge/age";
+import { tryParseHingeTimestampToDate } from "@/lib/hinge/timestamp";
+import { deriveHingeProfileIdFromExport } from "./hinge-profile-id";
+import { sanitizeAnonymizedHingeBlob } from "./hinge-runtime-schema";
 
 /**
  * Helper functions to detect file types based on content structure
@@ -24,28 +25,28 @@ function isUserFile(data: unknown): data is UserData {
 }
 
 function isMatchesFile(data: unknown): data is Conversations {
-  if (!Array.isArray(data)) return false;
-  return (
-    data.length === 0 ||
-    (typeof data[0] === "object" &&
-      data[0] !== null &&
-      ("chats" in data[0] ||
-        "like" in data[0] ||
-        "match" in data[0] ||
-        "block" in data[0] ||
-        "we_met" in data[0]))
+  if (!Array.isArray(data) || data.length === 0) return false;
+  return data.some(
+    (entry) =>
+      typeof entry === "object" &&
+      entry !== null &&
+      ("chats" in entry ||
+        "like" in entry ||
+        "match" in entry ||
+        "block" in entry ||
+        "we_met" in entry ||
+        "voice_notes" in entry),
   );
 }
 
 function isPromptsFile(data: unknown): data is PromptEntryList {
-  if (!Array.isArray(data)) return false;
-  return (
-    data.length === 0 ||
-    (typeof data[0] === "object" &&
-      data[0] !== null &&
-      "prompt" in data[0] &&
-      ("text" in data[0] || "options" in data[0]) && // Accept either text or options (for poll prompts)
-      "type" in data[0])
+  if (!Array.isArray(data) || data.length === 0) return false;
+  return data.some(
+    (entry) =>
+      typeof entry === "object" &&
+      entry !== null &&
+      "type" in entry &&
+      ("text" in entry || "options" in entry),
   );
 }
 
@@ -80,14 +81,21 @@ function isSubscriptionsFile(data: unknown): boolean {
  *
  * Each part is validated with type guards before being merged.
  */
-function combineHingeDataParts(dataParts: unknown[]): FullHingeDataJSON {
+export interface HingeExportFilePresence {
+  prompts?: boolean;
+}
+
+function combineHingeDataParts(
+  dataParts: unknown[],
+  filePresence: HingeExportFilePresence,
+): FullHingeDataJSON {
   const combined: Partial<FullHingeDataJSON> = {
     User: {} as UserData,
     Matches: [],
-    Prompts: [],
     Media: [],
     Subscriptions: [],
   };
+  if (filePresence.prompts) combined.Prompts = [];
 
   // Only recognized core files are merged. Unknown sidecars are ignored because
   // some Hinge exports include selfie audit images or extra prompt metadata.
@@ -134,17 +142,20 @@ export function isValidHingeJson(
     age: hingeJson.User.profile?.age,
   };
 
-  if (!validationData.age && !validationData.birth_date) {
+  if (!isPlausibleHingeAge(validationData.age)) {
     errors.birth_date = {
-      message: "No birth date or age detected",
-      user: hingeJson.User,
+      message: "No plausible adult age detected",
+      age: validationData.age,
     };
   }
 
-  if (!validationData.signup_time) {
+  const signupTimestamp = validationData.signup_time
+    ? tryParseHingeTimestampToDate(validationData.signup_time)?.getTime()
+    : Number.NaN;
+  if (!Number.isFinite(signupTimestamp)) {
     errors.create_date = {
-      message: "No signup time detected",
-      user: hingeJson.User,
+      message: "No valid signup time detected",
+      signup_time: validationData.signup_time,
     };
   }
 
@@ -166,23 +177,6 @@ export function isValidHingeJson(
   }
 }
 
-function normalizeHingeSignupTime(signupTime: string): string {
-  return signupTime.trim().replace("T", " ").replace(/Z$/, "");
-}
-
-/**
- * Create a stable SwipeStats Hinge profile ID for repeat exports.
- *
- * Hinge exports do not expose a native account ID. Signup time is the most
- * stable account-scoped value we have: it survives repeat exports, but changes
- * when someone deletes and recreates their Hinge account.
- */
-async function createSwipestatsProfileId(signupTime: string): Promise<string> {
-  return createSHA256Hash(
-    `hinge-profile:v2:${normalizeHingeSignupTime(signupTime)}`,
-  );
-}
-
 /**
  * Extract and anonymize Hinge data from multiple JSON strings
  *
@@ -192,6 +186,7 @@ async function createSwipestatsProfileId(signupTime: string): Promise<string> {
  */
 export async function extractHingeData(
   jsonStrings: string[],
+  filePresence: HingeExportFilePresence = {},
 ): Promise<SwipestatsHingeProfilePayload> {
   try {
     // Parse each file - treat as unknown until validated by type guards
@@ -199,7 +194,7 @@ export async function extractHingeData(
       (jsonString) => JSON.parse(jsonString) as unknown,
     );
 
-    const hingeJson = combineHingeDataParts(hingeDataParts);
+    const hingeJson = combineHingeDataParts(hingeDataParts, filePresence);
 
     const [jsonDataIsValid, invalidKeysAndValues] = isValidHingeJson(hingeJson);
 
@@ -209,12 +204,10 @@ export async function extractHingeData(
     }
 
     // Anonymize the data
-    const anonymizedHingeJson: AnonymizedHingeDataJSON = {
-      ...hingeJson,
+    const anonymizedHingeJson = sanitizeAnonymizedHingeBlob({
       User: {
         preferences: hingeJson.User.preferences,
         identity: {
-          fbid: hingeJson.User.identity.fbid,
           phone_country_code: hingeJson.User.identity.phone_country_code,
           phone_country_calling_code:
             hingeJson.User.identity.phone_country_calling_code,
@@ -225,26 +218,25 @@ export async function extractHingeData(
           has_phone_carrier: !!hingeJson.User.identity.phone_carrier,
         },
         account: hingeJson.User.account,
-        installs: hingeJson.User.installs.map((install) =>
-          omit(install, ["ip_address", "idfa", "idfv", "adid", "user_agent"]),
-        ),
-        devices: hingeJson.User.devices?.map((device) =>
-          omit(device, ["device_id", "user_agent"]),
-        ),
+        installs: hingeJson.User.installs,
+        devices: hingeJson.User.devices,
         location: hingeJson.User.location
           ? { country: getLocationCountry(hingeJson.User.location) }
           : undefined,
         profile: {
-          ...omit(hingeJson.User.profile, ["first_name", "last_name"]),
+          ...hingeJson.User.profile,
           has_first_name: !!hingeJson.User.profile.first_name,
           has_last_name: !!hingeJson.User.profile.last_name,
         },
-      } as AnonymizedHingeUser,
-    };
+      },
+      Matches: hingeJson.Matches,
+      ...(hingeJson.Prompts !== undefined
+        ? { Prompts: hingeJson.Prompts }
+        : {}),
+      Media: hingeJson.Media,
+    });
 
-    const profileId = await createSwipestatsProfileId(
-      anonymizedHingeJson.User.account.signup_time,
-    );
+    const profileId = await deriveHingeProfileIdFromExport(anonymizedHingeJson);
 
     const swipestatsHingeProfilePayload: SwipestatsHingeProfilePayload = {
       hingeId: profileId,
