@@ -33,9 +33,10 @@ const developmentTrustedOrigins =
         "http://*.localhost",
         "https://*.localhost",
 
-        // LocalCan local/public development proxies.
+        // MCP-managed LocalCan public development tunnel.
         "https://*.local",
         "https://swipestats-*.localcan.dev",
+        "https://swipestats.localcan.dev",
       ]
     : [];
 

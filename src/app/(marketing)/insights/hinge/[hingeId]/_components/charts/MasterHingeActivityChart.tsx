@@ -613,21 +613,24 @@ export function MasterHingeActivityChart() {
                       render={({ field, fieldState }) => (
                         <Field data-invalid={fieldState.invalid}>
                           <Popover>
-                            <PopoverTrigger asChild>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                id={field.name}
-                                aria-invalid={fieldState.invalid}
-                                className={cn(
-                                  "w-[240px] justify-start pl-3 text-left font-normal",
-                                  !field.value?.from && "text-muted-foreground",
-                                )}
-                              >
-                                {formatDateRange(field.value)}
-                                <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
-                            </PopoverTrigger>
+                            <PopoverTrigger
+                              render={
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  id={field.name}
+                                  aria-invalid={fieldState.invalid}
+                                  className={cn(
+                                    "w-[240px] justify-start pl-3 text-left font-normal",
+                                    !field.value?.from &&
+                                      "text-muted-foreground",
+                                  )}
+                                >
+                                  {formatDateRange(field.value)}
+                                  <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                </Button>
+                              }
+                            />
                             <PopoverContent
                               className="w-auto p-0"
                               align="start"

@@ -120,11 +120,13 @@ export function EventCard({ event, onEdit, onDelete }: EventCardProps) {
 
               {/* Actions */}
               <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
+                <DropdownMenuTrigger
+                  render={
+                    <Button variant="ghost" size="sm">
+                      <MoreVertical className="h-4 w-4" />
+                    </Button>
+                  }
+                />
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => onEdit(event.id)}>
                     <Edit2 className="mr-2 h-4 w-4" />

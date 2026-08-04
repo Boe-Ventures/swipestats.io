@@ -16,6 +16,13 @@ export { Prose, Tldr, PullStat } from "./blog";
 export { LockedValue, UpsellCard } from "./premium-gate";
 export { ErrorState } from "./error-state";
 export {
+  ChatTranscript,
+  ChatMessage,
+  ChatToolCard,
+  ChatPendingTurn,
+  ChatMidTurnShimmer,
+} from "./chat";
+export {
   GoldenAppHeader,
   GoldenSidebar,
   DEFAULT_GOLDEN_NAV,

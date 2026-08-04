@@ -160,9 +160,10 @@ export function PresetNumberField<
           <ToggleGroup
             id={getFormFieldIds(field.name).controlId}
             variant="outline"
-            type="single"
-            value={toggleValue}
-            onValueChange={handleToggleChange}
+            value={toggleValue ? [toggleValue] : []}
+            onValueChange={(values) =>
+              handleToggleChange(values[0]?.toString() ?? "")
+            }
             disabled={disabled}
             className="justify-start"
           >
@@ -170,7 +171,7 @@ export function PresetNumberField<
               <ToggleGroupItem
                 key={preset.value}
                 value={preset.value.toString()}
-                className="data-[state=on]:bg-primary px-3 data-[state=on]:text-white"
+                className="data-pressed:bg-primary px-3 data-pressed:text-white"
               >
                 {preset.label}
               </ToggleGroupItem>

@@ -45,17 +45,19 @@ export function DeleteAccountButton() {
 
   return (
     <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <Button variant="destructive" disabled={isDeleting}>
-          Delete Account
-        </Button>
-      </AlertDialogTrigger>
+      <AlertDialogTrigger
+        render={
+          <Button variant="destructive" disabled={isDeleting}>
+            Delete Account
+          </Button>
+        }
+      />
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
           <AlertDialogDescription>
-            This action cannot be undone. This will permanently delete your
-            account and remove all your data including:
+            This action cannot be undone. It permanently deletes your SwipeStats
+            account and uploaded product data, including:
             <ul className="mt-2 list-inside list-disc space-y-1 text-sm">
               <li>Your profile information</li>
               <li>All Tinder and Hinge profiles</li>

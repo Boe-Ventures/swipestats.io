@@ -10,6 +10,7 @@ import {
   hingeProfileTable,
   rayaProfileTable,
   originalAnonymizedFileTable,
+  attachmentTable,
 } from "@/server/db/schema";
 import { protectedProcedure } from "../trpc";
 import type { TRPCRouterRecord } from "@trpc/server";
@@ -22,6 +23,7 @@ import {
   updateTinderSwipeRankUserLocation,
 } from "@/server/services/swipe-rank/lifecycle.service";
 import { invalidatePublicSwipeRankCache } from "@/server/services/swipe-rank/public-cache";
+import { requestAmplitudeUserDeletion } from "@/server/clients/amplitude.server";
 
 export const userRouter = {
   // Get current user profile
@@ -175,22 +177,52 @@ export const userRouter = {
       });
     }
 
-    // Fetch all original files for blob cleanup.
-    const allFiles = await ctx.db.query.originalAnonymizedFileTable.findMany({
-      where: eq(originalAnonymizedFileTable.userId, userId),
-      columns: { blobUrl: true },
-    });
+    // Resolve every user-owned blob before deleting the rows that reference it.
+    const [allFiles, attachments] = await Promise.all([
+      ctx.db.query.originalAnonymizedFileTable.findMany({
+        where: eq(originalAnonymizedFileTable.userId, userId),
+        columns: { blobUrl: true },
+      }),
+      ctx.db.query.attachmentTable.findMany({
+        where: eq(attachmentTable.uploadedBy, userId),
+        columns: { url: true },
+      }),
+    ]);
 
     // Delete all user's blobs from Vercel storage
-    const blobUrls = allFiles
-      .map((f) => f.blobUrl)
-      .filter((url): url is string => url !== null);
+    const blobUrls = [
+      ...new Set([
+        ...allFiles
+          .map((file) => file.blobUrl)
+          .filter((url): url is string => url !== null),
+        ...attachments.map((attachment) => attachment.url),
+      ]),
+    ];
     if (blobUrls.length > 0) {
       console.log(`🗑️ Deleting ${blobUrls.length} blob(s) for user ${userId}`);
-      // Preserve the URL records and account whenever storage reports even one
-      // failure, so the user can retry instead of leaving an orphaned public
-      // export that the application can no longer locate.
-      await BlobService.deleteBulkOrThrow(blobUrls);
+      const result = await BlobService.deleteBulk(blobUrls);
+      if (result.failed.length > 0) {
+        console.error(
+          `Failed to delete ${result.failed.length} blob(s) for user ${userId}`,
+        );
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: "We could not remove all uploaded files. Please try again.",
+        });
+      }
+    }
+
+    // Require Amplitude to accept the erasure request before local deletion so
+    // a provider failure can be retried without losing the user identifier.
+    try {
+      await requestAmplitudeUserDeletion(userId);
+    } catch (error) {
+      console.error(`Failed to queue Amplitude deletion for user ${userId}`);
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: "We could not queue analytics deletion. Please try again.",
+        cause: error,
+      });
     }
 
     // Purge the Tinder analytical registry before the user cascade removes the

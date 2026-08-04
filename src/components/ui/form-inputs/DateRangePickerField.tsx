@@ -90,20 +90,22 @@ export function DateRangePickerField<
               </FieldLabel>
             )}
             <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  {...controlA11y}
-                  variant="outline"
-                  className={cn(
-                    "w-full justify-between pl-3 text-left font-normal",
-                    !field.value?.from && "text-muted-foreground",
-                  )}
-                  disabled={disabled}
-                >
-                  {formatDateRange(field.value)}
-                  <CalendarIcon className="h-4 w-4 opacity-50" />
-                </Button>
-              </PopoverTrigger>
+              <PopoverTrigger
+                render={
+                  <Button
+                    {...controlA11y}
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-between pl-3 text-left font-normal",
+                      !field.value?.from && "text-muted-foreground",
+                    )}
+                    disabled={disabled}
+                  >
+                    {formatDateRange(field.value)}
+                    <CalendarIcon className="h-4 w-4 opacity-50" />
+                  </Button>
+                }
+              />
               <PopoverContent className="w-auto p-0" align="start">
                 <Calendar
                   mode="range"

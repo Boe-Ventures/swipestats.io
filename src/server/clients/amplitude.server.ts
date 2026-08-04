@@ -104,3 +104,36 @@ export async function identifyAmplitudeServerUser(
     console.error("❌ [Amplitude server] identify failed:", error);
   }
 }
+
+/** Queue deletion of a user's events and properties in the EU project. */
+export async function requestAmplitudeUserDeletion(
+  userId: string,
+): Promise<void> {
+  if (!amplitudeServerEnabled) return;
+  if (!env.AMPLITUDE_SECRET_KEY) {
+    throw new Error("Amplitude deletion is not configured");
+  }
+
+  const credentials = Buffer.from(
+    `${env.NEXT_PUBLIC_AMPLITUDE_API_KEY}:${env.AMPLITUDE_SECRET_KEY}`,
+  ).toString("base64");
+  const response = await fetch(
+    "https://analytics.eu.amplitude.com/api/2/deletions/users",
+    {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${credentials}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        user_ids: [userId],
+        requester: "SwipeStats account deletion",
+        ignore_invalid_id: true,
+      }),
+    },
+  );
+
+  if (!response.ok) {
+    throw new Error(`Amplitude deletion request failed (${response.status})`);
+  }
+}

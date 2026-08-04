@@ -113,7 +113,7 @@ RULES:
     model: anthropic("claude-haiku-4-5"),
     output: Output.object({ schema: locationSchema }),
     prompt,
-    experimental_telemetry: {
+    telemetry: {
       isEnabled: true,
       functionId: "swipestats-extract-location",
     },

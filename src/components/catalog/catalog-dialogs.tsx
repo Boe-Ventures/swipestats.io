@@ -1,6 +1,11 @@
 "use client";
 
-import { useState, type FormEvent, type ReactNode } from "react";
+import {
+  isValidElement,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from "react";
 import { CheckCircle2, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useMutation } from "@tanstack/react-query";
@@ -141,8 +146,13 @@ export function CatalogRequestDialog({
         if (!next) setSubmitted(false);
       }}
     >
-      <DialogTrigger asChild onClick={() => setOpen(true)}>
-        {trigger ?? <Button>Request help</Button>}
+      <DialogTrigger
+        render={
+          isValidElement(trigger) ? trigger : <Button>Request help</Button>
+        }
+        onClick={() => setOpen(true)}
+      >
+        {trigger != null && !isValidElement(trigger) ? trigger : undefined}
       </DialogTrigger>
       <DialogContent className="rounded-2xl border-gray-200 bg-white sm:max-w-xl">
         {submitted ? (
@@ -317,8 +327,17 @@ export function CatalogSubmissionDialog({ trigger }: { trigger?: ReactNode }) {
         }
       }}
     >
-      <DialogTrigger asChild onClick={() => setOpen(true)}>
-        {trigger ?? <Button variant="outline">Submit a listing</Button>}
+      <DialogTrigger
+        render={
+          isValidElement(trigger) ? (
+            trigger
+          ) : (
+            <Button variant="outline">Submit a listing</Button>
+          )
+        }
+        onClick={() => setOpen(true)}
+      >
+        {trigger != null && !isValidElement(trigger) ? trigger : undefined}
       </DialogTrigger>
       <DialogContent
         className="rounded-2xl border-gray-200 bg-white sm:max-w-xl"
@@ -505,8 +524,17 @@ export function CatalogClaimDialog({
         if (!next) setSubmitted(false);
       }}
     >
-      <DialogTrigger asChild onClick={() => setOpen(true)}>
-        {trigger ?? <Button variant="outline">Claim this listing</Button>}
+      <DialogTrigger
+        render={
+          isValidElement(trigger) ? (
+            trigger
+          ) : (
+            <Button variant="outline">Claim this listing</Button>
+          )
+        }
+        onClick={() => setOpen(true)}
+      >
+        {trigger != null && !isValidElement(trigger) ? trigger : undefined}
       </DialogTrigger>
       <DialogContent className="rounded-2xl border-gray-200 bg-white sm:max-w-lg">
         {submitted ? (

@@ -22,6 +22,7 @@ import { Panel } from "@/components/golden";
 import { Button } from "@/components/ui/button";
 import {
   CATALOG_CATEGORIES,
+  CATALOG_CATEGORY_KEYS,
   CATALOG_PLACE_OPTIONS,
   CATALOG_SECTIONS,
   CATALOG_SECTION_KEYS,
@@ -89,9 +90,30 @@ export default async function DatingServicesPage() {
   const broaderAreas = CATALOG_PLACE_OPTIONS.filter(
     (place) => place.kind === "country" || place.kind === "region",
   );
+  const baseUrl = "https://www.swipestats.io";
+  const directoryJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: "SwipeStats Dating Services Directory",
+    description: metadata.description,
+    url: `${baseUrl}/dating-services`,
+    mainEntity: {
+      "@type": "ItemList",
+      itemListElement: CATALOG_CATEGORY_KEYS.map((key, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        name: CATALOG_CATEGORIES[key].label,
+        url: `${baseUrl}/dating-services/${CATALOG_CATEGORIES[key].slug}`,
+      })),
+    },
+  };
 
   return (
     <main className="min-h-screen bg-white text-gray-900">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(directoryJsonLd) }}
+      />
       <section className="relative overflow-hidden border-b border-gray-200">
         <div className="absolute inset-0 bg-[linear-gradient(to_right,oklch(0.92_0.01_286/0.45)_1px,transparent_1px),linear-gradient(to_bottom,oklch(0.92_0.01_286/0.45)_1px,transparent_1px)] [mask-image:linear-gradient(to_bottom,black,transparent_92%)] bg-[size:80px_80px]" />
         <div className="relative mx-auto max-w-7xl px-6 py-20 lg:px-8 lg:py-28">

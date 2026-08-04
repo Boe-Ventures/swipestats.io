@@ -289,7 +289,7 @@ async function analyzeConversation(
   const result = await generateText({
     model: anthropic(MODEL_ID),
     output: Output.object({ schema: conversationAnalysisSchema }),
-    system: CONVERSATION_SYSTEM_PROMPT,
+    instructions: CONVERSATION_SYSTEM_PROMPT,
     prompt: conversationText,
   });
 

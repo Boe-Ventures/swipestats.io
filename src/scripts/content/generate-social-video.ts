@@ -315,7 +315,7 @@ async function generateContent(angle: ContentAngle): Promise<GeneratedContent> {
     output: Output.object({ schema: generatedContentSchema }),
     prompt: angle.prompt,
     temperature: 1.0,
-    experimental_telemetry: {
+    telemetry: {
       isEnabled: true,
       functionId: "swipestats-video-content-generation",
     },

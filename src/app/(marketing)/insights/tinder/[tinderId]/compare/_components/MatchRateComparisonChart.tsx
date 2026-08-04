@@ -260,9 +260,9 @@ export function MatchRateComparisonChart() {
           <div className="flex gap-2">
             <Select
               value={granularity}
-              onValueChange={(value) =>
-                setGranularity(value as TimeGranularity)
-              }
+              onValueChange={(nextGranularity) => {
+                if (nextGranularity !== null) setGranularity(nextGranularity);
+              }}
             >
               <SelectTrigger
                 className="w-[120px]"
@@ -280,8 +280,8 @@ export function MatchRateComparisonChart() {
             </Select>
             <Select
               value={timeRange}
-              onValueChange={(value) =>
-                setTimeRange(value as MatchRateComparisonTimeRange)
+              onValueChange={(nextValue) =>
+                nextValue !== null && setTimeRange(nextValue)
               }
             >
               <SelectTrigger

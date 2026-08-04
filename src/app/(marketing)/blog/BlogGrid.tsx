@@ -13,6 +13,7 @@ interface BlogGridProps {
   featuredPosts?: readonly Post[];
   basePath?: string;
   searchComponent?: React.ReactNode;
+  showHeader?: boolean;
 }
 
 // Moved outside component to avoid recreation on every render
@@ -185,19 +186,22 @@ export function BlogGrid({
   featuredPosts = [],
   basePath = "/blog",
   searchComponent,
+  showHeader = true,
 }: BlogGridProps) {
   return (
     <main className="bg-background min-h-screen">
       <div className="mx-auto max-w-7xl space-y-8 px-4 py-6 sm:px-6 sm:py-12 lg:px-8">
         {/* Page Header */}
-        <div className="space-y-2">
-          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
-            {title}
-          </h1>
-          <p className="text-muted-foreground text-base sm:text-lg">
-            {description}
-          </p>
-        </div>
+        {showHeader && (
+          <div className="space-y-2">
+            <h1 className="text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
+              {title}
+            </h1>
+            <p className="text-muted-foreground text-base sm:text-lg">
+              {description}
+            </p>
+          </div>
+        )}
 
         {/* Featured Posts Section - Isolated, not affected by search */}
         {showFeatured && featuredPosts.length > 0 && (
