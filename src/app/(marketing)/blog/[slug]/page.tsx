@@ -17,6 +17,9 @@ import NewsletterCTA from "../../NewsletterCTA";
 
 export const dynamic = "force-static";
 
+const homiLandingUrl =
+  "https://www.homi.so/?utm_source=swipestats&utm_medium=blog_author&utm_campaign=creator_crosspromo";
+
 export function generateStaticParams() {
   // Only generate static paths for published posts
   return posts
@@ -42,6 +45,24 @@ function BlogCover({ src, title }: { src: string; title: string }) {
         priority
       />
     </figure>
+  );
+}
+
+function BoeVenturesNote() {
+  return (
+    <p className="mt-6 text-center text-sm/6 text-gray-600">
+      Also from Kristian:{" "}
+      <a
+        href={homiLandingUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="font-semibold text-gray-900 hover:text-rose-600"
+      >
+        Homi
+      </a>{" "}
+      is Kristian&apos;s AI workspace for organizing home searches with your
+      partner, family, or agent.
+    </p>
   );
 }
 
@@ -301,6 +322,7 @@ export default async function BlogPostPage({
                   </Link>
                 </div>
               </div>
+              <BoeVenturesNote />
             </div>
           </div>
         </div>
@@ -473,6 +495,7 @@ export default async function BlogPostPage({
                 </Link>
               </div>
             </div>
+            <BoeVenturesNote />
           </div>
         </div>
       </div>
