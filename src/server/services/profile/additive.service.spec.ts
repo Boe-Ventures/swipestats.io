@@ -1,5 +1,6 @@
 /// <reference types="bun-types" />
 import { describe, expect, test } from "bun:test";
+import { PgDialect } from "drizzle-orm/pg-core";
 
 import type {
   MatchInsert,
@@ -14,12 +15,43 @@ process.env.SKIP_ENV_VALIDATION = "1";
 process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/test";
 
 const {
+  buildTinderUsageChangePredicate,
   mergeTinderUsageRow,
   planTinderMediaReconciliation,
   planTinderUsageReconciliation,
   reconcileTinderCreateDateSnapshot,
   reconcileTinderMatches,
 } = await import("./additive.service");
+
+describe("buildTinderUsageChangePredicate", () => {
+  test("qualifies every stored column in the conflict predicate", () => {
+    const compiled = new PgDialect({ casing: "snake_case" }).sqlToQuery(
+      buildTinderUsageChangePredicate(),
+    ).sql;
+    const storedColumns = [
+      "app_opens",
+      "swipe_likes",
+      "swipe_passes",
+      "swipe_super_likes",
+      "matches",
+      "messages_sent",
+      "messages_received",
+      "swipes_combined",
+      "match_rate",
+      "like_rate",
+      "messages_sent_rate",
+      "response_rate",
+      "engagement_rate",
+      "user_age_this_day",
+      "date_stamp",
+    ];
+
+    for (const column of storedColumns) {
+      expect(compiled).toContain(`"tinder_usage"."${column}"`);
+      expect(compiled).toContain(`excluded.${column}`);
+    }
+  });
+});
 
 const allUsageMetricsPresent = {
   swipeLikes: true,
