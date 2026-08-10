@@ -247,6 +247,49 @@ export function planTinderUsageReconciliation(
   return { rowsToUpsert, legacyDateKeysToDelete };
 }
 
+/**
+ * Compare the stored usage row with the incoming conflict row. PostgreSQL
+ * exposes both relations inside ON CONFLICT, so every stored column must keep
+ * its table qualifier.
+ */
+export function buildTinderUsageChangePredicate() {
+  return sql`
+    ROW(
+      ${tinderUsageTable.appOpens},
+      ${tinderUsageTable.swipeLikes},
+      ${tinderUsageTable.swipePasses},
+      ${tinderUsageTable.swipeSuperLikes},
+      ${tinderUsageTable.matches},
+      ${tinderUsageTable.messagesSent},
+      ${tinderUsageTable.messagesReceived},
+      ${tinderUsageTable.swipesCombined},
+      ${tinderUsageTable.matchRate},
+      ${tinderUsageTable.likeRate},
+      ${tinderUsageTable.messagesSentRate},
+      ${tinderUsageTable.responseRate},
+      ${tinderUsageTable.engagementRate},
+      ${tinderUsageTable.userAgeThisDay},
+      ${tinderUsageTable.dateStamp}
+    ) IS DISTINCT FROM ROW(
+      excluded.app_opens,
+      excluded.swipe_likes,
+      excluded.swipe_passes,
+      excluded.swipe_super_likes,
+      excluded.matches,
+      excluded.messages_sent,
+      excluded.messages_received,
+      excluded.swipes_combined,
+      excluded.match_rate,
+      excluded.like_rate,
+      excluded.messages_sent_rate,
+      excluded.response_rate,
+      excluded.engagement_rate,
+      excluded.user_age_this_day,
+      excluded.date_stamp
+    )
+  `;
+}
+
 async function upsertUsageRecordsInTx(
   tx: TransactionClient,
   tinderId: string,
@@ -309,41 +352,7 @@ async function upsertUsageRecordsInTx(
           engagementRate: sql`excluded.engagement_rate`,
           userAgeThisDay: sql`excluded.user_age_this_day`,
         },
-        setWhere: sql`
-          ROW(
-            app_opens,
-            swipe_likes,
-            swipe_passes,
-            swipe_super_likes,
-            matches,
-            messages_sent,
-            messages_received,
-            swipes_combined,
-            match_rate,
-            like_rate,
-            messages_sent_rate,
-            response_rate,
-            engagement_rate,
-            user_age_this_day,
-            date_stamp
-          ) IS DISTINCT FROM ROW(
-            excluded.app_opens,
-            excluded.swipe_likes,
-            excluded.swipe_passes,
-            excluded.swipe_super_likes,
-            excluded.matches,
-            excluded.messages_sent,
-            excluded.messages_received,
-            excluded.swipes_combined,
-            excluded.match_rate,
-            excluded.like_rate,
-            excluded.messages_sent_rate,
-            excluded.response_rate,
-            excluded.engagement_rate,
-            excluded.user_age_this_day,
-            excluded.date_stamp
-          )
-        `,
+        setWhere: buildTinderUsageChangePredicate(),
       })
       .returning({ dateStampRaw: tinderUsageTable.dateStampRaw });
     usageInserted += changedRows.length;
