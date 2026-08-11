@@ -115,7 +115,9 @@ async function bindTransientUpload(input: {
   if (existing.blobUrl && existing.blobUrl !== input.blobUrl) {
     throw new Error("Temporary upload lease is already bound.");
   }
-  if (["PROCESSING", "COMMITTED", "CLEANED"].includes(existing.status)) {
+  if (
+    ["PROCESSING", "COMMITTED", "RETAINED", "CLEANED"].includes(existing.status)
+  ) {
     if (existing.blobUrl === input.blobUrl) return;
     throw new Error("Temporary upload lease cannot be rebound.");
   }
@@ -170,7 +172,9 @@ export async function registerTransientUploadForProcessing(
   if (!lease) throw new Error("Temporary upload lease was not found.");
   assertLeaseIdentity(lease, binding);
 
-  if (["COMMITTED", "CLEANED"].includes(lease.status)) return lease;
+  if (["COMMITTED", "RETAINED", "CLEANED"].includes(lease.status)) {
+    return lease;
+  }
   if (lease.expiresAt <= now) {
     throw new Error("Temporary upload lease has expired.");
   }
@@ -203,7 +207,7 @@ export async function registerTransientUploadForProcessing(
   });
   if (!registered) throw new Error("Temporary upload lease was not found.");
   assertLeaseIdentity(registered, binding);
-  if (["COMMITTED", "CLEANED"].includes(registered.status)) {
+  if (["COMMITTED", "RETAINED", "CLEANED"].includes(registered.status)) {
     return registered;
   }
   if (registered.status !== "UPLOADED") {
@@ -244,12 +248,13 @@ export async function markTransientUploadCommittedInTx(
   tx: TransactionClient,
   binding: TransientUploadBinding | undefined,
   resultProfileId: string,
+  options?: { retainBlob?: boolean },
 ): Promise<void> {
   if (!binding) return;
   const [lease] = await tx
     .update(transientUploadTable)
     .set({
-      status: "COMMITTED",
+      status: options?.retainBlob ? "RETAINED" : "COMMITTED",
       resultProfileId,
       committedAt: new Date(),
       updatedAt: new Date(),

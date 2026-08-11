@@ -1,7 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import { getTableConfig, PgDialect } from "drizzle-orm/pg-core";
 
-import { transientUploadTable } from "./schema";
+import { transientUploadStatusEnum, transientUploadTable } from "./schema";
 
 function checkSql(name: string): string {
   const check = getTableConfig(transientUploadTable).checks.find(
@@ -30,6 +30,7 @@ describe("transient_upload constraints", () => {
     const commitState = checkSql("transient_upload_commit_state");
     expect(commitState).toContain('"resultprofileid" is not null');
     expect(commitState).toContain('"committedat" is not null');
+    expect(transientUploadStatusEnum.enumValues).toContain("RETAINED");
   });
 
   it("keeps failed abandoned cleanup retryable", () => {

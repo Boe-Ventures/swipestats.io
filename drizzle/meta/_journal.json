@@ -78,6 +78,13 @@
       "when": 1784540213445,
       "tag": "0010_swipe_rank_and_upload_pipeline",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1786456801420,
+      "tag": "0011_careful_stardust",
+      "breakpoints": true
     }
   ]
 }

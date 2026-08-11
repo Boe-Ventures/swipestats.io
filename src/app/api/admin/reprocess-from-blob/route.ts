@@ -3,8 +3,8 @@ import { NextResponse } from "next/server";
 import {
   createTinderProfile,
   getTinderProfile,
+  replaceTinderProfileRevision,
 } from "@/server/services/profile/profile.service";
-import { additiveUpdateProfile } from "@/server/services/profile/additive.service";
 import {
   createHingeProfile,
   getHingeProfile,
@@ -14,7 +14,7 @@ import { isAdminRequestAuthorized } from "@/lib/admin-request-auth";
 
 /**
  * Admin endpoint to re-trigger profile extraction from an existing blob URL.
- * Automatically determines create vs additive update based on existing profile state.
+ * Automatically determines create vs complete replacement based on profile state.
  *
  * POST /api/admin/reprocess-from-blob
  * Authorization: Bearer $ADMIN_TOKEN (or a verified admin browser session)
@@ -58,9 +58,9 @@ export async function POST(request: Request) {
 
       if (existing) {
         console.log(
-          `🔄 [Admin] Additive update for existing Tinder profile: ${profileId}`,
+          `🔄 [Admin] Replacing existing Tinder profile: ${profileId}`,
         );
-        const result = await additiveUpdateProfile({
+        const result = await replaceTinderProfileRevision({
           tinderId: profileId,
           blobUrl,
           userId,

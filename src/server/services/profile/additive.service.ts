@@ -51,7 +51,6 @@ import {
 } from "../swipe-rank/lifecycle.service";
 import { invalidatePublicSwipeRankCache } from "../swipe-rank/public-cache";
 import {
-  cleanupCommittedTransientUpload,
   lockTransientUploadForMutationInTx,
   markTransientUploadCommittedInTx,
   type TransientUploadBinding,
@@ -783,7 +782,7 @@ export async function absorbProfileIntoNew(data: {
       dataProvider: "TINDER",
       swipestatsVersion: "SWIPESTATS_4",
       file: null, // No longer storing raw JSON
-      blobUrl: null, // Verified upload blobs are transient and consumed.
+      blobUrl: data.blobUrl,
       userId: data.userId,
     });
 
@@ -795,6 +794,7 @@ export async function absorbProfileIntoNew(data: {
       tx,
       data.transientUpload,
       data.newTinderId,
+      { retainBlob: true },
     );
 
     return {
@@ -810,7 +810,6 @@ export async function absorbProfileIntoNew(data: {
   const totalTime = Date.now() - startTime;
   invalidatePublicSwipeRankCache();
   scheduleTinderSwipeRankRefresh([data.newTinderId]);
-  await cleanupCommittedTransientUpload(data.transientUpload?.id);
   console.log(
     `\n✅ Cross-account merge complete: ${data.oldTinderId} → ${data.newTinderId}`,
   );
@@ -1094,7 +1093,7 @@ export async function additiveUpdateProfile(data: {
       dataProvider: "TINDER",
       swipestatsVersion: "SWIPESTATS_4",
       file: null, // No longer storing raw JSON
-      blobUrl: null, // Verified upload blobs are transient and consumed.
+      blobUrl: data.blobUrl,
       userId: data.userId,
     });
 
@@ -1102,6 +1101,7 @@ export async function additiveUpdateProfile(data: {
       tx,
       data.transientUpload,
       data.tinderId,
+      { retainBlob: true },
     );
 
     return {
@@ -1123,7 +1123,6 @@ export async function additiveUpdateProfile(data: {
 
   const totalTime = Date.now() - startTime;
   scheduleTinderSwipeRankRefresh([data.tinderId]);
-  await cleanupCommittedTransientUpload(data.transientUpload?.id);
   console.log(`\n✅ Additive update complete for ${data.tinderId}`);
   console.log(
     `⏱️  Total time: ${totalTime}ms (${(totalTime / 1000).toFixed(2)}s)\n`,

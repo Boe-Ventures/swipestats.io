@@ -16,11 +16,9 @@ import {
   createTinderProfile,
   getTinderProfile,
   getTinderProfileWithUser,
+  replaceTinderProfileRevision,
 } from "@/server/services/profile/profile.service";
-import {
-  additiveUpdateProfile,
-  absorbProfileIntoNew,
-} from "@/server/services/profile/additive.service";
+import { absorbProfileIntoNew } from "@/server/services/profile/additive.service";
 import { trackServerEvent } from "@/server/services/analytics.service";
 import { captureException } from "@/server/clients/posthog.client";
 import { getTinderObservedUsageRange } from "@/lib/profile.utils";
@@ -32,7 +30,6 @@ import {
   tinderCreateDatesMatch,
 } from "@/server/services/profile/validation.service";
 import {
-  cleanupCommittedTransientUpload,
   registerTransientUploadForProcessing,
   type TransientUploadBinding,
 } from "@/server/services/transient-upload.service";
@@ -56,8 +53,11 @@ async function prepareTinderTransientUpload(params: {
     blobUrl: params.blobUrl,
   };
   const lease = await registerTransientUploadForProcessing(binding);
-  if (lease.status === "COMMITTED" || lease.status === "CLEANED") {
-    await cleanupCommittedTransientUpload(lease.id);
+  if (
+    lease.status === "COMMITTED" ||
+    lease.status === "RETAINED" ||
+    lease.status === "CLEANED"
+  ) {
     const profile = lease.resultProfileId
       ? await getTinderProfile(lease.resultProfileId)
       : null;
@@ -88,12 +88,10 @@ async function handleExistingProfileUpload(params: {
 }) {
   const { existing, currentUserId, ...uploadParams } = params;
 
-  // Case B: User owns this profile - use additive update
+  // Case B: User owns this profile - replace the derived projection.
   if (existing.userId === currentUserId) {
-    console.log(
-      `🔄 Additive update for existing profile tinderId: ${params.tinderId}`,
-    );
-    return additiveUpdateProfile({
+    console.log(`🔄 Replacing existing profile tinderId: ${params.tinderId}`);
+    return replaceTinderProfileRevision({
       ...uploadParams,
       userId: currentUserId,
     });
@@ -494,22 +492,18 @@ export const profileRouter = {
           transientUpload: preparedUpload.binding,
         });
 
-        // Skip the event when the same export was re-uploaded (nothing new
-        // merged in) — otherwise it reads as a noisy "0 new" update.
-        if (!result.isNoOp) {
-          trackServerEvent(ctx.session.user.id, "tinder_profile_updated", {
-            tinderId: input.tinderId,
-            matchCount: result.metrics.matchCount,
-            messageCount: result.metrics.messageCount,
-            photoCount: result.metrics.photoCount,
-            usageDays: result.metrics.usageDays,
-            hasPhotos: result.metrics.hasPhotos,
-            processingTimeMs: result.metrics.processingTimeMs,
-            jsonSizeMB: result.metrics.jsonSizeMB,
-            consentPhotos: input.consentPhotos ?? true,
-            consentWork: input.consentWork ?? true,
-          });
-        }
+        trackServerEvent(ctx.session.user.id, "tinder_profile_updated", {
+          tinderId: input.tinderId,
+          matchCount: result.metrics.matchCount,
+          messageCount: result.metrics.messageCount,
+          photoCount: result.metrics.photoCount,
+          usageDays: result.metrics.usageDays,
+          hasPhotos: result.metrics.hasPhotos,
+          processingTimeMs: result.metrics.processingTimeMs,
+          jsonSizeMB: result.metrics.jsonSizeMB,
+          consentPhotos: input.consentPhotos ?? true,
+          consentWork: input.consentWork ?? true,
+        });
 
         return result.profile;
       } catch (error) {
@@ -628,8 +622,8 @@ export const profileRouter = {
           // REVIEW(provider assumption): Exact birth calendar date plus exact
           // account-create instant identifies the same owned Tinder account
           // across historical raw timestamp spellings. Preserve the existing
-          // public ID and use the deduplicating additive path.
-          const result = await additiveUpdateProfile({
+          // public ID and replace its complete derived projection.
+          const result = await replaceTinderProfileRevision({
             tinderId: existingUserProfile.tinderId,
             verifiedTinderId: input.tinderId,
             blobUrl: input.blobUrl,
@@ -642,20 +636,18 @@ export const profileRouter = {
             transientUpload: preparedUpload.binding,
           });
 
-          if (!result.isNoOp) {
-            trackServerEvent(ctx.session.user.id, "tinder_profile_updated", {
-              tinderId: existingUserProfile.tinderId,
-              matchCount: result.metrics.matchCount,
-              messageCount: result.metrics.messageCount,
-              photoCount: result.metrics.photoCount,
-              usageDays: result.metrics.usageDays,
-              hasPhotos: result.metrics.hasPhotos,
-              processingTimeMs: result.metrics.processingTimeMs,
-              jsonSizeMB: result.metrics.jsonSizeMB,
-              consentPhotos: input.consentPhotos ?? true,
-              consentWork: input.consentWork ?? true,
-            });
-          }
+          trackServerEvent(ctx.session.user.id, "tinder_profile_updated", {
+            tinderId: existingUserProfile.tinderId,
+            matchCount: result.metrics.matchCount,
+            messageCount: result.metrics.messageCount,
+            photoCount: result.metrics.photoCount,
+            usageDays: result.metrics.usageDays,
+            hasPhotos: result.metrics.hasPhotos,
+            processingTimeMs: result.metrics.processingTimeMs,
+            jsonSizeMB: result.metrics.jsonSizeMB,
+            consentPhotos: input.consentPhotos ?? true,
+            consentWork: input.consentWork ?? true,
+          });
           return result.profile;
         }
 
