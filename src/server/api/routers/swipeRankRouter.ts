@@ -2,8 +2,8 @@ import { unstable_cache } from "next/cache";
 import { z } from "zod";
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 
-import { genderEnum, swipeRankPeriodKindEnum } from "@/server/db/schema";
-import { assertAlignedPeriod } from "@/server/services/swipe-rank/periods";
+import { genderEnum } from "@/server/db/schema";
+import { assertClosedSwipeRankMonth } from "@/server/services/swipe-rank/periods";
 import { getTinderSwipeRankBenchmark } from "@/server/services/swipe-rank/benchmark.service";
 import {
   getPublicSwipeRankLeaderboard,
@@ -16,7 +16,6 @@ import {
   listTinderSwipeRankProfilePeriods,
   listAdminSwipeRankPeriods,
 } from "@/server/services/swipe-rank/product.service";
-import { getSwipeRankEligibility } from "@/server/services/swipe-rank/eligibility";
 import { SWIPE_RANK_PUBLIC_CACHE_TAG } from "@/server/services/swipe-rank/public-cache";
 import {
   listTinderSwipeRankExclusions,
@@ -61,13 +60,13 @@ const ownerBenchmarkFiltersSchema = z
 
 const periodSchema = z
   .object({
-    kind: z.enum(swipeRankPeriodKindEnum.enumValues),
+    kind: z.literal("MONTH"),
     start: z.string().date(),
     end: z.string().date(),
   })
   .superRefine((period, ctx) => {
     try {
-      assertAlignedPeriod(period);
+      assertClosedSwipeRankMonth(period);
     } catch (error) {
       ctx.addIssue({
         code: "custom",
@@ -79,12 +78,12 @@ const periodSchema = z
 
 const cachedPublicSwipeRankLeaderboard = unstable_cache(
   getPublicSwipeRankLeaderboard,
-  ["swipe-rank-public-leaderboard-v4"],
+  ["swipe-rank-public-leaderboard-v5"],
   { revalidate: 60, tags: [SWIPE_RANK_PUBLIC_CACHE_TAG] },
 );
 const cachedPublicSwipeRankPeriods = unstable_cache(
   listPublicSwipeRankPeriods,
-  ["swipe-rank-public-periods-v2"],
+  ["swipe-rank-public-periods-v3"],
   { revalidate: 300, tags: [SWIPE_RANK_PUBLIC_CACHE_TAG] },
 );
 
@@ -99,7 +98,7 @@ export const swipeRankRouter = {
     return listTinderSwipeRankProfilePeriods(input.tinderId);
   }),
 
-  /** Private: exact live placement for one selected historical season. */
+  /** Private: frozen placement for one published monthly season. */
   placement: tinderProfileOwnerProcedure
     .input(z.object({ period: periodSchema }))
     .query(async ({ input }) => {
@@ -131,10 +130,8 @@ export const swipeRankRouter = {
       }),
     )
     .query(async ({ input }) => {
-      const eligibility = getSwipeRankEligibility(input.period.kind);
       return cachedPublicSwipeRankLeaderboard({
         ...input,
-        ...eligibility,
       });
     }),
 

@@ -57,7 +57,7 @@ export function normalizeSwipeRankExclusionInput(
 
 /**
  * The one write path for admin and CLI/agent moderation. Facts are retained;
- * the profile is removed from every live ranking field until restored.
+ * the profile is removed from every published ranking field until restored.
  */
 export async function setTinderSwipeRankExclusion(
   input: SetSwipeRankExclusionInput,

@@ -1,20 +1,23 @@
 import type { SwipeRankPeriodKind } from "@/server/db/schema";
 
-import {
-  SWIPE_RANK_ALL_TIME_END,
-  SWIPE_RANK_ALL_TIME_START,
-} from "./constants";
-
 export interface SwipeRankPeriodBounds {
   kind: SwipeRankPeriodKind;
   start: string;
   end: string;
 }
 
+export interface SwipeRankMonthBounds extends SwipeRankPeriodBounds {
+  kind: "MONTH";
+}
+
 const ISO_DATE_PATTERN = /^(\d{4})-(\d{2})-(\d{2})$/;
 
 function formatDate(year: number, month: number, day = 1): string {
   return `${String(year).padStart(4, "0")}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+function currentUtcMonthStart(now: Date): string {
+  return formatDate(now.getUTCFullYear(), now.getUTCMonth() + 1);
 }
 
 function parseDate(input: string): {
@@ -43,61 +46,52 @@ function parseDate(input: string): {
 
 /** Return the aligned half-open period containing an observed calendar date. */
 export function periodContaining(
-  kind: Exclude<SwipeRankPeriodKind, "ALL_TIME">,
+  kind: "MONTH",
   observedDate: string,
 ): SwipeRankPeriodBounds {
   const { year, month } = parseDate(observedDate);
-
-  if (kind === "MONTH") {
-    const nextYear = month === 12 ? year + 1 : year;
-    const nextMonth = month === 12 ? 1 : month + 1;
-    return {
-      kind,
-      start: formatDate(year, month),
-      end: formatDate(nextYear, nextMonth),
-    };
-  }
-
-  if (kind === "QUARTER") {
-    const startMonth = Math.floor((month - 1) / 3) * 3 + 1;
-    const nextYear = startMonth === 10 ? year + 1 : year;
-    const nextMonth = startMonth === 10 ? 1 : startMonth + 3;
-    return {
-      kind,
-      start: formatDate(year, startMonth),
-      end: formatDate(nextYear, nextMonth),
-    };
-  }
-
+  const nextYear = month === 12 ? year + 1 : year;
+  const nextMonth = month === 12 ? 1 : month + 1;
   return {
     kind,
-    start: formatDate(year, 1),
-    end: formatDate(year + 1, 1),
+    start: formatDate(year, month),
+    end: formatDate(nextYear, nextMonth),
   };
 }
 
-export function allTimePeriod(): SwipeRankPeriodBounds {
-  return {
-    kind: "ALL_TIME",
-    start: SWIPE_RANK_ALL_TIME_START,
-    end: SWIPE_RANK_ALL_TIME_END,
-  };
+/** The one season a monthly publisher may close at a given instant. */
+export function previousCalendarMonth(now = new Date()): SwipeRankMonthBounds {
+  const currentStart = currentUtcMonthStart(now);
+  const previousDay = new Date(`${currentStart}T00:00:00.000Z`);
+  previousDay.setUTCDate(0);
+  return periodContaining(
+    "MONTH",
+    formatDate(
+      previousDay.getUTCFullYear(),
+      previousDay.getUTCMonth() + 1,
+      previousDay.getUTCDate(),
+    ),
+  ) as SwipeRankMonthBounds;
+}
+
+export function assertClosedSwipeRankMonth(
+  period: SwipeRankPeriodBounds,
+  now = new Date(),
+): asserts period is SwipeRankMonthBounds {
+  if (period.kind !== "MONTH") {
+    throw new Error("SwipeRank supports completed calendar months only.");
+  }
+  assertAlignedPeriod(period);
+  if (period.end > currentUtcMonthStart(now)) {
+    throw new Error("An open SwipeRank month cannot be ranked or published.");
+  }
 }
 
 export function assertAlignedPeriod(period: SwipeRankPeriodBounds): void {
-  if (period.kind === "ALL_TIME") {
-    if (
-      period.start !== SWIPE_RANK_ALL_TIME_START ||
-      period.end !== SWIPE_RANK_ALL_TIME_END
-    ) {
-      throw new Error(
-        `ALL_TIME must use [${SWIPE_RANK_ALL_TIME_START}, ${SWIPE_RANK_ALL_TIME_END}).`,
-      );
-    }
-    return;
+  if (period.kind !== "MONTH") {
+    throw new Error("SwipeRank supports monthly periods only.");
   }
-
-  const expected = periodContaining(period.kind, period.start);
+  const expected = periodContaining("MONTH", period.start);
   if (period.start !== expected.start || period.end !== expected.end) {
     throw new Error(
       `${period.kind} must be aligned; expected [${expected.start}, ${expected.end}).`,

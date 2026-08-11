@@ -1077,11 +1077,8 @@ export type SwipeRankProfile = typeof swipeRankProfileTable.$inferSelect;
 export type SwipeRankProfileInsert = typeof swipeRankProfileTable.$inferInsert;
 
 /**
- * Privacy-safe source mutation journal used to prove snapshot lineage.
- *
- * Rows contain no user or provider identifier. The monotonically increasing
- * ID changes whenever an application transaction mutates Tinder source or
- * ownership state; a FULL fact build records the latest visible ID.
+ * Legacy privacy-safe source mutation journal retained for migration history.
+ * Closed monthly publication does not write or read this table.
  */
 export const swipeRankSourceMutationTable = pgTable(
   "swipe_rank_source_mutation",
@@ -1150,9 +1147,8 @@ export type SwipeRankBuild = typeof swipeRankBuildTable.$inferSelect;
 export type SwipeRankBuildInsert = typeof swipeRankBuildTable.$inferInsert;
 
 /**
- * Versioned period facts. Periods are half-open [periodStart, periodEnd).
- * MONTH is the canonical stored grain; broader grains are sums of month facts.
- * ALL_TIME uses the fixed [0001-01-01, 9999-01-01) sentinel interval.
+ * Versioned period facts. New builds store completed calendar months only.
+ * Broader enum values and constraints remain for existing shared data.
  */
 export const swipeRankPeriodFactTable = pgTable(
   "swipe_rank_period_fact",
@@ -1380,6 +1376,14 @@ export const swipeRankEntryTable = pgTable(
     metricNumerator: t.bigint({ mode: "number" }).notNull(),
     metricDenominator: t.bigint({ mode: "number" }).notNull(),
     metricValue: t.doublePrecision().notNull(),
+    likeRateNumerator: t.bigint({ mode: "number" }),
+    likeRateDenominator: t.bigint({ mode: "number" }),
+    likeRate: t.doublePrecision(),
+    swipesPerActiveDay: t.doublePrecision(),
+    ageInPeriod: t.integer(),
+    activeDays: t.integer(),
+    observedDays: t.integer(),
+    observedHistoryDays: t.integer(),
     qualityFlags: t.jsonb().$type<string[]>().default([]).notNull(),
     createdAt: t
       .timestamp()

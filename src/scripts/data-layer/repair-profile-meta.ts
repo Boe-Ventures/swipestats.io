@@ -13,10 +13,11 @@ export const retirement = {
       "bun run data-layer:repair-conversations -- --provider TINDER --json",
     tinderConversationApply:
       "bun run data-layer:repair-conversations -- --provider TINDER --apply --json",
-    rebuildSwipeRank: "bun run swipe-rank:launch -- --confirm-write",
+    swipeRank:
+      "Published seasons remain frozen; the next monthly build reads repaired canonical source.",
   },
   guidance:
-    "Run the audit and both dry runs first. Apply the calendar and conversation repairs during a maintenance window, rerun the audit, then rebuild SwipeRank. If the audit reports missing profile_meta rows, stop: the canonical repair scripts deliberately do not invent a row, so regenerate it through the profile ingestion/service path.",
+    "Run the audit and both dry runs first. Apply the calendar and conversation repairs during a maintenance window, then rerun the audit. The next monthly SwipeRank build reads repaired canonical source. If the audit reports missing profile_meta rows, stop: the canonical repair scripts deliberately do not invent a row, so regenerate it through the profile ingestion/service path.",
 } as const;
 
 function main(): void {
@@ -34,7 +35,7 @@ function main(): void {
         `2. ${retirement.replacement.tinderCalendarDryRun}`,
         `3. ${retirement.replacement.tinderConversationDryRun}`,
         "4. During a maintenance window, rerun steps 2 and 3 with --apply.",
-        `5. Rerun the audit, then ${retirement.replacement.rebuildSwipeRank}`,
+        `5. Rerun the audit. ${retirement.replacement.swipeRank}`,
         "",
         retirement.guidance,
       ].join("\n"),

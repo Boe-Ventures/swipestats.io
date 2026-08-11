@@ -16,10 +16,8 @@ import {
 import { aiProcedure, protectedProcedure, publicProcedure } from "../trpc";
 import {
   generateRoast,
-  buildRoastBenchmarks,
   STATS_ROAST_MODEL,
   type RoastBenchmark,
-  type RoastBenchmarkDistribution,
 } from "@/server/services/roast.service";
 import {
   roastProfile,
@@ -39,9 +37,6 @@ import {
   loadOwnedColumnLight,
 } from "@/server/services/comparison-column.service";
 import { readPhotoAnalysis } from "@/lib/photo-analysis";
-import { getTinderSwipeRankBenchmark } from "@/server/services/swipe-rank/benchmark.service";
-import { allTimePeriod } from "@/server/services/swipe-rank/periods";
-import type { SwipeRankFilters } from "@/server/services/swipe-rank/product.service";
 import { ProfileComparisonService } from "@/server/services/profile-comparison.service";
 import { env } from "@/env";
 import {
@@ -56,38 +51,6 @@ import {
  * version lives in `ai-output.service` (shared with the upsert writer). */
 function isOutdated(row: AiOutputRow): boolean {
   return (row.version ?? 1) < AI_OUTPUT_VERSION;
-}
-
-/**
- * Human label for the fact-backed peer field used by the stats roast.
- */
-function swipeRankCohortLabel(gender: string | undefined): string {
-  if (gender === "MALE") return "men on Tinder";
-  if (gender === "FEMALE") return "women on Tinder";
-  return "eligible Tinder uploads";
-}
-
-function roastDistribution(
-  benchmark: Awaited<ReturnType<typeof getTinderSwipeRankBenchmark>>,
-): RoastBenchmarkDistribution {
-  const { matchYield, likeRate, swipesPerActiveDay } = benchmark.cohort.metrics;
-  return {
-    matchRateP10: matchYield.p10,
-    matchRateP25: matchYield.p25,
-    matchRateP50: matchYield.p50,
-    matchRateP75: matchYield.p75,
-    matchRateP90: matchYield.p90,
-    likeRateP10: likeRate.p10,
-    likeRateP25: likeRate.p25,
-    likeRateP50: likeRate.p50,
-    likeRateP75: likeRate.p75,
-    likeRateP90: likeRate.p90,
-    swipesPerDayP10: swipesPerActiveDay.p10,
-    swipesPerDayP25: swipesPerActiveDay.p25,
-    swipesPerDayP50: swipesPerActiveDay.p50,
-    swipesPerDayP75: swipesPerActiveDay.p75,
-    swipesPerDayP90: swipesPerActiveDay.p90,
-  };
 }
 
 /** Stats roast lives in ai_output keyed by (kind, subjectId, scope=""). */
@@ -204,7 +167,6 @@ export const roastRouter = {
       // Verify ownership and gather gender/provider in one pass.
       let gender: string | undefined;
       let providerKey = "TINDER";
-      let swipeRankFilters: SwipeRankFilters | undefined;
       if (tinderProfileId) {
         const tp = await ctx.db.query.tinderProfileTable.findFirst({
           where: eq(tinderProfileTable.tinderId, tinderProfileId),
@@ -214,10 +176,6 @@ export const roastRouter = {
         }
         gender = tp.gender;
         providerKey = "TINDER";
-        swipeRankFilters = {
-          gender: tp.gender,
-          interestedIn: tp.interestedIn,
-        };
       } else {
         const hp = await ctx.db.query.hingeProfileTable.findFirst({
           where: eq(hingeProfileTable.hingeId, hingeProfileId!),
@@ -258,28 +216,7 @@ export const roastRouter = {
         });
       }
 
-      // Pull percentiles from the same activated all-time facts as SwipeRank so
-      // roast wording cannot drift from the product leaderboard. Hinge does not
-      // yet have a provider-correct period fact model, so it remains
-      // deliberately unbenchmarked. This lookup is best-effort.
-      let benchmarks: RoastBenchmark[] = [];
-      if (tinderProfileId) {
-        try {
-          const swipeRankBenchmark = await getTinderSwipeRankBenchmark({
-            providerProfileId: tinderProfileId,
-            period: allTimePeriod(),
-            filters: swipeRankFilters,
-          });
-          benchmarks = buildRoastBenchmarks(
-            profileMeta,
-            roastDistribution(swipeRankBenchmark),
-            swipeRankCohortLabel(gender),
-          );
-        } catch {
-          // A missing/unactivated build must not block the otherwise valid
-          // roast. The generated copy simply receives no comparison claims.
-        }
-      }
+      const benchmarks: RoastBenchmark[] = [];
 
       const output = await generateRoast({
         profileMeta,

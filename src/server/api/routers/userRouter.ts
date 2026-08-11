@@ -17,11 +17,8 @@ import type { TRPCRouterRecord } from "@trpc/server";
 import { BlobService } from "@/server/services/blob.service";
 import { getContinentFromCountry } from "@/lib/utils/continent";
 import { withTransaction } from "@/server/db";
-import {
-  lockTinderSwipeRankMutationsInTx,
-  purgeTinderSwipeRankUserInTx,
-  updateTinderSwipeRankUserLocation,
-} from "@/server/services/swipe-rank/lifecycle.service";
+import { purgeTinderSwipeRankUserInTx } from "@/server/services/swipe-rank/lifecycle.service";
+import { updateUserLocation } from "@/server/services/user/location.service";
 import { invalidatePublicSwipeRankCache } from "@/server/services/swipe-rank/public-cache";
 import { requestAmplitudeUserDeletion } from "@/server/clients/amplitude.server";
 
@@ -45,7 +42,7 @@ export const userRouter = {
     const timeZone = headersList.get("x-vercel-ip-timezone") ?? null;
     const continent = country ? getContinentFromCountry(country) : null;
 
-    const updatedUser = await updateTinderSwipeRankUserLocation({
+    const updatedUser = await updateUserLocation({
       userId: ctx.session.user.id,
       city,
       country,
@@ -152,7 +149,7 @@ export const userRouter = {
         ? getContinentFromCountry(input.country)
         : undefined;
 
-      const updatedUser = await updateTinderSwipeRankUserLocation({
+      const updatedUser = await updateUserLocation({
         userId: ctx.session.user.id,
         ...input,
         continent,
@@ -229,7 +226,6 @@ export const userRouter = {
     // provider source. This removes live facts and the person's frozen entry
     // rows, and rolls back with account deletion if either step fails.
     await withTransaction(async (tx) => {
-      await lockTinderSwipeRankMutationsInTx(tx);
       await purgeTinderSwipeRankUserInTx(tx, userId);
       await tx.delete(userTable).where(eq(userTable.id, userId));
     });

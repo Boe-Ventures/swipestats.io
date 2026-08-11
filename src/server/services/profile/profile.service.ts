@@ -31,11 +31,9 @@ import {
   loadVerifiedAnonymizedTinderData,
 } from "./validation.service";
 import { createUsageRecords } from "./usage.service";
+import { lockTinderProfileUploadInTx } from "./upload-lock";
 import {
-  lockTinderProfileUploadInTx,
-  lockTinderSwipeRankMutationsInTx,
   purgeTinderSwipeRankProfilesInTx,
-  scheduleTinderSwipeRankRefresh,
   transferTinderSwipeRankOwnershipInTx,
 } from "../swipe-rank/lifecycle.service";
 import { invalidatePublicSwipeRankCache } from "../swipe-rank/public-cache";
@@ -158,7 +156,6 @@ export async function transferProfileOwnership(
   console.log(`   To user: ${newUserId}`);
 
   await withTransaction(async (tx) => {
-    await lockTinderSwipeRankMutationsInTx(tx);
     await lockTinderProfileUploadInTx(tx, tinderId);
     // Verify old user is anonymous (safety check)
     const oldUser = await tx.query.userTable.findFirst({
@@ -235,11 +232,6 @@ export async function transferProfileOwnership(
     }
   });
 
-  invalidatePublicSwipeRankCache();
-  // A claim can commit even if the subsequent additive upload fails. Refresh
-  // ownership now; a successful additive update will schedule a second refresh
-  // for the changed usage facts.
-  scheduleTinderSwipeRankRefresh([tinderId]);
   console.log(`✅ Profile ownership transfer complete`);
 }
 
@@ -383,7 +375,6 @@ export async function createTinderProfile(data: {
   console.log(`\n💾 [6/6] Starting database transaction...`);
   const profile = await withTransaction(async (tx) => {
     await lockTransientUploadForMutationInTx(tx, data.transientUpload);
-    await lockTinderSwipeRankMutationsInTx(tx);
     await lockTinderProfileUploadInTx(tx, data.tinderId);
     // Insert original file reference (blob URL only - no raw JSON)
     const fileStart = Date.now();
@@ -533,11 +524,6 @@ export async function createTinderProfile(data: {
 
   console.log(`\n✅ Transaction completed in ${Date.now() - txStart}ms`);
 
-  // The source transaction is already committed. Ranking is deliberately
-  // deferred and internally guarded so it can never turn a successful upload
-  // into a reported failure.
-  scheduleTinderSwipeRankRefresh([data.tinderId]);
-
   // Compute metrics for analytics
   const totalTime = Date.now() - startTime;
   const photosInput = transformTinderPhotosToMedia(
@@ -644,7 +630,6 @@ export async function replaceTinderProfileRevision(data: {
 
   const result = await withTransaction(async (tx) => {
     await lockTransientUploadForMutationInTx(tx, data.transientUpload);
-    await lockTinderSwipeRankMutationsInTx(tx);
     await lockTinderProfileUploadInTx(tx, data.tinderId);
 
     const existing = await tx.query.tinderProfileTable.findFirst({
@@ -744,7 +729,6 @@ export async function replaceTinderProfileRevision(data: {
     return profile;
   });
 
-  scheduleTinderSwipeRankRefresh([data.tinderId]);
   return {
     profile: result,
     metrics: {
@@ -766,7 +750,6 @@ export async function resetTinderProfile(tinderId: string): Promise<void> {
   console.log(`\n🗑️  Resetting profile: ${tinderId}`);
 
   await withTransaction(async (tx) => {
-    await lockTinderSwipeRankMutationsInTx(tx);
     await lockTinderProfileUploadInTx(tx, tinderId);
     // Delete in order: messages → matches → usage → media → profileMeta → profile
     // messages first because they have onDelete: "restrict" on matchId

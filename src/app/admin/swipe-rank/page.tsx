@@ -14,7 +14,6 @@ import {
   Eye,
   ExternalLink,
   Filter,
-  History,
   Loader2,
   RotateCcw,
   Sparkles,
@@ -109,12 +108,6 @@ function percentileBand(rank: number, fieldSize: number): number {
   );
 }
 
-function quickJumpIcon(key: string) {
-  if (key === "ALL_TIME") return History;
-  if (key === "LAST_QUARTER") return Sparkles;
-  return CalendarDays;
-}
-
 function normalizedFilters(draft: DraftFilters): AdminFilters {
   return {
     gender:
@@ -198,7 +191,7 @@ export default function AdminSwipeRankPage() {
         period: selectedPeriod?.period ?? {
           kind: DEFAULT_SWIPE_RANK_PERIOD_KIND,
           start: "2000-01-01",
-          end: "2000-04-01",
+          end: "2000-02-01",
         },
         filters,
         page,
@@ -411,7 +404,7 @@ export default function AdminSwipeRankPage() {
             </div>
             <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
               {quickJumps.map((jump) => {
-                const Icon = quickJumpIcon(jump.key);
+                const Icon = CalendarDays;
                 const key = swipeRankPeriodKey(jump.period);
                 const active = key === selectedPeriodKey;
                 return (

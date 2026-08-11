@@ -6,73 +6,45 @@ process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/test";
 const { assembleSwipeRankValidationResult } =
   await import("./validate.service");
 
-const cleanComponents = {
+const clean = {
+  metricVersion: "tinder-match-yield-v1",
+  closedBefore: "2026-08-01",
   profiles: 10_484,
-  facts: 337_443,
-  monthFacts: 213_163,
-  quarterFacts: 78_619,
-  yearFacts: 35_177,
-  allTimeFacts: 10_484,
+  facts: 213_163,
   duplicateFacts: 0,
-  invalidAllTimeSentinels: 0,
-  rollupMismatches: 0,
+  nonMonthFacts: 0,
+  openMonthFacts: 0,
   rawMonthMismatches: 0,
-  rawAllTimeMismatches: 0,
   rateInputMismatches: 0,
-  overOneMissingFlag: 0,
-  overOneFlagWithoutCondition: 0,
-  zeroLikeMissingFlag: 0,
-  zeroLikeFlagWithoutCondition: 0,
-  profileRangeFlagMismatches: 0,
-  unknownQualityFlags: 0,
+  qualityFlagMismatches: 0,
   registryDescriptorMismatches: 0,
-  staleFacts: 0,
-  sourceGenerationMismatches: 0,
 };
 
-describe("SwipeRank validation result contract", () => {
-  test("a populated layer with every parity check clean is valid", () => {
-    expect(
-      assembleSwipeRankValidationResult(
-        "tinder-match-yield-v1",
-        cleanComponents,
-      ),
-    ).toEqual({
-      metricVersion: "tinder-match-yield-v1",
-      ...cleanComponents,
-      snapshotSourceCurrent: true,
+describe("SwipeRank monthly validation contract", () => {
+  test("accepts a populated closed-month fact layer", () => {
+    expect(assembleSwipeRankValidationResult(clean)).toEqual({
+      ...clean,
       valid: true,
     });
   });
 
-  test("a newer source generation does not invalidate clean scoped facts", () => {
-    const result = assembleSwipeRankValidationResult("tinder-match-yield-v1", {
-      ...cleanComponents,
-      sourceGenerationMismatches: 1,
-    });
-    expect(result.snapshotSourceCurrent).toBeFalse();
-    expect(result.valid).toBeTrue();
-  });
-
-  test("rollup mismatch counts are reported as their combined total", () => {
-    const result = assembleSwipeRankValidationResult("tinder-match-yield-v1", {
-      ...cleanComponents,
-      rollupMismatches: 3,
-    });
-    expect(result.rollupMismatches).toBe(3);
-    expect(result.valid).toBeFalse();
-  });
-
-  test("an empty fact layer is invalid even when no mismatch exists", () => {
+  test("rejects broader periods and open-month facts", () => {
     expect(
-      assembleSwipeRankValidationResult("tinder-match-yield-v1", {
-        ...cleanComponents,
-        profiles: 0,
-        facts: 0,
-        monthFacts: 0,
-        quarterFacts: 0,
-        yearFacts: 0,
-        allTimeFacts: 0,
+      assembleSwipeRankValidationResult({ ...clean, nonMonthFacts: 1 }).valid,
+    ).toBeFalse();
+    expect(
+      assembleSwipeRankValidationResult({ ...clean, openMonthFacts: 1 }).valid,
+    ).toBeFalse();
+  });
+
+  test("rejects an empty or source-divergent fact layer", () => {
+    expect(
+      assembleSwipeRankValidationResult({ ...clean, facts: 0 }).valid,
+    ).toBeFalse();
+    expect(
+      assembleSwipeRankValidationResult({
+        ...clean,
+        rawMonthMismatches: 1,
       }).valid,
     ).toBeFalse();
   });

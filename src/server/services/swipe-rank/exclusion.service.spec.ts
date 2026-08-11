@@ -9,6 +9,9 @@ await mock.module("./public-cache", () => ({
 }));
 await mock.module("./lifecycle.service", () => ({
   lockTinderSwipeRankPolicyInTx: mock(),
+  purgeTinderSwipeRankProfilesInTx: mock(),
+  purgeTinderSwipeRankUserInTx: mock(),
+  transferTinderSwipeRankOwnershipInTx: mock(),
 }));
 
 const { normalizeSwipeRankExclusionInput } =

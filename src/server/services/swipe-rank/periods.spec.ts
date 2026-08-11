@@ -1,9 +1,10 @@
 import { describe, expect, test } from "bun:test";
 
 import {
-  allTimePeriod,
   assertAlignedPeriod,
+  assertClosedSwipeRankMonth,
   periodContaining,
+  previousCalendarMonth,
 } from "./periods";
 
 describe("SwipeRank period bounds", () => {
@@ -15,41 +16,45 @@ describe("SwipeRank period bounds", () => {
     });
   });
 
-  test("quarters and years are aligned half-open periods", () => {
-    expect(periodContaining("QUARTER", "2025-12-31")).toEqual({
-      kind: "QUARTER",
-      start: "2025-10-01",
-      end: "2026-01-01",
-    });
-    expect(periodContaining("YEAR", "2025-12-31")).toEqual({
-      kind: "YEAR",
-      start: "2025-01-01",
-      end: "2026-01-01",
-    });
-  });
-
-  test("all-time has one explicit sentinel interval", () => {
-    expect(allTimePeriod()).toEqual({
-      kind: "ALL_TIME",
-      start: "0001-01-01",
-      end: "9999-01-01",
-    });
+  test("broader periods are rejected", () => {
     expect(() =>
       assertAlignedPeriod({
         kind: "ALL_TIME",
         start: "2014-01-01",
         end: "2026-01-01",
       }),
-    ).toThrow("ALL_TIME must use");
+    ).toThrow("monthly periods only");
   });
 
-  test("misaligned finite periods are rejected", () => {
+  test("the monthly publisher closes the immediately preceding UTC month", () => {
+    expect(previousCalendarMonth(new Date("2026-01-01T06:30:00.000Z"))).toEqual(
+      {
+        kind: "MONTH",
+        start: "2025-12-01",
+        end: "2026-01-01",
+      },
+    );
+  });
+
+  test("closed-season reads reject open months and every broader period", () => {
+    const now = new Date("2026-08-11T12:00:00.000Z");
     expect(() =>
-      assertAlignedPeriod({
-        kind: "QUARTER",
-        start: "2025-11-01",
-        end: "2026-02-01",
-      }),
-    ).toThrow("QUARTER must be aligned");
+      assertClosedSwipeRankMonth(
+        { kind: "MONTH", start: "2026-07-01", end: "2026-08-01" },
+        now,
+      ),
+    ).not.toThrow();
+    expect(() =>
+      assertClosedSwipeRankMonth(
+        { kind: "MONTH", start: "2026-08-01", end: "2026-09-01" },
+        now,
+      ),
+    ).toThrow("open SwipeRank month");
+    expect(() =>
+      assertClosedSwipeRankMonth(
+        { kind: "YEAR", start: "2025-01-01", end: "2026-01-01" },
+        now,
+      ),
+    ).toThrow("completed calendar months only");
   });
 });

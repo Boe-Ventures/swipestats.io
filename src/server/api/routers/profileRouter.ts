@@ -23,7 +23,7 @@ import { trackServerEvent } from "@/server/services/analytics.service";
 import { captureException } from "@/server/clients/posthog.client";
 import { getTinderObservedUsageRange } from "@/lib/profile.utils";
 import { summarizeUploadError } from "@/server/services/upload-error.service";
-import { updateTinderSwipeRankUserLocation } from "@/server/services/swipe-rank/lifecycle.service";
+import { updateUserLocation } from "@/server/services/user/location.service";
 import {
   loadVerifiedAnonymizedTinderData,
   tinderBirthDatesMatch,
@@ -357,7 +357,7 @@ export const profileRouter = {
           const region = geo.countryRegion || null;
           const continent = getContinentFromCountry(country);
 
-          await updateTinderSwipeRankUserLocation({
+          await updateUserLocation({
             userId: ctx.session.user.id,
             city,
             country,
@@ -465,7 +465,7 @@ export const profileRouter = {
           const region = geo.countryRegion || null;
           const continent = getContinentFromCountry(country);
 
-          await updateTinderSwipeRankUserLocation({
+          await updateUserLocation({
             userId: ctx.session.user.id,
             city,
             country,

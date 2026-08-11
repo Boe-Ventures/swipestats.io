@@ -133,7 +133,6 @@ repairs and then rerun the audit:
 bun run data-layer:repair-tinder-dates -- --apply --json
 bun run data-layer:repair-conversations -- --provider TINDER --apply --json
 bun run data-layer:audit-profile-meta -- --json
-bun run swipe-rank:launch -- --confirm-write
 ```
 
 If the audit reports a missing `profile_meta` row, stop. The canonical repair
@@ -155,15 +154,9 @@ timezone before storing `date_stamp`. The dry run measures that disagreement;
 `--apply` restores the `date_stamp_raw` calendar prefix at midnight, recomputes
 age-on-day from calendar dates (ignoring a provider birth timestamp's clock
 component), profile ranges, and usage-derived `profile_meta` values in one
-transaction, and journals the Tinder source mutation. The dry run reports both
-timestamp shifts and age mismatches. The repair changes SwipeRank age and
-profile-range inputs. Before treating SwipeRank as fresh, run the full build,
-independent validation, and activation gate immediately against the same
-database:
-
-```sh
-bun run swipe-rank:launch -- --confirm-write
-```
+transaction. The dry run reports timestamp shifts and age mismatches. The
+repair changes inputs for future monthly SwipeRank publications. Published
+seasons remain frozen.
 
 ## 8. Repair conversation derivatives
 

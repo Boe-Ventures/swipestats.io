@@ -4,15 +4,13 @@ import { sql } from "drizzle-orm";
 
 import { env } from "@/env";
 import { db } from "@/server/db";
-import type { Gender, SwipeRankPeriodKind } from "@/server/db/schema";
+import type { Gender } from "@/server/db/schema";
 
+import { SWIPE_RANK_METRIC_VERSION } from "./constants";
 import {
-  SWIPE_RANK_METRIC_VERSION,
-  SWIPE_RANK_PERIOD_KINDS,
-} from "./constants";
-import { SWIPE_RANK_ELIGIBILITY_V1 } from "./eligibility";
-import { assertAlignedPeriod, type SwipeRankPeriodBounds } from "./periods";
-import { completedFullSwipeRankBuildSql } from "./readiness";
+  assertClosedSwipeRankMonth,
+  type SwipeRankPeriodBounds,
+} from "./periods";
 
 export const SWIPE_RANK_PUBLIC_MINIMUM_FIELD_SIZE = 25;
 export const SWIPE_RANK_PUBLIC_PAGE_SIZE = 100;
@@ -54,28 +52,15 @@ export interface PublicSwipeRankLeaderboard {
   entries: PublicSwipeRankEntry[];
 }
 
-export interface PublicSwipeRankPeriodSummary {
-  period: SwipeRankPeriodBounds;
-  asOf: string;
-  minimumRateDenominator: number;
-  minimumActiveDays: number;
-  fieldSize: number;
-}
-
-export interface PublicSwipeRankPeriods {
-  metricVersion: string;
-  minimumPublicFieldSize: number;
-  periods: PublicSwipeRankPeriodSummary[];
-}
-
-interface PublicLeaderboardQueryRow extends Record<string, unknown> {
-  ready: boolean;
+interface LeaderboardRow extends Record<string, unknown> {
+  snapshot_id: string;
   profile_id: string | null;
   rank: number | string | null;
+  top_share: number | string | null;
   field_size: number | string;
   metric_value: number | string | null;
-  match_rate_numerator: number | string | null;
-  match_rate_denominator: number | string | null;
+  metric_numerator: number | string | null;
+  metric_denominator: number | string | null;
   active_days: number | string | null;
   age_in_period: number | string | null;
   gender: Gender | null;
@@ -87,14 +72,17 @@ interface PublicLeaderboardQueryRow extends Record<string, unknown> {
   observed_history_days: number | string | null;
   photo_url: string | null;
   photo_count: number | string | null;
-  as_of: string | Date | null;
+  as_of: string | Date;
+  minimum_rate_denominator: number | string;
+  minimum_active_days: number | string;
 }
 
-interface PublicPeriodSummaryRow extends Record<string, unknown> {
-  period_kind: SwipeRankPeriodKind;
+interface PeriodRow extends Record<string, unknown> {
   period_start: string;
   period_end: string;
   as_of: string | Date;
+  minimum_rate_denominator: number | string;
+  minimum_active_days: number | string;
   field_size: number | string;
 }
 
@@ -115,12 +103,6 @@ function publicIdentitySecret(): string {
   return secret;
 }
 
-/**
- * A profile receives one opaque public identity across every season. The
- * source profile ID is never returned, and the HMAC prevents somebody who
- * learns an internal ID elsewhere from reproducing its alias without the
- * server-side secret.
- */
 export function getPublicSwipeRankPseudonym(
   profileId: string,
   secret: string,
@@ -137,153 +119,91 @@ export function getPublicSwipeRankPseudonym(
   };
 }
 
-function assertPublicLeaderboardInput(input: {
-  minimumRateDenominator: number;
-  minimumActiveDays: number;
-  page: number;
-}) {
-  if (
-    !Number.isSafeInteger(input.minimumRateDenominator) ||
-    input.minimumRateDenominator < 0 ||
-    !Number.isSafeInteger(input.minimumActiveDays) ||
-    input.minimumActiveDays < 0
-  ) {
-    throw new Error(
-      "SwipeRank public eligibility thresholds must be non-negative integers.",
-    );
-  }
-  if (!Number.isSafeInteger(input.page) || input.page < 1) {
-    throw new Error(
-      "SwipeRank public leaderboard page must be a positive integer.",
-    );
-  }
-  const offset = (input.page - 1) * SWIPE_RANK_PUBLIC_PAGE_SIZE;
-  if (!Number.isSafeInteger(offset)) {
-    throw new Error("SwipeRank public leaderboard page is too large.");
-  }
-}
-
 export async function getPublicSwipeRankLeaderboard(input: {
   period: SwipeRankPeriodBounds;
-  minimumRateDenominator: number;
-  minimumActiveDays: number;
   page: number;
   metricVersion?: string;
 }): Promise<PublicSwipeRankLeaderboard> {
-  assertAlignedPeriod(input.period);
-  assertPublicLeaderboardInput(input);
+  assertClosedSwipeRankMonth(input.period);
+  if (!Number.isSafeInteger(input.page) || input.page < 1) {
+    throw new Error("SwipeRank page must be a positive integer.");
+  }
   const metricVersion = input.metricVersion ?? SWIPE_RANK_METRIC_VERSION;
   const offset = (input.page - 1) * SWIPE_RANK_PUBLIC_PAGE_SIZE;
-  const result = await db.execute<PublicLeaderboardQueryRow>(sql`
-    WITH season_counts AS (
+  const result = await db.execute<LeaderboardRow>(sql`
+    WITH selected_snapshot AS (
+      SELECT snapshot.*
+      FROM swipe_rank_snapshot snapshot
+      WHERE snapshot.data_provider = 'TINDER'
+        AND snapshot.metric_key = 'MATCH_YIELD'
+        AND snapshot.metric_version = ${metricVersion}
+        AND snapshot.period_kind = 'MONTH'
+        AND snapshot.period_start = ${input.period.start}::date
+        AND snapshot.period_end = ${input.period.end}::date
+        AND snapshot.status = 'PUBLISHED'
+      ORDER BY snapshot.published_at DESC, snapshot.id DESC
+      LIMIT 1
+    ), season_counts AS (
+      SELECT entry.profile_id, count(DISTINCT snapshot.period_start)::bigint
+        AS seasons_ranked
+      FROM swipe_rank_entry entry
+      JOIN swipe_rank_snapshot snapshot ON snapshot.id = entry.snapshot_id
+      WHERE snapshot.data_provider = 'TINDER'
+        AND snapshot.metric_version = ${metricVersion}
+        AND snapshot.period_kind = 'MONTH'
+        AND snapshot.status = 'PUBLISHED'
+      GROUP BY entry.profile_id
+    ), field AS (
       SELECT
-        history.profile_id,
-        count(*)::bigint AS seasons_ranked
-      FROM swipe_rank_period_fact AS history
-      JOIN swipe_rank_profile AS history_profile
-        ON history_profile.id = history.profile_id
-      JOIN swipe_rank_build AS history_build
-        ON history_build.id = history.build_id
-       AND history_build.status = 'COMPLETE'
-      WHERE history_profile.data_provider = 'TINDER'
-        AND history_profile.is_synthetic = false
-        AND history_profile.is_swipe_rank_excluded = false
-        AND history.metric_version = ${metricVersion}
-        AND ${completedFullSwipeRankBuildSql("TINDER", metricVersion)}
-        AND history.period_kind = ${input.period.kind}
-        AND history.match_rate_denominator >= ${input.minimumRateDenominator}
-        AND history.active_days >= ${input.minimumActiveDays}
-        AND history.match_rate IS NOT NULL
-      GROUP BY history.profile_id
-    ), eligible_base AS (
-      SELECT
-        fact.match_rate,
-        fact.match_rate_numerator,
-        fact.match_rate_denominator,
-        fact.active_days,
-        fact.age_in_period,
-        profile.id AS profile_id,
+        entry.*,
         profile.gender,
         profile.interested_in,
         profile.city,
         profile.region,
         profile.country,
         season_counts.seasons_ranked,
-        (
-          lifetime_fact.observed_last_date
-          - lifetime_fact.observed_first_date
-          + 1
-        )::integer AS observed_history_days,
         profile_media.photo_url,
         profile_media.photo_count,
-        build.completed_at AS build_completed_at,
-        fact.computed_at
-      FROM swipe_rank_period_fact AS fact
-      JOIN swipe_rank_profile AS profile ON profile.id = fact.profile_id
-      JOIN swipe_rank_build AS build
-        ON build.id = fact.build_id
-       AND build.status = 'COMPLETE'
-      JOIN season_counts ON season_counts.profile_id = profile.id
-      JOIN swipe_rank_period_fact AS lifetime_fact
-        ON lifetime_fact.profile_id = profile.id
-       AND lifetime_fact.metric_version = fact.metric_version
-       AND lifetime_fact.period_kind = 'ALL_TIME'
-       AND lifetime_fact.period_start = date '0001-01-01'
-       AND lifetime_fact.period_end = date '9999-01-01'
-      JOIN swipe_rank_build AS lifetime_build
-        ON lifetime_build.id = lifetime_fact.build_id
-       AND lifetime_build.status = 'COMPLETE'
+        row_number() OVER (ORDER BY entry.rank, entry.profile_id) AS row_number
+      FROM selected_snapshot snapshot
+      JOIN swipe_rank_entry entry ON entry.snapshot_id = snapshot.id
+      JOIN swipe_rank_profile profile ON profile.id = entry.profile_id
+      JOIN season_counts ON season_counts.profile_id = entry.profile_id
       LEFT JOIN LATERAL (
-        SELECT
-          min(media.url) AS photo_url,
-          count(*)::bigint AS photo_count
+        SELECT min(media.url) AS photo_url, count(*)::bigint AS photo_count
         FROM media
         WHERE media.tinder_profile_id = profile.provider_profile_id
           AND media.type IN ('image', 'photo')
-      ) AS profile_media ON true
-      WHERE profile.data_provider = 'TINDER'
-        AND profile.is_synthetic = false
+      ) profile_media ON true
+      WHERE profile.is_synthetic = false
         AND profile.is_swipe_rank_excluded = false
-        AND fact.metric_version = ${metricVersion}
-        AND ${completedFullSwipeRankBuildSql("TINDER", metricVersion)}
-        AND fact.period_kind = ${input.period.kind}
-        AND fact.period_start = ${input.period.start}::date
-        AND fact.period_end = ${input.period.end}::date
-        AND fact.match_rate_denominator >= ${input.minimumRateDenominator}
-        AND fact.active_days >= ${input.minimumActiveDays}
-        AND fact.match_rate IS NOT NULL
-    ), eligible AS (
-      SELECT
-        eligible_base.*,
-        rank() OVER (ORDER BY match_rate DESC) AS rank,
-        row_number() OVER (
-          ORDER BY match_rate DESC, profile_id
-        ) AS row_number
-      FROM eligible_base
     ), stats AS (
       SELECT
-        ${completedFullSwipeRankBuildSql("TINDER", metricVersion)} AS ready,
-        count(*)::bigint AS field_size,
-        max(build_completed_at) AS as_of
-      FROM eligible
+        snapshot.id AS snapshot_id,
+        snapshot.published_at AS as_of,
+        snapshot.minimum_rate_denominator,
+        snapshot.minimum_active_days,
+        snapshot.field_size::bigint AS field_size
+      FROM selected_snapshot snapshot
+      GROUP BY snapshot.id, snapshot.published_at,
+        snapshot.minimum_rate_denominator, snapshot.minimum_active_days,
+        snapshot.field_size
     ), paged AS (
-      SELECT eligible.*
-      FROM eligible
-      CROSS JOIN stats
+      SELECT field.*
+      FROM field CROSS JOIN stats
       WHERE stats.field_size >= ${SWIPE_RANK_PUBLIC_MINIMUM_FIELD_SIZE}
-      ORDER BY eligible.row_number
+      ORDER BY field.row_number
       LIMIT ${SWIPE_RANK_PUBLIC_PAGE_SIZE}
       OFFSET ${offset}
     )
     SELECT
-      stats.field_size,
-      stats.ready,
-      stats.as_of,
+      stats.*,
       paged.profile_id,
       paged.rank,
-      paged.match_rate AS metric_value,
-      paged.match_rate_numerator,
-      paged.match_rate_denominator,
+      paged.top_share,
+      paged.metric_value,
+      paged.metric_numerator,
+      paged.metric_denominator,
       paged.active_days,
       paged.age_in_period,
       paged.gender,
@@ -299,157 +219,107 @@ export async function getPublicSwipeRankLeaderboard(input: {
     LEFT JOIN paged ON true
     ORDER BY paged.row_number NULLS LAST
   `);
-  const rows = result.rows;
-  const first = rows[0];
+
+  const first = result.rows[0];
+  const ready = Boolean(first?.snapshot_id);
   const fieldSize = first ? Number(first.field_size) : 0;
   const countsSuppressed = fieldSize < SWIPE_RANK_PUBLIC_MINIMUM_FIELD_SIZE;
-  const totalPages = countsSuppressed
-    ? 0
-    : Math.ceil(fieldSize / SWIPE_RANK_PUBLIC_PAGE_SIZE);
   const secret = publicIdentitySecret();
-  const entries = !countsSuppressed
-    ? rows.flatMap((row) => {
+  const entries = countsSuppressed
+    ? []
+    : result.rows.flatMap((row) => {
         if (
           row.profile_id === null ||
           row.rank === null ||
+          row.top_share === null ||
           row.metric_value === null ||
-          row.match_rate_numerator === null ||
-          row.match_rate_denominator === null ||
-          row.active_days === null ||
-          row.seasons_ranked === null ||
-          row.observed_history_days === null ||
-          row.photo_count === null
+          row.metric_numerator === null ||
+          row.metric_denominator === null
         ) {
           return [];
         }
-        const rank = Number(row.rank);
         return [
           {
             ...getPublicSwipeRankPseudonym(row.profile_id, secret),
-            rank,
-            topShare: (rank / fieldSize) * 100,
+            rank: Number(row.rank),
+            topShare: Number(row.top_share),
             matchYieldPercent:
               Math.round(Number(row.metric_value) * 1_000) / 10,
-            matches: Number(row.match_rate_numerator),
-            rightSwipes: Number(row.match_rate_denominator),
-            activeDays: Number(row.active_days),
+            matches: Number(row.metric_numerator),
+            rightSwipes: Number(row.metric_denominator),
+            activeDays: Number(row.active_days ?? 0),
             age: row.age_in_period === null ? null : Number(row.age_in_period),
             gender: row.gender,
             interestedIn: row.interested_in,
             city: row.city,
             region: row.region,
             country: row.country,
-            seasonsRanked: Number(row.seasons_ranked),
-            observedHistoryDays: Number(row.observed_history_days),
+            seasonsRanked: Number(row.seasons_ranked ?? 1),
+            observedHistoryDays: Number(row.observed_history_days ?? 0),
             photoUrl: row.photo_url,
-            photoCount: Number(row.photo_count),
+            photoCount: Number(row.photo_count ?? 0),
           } satisfies PublicSwipeRankEntry,
         ];
-      })
-    : [];
+      });
 
   return {
-    ready: first?.ready ?? false,
+    ready,
     metricVersion,
     period: input.period,
     asOf: iso(first?.as_of ?? null),
-    minimumRateDenominator: input.minimumRateDenominator,
-    minimumActiveDays: input.minimumActiveDays,
+    minimumRateDenominator: Number(first?.minimum_rate_denominator ?? 100),
+    minimumActiveDays: Number(first?.minimum_active_days ?? 5),
     minimumPublicFieldSize: SWIPE_RANK_PUBLIC_MINIMUM_FIELD_SIZE,
     fieldSize: countsSuppressed ? null : fieldSize,
     countsSuppressed,
     page: input.page,
     pageSize: SWIPE_RANK_PUBLIC_PAGE_SIZE,
-    totalPages,
+    totalPages: countsSuppressed
+      ? 0
+      : Math.ceil(fieldSize / SWIPE_RANK_PUBLIC_PAGE_SIZE),
     entries,
   };
 }
 
-/**
- * Every observed useful period is retained. Small fields stay entirely absent
- * from the public inventory, while all eligible profiles in a useful period
- * are available through the paginated leaderboard.
- */
 export async function listPublicSwipeRankPeriods(
   metricVersion = SWIPE_RANK_METRIC_VERSION,
-): Promise<PublicSwipeRankPeriods> {
-  const result = await db.execute<PublicPeriodSummaryRow>(sql`
-    WITH period_facts AS (
-      SELECT
-        fact.period_kind,
-        fact.period_start,
-        fact.period_end,
-        build.completed_at,
-        (
-          fact.match_rate IS NOT NULL
-          AND fact.match_rate_denominator >= CASE fact.period_kind
-            WHEN 'MONTH' THEN ${SWIPE_RANK_ELIGIBILITY_V1.MONTH.minimumRateDenominator}
-            WHEN 'QUARTER' THEN ${SWIPE_RANK_ELIGIBILITY_V1.QUARTER.minimumRateDenominator}
-            WHEN 'YEAR' THEN ${SWIPE_RANK_ELIGIBILITY_V1.YEAR.minimumRateDenominator}
-            WHEN 'ALL_TIME' THEN ${SWIPE_RANK_ELIGIBILITY_V1.ALL_TIME.minimumRateDenominator}
-          END::bigint
-          AND fact.active_days >= CASE fact.period_kind
-            WHEN 'MONTH' THEN ${SWIPE_RANK_ELIGIBILITY_V1.MONTH.minimumActiveDays}
-            WHEN 'QUARTER' THEN ${SWIPE_RANK_ELIGIBILITY_V1.QUARTER.minimumActiveDays}
-            WHEN 'YEAR' THEN ${SWIPE_RANK_ELIGIBILITY_V1.YEAR.minimumActiveDays}
-            WHEN 'ALL_TIME' THEN ${SWIPE_RANK_ELIGIBILITY_V1.ALL_TIME.minimumActiveDays}
-          END::integer
-        ) AS is_eligible
-      FROM swipe_rank_period_fact AS fact
-      JOIN swipe_rank_profile AS profile ON profile.id = fact.profile_id
-      JOIN swipe_rank_build AS build
-        ON build.id = fact.build_id
-       AND build.status = 'COMPLETE'
-      WHERE profile.data_provider = 'TINDER'
-        AND profile.is_synthetic = false
-        AND profile.is_swipe_rank_excluded = false
-        AND fact.metric_version = ${metricVersion}
-        AND ${completedFullSwipeRankBuildSql("TINDER", metricVersion)}
-    ), summaries AS (
-      SELECT
-        period_kind,
-        period_start,
-        period_end,
-        max(completed_at) FILTER (WHERE is_eligible) AS as_of,
-        count(*) FILTER (WHERE is_eligible)::bigint AS field_size
-      FROM period_facts
-      GROUP BY period_kind, period_start, period_end
+) {
+  const result = await db.execute<PeriodRow>(sql`
+    WITH latest AS (
+      SELECT DISTINCT ON (snapshot.period_start) snapshot.*
+      FROM swipe_rank_snapshot snapshot
+      WHERE snapshot.data_provider = 'TINDER'
+        AND snapshot.metric_key = 'MATCH_YIELD'
+        AND snapshot.metric_version = ${metricVersion}
+        AND snapshot.period_kind = 'MONTH'
+        AND snapshot.status = 'PUBLISHED'
+      ORDER BY snapshot.period_start, snapshot.published_at DESC, snapshot.id DESC
     )
     SELECT
-      period_kind,
-      period_start::text,
-      period_end::text,
-      as_of,
-      field_size
-    FROM summaries
-    WHERE field_size >= ${SWIPE_RANK_PUBLIC_MINIMUM_FIELD_SIZE}
-    ORDER BY CASE period_kind
-      WHEN 'MONTH' THEN 1
-      WHEN 'QUARTER' THEN 2
-      WHEN 'YEAR' THEN 3
-      WHEN 'ALL_TIME' THEN 4
-    END, period_start DESC, period_end DESC
+      latest.period_start::text,
+      latest.period_end::text,
+      latest.published_at AS as_of,
+      latest.minimum_rate_denominator,
+      latest.minimum_active_days,
+      latest.field_size::bigint AS field_size
+    FROM latest
+    WHERE latest.field_size >= ${SWIPE_RANK_PUBLIC_MINIMUM_FIELD_SIZE}
+    ORDER BY latest.period_start DESC
   `);
-
-  const periods = result.rows.map((row) => {
-    const eligibility = SWIPE_RANK_ELIGIBILITY_V1[row.period_kind];
-    return {
-      period: {
-        kind: row.period_kind,
-        start: row.period_start,
-        end: row.period_end,
-      },
-      asOf: iso(row.as_of)!,
-      ...eligibility,
-      fieldSize: Number(row.field_size),
-    } satisfies PublicSwipeRankPeriodSummary;
-  });
 
   return {
     metricVersion,
     minimumPublicFieldSize: SWIPE_RANK_PUBLIC_MINIMUM_FIELD_SIZE,
-    periods: SWIPE_RANK_PERIOD_KINDS.flatMap((kind) =>
-      periods.filter((period) => period.period.kind === kind),
-    ),
+    periods: result.rows.map((row) => ({
+      period: {
+        kind: "MONTH" as const,
+        start: row.period_start,
+        end: row.period_end,
+      },
+      asOf: iso(row.as_of)!,
+      minimumRateDenominator: Number(row.minimum_rate_denominator),
+      minimumActiveDays: Number(row.minimum_active_days),
+      fieldSize: Number(row.field_size),
+    })),
   };
 }

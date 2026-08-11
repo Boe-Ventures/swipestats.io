@@ -37,14 +37,6 @@ import { useTinderProfile } from "../TinderProfileProvider";
 
 type Gender = "MALE" | "FEMALE" | "OTHER" | "MORE" | "UNKNOWN";
 type CohortMode = "GLOBAL" | "PEER";
-type PeriodKind = "MONTH" | "QUARTER" | "YEAR" | "ALL_TIME";
-
-const PERIOD_KIND_LABELS: Record<PeriodKind, string> = {
-  MONTH: "Month",
-  QUARTER: "Quarter",
-  YEAR: "Year",
-  ALL_TIME: "All time",
-};
 
 interface PercentileDistribution {
   p10: number | null;
@@ -66,13 +58,10 @@ interface ComparisonPlacement {
 }
 
 const FALLBACK_PERIOD = {
-  kind: "ALL_TIME",
-  start: "0001-01-01",
-  end: "9999-01-01",
+  kind: "MONTH",
+  start: "2000-01-01",
+  end: "2000-02-01",
 } as const;
-
-const BENCHMARK_REFRESH_INTERVAL_MS = 30_000;
-const EMPTY_INVENTORY_POLL_INTERVAL_MS = 3_000;
 
 function isGender(value: string | null): value is Gender {
   return (
@@ -190,7 +179,6 @@ function BenchmarkMetric({
 export function CohortBenchmarksSection() {
   const trpc = useTRPC();
   const { tinderId } = useTinderProfile();
-  const [selectedKind, setSelectedKind] = useState<PeriodKind>("MONTH");
   const [selectedPeriodKey, setSelectedPeriodKey] = useState("");
   const [cohortMode, setCohortMode] = useState<CohortMode>("GLOBAL");
 
@@ -198,23 +186,13 @@ export function CohortBenchmarksSection() {
     trpc.swipeRank.availablePeriods.queryOptions(
       { tinderId },
       {
+        staleTime: 5 * 60 * 1_000,
         refetchOnWindowFocus: true,
-        refetchInterval: (query) =>
-          query.state.data?.periods.length
-            ? BENCHMARK_REFRESH_INTERVAL_MS
-            : EMPTY_INVENTORY_POLL_INTERVAL_MS,
       },
     ),
   );
   const periods = inventory.data?.periods ?? [];
-  const effectiveKind = periods.some(
-    (item) => item.period.kind === selectedKind,
-  )
-    ? selectedKind
-    : periods[0]?.period.kind;
-  const kindPeriods = periods.filter(
-    (item) => item.period.kind === effectiveKind,
-  );
+  const kindPeriods = periods;
   const selected =
     kindPeriods.find(
       (item) => swipeRankPeriodKey(item.period) === selectedPeriodKey,
@@ -238,8 +216,8 @@ export function CohortBenchmarksSection() {
       },
       {
         enabled: Boolean(selected),
+        staleTime: 5 * 60 * 1_000,
         refetchOnWindowFocus: true,
-        refetchInterval: BENCHMARK_REFRESH_INTERVAL_MS,
       },
     ),
   );
@@ -279,7 +257,7 @@ export function CohortBenchmarksSection() {
         <CardHeader>
           <CardTitle>How you compare</CardTitle>
           <CardDescription>
-            Period benchmarks will appear after your first SwipeRank fact build.
+            Monthly benchmarks will appear after a completed month is published.
           </CardDescription>
         </CardHeader>
       </Card>
@@ -296,40 +274,18 @@ export function CohortBenchmarksSection() {
               How you compare
             </CardTitle>
             <CardDescription className="mt-2 max-w-2xl">
-              Period-correct distributions from eligible Tinder SwipeRank facts.
-              Your values remain visible even when you compare against a field
-              you are not part of.
+              Distributions from a frozen, published monthly SwipeRank field.
+              Your values remain visible when you compare against a field you
+              are outside.
             </CardDescription>
           </div>
 
           <div className="flex flex-wrap gap-2">
             <Select
-              value={effectiveKind}
-              onValueChange={(value) => {
-                setSelectedKind(value!);
-                setSelectedPeriodKey("");
-              }}
-            >
-              <SelectTrigger className="w-[135px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(PERIOD_KIND_LABELS).map(([value, label]) => (
-                  <SelectItem
-                    key={value}
-                    value={value}
-                    disabled={
-                      !periods.some((item) => item.period.kind === value)
-                    }
-                  >
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
               value={swipeRankPeriodKey(selected.period)}
-              onValueChange={(next) => next !== null && setSelectedPeriodKey(next)}
+              onValueChange={(next) =>
+                next !== null && setSelectedPeriodKey(next)
+              }
             >
               <SelectTrigger className="w-[180px]">
                 <SelectValue />
@@ -437,13 +393,13 @@ export function CohortBenchmarksSection() {
 
             {!benchmark.data.target.excludedFromSwipeRank &&
               !benchmark.data.target.eligibility.eligible && (
-              <div className="rounded-lg border border-dashed p-4 text-sm">
-                Your period values are shown, but placement requires at least{" "}
-                {benchmark.data.eligibility.minimumRateDenominator.toLocaleString()}{" "}
-                right swipes and{" "}
-                {benchmark.data.eligibility.minimumActiveDays.toLocaleString()}{" "}
-                active days.
-              </div>
+                <div className="rounded-lg border border-dashed p-4 text-sm">
+                  Your period values are shown, but placement requires at least{" "}
+                  {benchmark.data.eligibility.minimumRateDenominator.toLocaleString()}{" "}
+                  right swipes and{" "}
+                  {benchmark.data.eligibility.minimumActiveDays.toLocaleString()}{" "}
+                  active days.
+                </div>
               )}
 
             {!benchmark.data.target.excludedFromSwipeRank &&

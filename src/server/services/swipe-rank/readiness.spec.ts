@@ -10,8 +10,6 @@ const cleanState = {
   scope: "FULL" as const,
   latestCompleteFullBuildId: "srb_current",
   foreignFactCount: 0,
-  sourceGeneration: 12,
-  currentGeneration: 12,
 };
 
 describe("SwipeRank build activation", () => {
@@ -34,15 +32,6 @@ describe("SwipeRank build activation", () => {
         foreignFactCount: 1,
       }),
     ).toThrow("facts changed");
-  });
-
-  test("rejects source mutation after validation", () => {
-    expect(() =>
-      assertTinderSwipeRankBuildCanActivate("srb_current", {
-        ...cleanState,
-        currentGeneration: 13,
-      }),
-    ).toThrow("source data changed");
   });
 
   test("rejects PROFILE and incomplete builds", () => {

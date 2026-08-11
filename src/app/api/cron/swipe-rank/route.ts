@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { reconcileTinderSwipeRankFacts } from "@/server/services/swipe-rank/reconcile.service";
-import { invalidatePublicSwipeRankCache } from "@/server/services/swipe-rank/public-cache";
+import { publishPreviousTinderSwipeRankMonth } from "@/server/services/swipe-rank/publication.service";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -13,13 +12,10 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const summary = await reconcileTinderSwipeRankFacts({ limit: 100 });
-  if (summary.orphanProfilesPurged > 0 || summary.build) {
-    invalidatePublicSwipeRankCache();
-  }
+  const summary = await publishPreviousTinderSwipeRankMonth();
   return NextResponse.json({
     ok: true,
-    reconciledAt: new Date().toISOString(),
+    processedAt: new Date().toISOString(),
     ...summary,
   });
 }

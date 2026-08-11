@@ -370,21 +370,21 @@ export default function PrivacyPage() {
           </li>
           <li>
             The competition season, eligibility context, and leaderboard
-            freshness date
+            publication date
           </li>
         </ul>
         <p>
           We do not include your Tinder ID, SwipeStats profile or account ID,
           provider or upload identifiers, messages, uploaded files other than
           the profile-photo presentation described above, or exact account dates
-          in the public leaderboard. Historical rows use the latest uploaded
-          gender and interested-in descriptors; we do not infer a historical
+          in the public leaderboard. Historical rows use the descriptors
+          captured by the monthly publication; we do not infer a historical
           identity timeline. The public pseudonym and technical row key remain
-          stable between months, quarters, years, and all-time competitions so
-          readers can follow one profile&apos;s results across seasons. Exact
-          activity, demographic, location, and photo context can make a
-          pseudonymous row recognizable or linkable with information published
-          elsewhere even though we do not expose direct account identifiers.
+          stable between monthly competitions so readers can follow one
+          profile&apos;s results across seasons. Exact activity, demographic,
+          location, and photo context can make a pseudonymous row recognizable
+          or linkable with information published elsewhere even though we do not
+          expose direct account identifiers.
         </p>
         <p>
           The audience is anyone on the internet. Public entries can be copied,
