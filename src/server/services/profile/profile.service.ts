@@ -527,7 +527,6 @@ export async function createTinderProfile(data: {
       tx,
       data.transientUpload,
       data.tinderId,
-      { retainBlob: true },
     );
     return profile!;
   });
@@ -741,7 +740,6 @@ export async function replaceTinderProfileRevision(data: {
       tx,
       data.transientUpload,
       data.tinderId,
-      { retainBlob: true },
     );
     return profile;
   });

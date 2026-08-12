@@ -6,9 +6,9 @@ Tinder exports are anonymized in the browser, uploaded to the existing public
 Vercel Blob store, then processed on the server. The accepted public Blob URL
 is retained in `original_anonymized_file`; raw JSON is not stored in Postgres.
 
-The temporary-upload ledger has a `RETAINED` state for Tinder exports. It
-prevents the transient cleanup worker from deleting a Blob once the matching
-profile transaction and original-file pointer have committed.
+The transient upload remains marked `COMMITTED`. Its cleanup worker checks for
+the matching Tinder `original_anonymized_file` pointer and keeps that archived
+Blob instead of deleting it.
 
 ## Why this is deferred
 

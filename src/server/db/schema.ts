@@ -203,7 +203,6 @@ export const transientUploadStatusEnum = pgEnum("TransientUploadStatus", [
   "UPLOADED",
   "PROCESSING",
   "COMMITTED",
-  "RETAINED",
   "CLEANED",
   "ABANDONED",
 ]);
@@ -1845,7 +1844,7 @@ export const transientUploadTable = pgTable(
     ),
     check(
       "transient_upload_commit_state",
-      sql`${t.status} NOT IN ('COMMITTED', 'RETAINED', 'CLEANED') OR (${t.resultProfileId} IS NOT NULL AND ${t.committedAt} IS NOT NULL)`,
+      sql`${t.status} NOT IN ('COMMITTED', 'CLEANED') OR (${t.resultProfileId} IS NOT NULL AND ${t.committedAt} IS NOT NULL)`,
     ),
     check(
       "transient_upload_cleaned_state",

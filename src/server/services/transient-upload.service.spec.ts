@@ -5,6 +5,10 @@ import {
   transientUploadCleanupPrefix,
 } from "@/lib/upload/transient-upload";
 
+const SERVICE_SOURCE = await Bun.file(
+  new URL("./transient-upload.service.ts", import.meta.url),
+).text();
+
 describe("transient provider upload path binding", () => {
   const expected =
     "tinder-data/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/123e4567-e89b-42d3-a456-426614174000/data.json";
@@ -35,5 +39,11 @@ describe("transient provider upload path binding", () => {
     expect(transientUploadCleanupPrefix(expected)).toBe(
       expected.replace("data.json", ""),
     );
+  });
+
+  it("keeps a committed Tinder Blob when it has an original-file archive pointer", () => {
+    expect(SERVICE_SOURCE).toContain("originalAnonymizedFileTable.blobUrl");
+    expect(SERVICE_SOURCE).toContain("if (archivedTinderExport)");
+    expect(SERVICE_SOURCE).toContain("continue;");
   });
 });

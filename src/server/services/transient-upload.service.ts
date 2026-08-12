@@ -8,7 +8,11 @@ import {
 } from "@/lib/upload/transient-upload";
 import { isTrustedVercelBlobUrl } from "@/server/services/blob.service";
 import { db, type TransactionClient } from "@/server/db";
-import { transientUploadTable, type TransientUpload } from "@/server/db/schema";
+import {
+  originalAnonymizedFileTable,
+  transientUploadTable,
+  type TransientUpload,
+} from "@/server/db/schema";
 
 export type TransientDataProvider = "TINDER" | "HINGE";
 
@@ -115,9 +119,7 @@ async function bindTransientUpload(input: {
   if (existing.blobUrl && existing.blobUrl !== input.blobUrl) {
     throw new Error("Temporary upload lease is already bound.");
   }
-  if (
-    ["PROCESSING", "COMMITTED", "RETAINED", "CLEANED"].includes(existing.status)
-  ) {
+  if (["PROCESSING", "COMMITTED", "CLEANED"].includes(existing.status)) {
     if (existing.blobUrl === input.blobUrl) return;
     throw new Error("Temporary upload lease cannot be rebound.");
   }
@@ -172,7 +174,7 @@ export async function registerTransientUploadForProcessing(
   if (!lease) throw new Error("Temporary upload lease was not found.");
   assertLeaseIdentity(lease, binding);
 
-  if (["COMMITTED", "RETAINED", "CLEANED"].includes(lease.status)) {
+  if (["COMMITTED", "CLEANED"].includes(lease.status)) {
     return lease;
   }
   if (lease.expiresAt <= now) {
@@ -207,7 +209,7 @@ export async function registerTransientUploadForProcessing(
   });
   if (!registered) throw new Error("Temporary upload lease was not found.");
   assertLeaseIdentity(registered, binding);
-  if (["COMMITTED", "RETAINED", "CLEANED"].includes(registered.status)) {
+  if (["COMMITTED", "CLEANED"].includes(registered.status)) {
     return registered;
   }
   if (registered.status !== "UPLOADED") {
@@ -248,13 +250,12 @@ export async function markTransientUploadCommittedInTx(
   tx: TransactionClient,
   binding: TransientUploadBinding | undefined,
   resultProfileId: string,
-  options?: { retainBlob?: boolean },
 ): Promise<void> {
   if (!binding) return;
   const [lease] = await tx
     .update(transientUploadTable)
     .set({
-      status: options?.retainBlob ? "RETAINED" : "COMMITTED",
+      status: "COMMITTED",
       resultProfileId,
       committedAt: new Date(),
       updatedAt: new Date(),
@@ -347,6 +348,20 @@ export async function cleanupTransientUploadsBatch(
 
   for (const candidate of candidates) {
     const isCommitted = candidate.status === "COMMITTED";
+    const archivedTinderExport =
+      isCommitted &&
+      candidate.dataProvider === "TINDER" &&
+      candidate.blobUrl &&
+      (await db.query.originalAnonymizedFileTable.findFirst({
+        where: and(
+          eq(originalAnonymizedFileTable.dataProvider, "TINDER"),
+          eq(originalAnonymizedFileTable.blobUrl, candidate.blobUrl),
+        ),
+        columns: { id: true },
+      }));
+    if (archivedTinderExport) {
+      continue;
+    }
     let claimed: TransientUpload | undefined;
 
     if (isCommitted || candidate.status === "ABANDONED") {

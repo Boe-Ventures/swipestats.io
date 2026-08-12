@@ -53,11 +53,7 @@ async function prepareTinderTransientUpload(params: {
     blobUrl: params.blobUrl,
   };
   const lease = await registerTransientUploadForProcessing(binding);
-  if (
-    lease.status === "COMMITTED" ||
-    lease.status === "RETAINED" ||
-    lease.status === "CLEANED"
-  ) {
+  if (lease.status === "COMMITTED" || lease.status === "CLEANED") {
     const profile = lease.resultProfileId
       ? await getTinderProfile(lease.resultProfileId)
       : null;

@@ -794,7 +794,6 @@ export async function absorbProfileIntoNew(data: {
       tx,
       data.transientUpload,
       data.newTinderId,
-      { retainBlob: true },
     );
 
     return {
@@ -1101,7 +1100,6 @@ export async function additiveUpdateProfile(data: {
       tx,
       data.transientUpload,
       data.tinderId,
-      { retainBlob: true },
     );
 
     return {
