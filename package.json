@@ -30,6 +30,7 @@
     "data-layer:repair-hinge-media": "bun run src/scripts/data-layer/repair-hinge-media-duplicates.ts",
     "data-layer:repair-profile-meta": "bun run src/scripts/data-layer/repair-profile-meta.ts",
     "data-layer:repair-tinder-dates": "bun run src/scripts/data-layer/repair-tinder-calendar-dates.ts",
+    "data-layer:recover-transient-tinder-archives": "bun run src/scripts/data-layer/recover-transient-tinder-archives.ts",
     "dev": "portless",
     "dev:direct": "node scripts/sync-localcan-target.mjs && next dev --turbopack",
     "dev:webpack": "next dev --webpack",
