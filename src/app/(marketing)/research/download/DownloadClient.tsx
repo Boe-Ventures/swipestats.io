@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useQueryState } from "nuqs";
+import { useSearchParams } from "next/navigation";
 import {
   ArrowDownTrayIcon,
   CheckCircleIcon,
@@ -11,9 +11,9 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { cn } from "@/components/ui/lib/utils";
 
 export function DownloadClient() {
-  const [licenseKey, setLicenseKey] = useQueryState("licenseKey", {
-    defaultValue: "",
-  });
+  const searchParams = useSearchParams();
+  const initialLicenseKey = searchParams.get("licenseKey")?.trim() ?? "";
+  const [licenseKey, setLicenseKey] = useState(initialLicenseKey);
   const [inputValue, setInputValue] = useState(licenseKey);
   const [_isPolling, setIsPolling] = useState(false);
   const trpc = useTRPC();
@@ -55,6 +55,20 @@ export function DownloadClient() {
     retryGenerationMutation.mutate({ licenseKey });
   };
 
+  // A license key grants access to the purchased export. Read it from the
+  // LemonSqueezy return or receipt link, then remove it from browser history.
+  useEffect(() => {
+    if (!initialLicenseKey) return;
+
+    const url = new URL(window.location.href);
+    url.searchParams.delete("licenseKey");
+    window.history.replaceState(
+      window.history.state,
+      "",
+      `${url.pathname}${url.search}${url.hash}`,
+    );
+  }, [initialLicenseKey]);
+
   // Poll if status is PENDING or GENERATING
   useEffect(() => {
     if (
@@ -84,7 +98,7 @@ export function DownloadClient() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    void setLicenseKey(inputValue.trim());
+    setLicenseKey(inputValue.trim());
   };
 
   const handleDownload = async () => {
@@ -221,7 +235,7 @@ export function DownloadClient() {
                   </div>
                   <div className="mt-4">
                     <button
-                      onClick={() => void setLicenseKey("")}
+                      onClick={() => setLicenseKey("")}
                       className="cursor-pointer text-sm font-medium text-red-800 hover:text-red-700"
                     >
                       Try a different key →
@@ -401,7 +415,7 @@ export function DownloadClient() {
 
               <div className="text-center">
                 <button
-                  onClick={() => void setLicenseKey("")}
+                  onClick={() => setLicenseKey("")}
                   className="cursor-pointer text-sm font-medium text-gray-600 hover:text-gray-900"
                 >
                   Use a different license key →

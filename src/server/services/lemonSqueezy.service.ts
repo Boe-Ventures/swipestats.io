@@ -386,7 +386,9 @@ export async function createDatasetCheckout(
         },
       },
       productOptions: {
-        redirectUrl: `${env.NEXT_PUBLIC_BASE_URL}/research/download`,
+        redirectUrl: `${env.NEXT_PUBLIC_BASE_URL}/research/download?licenseKey=[license_key]`,
+        receiptButtonText: "Download your dataset",
+        receiptLinkUrl: `${env.NEXT_PUBLIC_BASE_URL}/research/download?licenseKey=[license_key]`,
         enabledVariants: [Number(variantId)],
       },
     },
