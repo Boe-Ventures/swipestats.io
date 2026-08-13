@@ -1,13 +1,20 @@
 import { and, eq, sql } from "drizzle-orm";
 
-import type { TinderPhotoData } from "@/lib/interfaces/TinderDataJSON";
+import type {
+  AnonymizedTinderDataJSON,
+  TinderPhotoData,
+} from "@/lib/interfaces/TinderDataJSON";
+import { assertTinderProfileIdMatchesExport } from "@/lib/upload/tinder-profile-id";
 import { withTransaction, db, type TransactionClient } from "@/server/db";
 import {
+  aiOutputTable,
+  jobTable,
   matchTable,
   mediaTable,
   messageTable,
   originalAnonymizedFileTable,
   profileMetaTable,
+  schoolTable,
   tinderProfileTable,
   tinderUsageTable,
   userTable,
@@ -19,7 +26,10 @@ import { canDeleteClaimedAnonymousUser } from "./claim-ownership";
 import { computeProfileMeta } from "./meta.service";
 import { createMessagesAndMatches } from "./messages.service";
 import { transformTinderJsonToProfile } from "./transform.service";
-import { loadVerifiedAnonymizedTinderData } from "./validation.service";
+import {
+  assertTinderDataMatchesConsent,
+  loadVerifiedAnonymizedTinderData,
+} from "./validation.service";
 import { createUsageRecords } from "./usage.service";
 import {
   lockTinderProfileUploadInTx,
@@ -30,7 +40,6 @@ import {
 } from "../swipe-rank/lifecycle.service";
 import { invalidatePublicSwipeRankCache } from "../swipe-rank/public-cache";
 import {
-  cleanupCommittedTransientUpload,
   lockTransientUploadForMutationInTx,
   markTransientUploadCommittedInTx,
   type TransientUploadBinding,
@@ -384,7 +393,7 @@ export async function createTinderProfile(data: {
       dataProvider: "TINDER",
       swipestatsVersion: "SWIPESTATS_4",
       file: null, // No longer storing raw JSON
-      blobUrl: null, // Verified upload blobs are transient and consumed.
+      blobUrl: data.blobUrl,
       userId: data.userId,
     });
     console.log(
@@ -528,7 +537,6 @@ export async function createTinderProfile(data: {
   // deferred and internally guarded so it can never turn a successful upload
   // into a reported failure.
   scheduleTinderSwipeRankRefresh([data.tinderId]);
-  await cleanupCommittedTransientUpload(data.transientUpload?.id);
 
   // Compute metrics for analytics
   const totalTime = Date.now() - startTime;
@@ -571,6 +579,189 @@ export async function createTinderProfile(data: {
  *
  * @param tinderId - The Tinder profile ID to reset
  */
+/**
+ * Replace the derived Tinder records for a repeat export from the same
+ * deterministic account identity. Each accepted source Blob remains attached
+ * to the user in original_anonymized_file, while the analytical projection is
+ * rebuilt from the newest complete export.
+ */
+export async function replaceTinderProfileRevision(data: {
+  tinderId: string;
+  blobUrl: string;
+  userId: string;
+  timezone?: string;
+  country?: string;
+  consentPhotos?: boolean;
+  consentWork?: boolean;
+  verifiedTinderJson?: AnonymizedTinderDataJSON;
+  verifiedTinderId?: string;
+  transientUpload?: TransientUploadBinding;
+}): Promise<TinderProfileResult> {
+  const startTime = Date.now();
+  const anonymizedTinderJson =
+    data.verifiedTinderJson ??
+    (await loadVerifiedAnonymizedTinderData(
+      data.blobUrl,
+      data.tinderId,
+      {
+        photos: data.consentPhotos ?? true,
+        work: data.consentWork ?? true,
+      },
+      { consume: false },
+    ));
+
+  if (data.verifiedTinderJson) {
+    await assertTinderProfileIdMatchesExport(
+      data.verifiedTinderId ?? data.tinderId,
+      anonymizedTinderJson,
+    );
+    assertTinderDataMatchesConsent(anonymizedTinderJson, {
+      photos: data.consentPhotos ?? true,
+      work: data.consentWork ?? true,
+    });
+  }
+
+  const profileData = transformTinderJsonToProfile(anonymizedTinderJson, {
+    tinderId: data.tinderId,
+    userId: data.userId,
+    timezone: data.timezone,
+    country: data.country,
+  });
+  const birthDate = new Date(anonymizedTinderJson.User.birth_date);
+  const usage = createUsageRecords(
+    anonymizedTinderJson,
+    data.tinderId,
+    birthDate,
+  );
+  const { matchesInput, messagesInput } = createMessagesAndMatches(
+    anonymizedTinderJson.Messages,
+    data.tinderId,
+  );
+  const media = transformTinderPhotosToMedia(
+    anonymizedTinderJson.Photos,
+    data.tinderId,
+  );
+
+  const result = await withTransaction(async (tx) => {
+    await lockTransientUploadForMutationInTx(tx, data.transientUpload);
+    await lockTinderSwipeRankMutationsInTx(tx);
+    await lockTinderProfileUploadInTx(tx, data.tinderId);
+
+    const existing = await tx.query.tinderProfileTable.findFirst({
+      where: and(
+        eq(tinderProfileTable.tinderId, data.tinderId),
+        eq(tinderProfileTable.userId, data.userId),
+      ),
+    });
+    if (!existing) {
+      throw new Error(
+        `Failed to replace profile ${data.tinderId}: ownership changed before processing.`,
+      );
+    }
+
+    await tx
+      .delete(messageTable)
+      .where(eq(messageTable.tinderProfileId, data.tinderId));
+    await tx
+      .delete(matchTable)
+      .where(eq(matchTable.tinderProfileId, data.tinderId));
+    await tx
+      .delete(tinderUsageTable)
+      .where(eq(tinderUsageTable.tinderProfileId, data.tinderId));
+    await tx
+      .delete(mediaTable)
+      .where(eq(mediaTable.tinderProfileId, data.tinderId));
+    await tx
+      .delete(profileMetaTable)
+      .where(eq(profileMetaTable.tinderProfileId, data.tinderId));
+    await tx
+      .delete(jobTable)
+      .where(eq(jobTable.tinderProfileId, data.tinderId));
+    await tx
+      .delete(schoolTable)
+      .where(eq(schoolTable.tinderProfileId, data.tinderId));
+    await tx
+      .delete(aiOutputTable)
+      .where(eq(aiOutputTable.tinderProfileId, data.tinderId));
+
+    const [profile] = await tx
+      .update(tinderProfileTable)
+      .set({
+        ...profileData,
+        createdAt: existing.createdAt,
+        updatedAt: new Date(),
+      })
+      .where(
+        and(
+          eq(tinderProfileTable.tinderId, data.tinderId),
+          eq(tinderProfileTable.userId, data.userId),
+        ),
+      )
+      .returning();
+    if (!profile)
+      throw new Error(`Failed to replace profile ${data.tinderId}.`);
+
+    for (let index = 0; index < usage.length; index += 500) {
+      await tx.insert(tinderUsageTable).values(usage.slice(index, index + 500));
+    }
+    for (let index = 0; index < matchesInput.length; index += 500) {
+      await tx
+        .insert(matchTable)
+        .values(matchesInput.slice(index, index + 500));
+    }
+    for (let index = 0; index < messagesInput.length; index += 1000) {
+      await tx
+        .insert(messageTable)
+        .values(messagesInput.slice(index, index + 1000));
+    }
+    if (media.length > 0) await tx.insert(mediaTable).values(media);
+
+    const fullProfile = await tx.query.tinderProfileTable.findFirst({
+      where: eq(tinderProfileTable.tinderId, data.tinderId),
+      with: { usage: true, matches: { with: { messages: true } } },
+    });
+    if (!fullProfile)
+      throw new Error(`Failed to load profile ${data.tinderId}.`);
+    await tx.insert(profileMetaTable).values({
+      ...computeProfileMeta(fullProfile),
+      id: createId("pmeta"),
+      tinderProfileId: data.tinderId,
+      hingeProfileId: null,
+    });
+    await tx.insert(originalAnonymizedFileTable).values({
+      id: createId("oaf"),
+      dataProvider: "TINDER",
+      swipestatsVersion: "SWIPESTATS_4",
+      file: null,
+      blobUrl: data.blobUrl,
+      userId: data.userId,
+    });
+    await markTransientUploadCommittedInTx(
+      tx,
+      data.transientUpload,
+      data.tinderId,
+    );
+    return profile;
+  });
+
+  scheduleTinderSwipeRankRefresh([data.tinderId]);
+  return {
+    profile: result,
+    metrics: {
+      processingTimeMs: Date.now() - startTime,
+      usageDays: usage.length,
+      matchCount: matchesInput.length,
+      messageCount: messagesInput.length,
+      photoCount: media.length,
+      hasPhotos: media.length > 0,
+      jsonSizeMB:
+        Buffer.byteLength(JSON.stringify(anonymizedTinderJson), "utf8") /
+        1024 /
+        1024,
+    },
+  };
+}
+
 export async function resetTinderProfile(tinderId: string): Promise<void> {
   console.log(`\n🗑️  Resetting profile: ${tinderId}`);
 

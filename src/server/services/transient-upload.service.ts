@@ -8,7 +8,11 @@ import {
 } from "@/lib/upload/transient-upload";
 import { isTrustedVercelBlobUrl } from "@/server/services/blob.service";
 import { db, type TransactionClient } from "@/server/db";
-import { transientUploadTable, type TransientUpload } from "@/server/db/schema";
+import {
+  originalAnonymizedFileTable,
+  transientUploadTable,
+  type TransientUpload,
+} from "@/server/db/schema";
 
 export type TransientDataProvider = "TINDER" | "HINGE";
 
@@ -170,7 +174,9 @@ export async function registerTransientUploadForProcessing(
   if (!lease) throw new Error("Temporary upload lease was not found.");
   assertLeaseIdentity(lease, binding);
 
-  if (["COMMITTED", "CLEANED"].includes(lease.status)) return lease;
+  if (["COMMITTED", "CLEANED"].includes(lease.status)) {
+    return lease;
+  }
   if (lease.expiresAt <= now) {
     throw new Error("Temporary upload lease has expired.");
   }
@@ -342,6 +348,20 @@ export async function cleanupTransientUploadsBatch(
 
   for (const candidate of candidates) {
     const isCommitted = candidate.status === "COMMITTED";
+    const archivedTinderExport =
+      isCommitted &&
+      candidate.dataProvider === "TINDER" &&
+      candidate.blobUrl &&
+      (await db.query.originalAnonymizedFileTable.findFirst({
+        where: and(
+          eq(originalAnonymizedFileTable.dataProvider, "TINDER"),
+          eq(originalAnonymizedFileTable.blobUrl, candidate.blobUrl),
+        ),
+        columns: { id: true },
+      }));
+    if (archivedTinderExport) {
+      continue;
+    }
     let claimed: TransientUpload | undefined;
 
     if (isCommitted || candidate.status === "ABANDONED") {
