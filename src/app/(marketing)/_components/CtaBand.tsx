@@ -26,7 +26,7 @@ export function CtaBand({
   return (
     <div
       className={cn(
-        "relative overflow-hidden rounded-[28px] bg-gray-950 p-16 text-gray-100 max-[720px]:p-8",
+        "relative isolate overflow-hidden rounded-[28px] bg-gray-950 p-16 text-gray-100 [clip-path:inset(0_round_28px)] max-[720px]:p-8",
         center && "text-center",
         className,
       )}
@@ -40,9 +40,17 @@ export function CtaBand({
             : "-bottom-[240px] -left-[120px]",
         )}
       />
-      <div className={cn("relative", center ? "mx-auto max-w-[600px]" : "max-w-[620px]")}>
+      <div
+        className={cn(
+          "relative",
+          center ? "mx-auto max-w-[600px]" : "max-w-[620px]",
+        )}
+      >
         {eyebrow && (
-          <Eyebrow noRule className={cn("text-rose-500", center && "justify-center")}>
+          <Eyebrow
+            noRule
+            className={cn("text-rose-500", center && "justify-center")}
+          >
             {eyebrow}
           </Eyebrow>
         )}

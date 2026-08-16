@@ -58,6 +58,15 @@ export function TinderInsightsFunnelSVG({
   const maxWidth = 320; // Maximum width for widest stage
   const combinedSwipesTotal =
     (globalMeta.swipeLikesTotal ?? 0) + (globalMeta.swipePassesTotal ?? 0);
+  const noMatchRecordTotal = Math.max(
+    (globalMeta.swipeLikesTotal ?? 0) - (globalMeta.matchesTotal ?? 0),
+    0,
+  );
+  const noMessageRecordTotal = Math.max(
+    (globalMeta.matchesTotal ?? 0) -
+      (globalMeta.conversationsWithMessages ?? 0),
+    0,
+  );
   const maxValue = combinedSwipesTotal || 1; // Avoid division by zero
 
   // Calculate viewBox dimensions based on content
@@ -152,12 +161,12 @@ export function TinderInsightsFunnelSVG({
     prevStageHalfWidth: totalSwipesWidth / 2,
   });
 
-  // REVIEW(provider assumption): Usage matches/right swipes and the Messages
-  // collection are independent, non-exhaustive ledgers. Show observed counts,
-  // but do not manufacture complements such as "no match" or "no chats" by
-  // subtracting one ledger from another.
-  // Row 2 (Y=812): observed matches
+  // Matches/right swipes and exported messages come from separate aggregate
+  // ledgers. The off-path values below describe records missing from the next
+  // exported stage. They are bounded at zero and avoid causal outcome labels.
+  // Row 2 (Y=812): match records and right swipes without a match record
   const matchesX = 550;
+  const noMatchRecordX = 800;
   const row2Y = 812;
 
   stages.push({
@@ -172,8 +181,25 @@ export function TinderInsightsFunnelSVG({
     prevStageHalfWidth: rightSwipesWidth / 2,
   });
 
-  // Row 3 (Y=1068): conversation records with outgoing messages
+  if (noMatchRecordTotal > 0) {
+    stages.push({
+      id: "no-match-record",
+      value: noMatchRecordTotal,
+      label: "no match record",
+      labelPosition: "right",
+      x: noMatchRecordX,
+      y: row2Y,
+      showPath: true,
+      prevStageX: rightSwipesX,
+      prevStageHalfWidth: rightSwipesWidth / 2,
+      isDropout: true,
+      dropoutSide: "right",
+    });
+  }
+
+  // Row 3 (Y=1068): message records and matches without a message record
   const chatsX = 400;
+  const noMessageRecordX = 620;
   const row3Y = 1068;
 
   stages.push({
@@ -187,6 +213,22 @@ export function TinderInsightsFunnelSVG({
     prevStageX: matchesX,
     prevStageHalfWidth: matchesWidth / 2,
   });
+
+  if (noMessageRecordTotal > 0) {
+    stages.push({
+      id: "no-message-record",
+      value: noMessageRecordTotal,
+      label: "no message record",
+      labelPosition: "right",
+      x: noMessageRecordX,
+      y: row3Y,
+      showPath: true,
+      prevStageX: matchesX,
+      prevStageHalfWidth: matchesWidth / 2,
+      isDropout: true,
+      dropoutSide: "right",
+    });
+  }
 
   // Self-reported outcome counts can overlap (for example, a relationship can
   // also be a sexual encounter), so they are displayed without residuals.
@@ -255,8 +297,10 @@ export function TinderInsightsFunnelSVG({
       >
         <title>Your Tinder Insights</title>
         <desc>
-          A funnel visualization showing your Tinder journey from{" "}
-          {combinedSwipesTotal.toLocaleString()} total swipes
+          A funnel visualization of exported Tinder activity from{" "}
+          {combinedSwipesTotal.toLocaleString()} total swipes through match and
+          message records. Off-path totals show aggregate records absent from
+          the next exported stage.
         </desc>
 
         <defs>
@@ -401,7 +445,7 @@ export function TinderInsightsFunnelSVG({
                         fill={colors.textDropout}
                         fontSize="30"
                         fontWeight="bold"
-                        textAnchor="start"
+                        textAnchor="middle"
                         opacity={colors.textDropoutOpacity}
                       >
                         {(stage.value ?? 0).toLocaleString()}
@@ -411,7 +455,7 @@ export function TinderInsightsFunnelSVG({
                         y="70"
                         fill={colors.textDropout}
                         fontSize="30"
-                        textAnchor="start"
+                        textAnchor="middle"
                         opacity={colors.textDropoutOpacity}
                       >
                         {stage.label}

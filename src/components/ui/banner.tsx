@@ -15,7 +15,7 @@ interface BannerProps {
 }
 
 const CTA_CLASSNAME =
-  "flex-none rounded-full bg-gray-900 px-3.5 py-1 text-sm font-semibold text-white shadow-xs hover:bg-gray-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900";
+  "flex-none rounded-full bg-gray-900 px-3.5 py-1.5 text-sm font-semibold text-white shadow-xs hover:bg-gray-700 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gray-900 sm:py-1";
 
 export function Banner({
   title = "GeneriCon 2023",
@@ -28,7 +28,7 @@ export function Banner({
   badge,
 }: BannerProps) {
   return (
-    <div className="relative isolate z-40 flex items-center gap-x-6 overflow-hidden bg-gray-50 px-6 py-2.5 sm:px-3.5 sm:before:flex-1">
+    <div className="relative isolate z-40 flex items-start gap-3 overflow-hidden bg-gray-50 px-4 py-3 sm:items-center sm:gap-x-6 sm:px-3.5 sm:py-2.5 sm:before:flex-1">
       <div
         aria-hidden="true"
         className="absolute top-1/2 left-[max(-7rem,calc(50%-52rem))] -z-10 -translate-y-1/2 transform-gpu blur-2xl"
@@ -53,8 +53,8 @@ export function Banner({
           className="aspect-[577/310] w-[36rem] bg-linear-to-r from-[#ff80b5] to-[#9089fc] opacity-30"
         />
       </div>
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-        <p className="text-sm/6 text-gray-900">
+      <div className="flex min-w-0 flex-1 flex-col items-start gap-2 sm:flex-none sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4">
+        <p className="min-w-0 text-[13px]/5 text-gray-900 sm:text-sm/6">
           {badge && (
             <span className="mr-2 inline-flex items-center rounded-full bg-gray-900 px-2 py-0.5 text-xs font-semibold text-white">
               {badge}
@@ -64,11 +64,13 @@ export function Banner({
           <svg
             viewBox="0 0 2 2"
             aria-hidden="true"
-            className="mx-2 inline size-0.5 fill-current"
+            className="mx-2 hidden size-0.5 fill-current sm:inline"
           >
             <circle r={1} cx={1} cy={1} />
           </svg>
-          {typeof message === "string" ? message : <span>{message}</span>}
+          <span className="mt-0.5 block text-gray-700 sm:mt-0 sm:inline sm:text-gray-900">
+            {message}
+          </span>
         </p>
         {ctaText && ctaHref && (
           <Link href={ctaHref} className={CTA_CLASSNAME}>
@@ -89,11 +91,11 @@ export function Banner({
         )}
       </div>
       {showDismiss && onDismiss && (
-        <div className="flex flex-1 justify-end">
+        <div className="flex flex-none sm:flex-1 sm:justify-end">
           <button
             type="button"
             onClick={onDismiss}
-            className="-m-3 p-3 focus-visible:-outline-offset-4"
+            className="-m-2 p-2 focus-visible:-outline-offset-4 sm:-m-3 sm:p-3"
           >
             <span className="sr-only">Dismiss</span>
             <XMarkIcon aria-hidden="true" className="size-5 text-gray-900" />
