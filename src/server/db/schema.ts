@@ -1078,7 +1078,7 @@ export type SwipeRankProfileInsert = typeof swipeRankProfileTable.$inferInsert;
 
 /**
  * Legacy privacy-safe source mutation journal retained for migration history.
- * Closed monthly publication does not write or read this table.
+ * Closed-season publication does not write or read this table.
  */
 export const swipeRankSourceMutationTable = pgTable(
   "swipe_rank_source_mutation",
@@ -1896,6 +1896,60 @@ export type OriginalAnonymizedFile =
 export type OriginalAnonymizedFileInsert =
   typeof originalAnonymizedFileTable.$inferInsert;
 
+/**
+ * Immutable private-object history for every accepted Tinder export.
+ *
+ * The JSON body stays in a dedicated private Blob store. Postgres retains the
+ * profile link and integrity/provenance metadata needed to compare revisions.
+ */
+export const tinderExportRevisionTable = pgTable(
+  "tinder_export_revision",
+  (t) => ({
+    id: t.text().primaryKey(),
+    tinderProfileId: t
+      .text()
+      .notNull()
+      .references(() => tinderProfileTable.tinderId, { onDelete: "cascade" }),
+    blobUrl: t.text().notNull(),
+    blobPathname: t.text().notNull(),
+    blobEtag: t.text().notNull(),
+    contentSha256: t.text().notNull(),
+    contentLength: t.bigint({ mode: "number" }).notNull(),
+    swipestatsVersion: swipestatsVersionEnum().notNull(),
+    transportUploadId: t.text(),
+    acceptedAt: t
+      .timestamp()
+      .$defaultFn(() => new Date())
+      .notNull(),
+  }),
+  (table) => [
+    index("tinder_export_revision_profile_accepted_idx").on(
+      table.tinderProfileId,
+      table.acceptedAt,
+    ),
+    index("tinder_export_revision_digest_idx").on(
+      table.tinderProfileId,
+      table.contentSha256,
+    ),
+    uniqueIndex("tinder_export_revision_blob_pathname_unique").on(
+      table.blobPathname,
+    ),
+    check(
+      "tinder_export_revision_sha256",
+      sql`${table.contentSha256} ~ '^[0-9a-f]{64}$'`,
+    ),
+    check(
+      "tinder_export_revision_content_length",
+      sql`${table.contentLength} > 0`,
+    ),
+  ],
+);
+
+export type TinderExportRevision =
+  typeof tinderExportRevisionTable.$inferSelect;
+export type TinderExportRevisionInsert =
+  typeof tinderExportRevisionTable.$inferInsert;
+
 export const purchaseTable = pgTable("purchase", (t) => ({
   id: t.text().primaryKey(),
   userId: t
@@ -2498,6 +2552,7 @@ export const tinderProfileRelations = relations(
       references: [customDataTable.tinderProfileId],
     }),
     purchases: many(purchaseTable),
+    exportRevisions: many(tinderExportRevisionTable),
   }),
 );
 
@@ -2725,6 +2780,16 @@ export const originalAnonymizedFileRelations = relations(
     user: one(userTable, {
       fields: [originalAnonymizedFileTable.userId],
       references: [userTable.id],
+    }),
+  }),
+);
+
+export const tinderExportRevisionRelations = relations(
+  tinderExportRevisionTable,
+  ({ one }) => ({
+    tinderProfile: one(tinderProfileTable, {
+      fields: [tinderExportRevisionTable.tinderProfileId],
+      references: [tinderProfileTable.tinderId],
     }),
   }),
 );
