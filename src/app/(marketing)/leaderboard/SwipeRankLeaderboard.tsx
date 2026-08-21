@@ -356,7 +356,11 @@ export function SwipeRankLeaderboard() {
                   </SelectContent>
                 </Select>
                 <Select
-                  value={swipeRankPeriodKey(selected)}
+                  value={
+                    options.length > 0
+                      ? swipeRankPeriodKey(selected)
+                      : undefined
+                  }
                   disabled={options.length === 0}
                   onValueChange={(value) => {
                     if (value === null) return;
@@ -368,7 +372,9 @@ export function SwipeRankLeaderboard() {
                     className="h-11 bg-white sm:w-56"
                     aria-label="Competition season"
                   >
-                    <SelectValue />
+                    <SelectValue
+                      placeholder={`No published ${KIND_NOUNS[kind]}s`}
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {options.map((period) => (
