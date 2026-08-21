@@ -10,8 +10,8 @@ export interface SwipeRankValidationResult {
   profiles: number;
   facts: number;
   duplicateFacts: number;
-  nonMonthFacts: number;
-  openMonthFacts: number;
+  unsupportedPeriodFacts: number;
+  openPeriodFacts: number;
   rawMonthMismatches: number;
   rateInputMismatches: number;
   qualityFlagMismatches: number;
@@ -26,8 +26,8 @@ interface CountRow extends Record<string, unknown> {
 interface InventoryRow extends Record<string, unknown> {
   profiles: number | string;
   facts: number | string;
-  non_month_facts: number | string;
-  open_month_facts: number | string;
+  unsupported_period_facts: number | string;
+  open_period_facts: number | string;
   rate_input_mismatches: number | string;
   quality_flag_mismatches: number | string;
 }
@@ -40,8 +40,8 @@ export function assembleSwipeRankValidationResult(
     valid:
       input.facts > 0 &&
       input.duplicateFacts === 0 &&
-      input.nonMonthFacts === 0 &&
-      input.openMonthFacts === 0 &&
+      input.unsupportedPeriodFacts === 0 &&
+      input.openPeriodFacts === 0 &&
       input.rawMonthMismatches === 0 &&
       input.rateInputMismatches === 0 &&
       input.qualityFlagMismatches === 0 &&
@@ -63,10 +63,11 @@ async function queryInventory(
     SELECT
       count(DISTINCT fact.profile_id)::bigint AS profiles,
       count(*)::bigint AS facts,
-      count(*) FILTER (WHERE fact.period_kind <> 'MONTH')::bigint
-        AS non_month_facts,
+      count(*) FILTER (
+        WHERE fact.period_kind NOT IN ('MONTH', 'QUARTER', 'YEAR')
+      )::bigint AS unsupported_period_facts,
       count(*) FILTER (WHERE fact.period_end > ${closedBefore}::date)::bigint
-        AS open_month_facts,
+        AS open_period_facts,
       count(*) FILTER (
         WHERE fact.match_rate_numerator IS DISTINCT FROM fact.matches
           OR fact.match_rate_denominator IS DISTINCT FROM fact.swipe_likes
@@ -109,12 +110,12 @@ async function queryDuplicateFacts(metricVersion: string): Promise<number> {
   const result = await db.execute<CountRow>(sql`
     SELECT count(*)::bigint AS count
     FROM (
-      SELECT fact.profile_id, fact.period_start
+      SELECT fact.profile_id, fact.period_kind, fact.period_start
       FROM swipe_rank_period_fact fact
       JOIN swipe_rank_profile profile ON profile.id = fact.profile_id
       WHERE profile.data_provider = 'TINDER'
         AND fact.metric_version = ${metricVersion}
-      GROUP BY fact.profile_id, fact.period_start
+      GROUP BY fact.profile_id, fact.period_kind, fact.period_start
       HAVING count(*) > 1
     ) duplicates
   `);
@@ -196,7 +197,7 @@ async function queryRegistryDescriptorMismatches(): Promise<number> {
   return count(result.rows, "registry descriptor parity");
 }
 
-/** Validate the full month-only fact set before activating a publication. */
+/** Validate the full closed-season fact set before activating a publication. */
 export async function validateTinderSwipeRankFacts(
   metricVersion = SWIPE_RANK_METRIC_VERSION,
   closedBefore = `${new Date().toISOString().slice(0, 7)}-01`,
@@ -218,8 +219,8 @@ export async function validateTinderSwipeRankFacts(
     profiles: Number(inventory.profiles),
     facts: Number(inventory.facts),
     duplicateFacts,
-    nonMonthFacts: Number(inventory.non_month_facts),
-    openMonthFacts: Number(inventory.open_month_facts),
+    unsupportedPeriodFacts: Number(inventory.unsupported_period_facts),
+    openPeriodFacts: Number(inventory.open_period_facts),
     rawMonthMismatches,
     rateInputMismatches: Number(inventory.rate_input_mismatches),
     qualityFlagMismatches: Number(inventory.quality_flag_mismatches),

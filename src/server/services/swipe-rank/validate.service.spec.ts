@@ -12,28 +12,31 @@ const clean = {
   profiles: 10_484,
   facts: 213_163,
   duplicateFacts: 0,
-  nonMonthFacts: 0,
-  openMonthFacts: 0,
+  unsupportedPeriodFacts: 0,
+  openPeriodFacts: 0,
   rawMonthMismatches: 0,
   rateInputMismatches: 0,
   qualityFlagMismatches: 0,
   registryDescriptorMismatches: 0,
 };
 
-describe("SwipeRank monthly validation contract", () => {
-  test("accepts a populated closed-month fact layer", () => {
+describe("SwipeRank closed-season validation contract", () => {
+  test("accepts a populated closed-season fact layer", () => {
     expect(assembleSwipeRankValidationResult(clean)).toEqual({
       ...clean,
       valid: true,
     });
   });
 
-  test("rejects broader periods and open-month facts", () => {
+  test("rejects unsupported periods and open facts", () => {
     expect(
-      assembleSwipeRankValidationResult({ ...clean, nonMonthFacts: 1 }).valid,
+      assembleSwipeRankValidationResult({
+        ...clean,
+        unsupportedPeriodFacts: 1,
+      }).valid,
     ).toBeFalse();
     expect(
-      assembleSwipeRankValidationResult({ ...clean, openMonthFacts: 1 }).valid,
+      assembleSwipeRankValidationResult({ ...clean, openPeriodFacts: 1 }).valid,
     ).toBeFalse();
   });
 

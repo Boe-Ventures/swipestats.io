@@ -8,7 +8,7 @@ import type { Gender } from "@/server/db/schema";
 
 import { SWIPE_RANK_METRIC_VERSION } from "./constants";
 import {
-  assertClosedSwipeRankMonth,
+  assertClosedSwipeRankPeriod,
   type SwipeRankPeriodBounds,
 } from "./periods";
 
@@ -78,6 +78,7 @@ interface LeaderboardRow extends Record<string, unknown> {
 }
 
 interface PeriodRow extends Record<string, unknown> {
+  period_kind: "MONTH" | "QUARTER" | "YEAR";
   period_start: string;
   period_end: string;
   as_of: string | Date;
@@ -124,7 +125,7 @@ export async function getPublicSwipeRankLeaderboard(input: {
   page: number;
   metricVersion?: string;
 }): Promise<PublicSwipeRankLeaderboard> {
-  assertClosedSwipeRankMonth(input.period);
+  assertClosedSwipeRankPeriod(input.period);
   if (!Number.isSafeInteger(input.page) || input.page < 1) {
     throw new Error("SwipeRank page must be a positive integer.");
   }
@@ -137,7 +138,7 @@ export async function getPublicSwipeRankLeaderboard(input: {
       WHERE snapshot.data_provider = 'TINDER'
         AND snapshot.metric_key = 'MATCH_YIELD'
         AND snapshot.metric_version = ${metricVersion}
-        AND snapshot.period_kind = 'MONTH'
+        AND snapshot.period_kind = ${input.period.kind}
         AND snapshot.period_start = ${input.period.start}::date
         AND snapshot.period_end = ${input.period.end}::date
         AND snapshot.status = 'PUBLISHED'
@@ -150,7 +151,7 @@ export async function getPublicSwipeRankLeaderboard(input: {
       JOIN swipe_rank_snapshot snapshot ON snapshot.id = entry.snapshot_id
       WHERE snapshot.data_provider = 'TINDER'
         AND snapshot.metric_version = ${metricVersion}
-        AND snapshot.period_kind = 'MONTH'
+        AND snapshot.period_kind = ${input.period.kind}
         AND snapshot.status = 'PUBLISHED'
       GROUP BY entry.profile_id
     ), field AS (
@@ -286,25 +287,25 @@ export async function listPublicSwipeRankPeriods(
 ) {
   const result = await db.execute<PeriodRow>(sql`
     WITH latest AS (
-      SELECT DISTINCT ON (snapshot.period_start) snapshot.*
+      SELECT DISTINCT ON (snapshot.period_kind, snapshot.period_start) snapshot.*
       FROM swipe_rank_snapshot snapshot
       WHERE snapshot.data_provider = 'TINDER'
         AND snapshot.metric_key = 'MATCH_YIELD'
         AND snapshot.metric_version = ${metricVersion}
-        AND snapshot.period_kind = 'MONTH'
         AND snapshot.status = 'PUBLISHED'
-      ORDER BY snapshot.period_start, snapshot.published_at DESC, snapshot.id DESC
+      ORDER BY snapshot.period_kind, snapshot.period_start, snapshot.published_at DESC, snapshot.id DESC
     )
     SELECT
       latest.period_start::text,
       latest.period_end::text,
+      latest.period_kind,
       latest.published_at AS as_of,
       latest.minimum_rate_denominator,
       latest.minimum_active_days,
       latest.field_size::bigint AS field_size
     FROM latest
     WHERE latest.field_size >= ${SWIPE_RANK_PUBLIC_MINIMUM_FIELD_SIZE}
-    ORDER BY latest.period_start DESC
+    ORDER BY latest.period_start DESC, latest.period_kind
   `);
 
   return {
@@ -312,7 +313,7 @@ export async function listPublicSwipeRankPeriods(
     minimumPublicFieldSize: SWIPE_RANK_PUBLIC_MINIMUM_FIELD_SIZE,
     periods: result.rows.map((row) => ({
       period: {
-        kind: "MONTH" as const,
+        kind: row.period_kind,
         start: row.period_start,
         end: row.period_end,
       },

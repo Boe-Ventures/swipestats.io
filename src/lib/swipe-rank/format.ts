@@ -1,4 +1,4 @@
-export type SwipeRankPeriodKind = "MONTH";
+export type SwipeRankPeriodKind = "MONTH" | "QUARTER" | "YEAR";
 
 export const DEFAULT_SWIPE_RANK_PERIOD_KIND = "MONTH";
 
@@ -14,6 +14,10 @@ export function formatSwipeRankPeriodLabel(
   const [yearValue, monthValue] = period.start.split("-");
   const year = Number(yearValue);
   const month = Number(monthValue);
+  if (period.kind === "YEAR") return String(year);
+  if (period.kind === "QUARTER") {
+    return `Q${Math.floor((month - 1) / 3) + 1} ${year}`;
+  }
   return new Date(Date.UTC(year, month - 1, 1)).toLocaleDateString(locales, {
     month: "long",
     year: "numeric",

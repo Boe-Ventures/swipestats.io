@@ -281,20 +281,22 @@ describe("SwipeRank public leaderboard", () => {
     expect(execute).not.toHaveBeenCalled();
   });
 
-  test("returns published closed months in reverse chronological order", async () => {
+  test("returns published closed seasons in reverse chronological order", async () => {
     execute.mockResolvedValueOnce({
       rows: [
         {
           period_start: "2026-06-01",
           period_end: "2026-07-01",
+          period_kind: "MONTH",
           as_of: "2026-07-01T06:30:00.000Z",
           minimum_rate_denominator: "100",
           minimum_active_days: "5",
           field_size: "70",
         },
         {
-          period_start: "2026-05-01",
-          period_end: "2026-06-01",
+          period_start: "2026-04-01",
+          period_end: "2026-07-01",
+          period_kind: "QUARTER",
           as_of: "2026-06-01T06:30:00.000Z",
           minimum_rate_denominator: "100",
           minimum_active_days: "5",
@@ -307,7 +309,7 @@ describe("SwipeRank public leaderboard", () => {
 
     expect(result.periods.map(({ period }) => period.kind)).toEqual([
       "MONTH",
-      "MONTH",
+      "QUARTER",
     ]);
     expect(result.periods[0]).toMatchObject({
       minimumRateDenominator: 100,
@@ -316,7 +318,7 @@ describe("SwipeRank public leaderboard", () => {
     });
     expect(result.periods[0]).not.toHaveProperty("publishedProfiles");
     expect(result.periods[1]).toMatchObject({
-      period: { start: "2026-05-01" },
+      period: { start: "2026-04-01" },
       fieldSize: 900,
     });
   });

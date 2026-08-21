@@ -1,15 +1,16 @@
 # SwipeRank operations
 
-SwipeRank is a closed monthly competition. At 06:30 UTC on the first day of
-each month, `/api/cron/swipe-rank` builds and validates completed-month facts,
-then publishes the immediately preceding calendar month as an immutable
-snapshot.
+SwipeRank uses closed calendar seasons. At 06:30 UTC on the first day of each
+month, `/api/cron/swipe-rank` builds and validates completed facts and publishes
+the preceding month. The same invocation also publishes the preceding quarter
+on April 1, July 1, October 1, and January 1. January 1 also publishes the
+preceding year.
 
 Uploads only persist verified Tinder source data and normal profile insights.
 They do not compute, refresh, or schedule SwipeRank.
 
-The publisher is idempotent. Once a month has a published snapshot, rerunning
-the job returns that edition without rebuilding or revising its field.
+The publisher is idempotent. Published snapshots remain immutable; a retry
+creates only the season snapshots missing from that boundary.
 
 Manual recovery uses the same path as cron:
 

@@ -44,6 +44,7 @@ import {
   transformTinderPhotosToMedia,
 } from "./profile.service";
 import { purgeTinderSwipeRankProfilesInTx } from "../swipe-rank/lifecycle.service";
+import { invalidatePublicSwipeRankCache } from "../swipe-rank/public-cache";
 import { lockTinderProfileUploadInTx } from "./upload-lock";
 import {
   lockTransientUploadForMutationInTx,

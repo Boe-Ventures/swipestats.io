@@ -1,7 +1,7 @@
 import { sql, type SQL } from "drizzle-orm";
 
 import { db } from "@/server/db";
-import { parseSwipeRankPeriod } from "@/scripts/swipe-rank/periods";
+import { parseClosedSwipeRankPeriod } from "@/server/services/swipe-rank/periods";
 
 import {
   getFlagValue,
@@ -92,7 +92,7 @@ async function explain(query: SQL, analyze: boolean): Promise<unknown> {
 }
 
 async function main(): Promise<void> {
-  const period = parseSwipeRankPeriod(getFlagValue("--period") ?? "2025");
+  const period = parseClosedSwipeRankPeriod(getFlagValue("--period") ?? "2025");
   const analyze = hasFlag("--analyze");
   const fullPlans = hasFlag("--full-plans");
 
@@ -178,7 +178,7 @@ async function main(): Promise<void> {
           FROM tinder_usage u
           JOIN tinder_profile p ON p.tinder_id = u.tinder_profile_id
           WHERE p.computed = false
-          ${periodFilter(period.startDate, period.endDate)}
+          ${periodFilter(period.start, period.end)}
           GROUP BY u.tinder_profile_id
         `,
         analyze,
@@ -202,7 +202,7 @@ async function main(): Promise<void> {
             FROM tinder_usage u
             JOIN tinder_profile p ON p.tinder_id = u.tinder_profile_id
             WHERE p.computed = false
-            ${periodFilter(period.startDate, period.endDate)}
+            ${periodFilter(period.start, period.end)}
             GROUP BY
               u.tinder_profile_id,
               p.gender,
@@ -249,7 +249,7 @@ async function main(): Promise<void> {
       : undefined,
     interpretation: {
       monthRows:
-        "The profile-month count is the canonical fact-layer floor. Quarter, year, and all-time facts can be stored too or derived from months.",
+        "The profile-month count is the canonical fact-layer floor. Closed quarter and year facts are derived from completed months.",
       analyze:
         "Without --analyze, plans contain estimates only. --analyze executes the read-only SELECTs and reports actual timings/buffers.",
     },

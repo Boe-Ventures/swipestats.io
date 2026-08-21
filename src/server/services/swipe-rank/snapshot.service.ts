@@ -11,7 +11,7 @@ import {
   getSwipeRankEligibility,
 } from "./eligibility";
 import {
-  assertClosedSwipeRankMonth,
+  assertClosedSwipeRankPeriod,
   type SwipeRankPeriodBounds,
 } from "./periods";
 
@@ -99,7 +99,7 @@ export function hasCoherentFullSwipeRankLineage(input: {
 export async function createGlobalSwipeRankSnapshot(
   input: CreateGlobalSwipeRankSnapshotInput,
 ): Promise<SwipeRankSnapshotSummary> {
-  assertClosedSwipeRankMonth(input.period);
+  assertClosedSwipeRankPeriod(input.period);
 
   const metricVersion = input.metricVersion ?? SWIPE_RANK_METRIC_VERSION;
   const eligibility = getSwipeRankEligibility(input.period.kind);
@@ -167,7 +167,7 @@ export async function createGlobalSwipeRankSnapshot(
         })
       ) {
         throw new Error(
-          "Snapshot lineage is not one activated, coherent FULL monthly build.",
+          "Snapshot lineage is not one activated, coherent FULL season build.",
         );
       }
       if (!source.source_cutoff) {

@@ -11,7 +11,7 @@ import {
 import { SWIPE_RANK_METRIC_VERSION } from "./constants";
 import { swipeRankCountryFilterSql } from "./country-filter";
 import {
-  assertClosedSwipeRankMonth,
+  assertClosedSwipeRankPeriod,
   type SwipeRankPeriodBounds,
 } from "./periods";
 import { getSwipeRankFromFacts } from "./rank.service";
@@ -27,6 +27,7 @@ export interface SwipeRankFilters {
 }
 
 interface ProfilePeriodRow extends Record<string, unknown> {
+  period_kind: "MONTH" | "QUARTER" | "YEAR";
   period_start: string;
   period_end: string;
   published_at: Date | string;
@@ -38,6 +39,7 @@ interface ProfilePeriodRow extends Record<string, unknown> {
 }
 
 interface PeriodRow extends Record<string, unknown> {
+  period_kind: "MONTH" | "QUARTER" | "YEAR";
   period_start: string;
   period_end: string;
   published_at: Date | string;
@@ -104,7 +106,7 @@ function filterSql(filters: SwipeRankFilters): SQL {
     : sql`AND ${sql.join(conditions, sql` AND `)}`;
 }
 
-/** Published monthly editions in which this owner has a frozen entry. */
+/** Published closed seasons in which this owner has a frozen entry. */
 export async function listTinderSwipeRankProfilePeriods(
   providerProfileId: string,
 ) {
@@ -112,6 +114,7 @@ export async function listTinderSwipeRankProfilePeriods(
     SELECT
       snapshot.period_start::text,
       snapshot.period_end::text,
+      snapshot.period_kind,
       snapshot.published_at,
       profile.gender,
       profile.interested_in,
@@ -123,7 +126,6 @@ export async function listTinderSwipeRankProfilePeriods(
     JOIN swipe_rank_profile profile ON profile.id = entry.profile_id
     WHERE snapshot.data_provider = 'TINDER'
       AND snapshot.metric_version = ${SWIPE_RANK_METRIC_VERSION}
-      AND snapshot.period_kind = 'MONTH'
       AND snapshot.status = 'PUBLISHED'
       AND profile.provider_profile_id = ${providerProfileId}
       AND profile.is_synthetic = false
@@ -137,12 +139,12 @@ export async function listTinderSwipeRankProfilePeriods(
     eligibilityVersion: SWIPE_RANK_ELIGIBILITY_VERSION,
     periods: result.rows.map((row) => {
       const period = {
-        kind: "MONTH" as const,
+        kind: row.period_kind,
         start: row.period_start,
         end: row.period_end,
       };
       const eligibility = evaluateSwipeRankEligibility({
-        periodKind: "MONTH",
+        periodKind: row.period_kind,
         rateDenominator: number(row.metric_denominator),
         activeDays: number(row.active_days),
       });
@@ -163,8 +165,8 @@ export async function getTinderSwipeRankPlacement(
   providerProfileId: string,
   period: SwipeRankPeriodBounds,
 ) {
-  assertClosedSwipeRankMonth(period);
-  const threshold = getSwipeRankEligibility("MONTH");
+  assertClosedSwipeRankPeriod(period);
+  const threshold = getSwipeRankEligibility(period.kind);
   const placement = await getSwipeRankFromFacts({
     dataProvider: "TINDER",
     providerProfileId,
@@ -175,7 +177,7 @@ export async function getTinderSwipeRankPlacement(
     ...placement,
     asOf: placement.computedAt,
     eligibility: evaluateSwipeRankEligibility({
-      periodKind: "MONTH",
+      periodKind: period.kind,
       rateDenominator: placement.matchRateDenominator,
       activeDays: placement.activeDays,
     }),
@@ -202,6 +204,7 @@ export async function listAdminSwipeRankPeriods(
     SELECT
       snapshot.period_start::text,
       snapshot.period_end::text,
+      snapshot.period_kind,
       snapshot.published_at,
       count(entry.id)::bigint AS total_count
     FROM swipe_rank_snapshot snapshot
@@ -209,12 +212,11 @@ export async function listAdminSwipeRankPeriods(
     JOIN swipe_rank_profile profile ON profile.id = entry.profile_id
     WHERE snapshot.data_provider = 'TINDER'
       AND snapshot.metric_version = ${SWIPE_RANK_METRIC_VERSION}
-      AND snapshot.period_kind = 'MONTH'
       AND snapshot.status = 'PUBLISHED'
       AND profile.is_synthetic = false
       AND profile.is_swipe_rank_excluded = false
       ${conditions}
-    GROUP BY snapshot.id, snapshot.period_start, snapshot.period_end,
+    GROUP BY snapshot.id, snapshot.period_kind, snapshot.period_start, snapshot.period_end,
       snapshot.published_at
     ORDER BY snapshot.period_start DESC, snapshot.published_at DESC
   `);
@@ -224,14 +226,14 @@ export async function listAdminSwipeRankPeriods(
     filters,
     periods: result.rows.map((row) => ({
       period: {
-        kind: "MONTH" as const,
+        kind: row.period_kind,
         start: row.period_start,
         end: row.period_end,
       },
       asOf: asDate(row.published_at),
       totalFactCount: number(row.total_count),
       eligibleCount: number(row.total_count),
-      eligibility: getSwipeRankEligibility("MONTH"),
+      eligibility: getSwipeRankEligibility(row.period_kind),
     })),
   };
 }
@@ -246,7 +248,7 @@ export interface AdminSwipeRankLeaderboardInput {
 export async function getAdminSwipeRankLeaderboard(
   input: AdminSwipeRankLeaderboardInput,
 ) {
-  assertClosedSwipeRankMonth(input.period);
+  assertClosedSwipeRankPeriod(input.period);
   const filters = input.filters ?? {};
   const conditions = filterSql(filters);
   const offset = (input.page - 1) * input.limit;
@@ -256,7 +258,7 @@ export async function getAdminSwipeRankLeaderboard(
       FROM swipe_rank_snapshot snapshot
       WHERE snapshot.data_provider = 'TINDER'
         AND snapshot.metric_version = ${SWIPE_RANK_METRIC_VERSION}
-        AND snapshot.period_kind = 'MONTH'
+        AND snapshot.period_kind = ${input.period.kind}
         AND snapshot.period_start = ${input.period.start}::date
         AND snapshot.period_end = ${input.period.end}::date
         AND snapshot.status = 'PUBLISHED'
@@ -320,7 +322,7 @@ export async function getAdminSwipeRankLeaderboard(
     eligibilityVersion: SWIPE_RANK_ELIGIBILITY_VERSION,
     period: input.period,
     filters,
-    eligibility: getSwipeRankEligibility("MONTH"),
+    eligibility: getSwipeRankEligibility(input.period.kind),
     asOf: summary?.as_of ? asDate(summary.as_of) : null,
     totalFactCount: fieldSize,
     fieldSize,

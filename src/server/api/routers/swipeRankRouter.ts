@@ -3,7 +3,7 @@ import { z } from "zod";
 import { TRPCError, type TRPCRouterRecord } from "@trpc/server";
 
 import { genderEnum } from "@/server/db/schema";
-import { assertClosedSwipeRankMonth } from "@/server/services/swipe-rank/periods";
+import { assertClosedSwipeRankPeriod } from "@/server/services/swipe-rank/periods";
 import { getTinderSwipeRankBenchmark } from "@/server/services/swipe-rank/benchmark.service";
 import {
   getPublicSwipeRankLeaderboard,
@@ -60,13 +60,13 @@ const ownerBenchmarkFiltersSchema = z
 
 const periodSchema = z
   .object({
-    kind: z.literal("MONTH"),
+    kind: z.enum(["MONTH", "QUARTER", "YEAR"]),
     start: z.string().date(),
     end: z.string().date(),
   })
   .superRefine((period, ctx) => {
     try {
-      assertClosedSwipeRankMonth(period);
+      assertClosedSwipeRankPeriod(period);
     } catch (error) {
       ctx.addIssue({
         code: "custom",
@@ -98,7 +98,7 @@ export const swipeRankRouter = {
     return listTinderSwipeRankProfilePeriods(input.tinderId);
   }),
 
-  /** Private: frozen placement for one published monthly season. */
+  /** Private: frozen placement for one published closed season. */
   placement: tinderProfileOwnerProcedure
     .input(z.object({ period: periodSchema }))
     .query(async ({ input }) => {
@@ -165,7 +165,7 @@ export const swipeRankRouter = {
       return getAdminSwipeRankLeaderboard(input);
     }),
 
-  /** Private admin: current manual removals from every live SwipeRank field. */
+  /** Private admin: current manual removals from every published field. */
   adminExclusions: adminProcedure.query(async () => {
     return listTinderSwipeRankExclusions();
   }),

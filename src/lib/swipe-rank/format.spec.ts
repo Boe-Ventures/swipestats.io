@@ -7,7 +7,7 @@ import {
 } from "./format";
 
 describe("SwipeRank formatting", () => {
-  test("uses months as the only SwipeRank season", () => {
+  test("defaults to the most frequently published season", () => {
     expect(DEFAULT_SWIPE_RANK_PERIOD_KIND).toBe("MONTH");
   });
 
@@ -15,12 +15,18 @@ describe("SwipeRank formatting", () => {
     expect(formatMatchYield(1.41, "en-US")).toBe("141.0%");
   });
 
-  test("formats monthly seasons", () => {
+  test("formats month, quarter, and year seasons", () => {
     expect(
       formatSwipeRankPeriodLabel(
         { kind: "MONTH", start: "2026-07-01" },
         "en-US",
       ),
     ).toBe("July 2026");
+    expect(
+      formatSwipeRankPeriodLabel({ kind: "QUARTER", start: "2026-07-01" }),
+    ).toBe("Q3 2026");
+    expect(
+      formatSwipeRankPeriodLabel({ kind: "YEAR", start: "2026-01-01" }),
+    ).toBe("2026");
   });
 });

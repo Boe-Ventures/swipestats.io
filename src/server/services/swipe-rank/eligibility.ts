@@ -9,15 +9,17 @@ export interface SwipeRankEligibilityThreshold {
 
 export const SWIPE_RANK_ELIGIBILITY_V1 = {
   MONTH: { minimumRateDenominator: 100, minimumActiveDays: 5 },
+  QUARTER: { minimumRateDenominator: 250, minimumActiveDays: 15 },
+  YEAR: { minimumRateDenominator: 500, minimumActiveDays: 40 },
 } as const;
 
 export function getSwipeRankEligibility(
   periodKind: SwipeRankPeriodKind,
 ): SwipeRankEligibilityThreshold {
-  if (periodKind !== "MONTH") {
-    throw new Error("SwipeRank eligibility exists for monthly seasons only.");
+  if (periodKind === "ALL_TIME") {
+    throw new Error("SwipeRank does not publish all-time seasons.");
   }
-  return SWIPE_RANK_ELIGIBILITY_V1.MONTH;
+  return SWIPE_RANK_ELIGIBILITY_V1[periodKind];
 }
 
 export function evaluateSwipeRankEligibility(input: {

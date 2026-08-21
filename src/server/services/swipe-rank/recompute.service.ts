@@ -20,6 +20,8 @@ export interface SwipeRankBuildSummary {
   profileCount: number;
   factCount: number;
   monthFactCount: number;
+  quarterFactCount: number;
+  yearFactCount: number;
   anomalousFactCount: number;
 }
 
@@ -27,6 +29,8 @@ interface SummaryRow extends Record<string, unknown> {
   profile_count: number | string;
   fact_count: number | string;
   month_fact_count: number | string;
+  quarter_fact_count: number | string;
+  year_fact_count: number | string;
   anomalous_fact_count: number | string;
 }
 
@@ -39,8 +43,9 @@ function asNumber(value: number | string): number {
  *
  * The only source range is the set of rows actually present in tinder_usage.
  * Profile first/last app-open dates are retained only as a quality diagnostic.
- * Only completed UTC calendar months are materialized. Publication reads a
- * frozen monthly snapshot and never treats these working facts as a live rank.
+ * Completed UTC months are canonical. Completed quarter and year facts are
+ * rolled up from those months. Frozen published snapshots are the ranking
+ * surface.
  */
 export async function recomputeTinderSwipeRankFacts(
   options: RecomputeTinderSwipeRankFactsOptions = {},
@@ -136,10 +141,9 @@ export async function recomputeTinderSwipeRankFacts(
         FROM tinder_profile p
         LEFT JOIN "user" app_user ON app_user.id = p.user_id
         LEFT JOIN LATERAL (
-          SELECT max(o.created_at) AS created_at
-          FROM original_anonymized_file o
-          WHERE o.user_id = p.user_id
-            AND o.data_provider = 'TINDER'
+          SELECT max(revision.accepted_at) AS created_at
+          FROM tinder_export_revision revision
+          WHERE revision.tinder_profile_id = p.tinder_id
         ) source_file ON true
         WHERE p.computed = false
         ON CONFLICT (data_provider, provider_profile_id) DO UPDATE SET
@@ -187,10 +191,10 @@ export async function recomputeTinderSwipeRankFacts(
             JOIN selected_profiles p ON p.tinder_id = u.tinder_profile_id
           ),
           file_watermark AS (
-            SELECT max(o.created_at) AS latest_file_created_at
-            FROM original_anonymized_file o
-            JOIN selected_profiles p ON p.user_id = o.user_id
-            WHERE o.data_provider = 'TINDER'
+            SELECT max(revision.accepted_at) AS latest_file_created_at
+            FROM tinder_export_revision revision
+            JOIN selected_profiles p
+              ON p.tinder_id = revision.tinder_profile_id
           )
           UPDATE swipe_rank_build
           SET source_watermark = swipe_rank_build.source_watermark || jsonb_build_object(
@@ -348,6 +352,125 @@ export async function recomputeTinderSwipeRankFacts(
         FROM prepared
       `);
 
+        // Broader closed seasons are sums of canonical completed months. Rates
+        // remain generated from rolled-up numerator and denominator values.
+        await tx.execute(sql`
+        WITH month_base AS (
+          SELECT fact.*
+          FROM swipe_rank_period_fact fact
+          JOIN swipe_rank_profile srp ON srp.id = fact.profile_id
+          WHERE srp.data_provider = 'TINDER'
+            AND fact.metric_version = ${metricVersion}
+            AND fact.period_kind = 'MONTH'
+        ),
+        expanded AS (
+          SELECT
+            month_base.*,
+            'QUARTER'::"SwipeRankPeriodKind" AS rollup_kind,
+            date_trunc('quarter', period_start)::date AS rollup_start,
+            (date_trunc('quarter', period_start) + interval '3 months')::date AS rollup_end
+          FROM month_base
+          WHERE date_trunc('quarter', period_start) + interval '3 months'
+            <= ${closedBefore}::date
+          UNION ALL
+          SELECT
+            month_base.*,
+            'YEAR'::"SwipeRankPeriodKind",
+            date_trunc('year', period_start)::date,
+            (date_trunc('year', period_start) + interval '1 year')::date
+          FROM month_base
+          WHERE date_trunc('year', period_start) + interval '1 year'
+            <= ${closedBefore}::date
+        ),
+        rolled AS (
+          SELECT
+            profile_id,
+            rollup_kind,
+            rollup_start,
+            rollup_end,
+            min(observed_first_date) AS observed_first_date,
+            max(observed_last_date) AS observed_last_date,
+            sum(source_row_count)::bigint AS source_row_count,
+            sum(observed_days)::int AS observed_days,
+            sum(active_days)::int AS active_days,
+            max(age_in_period)::int AS age_in_period,
+            CASE WHEN bool_and(swipe_likes IS NOT NULL)
+              THEN sum(swipe_likes)::bigint END AS swipe_likes,
+            CASE WHEN bool_and(swipe_passes IS NOT NULL)
+              THEN sum(swipe_passes)::bigint END AS swipe_passes,
+            CASE WHEN bool_and(swipe_super_likes IS NOT NULL)
+              THEN sum(swipe_super_likes)::bigint END AS swipe_super_likes,
+            CASE WHEN bool_and(matches IS NOT NULL)
+              THEN sum(matches)::bigint END AS matches,
+            CASE WHEN bool_and(messages_sent IS NOT NULL)
+              THEN sum(messages_sent)::bigint END AS messages_sent,
+            CASE WHEN bool_and(messages_received IS NOT NULL)
+              THEN sum(messages_received)::bigint END AS messages_received,
+            CASE WHEN bool_and(app_opens IS NOT NULL)
+              THEN sum(app_opens)::bigint END AS app_opens,
+            CASE WHEN bool_and(match_rate_numerator IS NOT NULL)
+              THEN sum(match_rate_numerator)::bigint END AS match_rate_numerator,
+            CASE WHEN bool_and(match_rate_denominator IS NOT NULL)
+              THEN sum(match_rate_denominator)::bigint END AS match_rate_denominator,
+            CASE WHEN bool_and(like_rate_numerator IS NOT NULL)
+              THEN sum(like_rate_numerator)::bigint END AS like_rate_numerator,
+            CASE WHEN bool_and(like_rate_denominator IS NOT NULL)
+              THEN sum(like_rate_denominator)::bigint END AS like_rate_denominator,
+            bool_or(quality_flags ? 'PROFILE_RANGE_EXCLUDES_USAGE')
+              AS profile_range_excludes_usage,
+            max(source_profile_updated_at) AS source_profile_updated_at,
+            max(source_file_created_at) AS source_file_created_at
+          FROM expanded
+          GROUP BY profile_id, rollup_kind, rollup_start, rollup_end
+        ),
+        prepared AS (
+          SELECT
+            *,
+            to_jsonb(array_remove(ARRAY[
+              CASE WHEN match_rate_denominator > 0
+                     AND match_rate_numerator > match_rate_denominator
+                THEN 'MATCH_YIELD_OVER_ONE' END,
+              CASE WHEN match_rate_denominator = 0
+                     AND match_rate_numerator > 0
+                THEN 'MATCHES_WITH_ZERO_LIKES' END,
+              CASE WHEN profile_range_excludes_usage
+                THEN 'PROFILE_RANGE_EXCLUDES_USAGE' END
+            ]::text[], NULL)) AS quality_flags
+          FROM rolled
+        )
+        INSERT INTO swipe_rank_period_fact (
+          id, profile_id, build_id, metric_version, period_kind,
+          period_start, period_end, observed_first_date, observed_last_date,
+          source_row_count, observed_days, active_days, age_in_period,
+          swipe_likes, swipe_passes, swipe_super_likes, matches,
+          messages_sent, messages_received, app_opens,
+          match_rate_numerator, match_rate_denominator,
+          like_rate_numerator, like_rate_denominator, quality_flags,
+          has_quality_anomaly, source_profile_updated_at,
+          source_file_created_at, source_fingerprint, computed_at
+        )
+        SELECT
+          'srf_' || md5(
+            profile_id || ':' || rollup_kind::text || ':' || rollup_start::text || ':' || ${metricVersion}
+          ),
+          profile_id, ${buildId}, ${metricVersion}, rollup_kind,
+          rollup_start, rollup_end, observed_first_date, observed_last_date,
+          source_row_count, observed_days, active_days, age_in_period,
+          swipe_likes, swipe_passes, swipe_super_likes, matches,
+          messages_sent, messages_received, app_opens,
+          match_rate_numerator, match_rate_denominator,
+          like_rate_numerator, like_rate_denominator, quality_flags,
+          jsonb_array_length(quality_flags) > 0,
+          source_profile_updated_at, source_file_created_at,
+          md5(concat_ws(':',
+            source_row_count, observed_first_date, observed_last_date,
+            swipe_likes, swipe_passes, swipe_super_likes, matches,
+            messages_sent, messages_received, app_opens
+          )),
+          now()
+        FROM prepared
+      `);
+
         await tx.execute(sql`
         UPDATE swipe_rank_build build
         SET
@@ -373,6 +496,8 @@ export async function recomputeTinderSwipeRankFacts(
           count(DISTINCT profile_id)::bigint AS profile_count,
           count(*)::bigint AS fact_count,
           count(*) FILTER (WHERE period_kind = 'MONTH')::bigint AS month_fact_count,
+          count(*) FILTER (WHERE period_kind = 'QUARTER')::bigint AS quarter_fact_count,
+          count(*) FILTER (WHERE period_kind = 'YEAR')::bigint AS year_fact_count,
           count(*) FILTER (WHERE has_quality_anomaly)::bigint AS anomalous_fact_count
         FROM swipe_rank_period_fact
         WHERE build_id = ${buildId}
@@ -406,6 +531,8 @@ export async function recomputeTinderSwipeRankFacts(
     profileCount: asNumber(row.profile_count),
     factCount: asNumber(row.fact_count),
     monthFactCount: asNumber(row.month_fact_count),
+    quarterFactCount: asNumber(row.quarter_fact_count),
+    yearFactCount: asNumber(row.year_fact_count),
     anomalousFactCount: asNumber(row.anomalous_fact_count),
   };
 }

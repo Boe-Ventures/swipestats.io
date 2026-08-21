@@ -4,7 +4,7 @@ import { db } from "@/server/db";
 
 import { SWIPE_RANK_METRIC_VERSION } from "./constants";
 import {
-  assertClosedSwipeRankMonth,
+  assertClosedSwipeRankPeriod,
   type SwipeRankPeriodBounds,
 } from "./periods";
 
@@ -62,9 +62,9 @@ function asDate(value: Date | string): Date {
   return value instanceof Date ? value : new Date(value);
 }
 
-/** Read an owner's immutable placement from a published monthly edition. */
+/** Read an owner's immutable placement from a published closed season. */
 export async function getSwipeRankFromFacts(input: GetSwipeRankInput) {
-  assertClosedSwipeRankMonth(input.period);
+  assertClosedSwipeRankPeriod(input.period);
   const metricVersion = input.metricVersion ?? SWIPE_RANK_METRIC_VERSION;
   const result = await db.execute<RankRow>(sql`
     WITH selected_snapshot AS (
@@ -72,7 +72,7 @@ export async function getSwipeRankFromFacts(input: GetSwipeRankInput) {
       FROM swipe_rank_snapshot snapshot
       WHERE snapshot.data_provider = ${input.dataProvider}
         AND snapshot.metric_version = ${metricVersion}
-        AND snapshot.period_kind = 'MONTH'
+        AND snapshot.period_kind = ${input.period.kind}
         AND snapshot.period_start = ${input.period.start}::date
         AND snapshot.period_end = ${input.period.end}::date
         AND snapshot.status = 'PUBLISHED'

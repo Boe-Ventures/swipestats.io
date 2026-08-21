@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { publishPreviousTinderSwipeRankMonth } from "@/server/services/swipe-rank/publication.service";
+import { publishClosedTinderSwipeRankSeasons } from "@/server/services/swipe-rank/publication.service";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 300;
@@ -12,7 +12,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const summary = await publishPreviousTinderSwipeRankMonth();
+  const summary = await publishClosedTinderSwipeRankSeasons();
   return NextResponse.json({
     ok: true,
     processedAt: new Date().toISOString(),

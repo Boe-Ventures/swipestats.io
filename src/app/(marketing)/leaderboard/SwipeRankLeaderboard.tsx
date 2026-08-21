@@ -57,10 +57,14 @@ import {
 
 const KIND_LABELS: Record<SwipeRankPeriodKind, string> = {
   MONTH: "Month",
+  QUARTER: "Quarter",
+  YEAR: "Year",
 };
 
 const KIND_NOUNS: Record<SwipeRankPeriodKind, string> = {
   MONTH: "month",
+  QUARTER: "quarter",
+  YEAR: "year",
 };
 
 const UNKNOWN_GENDER_PRESENTATION = {
@@ -424,8 +428,8 @@ export function SwipeRankLeaderboard() {
           <Card>
             <CardContent>
               <EmptyLeaderboard
-                title="No monthly season has been published yet"
-                description="The first closed SwipeRank month will appear after its scheduled publication completes."
+                title={`No ${KIND_NOUNS[kind]} season has been published yet`}
+                description="Closed seasons appear after the scheduled publication completes."
               />
             </CardContent>
           </Card>
@@ -448,7 +452,7 @@ export function SwipeRankLeaderboard() {
               {!data.ready ? (
                 <EmptyLeaderboard
                   title="The first full field is being prepared"
-                  description="SwipeRank stays hidden until this closed month has passed validation and publication."
+                  description="SwipeRank stays hidden until this closed season has passed validation and publication."
                 />
               ) : data.countsSuppressed ? (
                 <EmptyLeaderboard

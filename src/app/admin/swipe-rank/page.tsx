@@ -265,8 +265,9 @@ export default function AdminSwipeRankPage() {
             SwipeRank Explorer
           </h1>
           <p className="mt-2 max-w-3xl text-gray-600">
-            Private, live rankings over versioned Tinder facts. Observed match
-            rate is matches divided by right swipes and is never capped at 100%.
+            Private exploration over versioned Tinder facts and published closed
+            seasons. Observed match rate is matches divided by right swipes and
+            is never capped at 100%.
           </p>
         </div>
       </div>
@@ -812,8 +813,8 @@ export default function AdminSwipeRankPage() {
             </AlertDialogTitle>
             <AlertDialogDescription>
               {moderationTarget?.excluded
-                ? "The profile’s data and facts stay intact for review, but it will be removed from every live rank and benchmark."
-                : "The existing facts will immediately make this profile eligible for live fields again."}
+                ? "The profile’s data and facts stay intact for review, but future published seasons and benchmarks will exclude it."
+                : "Future published seasons and benchmarks can include this profile again."}
             </AlertDialogDescription>
           </AlertDialogHeader>
 

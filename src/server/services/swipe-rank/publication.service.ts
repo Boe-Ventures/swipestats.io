@@ -5,7 +5,10 @@ import { swipeRankSnapshotTable } from "@/server/db/schema";
 
 import { SWIPE_RANK_METRIC_VERSION } from "./constants";
 import { invalidatePublicSwipeRankCache } from "./public-cache";
-import { previousCalendarMonth } from "./periods";
+import {
+  swipeRankSeasonsToPublish,
+  type ClosedSwipeRankPeriodBounds,
+} from "./periods";
 import { activateTinderSwipeRankBuild } from "./readiness";
 import { recomputeTinderSwipeRankFacts } from "./recompute.service";
 import { createGlobalSwipeRankSnapshot } from "./snapshot.service";
@@ -22,7 +25,7 @@ interface PublishedSnapshot {
 export interface SwipeRankPublicationDependencies {
   withLock: <T>(callback: () => Promise<T>) => Promise<T>;
   findPublishedSnapshot: (
-    period: ReturnType<typeof previousCalendarMonth>,
+    period: ClosedSwipeRankPeriodBounds,
   ) => Promise<PublishedSnapshot | undefined>;
   recompute: typeof recomputeTinderSwipeRankFacts;
   validate: typeof validateTinderSwipeRankFacts;
@@ -40,7 +43,7 @@ const productionDependencies: SwipeRankPublicationDependencies = {
         eq(swipeRankSnapshotTable.dataProvider, "TINDER"),
         eq(swipeRankSnapshotTable.metricKey, "MATCH_YIELD"),
         eq(swipeRankSnapshotTable.metricVersion, SWIPE_RANK_METRIC_VERSION),
-        eq(swipeRankSnapshotTable.periodKind, "MONTH"),
+        eq(swipeRankSnapshotTable.periodKind, period.kind),
         eq(swipeRankSnapshotTable.periodStart, period.start),
         eq(swipeRankSnapshotTable.status, "PUBLISHED"),
       ),
@@ -52,59 +55,76 @@ const productionDependencies: SwipeRankPublicationDependencies = {
   invalidatePublicCache: invalidatePublicSwipeRankCache,
 };
 
-export async function publishPreviousTinderSwipeRankMonthWithDependencies(
+/**
+ * One monthly invocation publishes every season that closed at the current
+ * UTC month boundary: prior month, plus prior quarter and year when due.
+ */
+export async function publishClosedTinderSwipeRankSeasonsWithDependencies(
   now: Date,
   dependencies: SwipeRankPublicationDependencies,
 ) {
-  const period = previousCalendarMonth(now);
-
+  const periods = swipeRankSeasonsToPublish(now);
   return dependencies.withLock(async () => {
-    const existing = await dependencies.findPublishedSnapshot(period);
-    if (existing) {
+    const existing = await Promise.all(
+      periods.map(async (period) => ({
+        period,
+        snapshot: await dependencies.findPublishedSnapshot(period),
+      })),
+    );
+    const missing = existing.filter((item) => !item.snapshot);
+    if (missing.length === 0) {
       return {
         alreadyPublished: true,
-        period,
-        snapshotId: existing.id,
-        buildId: existing.buildId,
-        publishedAt: existing.publishedAt,
+        periods,
+        published: existing.map(({ period, snapshot }) => ({
+          period,
+          snapshotId: snapshot!.id,
+          buildId: snapshot!.buildId,
+          publishedAt: snapshot!.publishedAt,
+        })),
       };
     }
 
+    const closedBefore = periods[0]!.end;
     const build = await dependencies.recompute({
       metricVersion: SWIPE_RANK_METRIC_VERSION,
-      closedBefore: period.end,
+      closedBefore,
     });
     const validation = await dependencies.validate(
       build.metricVersion,
-      period.end,
+      closedBefore,
     );
     if (!validation.valid) {
       throw new Error(
-        `SwipeRank monthly validation failed for build ${build.buildId}.`,
+        `SwipeRank closed-season validation failed for build ${build.buildId}.`,
       );
     }
 
     const activatedAt = await dependencies.activate(build.buildId);
-    const snapshot = await dependencies.createSnapshot({
-      period,
-      publish: true,
-      metricVersion: build.metricVersion,
-    });
+    const snapshots = [];
+    for (const { period } of missing) {
+      snapshots.push(
+        await dependencies.createSnapshot({
+          period,
+          publish: true,
+          metricVersion: build.metricVersion,
+        }),
+      );
+    }
     dependencies.invalidatePublicCache();
-
     return {
       alreadyPublished: false,
-      period,
+      periods,
       activatedAt,
       build,
       validation,
-      snapshot,
+      snapshots,
     };
   });
 }
 
-export async function publishPreviousTinderSwipeRankMonth(now = new Date()) {
-  return publishPreviousTinderSwipeRankMonthWithDependencies(
+export async function publishClosedTinderSwipeRankSeasons(now = new Date()) {
+  return publishClosedTinderSwipeRankSeasonsWithDependencies(
     now,
     productionDependencies,
   );

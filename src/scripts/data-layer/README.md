@@ -13,7 +13,7 @@ bun run data-layer:audit-profile-meta -- --skip-conversations
 
 Checks provider-key grain, missing and duplicate rows, formula invariants, raw
 Tinder usage totals, conversation aggregates, Hinge capability placeholders,
-profile-range exclusions, and all-time eligibility differences.
+profile-range exclusions, and closed-season eligibility differences.
 
 ### Retired: legacy Hinge rates-above-100 audit
 
@@ -93,7 +93,7 @@ privacy thresholds. Age bands use age observed inside the selected period.
 ```sh
 bun run data-layer:inspect-periods -- --period 2025
 bun run data-layer:inspect-periods -- --period 2025-12 --analyze --json
-bun run data-layer:inspect-periods -- --period all-time --analyze --full-plans
+bun run data-layer:inspect-periods -- --period 2025 --analyze --full-plans
 ```
 
 Reports table and index sizes, candidate profile-month/quarter/year row counts,

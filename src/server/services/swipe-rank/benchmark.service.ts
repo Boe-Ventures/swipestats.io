@@ -12,7 +12,7 @@ import {
 import { SWIPE_RANK_METRIC_VERSION } from "./constants";
 import { swipeRankCountryFilterSql } from "./country-filter";
 import {
-  assertClosedSwipeRankMonth,
+  assertClosedSwipeRankPeriod,
   type SwipeRankPeriodBounds,
 } from "./periods";
 import type { SwipeRankFilters } from "./product.service";
@@ -413,7 +413,7 @@ export function assembleSwipeRankBenchmark(
 export async function getTinderSwipeRankBenchmark(
   input: SwipeRankBenchmarkInput,
 ) {
-  assertClosedSwipeRankMonth(input.period);
+  assertClosedSwipeRankPeriod(input.period);
   const filters = input.filters ?? {};
   const filterSql = comparisonFilterSql(filters);
 
@@ -429,7 +429,7 @@ export async function getTinderSwipeRankBenchmark(
       FROM swipe_rank_snapshot snapshot
       WHERE snapshot.data_provider = 'TINDER'
         AND snapshot.metric_version = ${SWIPE_RANK_METRIC_VERSION}
-        AND snapshot.period_kind = 'MONTH'
+        AND snapshot.period_kind = ${input.period.kind}
         AND snapshot.period_start = ${input.period.start}::date
         AND snapshot.period_end = ${input.period.end}::date
         AND snapshot.status = 'PUBLISHED'
@@ -563,7 +563,7 @@ export async function getTinderSwipeRankBenchmark(
   const row = result.rows[0];
   if (!row) {
     throw new Error(
-      `No published monthly SwipeRank exists for Tinder profile ${input.providerProfileId}.`,
+      `No published SwipeRank season exists for Tinder profile ${input.providerProfileId}.`,
     );
   }
 

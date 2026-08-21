@@ -25,7 +25,7 @@ export async function lockTinderSwipeRankPolicyInTx(
 
 /**
  * Remove provider-specific analytical state in the same transaction that
- * removes the source Tinder profile. Live facts and the person's frozen
+ * removes the source Tinder profile. Working facts and the person's frozen
  * snapshot entries cascade from the registry row. The aggregate edition field
  * size remains an historical count, but no per-person numerator, denominator,
  * or quality record survives erasure.

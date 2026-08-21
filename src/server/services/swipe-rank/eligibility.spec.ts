@@ -11,8 +11,16 @@ describe("SwipeRank eligibility v1", () => {
       minimumRateDenominator: 100,
       minimumActiveDays: 5,
     });
-    expect(() => getSwipeRankEligibility("QUARTER")).toThrow(
-      "monthly seasons only",
+    expect(getSwipeRankEligibility("QUARTER")).toEqual({
+      minimumRateDenominator: 250,
+      minimumActiveDays: 15,
+    });
+    expect(getSwipeRankEligibility("YEAR")).toEqual({
+      minimumRateDenominator: 500,
+      minimumActiveDays: 40,
+    });
+    expect(() => getSwipeRankEligibility("ALL_TIME")).toThrow(
+      "does not publish all-time",
     );
   });
 
