@@ -191,6 +191,14 @@ export function SwipeRankLeaderboard() {
       availablePeriods.data?.periods,
     );
   }, [availablePeriods.data?.periods, kind]);
+  const periodSelectItems = useMemo(
+    () =>
+      options.map((period) => ({
+        value: swipeRankPeriodKey(period),
+        label: formatSwipeRankPeriodLabel(period),
+      })),
+    [options],
+  );
   const quickJumps = useMemo(
     () => resolveLeaderboardQuickJumps(availablePeriods.data?.periods),
     [availablePeriods.data?.periods],
@@ -361,6 +369,7 @@ export function SwipeRankLeaderboard() {
                       ? swipeRankPeriodKey(selected)
                       : undefined
                   }
+                  items={periodSelectItems}
                   disabled={options.length === 0}
                   onValueChange={(value) => {
                     if (value === null) return;
