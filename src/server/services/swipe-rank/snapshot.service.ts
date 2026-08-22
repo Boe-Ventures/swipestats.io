@@ -17,6 +17,7 @@ import {
 
 export interface CreateGlobalSwipeRankSnapshotInput {
   period: SwipeRankPeriodBounds;
+  expectedBuildId: string;
   publish?: boolean;
   metricVersion?: string;
 }
@@ -40,7 +41,6 @@ interface FactSetRow extends Record<string, unknown> {
   field_size: number | string;
   source_cutoff: Date | string | null;
   build_scope: "FULL" | "PROFILE" | null;
-  build_activated_at: Date | string | null;
 }
 
 interface CountRow extends Record<string, unknown> {
@@ -79,22 +79,24 @@ function iso(value: Date | string): string {
 }
 
 export function hasCoherentFullSwipeRankLineage(input: {
+  buildId: string | null;
+  expectedBuildId: string;
   distinctBuilds: number;
   buildScope: "FULL" | "PROFILE" | null;
-  buildActivated: boolean;
 }): boolean {
   return (
+    input.buildId === input.expectedBuildId &&
     input.distinctBuilds === 1 &&
-    input.buildScope === "FULL" &&
-    input.buildActivated
+    input.buildScope === "FULL"
   );
 }
 
 /**
  * Freeze one global leaderboard edition from a coherent full fact build.
  *
- * A snapshot accepts facts from one activated full build. This keeps
- * `snapshot.buildId` truthful and the edition reproducible from stored entries.
+ * A snapshot accepts facts only from the exact full build that the publisher
+ * validated. Rechecking under the build lock prevents a later rebuild from
+ * being frozen under an earlier validation result.
  */
 export async function createGlobalSwipeRankSnapshot(
   input: CreateGlobalSwipeRankSnapshotInput,
@@ -149,8 +151,7 @@ export async function createGlobalSwipeRankSnapshot(
         count(DISTINCT period_facts.build_id)::int AS distinct_builds,
         count(eligible.id)::int AS field_size,
         max(period_facts.computed_at) AS source_cutoff,
-        min(build.scope::text) AS build_scope,
-        min(build.activated_at) AS build_activated_at
+        min(build.scope::text) AS build_scope
       FROM period_facts
       LEFT JOIN eligible ON eligible.id = period_facts.id
       LEFT JOIN swipe_rank_build build ON build.id = period_facts.build_id
@@ -161,13 +162,14 @@ export async function createGlobalSwipeRankSnapshot(
       }
       if (
         !hasCoherentFullSwipeRankLineage({
+          buildId: source.build_id,
+          expectedBuildId: input.expectedBuildId,
           distinctBuilds: Number(source.distinct_builds),
           buildScope: source.build_scope,
-          buildActivated: source.build_activated_at !== null,
         })
       ) {
         throw new Error(
-          "Snapshot lineage is not one activated, coherent FULL season build.",
+          "Snapshot lineage does not match the validated FULL season build.",
         );
       }
       if (!source.source_cutoff) {

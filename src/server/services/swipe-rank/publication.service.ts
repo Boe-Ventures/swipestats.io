@@ -9,7 +9,6 @@ import {
   swipeRankSeasonsToPublish,
   type ClosedSwipeRankPeriodBounds,
 } from "./periods";
-import { activateTinderSwipeRankBuild } from "./readiness";
 import { recomputeTinderSwipeRankFacts } from "./recompute.service";
 import { createGlobalSwipeRankSnapshot } from "./snapshot.service";
 import { validateTinderSwipeRankFacts } from "./validate.service";
@@ -29,7 +28,6 @@ export interface SwipeRankPublicationDependencies {
   ) => Promise<PublishedSnapshot | undefined>;
   recompute: typeof recomputeTinderSwipeRankFacts;
   validate: typeof validateTinderSwipeRankFacts;
-  activate: typeof activateTinderSwipeRankBuild;
   createSnapshot: typeof createGlobalSwipeRankSnapshot;
   invalidatePublicCache: typeof invalidatePublicSwipeRankCache;
 }
@@ -50,7 +48,6 @@ const productionDependencies: SwipeRankPublicationDependencies = {
     }),
   recompute: recomputeTinderSwipeRankFacts,
   validate: validateTinderSwipeRankFacts,
-  activate: activateTinderSwipeRankBuild,
   createSnapshot: createGlobalSwipeRankSnapshot,
   invalidatePublicCache: invalidatePublicSwipeRankCache,
 };
@@ -100,12 +97,12 @@ export async function publishClosedTinderSwipeRankSeasonsWithDependencies(
       );
     }
 
-    const activatedAt = await dependencies.activate(build.buildId);
     const snapshots = [];
     for (const { period } of missing) {
       snapshots.push(
         await dependencies.createSnapshot({
           period,
+          expectedBuildId: build.buildId,
           publish: true,
           metricVersion: build.metricVersion,
         }),
@@ -115,7 +112,6 @@ export async function publishClosedTinderSwipeRankSeasonsWithDependencies(
     return {
       alreadyPublished: false,
       periods,
-      activatedAt,
       build,
       validation,
       snapshots,

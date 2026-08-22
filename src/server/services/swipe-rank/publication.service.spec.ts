@@ -34,7 +34,6 @@ function dependencies(
       registryDescriptorMismatches: 0,
       valid: true,
     })),
-    activate: mock(async () => new Date("2026-01-01T06:30:01.000Z")),
     createSnapshot: mock(
       async (
         input: Parameters<
@@ -77,6 +76,9 @@ describe("closed-season SwipeRank publication", () => {
       closedBefore: "2026-01-01",
     });
     expect(deps.createSnapshot).toHaveBeenCalledTimes(3);
+    expect(deps.createSnapshot).toHaveBeenCalledWith(
+      expect.objectContaining({ expectedBuildId: "srb_seasons" }),
+    );
   });
 
   test("publishes only the month outside a quarter boundary", async () => {
