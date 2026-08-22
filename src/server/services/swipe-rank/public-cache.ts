@@ -1,6 +1,15 @@
 import { revalidateTag } from "next/cache";
 
-export const SWIPE_RANK_PUBLIC_CACHE_TAG = "swipe-rank-public-v2";
+import {
+  getSwipeRankDatabaseCacheNamespace,
+  getSwipeRankDeploymentCacheNamespace,
+} from "./public-cache-namespace";
+
+const databaseCacheNamespace = getSwipeRankDatabaseCacheNamespace();
+
+export const SWIPE_RANK_PUBLIC_CACHE_NAMESPACE =
+  getSwipeRankDeploymentCacheNamespace();
+export const SWIPE_RANK_PUBLIC_CACHE_TAG = `swipe-rank-public-v3-${databaseCacheNamespace}`;
 
 /**
  * Runtime mutations invalidate immediately. Fact recomputes also run from
