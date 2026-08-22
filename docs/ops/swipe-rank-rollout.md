@@ -20,9 +20,12 @@ published snapshots.
    `CRON_SECRET`, and either `SWIPE_RANK_PUBLIC_ID_SECRET` or
    `BETTER_AUTH_SECRET`. Confirm `ANTHROPIC_API_KEY` is available to the
    production runtime for the Sonnet 5 review job.
-5. Rehearse `bun db:migrate` and `bun run swipe-rank:publish -- --confirm-write`
+5. Confirm Fluid Compute is enabled and the project-wide function duration is
+   set to the highest stable limit available on the Vercel plan. Route files
+   intentionally inherit this shared project setting.
+6. Rehearse `bun db:migrate` and `bun run swipe-rank:publish -- --confirm-write`
    on an expiring Neon branch created from production.
-6. Verify the rehearsal produces a published snapshot, matching entry and field
+7. Verify the rehearsal produces a published snapshot, matching entry and field
    counts, no validation mismatches, and no activated legacy build.
 
 ## Deploy
@@ -47,7 +50,8 @@ Run `/api/cron/swipe-rank` from the production deployment summary in Vercel.
 This uses the configured cron authorization and exercises the same route as the
 monthly schedule.
 
-The invocation must finish within the route's 300-second limit and return:
+The invocation must finish within the project-wide Fluid Compute duration and
+return:
 
 - `ok: true`;
 - `validation.valid: true`;

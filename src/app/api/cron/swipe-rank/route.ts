@@ -3,7 +3,6 @@ import { NextResponse } from "next/server";
 import { publishClosedTinderSwipeRankSeasons } from "@/server/services/swipe-rank/publication.service";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 300;
 
 export async function GET(request: Request) {
   const cronSecret = process.env.CRON_SECRET;

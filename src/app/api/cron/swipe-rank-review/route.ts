@@ -4,7 +4,6 @@ import { reviewSwipeRankCohort } from "@/server/services/swipe-rank/ai-review.se
 import { swipeRankSeasonsToPublish } from "@/server/services/swipe-rank/periods";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 300;
 
 export async function GET(request: Request) {
   const cronSecret = process.env.CRON_SECRET;
