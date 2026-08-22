@@ -16,11 +16,15 @@ import {
   listTinderSwipeRankProfilePeriods,
   listAdminSwipeRankPeriods,
 } from "@/server/services/swipe-rank/product.service";
-import { SWIPE_RANK_PUBLIC_CACHE_TAG } from "@/server/services/swipe-rank/public-cache";
+import {
+  SWIPE_RANK_PUBLIC_CACHE_NAMESPACE,
+  SWIPE_RANK_PUBLIC_CACHE_TAG,
+} from "@/server/services/swipe-rank/public-cache";
 import {
   listTinderSwipeRankExclusions,
   setTinderSwipeRankExclusion,
 } from "@/server/services/swipe-rank/exclusion.service";
+import { reviewSwipeRankEntry } from "@/server/services/swipe-rank/ai-review.service";
 
 import {
   adminProcedure,
@@ -78,12 +82,12 @@ const periodSchema = z
 
 const cachedPublicSwipeRankLeaderboard = unstable_cache(
   getPublicSwipeRankLeaderboard,
-  ["swipe-rank-public-leaderboard-v5"],
+  ["swipe-rank-public-leaderboard-v6", SWIPE_RANK_PUBLIC_CACHE_NAMESPACE],
   { revalidate: 60, tags: [SWIPE_RANK_PUBLIC_CACHE_TAG] },
 );
 const cachedPublicSwipeRankPeriods = unstable_cache(
   listPublicSwipeRankPeriods,
-  ["swipe-rank-public-periods-v3"],
+  ["swipe-rank-public-periods-v4", SWIPE_RANK_PUBLIC_CACHE_NAMESPACE],
   { revalidate: 300, tags: [SWIPE_RANK_PUBLIC_CACHE_TAG] },
 );
 
@@ -157,6 +161,15 @@ export const swipeRankRouter = {
       z.object({
         period: periodSchema,
         filters: filtersSchema.optional(),
+        aiReview: z
+          .enum([
+            "ALL",
+            "UNREVIEWED",
+            "CLEAR",
+            "NEEDS_REVIEW",
+            "EXCLUDE_RECOMMENDED",
+          ])
+          .default("ALL"),
         page: z.number().int().min(1).default(1),
         limit: z.number().int().min(1).max(100).default(50),
       }),
@@ -192,6 +205,24 @@ export const swipeRankRouter = {
       return setTinderSwipeRankExclusion({
         ...input,
         actor: `admin:${actorId}`,
+      });
+    }),
+
+  /** Private admin: Sonnet review with a reversible hold for non-clear cases. */
+  reviewAdminEntry: adminProcedure
+    .input(
+      z.object({
+        entryId: z.string().trim().min(1),
+        force: z.boolean().default(true),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const actorId = ctx.session?.user.id;
+      if (!actorId) throw new TRPCError({ code: "UNAUTHORIZED" });
+      return reviewSwipeRankEntry({
+        entryId: input.entryId,
+        actor: `admin:${actorId}`,
+        force: input.force,
       });
     }),
 } satisfies TRPCRouterRecord;

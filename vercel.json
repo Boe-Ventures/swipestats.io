@@ -9,6 +9,10 @@
       "schedule": "30 6 1 * *"
     },
     {
+      "path": "/api/cron/swipe-rank-review",
+      "schedule": "15 7 1 * *"
+    },
+    {
       "path": "/api/cron/transient-uploads",
       "schedule": "15 * * * *"
     }

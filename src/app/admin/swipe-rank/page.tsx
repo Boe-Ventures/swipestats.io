@@ -132,6 +132,9 @@ export default function AdminSwipeRankPage() {
   const [filters, setFilters] = useState<AdminFilters>({});
   const [filterError, setFilterError] = useState<string | null>(null);
   const [selectedPeriodKey, setSelectedPeriodKey] = useState("");
+  const [aiReview, setAiReview] = useState<
+    "ALL" | "UNREVIEWED" | "CLEAR" | "NEEDS_REVIEW" | "EXCLUDE_RECOMMENDED"
+  >("ALL");
   const [page, setPage] = useState(1);
   const [moderationTarget, setModerationTarget] =
     useState<ModerationTarget | null>(null);
@@ -194,6 +197,7 @@ export default function AdminSwipeRankPage() {
           end: "2000-02-01",
         },
         filters,
+        aiReview,
         page,
         limit,
       },
@@ -206,6 +210,18 @@ export default function AdminSwipeRankPage() {
       onSuccess: async () => {
         setModerationTarget(null);
         setExclusionReason("");
+        await Promise.all([
+          exclusionsQuery.refetch(),
+          periodsQuery.refetch(),
+          leaderboardQuery.refetch(),
+        ]);
+      },
+    }),
+  );
+
+  const reviewMutation = useMutation(
+    trpc.swipeRank.reviewAdminEntry.mutationOptions({
+      onSuccess: async () => {
         await Promise.all([
           exclusionsQuery.refetch(),
           periodsQuery.refetch(),
@@ -342,12 +358,12 @@ export default function AdminSwipeRankPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <Ban className="h-4 w-4 text-amber-700" />
-              Banned from SwipeRank
+              Held from SwipeRank
             </CardTitle>
             <CardDescription>
-              These are reversible ranking bans: facts stay intact for review,
-              while the profiles are omitted from every live field and benchmark
-              until restored.
+              Manual bans and Sonnet review holds are reversible. Facts stay
+              available here while profiles remain outside public fields and
+              benchmarks until an administrator restores them.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -445,38 +461,69 @@ export default function AdminSwipeRankPage() {
           </div>
         )}
         <CardContent className="flex flex-wrap items-end justify-between gap-4 p-5">
-          <div className="min-w-[280px]">
-            <label
-              htmlFor="swipe-rank-period"
-              className="mb-2 block text-sm font-medium text-gray-700"
-            >
-              Available period
-            </label>
-            <Select
-              value={selectedPeriodKey}
-              onValueChange={(value) => {
-                if (value === null) return;
-                setSelectedPeriodKey(value);
-                setPage(1);
-              }}
-              disabled={periods.length === 0}
-            >
-              <SelectTrigger id="swipe-rank-period">
-                <SelectValue placeholder="Select a period" />
-              </SelectTrigger>
-              <SelectContent>
-                {periods.map((item) => (
-                  <SelectItem
-                    key={swipeRankPeriodKey(item.period)}
-                    value={swipeRankPeriodKey(item.period)}
-                    disabled={item.eligibleCount === 0}
-                  >
-                    {formatSwipeRankPeriodLabel(item.period)} ·{" "}
-                    {item.eligibleCount.toLocaleString()} eligible
+          <div className="flex flex-wrap gap-4">
+            <div className="min-w-[280px]">
+              <label
+                htmlFor="swipe-rank-period"
+                className="mb-2 block text-sm font-medium text-gray-700"
+              >
+                Available period
+              </label>
+              <Select
+                value={selectedPeriodKey}
+                onValueChange={(value) => {
+                  if (value === null) return;
+                  setSelectedPeriodKey(value);
+                  setPage(1);
+                }}
+                disabled={periods.length === 0}
+              >
+                <SelectTrigger id="swipe-rank-period">
+                  <SelectValue placeholder="Select a period" />
+                </SelectTrigger>
+                <SelectContent>
+                  {periods.map((item) => (
+                    <SelectItem
+                      key={swipeRankPeriodKey(item.period)}
+                      value={swipeRankPeriodKey(item.period)}
+                      disabled={item.eligibleCount === 0}
+                    >
+                      {formatSwipeRankPeriodLabel(item.period)} ·{" "}
+                      {item.eligibleCount.toLocaleString()} eligible
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="min-w-[220px]">
+              <label
+                htmlFor="swipe-rank-ai-review"
+                className="mb-2 block text-sm font-medium text-gray-700"
+              >
+                Sonnet review
+              </label>
+              <Select
+                value={aiReview}
+                onValueChange={(value) => {
+                  if (value === null) return;
+                  setAiReview(value);
+                  setPage(1);
+                }}
+              >
+                <SelectTrigger id="swipe-rank-ai-review">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="ALL">All profiles</SelectItem>
+                  <SelectItem value="UNREVIEWED">Unreviewed</SelectItem>
+                  <SelectItem value="NEEDS_REVIEW">Needs review</SelectItem>
+                  <SelectItem value="EXCLUDE_RECOMMENDED">
+                    Exclusion recommended
                   </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                  <SelectItem value="CLEAR">Clear</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {leaderboard && (
@@ -543,7 +590,7 @@ export default function AdminSwipeRankPage() {
           </CardHeader>
           <CardContent className="p-0">
             <div className="overflow-x-auto">
-              <Table className="min-w-[1180px]">
+              <Table className="min-w-[1380px]">
                 <TableHeader>
                   <TableRow className="bg-slate-50/80 hover:bg-slate-50/80">
                     <TableHead className="w-20">Rank</TableHead>
@@ -558,7 +605,10 @@ export default function AdminSwipeRankPage() {
                     </TableHead>
                     <TableHead className="text-right">Activity</TableHead>
                     <TableHead className="w-24">Quality</TableHead>
-                    <TableHead className="w-28">Actions</TableHead>
+                    <TableHead className="w-72">Sonnet review</TableHead>
+                    <TableHead className="sticky right-0 z-10 w-28 border-l bg-white shadow-[-8px_0_12px_-12px_rgba(15,23,42,0.35)]">
+                      Actions
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -580,7 +630,7 @@ export default function AdminSwipeRankPage() {
                         {showBand && (
                           <TableRow className="border-y bg-slate-50 hover:bg-slate-50">
                             <TableCell
-                              colSpan={9}
+                              colSpan={10}
                               className="py-2 font-mono text-[11px] tracking-[0.12em] uppercase"
                             >
                               <span className="font-bold text-slate-900">
@@ -720,6 +770,40 @@ export default function AdminSwipeRankPage() {
                             )}
                           </TableCell>
                           <TableCell>
+                            {entry.aiReview ? (
+                              <div className="max-w-72 space-y-1.5">
+                                <Badge
+                                  title={`${entry.aiReview.model} · ${new Date(entry.aiReview.reviewedAt).toLocaleString()}`}
+                                  className={cn(
+                                    entry.aiReview.verdict === "CLEAR" &&
+                                      "bg-emerald-100 text-emerald-900 hover:bg-emerald-100",
+                                    entry.aiReview.verdict === "NEEDS_REVIEW" &&
+                                      "bg-amber-100 text-amber-900 hover:bg-amber-100",
+                                    entry.aiReview.verdict ===
+                                      "EXCLUDE_RECOMMENDED" &&
+                                      "bg-red-100 text-red-900 hover:bg-red-100",
+                                  )}
+                                >
+                                  {entry.aiReview.verdict === "CLEAR"
+                                    ? "Clear"
+                                    : entry.aiReview.verdict === "NEEDS_REVIEW"
+                                      ? "Needs review"
+                                      : "Exclude suggested"}
+                                  {" · "}
+                                  {Math.round(entry.aiReview.confidence * 100)}%
+                                </Badge>
+                                <p
+                                  className="line-clamp-3 text-xs leading-5 text-gray-600"
+                                  title={`${entry.aiReview.summary}\n\n${entry.aiReview.recommendedAction}`}
+                                >
+                                  {entry.aiReview.summary}
+                                </p>
+                              </div>
+                            ) : (
+                              <Badge variant="outline">Unreviewed</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell className="sticky right-0 z-[1] border-l bg-white shadow-[-8px_0_12px_-12px_rgba(15,23,42,0.35)]">
                             <div className="flex flex-col gap-2">
                               <ButtonLink
                                 href={`/admin/insights/tinder/${entry.providerProfileId}`}
@@ -731,6 +815,31 @@ export default function AdminSwipeRankPage() {
                                 <Eye className="h-3.5 w-3.5" />
                                 View
                               </ButtonLink>
+                              <Button
+                                variant="outline"
+                                size="xs"
+                                className="gap-1.5 text-violet-800"
+                                disabled={
+                                  reviewMutation.isPending &&
+                                  reviewMutation.variables?.entryId ===
+                                    entry.entryId
+                                }
+                                onClick={() =>
+                                  reviewMutation.mutate({
+                                    entryId: entry.entryId,
+                                    force: true,
+                                  })
+                                }
+                              >
+                                {reviewMutation.isPending &&
+                                reviewMutation.variables?.entryId ===
+                                  entry.entryId ? (
+                                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                                ) : (
+                                  <Sparkles className="h-3.5 w-3.5" />
+                                )}
+                                Review
+                              </Button>
                               <Button
                                 variant="outline"
                                 size="xs"
@@ -756,6 +865,12 @@ export default function AdminSwipeRankPage() {
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {reviewMutation.isError && (
+        <p className="text-sm text-red-700">
+          Sonnet review failed: {reviewMutation.error.message}
+        </p>
       )}
 
       {leaderboard?.fieldSize === 0 && (

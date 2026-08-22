@@ -47,6 +47,7 @@ interface PeriodRow extends Record<string, unknown> {
 }
 
 interface LeaderboardRow extends Record<string, unknown> {
+  entry_id: string | null;
   profile_id: string | null;
   provider_profile_id: string | null;
   gender: Gender | null;
@@ -68,6 +69,19 @@ interface LeaderboardRow extends Record<string, unknown> {
   filtered_rank: number | string | null;
   filtered_tie_count: number | string | null;
   filtered_field_size: number | string;
+  ai_review_id: string | null;
+  ai_review_verdict: "CLEAR" | "NEEDS_REVIEW" | "EXCLUDE_RECOMMENDED" | null;
+  ai_review_confidence: number | string | null;
+  ai_review_summary: string | null;
+  ai_review_recommended_action: string | null;
+  ai_review_signals: Array<{
+    category: string;
+    severity: string;
+    finding: string;
+    evidence: string;
+  }> | null;
+  ai_review_model: string | null;
+  ai_reviewed_at: Date | string | null;
 }
 
 function number(value: number | string | null): number {
@@ -201,19 +215,38 @@ export async function listAdminSwipeRankPeriods(
 ) {
   const conditions = filterSql(filters);
   const result = await db.execute<PeriodRow>(sql`
+    WITH latest_snapshots AS (
+      SELECT DISTINCT ON (
+        period_kind,
+        period_start,
+        period_end
+      )
+        id,
+        period_kind,
+        period_start,
+        period_end,
+        published_at
+      FROM swipe_rank_snapshot
+      WHERE data_provider = 'TINDER'
+        AND metric_version = ${SWIPE_RANK_METRIC_VERSION}
+        AND status = 'PUBLISHED'
+      ORDER BY
+        period_kind,
+        period_start,
+        period_end,
+        published_at DESC,
+        id DESC
+    )
     SELECT
       snapshot.period_start::text,
       snapshot.period_end::text,
       snapshot.period_kind,
       snapshot.published_at,
       count(entry.id)::bigint AS total_count
-    FROM swipe_rank_snapshot snapshot
+    FROM latest_snapshots snapshot
     JOIN swipe_rank_entry entry ON entry.snapshot_id = snapshot.id
     JOIN swipe_rank_profile profile ON profile.id = entry.profile_id
-    WHERE snapshot.data_provider = 'TINDER'
-      AND snapshot.metric_version = ${SWIPE_RANK_METRIC_VERSION}
-      AND snapshot.status = 'PUBLISHED'
-      AND profile.is_synthetic = false
+    WHERE profile.is_synthetic = false
       AND profile.is_swipe_rank_excluded = false
       ${conditions}
     GROUP BY snapshot.id, snapshot.period_kind, snapshot.period_start, snapshot.period_end,
@@ -241,6 +274,12 @@ export async function listAdminSwipeRankPeriods(
 export interface AdminSwipeRankLeaderboardInput {
   period: SwipeRankPeriodBounds;
   filters?: SwipeRankFilters;
+  aiReview?:
+    | "ALL"
+    | "UNREVIEWED"
+    | "CLEAR"
+    | "NEEDS_REVIEW"
+    | "EXCLUDE_RECOMMENDED";
   page: number;
   limit: number;
 }
@@ -251,6 +290,12 @@ export async function getAdminSwipeRankLeaderboard(
   assertClosedSwipeRankPeriod(input.period);
   const filters = input.filters ?? {};
   const conditions = filterSql(filters);
+  const aiReviewCondition =
+    input.aiReview === undefined || input.aiReview === "ALL"
+      ? sql``
+      : input.aiReview === "UNREVIEWED"
+        ? sql`AND ai_review.id IS NULL`
+        : sql`AND ai_review.verdict = ${input.aiReview}::"SwipeRankAiReviewVerdict"`;
   const offset = (input.page - 1) * input.limit;
   const result = await db.execute<LeaderboardRow>(sql`
     WITH selected_snapshot AS (
@@ -266,6 +311,7 @@ export async function getAdminSwipeRankLeaderboard(
       LIMIT 1
     ), field AS (
       SELECT
+        entry.id AS entry_id,
         entry.*,
         profile.provider_profile_id,
         profile.gender,
@@ -275,6 +321,14 @@ export async function getAdminSwipeRankLeaderboard(
         profile.country,
         profile_media.photo_url,
         profile_media.photo_count,
+        ai_review.id AS ai_review_id,
+        ai_review.verdict AS ai_review_verdict,
+        ai_review.confidence AS ai_review_confidence,
+        ai_review.summary AS ai_review_summary,
+        ai_review.recommended_action AS ai_review_recommended_action,
+        ai_review.signals AS ai_review_signals,
+        ai_review.model AS ai_review_model,
+        ai_review.reviewed_at AS ai_reviewed_at,
         snapshot.published_at
       FROM selected_snapshot snapshot
       JOIN swipe_rank_entry entry ON entry.snapshot_id = snapshot.id
@@ -285,9 +339,17 @@ export async function getAdminSwipeRankLeaderboard(
         WHERE media.tinder_profile_id = profile.provider_profile_id
           AND media.type IN ('image', 'photo')
       ) profile_media ON true
+      LEFT JOIN LATERAL (
+        SELECT review.*
+        FROM swipe_rank_ai_review review
+        WHERE review.entry_id = entry.id
+        ORDER BY review.reviewed_at DESC, review.id DESC
+        LIMIT 1
+      ) ai_review ON true
       WHERE profile.is_synthetic = false
         AND profile.is_swipe_rank_excluded = false
         ${conditions}
+        ${aiReviewCondition}
     ), ranked AS (
       SELECT
         field.*,
@@ -322,6 +384,7 @@ export async function getAdminSwipeRankLeaderboard(
     eligibilityVersion: SWIPE_RANK_ELIGIBILITY_VERSION,
     period: input.period,
     filters,
+    aiReview: input.aiReview ?? "ALL",
     eligibility: getSwipeRankEligibility(input.period.kind),
     asOf: summary?.as_of ? asDate(summary.as_of) : null,
     totalFactCount: fieldSize,
@@ -331,6 +394,7 @@ export async function getAdminSwipeRankLeaderboard(
     totalPages: Math.ceil(fieldSize / input.limit),
     entries: result.rows.flatMap((row) => {
       if (
+        row.entry_id === null ||
         row.profile_id === null ||
         row.provider_profile_id === null ||
         row.filtered_rank === null ||
@@ -342,6 +406,7 @@ export async function getAdminSwipeRankLeaderboard(
       return [
         {
           profileId: row.profile_id,
+          entryId: row.entry_id,
           providerProfileId: row.provider_profile_id,
           gender: row.gender,
           interestedIn: row.interested_in,
@@ -359,6 +424,19 @@ export async function getAdminSwipeRankLeaderboard(
           observedDays: number(row.observed_days),
           qualityFlags: row.quality_flags ?? [],
           hasQualityAnomaly: (row.quality_flags?.length ?? 0) > 0,
+          aiReview:
+            row.ai_review_id && row.ai_review_verdict
+              ? {
+                  id: row.ai_review_id,
+                  verdict: row.ai_review_verdict,
+                  confidence: number(row.ai_review_confidence),
+                  summary: row.ai_review_summary ?? "",
+                  recommendedAction: row.ai_review_recommended_action ?? "",
+                  signals: row.ai_review_signals ?? [],
+                  model: row.ai_review_model ?? "",
+                  reviewedAt: asDate(row.ai_reviewed_at!),
+                }
+              : null,
           computedAt: asDate(row.as_of!),
           rank,
           tieCount: number(row.filtered_tie_count),

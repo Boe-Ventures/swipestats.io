@@ -44,6 +44,7 @@
     "swipe-rank:inspect-facts": "bun run src/scripts/swipe-rank/inspect-profile-facts.ts",
     "swipe-rank:moderate": "bun run src/scripts/swipe-rank/moderate-profile.ts",
     "swipe-rank:publish": "bun run src/scripts/swipe-rank/publish-previous-month.ts",
+    "swipe-rank:review": "bun run src/scripts/swipe-rank/review-cohort.ts",
     "swipe-rank:validate": "bun run src/scripts/swipe-rank/validate-period-facts.ts",
     "test": "bun test",
     "typecheck": "velite build && tsc --noEmit",

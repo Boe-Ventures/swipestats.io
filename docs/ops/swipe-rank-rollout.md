@@ -14,10 +14,12 @@ published snapshots.
    Vercel Preview deployment.
 2. Run `bun check`.
 3. Confirm production has applied migrations through
-   `0010_swipe_rank_and_upload_pipeline` and has not applied `0011` or `0012`.
+   `0010_swipe_rank_and_upload_pipeline` and has not applied `0011`, `0012`, or
+   `0013`.
 4. Confirm the production Vercel environment contains `DATABASE_URL`,
    `CRON_SECRET`, and either `SWIPE_RANK_PUBLIC_ID_SECRET` or
-   `BETTER_AUTH_SECRET`.
+   `BETTER_AUTH_SECRET`. Confirm `ANTHROPIC_API_KEY` is available to the
+   production runtime for the Sonnet 5 review job.
 5. Rehearse `bun db:migrate` and `bun run swipe-rank:publish -- --confirm-write`
    on an expiring Neon branch created from production.
 6. Verify the rehearsal produces a published snapshot, matching entry and field
@@ -26,8 +28,8 @@ published snapshots.
 ## Deploy
 
 The production Vercel build runs `bun db:migrate` after the application build.
-Migrations `0011` and `0012` are additive. A failed migration prevents the new
-deployment from becoming active.
+Migrations `0011`, `0012`, and `0013` are additive. A failed migration prevents
+the new deployment from becoming active.
 
 After Vercel reports a successful production deployment:
 
@@ -62,6 +64,13 @@ Then verify:
 3. `/leaderboard` renders the full field and does not offer an open period.
 4. An eligible owner sees the same closed season on `/insights`.
 5. `/admin/swipe-rank` shows the snapshot and retains profile view and ban tools.
+
+Run `/api/cron/swipe-rank-review` after publication. It must return `ok: true`,
+50 completed profiles when the field has at least 50 entries, zero failures,
+and a bounded `verdictCounts` object. Then verify the Sonnet review filter and
+summaries in `/admin/swipe-rank`. Every `NEEDS_REVIEW` or
+`EXCLUDE_RECOMMENDED` result must appear in the reversible hold list and remain
+outside public fields until an administrator restores it.
 
 The publisher is idempotent. A retry should return `alreadyPublished: true`
 without creating a build or snapshot.
