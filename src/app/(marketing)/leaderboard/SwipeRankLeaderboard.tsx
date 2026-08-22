@@ -191,14 +191,6 @@ export function SwipeRankLeaderboard() {
       availablePeriods.data?.periods,
     );
   }, [availablePeriods.data?.periods, kind]);
-  const periodSelectItems = useMemo(
-    () =>
-      options.map((period) => ({
-        value: swipeRankPeriodKey(period),
-        label: formatSwipeRankPeriodLabel(period),
-      })),
-    [options],
-  );
   const quickJumps = useMemo(
     () => resolveLeaderboardQuickJumps(availablePeriods.data?.periods),
     [availablePeriods.data?.periods],
@@ -353,7 +345,7 @@ export function SwipeRankLeaderboard() {
                     className="h-11 bg-white sm:w-44"
                     aria-label="Competition length"
                   >
-                    <SelectValue />
+                    <SelectValue>{KIND_LABELS[kind]}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {Object.entries(KIND_LABELS).map(([value, label]) => (
@@ -369,7 +361,6 @@ export function SwipeRankLeaderboard() {
                       ? swipeRankPeriodKey(selected)
                       : undefined
                   }
-                  items={periodSelectItems}
                   disabled={options.length === 0}
                   onValueChange={(value) => {
                     if (value === null) return;
@@ -381,9 +372,11 @@ export function SwipeRankLeaderboard() {
                     className="h-11 bg-white sm:w-56"
                     aria-label="Competition season"
                   >
-                    <SelectValue
-                      placeholder={`No published ${KIND_NOUNS[kind]}s`}
-                    />
+                    <SelectValue>
+                      {options.length > 0
+                        ? periodLabel
+                        : `No published ${KIND_NOUNS[kind]}s`}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {options.map((period) => (
