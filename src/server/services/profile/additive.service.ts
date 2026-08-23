@@ -43,13 +43,9 @@ import {
   type TinderProfileResult,
   transformTinderPhotosToMedia,
 } from "./profile.service";
-import {
-  lockTinderProfileUploadInTx,
-  lockTinderSwipeRankMutationsInTx,
-  purgeTinderSwipeRankProfilesInTx,
-  scheduleTinderSwipeRankRefresh,
-} from "../swipe-rank/lifecycle.service";
+import { purgeTinderSwipeRankProfilesInTx } from "../swipe-rank/lifecycle.service";
 import { invalidatePublicSwipeRankCache } from "../swipe-rank/public-cache";
+import { lockTinderProfileUploadInTx } from "./upload-lock";
 import {
   lockTransientUploadForMutationInTx,
   markTransientUploadCommittedInTx,
@@ -504,7 +500,6 @@ export async function absorbProfileIntoNew(data: {
 
   const profile = await withTransaction(async (tx) => {
     await lockTransientUploadForMutationInTx(tx, data.transientUpload);
-    await lockTinderSwipeRankMutationsInTx(tx);
     // Cross-account merges touch two profile identities. Sort the lock keys so
     // concurrent merges cannot deadlock while moving rows between accounts.
     for (const tinderId of [data.oldTinderId, data.newTinderId].sort((a, b) =>
@@ -808,7 +803,6 @@ export async function absorbProfileIntoNew(data: {
 
   const totalTime = Date.now() - startTime;
   invalidatePublicSwipeRankCache();
-  scheduleTinderSwipeRankRefresh([data.newTinderId]);
   console.log(
     `\n✅ Cross-account merge complete: ${data.oldTinderId} → ${data.newTinderId}`,
   );
@@ -892,7 +886,6 @@ export async function additiveUpdateProfile(data: {
 
   const profile = await withTransaction(async (tx) => {
     await lockTransientUploadForMutationInTx(tx, data.transientUpload);
-    await lockTinderSwipeRankMutationsInTx(tx);
     await lockTinderProfileUploadInTx(tx, data.tinderId);
     const existingIdentity = await tx.query.tinderProfileTable.findFirst({
       where: and(
@@ -1120,7 +1113,6 @@ export async function additiveUpdateProfile(data: {
   });
 
   const totalTime = Date.now() - startTime;
-  scheduleTinderSwipeRankRefresh([data.tinderId]);
   console.log(`\n✅ Additive update complete for ${data.tinderId}`);
   console.log(
     `⏱️  Total time: ${totalTime}ms (${(totalTime / 1000).toFixed(2)}s)\n`,

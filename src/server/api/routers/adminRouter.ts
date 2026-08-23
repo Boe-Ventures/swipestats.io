@@ -31,10 +31,7 @@ import {
   getComparisonForAdmin,
 } from "@/server/services/profile-comparison.service";
 import { withTransaction } from "@/server/db";
-import {
-  lockTinderSwipeRankMutationsInTx,
-  purgeTinderSwipeRankProfilesInTx,
-} from "@/server/services/swipe-rank/lifecycle.service";
+import { purgeTinderSwipeRankProfilesInTx } from "@/server/services/swipe-rank/lifecycle.service";
 import { invalidatePublicSwipeRankCache } from "@/server/services/swipe-rank/public-cache";
 import { lockHingeAdminProfileMutationInTx } from "@/server/services/hinge/hinge-upload-lock";
 
@@ -98,7 +95,6 @@ export const adminRouter = {
       // Live facts cascade from the SwipeRank registry; frozen snapshot rows
       // detach, and source children cascade from tinder_profile.
       await withTransaction(async (tx) => {
-        await lockTinderSwipeRankMutationsInTx(tx);
         await purgeTinderSwipeRankProfilesInTx(tx, [input.tinderId]);
         await tx
           .delete(tinderProfileTable)

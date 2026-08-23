@@ -113,7 +113,7 @@ export async function applyTinderCalendarDateRepair(
       hashtextextended(${swipeRankBuildLockName("TINDER")}, 0)
     )
   `);
-  const usageRepair = await tx.execute<{ changed_rows: number | string }>(sql`
+  await tx.execute<{ changed_rows: number | string }>(sql`
     WITH canonical AS (
       SELECT
         usage.tinder_profile_id,
@@ -146,7 +146,7 @@ export async function applyTinderCalendarDateRepair(
     SELECT count(*)::int AS changed_rows FROM updated
   `);
 
-  const profileRepair = await tx.execute<{ changed_rows: number | string }>(sql`
+  await tx.execute<{ changed_rows: number | string }>(sql`
     WITH bounds AS (
       SELECT
         usage.tinder_profile_id,
@@ -188,7 +188,7 @@ export async function applyTinderCalendarDateRepair(
     SELECT count(*)::int AS changed_rows FROM updated
   `);
 
-  const metadataRepair = await tx.execute<{
+  await tx.execute<{
     changed_rows: number | string;
   }>(sql`
     WITH aggregate AS (
@@ -291,16 +291,6 @@ export async function applyTinderCalendarDateRepair(
       RETURNING 1
     )
     SELECT count(*)::int AS changed_rows FROM updated
-  `);
-
-  const changedRows = [usageRepair, profileRepair, metadataRepair].reduce(
-    (sum, result) => sum + Number(result.rows[0]?.changed_rows ?? 0),
-    0,
-  );
-  await tx.execute(sql`
-    INSERT INTO swipe_rank_source_mutation (data_provider, created_at)
-    SELECT 'TINDER', now()
-    WHERE ${changedRows} > 0
   `);
 
   const postcondition = await tx.execute<{
@@ -453,7 +443,7 @@ async function main(): Promise<void> {
     tinderId,
     before,
     after,
-    note: "The raw provider date prefix is authoritative. Apply mode changes SwipeRank age and profile-range inputs. Immediately run `bun run swipe-rank:launch -- --confirm-write` against the same database before treating SwipeRank as fresh.",
+    note: "The raw provider date prefix is authoritative. Apply mode changes future monthly SwipeRank inputs. Published seasons remain frozen; the next monthly build reads the repaired canonical source.",
   };
 
   if (hasFlag("--json")) {

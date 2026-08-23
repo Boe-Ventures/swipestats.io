@@ -3,10 +3,11 @@ import { eq, sql, type SQL } from "drizzle-orm";
 import { db } from "@/server/db";
 import { tinderProfileTable } from "@/server/db/schema";
 import { swipeRankCountryFilterSql } from "@/server/services/swipe-rank/country-filter";
+import { getSwipeRankEligibility } from "@/server/services/swipe-rank/eligibility";
 import {
-  getDefaultEligibility,
-  parseSwipeRankPeriod,
-} from "@/scripts/swipe-rank/periods";
+  parseClosedSwipeRankPeriod,
+  previousCalendarMonth,
+} from "@/server/services/swipe-rank/periods";
 
 import {
   getFlagValue,
@@ -420,23 +421,27 @@ async function main(): Promise<void> {
     throw new Error("--age-min cannot be greater than --age-max.");
   }
 
-  const period = parseSwipeRankPeriod(getFlagValue("--period") ?? "all-time");
-  const defaults = getDefaultEligibility(period.kind);
-  const minLikes = getIntegerFlag("--min-likes") ?? defaults.minLikes;
+  const defaultPeriod = previousCalendarMonth().start.slice(0, 7);
+  const period = parseClosedSwipeRankPeriod(
+    getFlagValue("--period") ?? defaultPeriod,
+  );
+  const defaults = getSwipeRankEligibility(period.kind);
+  const minLikes =
+    getIntegerFlag("--min-likes") ?? defaults.minimumRateDenominator;
   const minActiveDays =
-    getIntegerFlag("--min-active-days") ?? defaults.minActiveDays;
+    getIntegerFlag("--min-active-days") ?? defaults.minimumActiveDays;
 
   const rawProbe = await computeProbe(
     descriptor,
     targetId,
-    period.startDate,
-    period.endDate,
+    period.start,
+    period.end,
     minLikes,
     minActiveDays,
   );
   const normalized = normalizeProbe(rawProbe);
   const monthlySeries = hasFlag("--series")
-    ? await computeMonthlySeries(descriptor, period.startDate, period.endDate)
+    ? await computeMonthlySeries(descriptor, period.start, period.end)
     : undefined;
 
   const result = {

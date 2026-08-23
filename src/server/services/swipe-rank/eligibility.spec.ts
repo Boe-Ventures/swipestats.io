@@ -19,10 +19,9 @@ describe("SwipeRank eligibility v1", () => {
       minimumRateDenominator: 500,
       minimumActiveDays: 40,
     });
-    expect(getSwipeRankEligibility("ALL_TIME")).toEqual({
-      minimumRateDenominator: 1_000,
-      minimumActiveDays: 40,
-    });
+    expect(() => getSwipeRankEligibility("ALL_TIME")).toThrow(
+      "does not publish all-time",
+    );
   });
 
   test("requires both the denominator and active-day minimum", () => {

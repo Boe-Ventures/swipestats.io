@@ -48,8 +48,7 @@
  *           - Aggregated statistics for each profile
  *           - Enables quick analytics queries
  *
- *   SwipeRank period facts and descriptor cohorts are built separately with:
- *     bun run swipe-rank:launch -- --confirm-write
+ *   SwipeRank is built and published separately by the monthly publisher.
  *
  * ============================================================================
  * POST-MIGRATION
@@ -204,9 +203,8 @@ async function main() {
     console.log(`Total time: ${formatDuration(totalDuration)}`);
     console.log("");
     console.log("Next steps:");
-    console.log("  1. Run: bun run swipe-rank:launch -- --confirm-write");
-    console.log("  2. Start your dev server: bun dev");
-    console.log("  3. Verify SwipeRank and private benchmarks");
+    console.log("  1. Start your dev server: bun dev");
+    console.log("  2. Verify the migrated profile insights");
     console.log("");
     printSuccess("Your database is ready to use!");
   } catch (error) {

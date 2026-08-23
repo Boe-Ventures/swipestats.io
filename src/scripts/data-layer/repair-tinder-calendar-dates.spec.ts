@@ -15,7 +15,7 @@ function queryText(query: SQL): string {
 }
 
 describe("Tinder calendar-date repair", () => {
-  test("journals, canonicalizes usage dates, and repairs profile aggregates", async () => {
+  test("canonicalizes usage dates and repairs profile aggregates", async () => {
     const queries: SQL[] = [];
     const tx = {
       execute: async (query: SQL) => {
@@ -26,7 +26,7 @@ describe("Tinder calendar-date repair", () => {
 
     await applyTinderCalendarDateRepair(tx, "profile-1");
 
-    expect(queries).toHaveLength(6);
+    expect(queries).toHaveLength(5);
     expect(queryText(queries[0]!)).toContain("pg_advisory_xact_lock");
     expect(queryText(queries[0]!)).not.toContain(
       "pg_advisory_xact_lock_shared",
@@ -43,13 +43,9 @@ describe("Tinder calendar-date repair", () => {
 
     expect(queryText(queries[2]!)).toContain("update tinder_profile");
     expect(queryText(queries[3]!)).toContain("update profile_meta");
-    expect(queryText(queries[4]!)).toContain(
-      "insert into swipe_rank_source_mutation",
-    );
-    expect(queryText(queries[4]!)).toContain("where");
-    expect(queryText(queries[5]!)).toContain("missing_meta");
-    expect(queryText(queries[5]!)).toContain("usage_mismatches");
-    expect(queryText(queries[5]!)).toContain("metadata_mismatches");
+    expect(queryText(queries[4]!)).toContain("missing_meta");
+    expect(queryText(queries[4]!)).toContain("usage_mismatches");
+    expect(queryText(queries[4]!)).toContain("metadata_mismatches");
   });
 
   test("rolls back when a selected profile still lacks metadata", async () => {
@@ -57,7 +53,7 @@ describe("Tinder calendar-date repair", () => {
     const tx = {
       execute: async () => {
         queryCount++;
-        return queryCount === 6
+        return queryCount === 5
           ? {
               rows: [
                 {

@@ -12,8 +12,6 @@ interface ActivationStateRow extends Record<string, unknown> {
   metric_version: string;
   latest_complete_full_build_id: string | null;
   foreign_fact_count: number | string;
-  source_generation: number | string | null;
-  current_generation: number | string;
 }
 
 export interface TinderSwipeRankActivationState {
@@ -21,8 +19,6 @@ export interface TinderSwipeRankActivationState {
   scope: "FULL" | "PROFILE";
   latestCompleteFullBuildId: string | null;
   foreignFactCount: number;
-  sourceGeneration: number | null;
-  currentGeneration: number;
 }
 
 /** Pure activation contract, shared with focused tests. */
@@ -45,20 +41,12 @@ export function assertTinderSwipeRankBuildCanActivate(
       `SwipeRank facts changed after build ${buildId} validation.`,
     );
   }
-  if (
-    state.sourceGeneration === null ||
-    state.sourceGeneration !== state.currentGeneration
-  ) {
-    throw new Error(
-      `Tinder source data changed after build ${buildId} validation.`,
-    );
-  }
 }
 
 /**
  * Product reads are enabled only when the newest completed FULL build was
  * explicitly activated after validation. A newly committed full replacement
- * therefore makes reads dark until launch validation succeeds; an older
+ * therefore makes reads dark until publication validation succeeds; an older
  * activation cannot accidentally bless newer facts.
  */
 export function completedFullSwipeRankBuildSql(
@@ -92,10 +80,9 @@ export async function isSwipeRankReady(
 /**
  * Activate one independently validated FULL build.
  *
- * Validation runs outside this transaction because it deliberately executes
- * several independent parity queries. Before activation we reacquire the
- * provider-wide exclusive lock and prove that neither a source mutation nor a
- * scoped/full fact replacement happened during that validation window.
+ * Validation runs outside this transaction because it executes several parity
+ * queries. Before activation we reacquire the provider-wide exclusive lock and
+ * prove that the monthly fact replacement did not change during validation.
  */
 export async function activateTinderSwipeRankBuild(
   buildId: string,
@@ -129,14 +116,7 @@ export async function activateTinderSwipeRankBuild(
             WHERE profile.data_provider = 'TINDER'
               AND fact.metric_version = candidate.metric_version
               AND fact.build_id <> candidate.id
-          )::bigint AS foreign_fact_count,
-          (candidate.source_watermark ->> 'sourceGeneration')::bigint
-            AS source_generation,
-          coalesce((
-            SELECT max(mutation.id)
-            FROM swipe_rank_source_mutation mutation
-            WHERE mutation.data_provider = 'TINDER'
-          ), 0)::bigint AS current_generation
+          )::bigint AS foreign_fact_count
         FROM swipe_rank_build candidate
         WHERE candidate.id = ${buildId}
           AND candidate.data_provider = 'TINDER'
@@ -150,11 +130,6 @@ export async function activateTinderSwipeRankBuild(
         scope: state.scope,
         latestCompleteFullBuildId: state.latest_complete_full_build_id,
         foreignFactCount: Number(state.foreign_fact_count),
-        sourceGeneration:
-          state.source_generation === null
-            ? null
-            : Number(state.source_generation),
-        currentGeneration: Number(state.current_generation),
       });
 
       const activatedAt = new Date();

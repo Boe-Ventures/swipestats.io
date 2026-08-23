@@ -4,7 +4,6 @@ export interface LeaderboardPeriodOption {
   kind: SwipeRankPeriodKind;
   start: string;
   end: string;
-  live: boolean;
 }
 
 export interface ObservedPeriod {
@@ -16,159 +15,106 @@ export interface ObservedPeriod {
 }
 
 export interface LeaderboardQuickJump {
-  key: "ALL_TIME" | "LAST_QUARTER" | "LAST_MONTH" | "LAST_YEAR";
+  key: "LAST_MONTH" | "LAST_QUARTER" | "LAST_YEAR";
   label: string;
   period: LeaderboardPeriodOption;
-}
-
-function calendarDate(year: number, monthIndex: number, day = 1) {
-  return new Date(Date.UTC(year, monthIndex, day));
 }
 
 function dateString(value: Date) {
   return value.toISOString().slice(0, 10);
 }
 
+/** Closed placeholders are used only while the published inventory loads. */
 export function generatedPeriodOptions(
   kind: SwipeRankPeriodKind,
   today = new Date(),
 ): LeaderboardPeriodOption[] {
-  const year = today.getUTCFullYear();
-  const month = today.getUTCMonth();
-  const todayString = dateString(today);
-
-  if (kind === "ALL_TIME") {
+  const currentMonth = new Date(
+    Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1),
+  );
+  const previousDay = new Date(currentMonth);
+  previousDay.setUTCDate(0);
+  const year = previousDay.getUTCFullYear();
+  const month = previousDay.getUTCMonth();
+  if (kind === "MONTH") {
+    const start = new Date(Date.UTC(year, month, 1));
     return [
       {
         kind,
-        start: "0001-01-01",
-        end: "9999-01-01",
-        live: true,
+        start: dateString(start),
+        end: dateString(currentMonth),
       },
     ];
   }
-
-  const count = kind === "MONTH" ? 36 : kind === "QUARTER" ? 16 : 10;
-  return Array.from({ length: count }, (_, index): LeaderboardPeriodOption => {
-    if (kind === "MONTH") {
-      const start = calendarDate(year, month - index);
-      const end = calendarDate(start.getUTCFullYear(), start.getUTCMonth() + 1);
-      return {
+  if (kind === "QUARTER") {
+    const startMonth = Math.floor(month / 3) * 3;
+    const start = new Date(Date.UTC(year, startMonth, 1));
+    const end = new Date(Date.UTC(year, startMonth + 3, 1));
+    if (end > currentMonth) start.setUTCMonth(start.getUTCMonth() - 3);
+    const closedEnd = new Date(
+      Date.UTC(start.getUTCFullYear(), start.getUTCMonth() + 3, 1),
+    );
+    return [
+      {
         kind,
         start: dateString(start),
-        end: dateString(end),
-        live: todayString < dateString(end),
-      };
-    }
-
-    if (kind === "QUARTER") {
-      const currentQuarterStart = Math.floor(month / 3) * 3;
-      const start = calendarDate(year, currentQuarterStart - index * 3);
-      const end = calendarDate(start.getUTCFullYear(), start.getUTCMonth() + 3);
-      return {
-        kind,
-        start: dateString(start),
-        end: dateString(end),
-        live: todayString < dateString(end),
-      };
-    }
-
-    const start = calendarDate(year - index, 0);
-    const end = calendarDate(year - index + 1, 0);
-    return {
+        end: dateString(closedEnd),
+      },
+    ];
+  }
+  const closedYear = currentMonth.getUTCMonth() === 0 ? year : year - 1;
+  return [
+    {
       kind,
-      start: dateString(start),
-      end: dateString(end),
-      live: todayString < dateString(end),
-    };
-  });
+      start: `${closedYear}-01-01`,
+      end: `${closedYear + 1}-01-01`,
+    },
+  ];
 }
 
 export function resolveLeaderboardPeriodOptions(
   kind: SwipeRankPeriodKind,
   observedPeriods: readonly ObservedPeriod[] | undefined,
-  today = new Date(),
 ): LeaderboardPeriodOption[] {
-  const todayString = dateString(today);
-  const observed = observedPeriods
-    ?.filter((item) => item.period.kind === kind)
-    .map(
-      (item): LeaderboardPeriodOption => ({
-        ...item.period,
-        live: kind === "ALL_TIME" || todayString < item.period.end,
-      }),
-    )
-    .sort((left, right) => right.start.localeCompare(left.start));
-
-  return observed && observed.length > 0
-    ? observed
-    : generatedPeriodOptions(kind, today);
+  return (
+    observedPeriods
+      ?.filter((item) => item.period.kind === kind)
+      .map((item) => item.period)
+      .sort((left, right) => right.start.localeCompare(left.start)) ?? []
+  );
 }
 
 export function preferredLeaderboardPeriod(
   options: readonly LeaderboardPeriodOption[],
   kind: SwipeRankPeriodKind,
 ): LeaderboardPeriodOption {
-  const newestFirst = [...options].sort((left, right) =>
-    right.start.localeCompare(left.start),
-  );
-  const preferred =
-    kind === "MONTH"
-      ? (newestFirst.find((period) => !period.live) ?? newestFirst[0])
-      : newestFirst[0];
-
-  if (!preferred) {
-    throw new Error(`No ${kind} leaderboard periods are available.`);
-  }
+  const preferred = options[0];
+  if (!preferred) throw new Error(`No ${kind} leaderboard is available.`);
   return preferred;
 }
 
-/** Curated shortcuts use completed calendar periods, except all time. */
 export function resolveLeaderboardQuickJumps(
   observedPeriods: readonly ObservedPeriod[] | undefined,
-  today = new Date(),
 ): LeaderboardQuickJump[] {
   if (!observedPeriods) return [];
-  const observed = observedPeriods;
-  const todayString = dateString(today);
-
-  function newest(
-    kind: SwipeRankPeriodKind,
-    completedOnly: boolean,
-  ): LeaderboardPeriodOption | undefined {
-    return observed
-      .filter(
-        (item) =>
-          item.period.kind === kind &&
-          (!completedOnly || item.period.end <= todayString),
-      )
-      .map((item) => ({
-        ...item.period,
-        live: kind === "ALL_TIME" || todayString < item.period.end,
-      }))
-      .sort((left, right) => right.start.localeCompare(left.start))[0];
-  }
-
-  return [
+  const definitions = [
     {
-      key: "ALL_TIME" as const,
-      label: "All time",
-      period: newest("ALL_TIME", false),
-    },
-    {
-      key: "LAST_QUARTER" as const,
-      label: "Last quarter",
-      period: newest("QUARTER", true),
-    },
-    {
+      kind: "MONTH" as const,
       key: "LAST_MONTH" as const,
-      label: "Last month",
-      period: newest("MONTH", true),
+      label: "Latest month",
     },
     {
-      key: "LAST_YEAR" as const,
-      label: "Last year",
-      period: newest("YEAR", true),
+      kind: "QUARTER" as const,
+      key: "LAST_QUARTER" as const,
+      label: "Latest quarter",
     },
-  ].flatMap((item) => (item.period ? [item as LeaderboardQuickJump] : []));
+    { kind: "YEAR" as const, key: "LAST_YEAR" as const, label: "Latest year" },
+  ];
+  return definitions.flatMap((definition) => {
+    const period = resolveLeaderboardPeriodOptions(
+      definition.kind,
+      observedPeriods,
+    )[0];
+    return period ? [{ ...definition, period }] : [];
+  });
 }

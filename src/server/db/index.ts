@@ -87,8 +87,7 @@ export async function withTransaction<T>(
  * use different PostgreSQL backends. A transaction-scoped lock is pinned to
  * this transaction. READ COMMITTED is deliberate: if the first lock statement
  * blocks, later statements take their snapshots only after the predecessor has
- * committed. Source writers take the matching shared lock before mutation, so
- * the source remains stable for the rest of this exclusive transaction.
+ * committed. Callers use matching locks for the state they need to serialize.
  */
 export async function withAdvisoryLockTransaction<T>(
   lockName: string,

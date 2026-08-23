@@ -162,6 +162,12 @@ export const swipeRankSnapshotStatusEnum = pgEnum("SwipeRankSnapshotStatus", [
   "ARCHIVED",
 ]);
 
+export const swipeRankAiReviewVerdictEnum = pgEnum("SwipeRankAiReviewVerdict", [
+  "CLEAR",
+  "NEEDS_REVIEW",
+  "EXCLUDE_RECOMMENDED",
+]);
+
 export const catalogVerificationStatusEnum = pgEnum(
   "catalog_verification_status",
   ["UNVERIFIED", "VERIFIED"],
@@ -243,6 +249,8 @@ export type SwipeRankBuildScope =
   (typeof swipeRankBuildScopeEnum.enumValues)[number];
 export type SwipeRankSnapshotStatus =
   (typeof swipeRankSnapshotStatusEnum.enumValues)[number];
+export type SwipeRankAiReviewVerdict =
+  (typeof swipeRankAiReviewVerdictEnum.enumValues)[number];
 export type TransientUploadStatus =
   (typeof transientUploadStatusEnum.enumValues)[number];
 
@@ -1077,11 +1085,8 @@ export type SwipeRankProfile = typeof swipeRankProfileTable.$inferSelect;
 export type SwipeRankProfileInsert = typeof swipeRankProfileTable.$inferInsert;
 
 /**
- * Privacy-safe source mutation journal used to prove snapshot lineage.
- *
- * Rows contain no user or provider identifier. The monotonically increasing
- * ID changes whenever an application transaction mutates Tinder source or
- * ownership state; a FULL fact build records the latest visible ID.
+ * Legacy privacy-safe source mutation journal retained for migration history.
+ * Closed-season publication does not write or read this table.
  */
 export const swipeRankSourceMutationTable = pgTable(
   "swipe_rank_source_mutation",
@@ -1150,9 +1155,8 @@ export type SwipeRankBuild = typeof swipeRankBuildTable.$inferSelect;
 export type SwipeRankBuildInsert = typeof swipeRankBuildTable.$inferInsert;
 
 /**
- * Versioned period facts. Periods are half-open [periodStart, periodEnd).
- * MONTH is the canonical stored grain; broader grains are sums of month facts.
- * ALL_TIME uses the fixed [0001-01-01, 9999-01-01) sentinel interval.
+ * Versioned period facts. New builds store completed calendar months only.
+ * Broader enum values and constraints remain for existing shared data.
  */
 export const swipeRankPeriodFactTable = pgTable(
   "swipe_rank_period_fact",
@@ -1380,6 +1384,14 @@ export const swipeRankEntryTable = pgTable(
     metricNumerator: t.bigint({ mode: "number" }).notNull(),
     metricDenominator: t.bigint({ mode: "number" }).notNull(),
     metricValue: t.doublePrecision().notNull(),
+    likeRateNumerator: t.bigint({ mode: "number" }),
+    likeRateDenominator: t.bigint({ mode: "number" }),
+    likeRate: t.doublePrecision(),
+    swipesPerActiveDay: t.doublePrecision(),
+    ageInPeriod: t.integer(),
+    activeDays: t.integer(),
+    observedDays: t.integer(),
+    observedHistoryDays: t.integer(),
     qualityFlags: t.jsonb().$type<string[]>().default([]).notNull(),
     createdAt: t
       .timestamp()
@@ -1408,6 +1420,84 @@ export const swipeRankEntryTable = pgTable(
 
 export type SwipeRankEntry = typeof swipeRankEntryTable.$inferSelect;
 export type SwipeRankEntryInsert = typeof swipeRankEntryTable.$inferInsert;
+
+/**
+ * One reproducible Sonnet review for a frozen SwipeRank entry.
+ *
+ * Reviews are advisory. A human admin owns the separate exclusion decision.
+ * The evidence summary deliberately omits raw message text and image bytes.
+ */
+export const swipeRankAiReviewTable = pgTable(
+  "swipe_rank_ai_review",
+  (t) => ({
+    id: t
+      .text()
+      .primaryKey()
+      .$defaultFn(() => createId("srr")),
+    entryId: t
+      .text()
+      .notNull()
+      .references(() => swipeRankEntryTable.id, { onDelete: "cascade" }),
+    reviewVersion: t.text().notNull(),
+    model: t.text().notNull(),
+    verdict: swipeRankAiReviewVerdictEnum().notNull(),
+    confidence: t.doublePrecision().notNull(),
+    summary: t.text().notNull(),
+    recommendedAction: t.text().notNull(),
+    signals: t
+      .jsonb()
+      .$type<
+        Array<{
+          category: string;
+          severity: string;
+          finding: string;
+          evidence: string;
+        }>
+      >()
+      .default([])
+      .notNull(),
+    evidenceSummary: t
+      .jsonb()
+      .$type<Record<string, unknown>>()
+      .default({})
+      .notNull(),
+    modelInputHash: t.text().notNull(),
+    reviewedBy: t.text().notNull(),
+    reviewedAt: t
+      .timestamp()
+      .$defaultFn(() => new Date())
+      .notNull(),
+    createdAt: t
+      .timestamp()
+      .$defaultFn(() => new Date())
+      .notNull(),
+    updatedAt: t
+      .timestamp()
+      .$defaultFn(() => new Date())
+      .$onUpdate(() => new Date())
+      .notNull(),
+  }),
+  (table) => [
+    uniqueIndex("swipe_rank_ai_review_entry_version_model_idx").on(
+      table.entryId,
+      table.reviewVersion,
+      table.model,
+    ),
+    index("swipe_rank_ai_review_queue_idx").on(table.verdict, table.reviewedAt),
+    check(
+      "swipe_rank_ai_review_confidence",
+      sql`${table.confidence} >= 0 AND ${table.confidence} <= 1`,
+    ),
+    check(
+      "swipe_rank_ai_review_text",
+      sql`nullif(btrim(${table.summary}), '') IS NOT NULL AND nullif(btrim(${table.recommendedAction}), '') IS NOT NULL AND nullif(btrim(${table.reviewedBy}), '') IS NOT NULL`,
+    ),
+  ],
+);
+
+export type SwipeRankAiReview = typeof swipeRankAiReviewTable.$inferSelect;
+export type SwipeRankAiReviewInsert =
+  typeof swipeRankAiReviewTable.$inferInsert;
 
 // ---- SUPPORT TABLES -----------------------------------------------
 
@@ -1891,6 +1981,60 @@ export type OriginalAnonymizedFile =
   typeof originalAnonymizedFileTable.$inferSelect;
 export type OriginalAnonymizedFileInsert =
   typeof originalAnonymizedFileTable.$inferInsert;
+
+/**
+ * Immutable private-object history for every accepted Tinder export.
+ *
+ * The JSON body stays in a dedicated private Blob store. Postgres retains the
+ * profile link and integrity/provenance metadata needed to compare revisions.
+ */
+export const tinderExportRevisionTable = pgTable(
+  "tinder_export_revision",
+  (t) => ({
+    id: t.text().primaryKey(),
+    tinderProfileId: t
+      .text()
+      .notNull()
+      .references(() => tinderProfileTable.tinderId, { onDelete: "cascade" }),
+    blobUrl: t.text().notNull(),
+    blobPathname: t.text().notNull(),
+    blobEtag: t.text().notNull(),
+    contentSha256: t.text().notNull(),
+    contentLength: t.bigint({ mode: "number" }).notNull(),
+    swipestatsVersion: swipestatsVersionEnum().notNull(),
+    transportUploadId: t.text(),
+    acceptedAt: t
+      .timestamp()
+      .$defaultFn(() => new Date())
+      .notNull(),
+  }),
+  (table) => [
+    index("tinder_export_revision_profile_accepted_idx").on(
+      table.tinderProfileId,
+      table.acceptedAt,
+    ),
+    index("tinder_export_revision_digest_idx").on(
+      table.tinderProfileId,
+      table.contentSha256,
+    ),
+    uniqueIndex("tinder_export_revision_blob_pathname_unique").on(
+      table.blobPathname,
+    ),
+    check(
+      "tinder_export_revision_sha256",
+      sql`${table.contentSha256} ~ '^[0-9a-f]{64}$'`,
+    ),
+    check(
+      "tinder_export_revision_content_length",
+      sql`${table.contentLength} > 0`,
+    ),
+  ],
+);
+
+export type TinderExportRevision =
+  typeof tinderExportRevisionTable.$inferSelect;
+export type TinderExportRevisionInsert =
+  typeof tinderExportRevisionTable.$inferInsert;
 
 export const purchaseTable = pgTable("purchase", (t) => ({
   id: t.text().primaryKey(),
@@ -2494,6 +2638,7 @@ export const tinderProfileRelations = relations(
       references: [customDataTable.tinderProfileId],
     }),
     purchases: many(purchaseTable),
+    exportRevisions: many(tinderExportRevisionTable),
   }),
 );
 
@@ -2631,7 +2776,7 @@ export const swipeRankSnapshotRelations = relations(
 
 export const swipeRankEntryRelations = relations(
   swipeRankEntryTable,
-  ({ one }) => ({
+  ({ one, many }) => ({
     snapshot: one(swipeRankSnapshotTable, {
       fields: [swipeRankEntryTable.snapshotId],
       references: [swipeRankSnapshotTable.id],
@@ -2639,6 +2784,17 @@ export const swipeRankEntryRelations = relations(
     profile: one(swipeRankProfileTable, {
       fields: [swipeRankEntryTable.profileId],
       references: [swipeRankProfileTable.id],
+    }),
+    aiReviews: many(swipeRankAiReviewTable),
+  }),
+);
+
+export const swipeRankAiReviewRelations = relations(
+  swipeRankAiReviewTable,
+  ({ one }) => ({
+    entry: one(swipeRankEntryTable, {
+      fields: [swipeRankAiReviewTable.entryId],
+      references: [swipeRankEntryTable.id],
     }),
   }),
 );
@@ -2721,6 +2877,16 @@ export const originalAnonymizedFileRelations = relations(
     user: one(userTable, {
       fields: [originalAnonymizedFileTable.userId],
       references: [userTable.id],
+    }),
+  }),
+);
+
+export const tinderExportRevisionRelations = relations(
+  tinderExportRevisionTable,
+  ({ one }) => ({
+    tinderProfile: one(tinderProfileTable, {
+      fields: [tinderExportRevisionTable.tinderProfileId],
+      references: [tinderProfileTable.tinderId],
     }),
   }),
 );

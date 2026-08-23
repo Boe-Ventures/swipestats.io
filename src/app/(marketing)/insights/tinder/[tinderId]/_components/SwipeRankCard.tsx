@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { AlertTriangle, CalendarClock, Trophy, Users } from "lucide-react";
 
@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  DEFAULT_SWIPE_RANK_PERIOD_KIND,
   formatMatchYield,
   formatSwipeRankPeriodLabel,
   swipeRankPeriodKey,
@@ -30,23 +29,11 @@ import { useTRPC } from "@/trpc/react";
 
 import { useTinderProfile } from "../TinderProfileProvider";
 
-type PeriodKind = "MONTH" | "QUARTER" | "YEAR" | "ALL_TIME";
-
-const PERIOD_KIND_LABELS: Record<PeriodKind, string> = {
-  MONTH: "Month",
-  QUARTER: "Quarter",
-  YEAR: "Year",
-  ALL_TIME: "All time",
-};
-
 const FALLBACK_PERIOD = {
-  kind: "ALL_TIME",
-  start: "0001-01-01",
-  end: "9999-01-01",
+  kind: "MONTH",
+  start: "2000-01-01",
+  end: "2000-02-01",
 } as const;
-
-const STALE_FACT_POLL_INTERVAL_MS = 3_000;
-const LIVE_FIELD_POLL_INTERVAL_MS = 30_000;
 
 function formatTopShare(value: number | null) {
   if (value === null) return null;
@@ -97,31 +84,18 @@ function RankBlock({
 export function SwipeRankCard() {
   const trpc = useTRPC();
   const { tinderId } = useTinderProfile();
-  const [selectedKind, setSelectedKind] = useState<PeriodKind>(
-    DEFAULT_SWIPE_RANK_PERIOD_KIND,
-  );
   const [selectedPeriodKey, setSelectedPeriodKey] = useState("");
   const inventory = useQuery(
     trpc.swipeRank.availablePeriods.queryOptions(
       { tinderId },
       {
+        staleTime: 5 * 60 * 1_000,
         refetchOnWindowFocus: true,
-        refetchInterval: (query) =>
-          query.state.data?.periods.length
-            ? LIVE_FIELD_POLL_INTERVAL_MS
-            : STALE_FACT_POLL_INTERVAL_MS,
       },
     ),
   );
   const periods = inventory.data?.periods ?? [];
-  const effectiveKind = periods.some(
-    (item) => item.period.kind === selectedKind,
-  )
-    ? selectedKind
-    : periods[0]?.period.kind;
-  const kindPeriods = periods.filter(
-    (item) => item.period.kind === effectiveKind,
-  );
+  const kindPeriods = periods;
   const selectedPeriod =
     kindPeriods.find(
       (item) => swipeRankPeriodKey(item.period) === selectedPeriodKey,
@@ -134,27 +108,11 @@ export function SwipeRankCard() {
       },
       {
         enabled: Boolean(selectedPeriod),
+        staleTime: 5 * 60 * 1_000,
         refetchOnWindowFocus: true,
-        refetchInterval: (query) =>
-          query.state.data?.isStale
-            ? STALE_FACT_POLL_INTERVAL_MS
-            : LIVE_FIELD_POLL_INTERVAL_MS,
       },
     ),
   );
-  const selectedIsStale = placement.data?.isStale ?? false;
-  const refetchInventory = inventory.refetch;
-
-  useEffect(() => {
-    if (!selectedIsStale) return;
-
-    void refetchInventory();
-    const interval = window.setInterval(() => {
-      void refetchInventory();
-    }, STALE_FACT_POLL_INTERVAL_MS);
-
-    return () => window.clearInterval(interval);
-  }, [refetchInventory, selectedIsStale]);
   const selected = placement.data;
 
   if (inventory.isLoading || (selectedPeriod && placement.isLoading)) {
@@ -199,7 +157,7 @@ export function SwipeRankCard() {
             SwipeRank
           </CardTitle>
           <CardDescription>
-            Your first ranking will appear after the next SwipeRank fact build.
+            Your first ranking will appear after a completed month is published.
           </CardDescription>
         </CardHeader>
       </Card>
@@ -227,32 +185,10 @@ export function SwipeRankCard() {
           </div>
           <div className="flex flex-wrap gap-2">
             <Select
-              value={effectiveKind}
-              onValueChange={(value) => {
-                setSelectedKind(value!);
-                setSelectedPeriodKey("");
-              }}
-            >
-              <SelectTrigger className="w-[140px] bg-white">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(PERIOD_KIND_LABELS).map(([value, label]) => (
-                  <SelectItem
-                    key={value}
-                    value={value}
-                    disabled={
-                      !periods.some((item) => item.period.kind === value)
-                    }
-                  >
-                    {label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select
               value={swipeRankPeriodKey(selectedPeriod.period)}
-              onValueChange={(next) => next !== null && setSelectedPeriodKey(next)}
+              onValueChange={(next) =>
+                next !== null && setSelectedPeriodKey(next)
+              }
             >
               <SelectTrigger className="w-[190px] bg-white">
                 <SelectValue />
@@ -284,8 +220,8 @@ export function SwipeRankCard() {
                   selected.excludedFromSwipeRank
                     ? "bg-amber-500 text-white"
                     : selected.eligible
-                    ? "bg-emerald-500 text-white"
-                    : "bg-slate-700 text-slate-100"
+                      ? "bg-emerald-500 text-white"
+                      : "bg-slate-700 text-slate-100"
                 }
               >
                 {selected.excludedFromSwipeRank
@@ -315,7 +251,7 @@ export function SwipeRankCard() {
               </p>
               <p className="mt-2 text-sm text-amber-800">
                 Your underlying activity and private insights remain available,
-                but this profile is omitted from live ranks and benchmarks.
+                but this profile is omitted from published ranks and benchmarks.
               </p>
             </div>
           ) : selected.eligible ? (
@@ -376,7 +312,7 @@ export function SwipeRankCard() {
         <div className="text-muted-foreground flex flex-wrap items-center gap-x-5 gap-y-2 border-t pt-4 text-xs">
           <span className="flex items-center gap-1.5">
             <CalendarClock className="h-3.5 w-3.5" />
-            As of {asOf} · {selected.isStale ? "Refresh needed" : "Fresh"}
+            Published {asOf}
           </span>
           <span className="flex items-center gap-1.5">
             <Users className="h-3.5 w-3.5" />

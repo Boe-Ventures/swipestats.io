@@ -6,7 +6,11 @@
     },
     {
       "path": "/api/cron/swipe-rank",
-      "schedule": "30 6 * * *"
+      "schedule": "30 6 1 * *"
+    },
+    {
+      "path": "/api/cron/swipe-rank-review",
+      "schedule": "15 7 1 * *"
     },
     {
       "path": "/api/cron/transient-uploads",

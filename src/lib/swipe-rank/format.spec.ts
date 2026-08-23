@@ -7,15 +7,15 @@ import {
 } from "./format";
 
 describe("SwipeRank formatting", () => {
-  test("uses quarters as the default SwipeRank season", () => {
-    expect(DEFAULT_SWIPE_RANK_PERIOD_KIND).toBe("QUARTER");
+  test("defaults to the most frequently published season", () => {
+    expect(DEFAULT_SWIPE_RANK_PERIOD_KIND).toBe("MONTH");
   });
 
   test("preserves match yield above 100 percent", () => {
     expect(formatMatchYield(1.41, "en-US")).toBe("141.0%");
   });
 
-  test("formats first-class month, quarter, year, and all-time periods", () => {
+  test("formats month, quarter, and year seasons", () => {
     expect(
       formatSwipeRankPeriodLabel(
         { kind: "MONTH", start: "2026-07-01" },
@@ -28,8 +28,5 @@ describe("SwipeRank formatting", () => {
     expect(
       formatSwipeRankPeriodLabel({ kind: "YEAR", start: "2026-01-01" }),
     ).toBe("2026");
-    expect(
-      formatSwipeRankPeriodLabel({ kind: "ALL_TIME", start: "0001-01-01" }),
-    ).toBe("All time");
   });
 });

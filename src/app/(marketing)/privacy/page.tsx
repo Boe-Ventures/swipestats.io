@@ -141,6 +141,13 @@ export default function PrivacyPage() {
           <li>Match and conversation metadata</li>
           <li>Photos</li>
         </ul>
+        <p>
+          We retain each accepted anonymized Tinder export as a historical
+          revision in private object storage. The raw JSON is not stored in our
+          Postgres database. A short-lived public upload object is used only to
+          transport the file from your browser and is removed after the private
+          revision and profile update commit.
+        </p>
 
         <p>
           <strong>For Hinge uploads, we remove:</strong>
@@ -370,21 +377,21 @@ export default function PrivacyPage() {
           </li>
           <li>
             The competition season, eligibility context, and leaderboard
-            freshness date
+            publication date
           </li>
         </ul>
         <p>
           We do not include your Tinder ID, SwipeStats profile or account ID,
           provider or upload identifiers, messages, uploaded files other than
           the profile-photo presentation described above, or exact account dates
-          in the public leaderboard. Historical rows use the latest uploaded
-          gender and interested-in descriptors; we do not infer a historical
+          in the public leaderboard. Historical rows use the descriptors
+          captured by the scheduled publication; we do not infer a historical
           identity timeline. The public pseudonym and technical row key remain
-          stable between months, quarters, years, and all-time competitions so
-          readers can follow one profile&apos;s results across seasons. Exact
-          activity, demographic, location, and photo context can make a
-          pseudonymous row recognizable or linkable with information published
-          elsewhere even though we do not expose direct account identifiers.
+          stable between published seasons so readers can follow one
+          profile&apos;s results across seasons. Exact activity, demographic,
+          location, and photo context can make a pseudonymous row recognizable
+          or linkable with information published elsewhere even though we do not
+          expose direct account identifiers.
         </p>
         <p>
           The audience is anyone on the internet. Public entries can be copied,

@@ -49,25 +49,23 @@ describe("SwipeRank snapshot identity", () => {
 });
 
 describe("SwipeRank snapshot lineage", () => {
-  test("accepts only one current full source generation", () => {
+  test("accepts the exact validated full monthly build", () => {
     expect(
       hasCoherentFullSwipeRankLineage({
+        buildId: "srb_validated",
+        expectedBuildId: "srb_validated",
         distinctBuilds: 1,
         buildScope: "FULL",
-        buildActivated: true,
-        sourceGeneration: 9,
-        currentGeneration: 9,
       }),
     ).toBeTrue();
   });
 
-  test("rejects scoped, mixed, missing, and superseded lineage", () => {
+  test("rejects scoped, mixed, and replaced lineage", () => {
     const baseline = {
+      buildId: "srb_validated",
+      expectedBuildId: "srb_validated",
       distinctBuilds: 1,
       buildScope: "FULL" as const,
-      buildActivated: true,
-      sourceGeneration: 9,
-      currentGeneration: 9,
     };
     expect(
       hasCoherentFullSwipeRankLineage({
@@ -84,19 +82,7 @@ describe("SwipeRank snapshot lineage", () => {
     expect(
       hasCoherentFullSwipeRankLineage({
         ...baseline,
-        buildActivated: false,
-      }),
-    ).toBeFalse();
-    expect(
-      hasCoherentFullSwipeRankLineage({
-        ...baseline,
-        sourceGeneration: null,
-      }),
-    ).toBeFalse();
-    expect(
-      hasCoherentFullSwipeRankLineage({
-        ...baseline,
-        currentGeneration: 10,
+        buildId: "srb_replacement",
       }),
     ).toBeFalse();
   });

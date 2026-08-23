@@ -31,13 +31,14 @@ function leaderboardRow(
   overrides: Partial<Record<string, unknown>> = {},
 ): Record<string, unknown> {
   return {
-    ready: true,
+    snapshot_id: "srs_month",
     profile_id: null,
     rank: null,
+    top_share: null,
     field_size: "1406",
     metric_value: null,
-    match_rate_numerator: null,
-    match_rate_denominator: null,
+    metric_numerator: null,
+    metric_denominator: null,
     active_days: null,
     age_in_period: null,
     gender: null,
@@ -50,6 +51,8 @@ function leaderboardRow(
     photo_url: null,
     photo_count: null,
     as_of: "2026-07-14T10:00:00.000Z",
+    minimum_rate_denominator: "100",
+    minimum_active_days: "5",
     ...overrides,
   };
 }
@@ -89,9 +92,10 @@ describe("SwipeRank public leaderboard", () => {
         leaderboardRow({
           profile_id: "srp_internal-one",
           rank: "122",
+          top_share: String((122 / 1406) * 100),
           metric_value: "0.19862857142857143",
-          match_rate_numerator: "4345",
-          match_rate_denominator: "21875",
+          metric_numerator: "4345",
+          metric_denominator: "21875",
           active_days: "615",
           age_in_period: "33",
           gender: "MALE",
@@ -109,8 +113,6 @@ describe("SwipeRank public leaderboard", () => {
 
     const result = await getPublicSwipeRankLeaderboard({
       period: MONTH,
-      minimumRateDenominator: 100,
-      minimumActiveDays: 5,
       page: 1,
     });
 
@@ -178,9 +180,10 @@ describe("SwipeRank public leaderboard", () => {
         leaderboardRow({
           profile_id: "srp_internal-one",
           rank: "1",
+          top_share: String((1 / 1406) * 100),
           metric_value: "0.5",
-          match_rate_numerator: "125",
-          match_rate_denominator: "250",
+          metric_numerator: "125",
+          metric_denominator: "250",
           active_days: "20",
           age_in_period: "58",
           gender: "MORE",
@@ -197,8 +200,6 @@ describe("SwipeRank public leaderboard", () => {
 
     const result = await getPublicSwipeRankLeaderboard({
       period: MONTH,
-      minimumRateDenominator: 100,
-      minimumActiveDays: 5,
       page: 1,
     });
 
@@ -221,8 +222,6 @@ describe("SwipeRank public leaderboard", () => {
 
     const result = await getPublicSwipeRankLeaderboard({
       period: MONTH,
-      minimumRateDenominator: 100,
-      minimumActiveDays: 5,
       page: 15,
     });
 
@@ -242,8 +241,6 @@ describe("SwipeRank public leaderboard", () => {
 
     const result = await getPublicSwipeRankLeaderboard({
       period: MONTH,
-      minimumRateDenominator: 100,
-      minimumActiveDays: 5,
       page: 1,
     });
 
@@ -255,15 +252,13 @@ describe("SwipeRank public leaderboard", () => {
     });
   });
 
-  test("distinguishes a not-yet-launched field from a populated one", async () => {
+  test("distinguishes an unpublished field from a populated one", async () => {
     execute.mockResolvedValueOnce({
-      rows: [leaderboardRow({ ready: false, field_size: "0", as_of: null })],
+      rows: [],
     });
 
     const result = await getPublicSwipeRankLeaderboard({
       period: MONTH,
-      minimumRateDenominator: 100,
-      minimumActiveDays: 5,
       page: 1,
     });
 
@@ -275,8 +270,6 @@ describe("SwipeRank public leaderboard", () => {
   test("rejects unsafe pagination before querying", async () => {
     const error = await getPublicSwipeRankLeaderboard({
       period: MONTH,
-      minimumRateDenominator: 100,
-      minimumActiveDays: 5,
       page: 0,
     }).then(
       () => null,
@@ -288,28 +281,25 @@ describe("SwipeRank public leaderboard", () => {
     expect(execute).not.toHaveBeenCalled();
   });
 
-  test("returns every useful period without publication state", async () => {
+  test("returns published closed seasons in reverse chronological order", async () => {
     execute.mockResolvedValueOnce({
       rows: [
         {
-          period_kind: "YEAR",
-          period_start: "2026-01-01",
-          period_end: "2027-01-01",
-          as_of: "2026-07-14T10:00:00.000Z",
-          field_size: "800",
-        },
-        {
+          period_start: "2026-06-01",
+          period_end: "2026-07-01",
           period_kind: "MONTH",
-          period_start: "2026-07-01",
-          period_end: "2026-08-01",
-          as_of: "2026-07-14T10:00:00.000Z",
+          as_of: "2026-07-01T06:30:00.000Z",
+          minimum_rate_denominator: "100",
+          minimum_active_days: "5",
           field_size: "70",
         },
         {
-          period_kind: "MONTH",
-          period_start: "2026-06-01",
+          period_start: "2026-04-01",
           period_end: "2026-07-01",
-          as_of: "2026-07-14T10:00:00.000Z",
+          period_kind: "QUARTER",
+          as_of: "2026-06-01T06:30:00.000Z",
+          minimum_rate_denominator: "100",
+          minimum_active_days: "5",
           field_size: "900",
         },
       ],
@@ -319,8 +309,7 @@ describe("SwipeRank public leaderboard", () => {
 
     expect(result.periods.map(({ period }) => period.kind)).toEqual([
       "MONTH",
-      "MONTH",
-      "YEAR",
+      "QUARTER",
     ]);
     expect(result.periods[0]).toMatchObject({
       minimumRateDenominator: 100,
@@ -329,12 +318,8 @@ describe("SwipeRank public leaderboard", () => {
     });
     expect(result.periods[0]).not.toHaveProperty("publishedProfiles");
     expect(result.periods[1]).toMatchObject({
-      period: { start: "2026-06-01" },
+      period: { start: "2026-04-01" },
       fieldSize: 900,
-    });
-    expect(result.periods[2]).toMatchObject({
-      minimumRateDenominator: 500,
-      minimumActiveDays: 40,
     });
   });
 });

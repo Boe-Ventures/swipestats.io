@@ -1,10 +1,8 @@
 import { sql, type SQL } from "drizzle-orm";
 
 import { db } from "@/server/db";
-import {
-  getDefaultEligibility,
-  parseSwipeRankPeriod,
-} from "@/scripts/swipe-rank/periods";
+import { getSwipeRankEligibility } from "@/server/services/swipe-rank/eligibility";
+import { parseClosedSwipeRankPeriod } from "@/server/services/swipe-rank/periods";
 
 import {
   getFlagValue,
@@ -23,9 +21,9 @@ function periodFilter(startDate: string | null, endDate: string | null): SQL {
 }
 
 async function main(): Promise<void> {
-  const period = parseSwipeRankPeriod(getFlagValue("--period") ?? "2025");
+  const period = parseClosedSwipeRankPeriod(getFlagValue("--period") ?? "2025");
   const targetId = getFlagValue("--tinder-id");
-  const eligibility = getDefaultEligibility(period.kind);
+  const eligibility = getSwipeRankEligibility(period.kind);
 
   const [coverage, commonLocations, segmentResult, targetResult] =
     await Promise.all([
@@ -127,7 +125,7 @@ async function main(): Promise<void> {
           JOIN tinder_profile p ON p.tinder_id = u.tinder_profile_id
           LEFT JOIN "user" usr ON usr.id = p.user_id
           WHERE p.computed = false
-          ${periodFilter(period.startDate, period.endDate)}
+          ${periodFilter(period.start, period.end)}
           GROUP BY
             p.tinder_id,
             p.gender,
@@ -147,8 +145,8 @@ async function main(): Promise<void> {
               WHEN age_in_period IS NOT NULL THEN '55_plus'
               ELSE 'unknown'
             END AS age_band,
-            likes >= ${eligibility.minLikes}
-              AND active_days >= ${eligibility.minActiveDays} AS eligible
+            likes >= ${eligibility.minimumRateDenominator}
+              AND active_days >= ${eligibility.minimumActiveDays} AS eligible
           FROM profile_period
         ),
         segments AS (

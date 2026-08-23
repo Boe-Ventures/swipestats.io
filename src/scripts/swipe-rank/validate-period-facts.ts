@@ -1,4 +1,4 @@
-/** Read-only parity checks for a completed SwipeRank fact backfill. */
+/** Read-only parity checks for the completed-month SwipeRank fact set. */
 
 import { validateTinderSwipeRankFacts } from "@/server/services/swipe-rank/validate.service";
 

@@ -15,7 +15,6 @@ import {
   tinderProfileTable,
   userTable,
 } from "@/server/db/schema";
-import { lockTinderSwipeRankMutationsInTx } from "./swipe-rank/lifecycle.service";
 import { invalidatePublicSwipeRankCache } from "./swipe-rank/public-cache";
 import { lockHingeProviderOwnershipTransferInTx } from "./hinge/hinge-upload-lock";
 
@@ -77,7 +76,6 @@ export async function transferAnonymousUserData(
   let hadProfile = false;
 
   await withTransaction(async (tx) => {
-    await lockTinderSwipeRankMutationsInTx(tx);
     // Serialize with Hinge uploads before reading/updating ownership. A shared
     // upload lock is insufficient here: a cross-account merge replaces its
     // source row and an already-running bulk UPDATE could otherwise miss the

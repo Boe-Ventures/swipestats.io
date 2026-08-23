@@ -7,7 +7,6 @@ import {
   CalendarDays,
   ChevronLeft,
   ChevronRight,
-  History,
   Info,
   Loader2,
   ShieldCheck,
@@ -51,7 +50,7 @@ import { cn } from "@/components/ui/lib/utils";
 import { useTRPC } from "@/trpc/react";
 
 import {
-  preferredLeaderboardPeriod,
+  generatedPeriodOptions,
   resolveLeaderboardQuickJumps,
   resolveLeaderboardPeriodOptions,
 } from "./period-options";
@@ -60,14 +59,12 @@ const KIND_LABELS: Record<SwipeRankPeriodKind, string> = {
   MONTH: "Month",
   QUARTER: "Quarter",
   YEAR: "Year",
-  ALL_TIME: "All time",
 };
 
 const KIND_NOUNS: Record<SwipeRankPeriodKind, string> = {
   MONTH: "month",
   QUARTER: "quarter",
   YEAR: "year",
-  ALL_TIME: "all-time season",
 };
 
 const UNKNOWN_GENDER_PRESENTATION = {
@@ -161,7 +158,6 @@ function formatObservedTenure(days: number): string {
 }
 
 function eligibleSeasonCopy(count: number, kind: SwipeRankPeriodKind): string {
-  if (kind === "ALL_TIME") return "All-time eligible";
   const noun = KIND_NOUNS[kind];
   return `${count.toLocaleString()} ranked ${noun}${count === 1 ? "" : "s"}`;
 }
@@ -199,7 +195,8 @@ export function SwipeRankLeaderboard() {
     () => resolveLeaderboardQuickJumps(availablePeriods.data?.periods),
     [availablePeriods.data?.periods],
   );
-  const defaultPeriod = preferredLeaderboardPeriod(options, kind);
+  const placeholderPeriod = generatedPeriodOptions(kind)[0]!;
+  const defaultPeriod = options[0] ?? placeholderPeriod;
   const [selectedKey, setSelectedKey] = useState(() =>
     swipeRankPeriodKey(defaultPeriod),
   );
@@ -218,6 +215,7 @@ export function SwipeRankLeaderboard() {
         page,
       },
       {
+        enabled: availablePeriods.isSuccess && options.length > 0,
         refetchInterval: 60 * 1000,
         refetchOnWindowFocus: true,
       },
@@ -229,7 +227,7 @@ export function SwipeRankLeaderboard() {
       nextKind,
       availablePeriods.data?.periods,
     );
-    const preferred = preferredLeaderboardPeriod(nextOptions, nextKind);
+    const preferred = nextOptions[0] ?? generatedPeriodOptions(nextKind)[0]!;
     setKind(nextKind);
     setSelectedKey(swipeRankPeriodKey(preferred));
     setPage(1);
@@ -319,22 +317,14 @@ export function SwipeRankLeaderboard() {
                             active && "bg-primary/10 text-primary",
                           )}
                         >
-                          {jump.key === "ALL_TIME" ? (
-                            <History className="h-4 w-4" />
-                          ) : jump.key === "LAST_QUARTER" ? (
-                            <Sparkles className="h-4 w-4" />
-                          ) : (
-                            <CalendarDays className="h-4 w-4" />
-                          )}
+                          <CalendarDays className="h-4 w-4" />
                         </span>
                         <span className="min-w-0 flex-1">
                           <span className="block text-sm font-semibold text-slate-950">
                             {jump.label}
                           </span>
                           <span className="text-muted-foreground block truncate text-xs">
-                            {jump.key === "ALL_TIME"
-                              ? "Full archive"
-                              : formatSwipeRankPeriodLabel(jump.period)}
+                            {formatSwipeRankPeriodLabel(jump.period)}
                           </span>
                         </span>
                         <ArrowRight className="text-muted-foreground h-4 w-4 shrink-0 transition-transform group-hover:translate-x-0.5" />
@@ -349,15 +339,13 @@ export function SwipeRankLeaderboard() {
               <div className="flex flex-col gap-3 sm:flex-row">
                 <Select
                   value={kind}
-                  onValueChange={(value) =>
-                    chooseKind(value!)
-                  }
+                  onValueChange={(value) => chooseKind(value!)}
                 >
                   <SelectTrigger
                     className="h-11 bg-white sm:w-44"
                     aria-label="Competition length"
                   >
-                    <SelectValue />
+                    <SelectValue>{KIND_LABELS[kind]}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {Object.entries(KIND_LABELS).map(([value, label]) => (
@@ -368,7 +356,12 @@ export function SwipeRankLeaderboard() {
                   </SelectContent>
                 </Select>
                 <Select
-                  value={swipeRankPeriodKey(selected)}
+                  value={
+                    options.length > 0
+                      ? swipeRankPeriodKey(selected)
+                      : undefined
+                  }
+                  disabled={options.length === 0}
                   onValueChange={(value) => {
                     if (value === null) return;
                     setSelectedKey(value);
@@ -379,7 +372,11 @@ export function SwipeRankLeaderboard() {
                     className="h-11 bg-white sm:w-56"
                     aria-label="Competition season"
                   >
-                    <SelectValue />
+                    <SelectValue>
+                      {options.length > 0
+                        ? periodLabel
+                        : `No published ${KIND_NOUNS[kind]}s`}
+                    </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     {options.map((period) => (
@@ -388,7 +385,6 @@ export function SwipeRankLeaderboard() {
                         value={swipeRankPeriodKey(period)}
                       >
                         {formatSwipeRankPeriodLabel(period)}
-                        {period.live ? " · live" : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -436,6 +432,17 @@ export function SwipeRankLeaderboard() {
           </Card>
         )}
 
+        {availablePeriods.isSuccess && options.length === 0 && (
+          <Card>
+            <CardContent>
+              <EmptyLeaderboard
+                title={`No ${KIND_NOUNS[kind]} season has been published yet`}
+                description="Closed seasons appear after the scheduled publication completes."
+              />
+            </CardContent>
+          </Card>
+        )}
+
         {data && (
           <Card className="gap-0 overflow-hidden border-slate-300 py-0 shadow-sm">
             <CardHeader className="border-b border-slate-800 bg-slate-950 py-5 text-white">
@@ -447,14 +454,13 @@ export function SwipeRankLeaderboard() {
                     the eligible field.
                   </CardDescription>
                 </div>
-                {selected.live && <Badge>Live period</Badge>}
               </div>
             </CardHeader>
             <CardContent className="p-0">
               {!data.ready ? (
                 <EmptyLeaderboard
                   title="The first full field is being prepared"
-                  description="SwipeRank stays hidden until the complete historical backfill and its validation checks have finished."
+                  description="SwipeRank stays hidden until this closed season has passed validation and publication."
                 />
               ) : data.countsSuppressed ? (
                 <EmptyLeaderboard
@@ -533,9 +539,7 @@ export function SwipeRankLeaderboard() {
                                   </TableCell>
                                 </TableRow>
                               )}
-                              <TableRow
-                                className="group h-[96px] bg-white hover:bg-rose-50/30"
-                              >
+                              <TableRow className="group h-[96px] bg-white hover:bg-rose-50/30">
                                 <TableCell className="px-7">
                                   <div className="flex items-center">
                                     <span
@@ -632,7 +636,8 @@ export function SwipeRankLeaderboard() {
                     <p className="text-muted-foreground max-w-3xl text-xs leading-5">
                       Stable pseudonyms link the same profile across seasons.
                       Profile details and exact activity totals come from the
-                      uploaded Tinder export; late uploads can revise history.
+                      uploaded Tinder export. Each monthly field is frozen when
+                      that season is published.
                     </p>
                     {data.totalPages > 1 && (
                       <div className="flex shrink-0 items-center gap-3">

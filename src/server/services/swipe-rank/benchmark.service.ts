@@ -11,9 +11,11 @@ import {
 } from "./eligibility";
 import { SWIPE_RANK_METRIC_VERSION } from "./constants";
 import { swipeRankCountryFilterSql } from "./country-filter";
-import { assertAlignedPeriod, type SwipeRankPeriodBounds } from "./periods";
+import {
+  assertClosedSwipeRankPeriod,
+  type SwipeRankPeriodBounds,
+} from "./periods";
 import type { SwipeRankFilters } from "./product.service";
-import { completedFullSwipeRankBuildSql } from "./readiness";
 
 type NumericDatabaseValue = number | string | null;
 
@@ -116,27 +118,27 @@ function comparisonFilterSql(filters: SwipeRankFilters): SQL {
   const conditions: SQL[] = [];
 
   if (filters.gender) {
-    conditions.push(sql`srp.gender = ${filters.gender}`);
+    conditions.push(sql`profile.gender = ${filters.gender}`);
   }
   if (filters.interestedIn) {
-    conditions.push(sql`srp.interested_in = ${filters.interestedIn}`);
+    conditions.push(sql`profile.interested_in = ${filters.interestedIn}`);
   }
   if (filters.ageMin !== undefined) {
-    conditions.push(sql`fact.age_in_period >= ${filters.ageMin}`);
+    conditions.push(sql`entry.age_in_period >= ${filters.ageMin}`);
   }
   if (filters.ageMax !== undefined) {
-    conditions.push(sql`fact.age_in_period <= ${filters.ageMax}`);
+    conditions.push(sql`entry.age_in_period <= ${filters.ageMax}`);
   }
   if (filters.country) {
     conditions.push(
-      swipeRankCountryFilterSql(sql`srp.country`, filters.country),
+      swipeRankCountryFilterSql(sql`profile.country`, filters.country),
     );
   }
   if (filters.region) {
-    conditions.push(sql`lower(srp.region) = lower(${filters.region})`);
+    conditions.push(sql`lower(profile.region) = lower(${filters.region})`);
   }
   if (filters.city) {
-    conditions.push(sql`lower(srp.city) = lower(${filters.city})`);
+    conditions.push(sql`lower(profile.city) = lower(${filters.city})`);
   }
 
   return conditions.length === 0
@@ -411,70 +413,49 @@ export function assembleSwipeRankBenchmark(
 export async function getTinderSwipeRankBenchmark(
   input: SwipeRankBenchmarkInput,
 ) {
-  assertAlignedPeriod(input.period);
+  assertClosedSwipeRankPeriod(input.period);
   const filters = input.filters ?? {};
   const filterSql = comparisonFilterSql(filters);
-  const threshold = getSwipeRankEligibility(input.period.kind);
 
   const result = await db.execute<BenchmarkRow>(sql`
     WITH target_profile AS (
-      SELECT srp.*
-      FROM swipe_rank_profile srp
-      WHERE srp.data_provider = 'TINDER'
-        AND srp.provider_profile_id = ${input.providerProfileId}
-        AND srp.is_synthetic = false
-    ),
-    period_field AS (
+      SELECT profile.*
+      FROM swipe_rank_profile profile
+      WHERE profile.data_provider = 'TINDER'
+        AND profile.provider_profile_id = ${input.providerProfileId}
+        AND profile.is_synthetic = false
+    ), selected_snapshot AS (
+      SELECT snapshot.*
+      FROM swipe_rank_snapshot snapshot
+      WHERE snapshot.data_provider = 'TINDER'
+        AND snapshot.metric_version = ${SWIPE_RANK_METRIC_VERSION}
+        AND snapshot.period_kind = ${input.period.kind}
+        AND snapshot.period_start = ${input.period.start}::date
+        AND snapshot.period_end = ${input.period.end}::date
+        AND snapshot.status = 'PUBLISHED'
+      ORDER BY snapshot.published_at DESC, snapshot.id DESC
+      LIMIT 1
+    ), target_fact AS (
       SELECT
-        fact.*,
-        srp.provider_profile_id,
-        srp.gender,
-        srp.interested_in,
-        srp.city,
-        srp.region,
-        srp.country
-      FROM swipe_rank_period_fact fact
-      JOIN swipe_rank_profile srp ON srp.id = fact.profile_id
-      JOIN swipe_rank_build build
-        ON build.id = fact.build_id
-       AND build.status = 'COMPLETE'
-      WHERE srp.data_provider = 'TINDER'
-        AND srp.is_synthetic = false
-        AND fact.metric_version = ${SWIPE_RANK_METRIC_VERSION}
-        AND ${completedFullSwipeRankBuildSql(
-          "TINDER",
-          SWIPE_RANK_METRIC_VERSION,
-        )}
-        AND fact.period_kind = ${input.period.kind}
-        AND fact.period_start = ${input.period.start}::date
-        AND fact.period_end = ${input.period.end}::date
-    ),
-    target_fact AS (
-      SELECT field.*
-      FROM period_field field
-      JOIN target_profile target ON target.id = field.profile_id
-    ),
-    eligible AS (
-      SELECT fact.*
-      FROM swipe_rank_period_fact fact
-      JOIN swipe_rank_profile srp ON srp.id = fact.profile_id
-      JOIN swipe_rank_build build
-        ON build.id = fact.build_id
-       AND build.status = 'COMPLETE'
-      WHERE srp.data_provider = 'TINDER'
-        AND srp.is_synthetic = false
-        AND srp.is_swipe_rank_excluded = false
-        AND fact.metric_version = ${SWIPE_RANK_METRIC_VERSION}
-        AND ${completedFullSwipeRankBuildSql(
-          "TINDER",
-          SWIPE_RANK_METRIC_VERSION,
-        )}
-        AND fact.period_kind = ${input.period.kind}
-        AND fact.period_start = ${input.period.start}::date
-        AND fact.period_end = ${input.period.end}::date
-        AND fact.match_rate IS NOT NULL
-        AND fact.match_rate_denominator >= ${threshold.minimumRateDenominator}
-        AND fact.active_days >= ${threshold.minimumActiveDays}
+        entry.*,
+        entry.metric_numerator AS match_rate_numerator,
+        entry.metric_denominator AS match_rate_denominator,
+        entry.metric_value AS match_rate,
+        (jsonb_array_length(entry.quality_flags) > 0) AS has_quality_anomaly,
+        snapshot.published_at AS computed_at
+      FROM selected_snapshot snapshot
+      JOIN swipe_rank_entry entry ON entry.snapshot_id = snapshot.id
+      JOIN target_profile target ON target.id = entry.profile_id
+    ), eligible AS (
+      SELECT
+        entry.*,
+        entry.metric_value AS match_rate,
+        snapshot.published_at AS computed_at
+      FROM selected_snapshot snapshot
+      JOIN swipe_rank_entry entry ON entry.snapshot_id = snapshot.id
+      JOIN swipe_rank_profile profile ON profile.id = entry.profile_id
+      WHERE profile.is_synthetic = false
+        AND profile.is_swipe_rank_excluded = false
         ${filterSql}
     ),
     distribution AS (
@@ -572,17 +553,17 @@ export async function getTinderSwipeRankBenchmark(
       target.is_swipe_rank_excluded,
       target_fact.computed_at AS target_computed_at,
       distribution.*,
-      placement.*
+      target_placement.*
     FROM target_profile target
     JOIN target_fact ON true
     CROSS JOIN distribution
-    LEFT JOIN target_placement placement ON true
+    LEFT JOIN target_placement ON true
   `);
 
   const row = result.rows[0];
   if (!row) {
     throw new Error(
-      `No ${input.period.kind} SwipeRank fact exists for Tinder profile ${input.providerProfileId}.`,
+      `No published SwipeRank season exists for Tinder profile ${input.providerProfileId}.`,
     );
   }
 

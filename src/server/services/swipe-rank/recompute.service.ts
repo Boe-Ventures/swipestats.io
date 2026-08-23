@@ -1,31 +1,28 @@
-import { sql, type SQL } from "drizzle-orm";
+import { sql } from "drizzle-orm";
 
 import { db, withAdvisoryLockTransaction } from "@/server/db";
 import { swipeRankBuildTable } from "@/server/db/schema";
 import { createId } from "@/server/db/utils";
 
 import { SWIPE_RANK_METRIC_VERSION, swipeRankBuildLockName } from "./constants";
-import {
-  getRecomputeScope,
-  normalizeRecomputeProfileIds,
-} from "./recompute-options";
+import { periodContaining } from "./periods";
+import { buildSwipeRankSourceWatermarkUpdate } from "./recompute-sql";
 
 export interface RecomputeTinderSwipeRankFactsOptions {
-  /** Undefined means every real Tinder profile. An empty array is rejected. */
-  profileIds?: readonly string[];
   metricVersion?: string;
+  /** Exclusive UTC month boundary. Defaults to the current UTC month. */
+  closedBefore?: string;
 }
 
 export interface SwipeRankBuildSummary {
   buildId: string;
   metricVersion: string;
-  scope: "FULL" | "PROFILE";
+  scope: "FULL";
   profileCount: number;
   factCount: number;
   monthFactCount: number;
   quarterFactCount: number;
   yearFactCount: number;
-  allTimeFactCount: number;
   anomalousFactCount: number;
 }
 
@@ -35,25 +32,7 @@ interface SummaryRow extends Record<string, unknown> {
   month_fact_count: number | string;
   quarter_fact_count: number | string;
   year_fact_count: number | string;
-  all_time_fact_count: number | string;
   anomalous_fact_count: number | string;
-}
-
-function inList(values: readonly string[]): SQL {
-  return sql`(${sql.join(
-    values.map((value) => sql`${value}`),
-    sql`, `,
-  )})`;
-}
-
-function sourceProfileFilter(profileIds: readonly string[] | undefined): SQL {
-  return profileIds ? sql`AND p.tinder_id IN ${inList(profileIds)}` : sql``;
-}
-
-function registryProfileFilter(profileIds: readonly string[] | undefined): SQL {
-  return profileIds
-    ? sql`AND srp.provider_profile_id IN ${inList(profileIds)}`
-    : sql``;
 }
 
 function asNumber(value: number | string): number {
@@ -65,16 +44,27 @@ function asNumber(value: number | string): number {
  *
  * The only source range is the set of rows actually present in tinder_usage.
  * Profile first/last app-open dates are retained only as a quality diagnostic.
- * Broader periods are always derived from the canonical MONTH rows, so rates
- * are ratios of summed numerators/denominators rather than averages of rates.
+ * Completed UTC months are canonical. Completed quarter and year facts are
+ * rolled up from those months. Frozen published snapshots are the ranking
+ * surface.
  */
 export async function recomputeTinderSwipeRankFacts(
   options: RecomputeTinderSwipeRankFactsOptions = {},
 ): Promise<SwipeRankBuildSummary> {
-  const profileIds = normalizeRecomputeProfileIds(options.profileIds);
   const metricVersion =
     options.metricVersion?.trim() || SWIPE_RANK_METRIC_VERSION;
-  const scope = getRecomputeScope(profileIds);
+  const closedBefore =
+    options.closedBefore ?? `${new Date().toISOString().slice(0, 7)}-01`;
+  let containingMonth;
+  try {
+    containingMonth = periodContaining("MONTH", closedBefore);
+  } catch {
+    throw new Error("SwipeRank closedBefore must be a UTC month start.");
+  }
+  if (containingMonth.start !== closedBefore) {
+    throw new Error("SwipeRank closedBefore must be a UTC month start.");
+  }
+  const scope = "FULL" as const;
   const buildId = createId("srb");
 
   await db.insert(swipeRankBuildTable).values({
@@ -84,7 +74,7 @@ export async function recomputeTinderSwipeRankFacts(
     scope,
     status: "RUNNING",
     sourceWatermark: {
-      requestedProfileCount: profileIds?.length ?? 0,
+      closedBefore,
     },
   });
 
@@ -93,10 +83,8 @@ export async function recomputeTinderSwipeRankFacts(
     row = await withAdvisoryLockTransaction(
       swipeRankBuildLockName("TINDER"),
       async (tx) => {
-        // Fact IDs are deterministic and full/scoped builds replace overlapping
-        // rows. The transaction lock is the first READ COMMITTED statement, so
-        // a queued build's source queries see its predecessor's commit. The
-        // provider-wide registry is shared across metric versions.
+        // Fact IDs are deterministic. One full monthly publication build
+        // replaces the working fact set for this metric version atomically.
 
         // Sync provider-native identity and immutable source provenance. The
         // source-file timestamp is informative only; raw usage is authoritative.
@@ -154,13 +142,11 @@ export async function recomputeTinderSwipeRankFacts(
         FROM tinder_profile p
         LEFT JOIN "user" app_user ON app_user.id = p.user_id
         LEFT JOIN LATERAL (
-          SELECT max(o.created_at) AS created_at
-          FROM original_anonymized_file o
-          WHERE o.user_id = p.user_id
-            AND o.data_provider = 'TINDER'
+          SELECT max(revision.accepted_at) AS created_at
+          FROM tinder_export_revision revision
+          WHERE revision.tinder_profile_id = p.tinder_id
         ) source_file ON true
         WHERE p.computed = false
-        ${sourceProfileFilter(profileIds)}
         ON CONFLICT (data_provider, provider_profile_id) DO UPDATE SET
           user_id = excluded.user_id,
           gender = excluded.gender,
@@ -176,11 +162,8 @@ export async function recomputeTinderSwipeRankFacts(
           updated_at = now()
       `);
 
-        // Provider rows are the source of truth. A full reconciliation removes
-        // analytical subjects whose source profile was deleted; scoped rebuilds
-        // never infer deletion from an omitted ID.
-        if (!profileIds) {
-          await tx.execute(sql`
+        // Provider rows are the source of truth.
+        await tx.execute(sql`
           DELETE FROM swipe_rank_profile srp
           WHERE srp.data_provider = 'TINDER'
             AND NOT EXISTS (
@@ -190,63 +173,10 @@ export async function recomputeTinderSwipeRankFacts(
                 AND p.computed = false
             )
         `);
-        }
 
-        if (scope === "FULL") {
-          await tx.execute(sql`
-          WITH selected_profiles AS (
-            SELECT
-              p.tinder_id,
-              p.updated_at,
-              p.user_id
-            FROM tinder_profile p
-            WHERE p.computed = false
-          ),
-          usage_watermark AS (
-            SELECT
-              count(*)::bigint AS row_count,
-              min(u.date_stamp_raw)::date AS first_date,
-              max(u.date_stamp_raw)::date AS last_date
-            FROM tinder_usage u
-            JOIN selected_profiles p ON p.tinder_id = u.tinder_profile_id
-          ),
-          file_watermark AS (
-            SELECT max(o.created_at) AS latest_file_created_at
-            FROM original_anonymized_file o
-            JOIN selected_profiles p ON p.user_id = o.user_id
-            WHERE o.data_provider = 'TINDER'
-          )
-          UPDATE swipe_rank_build
-          SET source_watermark = swipe_rank_build.source_watermark || jsonb_build_object(
-            'sourceGeneration', coalesce((
-              SELECT max(mutation.id)
-              FROM swipe_rank_source_mutation mutation
-              WHERE mutation.data_provider = 'TINDER'
-            ), 0),
-            'profileCount', (SELECT count(*) FROM selected_profiles),
-            'usageRowCount', coalesce((SELECT row_count FROM usage_watermark), 0),
-            'firstObservedDate', (SELECT first_date FROM usage_watermark),
-            'lastObservedDate', (SELECT last_date FROM usage_watermark),
-            'latestProfileUpdatedAt', (SELECT max(updated_at) FROM selected_profiles),
-            'latestSourceFileCreatedAt', (SELECT latest_file_created_at FROM file_watermark)
-          )
-          WHERE swipe_rank_build.id = ${buildId}
-        `);
-        } else {
-          // Scoped build rows outlive profile deletion, so retain no exact
-          // dates, usage counts, file timestamps, or provider identifiers.
-          await tx.execute(sql`
-          UPDATE swipe_rank_build
-          SET source_watermark = swipe_rank_build.source_watermark || jsonb_build_object(
-            'sourceGeneration', coalesce((
-              SELECT max(mutation.id)
-              FROM swipe_rank_source_mutation mutation
-              WHERE mutation.data_provider = 'TINDER'
-            ), 0)
-          )
-          WHERE swipe_rank_build.id = ${buildId}
-        `);
-        }
+        await tx.execute(
+          buildSwipeRankSourceWatermarkUpdate({ closedBefore, buildId }),
+        );
 
         // Replacing one version inside a transaction keeps readers on the old
         // committed facts until the complete replacement is ready.
@@ -256,7 +186,6 @@ export async function recomputeTinderSwipeRankFacts(
         WHERE fact.profile_id = srp.id
           AND srp.data_provider = 'TINDER'
           AND fact.metric_version = ${metricVersion}
-          ${registryProfileFilter(profileIds)}
       `);
 
         // MONTH is canonical. date_stamp_raw is the provider's calendar date and
@@ -293,7 +222,7 @@ export async function recomputeTinderSwipeRankFacts(
             ON srp.data_provider = 'TINDER'
            AND srp.provider_profile_id = p.tinder_id
           WHERE p.computed = false
-          ${sourceProfileFilter(profileIds)}
+            AND u.date_stamp_raw::date < ${closedBefore}::date
           GROUP BY
             srp.id,
             date_trunc('month', u.date_stamp_raw::date)::date,
@@ -392,8 +321,8 @@ export async function recomputeTinderSwipeRankFacts(
         FROM prepared
       `);
 
-        // Quarter, year and all-time rows are sums of canonical months. No rate
-        // is averaged: generated rates use the rolled-up numerator/denominator.
+        // Broader closed seasons are sums of canonical completed months. Rates
+        // remain generated from rolled-up numerator and denominator values.
         await tx.execute(sql`
         WITH month_base AS (
           SELECT fact.*
@@ -402,7 +331,6 @@ export async function recomputeTinderSwipeRankFacts(
           WHERE srp.data_provider = 'TINDER'
             AND fact.metric_version = ${metricVersion}
             AND fact.period_kind = 'MONTH'
-            ${registryProfileFilter(profileIds)}
         ),
         expanded AS (
           SELECT
@@ -411,6 +339,8 @@ export async function recomputeTinderSwipeRankFacts(
             date_trunc('quarter', period_start)::date AS rollup_start,
             (date_trunc('quarter', period_start) + interval '3 months')::date AS rollup_end
           FROM month_base
+          WHERE date_trunc('quarter', period_start) + interval '3 months'
+            <= ${closedBefore}::date
           UNION ALL
           SELECT
             month_base.*,
@@ -418,13 +348,8 @@ export async function recomputeTinderSwipeRankFacts(
             date_trunc('year', period_start)::date,
             (date_trunc('year', period_start) + interval '1 year')::date
           FROM month_base
-          UNION ALL
-          SELECT
-            month_base.*,
-            'ALL_TIME'::"SwipeRankPeriodKind",
-            date '0001-01-01',
-            date '9999-01-01'
-          FROM month_base
+          WHERE date_trunc('year', period_start) + interval '1 year'
+            <= ${closedBefore}::date
         ),
         rolled AS (
           SELECT
@@ -483,102 +408,52 @@ export async function recomputeTinderSwipeRankFacts(
           FROM rolled
         )
         INSERT INTO swipe_rank_period_fact (
-          id,
-          profile_id,
-          build_id,
-          metric_version,
-          period_kind,
-          period_start,
-          period_end,
-          observed_first_date,
-          observed_last_date,
-          source_row_count,
-          observed_days,
-          active_days,
-          age_in_period,
-          swipe_likes,
-          swipe_passes,
-          swipe_super_likes,
-          matches,
-          messages_sent,
-          messages_received,
-          app_opens,
-          match_rate_numerator,
-          match_rate_denominator,
-          like_rate_numerator,
-          like_rate_denominator,
-          quality_flags,
-          has_quality_anomaly,
-          source_profile_updated_at,
-          source_file_created_at,
-          source_fingerprint,
-          computed_at
+          id, profile_id, build_id, metric_version, period_kind,
+          period_start, period_end, observed_first_date, observed_last_date,
+          source_row_count, observed_days, active_days, age_in_period,
+          swipe_likes, swipe_passes, swipe_super_likes, matches,
+          messages_sent, messages_received, app_opens,
+          match_rate_numerator, match_rate_denominator,
+          like_rate_numerator, like_rate_denominator, quality_flags,
+          has_quality_anomaly, source_profile_updated_at,
+          source_file_created_at, source_fingerprint, computed_at
         )
         SELECT
           'srf_' || md5(
             profile_id || ':' || rollup_kind::text || ':' || rollup_start::text || ':' || ${metricVersion}
           ),
-          profile_id,
-          ${buildId},
-          ${metricVersion},
-          rollup_kind,
-          rollup_start,
-          rollup_end,
-          observed_first_date,
-          observed_last_date,
-          source_row_count,
-          observed_days,
-          active_days,
-          age_in_period,
-          swipe_likes,
-          swipe_passes,
-          swipe_super_likes,
-          matches,
-          messages_sent,
-          messages_received,
-          app_opens,
-          match_rate_numerator,
-          match_rate_denominator,
-          like_rate_numerator,
-          like_rate_denominator,
-          quality_flags,
+          profile_id, ${buildId}, ${metricVersion}, rollup_kind,
+          rollup_start, rollup_end, observed_first_date, observed_last_date,
+          source_row_count, observed_days, active_days, age_in_period,
+          swipe_likes, swipe_passes, swipe_super_likes, matches,
+          messages_sent, messages_received, app_opens,
+          match_rate_numerator, match_rate_denominator,
+          like_rate_numerator, like_rate_denominator, quality_flags,
           jsonb_array_length(quality_flags) > 0,
-          source_profile_updated_at,
-          source_file_created_at,
+          source_profile_updated_at, source_file_created_at,
           md5(concat_ws(':',
-            source_row_count,
-            observed_first_date,
-            observed_last_date,
-            swipe_likes,
-            swipe_passes,
-            swipe_super_likes,
-            matches,
-            messages_sent,
-            messages_received,
-            app_opens
+            source_row_count, observed_first_date, observed_last_date,
+            swipe_likes, swipe_passes, swipe_super_likes, matches,
+            messages_sent, messages_received, app_opens
           )),
           now()
         FROM prepared
       `);
 
-        const completionWatermark =
-          scope === "FULL"
-            ? sql`build.source_watermark || jsonb_build_object(
-                'factCount', (
-                  SELECT count(*)
-                  FROM swipe_rank_period_fact fact
-                  JOIN swipe_rank_profile srp ON srp.id = fact.profile_id
-                  WHERE fact.build_id = ${buildId}
-                    AND srp.data_provider = 'TINDER'
-                )
-              )`
-            : sql`build.source_watermark`;
         await tx.execute(sql`
         UPDATE swipe_rank_build build
         SET
           status = 'COMPLETE',
           completed_at = now(),
-          source_watermark = ${completionWatermark}
+          source_watermark = build.source_watermark || jsonb_build_object(
+            'factCount', (
+              SELECT count(*)
+              FROM swipe_rank_period_fact fact
+              JOIN swipe_rank_profile srp ON srp.id = fact.profile_id
+              WHERE fact.build_id = ${buildId}
+                AND srp.data_provider = 'TINDER'
+            )
+          )
         WHERE build.id = ${buildId}
       `);
 
@@ -592,7 +467,6 @@ export async function recomputeTinderSwipeRankFacts(
           count(*) FILTER (WHERE period_kind = 'MONTH')::bigint AS month_fact_count,
           count(*) FILTER (WHERE period_kind = 'QUARTER')::bigint AS quarter_fact_count,
           count(*) FILTER (WHERE period_kind = 'YEAR')::bigint AS year_fact_count,
-          count(*) FILTER (WHERE period_kind = 'ALL_TIME')::bigint AS all_time_fact_count,
           count(*) FILTER (WHERE has_quality_anomaly)::bigint AS anomalous_fact_count
         FROM swipe_rank_period_fact
         WHERE build_id = ${buildId}
@@ -628,7 +502,6 @@ export async function recomputeTinderSwipeRankFacts(
     monthFactCount: asNumber(row.month_fact_count),
     quarterFactCount: asNumber(row.quarter_fact_count),
     yearFactCount: asNumber(row.year_fact_count),
-    allTimeFactCount: asNumber(row.all_time_fact_count),
     anomalousFactCount: asNumber(row.anomalous_fact_count),
   };
 }

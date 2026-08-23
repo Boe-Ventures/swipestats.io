@@ -13,11 +13,7 @@ import {
 } from "@/server/db/schema";
 import { createId } from "@/server/db/utils";
 import { computeProfileMeta } from "@/server/services/profile/meta.service";
-import {
-  lockTinderSwipeRankMutationsInTx,
-  purgeTinderSwipeRankProfilesInTx,
-  scheduleTinderSwipeRankRefresh,
-} from "@/server/services/swipe-rank/lifecycle.service";
+import { purgeTinderSwipeRankProfilesInTx } from "@/server/services/swipe-rank/lifecycle.service";
 import { invalidatePublicSwipeRankCache } from "@/server/services/swipe-rank/public-cache";
 import { isAdminRequestAuthorized } from "@/lib/admin-request-auth";
 
@@ -63,7 +59,6 @@ export async function POST(request: Request) {
     );
 
     const result = await withTransaction(async (tx) => {
-      await lockTinderSwipeRankMutationsInTx(tx);
       // 1. Fetch both profiles
       const [oldProfile, newProfile] = await Promise.all([
         tx.query.tinderProfileTable.findFirst({
@@ -239,7 +234,6 @@ export async function POST(request: Request) {
       `\n✅ [Admin] Merge complete: ${oldTinderId} → ${newTinderId}\n`,
     );
     invalidatePublicSwipeRankCache();
-    scheduleTinderSwipeRankRefresh([newTinderId]);
 
     return NextResponse.json(result);
   } catch (error) {

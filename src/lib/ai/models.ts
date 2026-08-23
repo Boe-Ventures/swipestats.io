@@ -8,6 +8,8 @@
 export const AI_MODELS = {
   /** Sonnet: vision + sharper reasoning/comedy (roasts, photo analysis, compose). */
   sonnet: "claude-sonnet-4-6",
+  /** Sonnet 5: higher-judgment internal review jobs. */
+  sonnet5: "claude-sonnet-5",
   /** Haiku: cheap text-only work (prompt suggestions). */
   haiku: "claude-haiku-4-5-20251001",
 } as const;
