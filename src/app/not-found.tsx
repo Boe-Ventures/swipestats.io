@@ -19,6 +19,12 @@ export default function NotFound() {
             <ButtonLink href="/research" variant="ghost">
               Explore research
             </ButtonLink>
+            <ButtonLink href="/llms.txt" variant="ghost">
+              Agent index
+            </ButtonLink>
+            <ButtonLink href="/sitemap.xml" variant="ghost">
+              Site map
+            </ButtonLink>
           </>
         }
       />

@@ -46,7 +46,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    creator: "@SwipeStats",
+    creator: "@swipestats_io",
     images: ["/SwipeStats-og.png"],
   },
 };
