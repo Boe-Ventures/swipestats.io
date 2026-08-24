@@ -1,4 +1,4 @@
-/** Run bounded Sonnet trust reviews for the top entries in one closed month. */
+/** Run bounded profile-level Sonnet reviews for one closed-month cohort. */
 
 import { reviewSwipeRankCohort } from "@/server/services/swipe-rank/ai-review.service";
 

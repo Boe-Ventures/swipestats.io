@@ -4,6 +4,10 @@ import { db } from "@/server/db";
 import type { Gender } from "@/server/db/schema";
 
 import {
+  SWIPE_RANK_AI_REVIEW_MODEL,
+  SWIPE_RANK_AI_REVIEW_VERSION,
+} from "./ai-review.contract";
+import {
   SWIPE_RANK_ELIGIBILITY_VERSION,
   evaluateSwipeRankEligibility,
   getSwipeRankEligibility,
@@ -341,8 +345,10 @@ export async function getAdminSwipeRankLeaderboard(
       ) profile_media ON true
       LEFT JOIN LATERAL (
         SELECT review.*
-        FROM swipe_rank_ai_review review
-        WHERE review.entry_id = entry.id
+        FROM swipe_rank_profile_ai_review review
+        WHERE review.profile_id = profile.id
+          AND review.review_version = ${SWIPE_RANK_AI_REVIEW_VERSION}
+          AND review.model = ${SWIPE_RANK_AI_REVIEW_MODEL}
         ORDER BY review.reviewed_at DESC, review.id DESC
         LIMIT 1
       ) ai_review ON true

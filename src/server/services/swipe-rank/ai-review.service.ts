@@ -4,7 +4,7 @@ import { and, eq, sql } from "drizzle-orm";
 
 import { generateStructured } from "@/lib/ai/generate-structured";
 import { db } from "@/server/db";
-import { swipeRankAiReviewTable } from "@/server/db/schema";
+import { swipeRankProfileAiReviewTable } from "@/server/db/schema";
 
 import {
   applySwipeRankAiReviewPolicy,
@@ -15,10 +15,12 @@ import {
   redactSwipeRankReviewMessage,
   SWIPE_RANK_AI_REVIEW_MODEL,
   SWIPE_RANK_AI_REVIEW_VERSION,
+  shouldReuseSwipeRankProfileReview,
   swipeRankAiReviewRequiresHold,
   swipeRankAiReviewOutputSchema,
 } from "./ai-review.contract";
 import { setTinderSwipeRankExclusion } from "./exclusion.service";
+import { SWIPE_RANK_METRIC_VERSION } from "./constants";
 import type { SwipeRankPeriodBounds } from "./periods";
 
 interface ReviewEntryRow extends Record<string, unknown> {
@@ -120,14 +122,14 @@ interface ReachableImage {
 }
 
 export interface SwipeRankAiReviewTarget {
-  entryId: string;
+  profileId: string;
   providerProfileId: string;
   rank: number;
   excluded: boolean;
 }
 
-export interface ReviewSwipeRankEntryInput {
-  entryId: string;
+export interface ReviewSwipeRankProfileInput {
+  profileId: string;
   actor: string;
   force?: boolean;
 }
@@ -178,8 +180,40 @@ function date(value: Date | string | null): string | null {
   );
 }
 
-async function getEntry(entryId: string): Promise<ReviewEntryRow> {
+function uniqueSignals<T extends { finding: string; evidence: string }>(
+  signals: T[],
+) {
+  return [
+    ...new Map(
+      signals.map((signal) => [
+        `${signal.finding}\u0000${signal.evidence}`,
+        signal,
+      ]),
+    ).values(),
+  ];
+}
+
+async function getPublishedPlacements(
+  profileId: string,
+): Promise<ReviewEntryRow[]> {
   const result = await db.execute<ReviewEntryRow>(sql`
+    WITH latest_snapshots AS (
+      SELECT DISTINCT ON (
+        snapshot.period_kind,
+        snapshot.period_start,
+        snapshot.period_end
+      ) snapshot.*
+      FROM swipe_rank_snapshot snapshot
+      WHERE snapshot.data_provider = 'TINDER'
+        AND snapshot.metric_version = ${SWIPE_RANK_METRIC_VERSION}
+        AND snapshot.status = 'PUBLISHED'
+      ORDER BY
+        snapshot.period_kind,
+        snapshot.period_start,
+        snapshot.period_end,
+        snapshot.published_at DESC,
+        snapshot.id DESC
+    )
     SELECT
       entry.id AS entry_id,
       entry.profile_id,
@@ -207,19 +241,21 @@ async function getEntry(entryId: string): Promise<ReviewEntryRow> {
       tinder_profile.first_day_on_app AS profile_first_day,
       tinder_profile.last_day_on_app AS profile_last_day,
       tinder_profile.bio
-    FROM swipe_rank_entry entry
-    JOIN swipe_rank_snapshot snapshot ON snapshot.id = entry.snapshot_id
+    FROM latest_snapshots snapshot
+    JOIN swipe_rank_entry entry ON entry.snapshot_id = snapshot.id
     JOIN swipe_rank_profile profile ON profile.id = entry.profile_id
     JOIN tinder_profile
       ON tinder_profile.tinder_id = profile.provider_profile_id
-    WHERE entry.id = ${entryId}
-      AND snapshot.data_provider = 'TINDER'
+    WHERE profile.id = ${profileId}
       AND profile.is_synthetic = false
-    LIMIT 1
+    ORDER BY snapshot.period_start DESC, snapshot.period_kind, entry.id
   `);
-  const entry = result.rows[0];
-  if (!entry) throw new Error(`SwipeRank entry ${entryId} was not found.`);
-  return entry;
+  if (result.rows.length === 0) {
+    throw new Error(
+      `SwipeRank profile ${profileId} has no current published placements.`,
+    );
+  }
+  return result.rows;
 }
 
 async function getMonthlyHistory(profileId: string) {
@@ -240,9 +276,9 @@ async function getMonthlyHistory(profileId: string) {
       quality_flags
     FROM swipe_rank_period_fact
     WHERE profile_id = ${profileId}
+      AND metric_version = ${SWIPE_RANK_METRIC_VERSION}
       AND period_kind = 'MONTH'
-    ORDER BY period_start DESC
-    LIMIT 12
+    ORDER BY period_start
   `);
   return result.rows.map((row) => ({
     periodStart: row.period_start,
@@ -284,8 +320,6 @@ async function getDailyShape(entry: ReviewEntryRow) {
       )::int AS negative_rows
     FROM tinder_usage
     WHERE tinder_profile_id = ${entry.provider_profile_id}
-      AND date_stamp >= ${entry.period_start}::date
-      AND date_stamp < ${entry.period_end}::date
   `);
   const row = result.rows[0];
   return {
@@ -502,8 +536,9 @@ async function getReachableImages(providerProfileId: string) {
   };
 }
 
-export async function buildSwipeRankAiReviewEvidence(entryId: string) {
-  const entry = await getEntry(entryId);
+export async function buildSwipeRankAiReviewEvidence(profileId: string) {
+  const placements = await getPublishedPlacements(profileId);
+  const entry = placements[0]!;
   const [monthlyHistory, dailyShape, cohortShape, messageEvidence, images] =
     await Promise.all([
       getMonthlyHistory(entry.profile_id),
@@ -513,7 +548,58 @@ export async function buildSwipeRankAiReviewEvidence(entryId: string) {
       getReachableImages(entry.provider_profile_id),
     ]);
 
+  const placementEvidence = placements.map((placement) => ({
+    period: {
+      kind: placement.period_kind,
+      start: placement.period_start,
+      end: placement.period_end,
+    },
+    rank: number(placement.rank),
+    fieldSize: number(placement.field_size),
+    topSharePercent:
+      number(placement.field_size) > 0
+        ? (number(placement.rank) / number(placement.field_size)) * 100
+        : null,
+    matchYield: number(placement.metric_value),
+    observedMatches: number(placement.metric_numerator),
+    rightSwipes: number(placement.metric_denominator),
+    activeDays: number(placement.active_days),
+    observedDays: number(placement.observed_days),
+    ageInPeriod: nullableNumber(placement.age_in_period),
+    swipesPerActiveDay: nullableNumber(placement.swipes_per_active_day),
+    qualityFlags: placement.quality_flags ?? [],
+  }));
+  const mechanicalSignals = uniqueSignals([
+    ...monthlyHistory.flatMap((month) =>
+      buildSwipeRankMechanicalSignals({
+        rightSwipes: month.rightSwipes,
+        leftSwipes: month.leftSwipes,
+        swipesPerActiveDay: month.swipesPerActiveDay,
+        priorSwipesPerActiveDay: monthlyHistory
+          .filter((fact) => fact.periodStart < month.periodStart)
+          .flatMap((fact) =>
+            fact.swipesPerActiveDay === null ? [] : [fact.swipesPerActiveDay],
+          ),
+        negativeDailyRows: 0,
+      }),
+    ),
+    ...buildSwipeRankMechanicalSignals({
+      rightSwipes: 0,
+      leftSwipes: 0,
+      swipesPerActiveDay: null,
+      priorSwipesPerActiveDay: [],
+      negativeDailyRows: dailyShape.negativeRows,
+    }),
+  ]);
+
   const evidence = {
+    reviewScope: {
+      profileLevel: true,
+      placementCount: placementEvidence.length,
+      monthlyHistoryCount: monthlyHistory.length,
+      earliestPlacement: placements.at(-1)?.period_start ?? null,
+      latestPlacement: entry.period_start,
+    },
     leaderboardEntry: {
       period: {
         kind: entry.period_kind,
@@ -529,8 +615,8 @@ export async function buildSwipeRankAiReviewEvidence(entryId: string) {
       observedDays: number(entry.observed_days),
       swipesPerActiveDay: nullableNumber(entry.swipes_per_active_day),
       qualityFlags: entry.quality_flags ?? [],
-      alreadyExcluded: entry.is_swipe_rank_excluded,
     },
+    placements: placementEvidence,
     profile: {
       gender: entry.gender,
       interestedIn: entry.interested_in,
@@ -550,19 +636,7 @@ export async function buildSwipeRankAiReviewEvidence(entryId: string) {
       swipesPerActiveDay: nullableNumber(entry.swipes_per_active_day),
       cohortShape,
     }),
-    mechanicalSignals: buildSwipeRankMechanicalSignals({
-      rightSwipes: number(entry.metric_denominator),
-      leftSwipes:
-        monthlyHistory.find((fact) => fact.periodStart === entry.period_start)
-          ?.leftSwipes ?? 0,
-      swipesPerActiveDay: nullableNumber(entry.swipes_per_active_day),
-      priorSwipesPerActiveDay: monthlyHistory
-        .filter((fact) => fact.periodStart < entry.period_start)
-        .flatMap((fact) =>
-          fact.swipesPerActiveDay === null ? [] : [fact.swipesPerActiveDay],
-        ),
-      negativeDailyRows: dailyShape.negativeRows,
-    }),
+    mechanicalSignals,
     dailyShape,
     monthlyHistory,
     messages: messageEvidence,
@@ -572,7 +646,7 @@ export async function buildSwipeRankAiReviewEvidence(entryId: string) {
     },
   };
 
-  return { entry, evidence, imageFiles: images.files };
+  return { entry, placements, evidence, imageFiles: images.files };
 }
 
 export async function listSwipeRankAiReviewTargets(input: {
@@ -582,7 +656,7 @@ export async function listSwipeRankAiReviewTargets(input: {
 }): Promise<SwipeRankAiReviewTarget[]> {
   const result = await db.execute<
     Record<string, unknown> & {
-      entry_id: string;
+      profile_id: string;
       provider_profile_id: string;
       rank: number | string;
       is_swipe_rank_excluded: boolean;
@@ -592,13 +666,14 @@ export async function listSwipeRankAiReviewTargets(input: {
       SELECT id, published_at
       FROM swipe_rank_snapshot
       WHERE data_provider = 'TINDER'
+        AND metric_version = ${SWIPE_RANK_METRIC_VERSION}
         AND period_kind = ${input.period.kind}
         AND period_start = ${input.period.start}::date
         AND period_end = ${input.period.end}::date
         AND status = 'PUBLISHED'
     ), latest_profile_entry AS (
       SELECT DISTINCT ON (profile.id)
-        entry.id AS entry_id,
+        profile.id AS profile_id,
         profile.provider_profile_id,
         entry.rank,
         profile.is_swipe_rank_excluded
@@ -613,7 +688,7 @@ export async function listSwipeRankAiReviewTargets(input: {
       ORDER BY profile.id, snapshot.published_at DESC, snapshot.id DESC
     )
     SELECT
-      entry_id,
+      profile_id,
       provider_profile_id,
       rank,
       is_swipe_rank_excluded
@@ -622,23 +697,42 @@ export async function listSwipeRankAiReviewTargets(input: {
     LIMIT ${input.limit}
   `);
   return result.rows.map((row) => ({
-    entryId: row.entry_id,
+    profileId: row.profile_id,
     providerProfileId: row.provider_profile_id,
     rank: number(row.rank),
     excluded: row.is_swipe_rank_excluded,
   }));
 }
 
-export async function reviewSwipeRankEntry(input: ReviewSwipeRankEntryInput) {
-  const existing = await db.query.swipeRankAiReviewTable.findFirst({
+export async function reviewSwipeRankProfile(
+  input: ReviewSwipeRankProfileInput,
+) {
+  const { entry, evidence, imageFiles } = await buildSwipeRankAiReviewEvidence(
+    input.profileId,
+  );
+  const modelInputHash = createHash("sha256")
+    .update(JSON.stringify({ evidence, imageFiles }))
+    .digest("hex");
+  const existing = await db.query.swipeRankProfileAiReviewTable.findFirst({
     where: and(
-      eq(swipeRankAiReviewTable.entryId, input.entryId),
-      eq(swipeRankAiReviewTable.reviewVersion, SWIPE_RANK_AI_REVIEW_VERSION),
-      eq(swipeRankAiReviewTable.model, SWIPE_RANK_AI_REVIEW_MODEL),
+      eq(swipeRankProfileAiReviewTable.profileId, input.profileId),
+      eq(
+        swipeRankProfileAiReviewTable.reviewVersion,
+        SWIPE_RANK_AI_REVIEW_VERSION,
+      ),
+      eq(swipeRankProfileAiReviewTable.model, SWIPE_RANK_AI_REVIEW_MODEL),
     ),
   });
-  if (existing && !input.force) {
-    const entry = await getEntry(input.entryId);
+  if (
+    shouldReuseSwipeRankProfileReview({
+      storedModelInputHash: existing?.modelInputHash ?? null,
+      currentModelInputHash: modelInputHash,
+      force: input.force,
+    })
+  ) {
+    if (!existing) {
+      throw new Error("A reusable SwipeRank review was not found.");
+    }
     const hold = await enforceSwipeRankAiReviewHold({
       entry,
       verdict: existing.verdict,
@@ -648,15 +742,12 @@ export async function reviewSwipeRankEntry(input: ReviewSwipeRankEntryInput) {
     return { review: existing, created: false, hold };
   }
 
-  const { entry, evidence, imageFiles } = await buildSwipeRankAiReviewEvidence(
-    input.entryId,
-  );
   const prompt = buildSwipeRankReviewPrompt(evidence);
   const rawOutput = await generateStructured({
     schema: swipeRankAiReviewOutputSchema,
     name: "SwipeRankProfileReview",
     description:
-      "An internal trust review of one frozen SwipeRank leaderboard entry.",
+      "An internal trust review of one stable SwipeRank profile across its published seasons.",
     model: SWIPE_RANK_AI_REVIEW_MODEL,
     maxOutputTokens: 4_096,
     providerOptions: {
@@ -699,18 +790,12 @@ export async function reviewSwipeRankEntry(input: ReviewSwipeRankEntryInput) {
         }
       : policyOutput;
 
-  const modelInputHash = createHash("sha256")
-    .update(JSON.stringify({ evidence, imageFiles }))
-    .digest("hex");
   const evidenceSummary = {
     reviewVersion: SWIPE_RANK_AI_REVIEW_VERSION,
-    period: evidence.leaderboardEntry.period,
-    rank: evidence.leaderboardEntry.rank,
-    fieldSize: evidence.leaderboardEntry.fieldSize,
-    matchYield: evidence.leaderboardEntry.matchYield,
-    observedMatches: evidence.leaderboardEntry.observedMatches,
-    rightSwipes: evidence.leaderboardEntry.rightSwipes,
-    qualityFlags: evidence.leaderboardEntry.qualityFlags,
+    profileLevel: true,
+    placementCount: evidence.placements.length,
+    earliestPlacement: evidence.reviewScope.earliestPlacement,
+    latestPlacement: evidence.reviewScope.latestPlacement,
     monthlyHistoryCount: evidence.monthlyHistory.length,
     outgoingMessageCount: evidence.messages.summary.outgoingMessageCount,
     messageSampleCount: evidence.messages.sample.length,
@@ -718,9 +803,9 @@ export async function reviewSwipeRankEntry(input: ReviewSwipeRankEntryInput) {
   };
   const now = new Date();
   const rows = await db
-    .insert(swipeRankAiReviewTable)
+    .insert(swipeRankProfileAiReviewTable)
     .values({
-      entryId: entry.entry_id,
+      profileId: entry.profile_id,
       reviewVersion: SWIPE_RANK_AI_REVIEW_VERSION,
       model: SWIPE_RANK_AI_REVIEW_MODEL,
       verdict: output.verdict,
@@ -736,9 +821,9 @@ export async function reviewSwipeRankEntry(input: ReviewSwipeRankEntryInput) {
     })
     .onConflictDoUpdate({
       target: [
-        swipeRankAiReviewTable.entryId,
-        swipeRankAiReviewTable.reviewVersion,
-        swipeRankAiReviewTable.model,
+        swipeRankProfileAiReviewTable.profileId,
+        swipeRankProfileAiReviewTable.reviewVersion,
+        swipeRankProfileAiReviewTable.model,
       ],
       set: {
         verdict: output.verdict,
@@ -804,8 +889,8 @@ export async function reviewSwipeRankCohort(input: ReviewSwipeRankCohortInput) {
       if (!target) return;
       const shortId = target.providerProfileId.slice(0, 10);
       try {
-        const result = await reviewSwipeRankEntry({
-          entryId: target.entryId,
+        const result = await reviewSwipeRankProfile({
+          profileId: target.profileId,
           actor: input.actor,
           force: input.force,
         });

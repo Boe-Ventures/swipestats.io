@@ -99,6 +99,13 @@
       "when": 1787429045418,
       "tag": "0013_skinny_kylun",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1787522344660,
+      "tag": "0014_swipe_rank_profile_ai_review",
+      "breakpoints": true
     }
   ]
 }
