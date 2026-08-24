@@ -488,7 +488,7 @@ export function SwipeRankLeaderboard() {
                             Orientation
                           </TableHead>
                           <TableHead className="min-w-64 px-7 text-right font-mono text-[11px] tracking-[0.12em] uppercase">
-                            Match rate · M / RS
+                            Match rate · activity
                           </TableHead>
                         </TableRow>
                       </TableHeader>
@@ -577,7 +577,6 @@ export function SwipeRankLeaderboard() {
                                       </span>
                                     </p>
                                     <p className="text-muted-foreground mt-1 font-mono text-xs">
-                                      {entry.alias} ·{" "}
                                       {formatObservedTenure(
                                         entry.observedHistoryDays,
                                       )}{" "}
@@ -613,7 +612,9 @@ export function SwipeRankLeaderboard() {
                                     </span>
                                     <p className="text-muted-foreground mt-1 font-mono text-xs whitespace-nowrap tabular-nums">
                                       {entry.matches.toLocaleString()} m /{" "}
-                                      {entry.rightSwipes.toLocaleString()} rs
+                                      {entry.rightSwipes.toLocaleString()} rs ·{" "}
+                                      {entry.totalSwipes.toLocaleString()} total{" "}
+                                      swipes
                                     </p>
                                     <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100">
                                       <div
@@ -634,10 +635,10 @@ export function SwipeRankLeaderboard() {
 
                   <div className="flex flex-col gap-4 border-t bg-slate-50/60 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-7">
                     <p className="text-muted-foreground max-w-3xl text-xs leading-5">
-                      Stable pseudonyms link the same profile across seasons.
-                      Profile details and exact activity totals come from the
-                      uploaded Tinder export. Each monthly field is frozen when
-                      that season is published.
+                      Profiles can recur across seasons. Profile details and
+                      exact activity totals come from the uploaded Tinder
+                      export. Each monthly field is frozen when that season is
+                      published.
                     </p>
                     {data.totalPages > 1 && (
                       <div className="flex shrink-0 items-center gap-3">

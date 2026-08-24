@@ -17,12 +17,12 @@ export const SWIPE_RANK_PUBLIC_PAGE_SIZE = 100;
 
 export interface PublicSwipeRankEntry {
   entryKey: string;
-  alias: string;
   rank: number;
   topShare: number;
   matchYieldPercent: number;
   matches: number;
   rightSwipes: number;
+  totalSwipes: number;
   activeDays: number;
   age: number | null;
   gender: Gender | null;
@@ -61,6 +61,7 @@ interface LeaderboardRow extends Record<string, unknown> {
   metric_value: number | string | null;
   metric_numerator: number | string | null;
   metric_denominator: number | string | null;
+  like_rate_denominator: number | string | null;
   active_days: number | string | null;
   age_in_period: number | string | null;
   gender: Gender | null;
@@ -107,7 +108,7 @@ function publicIdentitySecret(): string {
 export function getPublicSwipeRankPseudonym(
   profileId: string,
   secret: string,
-): Pick<PublicSwipeRankEntry, "entryKey" | "alias"> {
+): Pick<PublicSwipeRankEntry, "entryKey"> {
   if (!secret) {
     throw new Error("SwipeRank public identity secret must not be empty.");
   }
@@ -116,7 +117,6 @@ export function getPublicSwipeRankPseudonym(
     .digest("hex");
   return {
     entryKey: `entry_${digest.slice(0, 32)}`,
-    alias: `Dater #${digest.slice(0, 10).toUpperCase()}`,
   };
 }
 
@@ -205,6 +205,7 @@ export async function getPublicSwipeRankLeaderboard(input: {
       paged.metric_value,
       paged.metric_numerator,
       paged.metric_denominator,
+      paged.like_rate_denominator,
       paged.active_days,
       paged.age_in_period,
       paged.gender,
@@ -248,6 +249,9 @@ export async function getPublicSwipeRankLeaderboard(input: {
               Math.round(Number(row.metric_value) * 1_000) / 10,
             matches: Number(row.metric_numerator),
             rightSwipes: Number(row.metric_denominator),
+            totalSwipes: Number(
+              row.like_rate_denominator ?? row.metric_denominator,
+            ),
             activeDays: Number(row.active_days ?? 0),
             age: row.age_in_period === null ? null : Number(row.age_in_period),
             gender: row.gender,
