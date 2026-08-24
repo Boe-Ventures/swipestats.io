@@ -663,14 +663,24 @@ export async function listSwipeRankAiReviewTargets(input: {
     }
   >(sql`
     WITH period_snapshots AS (
-      SELECT id, published_at
-      FROM swipe_rank_snapshot
-      WHERE data_provider = 'TINDER'
-        AND metric_version = ${SWIPE_RANK_METRIC_VERSION}
-        AND period_kind = ${input.period.kind}
-        AND period_start = ${input.period.start}::date
-        AND period_end = ${input.period.end}::date
-        AND status = 'PUBLISHED'
+      SELECT DISTINCT ON (
+        snapshot.period_kind,
+        snapshot.period_start,
+        snapshot.period_end
+      ) snapshot.id, snapshot.published_at
+      FROM swipe_rank_snapshot snapshot
+      WHERE snapshot.data_provider = 'TINDER'
+        AND snapshot.metric_version = ${SWIPE_RANK_METRIC_VERSION}
+        AND snapshot.period_kind = ${input.period.kind}
+        AND snapshot.period_start = ${input.period.start}::date
+        AND snapshot.period_end = ${input.period.end}::date
+        AND snapshot.status = 'PUBLISHED'
+      ORDER BY
+        snapshot.period_kind,
+        snapshot.period_start,
+        snapshot.period_end,
+        snapshot.published_at DESC,
+        snapshot.id DESC
     ), latest_profile_entry AS (
       SELECT DISTINCT ON (profile.id)
         profile.id AS profile_id,
