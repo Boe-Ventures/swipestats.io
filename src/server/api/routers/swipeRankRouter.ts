@@ -24,7 +24,7 @@ import {
   listTinderSwipeRankExclusions,
   setTinderSwipeRankExclusion,
 } from "@/server/services/swipe-rank/exclusion.service";
-import { reviewSwipeRankEntry } from "@/server/services/swipe-rank/ai-review.service";
+import { reviewSwipeRankProfile } from "@/server/services/swipe-rank/ai-review.service";
 
 import {
   adminProcedure,
@@ -209,18 +209,18 @@ export const swipeRankRouter = {
     }),
 
   /** Private admin: Sonnet review with a reversible hold for non-clear cases. */
-  reviewAdminEntry: adminProcedure
+  reviewAdminProfile: adminProcedure
     .input(
       z.object({
-        entryId: z.string().trim().min(1),
+        profileId: z.string().trim().min(1),
         force: z.boolean().default(true),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       const actorId = ctx.session?.user.id;
       if (!actorId) throw new TRPCError({ code: "UNAUTHORIZED" });
-      return reviewSwipeRankEntry({
-        entryId: input.entryId,
+      return reviewSwipeRankProfile({
+        profileId: input.profileId,
         actor: `admin:${actorId}`,
         force: input.force,
       });

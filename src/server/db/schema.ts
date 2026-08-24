@@ -1422,12 +1422,10 @@ export type SwipeRankEntry = typeof swipeRankEntryTable.$inferSelect;
 export type SwipeRankEntryInsert = typeof swipeRankEntryTable.$inferInsert;
 
 /**
- * One reproducible Sonnet review for a frozen SwipeRank entry.
- *
- * Reviews are advisory. A human admin owns the separate exclusion decision.
- * The evidence summary deliberately omits raw message text and image bytes.
+ * Legacy entry-scoped reviews retained as immutable migration history.
+ * Profile-level reviews supersede these records for moderation decisions.
  */
-export const swipeRankAiReviewTable = pgTable(
+export const swipeRankEntryAiReviewTable = pgTable(
   "swipe_rank_ai_review",
   (t) => ({
     id: t
@@ -1495,9 +1493,92 @@ export const swipeRankAiReviewTable = pgTable(
   ],
 );
 
-export type SwipeRankAiReview = typeof swipeRankAiReviewTable.$inferSelect;
-export type SwipeRankAiReviewInsert =
-  typeof swipeRankAiReviewTable.$inferInsert;
+export type SwipeRankEntryAiReview =
+  typeof swipeRankEntryAiReviewTable.$inferSelect;
+export type SwipeRankEntryAiReviewInsert =
+  typeof swipeRankEntryAiReviewTable.$inferInsert;
+
+/**
+ * One reproducible AI review for a stable SwipeRank profile.
+ *
+ * The evidence can contain many published seasons. Raw message text, image
+ * bytes, and provider identifiers remain outside the stored summary.
+ */
+export const swipeRankProfileAiReviewTable = pgTable(
+  "swipe_rank_profile_ai_review",
+  (t) => ({
+    id: t
+      .text()
+      .primaryKey()
+      .$defaultFn(() => createId("srr")),
+    profileId: t
+      .text()
+      .notNull()
+      .references(() => swipeRankProfileTable.id, { onDelete: "cascade" }),
+    reviewVersion: t.text().notNull(),
+    model: t.text().notNull(),
+    verdict: swipeRankAiReviewVerdictEnum().notNull(),
+    confidence: t.doublePrecision().notNull(),
+    summary: t.text().notNull(),
+    recommendedAction: t.text().notNull(),
+    signals: t
+      .jsonb()
+      .$type<
+        Array<{
+          category: string;
+          severity: string;
+          finding: string;
+          evidence: string;
+        }>
+      >()
+      .default([])
+      .notNull(),
+    evidenceSummary: t
+      .jsonb()
+      .$type<Record<string, unknown>>()
+      .default({})
+      .notNull(),
+    modelInputHash: t.text().notNull(),
+    reviewedBy: t.text().notNull(),
+    reviewedAt: t
+      .timestamp()
+      .$defaultFn(() => new Date())
+      .notNull(),
+    createdAt: t
+      .timestamp()
+      .$defaultFn(() => new Date())
+      .notNull(),
+    updatedAt: t
+      .timestamp()
+      .$defaultFn(() => new Date())
+      .$onUpdate(() => new Date())
+      .notNull(),
+  }),
+  (table) => [
+    uniqueIndex("swipe_rank_profile_ai_review_version_model_idx").on(
+      table.profileId,
+      table.reviewVersion,
+      table.model,
+    ),
+    index("swipe_rank_profile_ai_review_queue_idx").on(
+      table.verdict,
+      table.reviewedAt,
+    ),
+    check(
+      "swipe_rank_profile_ai_review_confidence",
+      sql`${table.confidence} >= 0 AND ${table.confidence} <= 1`,
+    ),
+    check(
+      "swipe_rank_profile_ai_review_text",
+      sql`nullif(btrim(${table.summary}), '') IS NOT NULL AND nullif(btrim(${table.recommendedAction}), '') IS NOT NULL AND nullif(btrim(${table.reviewedBy}), '') IS NOT NULL`,
+    ),
+  ],
+);
+
+export type SwipeRankProfileAiReview =
+  typeof swipeRankProfileAiReviewTable.$inferSelect;
+export type SwipeRankProfileAiReviewInsert =
+  typeof swipeRankProfileAiReviewTable.$inferInsert;
 
 // ---- SUPPORT TABLES -----------------------------------------------
 
@@ -2738,6 +2819,7 @@ export const swipeRankProfileRelations = relations(
     }),
     periodFacts: many(swipeRankPeriodFactTable),
     leaderboardEntries: many(swipeRankEntryTable),
+    aiReviews: many(swipeRankProfileAiReviewTable),
   }),
 );
 
@@ -2785,16 +2867,26 @@ export const swipeRankEntryRelations = relations(
       fields: [swipeRankEntryTable.profileId],
       references: [swipeRankProfileTable.id],
     }),
-    aiReviews: many(swipeRankAiReviewTable),
+    legacyAiReviews: many(swipeRankEntryAiReviewTable),
   }),
 );
 
-export const swipeRankAiReviewRelations = relations(
-  swipeRankAiReviewTable,
+export const swipeRankEntryAiReviewRelations = relations(
+  swipeRankEntryAiReviewTable,
   ({ one }) => ({
     entry: one(swipeRankEntryTable, {
-      fields: [swipeRankAiReviewTable.entryId],
+      fields: [swipeRankEntryAiReviewTable.entryId],
       references: [swipeRankEntryTable.id],
+    }),
+  }),
+);
+
+export const swipeRankProfileAiReviewRelations = relations(
+  swipeRankProfileAiReviewTable,
+  ({ one }) => ({
+    profile: one(swipeRankProfileTable, {
+      fields: [swipeRankProfileAiReviewTable.profileId],
+      references: [swipeRankProfileTable.id],
     }),
   }),
 );

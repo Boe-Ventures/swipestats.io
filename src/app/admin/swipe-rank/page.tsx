@@ -220,7 +220,7 @@ export default function AdminSwipeRankPage() {
   );
 
   const reviewMutation = useMutation(
-    trpc.swipeRank.reviewAdminEntry.mutationOptions({
+    trpc.swipeRank.reviewAdminProfile.mutationOptions({
       onSuccess: async () => {
         await Promise.all([
           exclusionsQuery.refetch(),
@@ -821,19 +821,19 @@ export default function AdminSwipeRankPage() {
                                 className="gap-1.5 text-violet-800"
                                 disabled={
                                   reviewMutation.isPending &&
-                                  reviewMutation.variables?.entryId ===
-                                    entry.entryId
+                                  reviewMutation.variables?.profileId ===
+                                    entry.profileId
                                 }
                                 onClick={() =>
                                   reviewMutation.mutate({
-                                    entryId: entry.entryId,
+                                    profileId: entry.profileId,
                                     force: true,
                                   })
                                 }
                               >
                                 {reviewMutation.isPending &&
-                                reviewMutation.variables?.entryId ===
-                                  entry.entryId ? (
+                                reviewMutation.variables?.profileId ===
+                                  entry.profileId ? (
                                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
                                 ) : (
                                   <Sparkles className="h-3.5 w-3.5" />

@@ -8,6 +8,7 @@ import {
   buildSwipeRankReviewPrompt,
   redactSwipeRankReviewMessage,
   SWIPE_RANK_AI_REVIEW_MODEL,
+  shouldReuseSwipeRankProfileReview,
   swipeRankAiReviewRequiresHold,
   swipeRankAiReviewOutputSchema,
 } from "./ai-review.contract";
@@ -34,6 +35,9 @@ describe("SwipeRank AI review", () => {
     expect(prompt).toContain("at least two supplied images each show");
     expect(prompt).toContain("Pet-only, scenery, group, back-facing");
     expect(prompt).toContain("reversible automatic hold");
+    expect(prompt).toContain("stable SwipeRank profile");
+    expect(prompt).toContain("every current published placement");
+    expect(prompt).toContain("not separate people or separate review subjects");
   });
 
   test("uses Sonnet 5 and holds every non-clear verdict", () => {
@@ -44,8 +48,30 @@ describe("SwipeRank AI review", () => {
     expect(
       buildSwipeRankAiReviewHoldReason("Inspect the source profile."),
     ).toBe(
-      "AI review hold (claude-sonnet-5, swipe-rank-ai-review-v7): Inspect the source profile.",
+      "AI review hold (claude-sonnet-5, swipe-rank-ai-review-v8): Inspect the source profile.",
     );
+  });
+
+  test("reuses one profile review until its evidence changes", () => {
+    expect(
+      shouldReuseSwipeRankProfileReview({
+        storedModelInputHash: "same",
+        currentModelInputHash: "same",
+      }),
+    ).toBeTrue();
+    expect(
+      shouldReuseSwipeRankProfileReview({
+        storedModelInputHash: "old",
+        currentModelInputHash: "new",
+      }),
+    ).toBeFalse();
+    expect(
+      shouldReuseSwipeRankProfileReview({
+        storedModelInputHash: "same",
+        currentModelInputHash: "same",
+        force: true,
+      }),
+    ).toBeFalse();
   });
 
   test("caps the stored AI hold reason to the moderation field limit", () => {
