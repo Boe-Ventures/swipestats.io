@@ -1,15 +1,4 @@
 {
-  "headers": [
-    {
-      "source": "/",
-      "headers": [
-        {
-          "key": "Vary",
-          "value": "Accept, Accept-Encoding"
-        }
-      ]
-    }
-  ],
   "crons": [
     {
       "path": "/api/cron/deploy",

@@ -122,10 +122,7 @@ const config: NextConfig = {
       },
       {
         source: "/",
-        headers: [
-          { key: "Link", value: agentDiscoveryLinkHeader },
-          { key: "Vary", value: "Accept, Accept-Encoding" },
-        ],
+        headers: [{ key: "Link", value: agentDiscoveryLinkHeader }],
       },
     ];
   },

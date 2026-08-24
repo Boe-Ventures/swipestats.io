@@ -1,7 +1,10 @@
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
 
-import { appendVary, negotiatePageRepresentation } from "./content-negotiation";
+import {
+  appendVary,
+  markdownResponse,
+  negotiatePageRepresentation,
+} from "./content-negotiation";
 
 describe("homepage content negotiation", () => {
   test("defaults browser and wildcard requests to HTML", () => {
@@ -35,16 +38,12 @@ describe("homepage content negotiation", () => {
     expect(headers.get("Vary")).toBe("Accept-Encoding, Accept");
   });
 
-  test("keeps the negotiated homepage variants separate at the CDN", () => {
-    const config = JSON.parse(
-      readFileSync(new URL("../../vercel.json", import.meta.url), "utf8"),
-    ) as {
-      headers: { headers: { key: string; value: string }[]; source: string }[];
-    };
-    const homepage = config.headers.find((entry) => entry.source === "/");
-    expect(homepage?.headers).toContainEqual({
-      key: "Vary",
-      value: "Accept, Accept-Encoding",
-    });
+  test("serves Markdown directly with a cache-safe Vary header", () => {
+    const response = markdownResponse("# SwipeStats\n");
+    expect(response.headers.get("Content-Type")).toBe(
+      "text/markdown; charset=utf-8",
+    );
+    expect(response.headers.get("Vary")).toBe("Accept, Accept-Encoding");
+    expect(response.headers.get("Cache-Control")).toContain("s-maxage=300");
   });
 });

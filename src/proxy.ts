@@ -2,7 +2,11 @@ import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
 import { AUTH_RETURN_TO_HEADER } from "@/lib/auth-utils";
-import { negotiatePageRepresentation } from "@/lib/content-negotiation";
+import { SWIPESTATS_HOME_MARKDOWN } from "@/lib/agent-content";
+import {
+  markdownResponse,
+  negotiatePageRepresentation,
+} from "@/lib/content-negotiation";
 
 export function proxy(request: NextRequest): Response {
   if (request.nextUrl.pathname === "/") {
@@ -20,9 +24,7 @@ export function proxy(request: NextRequest): Response {
       );
     }
     if (selected === "text/markdown") {
-      const markdownUrl = request.nextUrl.clone();
-      markdownUrl.pathname = "/index.md";
-      return NextResponse.rewrite(markdownUrl);
+      return markdownResponse(SWIPESTATS_HOME_MARKDOWN);
     }
     return NextResponse.next();
   }

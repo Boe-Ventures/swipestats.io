@@ -99,3 +99,13 @@ export function appendVary(headers: Headers, field: string): void {
     headers.set("Vary", `${existing}, ${field}`);
   }
 }
+
+export function markdownResponse(body: string): Response {
+  return new Response(body, {
+    headers: {
+      "Cache-Control": "public, max-age=300, s-maxage=300",
+      "Content-Type": "text/markdown; charset=utf-8",
+      Vary: "Accept, Accept-Encoding",
+    },
+  });
+}
