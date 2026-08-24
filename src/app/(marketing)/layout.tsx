@@ -30,7 +30,7 @@ export const metadata: Metadata = {
     title: "SwipeStats - Analyze Your Dating App Data",
     description:
       "Upload your Tinder or Hinge data anonymously and get insights into your dating patterns. Compare with others worldwide.",
-    creator: "@SwipeStats",
+    creator: "@swipestats_io",
     images: ["/SwipeStats-og.png"],
   },
 };

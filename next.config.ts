@@ -24,6 +24,7 @@ const postHogPersonalApiKey = process.env.POSTHOG_PERSONAL_API_KEY;
 // representation of the site.
 const agentDiscoveryLinkHeader = [
   '</llms.txt>; rel="describedby"; type="text/plain"; title="SwipeStats for AI agents"',
+  '</index.md>; rel="alternate"; type="text/markdown"; title="SwipeStats homepage in Markdown"',
   '</sitemap.xml>; rel="sitemap"; type="application/xml"',
   '</downloads/swipestats-demo-dataset.jsonl>; rel="alternate"; type="application/jsonl"; title="SwipeStats free demo dataset"',
   '</research>; rel="related"; title="Research datasets"',

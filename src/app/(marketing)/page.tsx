@@ -21,6 +21,7 @@ import { InsightsShowcase } from "./InsightsShowcase";
 import NewsletterCTA from "./NewsletterCTA";
 import { ProfilePreviewsBanner } from "./ProfilePreviewsBanner";
 import { marketingOgImage } from "@/lib/og-images";
+import { SWIPESTATS_ORGANIZATION_JSON_LD } from "@/lib/agent-metadata";
 
 const homeOgImage = marketingOgImage({
   title: "Your dating data, finally visualized",
@@ -38,6 +39,7 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   openGraph: {
+    type: "website",
     title: "SwipeStats - Analyze Your Dating App Data",
     description:
       "Upload your Tinder or Hinge data anonymously and get insights into your dating patterns. Compare your swipes, matches, and messages with others worldwide.",
@@ -58,21 +60,6 @@ export const metadata: Metadata = {
       "Every swipe, match, and message—turned into charts and ranked against 10,000+ profiles.",
     images: [homeOgImage],
   },
-};
-
-const organizationJsonLd = {
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  name: "SwipeStats",
-  url: "https://www.swipestats.io",
-  logo: "https://www.swipestats.io/icon.png",
-  description:
-    "Dating app analytics platform. Upload your Tinder or Hinge data and get insights on match rates, swipe patterns, and percentile rankings from 10,000+ anonymous profiles.",
-  foundingDate: "2019",
-  sameAs: [
-    "https://www.instagram.com/swipestats.io",
-    "https://x.com/SwipeStats",
-  ],
 };
 
 const HOW_TO = "/how-to-request-your-data";
@@ -940,7 +927,9 @@ export default function HomePage() {
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(SWIPESTATS_ORGANIZATION_JSON_LD),
+        }}
       />
       <ProfilePreviewsBanner />
       <Hero />
