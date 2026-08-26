@@ -184,11 +184,11 @@ bun run privacy:anonymize-swiperank -- --period=2026-07 --limit=10
 Period batches use the latest published snapshot and the same current exclusion
 boundary as the admin leaderboard. The limit counts leaderboard profiles.
 Profiles without stored source images are reported and skipped, as are profiles
-whose stored images already have approved derivatives. Limits up to 1,000 make
-the same command suitable for a larger operator batch.
+whose stored images already have terminal review states. Limits up to 1,000
+make the same command suitable for a larger operator batch.
 
-If a fail-fast run stops on a diagnosed profile, resume after that leaderboard
-row with an offset. This keeps review and persistence atomic per profile:
+If a fail-fast run stops on an infrastructure, detector, model, Blob, or
+database error, resume after the diagnosed leaderboard row with an offset:
 
 ```sh
 bun run privacy:anonymize-swiperank -- \
@@ -199,15 +199,21 @@ bun run privacy:anonymize-swiperank -- \
 
 The process uses TensorFlow and Sharp locally, sends the anonymized JPEGs to
 Sonnet 5 for a strict privacy audit, uploads approved derivatives to Vercel
-Blob, and stores the approved URLs on their `media` rows.
+Blob, and stores the approved URLs on their `media` rows. Each source row also
+stores `APPROVED`, `NEEDS_REVIEW`, or `SOURCE_UNAVAILABLE` with a short review
+note. A null status means the image is still pending.
 
 Its error behavior is intentionally simple:
 
-- a download, detector, model, Blob, or database error terminates the batch;
-- `NEEDS_REVIEW` is a completed moderation result and saves zero images for that
-  profile;
+- terminal HTTP 400, 401, 403, 404, and 410 source responses are recorded as
+  unavailable while the remaining images continue;
+- a transport, detector, model, Blob, or database error terminates the batch;
+- `NEEDS_REVIEW` is a completed moderation result, records a privacy hold, and
+  saves no Blob derivatives for the held images;
 - Sonnet structured-output retries are disabled;
-- the admin query returns only `swipe_rank_anonymized_url` derivatives.
+- public SwipeRank payloads contain no media URLs. Admin leaderboard thumbnails
+  use approved derivatives, while the held-profile section deliberately shows
+  original images for administrator review.
 
 Run against a temporary database branch first when testing schema or query
 changes. A Blob write still targets the token supplied to the process, so use a

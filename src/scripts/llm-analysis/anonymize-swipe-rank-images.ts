@@ -184,6 +184,11 @@ console.log(
     alreadyApproved: results.filter(
       (item) => item.status === "ALREADY_APPROVED",
     ).length,
+    privacyHolds: results.filter((item) => item.status === "PRIVACY_HOLD")
+      .length,
+    sourceUnavailable: results.filter(
+      (item) => item.status === "SOURCE_UNAVAILABLE",
+    ).length,
     passed: results.filter(
       (item) => item.status === "PROCESSED" && item.result.verdict === "PASS",
     ).length,

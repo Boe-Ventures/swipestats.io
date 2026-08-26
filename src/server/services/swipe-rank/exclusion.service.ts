@@ -1,4 +1,4 @@
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 
 import { db, withTransaction } from "@/server/db";
 import { swipeRankProfileTable } from "@/server/db/schema";
@@ -127,6 +127,17 @@ export async function listTinderSwipeRankExclusions() {
       reason: swipeRankProfileTable.swipeRankExclusionReason,
       excludedAt: swipeRankProfileTable.swipeRankExcludedAt,
       excludedBy: swipeRankProfileTable.swipeRankExcludedBy,
+      photoUrls: sql<string[]>`coalesce((
+        SELECT array_agg(profile_media.url ORDER BY profile_media.id)
+        FROM (
+          SELECT media.id, media.url
+          FROM media
+          WHERE media.tinder_profile_id = ${swipeRankProfileTable.providerProfileId}
+            AND media.type IN ('image', 'photo')
+          ORDER BY media.id
+          LIMIT 4
+        ) profile_media
+      ), ARRAY[]::text[])`,
     })
     .from(swipeRankProfileTable)
     .where(

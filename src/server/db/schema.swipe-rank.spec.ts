@@ -1,7 +1,27 @@
 import { describe, expect, test } from "bun:test";
 import { getTableConfig, PgDialect } from "drizzle-orm/pg-core";
 
-import { swipeRankProfileAiReviewTable, swipeRankProfileTable } from "./schema";
+import {
+  mediaTable,
+  swipeRankImageReviewStatusEnum,
+  swipeRankProfileAiReviewTable,
+  swipeRankProfileTable,
+} from "./schema";
+
+describe("SwipeRank image review state", () => {
+  test("persists terminal outcomes on source media", () => {
+    expect(swipeRankImageReviewStatusEnum.enumValues).toEqual([
+      "APPROVED",
+      "NEEDS_REVIEW",
+      "SOURCE_UNAVAILABLE",
+    ]);
+    const columns = getTableConfig(mediaTable).columns.map(
+      (column) => column.name,
+    );
+    expect(columns).toContain("swipeRankImageReviewStatus");
+    expect(columns).toContain("swipeRankImageReviewNote");
+  });
+});
 
 describe("swipe_rank_profile constraints", () => {
   test("requires complete moderation metadata for an active exclusion", () => {

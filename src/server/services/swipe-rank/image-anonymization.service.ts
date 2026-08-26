@@ -46,13 +46,38 @@ interface TargetRow extends Record<string, unknown> {
 interface PeriodTargetRow extends TargetRow {
   rank: number;
   source_image_count: number;
-  unfinished_image_count: number;
+  pending_image_count: number;
   approved_image_count: number;
+  needs_review_image_count: number;
+  source_unavailable_image_count: number;
 }
 
 interface SourceMediaRow extends Record<string, unknown> {
   id: string;
   url: string;
+}
+
+class SourceImagePreparationError extends Error {
+  constructor(
+    message: string,
+    readonly mediaId: string,
+    readonly reason: string,
+    options?: ErrorOptions,
+  ) {
+    super(message, options);
+    this.name = "SourceImagePreparationError";
+  }
+}
+
+class NoAccessibleSourceImagesError extends Error {
+  constructor() {
+    super("Every pending source image is unavailable.");
+    this.name = "NoAccessibleSourceImagesError";
+  }
+}
+
+function isUnavailableSourceReason(reason: string) {
+  return /HTTP (400|401|403|404|410)\b/.test(reason);
 }
 
 export interface PreparedSwipeRankImage {
@@ -77,7 +102,11 @@ export type SwipeRankPeriodImageBatchResult =
       result: SwipeRankImageAnonymizationResult;
     }
   | {
-      status: "NO_SOURCE_IMAGES" | "ALREADY_APPROVED";
+      status:
+        | "NO_SOURCE_IMAGES"
+        | "ALREADY_APPROVED"
+        | "PRIVACY_HOLD"
+        | "SOURCE_UNAVAILABLE";
       rank: number;
       profileId: string;
       providerProfileId: string;
@@ -106,6 +135,7 @@ export async function listLatestSwipeRankImageTargets(limit: number) {
         FROM media
         WHERE media.tinder_profile_id = profile.provider_profile_id
           AND media.type IN ('image', 'photo')
+          AND media.swipe_rank_image_review_status IS NULL
           AND media.swipe_rank_anonymized_url IS NULL
       )
     ORDER BY
@@ -145,10 +175,14 @@ export async function listSwipeRankPeriodImageTargets(
         entry.metric_value,
         coalesce(profile_media.source_image_count, 0)::integer
           AS source_image_count,
-        coalesce(profile_media.unfinished_image_count, 0)::integer
-          AS unfinished_image_count,
+        coalesce(profile_media.pending_image_count, 0)::integer
+          AS pending_image_count,
         coalesce(profile_media.approved_image_count, 0)::integer
-          AS approved_image_count
+          AS approved_image_count,
+        coalesce(profile_media.needs_review_image_count, 0)::integer
+          AS needs_review_image_count,
+        coalesce(profile_media.source_unavailable_image_count, 0)::integer
+          AS source_unavailable_image_count
       FROM selected_snapshot snapshot
       JOIN swipe_rank_entry entry ON entry.snapshot_id = snapshot.id
       JOIN swipe_rank_profile profile ON profile.id = entry.profile_id
@@ -156,10 +190,17 @@ export async function listSwipeRankPeriodImageTargets(
         SELECT
           count(*)::integer AS source_image_count,
           count(*) FILTER (
-            WHERE media.swipe_rank_anonymized_url IS NULL
-          )::integer AS unfinished_image_count,
+            WHERE media.swipe_rank_image_review_status IS NULL
+              AND media.swipe_rank_anonymized_url IS NULL
+          )::integer AS pending_image_count,
           count(media.swipe_rank_anonymized_url)::integer
-            AS approved_image_count
+            AS approved_image_count,
+          count(*) FILTER (
+            WHERE media.swipe_rank_image_review_status = 'NEEDS_REVIEW'
+          )::integer AS needs_review_image_count,
+          count(*) FILTER (
+            WHERE media.swipe_rank_image_review_status = 'SOURCE_UNAVAILABLE'
+          )::integer AS source_unavailable_image_count
         FROM media
         WHERE media.tinder_profile_id = profile.provider_profile_id
           AND media.type IN ('image', 'photo')
@@ -177,8 +218,10 @@ export async function listSwipeRankPeriodImageTargets(
       provider_profile_id,
       rank,
       source_image_count,
-      unfinished_image_count,
-      approved_image_count
+      pending_image_count,
+      approved_image_count,
+      needs_review_image_count,
+      source_unavailable_image_count
     FROM ranked
     ORDER BY rank, provider_profile_id
     LIMIT ${limit}
@@ -195,6 +238,7 @@ export async function listUnfinishedSwipeRankSourceMedia(
     FROM media
     WHERE tinder_profile_id = ${providerProfileId}
       AND type IN ('image', 'photo')
+      AND swipe_rank_image_review_status IS NULL
       AND swipe_rank_anonymized_url IS NULL
     ORDER BY id
     LIMIT ${MAX_PROFILE_IMAGES}
@@ -236,13 +280,32 @@ async function prepareImages(rows: SourceMediaRow[]) {
         faceCount: anonymized.faces.length,
       });
     } catch (error) {
-      throw new Error(
+      const reason =
+        error instanceof Error ? error.message : "Unknown preparation error.";
+      if (isUnavailableSourceReason(reason)) {
+        await saveSourceUnavailable(row.id, reason);
+        continue;
+      }
+      throw new SourceImagePreparationError(
         `Could not prepare source image ${index + 1} (${row.id}).`,
+        row.id,
+        reason,
         { cause: error },
       );
     }
   }
   return prepared;
+}
+
+async function saveSourceUnavailable(mediaId: string, reason: string) {
+  await db
+    .update(mediaTable)
+    .set({
+      swipeRankImageReviewStatus: "SOURCE_UNAVAILABLE",
+      swipeRankImageReviewNote: reason.slice(0, 1_000),
+      swipeRankAnonymizedAt: new Date(),
+    })
+    .where(eq(mediaTable.id, mediaId));
 }
 
 async function auditImages(images: PreparedSwipeRankImage[]) {
@@ -313,6 +376,8 @@ async function saveApprovedImages(
             swipeRankAnonymizedAt: completedAt,
             swipeRankAnonymizationModel: AUDIT_MODEL,
             swipeRankAnonymizedFaceCount: image.faceCount,
+            swipeRankImageReviewStatus: "APPROVED",
+            swipeRankImageReviewNote: null,
           })
           .where(eq(mediaTable.id, image.mediaId));
       }
@@ -321,6 +386,38 @@ async function saveApprovedImages(
     await Promise.allSettled(uploaded.map((image) => deleteBlob(image.url)));
     throw error;
   }
+}
+
+async function savePrivacyHold(
+  images: PreparedSwipeRankImage[],
+  audit: z.infer<typeof imagePrivacyAuditSchema>,
+) {
+  const completedAt = new Date();
+  await withTransaction(async (tx) => {
+    for (const [index, image] of images.entries()) {
+      const imageAudit = audit.images[index]!;
+      const note = [
+        audit.summary,
+        imageAudit.issues.length > 0
+          ? `Issues: ${imageAudit.issues.join(", ")}.`
+          : null,
+        imageAudit.note || null,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .slice(0, 1_000);
+      await tx
+        .update(mediaTable)
+        .set({
+          swipeRankAnonymizedAt: completedAt,
+          swipeRankAnonymizationModel: AUDIT_MODEL,
+          swipeRankAnonymizedFaceCount: image.faceCount,
+          swipeRankImageReviewStatus: "NEEDS_REVIEW",
+          swipeRankImageReviewNote: note,
+        })
+        .where(eq(mediaTable.id, image.mediaId));
+    }
+  });
 }
 
 export async function anonymizeSwipeRankProfileImages(input: {
@@ -334,6 +431,9 @@ export async function anonymizeSwipeRankProfileImages(input: {
     throw new Error(`Profile ${input.profileId} has no unfinished images.`);
   }
   const images = await prepareImages(rows);
+  if (images.length === 0) {
+    throw new NoAccessibleSourceImagesError();
+  }
   return reviewAndSavePreparedSwipeRankImages({ ...input, images });
 }
 
@@ -358,6 +458,7 @@ export async function reviewAndSavePreparedSwipeRankImages(input: {
   const approved =
     audit.verdict === "PASS" && audit.images.every((image) => image.safe);
   if (!approved) {
+    await savePrivacyHold(images, audit);
     return {
       profileId: input.profileId,
       providerProfileId: input.providerProfileId,
@@ -443,16 +544,30 @@ export async function anonymizeSwipeRankPeriodProfileImages(input: {
       });
       continue;
     }
-    if (target.unfinished_image_count === 0) {
+    if (target.needs_review_image_count > 0) {
       await record({
-        status: "ALREADY_APPROVED",
+        status: "PRIVACY_HOLD",
         rank: target.rank,
         profileId: target.profile_id,
         providerProfileId: target.provider_profile_id,
         sourceImageCount: target.source_image_count,
         savedImageCount: target.approved_image_count,
-        summary:
-          "Every stored source image already has an approved derivative.",
+        summary: `${target.needs_review_image_count} images are held for privacy review.`,
+      });
+      continue;
+    }
+    if (target.pending_image_count === 0) {
+      const sourceUnavailable = target.source_unavailable_image_count > 0;
+      await record({
+        status: sourceUnavailable ? "SOURCE_UNAVAILABLE" : "ALREADY_APPROVED",
+        rank: target.rank,
+        profileId: target.profile_id,
+        providerProfileId: target.provider_profile_id,
+        sourceImageCount: target.source_image_count,
+        savedImageCount: target.approved_image_count,
+        summary: sourceUnavailable
+          ? `${target.source_unavailable_image_count} source images are unavailable.`
+          : "Every stored source image already has an approved derivative.",
       });
       continue;
     }
@@ -467,6 +582,18 @@ export async function anonymizeSwipeRankPeriodProfileImages(input: {
         }),
       });
     } catch (error) {
+      if (error instanceof NoAccessibleSourceImagesError) {
+        await record({
+          status: "SOURCE_UNAVAILABLE",
+          rank: target.rank,
+          profileId: target.profile_id,
+          providerProfileId: target.provider_profile_id,
+          sourceImageCount: target.source_image_count,
+          savedImageCount: target.approved_image_count,
+          summary: "A stored source image is no longer accessible.",
+        });
+        continue;
+      }
       throw new Error(
         `SwipeRank rank ${target.rank} profile ${target.provider_profile_id.slice(0, 10)} failed.`,
         { cause: error },
