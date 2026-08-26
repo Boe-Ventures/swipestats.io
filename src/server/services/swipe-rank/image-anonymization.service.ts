@@ -331,17 +331,24 @@ async function auditImages(images: PreparedSwipeRankImage[]) {
             type: "text",
             text: [
               "Review these machine-anonymized profile images for an internal admin interface.",
+              `There are exactly ${images.length} images, numbered 1 through ${images.length}.`,
               "Return PASS only when every visible face is blurred beyond recognition and no direct identifier remains legible.",
               "Direct identifiers include names, social handles, email addresses, phone numbers, license plates, and QR or barcodes.",
               "Ordinary scenery, clothing, tattoos, and broad location cues are acceptable unless they directly identify a person.",
               "Use NEEDS_REVIEW if uncertain. Include exactly one result for each image, in the supplied order.",
             ].join("\n"),
           },
-          ...images.map((image) => ({
-            type: "file" as const,
-            data: image.buffer,
-            mediaType: "image/jpeg" as const,
-          })),
+          ...images.flatMap((image, index) => [
+            {
+              type: "text" as const,
+              text: `Image ${index + 1} of ${images.length}:`,
+            },
+            {
+              type: "file" as const,
+              data: image.buffer,
+              mediaType: "image/jpeg" as const,
+            },
+          ]),
         ],
       },
     ],
