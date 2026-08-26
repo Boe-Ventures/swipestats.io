@@ -4,6 +4,7 @@ import {
   approvedImageIndexes,
   combineImagePrivacyAudits,
   imageAuditChunks,
+  isCompletedSwipeRankPrivacyHold,
 } from "./image-anonymization.service";
 
 function image(imageNumber: number, safe: boolean) {
@@ -17,6 +18,21 @@ function image(imageNumber: number, safe: boolean) {
 }
 
 describe("SwipeRank image review persistence", () => {
+  test("processes new pending images on a profile with an existing hold", () => {
+    expect(
+      isCompletedSwipeRankPrivacyHold({
+        needsReviewImageCount: 1,
+        pendingImageCount: 1,
+      }),
+    ).toBe(false);
+    expect(
+      isCompletedSwipeRankPrivacyHold({
+        needsReviewImageCount: 1,
+        pendingImageCount: 0,
+      }),
+    ).toBe(true);
+  });
+
   test("reviews large profiles in small attention-preserving chunks", () => {
     expect(imageAuditChunks([1, 2, 3, 4, 5, 6, 7])).toEqual([
       [1, 2, 3],

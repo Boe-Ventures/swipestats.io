@@ -55,6 +55,13 @@ interface PeriodTargetRow extends TargetRow {
   source_unavailable_image_count: number;
 }
 
+export function isCompletedSwipeRankPrivacyHold(input: {
+  needsReviewImageCount: number;
+  pendingImageCount: number;
+}) {
+  return input.needsReviewImageCount > 0 && input.pendingImageCount === 0;
+}
+
 interface SourceMediaRow extends Record<string, unknown> {
   id: string;
   url: string;
@@ -614,7 +621,12 @@ export async function anonymizeSwipeRankPeriodProfileImages(input: {
       });
       continue;
     }
-    if (target.needs_review_image_count > 0) {
+    if (
+      isCompletedSwipeRankPrivacyHold({
+        needsReviewImageCount: target.needs_review_image_count,
+        pendingImageCount: target.pending_image_count,
+      })
+    ) {
       await record({
         status: "PRIVACY_HOLD",
         rank: target.rank,
