@@ -38,6 +38,8 @@ const imagePrivacyAuditSchema = z.object({
   ),
 });
 
+type ImagePrivacyAudit = z.infer<typeof imagePrivacyAuditSchema>;
+
 interface TargetRow extends Record<string, unknown> {
   profile_id: string;
   provider_profile_id: string;
@@ -355,13 +357,26 @@ async function auditImages(images: PreparedSwipeRankImage[]) {
   });
 }
 
-async function saveApprovedImages(
+export function approvedImageIndexes(audit: ImagePrivacyAudit) {
+  const specificallyUnsafe = audit.images.some((image) => !image.safe);
+  if (audit.verdict === "NEEDS_REVIEW" && !specificallyUnsafe) {
+    return new Set<number>();
+  }
+  return new Set(
+    audit.images.flatMap((image, index) => (image.safe ? [index] : [])),
+  );
+}
+
+async function saveReviewedImages(
   profileId: string,
   images: PreparedSwipeRankImage[],
+  audit: ImagePrivacyAudit,
 ) {
   const uploaded: Array<PreparedSwipeRankImage & { url: string }> = [];
+  const approvedIndexes = approvedImageIndexes(audit);
   try {
-    for (const image of images) {
+    for (const [index, image] of images.entries()) {
+      if (!approvedIndexes.has(index)) continue;
       const result = await uploadBlob(
         `swipe-rank/anonymized/${profileId}/${image.mediaId}.jpg`,
         image.buffer,
@@ -375,16 +390,33 @@ async function saveApprovedImages(
     }
     const completedAt = new Date();
     await withTransaction(async (tx) => {
-      for (const image of uploaded) {
+      for (const [index, image] of images.entries()) {
+        const approved = approvedIndexes.has(index);
+        const uploadedImage = approved
+          ? uploaded.find((candidate) => candidate.mediaId === image.mediaId)
+          : undefined;
+        const imageAudit = audit.images[index]!;
+        const note = approved
+          ? null
+          : [
+              audit.summary,
+              imageAudit.issues.length > 0
+                ? `Issues: ${imageAudit.issues.join(", ")}.`
+                : null,
+              imageAudit.note || null,
+            ]
+              .filter(Boolean)
+              .join(" ")
+              .slice(0, 1_000);
         await tx
           .update(mediaTable)
           .set({
-            swipeRankAnonymizedUrl: image.url,
+            swipeRankAnonymizedUrl: approved ? uploadedImage!.url : null,
             swipeRankAnonymizedAt: completedAt,
             swipeRankAnonymizationModel: AUDIT_MODEL,
             swipeRankAnonymizedFaceCount: image.faceCount,
-            swipeRankImageReviewStatus: "APPROVED",
-            swipeRankImageReviewNote: null,
+            swipeRankImageReviewStatus: approved ? "APPROVED" : "NEEDS_REVIEW",
+            swipeRankImageReviewNote: note,
           })
           .where(eq(mediaTable.id, image.mediaId));
       }
@@ -393,38 +425,7 @@ async function saveApprovedImages(
     await Promise.allSettled(uploaded.map((image) => deleteBlob(image.url)));
     throw error;
   }
-}
-
-async function savePrivacyHold(
-  images: PreparedSwipeRankImage[],
-  audit: z.infer<typeof imagePrivacyAuditSchema>,
-) {
-  const completedAt = new Date();
-  await withTransaction(async (tx) => {
-    for (const [index, image] of images.entries()) {
-      const imageAudit = audit.images[index]!;
-      const note = [
-        audit.summary,
-        imageAudit.issues.length > 0
-          ? `Issues: ${imageAudit.issues.join(", ")}.`
-          : null,
-        imageAudit.note || null,
-      ]
-        .filter(Boolean)
-        .join(" ")
-        .slice(0, 1_000);
-      await tx
-        .update(mediaTable)
-        .set({
-          swipeRankAnonymizedAt: completedAt,
-          swipeRankAnonymizationModel: AUDIT_MODEL,
-          swipeRankAnonymizedFaceCount: image.faceCount,
-          swipeRankImageReviewStatus: "NEEDS_REVIEW",
-          swipeRankImageReviewNote: note,
-        })
-        .where(eq(mediaTable.id, image.mediaId));
-    }
-  });
+  return uploaded.length;
 }
 
 export async function anonymizeSwipeRankProfileImages(input: {
@@ -462,26 +463,18 @@ export async function reviewAndSavePreparedSwipeRankImages(input: {
       `Sonnet returned image numbers [${audit.images.map((image) => image.imageNumber).join(", ")}]; expected 1 through ${images.length}.`,
     );
   }
-  const approved =
-    audit.verdict === "PASS" && audit.images.every((image) => image.safe);
-  if (!approved) {
-    await savePrivacyHold(images, audit);
-    return {
-      profileId: input.profileId,
-      providerProfileId: input.providerProfileId,
-      verdict: "NEEDS_REVIEW",
-      sourceImageCount: images.length,
-      savedImageCount: 0,
-      summary: audit.summary,
-    };
-  }
-  await saveApprovedImages(input.profileId, images);
+  const savedImageCount = await saveReviewedImages(
+    input.profileId,
+    images,
+    audit,
+  );
+  const approved = savedImageCount === images.length;
   return {
     profileId: input.profileId,
     providerProfileId: input.providerProfileId,
-    verdict: "PASS",
+    verdict: approved ? "PASS" : "NEEDS_REVIEW",
     sourceImageCount: images.length,
-    savedImageCount: images.length,
+    savedImageCount,
     summary: audit.summary,
   };
 }

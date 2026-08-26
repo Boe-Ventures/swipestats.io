@@ -158,6 +158,74 @@ async function rotatedRgb(
     .toBuffer({ resolveWithObject: true });
 }
 
+export function imageDetectionTiles(width: number, height: number) {
+  if (width < 768 || height < 768) return [];
+
+  const tileWidth = Math.ceil(width * 0.32);
+  const tileHeight = Math.ceil(height * 0.32);
+  const horizontalTravel = width - tileWidth;
+  const verticalTravel = height - tileHeight;
+  const leftOffsets = [
+    0,
+    Math.round(horizontalTravel / 3),
+    Math.round((horizontalTravel * 2) / 3),
+    horizontalTravel,
+  ];
+  const topOffsets = [
+    0,
+    Math.round(verticalTravel / 3),
+    Math.round((verticalTravel * 2) / 3),
+    verticalTravel,
+  ];
+
+  return topOffsets.flatMap((top) =>
+    leftOffsets.map((left) => ({
+      left,
+      top,
+      width: tileWidth,
+      height: tileHeight,
+    })),
+  );
+}
+
+async function tiledFaces(
+  rgb: Uint8Array,
+  width: number,
+  height: number,
+): Promise<ImageFaceBox[]> {
+  const tiles = imageDetectionTiles(width, height);
+  if (tiles.length === 0) return [];
+
+  const image = sharp(rgb, { raw: { width, height, channels: 3 } });
+  const faces: ImageFaceBox[] = [];
+
+  for (const { left, top, width: tileWidth, height: tileHeight } of tiles) {
+    const tile = await image
+      .clone()
+      .extract({ left, top, width: tileWidth, height: tileHeight })
+      .raw()
+      .toBuffer();
+    const tileFaces = [
+      ...(await detectImageFacesWithModel(
+        tile,
+        tileWidth,
+        tileHeight,
+        "short",
+      )),
+      ...(await detectImageFacesWithModel(tile, tileWidth, tileHeight, "full")),
+    ];
+    faces.push(
+      ...tileFaces.map((face) => ({
+        ...face,
+        x: face.x + left,
+        y: face.y + top,
+      })),
+    );
+  }
+
+  return faces;
+}
+
 export async function detectImageFaces(
   rgb: Uint8Array,
   width: number,
@@ -166,6 +234,7 @@ export async function detectImageFaces(
   const primaryFaces = distinctFaces([
     ...(await detectImageFacesWithModel(rgb, width, height, "full")),
     ...(await detectImageFacesWithModel(rgb, width, height, "short")),
+    ...(await tiledFaces(rgb, width, height)),
   ]);
   if (primaryFaces.length > 0) return primaryFaces;
 
