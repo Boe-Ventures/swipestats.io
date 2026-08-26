@@ -40,6 +40,7 @@
     "ls:overview": "bun run src/scripts/lemonsqueezy/overview.ts",
     "privacy:anonymize-image": "bun run src/scripts/llm-analysis/anonymize-image-online.ts",
     "privacy:anonymize-swiperank": "bun run src/scripts/llm-analysis/anonymize-swipe-rank-images.ts",
+    "privacy:audit-swiperank-codex": "bun run src/scripts/llm-analysis/audit-swipe-rank-images-with-codex.ts",
     "preview": "next build && next start",
     "start": "next start",
     "swipe-rank:audit-over-100": "bun run src/scripts/swipe-rank/audit-over-100.ts",

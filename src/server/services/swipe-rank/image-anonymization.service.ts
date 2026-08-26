@@ -17,7 +17,7 @@ const DOWNLOAD_TIMEOUT_MS = 20_000;
 const AUDIT_MODEL = AI_MODELS.sonnet5;
 const AUDIT_CHUNK_SIZE = 3;
 
-const imagePrivacyAuditSchema = z.object({
+export const imagePrivacyAuditSchema = z.object({
   verdict: z.enum(["PASS", "NEEDS_REVIEW"]),
   summary: z.string().trim().min(1).max(500),
   images: z.array(

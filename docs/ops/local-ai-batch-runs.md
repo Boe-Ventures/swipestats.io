@@ -6,11 +6,12 @@ database access, and persisted output separate.
 
 ## The three execution paths
 
-| Path                   | Command                               | Model and billing                                                              | Database effect                              |
-| ---------------------- | ------------------------------------- | ------------------------------------------------------------------------------ | -------------------------------------------- |
-| Local image transform  | `bun run privacy:anonymize-image`     | TensorFlow CPU face detection plus Sharp; no model API                         | None                                         |
-| Local SwipeRank review | `bun run swipe-rank:review-codex`     | Local `codex exec`; charged against the account authenticated in the Codex CLI | Read-only                                    |
-| SwipeRank image batch  | `bun run privacy:anonymize-swiperank` | Local CPU transform followed by Anthropic Sonnet 5 privacy review              | Writes approved Blob URLs and media metadata |
+| Path                   | Command                                 | Model and billing                                                              | Database effect                                 |
+| ---------------------- | --------------------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------- |
+| Local image transform  | `bun run privacy:anonymize-image`       | TensorFlow CPU face detection plus Sharp; no model API                         | None                                            |
+| Local SwipeRank review | `bun run swipe-rank:review-codex`       | Local `codex exec`; charged against the account authenticated in the Codex CLI | Read-only                                       |
+| SwipeRank image batch  | `bun run privacy:anonymize-swiperank`   | Local CPU transform followed by Anthropic Sonnet 5 privacy review              | Writes approved Blob URLs and media metadata    |
+| Codex image audit      | `bun run privacy:audit-swiperank-codex` | Local Codex Sol vision review of approved derivatives                          | Optionally holds and deletes unsafe derivatives |
 
 The local Codex runner does not require `OPENAI_API_KEY`. It launches the
 installed Codex CLI, which uses the account already authenticated on the
@@ -202,6 +203,32 @@ Sonnet 5 for a strict privacy audit, uploads approved derivatives to Vercel
 Blob, and stores the approved URLs on their `media` rows. Each source row also
 stores `APPROVED`, `NEEDS_REVIEW`, or `SOURCE_UNAVAILABLE` with a short review
 note. A null status means the image is still pending.
+
+### Run the final local Codex image gate
+
+Large production batches require a second visual audit with local Codex Sol.
+This gate downloads only derivatives already approved by Sonnet. With
+`--write`, unsafe rows move to `NEEDS_REVIEW`, their derivative URLs are
+cleared, and their Blob objects are deleted. The command exits on the first
+Codex, schema, database, or Blob error.
+
+```sh
+DATABASE_URL="$PROD_DATABASE_URL" \
+BLOB_READ_WRITE_TOKEN="$PROD_BLOB_READ_WRITE_TOKEN" \
+  bun run privacy:audit-swiperank-codex -- \
+  --period=2026-07 \
+  --offset=0 \
+  --limit=500 \
+  --model=gpt-5.6-sol \
+  --reasoning=high \
+  --output-dir=/private/tmp/swiperank-sol-2026-07-top500 \
+  --write
+```
+
+Omit `--write` for a read-only calibration. The output directory has private
+permissions and retains one structured verdict plus Codex usage events per
+audited profile. Review the terminal summary and confirm every selected media
+row has a terminal state after both stages.
 
 Its error behavior is intentionally simple:
 
