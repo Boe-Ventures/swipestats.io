@@ -168,11 +168,33 @@ measurements rather than an API-dollar invoice.
 
 ## Run the Sonnet-reviewed SwipeRank image batch
 
-The supported batch selects the latest published Tinder profiles that still
-have unfinished images:
+The default batch selects the latest published Tinder profiles that still have
+unfinished images:
 
 ```sh
 bun run privacy:anonymize-swiperank -- --limit=10
+```
+
+For a visible leaderboard cohort, select the closed calendar period directly:
+
+```sh
+bun run privacy:anonymize-swiperank -- --period=2026-07 --limit=10
+```
+
+Period batches use the latest published snapshot and the same current exclusion
+boundary as the admin leaderboard. The limit counts leaderboard profiles.
+Profiles without stored source images are reported and skipped, as are profiles
+whose stored images already have approved derivatives. Limits up to 1,000 make
+the same command suitable for a larger operator batch.
+
+If a fail-fast run stops on a diagnosed profile, resume after that leaderboard
+row with an offset. This keeps review and persistence atomic per profile:
+
+```sh
+bun run privacy:anonymize-swiperank -- \
+  --period=2026-07 \
+  --offset=8 \
+  --limit=10
 ```
 
 The process uses TensorFlow and Sharp locally, sends the anonymized JPEGs to
@@ -212,7 +234,7 @@ set +a
 DATABASE_URL="$PROD_DATABASE_URL" \
 BLOB_READ_WRITE_TOKEN="$PROD_BLOB_READ_WRITE_TOKEN" \
 ANTHROPIC_API_KEY="$LOCAL_ANTHROPIC_API_KEY" \
-  bun run privacy:anonymize-swiperank -- --limit=10
+  bun run privacy:anonymize-swiperank -- --period=2026-07 --limit=10
 
 unlink /tmp/swipestats-production.env
 unset PROD_DATABASE_URL PROD_BLOB_READ_WRITE_TOKEN LOCAL_ANTHROPIC_API_KEY

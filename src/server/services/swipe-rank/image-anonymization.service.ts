@@ -8,6 +8,9 @@ import { mediaTable } from "@/server/db/schema";
 import { deleteBlob, uploadBlob } from "@/server/services/blob.service";
 import { anonymizeImageBuffer } from "@/server/services/image-anonymization.service";
 
+import { SWIPE_RANK_METRIC_VERSION } from "./constants";
+import type { ClosedSwipeRankPeriodBounds } from "./periods";
+
 const MAX_PROFILE_IMAGES = 9;
 const MAX_DOWNLOAD_BYTES = 20_000_000;
 const DOWNLOAD_TIMEOUT_MS = 20_000;
@@ -40,6 +43,13 @@ interface TargetRow extends Record<string, unknown> {
   provider_profile_id: string;
 }
 
+interface PeriodTargetRow extends TargetRow {
+  rank: number;
+  source_image_count: number;
+  unfinished_image_count: number;
+  approved_image_count: number;
+}
+
 interface SourceMediaRow extends Record<string, unknown> {
   id: string;
   url: string;
@@ -59,6 +69,22 @@ export interface SwipeRankImageAnonymizationResult {
   savedImageCount: number;
   summary: string;
 }
+
+export type SwipeRankPeriodImageBatchResult =
+  | {
+      status: "PROCESSED";
+      rank: number;
+      result: SwipeRankImageAnonymizationResult;
+    }
+  | {
+      status: "NO_SOURCE_IMAGES" | "ALREADY_APPROVED";
+      rank: number;
+      profileId: string;
+      providerProfileId: string;
+      sourceImageCount: number;
+      savedImageCount: number;
+      summary: string;
+    };
 
 export async function listLatestSwipeRankImageTargets(limit: number) {
   const result = await db.execute<TargetRow>(sql`
@@ -86,6 +112,77 @@ export async function listLatestSwipeRankImageTargets(limit: number) {
       tinder.created_at DESC,
       tinder.tinder_id DESC
     LIMIT ${limit}
+  `);
+  return result.rows;
+}
+
+/**
+ * Selects the visible rows from one published leaderboard edition. The window
+ * rank mirrors the admin leaderboard after currently excluded profiles have
+ * been removed.
+ */
+export async function listSwipeRankPeriodImageTargets(
+  period: ClosedSwipeRankPeriodBounds,
+  limit: number,
+  offset = 0,
+) {
+  const result = await db.execute<PeriodTargetRow>(sql`
+    WITH selected_snapshot AS (
+      SELECT snapshot.id
+      FROM swipe_rank_snapshot snapshot
+      WHERE snapshot.data_provider = 'TINDER'
+        AND snapshot.metric_version = ${SWIPE_RANK_METRIC_VERSION}
+        AND snapshot.period_kind = ${period.kind}
+        AND snapshot.period_start = ${period.start}::date
+        AND snapshot.period_end = ${period.end}::date
+        AND snapshot.status = 'PUBLISHED'
+      ORDER BY snapshot.published_at DESC, snapshot.id DESC
+      LIMIT 1
+    ), field AS (
+      SELECT
+        profile.id AS profile_id,
+        profile.provider_profile_id,
+        entry.metric_value,
+        coalesce(profile_media.source_image_count, 0)::integer
+          AS source_image_count,
+        coalesce(profile_media.unfinished_image_count, 0)::integer
+          AS unfinished_image_count,
+        coalesce(profile_media.approved_image_count, 0)::integer
+          AS approved_image_count
+      FROM selected_snapshot snapshot
+      JOIN swipe_rank_entry entry ON entry.snapshot_id = snapshot.id
+      JOIN swipe_rank_profile profile ON profile.id = entry.profile_id
+      LEFT JOIN LATERAL (
+        SELECT
+          count(*)::integer AS source_image_count,
+          count(*) FILTER (
+            WHERE media.swipe_rank_anonymized_url IS NULL
+          )::integer AS unfinished_image_count,
+          count(media.swipe_rank_anonymized_url)::integer
+            AS approved_image_count
+        FROM media
+        WHERE media.tinder_profile_id = profile.provider_profile_id
+          AND media.type IN ('image', 'photo')
+      ) profile_media ON true
+      WHERE profile.is_synthetic = false
+        AND profile.is_swipe_rank_excluded = false
+    ), ranked AS (
+      SELECT
+        field.*,
+        rank() OVER (ORDER BY metric_value DESC)::integer AS rank
+      FROM field
+    )
+    SELECT
+      profile_id,
+      provider_profile_id,
+      rank,
+      source_image_count,
+      unfinished_image_count,
+      approved_image_count
+    FROM ranked
+    ORDER BY rank, provider_profile_id
+    LIMIT ${limit}
+    OFFSET ${offset}
   `);
   return result.rows;
 }
@@ -129,14 +226,21 @@ async function downloadImage(url: string) {
 
 async function prepareImages(rows: SourceMediaRow[]) {
   const prepared: PreparedSwipeRankImage[] = [];
-  for (const row of rows) {
-    const source = await downloadImage(row.url);
-    const anonymized = await anonymizeImageBuffer(source);
-    prepared.push({
-      mediaId: row.id,
-      buffer: anonymized.buffer,
-      faceCount: anonymized.faces.length,
-    });
+  for (const [index, row] of rows.entries()) {
+    try {
+      const source = await downloadImage(row.url);
+      const anonymized = await anonymizeImageBuffer(source);
+      prepared.push({
+        mediaId: row.id,
+        buffer: anonymized.buffer,
+        faceCount: anonymized.faces.length,
+      });
+    } catch (error) {
+      throw new Error(
+        `Could not prepare source image ${index + 1} (${row.id}).`,
+        { cause: error },
+      );
+    }
   }
   return prepared;
 }
@@ -247,7 +351,9 @@ export async function reviewAndSavePreparedSwipeRankImages(input: {
     audit.images.length !== images.length ||
     audit.images.some((image, index) => image.imageNumber !== index + 1)
   ) {
-    throw new Error("Sonnet returned an incomplete or misordered image audit.");
+    throw new Error(
+      `Sonnet returned image numbers [${audit.images.map((image) => image.imageNumber).join(", ")}]; expected 1 through ${images.length}.`,
+    );
   }
   const approved =
     audit.verdict === "PASS" && audit.images.every((image) => image.safe);
@@ -286,6 +392,86 @@ export async function anonymizeLatestSwipeRankProfileImages(limit = 10) {
         providerProfileId: target.provider_profile_id,
       }),
     );
+  }
+  return results;
+}
+
+/**
+ * Fail-fast period batch. Rows without source media and rows already complete
+ * are reported as skips; operational and privacy-review errors stop the run.
+ */
+export async function anonymizeSwipeRankPeriodProfileImages(input: {
+  period: ClosedSwipeRankPeriodBounds;
+  limit?: number;
+  offset?: number;
+  onResult?: (result: SwipeRankPeriodImageBatchResult) => void | Promise<void>;
+}): Promise<SwipeRankPeriodImageBatchResult[]> {
+  const limit = input.limit ?? 10;
+  const offset = input.offset ?? 0;
+  if (!Number.isInteger(limit) || limit < 1 || limit > 1_000) {
+    throw new Error("limit must be an integer between 1 and 1000.");
+  }
+  if (!Number.isInteger(offset) || offset < 0) {
+    throw new Error("offset must be a nonnegative integer.");
+  }
+  const targets = await listSwipeRankPeriodImageTargets(
+    input.period,
+    limit,
+    offset,
+  );
+  if (targets.length === 0) {
+    throw new Error(
+      `No published SwipeRank field exists for ${input.period.kind} ${input.period.start}.`,
+    );
+  }
+
+  const results: SwipeRankPeriodImageBatchResult[] = [];
+  const record = async (result: SwipeRankPeriodImageBatchResult) => {
+    results.push(result);
+    await input.onResult?.(result);
+  };
+  for (const target of targets) {
+    if (target.source_image_count === 0) {
+      await record({
+        status: "NO_SOURCE_IMAGES",
+        rank: target.rank,
+        profileId: target.profile_id,
+        providerProfileId: target.provider_profile_id,
+        sourceImageCount: 0,
+        savedImageCount: 0,
+        summary: "The stored Tinder export has no source images.",
+      });
+      continue;
+    }
+    if (target.unfinished_image_count === 0) {
+      await record({
+        status: "ALREADY_APPROVED",
+        rank: target.rank,
+        profileId: target.profile_id,
+        providerProfileId: target.provider_profile_id,
+        sourceImageCount: target.source_image_count,
+        savedImageCount: target.approved_image_count,
+        summary:
+          "Every stored source image already has an approved derivative.",
+      });
+      continue;
+    }
+
+    try {
+      await record({
+        status: "PROCESSED",
+        rank: target.rank,
+        result: await anonymizeSwipeRankProfileImages({
+          profileId: target.profile_id,
+          providerProfileId: target.provider_profile_id,
+        }),
+      });
+    } catch (error) {
+      throw new Error(
+        `SwipeRank rank ${target.rank} profile ${target.provider_profile_id.slice(0, 10)} failed.`,
+        { cause: error },
+      );
+    }
   }
   return results;
 }

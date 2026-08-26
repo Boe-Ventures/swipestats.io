@@ -699,7 +699,9 @@ export default function AdminSwipeRankPage() {
                                         />
                                       )}
                                       <AvatarFallback className="rounded-md font-mono text-[10px]">
-                                        No image
+                                        {entry.photoCount > 0
+                                          ? "Pending"
+                                          : "No source"}
                                       </AvatarFallback>
                                     </Avatar>
                                   </Link>
@@ -715,9 +717,11 @@ export default function AdminSwipeRankPage() {
                                   <ExternalLink className="h-3 w-3 shrink-0" />
                                 </Link>
                                 <p className="mt-1 text-xs text-gray-500">
-                                  {entry.anonymizedPhotoCount.toLocaleString()}{" "}
-                                  of {entry.photoCount.toLocaleString()} images
-                                  admin-safe
+                                  {entry.anonymizedPhotoCount > 0
+                                    ? `${entry.anonymizedPhotoCount.toLocaleString()} of ${entry.photoCount.toLocaleString()} images admin-safe`
+                                    : entry.photoCount > 0
+                                      ? `${entry.photoCount.toLocaleString()} stored images awaiting anonymization`
+                                      : "No stored images in export"}
                                 </p>
                               </div>
                             </div>
