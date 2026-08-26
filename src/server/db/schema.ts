@@ -884,6 +884,13 @@ export const mediaTable = pgTable(
     caption: t.text(),
     url: t.text().notNull(),
     originalUrl: t.text(),
+    // Admin-only derivative used by SwipeRank review. The original media row
+    // remains the source of truth and public leaderboard payloads expose
+    // neither URL.
+    swipeRankAnonymizedUrl: t.text(),
+    swipeRankAnonymizedAt: t.timestamp(),
+    swipeRankAnonymizationModel: t.text(),
+    swipeRankAnonymizedFaceCount: t.integer(),
     fromSoMe: t.boolean(),
     hingeProfileId: t
       .text()

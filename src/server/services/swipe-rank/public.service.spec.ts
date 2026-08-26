@@ -39,6 +39,7 @@ function leaderboardRow(
     metric_value: null,
     metric_numerator: null,
     metric_denominator: null,
+    like_rate_denominator: null,
     active_days: null,
     age_in_period: null,
     gender: null,
@@ -48,7 +49,6 @@ function leaderboardRow(
     country: null,
     seasons_ranked: null,
     observed_history_days: null,
-    photo_url: null,
     photo_count: null,
     as_of: "2026-07-14T10:00:00.000Z",
     minimum_rate_denominator: "100",
@@ -73,7 +73,6 @@ describe("SwipeRank public leaderboard", () => {
       getPublicSwipeRankPseudonym("srp_internal-profile-id", secret),
     );
     expect(identity.entryKey).toMatch(/^entry_[a-f0-9]{32}$/);
-    expect(identity.alias).toMatch(/^Dater #[A-F0-9]{10}$/);
     expect(JSON.stringify(identity)).not.toContain("internal-profile-id");
     expect(
       getPublicSwipeRankPseudonym("srp_internal-profile-id", secret),
@@ -96,6 +95,7 @@ describe("SwipeRank public leaderboard", () => {
           metric_value: "0.19862857142857143",
           metric_numerator: "4345",
           metric_denominator: "21875",
+          like_rate_denominator: "91250",
           active_days: "615",
           age_in_period: "33",
           gender: "MALE",
@@ -105,7 +105,6 @@ describe("SwipeRank public leaderboard", () => {
           country: "NO",
           seasons_ranked: "7",
           observed_history_days: "4044",
-          photo_url: "https://example.com/photo.jpg",
           photo_count: "4",
         }),
       ],
@@ -129,7 +128,6 @@ describe("SwipeRank public leaderboard", () => {
     expect(Object.keys(entry).sort()).toEqual([
       "activeDays",
       "age",
-      "alias",
       "city",
       "country",
       "entryKey",
@@ -139,18 +137,19 @@ describe("SwipeRank public leaderboard", () => {
       "matches",
       "observedHistoryDays",
       "photoCount",
-      "photoUrl",
       "rank",
       "region",
       "rightSwipes",
       "seasonsRanked",
       "topShare",
+      "totalSwipes",
     ]);
     expect(entry).toMatchObject({
       rank: 122,
       matchYieldPercent: 19.9,
       matches: 4_345,
       rightSwipes: 21_875,
+      totalSwipes: 91_250,
       activeDays: 615,
       age: 33,
       gender: "MALE",
@@ -160,7 +159,6 @@ describe("SwipeRank public leaderboard", () => {
       country: "NO",
       seasonsRanked: 7,
       observedHistoryDays: 4_044,
-      photoUrl: "https://example.com/photo.jpg",
       photoCount: 4,
     });
     expect(entry.topShare).toBeCloseTo((122 / 1406) * 100);
@@ -212,7 +210,6 @@ describe("SwipeRank public leaderboard", () => {
       country: "IS",
       seasonsRanked: 2,
       observedHistoryDays: 800,
-      photoUrl: null,
       photoCount: 0,
     });
   });

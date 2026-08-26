@@ -59,8 +59,9 @@ interface LeaderboardRow extends Record<string, unknown> {
   city: string | null;
   region: string | null;
   country: string | null;
-  photo_url: string | null;
+  photo_urls: string[] | null;
   photo_count: number | string;
+  anonymized_photo_count: number | string;
   age_in_period: number | string | null;
   metric_numerator: number | string;
   metric_denominator: number | string;
@@ -323,8 +324,9 @@ export async function getAdminSwipeRankLeaderboard(
         profile.city,
         profile.region,
         profile.country,
-        profile_media.photo_url,
+        profile_media.photo_urls,
         profile_media.photo_count,
+        profile_media.anonymized_photo_count,
         ai_review.id AS ai_review_id,
         ai_review.verdict AS ai_review_verdict,
         ai_review.confidence AS ai_review_confidence,
@@ -338,7 +340,11 @@ export async function getAdminSwipeRankLeaderboard(
       JOIN swipe_rank_entry entry ON entry.snapshot_id = snapshot.id
       JOIN swipe_rank_profile profile ON profile.id = entry.profile_id
       LEFT JOIN LATERAL (
-        SELECT min(media.url) AS photo_url, count(*)::bigint AS photo_count
+        SELECT
+          array_agg(media.swipe_rank_anonymized_url ORDER BY media.id)
+            FILTER (WHERE media.swipe_rank_anonymized_url IS NOT NULL) AS photo_urls,
+          count(*)::bigint AS photo_count,
+          count(media.swipe_rank_anonymized_url)::bigint AS anonymized_photo_count
         FROM media
         WHERE media.tinder_profile_id = profile.provider_profile_id
           AND media.type IN ('image', 'photo')
@@ -419,8 +425,9 @@ export async function getAdminSwipeRankLeaderboard(
           city: row.city,
           region: row.region,
           country: row.country,
-          photoUrl: row.photo_url,
+          anonymizedPhotoUrls: row.photo_urls ?? [],
           photoCount: number(row.photo_count),
+          anonymizedPhotoCount: number(row.anonymized_photo_count),
           ageInPeriod:
             row.age_in_period === null ? null : number(row.age_in_period),
           matchRateNumerator: number(row.metric_numerator),

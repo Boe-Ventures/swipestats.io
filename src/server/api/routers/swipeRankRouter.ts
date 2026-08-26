@@ -82,7 +82,7 @@ const periodSchema = z
 
 const cachedPublicSwipeRankLeaderboard = unstable_cache(
   getPublicSwipeRankLeaderboard,
-  ["swipe-rank-public-leaderboard-v6", SWIPE_RANK_PUBLIC_CACHE_NAMESPACE],
+  ["swipe-rank-public-leaderboard-v7", SWIPE_RANK_PUBLIC_CACHE_NAMESPACE],
   { revalidate: 60, tags: [SWIPE_RANK_PUBLIC_CACHE_TAG] },
 );
 const cachedPublicSwipeRankPeriods = unstable_cache(

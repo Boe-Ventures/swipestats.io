@@ -17,12 +17,12 @@ export const SWIPE_RANK_PUBLIC_PAGE_SIZE = 100;
 
 export interface PublicSwipeRankEntry {
   entryKey: string;
-  alias: string;
   rank: number;
   topShare: number;
   matchYieldPercent: number;
   matches: number;
   rightSwipes: number;
+  totalSwipes: number;
   activeDays: number;
   age: number | null;
   gender: Gender | null;
@@ -32,7 +32,6 @@ export interface PublicSwipeRankEntry {
   country: string | null;
   seasonsRanked: number;
   observedHistoryDays: number;
-  photoUrl: string | null;
   photoCount: number;
 }
 
@@ -61,6 +60,7 @@ interface LeaderboardRow extends Record<string, unknown> {
   metric_value: number | string | null;
   metric_numerator: number | string | null;
   metric_denominator: number | string | null;
+  like_rate_denominator: number | string | null;
   active_days: number | string | null;
   age_in_period: number | string | null;
   gender: Gender | null;
@@ -70,7 +70,6 @@ interface LeaderboardRow extends Record<string, unknown> {
   country: string | null;
   seasons_ranked: number | string | null;
   observed_history_days: number | string | null;
-  photo_url: string | null;
   photo_count: number | string | null;
   as_of: string | Date;
   minimum_rate_denominator: number | string;
@@ -107,7 +106,7 @@ function publicIdentitySecret(): string {
 export function getPublicSwipeRankPseudonym(
   profileId: string,
   secret: string,
-): Pick<PublicSwipeRankEntry, "entryKey" | "alias"> {
+): Pick<PublicSwipeRankEntry, "entryKey"> {
   if (!secret) {
     throw new Error("SwipeRank public identity secret must not be empty.");
   }
@@ -116,7 +115,6 @@ export function getPublicSwipeRankPseudonym(
     .digest("hex");
   return {
     entryKey: `entry_${digest.slice(0, 32)}`,
-    alias: `Dater #${digest.slice(0, 10).toUpperCase()}`,
   };
 }
 
@@ -163,7 +161,6 @@ export async function getPublicSwipeRankLeaderboard(input: {
         profile.region,
         profile.country,
         season_counts.seasons_ranked,
-        profile_media.photo_url,
         profile_media.photo_count,
         row_number() OVER (ORDER BY entry.rank, entry.profile_id) AS row_number
       FROM selected_snapshot snapshot
@@ -171,7 +168,7 @@ export async function getPublicSwipeRankLeaderboard(input: {
       JOIN swipe_rank_profile profile ON profile.id = entry.profile_id
       JOIN season_counts ON season_counts.profile_id = entry.profile_id
       LEFT JOIN LATERAL (
-        SELECT min(media.url) AS photo_url, count(*)::bigint AS photo_count
+        SELECT count(*)::bigint AS photo_count
         FROM media
         WHERE media.tinder_profile_id = profile.provider_profile_id
           AND media.type IN ('image', 'photo')
@@ -205,6 +202,7 @@ export async function getPublicSwipeRankLeaderboard(input: {
       paged.metric_value,
       paged.metric_numerator,
       paged.metric_denominator,
+      paged.like_rate_denominator,
       paged.active_days,
       paged.age_in_period,
       paged.gender,
@@ -214,7 +212,6 @@ export async function getPublicSwipeRankLeaderboard(input: {
       paged.country,
       paged.seasons_ranked,
       paged.observed_history_days,
-      paged.photo_url,
       paged.photo_count
     FROM stats
     LEFT JOIN paged ON true
@@ -248,6 +245,9 @@ export async function getPublicSwipeRankLeaderboard(input: {
               Math.round(Number(row.metric_value) * 1_000) / 10,
             matches: Number(row.metric_numerator),
             rightSwipes: Number(row.metric_denominator),
+            totalSwipes: Number(
+              row.like_rate_denominator ?? row.metric_denominator,
+            ),
             activeDays: Number(row.active_days ?? 0),
             age: row.age_in_period === null ? null : Number(row.age_in_period),
             gender: row.gender,
@@ -257,7 +257,6 @@ export async function getPublicSwipeRankLeaderboard(input: {
             country: row.country,
             seasonsRanked: Number(row.seasons_ranked ?? 1),
             observedHistoryDays: Number(row.observed_history_days ?? 0),
-            photoUrl: row.photo_url,
             photoCount: Number(row.photo_count ?? 0),
           } satisfies PublicSwipeRankEntry,
         ];
