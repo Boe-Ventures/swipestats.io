@@ -6,11 +6,12 @@ database access, and persisted output separate.
 
 ## The three execution paths
 
-| Path                   | Command                               | Model and billing                                                              | Database effect                              |
-| ---------------------- | ------------------------------------- | ------------------------------------------------------------------------------ | -------------------------------------------- |
-| Local image transform  | `bun run privacy:anonymize-image`     | TensorFlow CPU face detection plus Sharp; no model API                         | None                                         |
-| Local SwipeRank review | `bun run swipe-rank:review-codex`     | Local `codex exec`; charged against the account authenticated in the Codex CLI | Read-only                                    |
-| SwipeRank image batch  | `bun run privacy:anonymize-swiperank` | Local CPU transform followed by Anthropic Sonnet 5 privacy review              | Writes approved Blob URLs and media metadata |
+| Path                   | Command                                 | Model and billing                                                              | Database effect                                 |
+| ---------------------- | --------------------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------- |
+| Local image transform  | `bun run privacy:anonymize-image`       | TensorFlow CPU face detection plus Sharp; no model API                         | None                                            |
+| Local SwipeRank review | `bun run swipe-rank:review-codex`       | Local `codex exec`; charged against the account authenticated in the Codex CLI | Read-only                                       |
+| SwipeRank image batch  | `bun run privacy:anonymize-swiperank`   | Local CPU transform followed by Anthropic Sonnet 5 privacy review              | Writes approved Blob URLs and media metadata    |
+| Codex image audit      | `bun run privacy:audit-swiperank-codex` | Local Codex Sol vision review of approved derivatives                          | Optionally holds and deletes unsafe derivatives |
 
 The local Codex runner does not require `OPENAI_API_KEY`. It launches the
 installed Codex CLI, which uses the account already authenticated on the
@@ -168,24 +169,78 @@ measurements rather than an API-dollar invoice.
 
 ## Run the Sonnet-reviewed SwipeRank image batch
 
-The supported batch selects the latest published Tinder profiles that still
-have unfinished images:
+The default batch selects the latest published Tinder profiles that still have
+unfinished images:
 
 ```sh
 bun run privacy:anonymize-swiperank -- --limit=10
 ```
 
+For a visible leaderboard cohort, select the closed calendar period directly:
+
+```sh
+bun run privacy:anonymize-swiperank -- --period=2026-07 --limit=10
+```
+
+Period batches use the latest published snapshot and the same current exclusion
+boundary as the admin leaderboard. The limit counts leaderboard profiles.
+Profiles without stored source images are reported and skipped, as are profiles
+whose stored images already have terminal review states. Limits up to 1,000
+make the same command suitable for a larger operator batch.
+
+If a fail-fast run stops on an infrastructure, detector, model, Blob, or
+database error, resume after the diagnosed leaderboard row with an offset:
+
+```sh
+bun run privacy:anonymize-swiperank -- \
+  --period=2026-07 \
+  --offset=8 \
+  --limit=10
+```
+
 The process uses TensorFlow and Sharp locally, sends the anonymized JPEGs to
 Sonnet 5 for a strict privacy audit, uploads approved derivatives to Vercel
-Blob, and stores the approved URLs on their `media` rows.
+Blob, and stores the approved URLs on their `media` rows. Each source row also
+stores `APPROVED`, `NEEDS_REVIEW`, or `SOURCE_UNAVAILABLE` with a short review
+note. A null status means the image is still pending.
+
+### Run the final local Codex image gate
+
+Large production batches require a second visual audit with local Codex Sol.
+This gate downloads only derivatives already approved by Sonnet. With
+`--write`, unsafe rows move to `NEEDS_REVIEW`, their derivative URLs are
+cleared, and their Blob objects are deleted. The command exits on the first
+Codex, schema, database, or Blob error.
+
+```sh
+DATABASE_URL="$PROD_DATABASE_URL" \
+BLOB_READ_WRITE_TOKEN="$PROD_BLOB_READ_WRITE_TOKEN" \
+  bun run privacy:audit-swiperank-codex -- \
+  --period=2026-07 \
+  --offset=0 \
+  --limit=500 \
+  --model=gpt-5.6-sol \
+  --reasoning=high \
+  --output-dir=/private/tmp/swiperank-sol-2026-07-top500 \
+  --write
+```
+
+Omit `--write` for a read-only calibration. The output directory has private
+permissions and retains one structured verdict plus Codex usage events per
+audited profile. Review the terminal summary and confirm every selected media
+row has a terminal state after both stages.
 
 Its error behavior is intentionally simple:
 
-- a download, detector, model, Blob, or database error terminates the batch;
-- `NEEDS_REVIEW` is a completed moderation result and saves zero images for that
-  profile;
+- terminal HTTP 400, 401, 403, 404, and 410 source responses are recorded as
+  unavailable while the remaining images continue;
+- a transport, detector, model, Blob, or database error terminates the batch;
+- `NEEDS_REVIEW` is a completed moderation result, records a privacy hold, and
+  saves no Blob derivatives for the held images;
 - Sonnet structured-output retries are disabled;
-- the admin query returns only `swipe_rank_anonymized_url` derivatives.
+- public SwipeRank payloads contain no media URLs. Admin leaderboard thumbnails
+  use approved derivatives, while the held-profile section deliberately shows
+  original images for administrator review.
 
 Run against a temporary database branch first when testing schema or query
 changes. A Blob write still targets the token supplied to the process, so use a
@@ -212,7 +267,7 @@ set +a
 DATABASE_URL="$PROD_DATABASE_URL" \
 BLOB_READ_WRITE_TOKEN="$PROD_BLOB_READ_WRITE_TOKEN" \
 ANTHROPIC_API_KEY="$LOCAL_ANTHROPIC_API_KEY" \
-  bun run privacy:anonymize-swiperank -- --limit=10
+  bun run privacy:anonymize-swiperank -- --period=2026-07 --limit=10
 
 unlink /tmp/swipestats-production.env
 unset PROD_DATABASE_URL PROD_BLOB_READ_WRITE_TOKEN LOCAL_ANTHROPIC_API_KEY

@@ -17,6 +17,15 @@ interface MediaGalleryCardProps {
   media: Media[];
 }
 
+interface SelectedMedia {
+  item: Media;
+  url: string;
+  label: string;
+  index: number;
+  total: number;
+  anonymized: boolean;
+}
+
 function isValidImageUrl(url: string): boolean {
   try {
     // Check if it's a valid URL (starts with http:// or https://)
@@ -27,11 +36,18 @@ function isValidImageUrl(url: string): boolean {
 }
 
 export function MediaGalleryCard({ media }: MediaGalleryCardProps) {
-  const [selectedMedia, setSelectedMedia] = useState<Media | null>(null);
+  const [selectedMedia, setSelectedMedia] = useState<SelectedMedia | null>(
+    null,
+  );
 
   // Split media into valid and invalid URLs
   const validMedia = media.filter((item) => isValidImageUrl(item.url));
   const invalidMedia = media.filter((item) => !isValidImageUrl(item.url));
+  const anonymizedMedia = media.flatMap((item) =>
+    item.swipeRankAnonymizedUrl && isValidImageUrl(item.swipeRankAnonymizedUrl)
+      ? [{ item, url: item.swipeRankAnonymizedUrl }]
+      : [],
+  );
 
   return (
     <div className="space-y-6">
@@ -40,7 +56,7 @@ export function MediaGalleryCard({ media }: MediaGalleryCardProps) {
         <>
           <Card>
             <CardHeader>
-              <CardTitle>Media Gallery ({validMedia.length})</CardTitle>
+              <CardTitle>Original media ({validMedia.length})</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
@@ -48,7 +64,16 @@ export function MediaGalleryCard({ media }: MediaGalleryCardProps) {
                   <div
                     key={item.id}
                     className="group relative aspect-square cursor-pointer overflow-hidden rounded-lg border bg-gray-100 transition-all hover:shadow-lg"
-                    onClick={() => setSelectedMedia(item)}
+                    onClick={() =>
+                      setSelectedMedia({
+                        item,
+                        url: item.url,
+                        label: "Original photo",
+                        index: index + 1,
+                        total: validMedia.length,
+                        anonymized: false,
+                      })
+                    }
                   >
                     {item.type === "photo" || item.type === "image" ? (
                       <Image
@@ -84,99 +109,167 @@ export function MediaGalleryCard({ media }: MediaGalleryCardProps) {
               </div>
             </CardContent>
           </Card>
-
-          {/* Lightbox Dialog */}
-          <Dialog
-            open={!!selectedMedia}
-            onOpenChange={() => setSelectedMedia(null)}
-          >
-            <DialogContent className="max-w-4xl">
-              <DialogHeader>
-                <DialogTitle className="flex items-center justify-between">
-                  <span>
-                    Photo{" "}
-                    {selectedMedia ? validMedia.indexOf(selectedMedia) + 1 : 0}{" "}
-                    of {validMedia.length}
-                  </span>
-                  <button
-                    onClick={() => setSelectedMedia(null)}
-                    className="hover:bg-accent rounded-full p-2"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </DialogTitle>
-              </DialogHeader>
-
-              {selectedMedia && (
-                <div className="space-y-4">
-                  {/* Image */}
-                  <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-gray-100">
-                    {selectedMedia.type === "photo" ||
-                    selectedMedia.type === "image" ? (
-                      <Image
-                        src={selectedMedia.url}
-                        alt="Selected media"
-                        fill
-                        className="object-contain"
-                        sizes="(max-width: 1024px) 100vw, 896px"
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center">
-                        <span className="text-muted-foreground">
-                          {selectedMedia.type}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Metadata */}
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2">
-                      <Badge>{selectedMedia.type}</Badge>
-                      {selectedMedia.fromSoMe && (
-                        <Badge variant="outline">From Social Media</Badge>
-                      )}
-                    </div>
-
-                    {selectedMedia.prompt && (
-                      <div>
-                        <span className="text-muted-foreground font-medium">
-                          Prompt:
-                        </span>
-                        <p className="mt-1">{selectedMedia.prompt}</p>
-                      </div>
-                    )}
-
-                    {selectedMedia.caption && (
-                      <div>
-                        <span className="text-muted-foreground font-medium">
-                          Caption:
-                        </span>
-                        <p className="mt-1">{selectedMedia.caption}</p>
-                      </div>
-                    )}
-
-                    <div>
-                      <span className="text-muted-foreground font-medium">
-                        URL:
-                      </span>
-                      <code className="mt-1 block rounded bg-gray-100 p-2 text-xs break-all">
-                        {selectedMedia.url}
-                      </code>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </DialogContent>
-          </Dialog>
         </>
       )}
+
+      <Card className="border-violet-200 bg-violet-50/30">
+        <CardHeader>
+          <CardTitle>
+            SwipeRank anonymized images ({anonymizedMedia.length})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {anonymizedMedia.length > 0 ? (
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+              {anonymizedMedia.map(({ item, url }, index) => (
+                <div
+                  key={`anonymized-${item.id}`}
+                  className="group relative aspect-square cursor-pointer overflow-hidden rounded-lg border border-violet-200 bg-gray-100 transition-all hover:shadow-lg"
+                  onClick={() =>
+                    setSelectedMedia({
+                      item,
+                      url,
+                      label: "Anonymized photo",
+                      index: index + 1,
+                      total: anonymizedMedia.length,
+                      anonymized: true,
+                    })
+                  }
+                >
+                  <Image
+                    src={url}
+                    alt={`Anonymized photo ${index + 1}`}
+                    fill
+                    className="object-cover transition-transform group-hover:scale-105"
+                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                  />
+                  <div className="absolute top-2 left-2">
+                    <Badge className="bg-violet-700 text-xs text-white">
+                      Admin-safe #{index + 1}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <ImageIcon className="mb-2 h-12 w-12 text-violet-300" />
+              <p className="text-muted-foreground text-sm">
+                No approved SwipeRank derivatives saved for this profile
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Dialog
+        open={!!selectedMedia}
+        onOpenChange={() => setSelectedMedia(null)}
+      >
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center justify-between">
+              <span>
+                {selectedMedia?.label} {selectedMedia?.index ?? 0} of{" "}
+                {selectedMedia?.total ?? 0}
+              </span>
+              <button
+                onClick={() => setSelectedMedia(null)}
+                className="hover:bg-accent rounded-full p-2"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </DialogTitle>
+          </DialogHeader>
+
+          {selectedMedia && (
+            <div className="space-y-4">
+              <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-gray-100">
+                {selectedMedia.item.type === "photo" ||
+                selectedMedia.item.type === "image" ? (
+                  <Image
+                    src={selectedMedia.url}
+                    alt={selectedMedia.label}
+                    fill
+                    className="object-contain"
+                    sizes="(max-width: 1024px) 100vw, 896px"
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center">
+                    <span className="text-muted-foreground">
+                      {selectedMedia.item.type}
+                    </span>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2 text-sm">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge>{selectedMedia.item.type}</Badge>
+                  {selectedMedia.anonymized && (
+                    <Badge className="bg-violet-700 text-white">
+                      SwipeRank admin-safe
+                    </Badge>
+                  )}
+                  {selectedMedia.item.fromSoMe && (
+                    <Badge variant="outline">From Social Media</Badge>
+                  )}
+                </div>
+
+                {selectedMedia.anonymized && (
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <p>
+                      <span className="text-muted-foreground font-medium">
+                        Faces detected:
+                      </span>{" "}
+                      {selectedMedia.item.swipeRankAnonymizedFaceCount ?? "—"}
+                    </p>
+                    <p>
+                      <span className="text-muted-foreground font-medium">
+                        Reviewed by:
+                      </span>{" "}
+                      {selectedMedia.item.swipeRankAnonymizationModel ?? "—"}
+                    </p>
+                  </div>
+                )}
+
+                {selectedMedia.item.prompt && (
+                  <div>
+                    <span className="text-muted-foreground font-medium">
+                      Prompt:
+                    </span>
+                    <p className="mt-1">{selectedMedia.item.prompt}</p>
+                  </div>
+                )}
+
+                {selectedMedia.item.caption && (
+                  <div>
+                    <span className="text-muted-foreground font-medium">
+                      Caption:
+                    </span>
+                    <p className="mt-1">{selectedMedia.item.caption}</p>
+                  </div>
+                )}
+
+                <div>
+                  <span className="text-muted-foreground font-medium">
+                    {selectedMedia.anonymized ? "Derivative URL:" : "URL:"}
+                  </span>
+                  <code className="mt-1 block rounded bg-gray-100 p-2 text-xs break-all">
+                    {selectedMedia.url}
+                  </code>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* No Valid Media Message */}
       {validMedia.length === 0 && invalidMedia.length === 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Media Gallery</CardTitle>
+            <CardTitle>Original media</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col items-center justify-center py-8 text-center">

@@ -62,6 +62,9 @@ interface LeaderboardRow extends Record<string, unknown> {
   photo_urls: string[] | null;
   photo_count: number | string;
   anonymized_photo_count: number | string;
+  pending_photo_count: number | string;
+  privacy_hold_photo_count: number | string;
+  unavailable_photo_count: number | string;
   age_in_period: number | string | null;
   metric_numerator: number | string;
   metric_denominator: number | string;
@@ -327,6 +330,9 @@ export async function getAdminSwipeRankLeaderboard(
         profile_media.photo_urls,
         profile_media.photo_count,
         profile_media.anonymized_photo_count,
+        profile_media.pending_photo_count,
+        profile_media.privacy_hold_photo_count,
+        profile_media.unavailable_photo_count,
         ai_review.id AS ai_review_id,
         ai_review.verdict AS ai_review_verdict,
         ai_review.confidence AS ai_review_confidence,
@@ -344,7 +350,17 @@ export async function getAdminSwipeRankLeaderboard(
           array_agg(media.swipe_rank_anonymized_url ORDER BY media.id)
             FILTER (WHERE media.swipe_rank_anonymized_url IS NOT NULL) AS photo_urls,
           count(*)::bigint AS photo_count,
-          count(media.swipe_rank_anonymized_url)::bigint AS anonymized_photo_count
+          count(media.swipe_rank_anonymized_url)::bigint AS anonymized_photo_count,
+          count(*) FILTER (
+            WHERE media.swipe_rank_image_review_status IS NULL
+              AND media.swipe_rank_anonymized_url IS NULL
+          )::bigint AS pending_photo_count,
+          count(*) FILTER (
+            WHERE media.swipe_rank_image_review_status = 'NEEDS_REVIEW'
+          )::bigint AS privacy_hold_photo_count,
+          count(*) FILTER (
+            WHERE media.swipe_rank_image_review_status = 'SOURCE_UNAVAILABLE'
+          )::bigint AS unavailable_photo_count
         FROM media
         WHERE media.tinder_profile_id = profile.provider_profile_id
           AND media.type IN ('image', 'photo')
@@ -428,6 +444,9 @@ export async function getAdminSwipeRankLeaderboard(
           anonymizedPhotoUrls: row.photo_urls ?? [],
           photoCount: number(row.photo_count),
           anonymizedPhotoCount: number(row.anonymized_photo_count),
+          pendingPhotoCount: number(row.pending_photo_count),
+          privacyHoldPhotoCount: number(row.privacy_hold_photo_count),
+          unavailablePhotoCount: number(row.unavailable_photo_count),
           ageInPeriod:
             row.age_in_period === null ? null : number(row.age_in_period),
           matchRateNumerator: number(row.metric_numerator),

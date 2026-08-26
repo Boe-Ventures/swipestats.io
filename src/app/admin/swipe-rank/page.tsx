@@ -372,20 +372,50 @@ export default function AdminSwipeRankPage() {
                 key={entry.profileId}
                 className="flex flex-col gap-3 rounded-lg border bg-amber-50/50 p-3 sm:flex-row sm:items-center sm:justify-between"
               >
-                <div className="min-w-0">
-                  <Link
-                    href={`/admin/insights/tinder/${entry.providerProfileId}`}
-                    className="block truncate font-mono text-xs text-blue-700 hover:underline"
-                  >
-                    {entry.providerProfileId}
-                  </Link>
-                  <p className="mt-1 text-sm text-gray-800">{entry.reason}</p>
-                  <p className="mt-1 text-xs text-gray-500">
-                    {entry.excludedAt
-                      ? new Date(entry.excludedAt).toLocaleString()
-                      : "Unknown time"}{" "}
-                    · {entry.excludedBy ?? "Unknown actor"}
-                  </p>
+                <div className="flex min-w-0 items-start gap-3">
+                  {entry.photoUrls.length > 0 && (
+                    <div className="shrink-0">
+                      <p className="mb-1 text-[10px] font-medium tracking-wide text-gray-500 uppercase">
+                        Originals
+                      </p>
+                      <div className="flex -space-x-2">
+                        {entry.photoUrls.map((photoUrl, photoIndex) => (
+                          <Link
+                            key={photoUrl}
+                            href={`/admin/insights/tinder/${entry.providerProfileId}`}
+                            target="_blank"
+                            aria-label={`Open held profile from original image ${photoIndex + 1}`}
+                          >
+                            <Avatar className="h-14 w-14 rounded-lg border-2 border-white bg-gray-100 shadow-sm">
+                              <AvatarImage
+                                src={photoUrl}
+                                alt=""
+                                className="rounded-md object-cover"
+                              />
+                              <AvatarFallback className="rounded-md font-mono text-[9px]">
+                                Source
+                              </AvatarFallback>
+                            </Avatar>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <Link
+                      href={`/admin/insights/tinder/${entry.providerProfileId}`}
+                      className="block truncate font-mono text-xs text-blue-700 hover:underline"
+                    >
+                      {entry.providerProfileId}
+                    </Link>
+                    <p className="mt-1 text-sm text-gray-800">{entry.reason}</p>
+                    <p className="mt-1 text-xs text-gray-500">
+                      {entry.excludedAt
+                        ? new Date(entry.excludedAt).toLocaleString()
+                        : "Unknown time"}{" "}
+                      · {entry.excludedBy ?? "Unknown actor"}
+                    </p>
+                  </div>
                 </div>
                 <Button
                   variant="outline"
@@ -699,7 +729,13 @@ export default function AdminSwipeRankPage() {
                                         />
                                       )}
                                       <AvatarFallback className="rounded-md font-mono text-[10px]">
-                                        No image
+                                        {entry.photoCount > 0
+                                          ? entry.privacyHoldPhotoCount > 0
+                                            ? "Held"
+                                            : entry.unavailablePhotoCount > 0
+                                              ? "Unavailable"
+                                              : "Pending"
+                                          : "No source"}
                                       </AvatarFallback>
                                     </Avatar>
                                   </Link>
@@ -715,9 +751,15 @@ export default function AdminSwipeRankPage() {
                                   <ExternalLink className="h-3 w-3 shrink-0" />
                                 </Link>
                                 <p className="mt-1 text-xs text-gray-500">
-                                  {entry.anonymizedPhotoCount.toLocaleString()}{" "}
-                                  of {entry.photoCount.toLocaleString()} images
-                                  admin-safe
+                                  {entry.anonymizedPhotoCount > 0
+                                    ? `${entry.anonymizedPhotoCount.toLocaleString()} of ${entry.photoCount.toLocaleString()} images admin-safe`
+                                    : entry.privacyHoldPhotoCount > 0
+                                      ? `${entry.privacyHoldPhotoCount.toLocaleString()} of ${entry.photoCount.toLocaleString()} images held for privacy review`
+                                      : entry.unavailablePhotoCount > 0
+                                        ? `${entry.unavailablePhotoCount.toLocaleString()} of ${entry.photoCount.toLocaleString()} source images unavailable`
+                                        : entry.photoCount > 0
+                                          ? `${entry.photoCount.toLocaleString()} stored images awaiting anonymization`
+                                          : "No stored images in export"}
                                 </p>
                               </div>
                             </div>

@@ -168,6 +168,11 @@ export const swipeRankAiReviewVerdictEnum = pgEnum("SwipeRankAiReviewVerdict", [
   "EXCLUDE_RECOMMENDED",
 ]);
 
+export const swipeRankImageReviewStatusEnum = pgEnum(
+  "SwipeRankImageReviewStatus",
+  ["APPROVED", "NEEDS_REVIEW", "SOURCE_UNAVAILABLE"],
+);
+
 export const catalogVerificationStatusEnum = pgEnum(
   "catalog_verification_status",
   ["UNVERIFIED", "VERIFIED"],
@@ -891,6 +896,8 @@ export const mediaTable = pgTable(
     swipeRankAnonymizedAt: t.timestamp(),
     swipeRankAnonymizationModel: t.text(),
     swipeRankAnonymizedFaceCount: t.integer(),
+    swipeRankImageReviewStatus: swipeRankImageReviewStatusEnum(),
+    swipeRankImageReviewNote: t.text(),
     fromSoMe: t.boolean(),
     hingeProfileId: t
       .text()
