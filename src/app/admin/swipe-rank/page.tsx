@@ -678,30 +678,33 @@ export default function AdminSwipeRankPage() {
                           </TableCell>
                           <TableCell>
                             <div className="flex min-w-56 items-center gap-3">
-                              <Link
-                                href={`/admin/insights/tinder/${entry.providerProfileId}`}
-                                target="_blank"
-                                className="relative shrink-0"
-                                aria-label="Open profile inspector"
-                              >
-                                <Avatar className="h-12 w-12 rounded-lg border bg-gray-100">
-                                  {entry.photoUrl && (
-                                    <AvatarImage
-                                      src={entry.photoUrl}
-                                      alt=""
-                                      className="rounded-lg"
-                                    />
-                                  )}
-                                  <AvatarFallback className="rounded-lg font-mono text-xs">
-                                    No image
-                                  </AvatarFallback>
-                                </Avatar>
-                                {entry.photoCount > 1 && (
-                                  <span className="absolute -right-1 -bottom-1 rounded-full border bg-white px-1 text-[10px] font-bold shadow-sm">
-                                    +{entry.photoCount - 1}
-                                  </span>
-                                )}
-                              </Link>
+                              <div className="flex shrink-0 -space-x-2">
+                                {(entry.anonymizedPhotoUrls.length > 0
+                                  ? entry.anonymizedPhotoUrls.slice(0, 3)
+                                  : [null]
+                                ).map((photoUrl, photoIndex) => (
+                                  <Link
+                                    key={photoUrl ?? "no-image"}
+                                    href={`/admin/insights/tinder/${entry.providerProfileId}`}
+                                    target="_blank"
+                                    className="relative"
+                                    aria-label={`Open profile inspector${photoUrl ? ` from image ${photoIndex + 1}` : ""}`}
+                                  >
+                                    <Avatar className="h-12 w-12 rounded-lg border-2 border-white bg-gray-100 shadow-sm">
+                                      {photoUrl && (
+                                        <AvatarImage
+                                          src={photoUrl}
+                                          alt=""
+                                          className="rounded-md"
+                                        />
+                                      )}
+                                      <AvatarFallback className="rounded-md font-mono text-[10px]">
+                                        No image
+                                      </AvatarFallback>
+                                    </Avatar>
+                                  </Link>
+                                ))}
+                              </div>
                               <div className="min-w-0">
                                 <Link
                                   href={`/admin/insights/tinder/${entry.providerProfileId}`}
@@ -712,9 +715,9 @@ export default function AdminSwipeRankPage() {
                                   <ExternalLink className="h-3 w-3 shrink-0" />
                                 </Link>
                                 <p className="mt-1 text-xs text-gray-500">
-                                  {entry.photoCount.toLocaleString()} stored
-                                  image
-                                  {entry.photoCount === 1 ? "" : "s"}
+                                  {entry.anonymizedPhotoCount.toLocaleString()}{" "}
+                                  of {entry.photoCount.toLocaleString()} images
+                                  admin-safe
                                 </p>
                               </div>
                             </div>
