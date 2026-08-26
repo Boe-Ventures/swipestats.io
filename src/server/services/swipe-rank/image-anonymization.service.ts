@@ -15,6 +15,7 @@ const MAX_PROFILE_IMAGES = 9;
 const MAX_DOWNLOAD_BYTES = 20_000_000;
 const DOWNLOAD_TIMEOUT_MS = 20_000;
 const AUDIT_MODEL = AI_MODELS.sonnet5;
+const AUDIT_CHUNK_SIZE = 3;
 
 const imagePrivacyAuditSchema = z.object({
   verdict: z.enum(["PASS", "NEEDS_REVIEW"]),
@@ -38,7 +39,7 @@ const imagePrivacyAuditSchema = z.object({
   ),
 });
 
-type ImagePrivacyAudit = z.infer<typeof imagePrivacyAuditSchema>;
+export type ImagePrivacyAudit = z.infer<typeof imagePrivacyAuditSchema>;
 
 interface TargetRow extends Record<string, unknown> {
   profile_id: string;
@@ -310,7 +311,52 @@ async function saveSourceUnavailable(mediaId: string, reason: string) {
     .where(eq(mediaTable.id, mediaId));
 }
 
-async function auditImages(images: PreparedSwipeRankImage[]) {
+export function imageAuditChunks<T>(items: T[], size = AUDIT_CHUNK_SIZE) {
+  if (!Number.isSafeInteger(size) || size < 1) {
+    throw new Error("Image audit chunk size must be a positive integer.");
+  }
+  return Array.from({ length: Math.ceil(items.length / size) }, (_, index) =>
+    items.slice(index * size, (index + 1) * size),
+  );
+}
+
+export function combineImagePrivacyAudits(
+  audits: ImagePrivacyAudit[],
+): ImagePrivacyAudit {
+  const images = audits.flatMap((audit) => {
+    const uncertainChunk =
+      audit.verdict === "NEEDS_REVIEW" &&
+      audit.images.every((image) => image.safe);
+    if (!uncertainChunk) return audit.images;
+    return audit.images.map((image) => ({
+      ...image,
+      safe: false,
+      issues: [...new Set([...image.issues, "OTHER_IDENTIFIER" as const])],
+      note: [image.note, "The complete review chunk was uncertain."]
+        .filter(Boolean)
+        .join(" ")
+        .slice(0, 300),
+    }));
+  });
+  return {
+    verdict:
+      audits.every((audit) => audit.verdict === "PASS") &&
+      images.every((image) => image.safe)
+        ? "PASS"
+        : "NEEDS_REVIEW",
+    summary: audits
+      .map((audit) => audit.summary)
+      .join(" ")
+      .slice(0, 500),
+    images,
+  };
+}
+
+async function auditImageChunk(
+  images: PreparedSwipeRankImage[],
+  firstImageNumber: number,
+) {
+  const lastImageNumber = firstImageNumber + images.length - 1;
   return generateStructured({
     schema: imagePrivacyAuditSchema,
     name: "SwipeRankImagePrivacyAudit",
@@ -333,9 +379,10 @@ async function auditImages(images: PreparedSwipeRankImage[]) {
             type: "text",
             text: [
               "Review these machine-anonymized profile images for an internal admin interface.",
-              `There are exactly ${images.length} images, numbered 1 through ${images.length}.`,
+              `There are exactly ${images.length} images, numbered ${firstImageNumber} through ${lastImageNumber}.`,
               "Return PASS only when every visible face is blurred beyond recognition and no direct identifier remains legible.",
               "Direct identifiers include names, social handles, email addresses, phone numbers, license plates, and QR or barcodes.",
+              "Inspect tickets, boarding passes, receipts, badges, IDs, and documents closely. Hold the image when a linear barcode, QR code, transaction detail, or personal field remains visible, even when the surrounding text is small.",
               "Ordinary scenery, clothing, tattoos, and broad location cues are acceptable unless they directly identify a person.",
               "Use NEEDS_REVIEW if uncertain. Include exactly one result for each image, in the supplied order.",
             ].join("\n"),
@@ -343,7 +390,7 @@ async function auditImages(images: PreparedSwipeRankImage[]) {
           ...images.flatMap((image, index) => [
             {
               type: "text" as const,
-              text: `Image ${index + 1} of ${images.length}:`,
+              text: `Image ${firstImageNumber + index}:`,
             },
             {
               type: "file" as const,
@@ -355,6 +402,29 @@ async function auditImages(images: PreparedSwipeRankImage[]) {
       },
     ],
   });
+}
+
+async function auditImages(images: PreparedSwipeRankImage[]) {
+  const audits: ImagePrivacyAudit[] = [];
+  let firstImageNumber = 1;
+  for (const chunk of imageAuditChunks(images)) {
+    const audit = await auditImageChunk(chunk, firstImageNumber);
+    const expectedNumbers = chunk.map((_, index) => firstImageNumber + index);
+    const returnedNumbers = audit.images.map((image) => image.imageNumber);
+    if (
+      returnedNumbers.length !== expectedNumbers.length ||
+      returnedNumbers.some(
+        (imageNumber, index) => imageNumber !== expectedNumbers[index],
+      )
+    ) {
+      throw new Error(
+        `Sonnet returned image numbers [${returnedNumbers.join(", ")}]; expected [${expectedNumbers.join(", ")}].`,
+      );
+    }
+    audits.push(audit);
+    firstImageNumber += chunk.length;
+  }
+  return combineImagePrivacyAudits(audits);
 }
 
 export function approvedImageIndexes(audit: ImagePrivacyAudit) {
