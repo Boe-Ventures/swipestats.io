@@ -1,4 +1,6 @@
 import { count } from "drizzle-orm";
+import { connection } from "next/server";
+
 import { db } from "@/server/db";
 import {
   userTable,
@@ -14,6 +16,11 @@ import { RecentProfiles } from "./_components/RecentProfiles";
 import { QuickActions } from "./_components/QuickActions";
 
 export default async function AdminHomePage() {
+  // Keep authenticated dashboard queries on the request path. Rendering this
+  // page during `next build` can turn six production-sized counts into a build
+  // timeout, while the values are only useful to the administrator opening it.
+  await connection();
+
   // Fetch global stats in parallel using direct Drizzle queries
   const [
     usersResult,
