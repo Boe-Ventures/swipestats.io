@@ -26,10 +26,11 @@ interface CliOptions {
   write: boolean;
 }
 
-interface ApprovedMedia {
+interface AuditableMedia {
   id: string;
   providerProfileId: string;
   url: string;
+  reviewStatus: "NEEDS_REVIEW" | "APPROVED" | "SOURCE_UNAVAILABLE" | null;
 }
 
 const outputSchema = {
@@ -131,7 +132,7 @@ Ordinary scenery, generic brands, tattoos, clothing, and broad location cues are
 }
 
 async function downloadApprovedImages(
-  rows: ApprovedMedia[],
+  rows: AuditableMedia[],
   subjectDir: string,
 ) {
   const imageDir = join(subjectDir, "images");
@@ -227,12 +228,29 @@ async function runCodexAudit(
   return combineImagePrivacyAudits([parsed]);
 }
 
-async function holdUnsafeImages(
-  rows: ApprovedMedia[],
+async function persistAuditResults(
+  rows: AuditableMedia[],
   audit: ImagePrivacyAudit,
 ) {
   const approvedIndexes = approvedImageIndexes(audit);
   const unsafe = rows.filter((_, index) => !approvedIndexes.has(index));
+  const newlyApproved = rows.filter(
+    (row, index) =>
+      approvedIndexes.has(index) && row.reviewStatus !== "APPROVED",
+  );
+  const reviewedAt = new Date();
+
+  for (const row of newlyApproved) {
+    await db
+      .update(mediaTable)
+      .set({
+        swipeRankImageReviewStatus: "APPROVED",
+        swipeRankImageReviewNote:
+          `Codex Sol privacy pass: ${audit.summary}`.slice(0, 1_000),
+        swipeRankAnonymizedAt: reviewedAt,
+      })
+      .where(eq(mediaTable.id, row.id));
+  }
   for (const row of unsafe) {
     const index = rows.indexOf(row);
     const imageAudit = audit.images[index]!;
@@ -252,12 +270,12 @@ async function holdUnsafeImages(
         swipeRankAnonymizedUrl: null,
         swipeRankImageReviewStatus: "NEEDS_REVIEW",
         swipeRankImageReviewNote: note,
-        swipeRankAnonymizedAt: new Date(),
+        swipeRankAnonymizedAt: reviewedAt,
       })
       .where(eq(mediaTable.id, row.id));
     await deleteBlob(row.url);
   }
-  return unsafe.length;
+  return { held: unsafe.length, approved: newlyApproved.length };
 }
 
 const options = optionsFrom(process.argv.slice(2));
@@ -275,7 +293,7 @@ const targets = await listSwipeRankPeriodImageTargets(
   options.offset,
 );
 const providerProfileIds = targets.map((target) => target.provider_profile_id);
-const approvedRows =
+const auditableRows =
   providerProfileIds.length === 0
     ? []
     : await db
@@ -283,12 +301,12 @@ const approvedRows =
           id: mediaTable.id,
           providerProfileId: mediaTable.tinderProfileId,
           url: mediaTable.swipeRankAnonymizedUrl,
+          reviewStatus: mediaTable.swipeRankImageReviewStatus,
         })
         .from(mediaTable)
         .where(
           and(
             inArray(mediaTable.tinderProfileId, providerProfileIds),
-            eq(mediaTable.swipeRankImageReviewStatus, "APPROVED"),
             isNotNull(mediaTable.swipeRankAnonymizedUrl),
           ),
         );
@@ -296,10 +314,11 @@ const approvedRows =
 let auditedProfiles = 0;
 let passedProfiles = 0;
 let heldImages = 0;
+let normalizedImages = 0;
 for (const target of targets) {
-  const rows = approvedRows
+  const rows = auditableRows
     .filter(
-      (row): row is ApprovedMedia =>
+      (row): row is AuditableMedia =>
         row.providerProfileId === target.provider_profile_id && !!row.url,
     )
     .sort((left, right) => left.id.localeCompare(right.id));
@@ -307,7 +326,7 @@ for (const target of targets) {
     console.log(
       JSON.stringify({
         rank: target.rank,
-        status: "NO_APPROVED_IMAGES",
+        status: "NO_PUBLISHED_IMAGES",
         profile: target.provider_profile_id.slice(0, 10),
       }),
     );
@@ -325,19 +344,28 @@ for (const target of targets) {
     schemaPath,
     options,
   );
-  const unsafeCount = options.write
-    ? await holdUnsafeImages(rows, audit)
-    : rows.length - approvedImageIndexes(audit).size;
+  const result = options.write
+    ? await persistAuditResults(rows, audit)
+    : {
+        held: rows.length - approvedImageIndexes(audit).size,
+        approved: rows.filter(
+          (row, index) =>
+            approvedImageIndexes(audit).has(index) &&
+            row.reviewStatus !== "APPROVED",
+        ).length,
+      };
   auditedProfiles += 1;
-  heldImages += unsafeCount;
-  if (unsafeCount === 0) passedProfiles += 1;
+  heldImages += result.held;
+  normalizedImages += result.approved;
+  if (result.held === 0) passedProfiles += 1;
   console.log(
     JSON.stringify({
       rank: target.rank,
-      status: unsafeCount === 0 ? "PASS" : "NEEDS_REVIEW",
+      status: result.held === 0 ? "PASS" : "NEEDS_REVIEW",
       profile: target.provider_profile_id.slice(0, 10),
-      approvedImages: rows.length,
-      heldImages: unsafeCount,
+      publishedImages: rows.length,
+      heldImages: result.held,
+      normalizedImages: result.approved,
       persisted: options.write,
       summary: audit.summary,
     }),
@@ -352,6 +380,7 @@ console.log(
     auditedProfiles,
     passedProfiles,
     heldImages,
+    normalizedImages,
     write: options.write,
     model: options.model,
     outputDir: options.outputDir,
