@@ -21,7 +21,10 @@ export function GranularitySelector({
       value={value}
       onValueChange={(nextValue) => nextValue !== null && onChange(nextValue)}
     >
-      <SelectTrigger className="w-[140px]" aria-label="Select granularity">
+      <SelectTrigger
+        className="w-[132px] sm:w-[140px]"
+        aria-label="Select granularity"
+      >
         <SelectValue placeholder="Select granularity" />
       </SelectTrigger>
       <SelectContent>

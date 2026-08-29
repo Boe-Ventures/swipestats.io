@@ -47,6 +47,7 @@ import { Calendar } from "@/components/ui/calendar";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { useMediaQuery } from "@/components/ui/hooks/use-media-query";
 import { Controller, FormProvider, Field } from "@/components/ui/form-new";
 import type { DateRange } from "react-day-picker";
 import { useTinderProfile } from "../../TinderProfileProvider";
@@ -155,6 +156,7 @@ export function MasterActivityChart() {
     new Set(["matches", "swipeLikes"]),
   );
   const [eventDialogOpen, setEventDialogOpen] = React.useState(false);
+  const isCompact = useMediaQuery("(max-width: 640px)");
 
   const form = useForm<ChartFormValues>({
     resolver: zodResolver(chartFormSchema),
@@ -446,7 +448,7 @@ export function MasterActivityChart() {
   return (
     <>
       <Card className="overflow-hidden shadow-lg transition-shadow duration-300 hover:shadow-xl">
-        <CardHeader className="space-y-6">
+        <CardHeader className="space-y-5 px-4 sm:space-y-6 sm:px-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-1">
               <CardTitle className="text-xl font-semibold">
@@ -500,7 +502,7 @@ export function MasterActivityChart() {
                           <SelectTrigger
                             id={field.name}
                             aria-invalid={fieldState.invalid}
-                            className="w-[140px]"
+                            className="w-[132px] sm:w-[140px]"
                           >
                             <SelectValue placeholder="Select range" />
                           </SelectTrigger>
@@ -593,7 +595,7 @@ export function MasterActivityChart() {
           )}
 
           {/* Metric Toggle Pills */}
-          <div className="flex flex-wrap gap-2">
+          <div className="-mx-4 flex flex-nowrap gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
             {Object.entries(chartConfig).map(([key, config]) => {
               const isVisible = visibleMetrics.has(key);
               const total = periodTotals[key as keyof typeof periodTotals];
@@ -602,7 +604,7 @@ export function MasterActivityChart() {
                   key={key}
                   onClick={() => toggleMetric(key)}
                   className={cn(
-                    "flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all duration-200",
+                    "flex shrink-0 items-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition-all duration-200 sm:px-4",
                     isVisible
                       ? "text-white shadow-md"
                       : "bg-muted text-muted-foreground hover:bg-muted/80",
@@ -628,7 +630,7 @@ export function MasterActivityChart() {
           </div>
         </CardHeader>
 
-        <CardContent className="px-6 pt-6 pr-6">
+        <CardContent className="px-2 pt-2 sm:px-6 sm:pt-6 sm:pr-6">
           {chartData.length === 0 ? (
             // Empty State
             <div className="flex min-h-[400px] flex-col items-center justify-center space-y-4 text-center">
@@ -668,9 +670,17 @@ export function MasterActivityChart() {
           ) : (
             <ChartContainer
               config={chartConfig}
-              className="aspect-auto h-[400px] w-full"
+              className="aspect-auto h-[300px] w-full min-w-0 sm:h-[400px]"
             >
-              <ComposedChart accessibilityLayer data={chartData}>
+              <ComposedChart
+                accessibilityLayer
+                data={chartData}
+                margin={
+                  isCompact
+                    ? { top: 8, right: 2, bottom: 0, left: -18 }
+                    : undefined
+                }
+              >
                 <CartesianGrid vertical={false} strokeDasharray="3 3" />
                 <XAxis
                   dataKey="period"
@@ -830,12 +840,16 @@ export function MasterActivityChart() {
                         x2={event.endPeriodKey}
                         fill="hsl(280, 70%, 50%)"
                         fillOpacity={0.08}
-                        label={{
-                          value: event.name,
-                          position: "insideTop",
-                          fontSize: 11,
-                          fill: "hsl(280, 70%, 35%)",
-                        }}
+                        label={
+                          isCompact
+                            ? undefined
+                            : {
+                                value: event.name,
+                                position: "insideTop",
+                                fontSize: 11,
+                                fill: "hsl(280, 70%, 35%)",
+                              }
+                        }
                       />
                     );
                   } else {
@@ -846,14 +860,18 @@ export function MasterActivityChart() {
                         stroke="hsl(280, 70%, 50%)"
                         strokeWidth={1.5}
                         strokeDasharray="4 4"
-                        label={{
-                          value: event.name,
-                          position: "insideTopLeft",
-                          fontSize: 12,
-                          fill: "hsl(280, 70%, 35%)",
-                          fontWeight: 600,
-                          offset: 5,
-                        }}
+                        label={
+                          isCompact
+                            ? undefined
+                            : {
+                                value: event.name,
+                                position: "insideTopLeft",
+                                fontSize: 12,
+                                fill: "hsl(280, 70%, 35%)",
+                                fontWeight: 600,
+                                offset: 5,
+                              }
+                        }
                       />
                     );
                   }

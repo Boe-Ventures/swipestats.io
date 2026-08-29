@@ -24,7 +24,7 @@ export function ProfilePreviewsBanner() {
   return (
     <Banner
       title="Profile Comparisons"
-      message="Put your dating photos and prompts side by side and get real ratings and feedback from friends."
+      message="Get ratings from friends on your photos and prompts."
       badge="New"
       ctaText="Try it free"
       ctaHref="/try?source=home_banner"

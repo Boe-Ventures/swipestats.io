@@ -138,10 +138,13 @@ function Hero() {
         {/* the real, richer insights showcase, framed as the live demo */}
         <div className="mt-12">
           <div className="mx-auto max-w-[1120px] rounded-3xl border border-gray-200 bg-gray-50 p-4 shadow-[0_8px_24px_oklch(0.2_0.02_286/0.08),0_18px_44px_oklch(0.2_0.02_286/0.1)] sm:p-6 [&_[data-slot=card]]:border-gray-200/70 [&_[data-slot=card]]:shadow-none!">
-            <p className="mb-3 flex items-center justify-center gap-2 text-[12.5px] font-semibold text-gray-600">
+            <p className="mb-3 flex items-center justify-center gap-2 text-center text-[12.5px] font-semibold text-gray-600">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              Real demo, real data. Click through an anonymized profile
-              yourself.
+              <span className="sm:hidden">Real data. Explore the demo.</span>
+              <span className="hidden sm:inline">
+                Real demo, real data. Click through an anonymized profile
+                yourself.
+              </span>
             </p>
             <InsightsShowcase />
           </div>
@@ -648,7 +651,7 @@ function DataRequestBand() {
         </div>
 
         {/* provider cards overlapping the band */}
-        <div className="relative z-10 -mt-32 grid grid-cols-1 gap-6 px-2 max-[720px]:-mt-28 md:grid-cols-3">
+        <div className="relative z-10 -mt-32 grid grid-cols-1 gap-x-6 gap-y-14 px-2 max-[720px]:-mt-28 md:grid-cols-3 md:gap-y-6">
           {dataRequestProviders.map((p) => (
             <div
               key={p.name}
@@ -859,17 +862,16 @@ function AboutImage() {
                   className="h-7 w-7"
                 />
                 <span className="text-[13px] font-semibold text-[#2C7FFF]">
-                  Also from Kristian
+                  From Boe Ventures
                 </span>
               </div>
               <h3 className="mt-5 max-w-[620px] text-[clamp(30px,4vw,44px)] leading-[1.05] font-semibold text-balance text-[#102A43]">
                 House hunting, but with a memory.
               </h3>
               <p className="mt-4 max-w-[600px] text-[16px] leading-[1.75] text-[#365B7D]">
-                If SwipeStats helps you make sense of dating data, Homi does the
-                same for the next chaotic shared decision: finding a place to
-                live. Kristian built it for saving listings, comparing
-                tradeoffs, and keeping everyone&apos;s notes in one calm
+                If SwipeStats helps you make sense of dating data, Homi brings
+                the same clarity to finding a place to live. Save listings,
+                compare tradeoffs, and keep everyone&apos;s notes in one calm
                 workspace.
               </p>
               <div className="mt-5 flex flex-wrap gap-2 text-[12px] font-semibold text-[#184B7A]">
@@ -898,7 +900,7 @@ function AboutImage() {
                   rel="noopener noreferrer"
                   className="inline-flex items-center justify-center rounded-[10px] border border-[#B8D9FF] bg-white px-[18px] py-[11px] text-[15px] font-semibold whitespace-nowrap text-[#184B7A] shadow-sm transition hover:-translate-y-px hover:border-[#7AB7FF]"
                 >
-                  Read the founder story →
+                  Why Homi exists →
                 </a>
               </div>
             </div>
