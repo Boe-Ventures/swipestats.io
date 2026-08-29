@@ -16,6 +16,8 @@ interface BannerProps {
   badge?: string;
   /** Keeps short campaigns to one row on mobile and hides their detail copy. */
   compactMobile?: boolean;
+  /** Matches the CTA sizing to the compact badge treatment. */
+  compactCta?: boolean;
 }
 
 const CTA_CLASSNAME =
@@ -31,6 +33,7 @@ export function Banner({
   ctaHref,
   badge,
   compactMobile = false,
+  compactCta = false,
 }: BannerProps) {
   return (
     <div
@@ -98,7 +101,13 @@ export function Banner({
           </span>
         </p>
         {ctaText && ctaHref && (
-          <Link href={ctaHref} className={CTA_CLASSNAME}>
+          <Link
+            href={ctaHref}
+            className={cn(
+              CTA_CLASSNAME,
+              compactCta && "px-2 py-0.5 text-xs sm:py-0.5",
+            )}
+          >
             {ctaText} <span aria-hidden="true">&rarr;</span>
           </Link>
         )}
@@ -109,7 +118,10 @@ export function Banner({
               e.preventDefault();
               ctaOnClick();
             }}
-            className={CTA_CLASSNAME}
+            className={cn(
+              CTA_CLASSNAME,
+              compactCta && "px-2 py-0.5 text-xs sm:py-0.5",
+            )}
           >
             {ctaText} <span aria-hidden="true">&rarr;</span>
           </a>
