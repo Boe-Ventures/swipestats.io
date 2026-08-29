@@ -21,22 +21,20 @@ export interface SponsorCampaign {
 }
 
 export const ACTIVE_SPONSOR_CAMPAIGN: SponsorCampaign = {
-  id: "house-sponsorship-blog-week-2026-07",
+  id: "house-research-datasets-2026-08",
   kind: "house",
   sponsorName: "SwipeStats",
-  eyebrow: "Advertise with SwipeStats",
-  barMessage: "Reach 50K+ dating readers every month.",
-  title: "Reach 50K+ people actively improving their dating lives",
+  eyebrow: "SwipeStats Research",
+  barMessage: "Interested in dating app research?",
+  title: "Real dating app datasets for research",
   description:
-    "Sponsor a high-intent dating guide or product surface with clear placement and reporting from SwipeStats.",
-  ctaText: "Sponsor SwipeStats",
-  href: "mailto:paw@swipestats.io?subject=SwipeStats%20sponsorship%20inquiry",
-  startsAt: "2026-07-14T14:00:00+02:00",
-  endsAt: "2026-08-04T14:00:00+02:00",
+    "294M swipes, 3.1M matches, and 12,000+ real Tinder profiles, available as research datasets.",
+  ctaText: "See our datasets",
+  href: "/research",
   proof: [
-    { value: "50K+", label: "monthly visitors" },
-    { value: "Dating", label: "high-intent audience" },
-    { value: "Clear", label: "placement reporting" },
+    { value: "294M", label: "swipes" },
+    { value: "3.1M", label: "matches" },
+    { value: "12,000+", label: "real profiles" },
   ],
 };
 

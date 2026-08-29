@@ -3,40 +3,35 @@ import { describe, expect, test } from "bun:test";
 import {
   ACTIVE_SPONSOR_CAMPAIGN,
   isSponsorCampaignActive,
+  type SponsorCampaign,
 } from "./sponsorship";
 
 describe("isSponsorCampaignActive", () => {
-  test("runs the blog sponsorship experiment inside its configured window", () => {
+  test("the research datasets campaign runs with no end date", () => {
+    expect(isSponsorCampaignActive(ACTIVE_SPONSOR_CAMPAIGN)).toBe(true);
     expect(
       isSponsorCampaignActive(
         ACTIVE_SPONSOR_CAMPAIGN,
-        new Date("2026-07-18T12:00:00+02:00"),
-      ),
-    ).toBe(true);
-
-    expect(
-      isSponsorCampaignActive(
-        ACTIVE_SPONSOR_CAMPAIGN,
-        new Date("2026-07-28T12:00:00+02:00"),
+        new Date("2030-01-01T00:00:00Z"),
       ),
     ).toBe(true);
   });
 
-  test("stays hidden before the experiment begins", () => {
+  test("respects a configured start and end window", () => {
+    const windowed: SponsorCampaign = {
+      ...ACTIVE_SPONSOR_CAMPAIGN,
+      startsAt: "2026-07-14T14:00:00+02:00",
+      endsAt: "2026-08-04T14:00:00+02:00",
+    };
+
     expect(
-      isSponsorCampaignActive(
-        ACTIVE_SPONSOR_CAMPAIGN,
-        new Date("2026-07-14T13:59:59+02:00"),
-      ),
+      isSponsorCampaignActive(windowed, new Date("2026-07-14T13:59:59+02:00")),
     ).toBe(false);
-  });
-
-  test("stops at the configured end time", () => {
     expect(
-      isSponsorCampaignActive(
-        ACTIVE_SPONSOR_CAMPAIGN,
-        new Date("2026-08-04T14:00:00+02:00"),
-      ),
+      isSponsorCampaignActive(windowed, new Date("2026-07-18T12:00:00+02:00")),
+    ).toBe(true);
+    expect(
+      isSponsorCampaignActive(windowed, new Date("2026-08-04T14:00:00+02:00")),
     ).toBe(false);
   });
 });
