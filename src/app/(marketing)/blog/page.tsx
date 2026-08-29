@@ -4,6 +4,7 @@ import { env } from "@/env";
 
 import { posts as allPosts } from "@velite";
 import { BlogPageContent } from "./BlogPageContent";
+import { BlogPageLoading } from "./BlogPageLoading";
 
 const ogImageUrl = `${env.NEXT_PUBLIC_BASE_URL}/api/og?title=${encodeURIComponent("Dating Advice, Tested Against the Data")}&subtitle=${encodeURIComponent("Statistics, app reviews, prompts, and practical guides from SwipeStats.")}&path=%2Fblog&variant=hero&screenshot=${encodeURIComponent("/images/blog/thumbnails/tinder-statistics.jpg")}`;
 
@@ -108,7 +109,7 @@ export default function BlogPage() {
           </p>
         </div>
       </div>
-      <Suspense fallback={<div className="container py-12">Loading...</div>}>
+      <Suspense fallback={<BlogPageLoading />}>
         <BlogPageContent
           allPosts={sortedPosts}
           featuredSlugs={FEATURED_SLUGS}
