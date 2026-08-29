@@ -4,11 +4,13 @@ import {
   AcademicCapIcon,
   ArrowRightIcon,
   ArrowDownTrayIcon,
+  BeakerIcon,
   ChartBarIcon,
   ChartPieIcon,
   CheckIcon,
   ClockIcon,
   CodeBracketSquareIcon,
+  CpuChipIcon,
   DocumentDuplicateIcon,
   DocumentTextIcon,
   NewspaperIcon,
@@ -928,6 +930,130 @@ function UseCasesSection() {
   );
 }
 
+/* ---------------------------------------------------------------- AI data */
+
+function AITrainingSection() {
+  const layers = [
+    {
+      label: "Behavior",
+      detail: "Longitudinal swipes, matches, usage, and response timing",
+    },
+    {
+      label: "Conversation",
+      detail: "Ordered dialogue, direction, language, and engagement context",
+    },
+    {
+      label: "Governance",
+      detail: "Documented provenance, PII redaction, and custom licensing",
+    },
+  ];
+
+  return (
+    <section className="py-[88px] max-[720px]:py-[60px]">
+      <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
+        <div className="relative overflow-hidden rounded-[32px] bg-gray-950 px-6 py-10 text-white sm:px-10 sm:py-12 lg:px-14 lg:py-14">
+          <div
+            aria-hidden="true"
+            className="absolute -top-36 -right-32 h-[360px] w-[360px] rounded-full bg-rose-500/20 blur-3xl"
+          />
+          <div
+            aria-hidden="true"
+            className="absolute -bottom-44 left-1/3 h-[300px] w-[420px] rounded-full bg-violet-500/15 blur-3xl"
+          />
+
+          <div className="relative grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16">
+            <div>
+              <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.07] px-3 py-1.5 text-[12px] font-semibold text-rose-200">
+                <CpuChipIcon className="h-4 w-4" />
+                AI training &amp; evaluation
+              </span>
+              <h2 className="mt-5 max-w-[640px] text-[clamp(32px,4.5vw,52px)] leading-[1.04] font-bold tracking-[-0.035em] text-balance">
+                Real human interaction data for models that need social context
+              </h2>
+              <p className="mt-5 max-w-[610px] text-[17px] leading-[1.7] text-gray-300">
+                SwipeStats can prepare custom datasets for conversational
+                post-training, domain-specific evaluation, and safety work.
+                Every engagement starts with a defined use, approved fields, and
+                a purpose-built license.
+              </p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <Link
+                  href="/ai-training-data"
+                  className={marketingButton({
+                    variant: "primary",
+                    size: "lg",
+                  })}
+                >
+                  Explore AI data
+                  <ArrowRightIcon className="h-4 w-4" />
+                </Link>
+                <a
+                  href="mailto:kris@swipestats.io?subject=AI%20training%20data%20inquiry"
+                  className={cn(
+                    marketingButton({ variant: "bare", size: "lg" }),
+                    "border border-white/20 text-white hover:bg-white/10",
+                  )}
+                >
+                  Discuss a custom dataset
+                </a>
+              </div>
+              <p className="mt-5 text-[12.5px] leading-5 text-gray-500">
+                AI training and evaluation rights are available through a custom
+                agreement.
+              </p>
+            </div>
+
+            <div className="rounded-3xl border border-white/10 bg-white/[0.05] p-3 shadow-2xl backdrop-blur">
+              <div className="flex items-center justify-between border-b border-white/10 px-3 py-3">
+                <span className="font-mono text-[11px] tracking-[0.08em] text-gray-400 uppercase">
+                  Custom dataset layers
+                </span>
+                <BeakerIcon className="h-5 w-5 text-rose-300" />
+              </div>
+              <div className="space-y-2 p-2 pt-3">
+                {layers.map((layer, index) => (
+                  <div
+                    key={layer.label}
+                    className="grid grid-cols-[36px_1fr] gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-4"
+                  >
+                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-rose-500/15 font-mono text-[12px] font-semibold text-rose-200">
+                      0{index + 1}
+                    </span>
+                    <div>
+                      <div className="text-[14px] font-semibold text-white">
+                        {layer.label}
+                      </div>
+                      <div className="mt-1 text-[12.5px] leading-5 text-gray-400">
+                        {layer.detail}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="grid grid-cols-3 gap-px overflow-hidden rounded-2xl bg-white/10">
+                {[
+                  { value: "12,000+", label: "profiles" },
+                  { value: "294M", label: "swipes" },
+                  { value: "1.1M", label: "messages" },
+                ].map((item) => (
+                  <div key={item.label} className="bg-gray-900 px-3 py-4">
+                    <div className="text-[18px] font-bold tabular-nums">
+                      {item.value}
+                    </div>
+                    <div className="mt-0.5 text-[10px] tracking-[0.05em] text-gray-500 uppercase">
+                      {item.label}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* ---------------------------------------------------------------- comparison */
 
 function ComparisonTableSection() {
@@ -1201,6 +1327,7 @@ export default function ResearchPage() {
       <SchemaSection />
       <DashboardSection />
       <UseCasesSection />
+      <AITrainingSection />
       <ResearchPricingSection />
       <ComparisonTableSection />
       <HowItWorksSection />
