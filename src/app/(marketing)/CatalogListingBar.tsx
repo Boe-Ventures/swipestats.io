@@ -20,7 +20,7 @@ export function CatalogListingBar({ onDismiss }: CatalogListingBarProps) {
         </span>
 
         <Link
-          href="/dating-services#list-with-us"
+          href="/dating-services?utm_source=swipestats&utm_medium=catalog_banner&utm_campaign=list_with_swipestats#list-with-us"
           className="group min-w-0 justify-self-start rounded-sm outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-offset-2 focus-visible:ring-offset-rose-700 sm:justify-self-center"
         >
           <span className="block text-[10px] leading-3 font-semibold tracking-wide text-white/70 sm:hidden">

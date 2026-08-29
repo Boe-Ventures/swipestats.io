@@ -6,7 +6,10 @@ import { XMarkIcon } from "@heroicons/react/20/solid";
 import { cn } from "@/components/ui/lib/utils";
 import { InquiryDialog } from "@/components/inquiries/InquiryDialog";
 import { useSponsorTracking } from "@/hooks/use-sponsor-tracking";
-import type { SponsorCampaign } from "@/lib/sponsorship";
+import {
+  sponsorCampaignHref,
+  type SponsorCampaign,
+} from "@/lib/sponsorship";
 
 interface SponsorBarProps {
   onDismiss: () => void;
@@ -26,6 +29,7 @@ export function SponsorBar({
     "sitewide-bar",
   );
   const isPaid = campaign.kind === "paid";
+  const linksOut = isPaid || !campaign.href.startsWith("mailto:");
   const [inquiryOpen, setInquiryOpen] = useState(false);
   const handleDismiss = () => {
     trackDismiss();
@@ -73,12 +77,12 @@ export function SponsorBar({
             {campaign.eyebrow}
           </span>
 
-          {isPaid ? (
+          {linksOut ? (
             <a
-              href={campaign.href}
+              href={sponsorCampaignHref(campaign, "sitewide-bar")}
               onClick={trackClick}
-              target="_blank"
-              rel="sponsored noopener noreferrer"
+              target={isPaid ? "_blank" : undefined}
+              rel={isPaid ? "sponsored noopener noreferrer" : undefined}
               className={ctaClassName}
             >
               {ctaContent}

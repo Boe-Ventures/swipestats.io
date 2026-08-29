@@ -24,16 +24,16 @@ export function ResearchBanner() {
     <Banner
       title="Real dating data"
       message="Anonymized swipes, matches, and messages from 12,000+ users."
-      badge="Research"
       ctaText={
         <>
           <span className="sm:hidden">Explore</span>
           <span className="hidden sm:inline">Explore research</span>
         </>
       }
-      ctaHref="/research?source=home_banner"
+      ctaHref="/research?utm_source=swipestats&utm_medium=homepage_banner&utm_campaign=research_datasets"
       showDismiss
       compactMobile
+      compactCta
       onDismiss={() => {
         localStorage.setItem(DISMISS_KEY, "1");
         setVisible(false);

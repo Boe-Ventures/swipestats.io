@@ -27,7 +27,7 @@ export function ProfilePreviewsBanner() {
       message="Get ratings from friends on your photos and prompts."
       badge="New"
       ctaText="Try it free"
-      ctaHref="/try?source=home_banner"
+      ctaHref="/try?utm_source=swipestats&utm_medium=homepage_banner&utm_campaign=profile_comparisons"
       showDismiss
       onDismiss={() => {
         localStorage.setItem(DISMISS_KEY, "1");
