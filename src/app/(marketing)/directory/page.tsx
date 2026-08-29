@@ -120,12 +120,12 @@ function DirectoryContent() {
             <div className="py-8">
               <ComingSoonWrapper
                 featureName="Advanced Filters & Full Directory"
-                description="Filter by platform, gender, age, match rate, location and browse all 7,000+ profiles"
+                description="Filter by platform, gender, age, match rate, location and browse all 12,000+ profiles"
                 topic="waitlist-directory-profiles"
                 benefits={[
                   "Filter by platform, gender, age, and match rate",
                   "Search by location and sort by various metrics",
-                  "Browse complete directory of 7,000+ profiles",
+                  "Browse complete directory of 12,000+ profiles",
                 ]}
               >
                 {/* Empty - nothing to wrap */}

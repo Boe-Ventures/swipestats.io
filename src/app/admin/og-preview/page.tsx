@@ -48,7 +48,7 @@ const PRESETS: Preset[] = [
     label: "Home (/)",
     title: "Your dating data, finally visualized",
     subtitle:
-      "Every swipe, match, and message—turned into charts and ranked against 10,000+ profiles.",
+      "Every swipe, match, and message—turned into charts and ranked against 12,000+ profiles.",
     path: "/",
     screenshot: "/images/og/screenshots/home-dashboard.jpg",
     variant: "hero",
@@ -74,7 +74,7 @@ const PRESETS: Preset[] = [
     label: "Research",
     title: "Dating data that’s almost impossible to get",
     subtitle:
-      "Anonymized, consent-based behavior from 7,000+ real dating-app users.",
+      "Anonymized, consent-based behavior from 12,000+ real dating-app users.",
     path: "/research",
     screenshot: "/images/og/screenshots/research.jpg",
     variant: "hero",
@@ -291,9 +291,7 @@ export default function OgPreviewPage() {
               <Card>
                 <CardHeader>
                   <CardTitle>Presets</CardTitle>
-                  <CardDescription>
-                    Click to load a preset.
-                  </CardDescription>
+                  <CardDescription>Click to load a preset.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-1">
                   {PRESETS.map((preset) => (

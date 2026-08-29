@@ -213,8 +213,8 @@ export function ComparisonDialog() {
                     <li className="flex items-start gap-2">
                       <Heart className="mt-0.5 h-4 w-4 shrink-0" />
                       <span>
-                        <strong>7,000+ Real User Profiles:</strong> Compare with
-                        verified profiles from our directory
+                        <strong>12,000+ Real User Profiles:</strong> Compare
+                        with verified profiles from our directory
                       </span>
                     </li>
                     <li className="flex items-start gap-2">
@@ -258,10 +258,10 @@ export function ComparisonDialog() {
           {/* {!hasPremiumAccess && (
             <ComingSoonWrapper
               featureName="All Directory Profiles"
-              description="Get access to compare your data with 7000+ real user profiles from our directory"
+              description="Get access to compare your data with 12,000+ real user profiles from our directory"
               topic="waitlist-directory-profiles"
               benefits={[
-                "Compare with 7,000+ verified real users",
+                "Compare with 12,000+ verified real users",
                 "Filter by demographics and match yield",
                 "See how you stack up globally",
               ]}
@@ -303,7 +303,7 @@ export function ComparisonDialog() {
                             Unlock All Profiles
                           </h3>
                           <p className="text-muted-foreground mt-1 text-sm">
-                            Compare with 7000+ real user profiles
+                            Compare with 12,000+ real user profiles
                           </p>
                         </div>
                         <Button

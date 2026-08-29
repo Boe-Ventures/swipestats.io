@@ -28,7 +28,7 @@ export const TIER_FEATURES = {
   ],
   PLUS_COMING_SOON: [
     "Message Intelligence AI",
-    "Geographic Directory Search for profile comparisons (7,000+ profiles)",
+    "Geographic Directory Search for profile comparisons (12,000+ profiles)",
   ],
   ELITE: [
     "Everything in Plus",

@@ -36,7 +36,7 @@ import { marketingOgImage } from "@/lib/og-images";
 const researchOgImage = marketingOgImage({
   title: "Dating data that’s almost impossible to get",
   subtitle:
-    "Anonymized, consent-based behavior from 7,000+ real dating-app users.",
+    "Anonymized, consent-based behavior from 12,000+ real dating-app users.",
   path: "/research",
   screenshot: "/images/og/screenshots/research.jpg",
 });
@@ -44,14 +44,14 @@ const researchOgImage = marketingOgImage({
 export const metadata: Metadata = {
   title: "Research Datasets",
   description:
-    "Anonymized, consent-based behavior from 7,000+ real dating-app users: swipes, matches, and messages. Ready to analyze, publish, and cite.",
+    "Anonymized, consent-based behavior from 12,000+ real dating-app users: swipes, matches, and messages. Ready to analyze, publish, and cite.",
   alternates: {
     canonical: "/research",
   },
   openGraph: {
     title: "Research Datasets | SwipeStats",
     description:
-      "Anonymized, consent-based behavior from 7,000+ real dating-app users: swipes, matches, and messages. Ready to analyze, publish, and cite.",
+      "Anonymized, consent-based behavior from 12,000+ real dating-app users: swipes, matches, and messages. Ready to analyze, publish, and cite.",
     url: "/research",
     images: [
       {
@@ -66,7 +66,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Dating Data That’s Almost Impossible to Get",
     description:
-      "Anonymized, consent-based behavior from 7,000+ real dating-app users.",
+      "Anonymized, consent-based behavior from 12,000+ real dating-app users.",
     images: [researchOgImage],
   },
 };
@@ -111,7 +111,7 @@ function HeroDataCard() {
           <span className="h-[11px] w-[11px] rounded-full bg-[#febc2e]" />
           <span className="h-[11px] w-[11px] rounded-full bg-[#28c840]" />
           <span className="ml-2.5 font-mono text-[12.5px] text-gray-400">
-            profile · line 1 of 7,214
+            profile · line 1 of 12,000+
           </span>
           <span className="ml-auto rounded-md bg-white/[0.06] px-2.5 py-[3px] font-mono text-[11px] text-gray-500">
             JSONL
@@ -216,7 +216,7 @@ function HeroDataCard() {
 
       <div className="grid grid-cols-3 gap-px overflow-hidden rounded-b-2xl border border-t-0 border-gray-200 bg-gray-200">
         {[
-          { k: "Profiles", v: "7,214" },
+          { k: "Profiles", v: "12,000+" },
           { k: "Daily records", v: "2.4M" },
           { k: "Messages", v: "1.1M" },
         ].map((s) => (
@@ -253,7 +253,7 @@ function HeroSection() {
             <p className="mt-[22px] max-w-[540px] text-[clamp(17px,2vw,20px)] leading-[1.6] text-gray-600">
               Anonymized, consent-based behavior from{" "}
               <strong className="font-semibold text-gray-900">
-                7,000+ real dating-app users
+                12,000+ real dating-app users
               </strong>
               : swipes, matches, and messages. Ready to analyze, publish, and
               cite. Not a survey.
@@ -277,7 +277,7 @@ function HeroSection() {
             </div>
             <div className="mt-10 flex flex-wrap items-center gap-7">
               {[
-                { n: "7,000+", l: "profiles analyzed" },
+                { n: "12,000+", l: "profiles analyzed" },
                 { n: "965k+", l: "YouTube views from our data" },
                 { n: "50+", l: "research citations" },
               ].map((t, i) => (
@@ -366,7 +366,7 @@ function ValueSection() {
   ];
   const surveyGood = [
     "Logged behavior, straight from the source",
-    "7,000+ profiles, growing weekly",
+    "12,000+ profiles, growing weekly",
     "Day-by-day usage spanning years",
     "Anonymized message-level text",
   ];
@@ -519,7 +519,7 @@ function SchemaSection() {
                 <span className="font-mono text-gray-500">meta</span>
               </span>
               <span className="font-mono text-[11px] text-gray-500">
-                5 of 7,214
+                5 of 12,000+
               </span>
             </div>
             <div
@@ -744,7 +744,7 @@ function UseCaseVisual({ kind }: { kind: UseCaseVisualKind }) {
               <div className="mt-2 h-2 w-4/5 rounded-full bg-gray-200" />
             </div>
             <span className="font-mono text-[11px] text-rose-600">
-              n = 7,214 profiles
+              n = 12,000+ profiles
             </span>
           </div>
           <div className="self-end">

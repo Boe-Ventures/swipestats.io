@@ -1354,7 +1354,7 @@ export default function DesignSystemPage() {
                 <Prose>
                   <h2>What the data actually says</h2>
                   <p>
-                    Across <strong>7,000+ profiles</strong>, the median match
+                    Across <strong>12,000+ profiles</strong>, the median match
                     rate tells a clear story.{" "}
                     <a href="#ds-prose">See the dataset</a>.
                   </p>

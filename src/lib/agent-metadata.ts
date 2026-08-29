@@ -7,7 +7,7 @@ export const SWIPESTATS_ORGANIZATION_JSON_LD = {
   url: "https://www.swipestats.io",
   logo: "https://www.swipestats.io/icon.png",
   description:
-    "Dating app analytics platform. Upload your Tinder or Hinge data and get insights on match rates, swipe patterns, and percentile rankings from 10,000+ anonymous profiles.",
+    "Dating app analytics platform. Upload your Tinder or Hinge data and get insights on match rates, swipe patterns, and percentile rankings from 12,000+ anonymous profiles.",
   foundingDate: "2019",
   contactPoint: {
     "@type": "ContactPoint",

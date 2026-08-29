@@ -19,14 +19,14 @@ import { CtaBand } from "./_components/CtaBand";
 import { FaqList } from "./_components/FaqList";
 import { InsightsShowcase } from "./InsightsShowcase";
 import NewsletterCTA from "./NewsletterCTA";
-import { ProfilePreviewsBanner } from "./ProfilePreviewsBanner";
+import { ResearchBanner } from "./ResearchBanner";
 import { marketingOgImage } from "@/lib/og-images";
 import { SWIPESTATS_ORGANIZATION_JSON_LD } from "@/lib/agent-metadata";
 
 const homeOgImage = marketingOgImage({
   title: "Your dating data, finally visualized",
   subtitle:
-    "Every swipe, match, and message—turned into charts and ranked against 10,000+ profiles.",
+    "Every swipe, match, and message—turned into charts and ranked against 12,000+ profiles.",
   path: "/",
   screenshot: "/images/og/screenshots/home-dashboard.jpg",
 });
@@ -57,7 +57,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Your dating data, finally visualized",
     description:
-      "Every swipe, match, and message—turned into charts and ranked against 10,000+ profiles.",
+      "Every swipe, match, and message—turned into charts and ranked against 12,000+ profiles.",
     images: [homeOgImage],
   },
 };
@@ -107,7 +107,7 @@ function Hero() {
           </h1>
           <p className="mx-auto mt-[22px] max-w-[600px] text-[clamp(17px,2vw,20px)] leading-[1.6] text-gray-600">
             Every swipe, match, and message, turned into charts and ranked
-            against 10,000+ anonymous profiles.
+            against 12,000+ anonymous profiles.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3.5">
             <Link
@@ -407,7 +407,7 @@ function Research() {
           <div>
             <Eyebrow>For researchers &amp; creators</Eyebrow>
             <h2 className="mt-3.5 text-[clamp(30px,4vw,46px)] leading-[1.06] font-bold tracking-[-0.03em] text-balance text-gray-900">
-              10,000+ anonymized profiles, ready to analyze
+              12,000+ anonymized profiles, ready to analyze
             </h2>
             <p className="mt-4 max-w-[560px] text-[clamp(17px,2vw,20px)] leading-[1.6] text-gray-600">
               The same data, aggregated and anonymized into a licensable dataset
@@ -933,7 +933,7 @@ export default function HomePage() {
           __html: JSON.stringify(SWIPESTATS_ORGANIZATION_JSON_LD),
         }}
       />
-      <ProfilePreviewsBanner />
+      <ResearchBanner />
       <Hero />
       <LogoStrip />
       <HowItWorks />
