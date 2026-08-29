@@ -56,6 +56,23 @@ export const PREVIEW_PAID_SPONSOR_CAMPAIGN: SponsorCampaign = {
   ],
 };
 
+export function sponsorCampaignHref(
+  campaign: SponsorCampaign,
+  placement: SponsorPlacement,
+) {
+  if (campaign.href.startsWith("mailto:")) {
+    return campaign.href;
+  }
+
+  const params = new URLSearchParams({
+    utm_source: "swipestats",
+    utm_medium: placement === "sitewide-bar" ? "sponsorbar" : "sponsorcard",
+    utm_campaign: campaign.id,
+  });
+
+  return `${campaign.href}${campaign.href.includes("?") ? "&" : "?"}${params.toString()}`;
+}
+
 export function isSponsorCampaignActive(
   campaign: SponsorCampaign,
   now = new Date(),

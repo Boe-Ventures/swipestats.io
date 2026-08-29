@@ -9,6 +9,7 @@ import { cn } from "@/components/ui/lib/utils";
 import { useSponsorTracking } from "@/hooks/use-sponsor-tracking";
 import {
   ACTIVE_SPONSOR_CAMPAIGN,
+  sponsorCampaignHref,
   type SponsorCampaign,
 } from "@/lib/sponsorship";
 
@@ -26,6 +27,7 @@ export function SponsorCard({
     "blog-inline",
   );
   const isPaid = campaign.kind === "paid";
+  const linksOut = isPaid || !campaign.href.startsWith("mailto:");
   const [inquiryOpen, setInquiryOpen] = useState(false);
 
   const ctaContent = (
@@ -65,12 +67,12 @@ export function SponsorCard({
             </p>
 
             <div className="mt-6 flex flex-wrap items-center gap-3.5">
-              {isPaid ? (
+              {linksOut ? (
                 <a
-                  href={campaign.href}
+                  href={sponsorCampaignHref(campaign, "blog-inline")}
                   onClick={trackClick}
-                  target="_blank"
-                  rel="sponsored noopener noreferrer"
+                  target={isPaid ? "_blank" : undefined}
+                  rel={isPaid ? "sponsored noopener noreferrer" : undefined}
                   className={marketingButton({
                     variant: "primary",
                     size: "default",
