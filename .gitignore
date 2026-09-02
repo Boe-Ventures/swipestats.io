@@ -94,3 +94,6 @@ ds-bundle/
 .design-sync/.cache/
 .design-sync/learnings/
 .design-sync/node_modules
+
+# Server logs (local only)
+/logs
