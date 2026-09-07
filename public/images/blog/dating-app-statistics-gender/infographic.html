@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;600;700;800&display=swap">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; font-family: "Inter Tight", -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; color: #ffffff; -webkit-font-smoothing: antialiased; }
+  .row { display:grid; grid-template-columns:14px 1fr; gap:12px; align-items:start; font-size:21px; color:#ffffff; line-height:1.5; }
+  .dot { width:9px; height:9px; border-radius:50%; margin-top:9px; }
+  .sub { font-size:18px; color:#c4a0b0; }
+</style>
+</head>
+<body>
+<div id="infographic" style="width:1200px; height:900px; background:radial-gradient(55% 45% at 12% 8%, rgba(255,70,148,0.18) 0%, rgba(0,0,0,0) 60%), #120810; display:flex; flex-direction:column; padding:52px 64px 0;">
+
+  <div style="display:flex; flex-direction:column; gap:10px; text-align:center;">
+    <div style="font-size:13px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:#ff80b5;">Dating app statistics by gender</div>
+    <div style="font-size:45px; font-weight:800; color:#ffffff; line-height:1.15;">Same app. Two completely different games.</div>
+    <div style="font-size:19px; color:#c4a0b0;">7,000+ real profiles. 294 million swipes.</div>
+  </div>
+
+  <div style="flex:1; display:grid; grid-template-columns:1fr 1fr; gap:28px; padding:30px 0 0; position:relative;">
+
+    <div style="background:#1a1020; border:1px solid #2a1220; border-radius:20px; padding:38px 40px; display:flex; flex-direction:column; justify-content:center; gap:26px;">
+      <div style="font-size:30px; font-weight:800; color:#ff4694;">Men</div>
+      <div style="display:flex; flex-direction:column; gap:2px;">
+        <div style="font-size:74px; font-weight:800; color:#ffffff; line-height:1;">5.26%</div>
+        <div class="sub">average match rate</div>
+      </div>
+      <div style="border-top:1px solid #2a1220; padding-top:20px; display:flex; flex-direction:column; gap:16px;">
+        <div class="row"><span class="dot" style="background:#ff4694;"></span><span><b>67%</b> of dating app users</span></div>
+        <div class="row"><span class="dot" style="background:#ff4694;"></span><span><b>15,609</b> right swipes on average</span></div>
+        <div class="row"><span class="dot" style="background:#ff4694;"></span><span><b>1,224</b> messages received</span></div>
+        <div class="row"><span class="dot" style="background:#ff4694;"></span><span><b>64%</b> feel insecure from a lack of messages</span></div>
+      </div>
+    </div>
+
+    <div style="background:#1a1020; border:1px solid #2a1220; border-radius:20px; padding:38px 40px; display:flex; flex-direction:column; justify-content:center; gap:26px;">
+      <div style="font-size:30px; font-weight:800; color:#ff80b5;">Women</div>
+      <div style="display:flex; flex-direction:column; gap:2px;">
+        <div style="font-size:74px; font-weight:800; color:#ffffff; line-height:1;">44.4%</div>
+        <div class="sub">average match rate</div>
+      </div>
+      <div style="border-top:1px solid #2a1220; padding-top:20px; display:flex; flex-direction:column; gap:16px;">
+        <div class="row"><span class="dot" style="background:#ff80b5;"></span><span><b>33%</b> of dating app users</span></div>
+        <div class="row"><span class="dot" style="background:#ff80b5;"></span><span><b>2,283</b> right swipes on average</span></div>
+        <div class="row"><span class="dot" style="background:#ff80b5;"></span><span><b>2,727</b> messages received</span></div>
+        <div class="row"><span class="dot" style="background:#ff80b5;"></span><span><b>54%</b> feel overwhelmed by the volume</span></div>
+      </div>
+    </div>
+
+    <div style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:76px; height:76px; border-radius:50%; background:#E11D48; color:#ffffff; font-size:24px; font-weight:800; display:flex; align-items:center; justify-content:center; box-shadow:0 0 0 8px #120810;">VS</div>
+  </div>
+
+  <div style="display:flex; align-items:center; justify-content:space-between; border-top:1px solid #2a1220; padding:20px 0 26px; margin-top:26px;">
+    <img src="/home/pawvej/Developer/paw-server/kit/brands/swipestats/logo.png" alt="SwipeStats" style="height:28px; width:auto;">
+    <div style="font-size:15px; font-weight:600; color:#c4a0b0;">swipestats.io/blog/dating-app-statistics-gender</div>
+  </div>
+
+</div>
+</body>
+</html>
