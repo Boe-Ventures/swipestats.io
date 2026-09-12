@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import { CheckIcon } from "@heroicons/react/20/solid";
 import { cn } from "@/components/ui/lib/utils";
 import { useTRPC } from "@/trpc/react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useAnalytics } from "@/contexts/AnalyticsProvider";
 import { SectionHead, marketingButton } from "../_components/marketing-ui";
 
@@ -13,6 +13,7 @@ type Tier = {
   id: string;
   apiTier: "STARTER" | "STANDARD" | "FRESH" | "PREMIUM" | null;
   price: string;
+  quantity?: number;
   description: string;
   features: string[];
   badge?: { label: string; variant: "rose" | "gray" | "pill" };
@@ -106,7 +107,7 @@ const tiers: Tier[] = [
 function Badge({ badge }: { badge: NonNullable<Tier["badge"]> }) {
   if (badge.variant === "pill") {
     return (
-      <span className="inline-flex items-center gap-2 rounded-full border border-rose-600/20 bg-rose-50 px-3 py-1.5 text-[13px] font-semibold leading-none text-rose-700">
+      <span className="inline-flex items-center gap-2 rounded-full border border-rose-600/20 bg-rose-50 px-3 py-1.5 text-[13px] leading-none font-semibold text-rose-700">
         {badge.label}
       </span>
     );
@@ -114,7 +115,7 @@ function Badge({ badge }: { badge: NonNullable<Tier["badge"]> }) {
   return (
     <span
       className={cn(
-        "rounded-md border px-2 py-1 font-mono text-[11px] font-medium uppercase tracking-[0.04em] whitespace-nowrap",
+        "rounded-md border px-2 py-1 font-mono text-[11px] font-medium tracking-[0.04em] whitespace-nowrap uppercase",
         badge.variant === "rose"
           ? "border-rose-600/20 bg-rose-50 text-rose-700"
           : "border-gray-200 bg-gray-100 text-gray-600",
@@ -129,10 +130,12 @@ function TierCard({
   tier,
   loadingTier,
   onCheckout,
+  children,
 }: {
   tier: Tier;
   loadingTier: string | null;
   onCheckout: (tier: Tier) => void;
+  children?: ReactNode;
 }) {
   const isLoading = loadingTier === tier.id;
 
@@ -169,6 +172,8 @@ function TierCard({
         {tier.description}
       </p>
 
+      {children}
+
       <div className="mt-[18px] text-[38px] font-bold tracking-[-0.03em] tabular-nums">
         {tier.price}
       </div>
@@ -176,7 +181,9 @@ function TierCard({
       <ul
         className={cn(
           "mt-5 flex-1",
-          tier.twoCol ? "grid grid-cols-2 gap-[11px]" : "flex flex-col gap-[11px]",
+          tier.twoCol
+            ? "grid grid-cols-2 gap-[11px]"
+            : "flex flex-col gap-[11px]",
         )}
       >
         {tier.features.map((feature) => (
@@ -211,9 +218,11 @@ function TierCard({
 }
 
 export function ResearchPricingSection() {
+  const [standardQuantity, setStandardQuantity] = useState(1);
   const [loadingTier, setLoadingTier] = useState<string | null>(null);
   const trpc = useTRPC();
   const { trackEvent } = useAnalytics();
+  const availability = useQuery(trpc.research.availability.queryOptions());
 
   const createCheckout = useMutation(
     trpc.research.createCheckout.mutationOptions({
@@ -250,11 +259,24 @@ export function ResearchPricingSection() {
     });
     createCheckout.mutate({
       tier: tier.apiTier,
+      quantity: tier.quantity ?? 1,
       surface: "research_pricing",
     });
   };
 
-  const topTiers = tiers.slice(0, 3);
+  const topTiers = tiers.slice(0, 3).map((tier) =>
+    tier.id === "standard"
+      ? {
+          ...tier,
+          quantity: standardQuantity,
+          price: `$${50 * standardQuantity}`,
+          features: [
+            `${(1000 * standardQuantity).toLocaleString("en-US")} profiles`,
+            ...tier.features.slice(1),
+          ],
+        }
+      : tier,
+  );
   const bottomTiers = tiers.slice(3);
 
   return (
@@ -274,7 +296,49 @@ export function ResearchPricingSection() {
               tier={tier}
               loadingTier={loadingTier}
               onCheckout={handleCheckout}
-            />
+            >
+              {tier.id === "standard" && (
+                <div className="mt-4 flex flex-col gap-2">
+                  <label
+                    htmlFor="standard-quantity"
+                    className="text-sm font-semibold"
+                  >
+                    Standard dataset size
+                  </label>
+                  <select
+                    id="standard-quantity"
+                    value={standardQuantity}
+                    onChange={(event) =>
+                      setStandardQuantity(Number(event.target.value))
+                    }
+                    className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base"
+                  >
+                    {Array.from({ length: 12 }, (_, index) => index + 1).map(
+                      (quantity) => (
+                        <option
+                          key={quantity}
+                          value={quantity}
+                          disabled={
+                            quantity > (availability.data?.maxQuantity ?? 1)
+                          }
+                        >
+                          {(quantity * 1000).toLocaleString("en-US")} profiles ·
+                          ${quantity * 50}
+                          {quantity > (availability.data?.maxQuantity ?? 1)
+                            ? " (currently unavailable)"
+                            : ""}
+                        </option>
+                      ),
+                    )}
+                  </select>
+                  <p className="text-sm text-gray-500">
+                    Up to 12,000 Tinder profiles in one download, subject to
+                    availability. Drawn from across our upload history at $0.05
+                    per profile.
+                  </p>
+                </div>
+              )}
+            </TierCard>
           ))}
         </div>
 

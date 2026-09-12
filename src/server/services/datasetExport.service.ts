@@ -1,4 +1,4 @@
-import { eq, sql, gte } from "drizzle-orm";
+import { eq, sql, gte, inArray } from "drizzle-orm";
 import { put } from "@vercel/blob";
 import { createGzip } from "node:zlib";
 import { PassThrough, Readable, Transform } from "node:stream";
@@ -24,6 +24,7 @@ export async function ensureDatasetExportForLicense(input: {
   licenseKeyId?: string;
   orderId?: string;
   tier: DatasetTier;
+  quantity: number;
   customerEmail?: string;
   expiresAt?: Date | null;
 }) {
@@ -46,7 +47,7 @@ export async function ensureDatasetExportForLicense(input: {
         licenseKeyId: input.licenseKeyId,
         orderId: input.orderId,
         tier: input.tier,
-        profileCount: product.profileCount,
+        profileCount: product.profileCount * input.quantity,
         recency: product.recency,
         customerEmail: input.customerEmail,
         expiresAt: input.expiresAt ?? undefined,
@@ -73,7 +74,7 @@ export async function ensureDatasetExportForLicense(input: {
 /**
  * Generate a dataset export for a given export record.
  *
- * Processes one profile at a time to avoid Neon's 64MB HTTP response limit.
+ * Processes bounded profile batches to stay below Neon's HTTP response limit.
  * Outputs JSONL (one JSON object per line) so researchers can stream-parse
  * large datasets without loading the entire file into memory.
  */
@@ -104,8 +105,10 @@ export async function generateDatasetForExport(
       exportRecord.recency,
     );
 
-    if (profiles.length === 0) {
-      throw new Error("No profiles found for export");
+    if (profiles.length !== exportRecord.profileCount) {
+      throw new Error(
+        `Requested ${exportRecord.profileCount} profiles, but only ${profiles.length} are available. Please contact support.`,
+      );
     }
 
     const profileIds = profiles.map((p) => p.tinderId);
@@ -218,7 +221,7 @@ export async function generateDatasetForExport(
   }
 }
 
-async function* streamDatasetJsonl({
+export async function* streamDatasetJsonl({
   exportId,
   exportRecord,
   profiles,
@@ -240,51 +243,65 @@ async function* streamDatasetJsonl({
     recency: exportRecord.recency,
   })}\n`;
 
-  // Keep database concurrency bounded while allowing the upload stream to
-  // apply backpressure. Only one ten-profile batch is resident at a time.
-  for (let i = 0; i < profiles.length; i += 10) {
-    const batch = profiles.slice(i, i + 10);
-    const batchLines = await Promise.all(
-      batch.map(async (profile) => {
-        const [meta, usage, matchCount] = await Promise.all([
-          db.query.profileMetaTable.findFirst({
-            where: eq(profileMetaTable.tinderProfileId, profile.tinderId),
-          }),
+  // Three queries per batch instead of three queries per profile. Keep usage
+  // payloads bounded and let the upload stream apply backpressure between batches.
+  const batchSize = 25;
+  for (let i = 0; i < profiles.length; i += batchSize) {
+    const batch = profiles.slice(i, i + batchSize);
+    const ids = batch.map((profile) => profile.tinderId);
+    const [metas, usageRows, counts] = await Promise.all([
+      db
+        .select()
+        .from(profileMetaTable)
+        .where(inArray(profileMetaTable.tinderProfileId, ids)),
+      db
+        .select()
+        .from(tinderUsageTable)
+        .where(inArray(tinderUsageTable.tinderProfileId, ids))
+        .orderBy(tinderUsageTable.dateStamp),
+      db
+        .select({
+          profileId: matchTable.tinderProfileId,
+          count: sql<number>`count(*)::int`,
+        })
+        .from(matchTable)
+        .where(inArray(matchTable.tinderProfileId, ids))
+        .groupBy(matchTable.tinderProfileId),
+    ]);
+    const metaById = new Map(metas.map((meta) => [meta.tinderProfileId, meta]));
+    const countById = new Map(counts.map((row) => [row.profileId, row.count]));
+    const usageById = new Map<string, typeof usageRows>();
+    for (const row of usageRows) {
+      if (!row.tinderProfileId) continue;
+      const rows = usageById.get(row.tinderProfileId) ?? [];
+      rows.push(row);
+      usageById.set(row.tinderProfileId, rows);
+    }
+    const batchLines = batch.map((profile) => {
+      const meta = metaById.get(profile.tinderId);
+      const usage = usageById.get(profile.tinderId) ?? [];
+      const matchCount = countById.get(profile.tinderId) ?? 0;
 
-          db
-            .select()
-            .from(tinderUsageTable)
-            .where(eq(tinderUsageTable.tinderProfileId, profile.tinderId))
-            .orderBy(tinderUsageTable.dateStamp),
+      // Strip internal fields, keep everything researchers need.
+      const {
+        userId,
+        computed,
+        createdAt,
+        updatedAt,
+        llmAnalyzedAt,
+        bioOriginal,
+        swipestatsVersion,
+        ...profileData
+      } = profile;
 
-          db
-            .select({ count: sql<number>`count(*)` })
-            .from(matchTable)
-            .where(eq(matchTable.tinderProfileId, profile.tinderId))
-            .then((rows) => rows[0]?.count ?? 0),
-        ]);
-
-        // Strip internal fields, keep everything researchers need.
-        const {
-          userId,
-          computed,
-          createdAt,
-          updatedAt,
-          llmAnalyzedAt,
-          bioOriginal,
-          swipestatsVersion,
-          ...profileData
-        } = profile;
-
-        return JSON.stringify({
-          type: "profile",
-          profile: profileData,
-          meta: meta ?? null,
-          usage,
-          matchCount,
-        });
-      }),
-    );
+      return JSON.stringify({
+        type: "profile",
+        profile: profileData,
+        meta: meta ?? null,
+        usage,
+        matchCount,
+      });
+    });
 
     for (const line of batchLines) {
       yield `${line}\n`;
@@ -292,7 +309,7 @@ async function* streamDatasetJsonl({
 
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
     console.log(
-      `[dataset-export] ${exportId} — batch ${Math.floor(i / 10) + 1}/${Math.ceil(profiles.length / 10)} done (${i + batch.length}/${profiles.length} profiles, ${elapsed}s)`,
+      `[dataset-export] ${exportId} — batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(profiles.length / batchSize)} done (${i + batch.length}/${profiles.length} profiles, ${elapsed}s)`,
     );
   }
 
@@ -325,4 +342,34 @@ async function getRandomProfiles(count: number, recency: "MIXED" | "RECENT") {
     .where(whereCondition)
     .orderBy(sql`RANDOM()`)
     .limit(count);
+}
+
+export async function assertDatasetAvailability(
+  tier: DatasetTier,
+  quantity: number,
+) {
+  const product = DATASET_PRODUCTS[tier];
+  const [row] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(tinderProfileTable)
+    .where(
+      product.recency === "RECENT"
+        ? gte(
+            tinderProfileTable.createdAt,
+            new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1000),
+          )
+        : undefined,
+    );
+  if ((row?.count ?? 0) < product.profileCount * quantity) {
+    throw new Error(
+      "This dataset size is currently unavailable. Please choose a smaller package or contact support.",
+    );
+  }
+}
+
+export async function getStandardDatasetAvailability() {
+  const [row] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(tinderProfileTable);
+  return { maxQuantity: Math.min(12, Math.floor((row?.count ?? 0) / 1000)) };
 }

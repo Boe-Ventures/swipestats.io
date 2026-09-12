@@ -4,6 +4,7 @@ import {
   getCustomer,
   validateLicense,
   getSubscription,
+  getOrderItem,
 } from "@lemonsqueezy/lemonsqueezy.js";
 import crypto from "crypto";
 
@@ -264,6 +265,7 @@ export async function getOrderFromLicenseKey(licenseKey: string): Promise<{
   orderId: string;
   variantId: number;
   customerEmail: string;
+  quantity: number;
 } | null> {
   // First validate the license to get license key ID
   const { data: validationData } = await validateLicense(licenseKey);
@@ -298,6 +300,7 @@ export async function getOrderDetails(orderId: string): Promise<{
   orderId: string;
   variantId: number;
   customerEmail: string;
+  quantity: number;
 } | null> {
   const orderResponse = await fetch(
     `https://api.lemonsqueezy.com/v1/orders/${orderId}`,
@@ -314,7 +317,7 @@ export async function getOrderDetails(orderId: string): Promise<{
   const orderData = (await orderResponse.json()) as {
     data?: {
       attributes?: {
-        first_order_item?: { variant_id?: number };
+        first_order_item?: { id?: number; variant_id?: number };
         user_email?: string;
       };
     };
@@ -325,7 +328,15 @@ export async function getOrderDetails(orderId: string): Promise<{
 
   if (!variantId || !customerEmail) return null;
 
+  const itemId = orderData.data?.attributes?.first_order_item?.id;
+  if (!itemId) return null;
+  const { data: item, error: itemError } = await getOrderItem(itemId);
+  if (itemError || !item?.data) return null;
+  const quantity = item.data.attributes.quantity;
+  if (!Number.isSafeInteger(quantity) || quantity < 1) return null;
+
   return {
+    quantity,
     orderId: orderId.toString(),
     variantId,
     customerEmail,
@@ -360,10 +371,20 @@ export async function createDatasetCheckout(
   tier: DatasetTier,
   email?: string,
   surface: BillingSurface = "research_pricing",
+  quantity = 1,
 ): Promise<CheckoutResult> {
   const variantId = LEMON_SQUEEZY_CONFIG.datasetVariants[tier];
   const checkoutAttemptId = createId("chk");
-  const amount = DATASET_PRODUCTS[tier].price;
+  if (
+    !Number.isInteger(quantity) ||
+    quantity < 1 ||
+    quantity > (tier === "STANDARD" ? 12 : 1)
+  ) {
+    throw new Error(
+      "Choose between 1 and 12 Standard packs, or one of the other datasets.",
+    );
+  }
+  const amount = DATASET_PRODUCTS[tier].price * quantity;
 
   // Validate variant ID is configured
   if (!variantId || variantId === "TBD") {
@@ -376,8 +397,10 @@ export async function createDatasetCheckout(
     LEMON_SQUEEZY_CONFIG.storeId,
     variantId,
     {
+      expiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
       checkoutData: {
         email,
+        variantQuantities: [{ variantId: Number(variantId), quantity }],
         custom: {
           product_line: "dataset",
           dataset_tier: tier,
@@ -386,6 +409,13 @@ export async function createDatasetCheckout(
         },
       },
       productOptions: {
+        ...(tier === "STANDARD"
+          ? {
+              name: "Standard Tinder dataset (1,000 profiles per pack)",
+              description:
+                "Choose your pack quantity on SwipeStats. All packs in this order are delivered together in one dataset download.",
+            }
+          : {}),
         redirectUrl: `${env.NEXT_PUBLIC_BASE_URL}/research/download?licenseKey=[license_key]`,
         receiptButtonText: "Download your dataset",
         receiptLinkUrl: `${env.NEXT_PUBLIC_BASE_URL}/research/download?licenseKey=[license_key]`,
