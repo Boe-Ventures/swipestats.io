@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;600;700;800&display=swap">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; font-family: "Inter Tight", -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; color: #ffffff; -webkit-font-smoothing: antialiased; }
+  .row { display:grid; grid-template-columns:34px 1fr; gap:16px; align-items:start; }
+  .mark { width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:19px; font-weight:800; margin-top:2px; }
+  .app { font-size:24px; font-weight:800; color:#ffffff; line-height:1.3; }
+  .note { font-size:16px; color:#c4a0b0; line-height:1.4; }
+</style>
+</head>
+<body>
+<div id="infographic" style="width:1200px; height:900px; background:radial-gradient(60% 50% at 12% 6%, rgba(255,70,148,0.20) 0%, rgba(0,0,0,0) 62%), #120810; display:flex; flex-direction:column; padding:52px 60px 0;">
+
+  <div style="display:flex; flex-direction:column; gap:10px;">
+    <div style="font-size:13px; font-weight:800; letter-spacing:0.10em; text-transform:uppercase; color:#ff80b5;">Dating app screenshot alerts</div>
+    <div style="font-size:46px; font-weight:800; color:#ffffff; line-height:1.12; letter-spacing:-0.01em;">Does Tinder notify screenshots? No.</div>
+    <div style="font-size:19px; color:#c4a0b0; line-height:1.4;">Only two mainstream apps say anything when you hit capture.</div>
+  </div>
+
+  <div style="flex:1; display:grid; grid-template-columns:1.25fr 1fr; gap:24px; padding:34px 0 0; align-items:stretch;">
+
+    <div style="background:#2a1220; border:1px solid rgba(255,128,181,0.18); border-radius:22px; padding:34px 34px; display:flex; flex-direction:column; justify-content:center; gap:26px;">
+      <div style="display:inline-flex; align-self:flex-start; background:#2a5c3a; color:#b8f0cc; font-size:14px; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; padding:8px 18px; border-radius:26px;">Sends no alert</div>
+      <div class="row"><div class="mark" style="background:rgba(120,220,160,0.16); color:#7fe0a8;">&#10003;</div><div><div class="app">Tinder</div><div class="note">Screenshots and screen recording. No detection, any tier.</div></div></div>
+      <div class="row"><div class="mark" style="background:rgba(120,220,160,0.16); color:#7fe0a8;">&#10003;</div><div><div class="app">Bumble</div><div class="note">Nothing sent, on profiles or chats.</div></div></div>
+      <div class="row"><div class="mark" style="background:rgba(120,220,160,0.16); color:#7fe0a8;">&#10003;</div><div><div class="app">Hinge</div><div class="note">Nothing sent, on profiles or chats.</div></div></div>
+      <div class="row"><div class="mark" style="background:rgba(120,220,160,0.16); color:#7fe0a8;">&#10003;</div><div><div class="app">OkCupid</div><div class="note">Nothing sent, on profiles or chats.</div></div></div>
+      <div class="row"><div class="mark" style="background:rgba(120,220,160,0.16); color:#7fe0a8;">&#10003;</div><div><div class="app">Match</div><div class="note">Nothing sent, on profiles or chats.</div></div></div>
+    </div>
+
+    <div style="background:linear-gradient(150deg,#E11D48,#ff4694); border-radius:22px; padding:34px 32px; display:flex; flex-direction:column; justify-content:center; gap:34px;">
+      <div style="display:inline-flex; align-self:flex-start; background:rgba(18,8,16,0.32); color:#ffffff; font-size:14px; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; padding:8px 18px; border-radius:26px;">The exceptions</div>
+      <div class="row"><div class="mark" style="background:rgba(18,8,16,0.30); color:#ffffff;">&#33;</div><div><div class="app">Badoo</div><div class="note" style="color:rgba(255,255,255,0.92);">Screenshot Block on private chats. Stops the capture and tells the other person you tried.</div></div></div>
+      <div class="row"><div class="mark" style="background:rgba(18,8,16,0.30); color:#ffffff;">&#33;</div><div><div class="app">Raya</div><div class="note" style="color:rgba(255,255,255,0.92);">Sharing profiles or chats can get you permanently banned.</div></div></div>
+    </div>
+
+  </div>
+
+  <div style="display:flex; align-items:center; justify-content:space-between; border-top:1px solid #2a1220; padding:20px 0 26px;">
+    <img src="/home/pawvej/Developer/paw-server/kit/brands/swipestats/logo.png" alt="SwipeStats" style="height:28px; width:auto;">
+    <div style="font-size:15px; font-weight:600; color:#c4a0b0;">swipestats.io/blog/does-tinder-notify-screenshots</div>
+  </div>
+
+</div>
+</body>
+</html>
