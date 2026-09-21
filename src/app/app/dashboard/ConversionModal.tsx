@@ -1,5 +1,6 @@
 "use client";
 
+import { ClientAuthForm } from "../../../components/auth/ClientAuthForm";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { AlertCircle, Check, Mail, Sparkles, Users } from "lucide-react";
@@ -206,7 +207,10 @@ export function ConversionModal({
 
           {/* Create Account Tab */}
           <TabsContent value="create" className="mt-4 space-y-4">
-            <form onSubmit={handleCreateAccount} className="space-y-4">
+            <ClientAuthForm
+              onSubmit={handleCreateAccount}
+              className="space-y-4"
+            >
               <UsernameField
                 username={username}
                 onUsernameChange={setUsername}
@@ -275,12 +279,12 @@ export function ConversionModal({
                 <Mail className="mr-2 h-4 w-4" />
                 {isLoading ? "Creating..." : "Create Account"}
               </Button>
-            </form>
+            </ClientAuthForm>
           </TabsContent>
 
           {/* Sign In Tab */}
           <TabsContent value="signin" className="mt-4 space-y-4">
-            <form onSubmit={handleSignIn} className="space-y-4">
+            <ClientAuthForm onSubmit={handleSignIn} className="space-y-4">
               <Field>
                 <FieldLabel htmlFor="signin-username">Username</FieldLabel>
                 <Input
@@ -310,7 +314,7 @@ export function ConversionModal({
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? "Signing in..." : "Sign In"}
               </Button>
-            </form>
+            </ClientAuthForm>
           </TabsContent>
         </Tabs>
 
