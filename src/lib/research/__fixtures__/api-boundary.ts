@@ -81,6 +81,8 @@ await mock.module("@/server/services/lemonSqueezy.service", () => ({
   getDatasetTierFromVariant: () => "STANDARD",
 }));
 await mock.module("@/server/services/datasetExport.service", () => ({
+  assertDatasetAvailability: async () => undefined,
+  getStandardDatasetAvailability: async () => ({ maxQuantity: 12 }),
   ensureDatasetExportForLicense: async () => ({}),
   generateDatasetForExport: async () => undefined,
 }));

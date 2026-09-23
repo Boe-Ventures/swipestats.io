@@ -32,3 +32,6 @@ const handler = (req: NextRequest) =>
   });
 
 export { handler as GET, handler as POST };
+
+// Dataset generation continues after the response via waitUntil.
+export const maxDuration = 800;

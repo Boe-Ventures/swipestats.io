@@ -54,7 +54,7 @@ await mock.module("@/server/db", () => ({
           name === "tinder_profile"
             ? [profile]
             : name === "match"
-              ? [{ count: "2" }]
+              ? [{ profileId: profile.tinderId, count: 2 }]
               : [];
         const builder = {
           where: (condition: Parameters<PgDialect["sqlToQuery"]>[0]) => {
@@ -68,6 +68,7 @@ await mock.module("@/server/db", () => ({
             return builder;
           },
           orderBy: () => builder,
+          groupBy: () => builder,
           limit: async () => {
             selected++;
             return result;
@@ -111,6 +112,7 @@ expect(output).toContain("preserved-id");
 expect(output).toContain("Research bio");
 expect(output).not.toContain("account-secret");
 expect(output).toContain("new-metric");
+expect(output).toContain('"matchCount":2');
 await generateDatasetForExport(record.id);
 expect(uploads).toBe(1);
 expect(state).toBe("READY");

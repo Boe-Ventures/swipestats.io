@@ -4,6 +4,19 @@ let mode: "valid" | "invalid" | "outage" = "valid";
 let variant = 456562;
 let queued = 0;
 let queuedTier = "";
+let queuedQuantity = 0;
+globalThis.fetch = Object.assign(
+  async () =>
+    Response.json({
+      data: {
+        attributes: {
+          first_order_item: { id: 99, variant_id: 456562 },
+          user_email: "fixture@example.com",
+        },
+      },
+    }),
+  { preconnect: globalThis.fetch.preconnect },
+);
 await mock.module("@/env", () => ({
   env: {
     NEXT_PUBLIC_IS_PRODUCTION: true,
@@ -16,6 +29,9 @@ await mock.module("@lemonsqueezy/lemonsqueezy.js", () => ({
   lemonSqueezySetup: () => undefined,
   createCheckout: async () => ({}),
   getCustomer: async () => ({}),
+  getOrderItem: async () => ({
+    data: { data: { attributes: { quantity: 3 } } },
+  }),
   getSubscription: async () => ({}),
   validateLicense: async () =>
     mode === "outage"
@@ -41,9 +57,13 @@ await mock.module("@/server/services/analytics.service", () => ({
 }));
 await mock.module("@vercel/functions", () => ({ waitUntil: () => undefined }));
 await mock.module("@/server/services/datasetExport.service", () => ({
-  ensureDatasetExportForLicense: async (input: { tier: string }) => {
+  ensureDatasetExportForLicense: async (input: {
+    tier: string;
+    quantity: number;
+  }) => {
     queued++;
     queuedTier = input.tier;
+    queuedQuantity = input.quantity;
     return {
       created: true,
       exportRecord: {
@@ -95,6 +115,7 @@ const request = () => {
 };
 expect((await POST(request())).status).toBe(200);
 expect(queuedTier).toBe("STANDARD");
+expect(queuedQuantity).toBe(3);
 expect(queued).toBe(1);
 mode = "invalid";
 expect((await validateDatasetLicenseKey("invalid")).valid).toBe(false);

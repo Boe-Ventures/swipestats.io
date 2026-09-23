@@ -38,7 +38,7 @@ import { marketingOgImage } from "@/lib/og-images";
 const researchOgImage = marketingOgImage({
   title: "Dating data that’s almost impossible to get",
   subtitle:
-    "Anonymized, consent-based behavior from 12,000+ real dating-app users.",
+    "Anonymized, consent-based behavior from 11,000+ real dating-app users.",
   path: "/research",
   screenshot: "/images/og/screenshots/research.jpg",
 });
@@ -46,14 +46,14 @@ const researchOgImage = marketingOgImage({
 export const metadata: Metadata = {
   title: "Research Datasets",
   description:
-    "Anonymized, consent-based behavior from 12,000+ real dating-app users: swipes, matches, and messages. Ready to analyze, publish, and cite.",
+    "Anonymized, consent-based behavior from 11,000+ real dating-app users: swipes, matches, and message statistics. Ready to analyze, publish, and cite.",
   alternates: {
     canonical: "/research",
   },
   openGraph: {
     title: "Research Datasets | SwipeStats",
     description:
-      "Anonymized, consent-based behavior from 12,000+ real dating-app users: swipes, matches, and messages. Ready to analyze, publish, and cite.",
+      "Anonymized, consent-based behavior from 11,000+ real dating-app users: swipes, matches, and message statistics. Ready to analyze, publish, and cite.",
     url: "/research",
     images: [
       {
@@ -68,7 +68,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Dating Data That’s Almost Impossible to Get",
     description:
-      "Anonymized, consent-based behavior from 12,000+ real dating-app users.",
+      "Anonymized, consent-based behavior from 11,000+ real dating-app users.",
     images: [researchOgImage],
   },
 };
@@ -113,7 +113,7 @@ function HeroDataCard() {
           <span className="h-[11px] w-[11px] rounded-full bg-[#febc2e]" />
           <span className="h-[11px] w-[11px] rounded-full bg-[#28c840]" />
           <span className="ml-2.5 font-mono text-[12.5px] text-gray-400">
-            profile · line 1 of 12,000+
+            profile · line 1 of 11,000+
           </span>
           <span className="ml-auto rounded-md bg-white/[0.06] px-2.5 py-[3px] font-mono text-[11px] text-gray-500">
             JSONL
@@ -207,10 +207,8 @@ function HeroDataCard() {
           {"\n  "}
           <TokPunc>],</TokPunc>
           {"\n  "}
-          <TokKey>{'"matches"'}</TokKey>
-          <TokPunc>:</TokPunc> <TokPunc>[</TokPunc>
-          <TokCmt>{"/* 386 conversations */"}</TokCmt>
-          <TokPunc>]</TokPunc>
+          <TokKey>{'"matchCount"'}</TokKey>
+          <TokPunc>:</TokPunc> <TokNum>386</TokNum>
           {"\n"}
           <TokPunc>{"}"}</TokPunc>
         </pre>
@@ -218,7 +216,7 @@ function HeroDataCard() {
 
       <div className="grid grid-cols-3 gap-px overflow-hidden rounded-b-2xl border border-t-0 border-gray-200 bg-gray-200">
         {[
-          { k: "Profiles", v: "12,000+" },
+          { k: "Profiles", v: "11,000+" },
           { k: "Daily records", v: "2.4M" },
           { k: "Messages", v: "1.1M" },
         ].map((s) => (
@@ -255,10 +253,10 @@ function HeroSection() {
             <p className="mt-[22px] max-w-[540px] text-[clamp(17px,2vw,20px)] leading-[1.6] text-gray-600">
               Anonymized, consent-based behavior from{" "}
               <strong className="font-semibold text-gray-900">
-                12,000+ real dating-app users
+                11,000+ real dating-app users
               </strong>
-              : swipes, matches, and messages. Ready to analyze, publish, and
-              cite. Not a survey.
+              : swipes, matches, and message statistics. Ready to analyze,
+              publish, and cite. Not a survey.
             </p>
             <div className="mt-8 flex flex-wrap items-center gap-3.5">
               <Link
@@ -279,7 +277,7 @@ function HeroSection() {
             </div>
             <div className="mt-10 flex flex-wrap items-center gap-7">
               {[
-                { n: "12,000+", l: "profiles analyzed" },
+                { n: "11,000+", l: "profiles analyzed" },
                 { n: "965k+", l: "YouTube views from our data" },
                 { n: "50+", l: "research citations" },
               ].map((t, i) => (
@@ -341,17 +339,17 @@ function ValueSection() {
     {
       icon: ChartPieIcon,
       title: "Observed, not claimed",
-      body: "Actual swipes, matches, and messages with timestamps, not what people say they do on a questionnaire.",
+      body: "Daily swipe, match, and message counts from users’ Tinder exports, ready for longitudinal analysis.",
     },
     {
       icon: ShieldCheckIcon,
       title: "Anonymized & consent-based",
-      body: "No names or contact info. PII in bios and messages is LLM-redacted. Every profile was voluntarily uploaded by its owner.",
+      body: "Profiles are voluntarily uploaded by their owners. Purchased exports omit account links, original bios, photos, and raw conversation text.",
     },
     {
       icon: DocumentDuplicateIcon,
       title: "Rich, computed data model",
-      body: "Five linked objects per profile, plus pre-computed metrics like match rate, response time, and ghosting. Ready to analyze.",
+      body: "Profile fields, computed statistics, daily usage records, and match counts in one JSONL record per profile.",
     },
     {
       icon: ClockIcon,
@@ -368,9 +366,9 @@ function ValueSection() {
   ];
   const surveyGood = [
     "Logged behavior, straight from the source",
-    "12,000+ profiles, growing weekly",
+    "11,000+ profiles, growing weekly",
     "Day-by-day usage spanning years",
-    "Anonymized message-level text",
+    "Daily message counts",
   ];
 
   return (
@@ -450,11 +448,6 @@ function SchemaSection() {
       body: "Demographics, bio, interests, education, search filters.",
     },
     {
-      name: "user",
-      cnt: "6 fields",
-      body: "Resolved geography, languages, and timezone.",
-    },
-    {
       name: "meta",
       cnt: "24 metrics",
       body: "Pre-computed match rate, response time, ghosting & more.",
@@ -465,9 +458,9 @@ function SchemaSection() {
       body: "One record per active day: swipes, matches, messages.",
     },
     {
-      name: "matches[]",
-      cnt: "+ messages",
-      body: "Every conversation with message-level, redacted text.",
+      name: "matchCount",
+      cnt: "Total",
+      body: "Number of retained match records for the profile.",
     },
   ];
 
@@ -488,11 +481,11 @@ function SchemaSection() {
         <SectionHead
           center
           eyebrow="The data model"
-          title="Five linked objects in every profile"
-          lead="Each line of the JSONL file is one user. Raw profile fields, geography, pre-computed stats, daily activity, and every conversation. All keyed together."
+          title="What each profile record contains"
+          lead="Each profile line contains profile fields, computed statistics, daily activity, and a match count. Raw conversations and photos are excluded from purchased downloads."
         />
 
-        <div className="mt-9 grid grid-cols-2 gap-3 md:grid-cols-5">
+        <div className="mt-9 grid grid-cols-2 gap-3 md:grid-cols-4">
           {keys.map((k) => (
             <div
               key={k.name}
@@ -521,7 +514,7 @@ function SchemaSection() {
                 <span className="font-mono text-gray-500">meta</span>
               </span>
               <span className="font-mono text-[11px] text-gray-500">
-                5 of 12,000+
+                5 of 11,000+
               </span>
             </div>
             <div
@@ -573,9 +566,10 @@ function SchemaSection() {
 
           <div>
             <p className="text-[15px] leading-[1.7] text-gray-600">
-              Everything is documented. The full data dictionary defines all 70+
-              variables, their types, nullability, and how each metric is
-              computed, with notes on PII redaction and data quality.
+              Downloads are gzip-compressed JSONL, with metadata and citation
+              records alongside the profile lines. Preview the sample to explore
+              the fields. Custom conversation datasets require a separate
+              agreement.
             </p>
             <div className="mt-[22px] flex flex-wrap gap-3">
               <Link
@@ -583,7 +577,7 @@ function SchemaSection() {
                 target="_blank"
                 className={marketingButton({ variant: "primary" })}
               >
-                Read the documentation
+                Preview sample fields
                 <ArrowRightIcon className="h-4 w-4" />
               </Link>
               <Link
@@ -635,7 +629,7 @@ function DashboardSection() {
           center
           eyebrow="See it before you buy"
           title="A glimpse of what's inside"
-          lead="One real, anonymized profile from the demo dataset, rendered exactly as it ships. Walk a single row end to end before you buy."
+          lead="Explore analytics for an example profile. Purchased datasets contain the fields listed above; this interface shows analyses you can build from dating-app exports."
         />
 
         {/* the real, data-driven insights (same charts that ship), framed as the live demo */}
@@ -643,7 +637,7 @@ function DashboardSection() {
           <div className="rounded-3xl border border-gray-200 bg-gray-50 p-4 shadow-[0_10px_30px_oklch(0.2_0.02_286/0.1),0_30px_60px_oklch(0.2_0.02_286/0.12)] sm:p-6 [&_[data-slot=card]]:border-gray-200/70 [&_[data-slot=card]]:shadow-none!">
             <p className="mb-3 flex items-center justify-center gap-2 text-[12.5px] font-semibold text-gray-600">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              The exact dashboard a buyer gets. Click through one real row.
+              Explore an example profile in the SwipeStats interface.
             </p>
             <InsightsShowcase />
           </div>
@@ -746,7 +740,7 @@ function UseCaseVisual({ kind }: { kind: UseCaseVisualKind }) {
               <div className="mt-2 h-2 w-4/5 rounded-full bg-gray-200" />
             </div>
             <span className="font-mono text-[11px] text-rose-600">
-              n = 12,000+ profiles
+              n = 11,000+ profiles
             </span>
           </div>
           <div className="self-end">
@@ -1032,7 +1026,7 @@ function AITrainingSection() {
               </div>
               <div className="grid grid-cols-3 gap-px overflow-hidden rounded-2xl bg-white/10">
                 {[
-                  { value: "12,000+", label: "profiles" },
+                  { value: "11,000+", label: "profiles" },
                   { value: "294M", label: "swipes" },
                   { value: "1.1M", label: "messages" },
                 ].map((item) => (
@@ -1071,12 +1065,12 @@ function ComparisonTableSection() {
       {
         label: "Price",
         mono: true,
-        cells: ["$0", "$15", "$50", "$150", "$300", "$1,500+"],
+        cells: ["$0", "$15", "$50–$600", "$150", "$300", "$1,500+"],
       },
       {
         label: "Profiles",
         mono: true,
-        cells: ["1", "10", "1,000", "1,000", "3,000", "5,000+"],
+        cells: ["1", "10", "1,000–12,000", "1,000", "3,000", "5,000+"],
       },
       {
         label: "Price / profile",
@@ -1221,8 +1215,8 @@ function HowItWorksSection() {
 function FAQSection() {
   const faqs = [
     {
-      q: "Is this data ethical and legal?",
-      a: "Yes. Every profile is voluntarily uploaded by its owner via their official GDPR data export, and fully anonymized. No names or contact details are included, and PII in bios and messages is LLM-redacted. We comply with applicable data-protection regulations.",
+      q: "Where does the data come from?",
+      a: "Users voluntarily upload their Tinder exports. Purchased research downloads include profile fields, calculated statistics, daily usage, and match counts. Account links, original bios, photos, and raw conversation text are excluded. Check the license terms for your intended use.",
       open: true,
     },
     {

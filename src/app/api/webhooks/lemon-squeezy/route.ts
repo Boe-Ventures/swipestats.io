@@ -7,6 +7,8 @@ import { userTable } from "@/server/db/schema";
 import {
   verifyWebhookSignature,
   getTierFromVariantId,
+  getOrderDetails,
+  getDatasetTierFromVariant,
   DATASET_PRODUCTS,
   validateDatasetLicenseKey,
   SWIPESTATS_PRODUCTS,
@@ -203,10 +205,16 @@ export async function POST(request: Request) {
         });
       }
 
-      // Client checkout metadata is not an entitlement. Check the actual license.
       const validation = await validateDatasetLicenseKey(licenseKey);
-      const datasetTier = validation.valid ? validation.tier : null;
-      const customerEmail = payload.data.attributes.user_email;
+      // Fulfillment follows the purchased order item, never editable checkout metadata.
+      if (!orderId) throw new Error("License event is missing its order ID");
+      const orderDetails = await getOrderDetails(orderId);
+      if (!orderDetails)
+        throw new Error("Unable to retrieve the purchased order item");
+      const orderTier = getDatasetTierFromVariant(orderDetails.variantId);
+      const datasetTier =
+        validation.valid && validation.tier === orderTier ? orderTier : null;
+      const customerEmail = orderDetails.customerEmail;
 
       if (!datasetTier) {
         console.log("[Webhook] Skipping non-dataset license key", {
@@ -231,6 +239,7 @@ export async function POST(request: Request) {
         licenseKeyId,
         orderId,
         tier: datasetTier,
+        quantity: orderDetails.quantity,
         customerEmail,
         expiresAt: payload.data.attributes.expires_at
           ? new Date(payload.data.attributes.expires_at)
@@ -247,9 +256,9 @@ export async function POST(request: Request) {
         orderId: orderId ?? null,
         licenseKeyId,
         tier: datasetTier,
-        amount: product.price,
+        amount: product.price * orderDetails.quantity,
         currency: "usd",
-        profileCount: product.profileCount,
+        profileCount: product.profileCount * orderDetails.quantity,
         recency: product.recency,
         testMode,
       });
@@ -261,7 +270,7 @@ export async function POST(request: Request) {
           orderId: orderId ?? null,
           licenseKeyId,
           tier: datasetTier,
-          profileCount: product.profileCount,
+          profileCount: product.profileCount * orderDetails.quantity,
           recency: product.recency,
           source: "webhook",
           alreadyExisted: !created,
@@ -582,3 +591,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }
+
+// Dataset generation continues after the response via waitUntil.
+export const maxDuration = 800;

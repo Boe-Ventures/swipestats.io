@@ -18,6 +18,8 @@ import { datasetCheckoutSurfaceSchema } from "@/lib/validators";
 import {
   ensureDatasetExportForLicense,
   generateDatasetForExport,
+  assertDatasetAvailability,
+  getStandardDatasetAvailability,
 } from "@/server/services/datasetExport.service";
 import { trackServerEvent } from "@/server/services/analytics.service";
 
@@ -28,23 +30,31 @@ import { publicProcedure, adminProcedure } from "../trpc";
 // NOTE: If you change the export format (filename, content-type, compression),
 // also update the download route at src/app/api/download/route.ts
 export const researchRouter = {
+  availability: publicProcedure.query(() => getStandardDatasetAvailability()),
   // Generate checkout URL for dataset purchase
   createCheckout: publicProcedure
     .input(
       z.object({
         tier: z.enum(["STARTER", "STANDARD", "FRESH", "PREMIUM"]),
         email: z.string().email().optional(),
+        quantity: z.number().int().min(1).max(12).default(1),
         surface: datasetCheckoutSurfaceSchema.optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       try {
+        if (input.tier !== "STANDARD" && input.quantity !== 1) {
+          throw new Error(
+            "Larger quantities are available for the Standard dataset.",
+          );
+        }
+        await assertDatasetAvailability(input.tier, input.quantity);
         const checkout = await createDatasetCheckout(
           input.tier,
           input.email,
           input.surface,
+          input.quantity,
         );
-        const product = DATASET_PRODUCTS[input.tier];
 
         trackServerEvent(
           ctx.session?.user.id ??
@@ -56,7 +66,7 @@ export const researchRouter = {
             checkoutAttemptId: checkout.checkoutAttemptId,
             surface: input.surface ?? "research_pricing",
             tier: input.tier,
-            amount: product.price,
+            amount: checkout.amount,
             currency: checkout.currency,
             providerVariantId: checkout.providerVariantId,
             hasPrefilledEmail: Boolean(input.email),
@@ -116,7 +126,9 @@ export const researchRouter = {
             ),
             expiresAt: existingExport.expiresAt,
             generatedAt: existingExport.generatedAt,
-            price: product.price,
+            price:
+              product.price *
+              (existingExport.profileCount / product.profileCount),
           },
         };
       }
@@ -155,6 +167,7 @@ export const researchRouter = {
         licenseKeyId: validation.licenseKeyId?.toString(),
         orderId: orderDetails.orderId,
         tier: datasetTier,
+        quantity: orderDetails.quantity,
         customerEmail: orderDetails.customerEmail,
         expiresAt: validation.expiresAt ? new Date(validation.expiresAt) : null,
       });
@@ -171,7 +184,7 @@ export const researchRouter = {
             orderId: exportRecord.orderId ?? null,
             licenseKeyId: exportRecord.licenseKeyId ?? undefined,
             tier: exportRecord.tier as DatasetTier,
-            profileCount: product.profileCount,
+            profileCount: exportRecord.profileCount,
             recency: product.recency,
             source: "download_page",
             alreadyExisted: false,
@@ -213,7 +226,8 @@ export const researchRouter = {
           ),
           expiresAt: exportRecord.expiresAt,
           generatedAt: exportRecord.generatedAt,
-          price: product.price,
+          price:
+            product.price * (exportRecord.profileCount / product.profileCount),
         },
       };
     }),
@@ -307,7 +321,7 @@ export const researchRouter = {
           orderId: exportRecord.orderId ?? null,
           licenseKeyId: exportRecord.licenseKeyId ?? undefined,
           tier: exportRecord.tier,
-          profileCount: product.profileCount,
+          profileCount: exportRecord.profileCount,
           recency: product.recency,
           source: "retry",
           alreadyExisted: true,
