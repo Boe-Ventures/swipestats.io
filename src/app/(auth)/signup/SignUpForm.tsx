@@ -1,5 +1,6 @@
 "use client";
 
+import { ClientAuthForm } from "../../../components/auth/ClientAuthForm";
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -118,7 +119,7 @@ export function SignUpForm() {
           </Alert>
         )}
 
-        <form onSubmit={handleSignUp} className="space-y-4">
+        <ClientAuthForm onSubmit={handleSignUp} className="space-y-4">
           <UsernameField
             username={username}
             onUsernameChange={setUsername}
@@ -227,7 +228,7 @@ export function SignUpForm() {
               </>
             )}
           </Button>
-        </form>
+        </ClientAuthForm>
 
         <div className="relative">
           <div className="absolute inset-0 flex items-center">

@@ -1,5 +1,6 @@
 "use client";
 
+import { ClientAuthForm } from "../../../components/auth/ClientAuthForm";
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
@@ -112,7 +113,7 @@ export function ResetPasswordForm() {
         </Alert>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <ClientAuthForm onSubmit={handleSubmit} className="space-y-4">
         <Field>
           <FieldLabel htmlFor="password">New Password</FieldLabel>
           <Input
@@ -129,7 +130,9 @@ export function ResetPasswordForm() {
         </Field>
 
         <Field>
-          <FieldLabel htmlFor="confirmPassword">Confirm New Password</FieldLabel>
+          <FieldLabel htmlFor="confirmPassword">
+            Confirm New Password
+          </FieldLabel>
           <Input
             id="confirmPassword"
             type="password"
@@ -156,7 +159,7 @@ export function ResetPasswordForm() {
             "Reset Password"
           )}
         </Button>
-      </form>
+      </ClientAuthForm>
     </div>
   );
 }
