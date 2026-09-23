@@ -7,11 +7,9 @@ import { userTable } from "@/server/db/schema";
 import {
   verifyWebhookSignature,
   getTierFromVariantId,
-  getDatasetTierFromVariant,
-  getOrderDetails,
   DATASET_PRODUCTS,
+  validateDatasetLicenseKey,
   SWIPESTATS_PRODUCTS,
-  type DatasetTier,
 } from "@/server/services/lemonSqueezy.service";
 import {
   ensureDatasetExportForLicense,
@@ -134,19 +132,6 @@ interface WebhookPayload {
   };
 }
 
-function parseDatasetTier(tier: string | undefined): DatasetTier | null {
-  if (
-    tier === "STARTER" ||
-    tier === "STANDARD" ||
-    tier === "FRESH" ||
-    tier === "PREMIUM"
-  ) {
-    return tier;
-  }
-
-  return null;
-}
-
 export async function POST(request: Request) {
   try {
     // 1. Get raw body and signature
@@ -218,16 +203,10 @@ export async function POST(request: Request) {
         });
       }
 
-      let datasetTier = parseDatasetTier(
-        payload.meta.custom_data?.dataset_tier,
-      );
-      let customerEmail = payload.data.attributes.user_email;
-
-      if (!datasetTier && orderId) {
-        const orderDetails = await getOrderDetails(orderId);
-        datasetTier = getDatasetTierFromVariant(orderDetails?.variantId);
-        customerEmail ??= orderDetails?.customerEmail;
-      }
+      // Client checkout metadata is not an entitlement. Check the actual license.
+      const validation = await validateDatasetLicenseKey(licenseKey);
+      const datasetTier = validation.valid ? validation.tier : null;
+      const customerEmail = payload.data.attributes.user_email;
 
       if (!datasetTier) {
         console.log("[Webhook] Skipping non-dataset license key", {
