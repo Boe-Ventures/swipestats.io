@@ -1,10 +1,15 @@
-import { eq, sql, gte } from "drizzle-orm";
+import { and, desc, eq, sql, gte } from "drizzle-orm";
 import { put } from "@vercel/blob";
 import { createGzip } from "node:zlib";
 import { PassThrough, Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
 
 import { db } from "@/server/db";
+import {
+  serializeResearchProfile,
+  RESEARCH_DATASET_VERSION,
+} from "@/lib/research/dataset-contract";
+import { researchUploadOptions } from "@/server/services/research-storage";
 import {
   datasetExportTable,
   tinderProfileTable,
@@ -81,6 +86,7 @@ export async function generateDatasetForExport(
   exportId: string,
 ): Promise<void> {
   let exportRecord: typeof datasetExportTable.$inferSelect | undefined;
+  let ownsGeneration = false;
 
   try {
     // Get the export record
@@ -93,10 +99,19 @@ export async function generateDatasetForExport(
     }
 
     // Update status to GENERATING
-    await db
+    const claimed = await db
       .update(datasetExportTable)
       .set({ status: "GENERATING" })
-      .where(eq(datasetExportTable.id, exportId));
+      .where(
+        and(
+          eq(datasetExportTable.id, exportId),
+          eq(datasetExportTable.status, "PENDING"),
+        ),
+      )
+      .returning({ id: datasetExportTable.id });
+    if (!claimed.length) return;
+    ownsGeneration = true;
+    const storage = researchUploadOptions();
 
     // Get random profiles based on tier and recency
     const profiles = await getRandomProfiles(
@@ -104,8 +119,8 @@ export async function generateDatasetForExport(
       exportRecord.recency,
     );
 
-    if (profiles.length === 0) {
-      throw new Error("No profiles found for export");
+    if (profiles.length !== exportRecord.profileCount) {
+      throw new Error("Insufficient profiles to fulfill this dataset package");
     }
 
     const profileIds = profiles.map((p) => p.tinderId);
@@ -143,7 +158,7 @@ export async function generateDatasetForExport(
       `[dataset-export] ${exportId} — streaming gzip upload to blob...`,
     );
     const uploadPromise = put(pathname, uploadBody, {
-      access: "public",
+      ...storage,
       contentType: "application/gzip",
       addRandomSuffix: false,
       multipart: true,
@@ -173,7 +188,7 @@ export async function generateDatasetForExport(
       .set({
         status: "READY",
         blobUrl: blobResult.url,
-        blobSize: rawSize,
+        blobSize: compressedSize,
         profileIds: profileIds,
         generatedAt: new Date(),
       })
@@ -190,6 +205,8 @@ export async function generateDatasetForExport(
     });
   } catch (error) {
     console.error(`Failed to generate dataset ${exportId}:`, error);
+
+    if (!ownsGeneration) throw error;
 
     // Update status to FAILED with error message
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -235,7 +252,8 @@ async function* streamDatasetJsonl({
     tier: exportRecord.tier,
     profileCount: profiles.length,
     generatedAt: new Date().toISOString(),
-    version: "1.0",
+    version: RESEARCH_DATASET_VERSION,
+    includesMessageContent: false,
     format: "jsonl",
     recency: exportRecord.recency,
   })}\n`;
@@ -264,25 +282,14 @@ async function* streamDatasetJsonl({
             .then((rows) => rows[0]?.count ?? 0),
         ]);
 
-        // Strip internal fields, keep everything researchers need.
-        const {
-          userId,
-          computed,
-          createdAt,
-          updatedAt,
-          llmAnalyzedAt,
-          bioOriginal,
-          swipestatsVersion,
-          ...profileData
-        } = profile;
-
-        return JSON.stringify({
-          type: "profile",
-          profile: profileData,
-          meta: meta ?? null,
-          usage,
-          matchCount,
-        });
+        return JSON.stringify(
+          serializeResearchProfile({
+            profile,
+            meta: meta ?? null,
+            usage,
+            matchCount,
+          }),
+        );
       }),
     );
 
@@ -323,6 +330,8 @@ async function getRandomProfiles(count: number, recency: "MIXED" | "RECENT") {
     .select()
     .from(tinderProfileTable)
     .where(whereCondition)
-    .orderBy(sql`RANDOM()`)
+    .orderBy(
+      recency === "RECENT" ? desc(tinderProfileTable.createdAt) : sql`RANDOM()`,
+    )
     .limit(count);
 }

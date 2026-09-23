@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import type { TRPCRouterRecord } from "@trpc/server";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
@@ -21,7 +21,9 @@ import {
 } from "@/server/services/datasetExport.service";
 import { trackServerEvent } from "@/server/services/analytics.service";
 
-import { publicProcedure, protectedProcedure } from "../trpc";
+import { isExportExpired } from "@/lib/research/access-policy";
+
+import { publicProcedure, adminProcedure } from "../trpc";
 
 // NOTE: If you change the export format (filename, content-type, compression),
 // also update the download route at src/app/api/download/route.ts
@@ -77,15 +79,30 @@ export const researchRouter = {
 
   // Validate license key and get export status (creates on-demand if needed)
   getExportByLicenseKey: publicProcedure
-    .input(z.object({ licenseKey: z.string().min(1) }))
-    .query(async ({ ctx, input }) => {
+    .input(z.object({ licenseKey: z.string().min(1).max(512) }))
+    .mutation(async ({ ctx, input }) => {
+      const validation = await validateDatasetLicenseKey(input.licenseKey);
+      if (!validation.valid)
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "This dataset license is invalid or no longer active.",
+        });
       // 1. Check local DB first (fast path)
       const existingExport = await ctx.db.query.datasetExportTable.findFirst({
         where: eq(datasetExportTable.licenseKey, input.licenseKey),
       });
 
       if (existingExport) {
-        const product = DATASET_PRODUCTS[existingExport.tier as DatasetTier];
+        if (
+          validation.tier !== existingExport.tier ||
+          isExportExpired(existingExport.expiresAt)
+        ) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "This dataset license is invalid or has expired.",
+          });
+        }
+        const product = DATASET_PRODUCTS[existingExport.tier];
         return {
           found: true,
           export: {
@@ -93,7 +110,9 @@ export const researchRouter = {
             tier: existingExport.tier,
             status: existingExport.status,
             profileCount: existingExport.profileCount,
-            blobUrl: existingExport.blobUrl,
+            downloadAvailable:
+              existingExport.status === "READY" &&
+              Boolean(existingExport.blobUrl),
             blobSize: existingExport.blobSize,
             downloadCount: existingExport.downloadCount,
             maxDownloads: existingExport.maxDownloads,
@@ -106,16 +125,6 @@ export const researchRouter = {
             price: product.price,
           },
         };
-      }
-
-      // 2. Validate with LemonSqueezy API
-      const validation = await validateDatasetLicenseKey(input.licenseKey);
-
-      if (!validation.valid) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Invalid license key. Please check your key and try again.",
-        });
       }
 
       // 3. Fetch the order to determine tier
@@ -131,7 +140,7 @@ export const researchRouter = {
       // 4. Create export record and trigger generation
       const datasetTier = getDatasetTierFromVariant(orderDetails.variantId);
 
-      if (!datasetTier) {
+      if (!datasetTier || datasetTier !== validation.tier) {
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: "Unable to determine dataset tier from order.",
@@ -145,6 +154,7 @@ export const researchRouter = {
         orderId: orderDetails.orderId,
         tier: datasetTier,
         customerEmail: orderDetails.customerEmail,
+        expiresAt: validation.expiresAt ? new Date(validation.expiresAt) : null,
       });
 
       if (exportRecord && created) {
@@ -190,7 +200,8 @@ export const researchRouter = {
           tier: exportRecord.tier,
           status: exportRecord.status,
           profileCount: exportRecord.profileCount,
-          blobUrl: exportRecord.blobUrl,
+          downloadAvailable:
+            exportRecord.status === "READY" && Boolean(exportRecord.blobUrl),
           blobSize: exportRecord.blobSize,
           downloadCount: exportRecord.downloadCount,
           maxDownloads: exportRecord.maxDownloads,
@@ -205,87 +216,8 @@ export const researchRouter = {
       };
     }),
 
-  // Increment download count and get signed download URL
-  recordDownload: publicProcedure
-    .input(z.object({ licenseKey: z.string().min(1) }))
-    .mutation(async ({ ctx, input }) => {
-      // Get the export record
-      const exportRecord = await ctx.db.query.datasetExportTable.findFirst({
-        where: eq(datasetExportTable.licenseKey, input.licenseKey),
-      });
-
-      if (!exportRecord) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Export not found for this license key",
-        });
-      }
-
-      // Check if dataset is ready
-      if (exportRecord.status !== "READY") {
-        throw new TRPCError({
-          code: "PRECONDITION_FAILED",
-          message: `Dataset is not ready yet. Status: ${exportRecord.status}`,
-        });
-      }
-
-      // Check download limit
-      if (exportRecord.downloadCount >= exportRecord.maxDownloads) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "Download limit reached for this license key",
-        });
-      }
-
-      // Check if expired
-      if (exportRecord.expiresAt && exportRecord.expiresAt < new Date()) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "This license key has expired",
-        });
-      }
-
-      // Increment download count and update timestamps
-      const now = new Date();
-      await ctx.db
-        .update(datasetExportTable)
-        .set({
-          downloadCount: exportRecord.downloadCount + 1,
-          firstDownloadedAt: exportRecord.firstDownloadedAt ?? now,
-          lastDownloadedAt: now,
-        })
-        .where(eq(datasetExportTable.id, exportRecord.id));
-
-      trackServerEvent(
-        ctx.session?.user.id ?? `dataset_export:${exportRecord.id}`,
-        "dataset_downloaded",
-        {
-          exportId: exportRecord.id,
-          orderId: exportRecord.orderId ?? null,
-          tier: exportRecord.tier as DatasetTier,
-          profileCount: exportRecord.profileCount,
-          downloadCount: exportRecord.downloadCount + 1,
-          downloadsRemaining: Math.max(
-            0,
-            exportRecord.maxDownloads - exportRecord.downloadCount - 1,
-          ),
-          maxDownloads: exportRecord.maxDownloads,
-        },
-        { consent: ctx.analyticsConsent },
-      );
-
-      // Return the blob URL (it's already public)
-      return {
-        downloadUrl: exportRecord.blobUrl!,
-        downloadsRemaining: Math.max(
-          0,
-          exportRecord.maxDownloads - exportRecord.downloadCount - 1,
-        ),
-      };
-    }),
-
   // Admin: list all exports
-  listExports: protectedProcedure
+  listExports: adminProcedure
     .input(
       z
         .object({
@@ -295,12 +227,21 @@ export const researchRouter = {
         .optional(),
     )
     .query(async ({ ctx, input }) => {
-      // Check if user is admin (you'll need to implement role checking)
-      // For now, just return the exports
       const limit = input?.limit ?? 50;
       const offset = input?.offset ?? 0;
 
       const exports = await ctx.db.query.datasetExportTable.findMany({
+        columns: {
+          id: true,
+          tier: true,
+          status: true,
+          profileCount: true,
+          downloadCount: true,
+          maxDownloads: true,
+          createdAt: true,
+          generatedAt: true,
+          expiresAt: true,
+        },
         limit,
         offset,
         orderBy: (table, { desc }) => [desc(table.createdAt)],
@@ -311,7 +252,7 @@ export const researchRouter = {
 
   // Retry failed generation (public - license key is the auth)
   retryGeneration: publicProcedure
-    .input(z.object({ licenseKey: z.string().min(1) }))
+    .input(z.object({ licenseKey: z.string().min(1).max(512) }))
     .mutation(async ({ ctx, input }) => {
       const exportRecord = await ctx.db.query.datasetExportTable.findFirst({
         where: eq(datasetExportTable.licenseKey, input.licenseKey),
@@ -324,6 +265,17 @@ export const researchRouter = {
         });
       }
 
+      const validation = await validateDatasetLicenseKey(input.licenseKey);
+      if (
+        !validation.valid ||
+        validation.tier !== exportRecord.tier ||
+        isExportExpired(exportRecord.expiresAt)
+      ) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "This dataset license is invalid or has expired.",
+        });
+      }
       if (exportRecord.status !== "FAILED") {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -332,12 +284,19 @@ export const researchRouter = {
       }
 
       // Reset to PENDING and trigger generation
-      await ctx.db
+      const queued = await ctx.db
         .update(datasetExportTable)
         .set({ status: "PENDING", errorMessage: null })
-        .where(eq(datasetExportTable.id, exportRecord.id));
+        .where(
+          and(
+            eq(datasetExportTable.id, exportRecord.id),
+            eq(datasetExportTable.status, "FAILED"),
+          ),
+        )
+        .returning({ id: datasetExportTable.id });
+      if (!queued.length) return { success: true };
 
-      const product = DATASET_PRODUCTS[exportRecord.tier as DatasetTier];
+      const product = DATASET_PRODUCTS[exportRecord.tier];
       trackServerEvent(
         ctx.session?.user.id ?? `dataset_export:${exportRecord.id}`,
         "dataset_export_queued",
@@ -345,7 +304,7 @@ export const researchRouter = {
           exportId: exportRecord.id,
           orderId: exportRecord.orderId ?? null,
           licenseKeyId: exportRecord.licenseKeyId ?? undefined,
-          tier: exportRecord.tier as DatasetTier,
+          tier: exportRecord.tier,
           profileCount: product.profileCount,
           recency: product.recency,
           source: "retry",

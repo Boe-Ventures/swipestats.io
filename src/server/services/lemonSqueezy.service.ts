@@ -6,6 +6,7 @@ import {
   getSubscription,
 } from "@lemonsqueezy/lemonsqueezy.js";
 import crypto from "crypto";
+import { isResearchLicenseValid } from "@/lib/research/access-policy";
 
 import { env, envSelect } from "@/env";
 import type { BillingProvider, BillingSurface } from "@/lib/validators";
@@ -240,17 +241,32 @@ export async function getSubscriptionDetails(subscriptionId: string): Promise<{
 // Validate license key for dataset downloads (returns full details)
 export async function validateDatasetLicenseKey(licenseKey: string): Promise<{
   valid: boolean;
+  tier?: DatasetTier | null;
   licenseKeyId?: number;
   status?: string;
   activationLimit?: number;
   activationUsage?: number;
   expiresAt?: string | null;
 }> {
-  const { data, error } = await validateLicense(licenseKey);
-  if (error || !data) return { valid: false };
+  const { data, error, statusCode } = await validateLicense(licenseKey);
+  // The license API can return a negative validation result with HTTP 400.
+  if (
+    data?.valid === false &&
+    statusCode !== null &&
+    statusCode < 500 &&
+    statusCode !== 429
+  )
+    return { valid: false };
+  if (error || !data)
+    throw new Error("Dataset license validation is temporarily unavailable");
 
   return {
-    valid: data.valid,
+    valid: isResearchLicenseValid(data, {
+      storeId: LEMON_SQUEEZY_CONFIG.storeId,
+      variantIds: Object.values(LEMON_SQUEEZY_CONFIG.datasetVariants),
+      production: env.NEXT_PUBLIC_IS_PRODUCTION,
+    }),
+    tier: getDatasetTierFromVariant(data.meta?.variant_id),
     licenseKeyId: data.license_key?.id,
     status: data.license_key?.status,
     activationLimit: data.license_key?.activation_limit,
@@ -386,9 +402,9 @@ export async function createDatasetCheckout(
         },
       },
       productOptions: {
-        redirectUrl: `${env.NEXT_PUBLIC_BASE_URL}/research/download?licenseKey=[license_key]`,
+        redirectUrl: `${env.NEXT_PUBLIC_BASE_URL}/research/download#licenseKey=[license_key]`,
         receiptButtonText: "Download your dataset",
-        receiptLinkUrl: `${env.NEXT_PUBLIC_BASE_URL}/research/download?licenseKey=[license_key]`,
+        receiptLinkUrl: `${env.NEXT_PUBLIC_BASE_URL}/research/download#licenseKey=[license_key]`,
         enabledVariants: [Number(variantId)],
       },
     },

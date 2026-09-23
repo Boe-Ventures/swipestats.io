@@ -1,136 +1,112 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { consumeResearchReceipt } from "@/lib/research/receipt-access";
 import {
   ArrowDownTrayIcon,
   CheckCircleIcon,
 } from "@heroicons/react/24/outline";
-import { useTRPC } from "@/trpc/react";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useTRPC, useTRPCClient, type RouterOutputs } from "@/trpc/react";
+import type { TRPCClientError } from "@trpc/client";
+import type { AppRouter } from "@/server/api/root";
+import {
+  createNativeDownload,
+  type DownloadState,
+} from "@/lib/research/native-download";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/components/ui/lib/utils";
 
 export function DownloadClient() {
-  const searchParams = useSearchParams();
-  const initialLicenseKey = searchParams.get("licenseKey")?.trim() ?? "";
-  const [licenseKey, setLicenseKey] = useState(initialLicenseKey);
-  const [inputValue, setInputValue] = useState(licenseKey);
-  const [_isPolling, setIsPolling] = useState(false);
+  const [licenseKey, setLicenseKey] = useState("");
+  const [inputValue, setInputValue] = useState("");
   const trpc = useTRPC();
+  const client = useTRPCClient();
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    const key = consumeResearchReceipt();
+    if (key) {
+      setLicenseKey(key);
+      setInputValue(key);
+    }
+  }, []);
 
-  // Query to get export details
-  const {
-    data: exportData,
-    isLoading,
-    error,
-    refetch,
-  } = useQuery(
-    trpc.research.getExportByLicenseKey.queryOptions(
-      { licenseKey: licenseKey },
-      {
-        enabled: licenseKey.length > 0,
-        retry: false,
-      },
-    ),
+  const lookup = useQuery<
+    RouterOutputs["research"]["getExportByLicenseKey"],
+    TRPCClientError<AppRouter>
+  >({
+    queryKey: ["research-export", licenseKey],
+    queryFn: ({ signal }) =>
+      client.research.getExportByLicenseKey.mutate({ licenseKey }, { signal }),
+    enabled: Boolean(licenseKey),
+    retry: false,
+    gcTime: 0,
+    refetchOnWindowFocus: false,
+    refetchInterval: (query) => {
+      if (query.state.error) return false;
+      const status = query.state.data?.export?.status;
+      return status === "PENDING" || status === "GENERATING" ? 3000 : false;
+    },
+  });
+  const exportData = lookup.data;
+  const isLoading = lookup.isPending;
+  const error = lookup.error;
+  const validationUnavailable = Boolean(
+    error &&
+    !["FORBIDDEN", "BAD_REQUEST", "NOT_FOUND"].includes(error.data?.code ?? ""),
   );
+  const refetch = () => lookup.refetch({ cancelRefetch: false });
+  const [downloadState, setDownloadState] = useState<DownloadState>({
+    phase: "idle",
+  });
+  const downloader = useRef<ReturnType<typeof createNativeDownload> | null>(
+    null,
+  );
+  useEffect(() => {
+    const download = createNativeDownload(setDownloadState, (key) => {
+      void queryClient.invalidateQueries(
+        { queryKey: ["research-export", key] },
+        { cancelRefetch: false },
+      );
+    });
+    downloader.current = download;
+    return () => {
+      download.dispose();
+      downloader.current = null;
+    };
+  }, [queryClient]);
+  useEffect(() => {
+    downloader.current?.cancel();
+  }, [licenseKey]);
+  const isDownloading = downloadState.phase === "requesting";
+  const downloadError =
+    downloadState.phase === "error" ? downloadState.message : null;
 
-  // Download state management
-  const [downloadError, setDownloadError] = useState<string | null>(null);
-  const [isDownloading, setIsDownloading] = useState(false);
-
-  // Mutation to retry failed generation
   const retryGenerationMutation = useMutation(
     trpc.research.retryGeneration.mutationOptions({
-      onSuccess: () => {
-        // Refetch to see the new PENDING status and start polling
-        void refetch();
-      },
-      onError: (error) => {
-        console.error("Failed to retry generation:", error);
-      },
+      onSuccess: (_data, variables) =>
+        queryClient.invalidateQueries(
+          { queryKey: ["research-export", variables.licenseKey] },
+          { cancelRefetch: false },
+        ),
     }),
   );
-
-  const handleRetry = () => {
-    retryGenerationMutation.mutate({ licenseKey });
+  const activeRetry =
+    retryGenerationMutation.variables?.licenseKey === licenseKey;
+  const handleRetry = () => retryGenerationMutation.mutate({ licenseKey });
+  const changeKey = () => {
+    setLicenseKey("");
+    setInputValue("");
+    retryGenerationMutation.reset();
   };
-
-  // A license key grants access to the purchased export. Read it from the
-  // LemonSqueezy return or receipt link, then remove it from browser history.
-  useEffect(() => {
-    if (!initialLicenseKey) return;
-
-    const url = new URL(window.location.href);
-    url.searchParams.delete("licenseKey");
-    window.history.replaceState(
-      window.history.state,
-      "",
-      `${url.pathname}${url.search}${url.hash}`,
-    );
-  }, [initialLicenseKey]);
-
-  // Poll if status is PENDING or GENERATING
-  useEffect(() => {
-    if (
-      exportData?.found &&
-      exportData.export &&
-      (exportData.export.status === "PENDING" ||
-        exportData.export.status === "GENERATING")
-    ) {
-      setIsPolling(true);
-      const interval = setInterval(() => {
-        void refetch();
-      }, 3000);
-
-      return () => {
-        clearInterval(interval);
-        setIsPolling(false);
-      };
-    } else {
-      setIsPolling(false);
-    }
-  }, [exportData, refetch]);
-
-  // Update input when query param changes
-  useEffect(() => {
-    setInputValue(licenseKey);
-  }, [licenseKey]);
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setLicenseKey(inputValue.trim());
+    const key = inputValue.trim();
+    if (key === licenseKey) void refetch();
+    else setLicenseKey(key);
   };
-
-  const handleDownload = async () => {
-    if (!exportData?.found || !exportData.export?.blobUrl) return;
-
-    try {
-      setIsDownloading(true);
-      setDownloadError(null);
-
-      // Create iframe to trigger download without navigation
-      const downloadUrl = `/api/download?licenseKey=${encodeURIComponent(licenseKey)}`;
-      const iframe = document.createElement("iframe");
-      iframe.style.display = "none";
-      iframe.src = downloadUrl;
-      document.body.appendChild(iframe);
-
-      // Wait a bit before refetching to allow download to start
-      setTimeout(() => {
-        void refetch();
-        setIsDownloading(false);
-        // Clean up iframe after download starts
-        setTimeout(() => {
-          document.body.removeChild(iframe);
-        }, 1000);
-      }, 2000);
-    } catch (error) {
-      console.error("Download failed:", error);
-      setDownloadError(
-        error instanceof Error ? error.message : "Failed to download file",
-      );
-      setIsDownloading(false);
-    }
+  const handleDownload = () => {
+    if (exportData?.export?.downloadAvailable)
+      downloader.current?.start(licenseKey);
   };
 
   const getStatusBadge = (status: string) => {
@@ -238,26 +214,33 @@ export function DownloadClient() {
                 Validating license key...
               </p>
             </div>
-          ) : error ? (
+          ) : error && (!exportData || !validationUnavailable) ? (
             // Error state
             <div className="rounded-lg bg-red-50 p-8">
               <div className="flex">
                 <div className="ml-3 flex-1">
                   <h3 className="text-sm font-medium text-red-800">
-                    Invalid License Key
+                    {validationUnavailable
+                      ? "Unable to validate right now"
+                      : "Invalid License Key"}
                   </h3>
                   <div className="mt-2 text-sm text-red-700">
                     <p>
-                      The license key you entered is invalid or has not been
-                      found. Please check your email and try again.
+                      {validationUnavailable
+                        ? "We could not reach the validation service. Please try again shortly."
+                        : "The license key is invalid or no longer active. Check your email or contact us for help."}
                     </p>
                   </div>
                   <div className="mt-4">
                     <button
-                      onClick={() => setLicenseKey("")}
+                      onClick={() =>
+                        validationUnavailable ? void refetch() : changeKey()
+                      }
                       className="cursor-pointer text-sm font-medium text-red-800 hover:text-red-700"
                     >
-                      Try a different key →
+                      {validationUnavailable
+                        ? "Try again"
+                        : "Try a different key →"}
                     </button>
                   </div>
                 </div>
@@ -266,6 +249,18 @@ export function DownloadClient() {
           ) : exportData?.found && exportData.export ? (
             // Export details and download
             <div className="space-y-6">
+              {error && (
+                <p role="alert" className="text-sm text-red-700">
+                  Status refresh failed.{" "}
+                  <button
+                    type="button"
+                    onClick={() => void refetch()}
+                    className="underline"
+                  >
+                    Try again
+                  </button>
+                </p>
+              )}
               <div className="overflow-hidden rounded-lg bg-white shadow">
                 <div className="px-4 py-5 sm:p-6">
                   <div className="sm:flex sm:items-center sm:justify-between">
@@ -354,11 +349,30 @@ export function DownloadClient() {
                   >
                     <ArrowDownTrayIcon className="h-5 w-5" />
                     {isDownloading
-                      ? "Preparing download..."
+                      ? "Starting download..."
                       : exportData.export.downloadsRemaining === 0
                         ? "Download Limit Reached"
                         : "Download Dataset"}
                   </button>
+
+                  {isDownloading && (
+                    <p className="text-sm text-gray-600" role="status">
+                      Waiting for the download response.{" "}
+                      <button
+                        type="button"
+                        onClick={() => downloader.current?.cancel()}
+                        className="underline"
+                      >
+                        Cancel request
+                      </button>
+                    </p>
+                  )}
+                  {downloadState.phase === "initiated" && (
+                    <p className="text-sm text-gray-600" role="status">
+                      Download requested. Check your browser&apos;s downloads
+                      for progress.
+                    </p>
+                  )}
 
                   {/* Error message */}
                   {downloadError && (
@@ -408,19 +422,19 @@ export function DownloadClient() {
                   </div>
                   <button
                     onClick={handleRetry}
-                    disabled={retryGenerationMutation.isPending}
+                    disabled={activeRetry && retryGenerationMutation.isPending}
                     className={cn(
                       "flex w-full items-center justify-center gap-x-2 rounded-md px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600",
-                      !retryGenerationMutation.isPending
+                      !(activeRetry && retryGenerationMutation.isPending)
                         ? "cursor-pointer bg-rose-600 hover:bg-rose-500"
                         : "cursor-not-allowed bg-gray-300",
                     )}
                   >
-                    {retryGenerationMutation.isPending
+                    {activeRetry && retryGenerationMutation.isPending
                       ? "Retrying..."
                       : "Retry Generation"}
                   </button>
-                  {retryGenerationMutation.isError && (
+                  {activeRetry && retryGenerationMutation.isError && (
                     <div className="rounded-lg bg-red-50 p-4">
                       <p className="text-sm font-medium text-red-800">
                         {retryGenerationMutation.error instanceof Error
@@ -434,7 +448,7 @@ export function DownloadClient() {
 
               <div className="text-center">
                 <button
-                  onClick={() => setLicenseKey("")}
+                  onClick={changeKey}
                   className="cursor-pointer text-sm font-medium text-gray-600 hover:text-gray-900"
                 >
                   Use a different license key →

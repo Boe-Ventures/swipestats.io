@@ -1,130 +1,125 @@
 import { type NextRequest, NextResponse } from "next/server";
+import { and, eq, gt, isNull, lt, or, sql } from "drizzle-orm";
 import { db } from "@/server/db";
 import { datasetExportTable } from "@/server/db/schema";
-import { eq } from "drizzle-orm";
+import { validateDatasetLicenseKey } from "@/server/services/lemonSqueezy.service";
+import { readResearchBlob } from "@/server/services/research-storage";
+import {
+  researchDownloadFormat,
+  DOWNLOAD_ACK_COOKIE,
+  DOWNLOAD_COOKIE_PATH,
+} from "@/lib/research/download-format";
+import { isExportExpired } from "@/lib/research/access-policy";
 import { trackServerEvent } from "@/server/services/analytics.service";
-import type { DatasetTier } from "@/server/services/lemonSqueezy.service";
 
-export async function GET(request: NextRequest) {
+const PRIVATE_HEADERS = {
+  "Cache-Control": "private, no-store",
+  "Referrer-Policy": "no-referrer",
+  "X-Content-Type-Options": "nosniff",
+};
+function failure(error: string, status: number) {
+  return NextResponse.json({ error }, { status, headers: PRIVATE_HEADERS });
+}
+
+// License credentials belong in the POST body, never a URL or redirect.
+export async function POST(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams;
-    const licenseKey = searchParams.get("licenseKey");
-
-    if (!licenseKey) {
-      return NextResponse.json(
-        { error: "License key is required" },
-        { status: 400 },
+    const form = await request.formData();
+    const licenseKey = form.get("licenseKey");
+    if (
+      typeof licenseKey !== "string" ||
+      !licenseKey.trim() ||
+      licenseKey.length > 512
+    )
+      return failure("License key is required", 400);
+    const requestId = form.get("requestId");
+    if (
+      requestId !== null &&
+      (typeof requestId !== "string" || !/^[a-f0-9-]{36}$/i.test(requestId))
+    )
+      return failure("Invalid download request", 400);
+    const validation = await validateDatasetLicenseKey(licenseKey);
+    if (!validation.valid)
+      return failure(
+        "This dataset license is invalid or no longer active",
+        403,
       );
-    }
-
-    // Get the export record
-    const exportRecord = await db.query.datasetExportTable.findFirst({
+    const record = await db.query.datasetExportTable.findFirst({
       where: eq(datasetExportTable.licenseKey, licenseKey),
     });
+    if (!record) return failure("Export not found for this license key", 404);
+    if (validation.tier !== record.tier || isExportExpired(record.expiresAt))
+      return failure("This dataset license is invalid or has expired", 403);
+    if (record.status !== "READY" || !record.blobUrl)
+      return failure("Dataset is not ready yet", 412);
+    if (record.downloadCount >= record.maxDownloads)
+      return failure("Download limit reached for this license key", 403);
 
-    if (!exportRecord) {
-      return NextResponse.json(
-        { error: "Export not found for this license key" },
-        { status: 404 },
-      );
-    }
-
-    // Check if dataset is ready
-    if (exportRecord.status !== "READY") {
-      return NextResponse.json(
-        { error: `Dataset is not ready yet. Status: ${exportRecord.status}` },
-        { status: 412 },
-      );
-    }
-
-    // Check download limit
-    if (exportRecord.downloadCount >= exportRecord.maxDownloads) {
-      return NextResponse.json(
-        { error: "Download limit reached for this license key" },
-        { status: 403 },
-      );
-    }
-
-    // Check if expired
-    if (exportRecord.expiresAt && exportRecord.expiresAt < new Date()) {
-      return NextResponse.json(
-        { error: "This license key has expired" },
-        { status: 403 },
-      );
-    }
-
-    if (!exportRecord.blobUrl) {
-      return NextResponse.json(
-        { error: "Download URL not available" },
-        { status: 500 },
-      );
-    }
-
-    // Fetch the file from Vercel Blob
-    const blobResponse = await fetch(exportRecord.blobUrl);
-
-    if (!blobResponse.ok) {
-      return NextResponse.json(
-        { error: "Failed to fetch dataset file" },
-        { status: 500 },
-      );
-    }
-
-    // Increment download count
+    const format = researchDownloadFormat(record.blobUrl);
+    const file = await readResearchBlob(record.blobUrl);
+    if (file?.statusCode !== 200)
+      return failure("Dataset file is unavailable", 503);
+    // Reserve the download atomically. Concurrent requests cannot bypass the limit.
     const now = new Date();
-    await db
+    const [claimed] = await db
       .update(datasetExportTable)
       .set({
-        downloadCount: exportRecord.downloadCount + 1,
-        firstDownloadedAt: exportRecord.firstDownloadedAt ?? now,
+        downloadCount: sql`${datasetExportTable.downloadCount} + 1`,
+        firstDownloadedAt: sql`coalesce(${datasetExportTable.firstDownloadedAt}, ${now})`,
         lastDownloadedAt: now,
       })
-      .where(eq(datasetExportTable.id, exportRecord.id));
-
-    const downloadCount = exportRecord.downloadCount + 1;
-    trackServerEvent(
-      `dataset_export:${exportRecord.id}`,
-      "dataset_downloaded",
-      {
-        exportId: exportRecord.id,
-        orderId: exportRecord.orderId ?? null,
-        tier: exportRecord.tier as DatasetTier,
-        profileCount: exportRecord.profileCount,
-        downloadCount,
-        downloadsRemaining: Math.max(
-          0,
-          exportRecord.maxDownloads - downloadCount,
+      .where(
+        and(
+          eq(datasetExportTable.id, record.id),
+          eq(datasetExportTable.status, "READY"),
+          eq(datasetExportTable.blobUrl, record.blobUrl),
+          lt(datasetExportTable.downloadCount, datasetExportTable.maxDownloads),
+          or(
+            isNull(datasetExportTable.expiresAt),
+            gt(datasetExportTable.expiresAt, now),
+          ),
         ),
-        maxDownloads: exportRecord.maxDownloads,
-      },
-    );
-
-    // Get the blob content
-    const blob = await blobResponse.blob();
-
-    // Generate filename — detect gzipped exports by blob URL extension
-    const isGzipped = exportRecord.blobUrl.endsWith(".gz");
-    const filename = isGzipped
-      ? `swipestats-dataset-${exportRecord.tier.toLowerCase()}.jsonl.gz`
-      : `swipestats-dataset-${exportRecord.tier.toLowerCase()}.json`;
-    const contentType = isGzipped ? "application/gzip" : "application/json";
-
-    // Return with Content-Disposition header to force download
-    return new NextResponse(blob, {
+      )
+      .returning({ downloadCount: datasetExportTable.downloadCount });
+    if (!claimed) {
+      await file.stream.cancel();
+      return failure("Download is no longer available for this license", 403);
+    }
+    trackServerEvent(`dataset_export:${record.id}`, "dataset_downloaded", {
+      exportId: record.id,
+      orderId: record.orderId ?? null,
+      tier: record.tier,
+      profileCount: record.profileCount,
+      downloadCount: claimed.downloadCount,
+      downloadsRemaining: Math.max(
+        0,
+        record.maxDownloads - claimed.downloadCount,
+      ),
+      maxDownloads: record.maxDownloads,
+    });
+    const response = new NextResponse(file.stream, {
       headers: {
-        "Content-Type": contentType,
-        "Content-Disposition": `attachment; filename="${filename}"`,
-        "Content-Length": blob.size.toString(),
+        ...PRIVATE_HEADERS,
+        "Content-Type": format.contentType,
+        "Content-Disposition": `attachment; filename="swipestats-dataset-${record.tier.toLowerCase()}.${format.extension}"`,
+        ...(file.blob.size === undefined
+          ? {}
+          : { "Content-Length": String(file.blob.size) }),
       },
     });
-  } catch (error) {
-    console.error("Download error:", error);
-    return NextResponse.json(
-      {
-        error:
-          error instanceof Error ? error.message : "Failed to download file",
-      },
-      { status: 500 },
+    if (requestId)
+      response.cookies.set(`${DOWNLOAD_ACK_COOKIE}_${requestId}`, "1", {
+        path: DOWNLOAD_COOKIE_PATH,
+        maxAge: 60,
+        sameSite: "strict",
+        secure: request.nextUrl.protocol === "https:",
+      });
+    return response;
+  } catch {
+    // Provider errors can contain storage URLs and credentials.
+    return failure(
+      "Unable to download this dataset. Please contact kris@swipestats.io.",
+      503,
     );
   }
 }

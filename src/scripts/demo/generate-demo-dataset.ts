@@ -5,6 +5,11 @@
  * Run with: bun run src/scripts/demo/generate-demo-dataset.ts
  */
 
+import {
+  serializeResearchProfile,
+  RESEARCH_DATASET_VERSION,
+} from "@/lib/research/dataset-contract";
+
 import { db } from "@/server/db";
 import { eq, inArray, sql } from "drizzle-orm";
 import {
@@ -47,7 +52,8 @@ async function generateDemoDataset() {
       tier: "FREE_SAMPLE",
       profileCount: profiles.length,
       generatedAt: new Date().toISOString(),
-      version: "1.0",
+      version: RESEARCH_DATASET_VERSION,
+      includesMessageContent: false,
       format: "jsonl",
       recency: "MIXED",
     }),
@@ -73,26 +79,15 @@ async function generateDemoDataset() {
         .then((rows) => rows[0]?.count ?? 0),
     ]);
 
-    // Strip internal fields, keep everything researchers need
-    const {
-      userId,
-      computed,
-      createdAt,
-      updatedAt,
-      llmAnalyzedAt,
-      bioOriginal,
-      swipestatsVersion,
-      ...profileData
-    } = profile;
-
     lines.push(
-      JSON.stringify({
-        type: "profile",
-        profile: profileData,
-        meta: meta ?? null,
-        usage, // Full usage history
-        matchCount,
-      }),
+      JSON.stringify(
+        serializeResearchProfile({
+          profile,
+          meta: meta ?? null,
+          usage,
+          matchCount,
+        }),
+      ),
     );
   }
 
@@ -133,7 +128,7 @@ JSONL (JSON Lines) — one JSON object per line.
 - Last line: citation object
 
 ## What's Included Per Profile
-- **Profile Data**: Age, gender, location, bio, interests, education, preferences
+- **Profile Data**: Demographics, bio, interests, education, search filters
 - **Aggregated Stats**: Total swipes, matches, messages, conversion rates
 - **Full Daily Activity**: Complete app usage history (swipes, matches, messages per day)
 - **Match Count**: Total number of matches
@@ -147,11 +142,10 @@ JSONL (JSON Lines) — one JSON object per line.
 \`\`\`
 
 ## Privacy & Ethics
-- All data is fully anonymized
-- No personal identifiers included
+- Application account and payment records are excluded
+- Research profile fields and stable join IDs are preserved
 - Message content excluded for privacy
 - Collected with explicit user consent
-- GDPR compliant
 
 ## Usage Rights
 This sample dataset is provided for:
@@ -205,9 +199,7 @@ Website: https://swipestats.io
   console.log("\n📊 Demo Dataset Summary:");
   console.log(`   Profiles: ${profiles.length}`);
   console.log(`   Profile IDs: ${profileIds.join(", ")}`);
-  console.log(
-    `   Size: ${(jsonlContent.length / 1024).toFixed(2)} KB`,
-  );
+  console.log(`   Size: ${(jsonlContent.length / 1024).toFixed(2)} KB`);
   console.log(`   Output: public/downloads/swipestats-demo-dataset.jsonl.zip`);
   console.log("\n🎉 Demo dataset ready for download!");
 }

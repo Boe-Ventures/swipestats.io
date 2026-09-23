@@ -1,4 +1,6 @@
 /**
+ * Private input for the offline research anonymization pipeline.
+ * Contains agreed research text; review/redact before external delivery.
  * Research Dataset Export Pipeline
  *
  * Exports 1k Tinder profiles with full data (geo, usage, meta, matches, messages)
@@ -20,15 +22,15 @@ import {
   matchTable,
   messageTable,
 } from "@/server/db/schema";
+import { and, eq, gt, inArray, isNotNull, sql } from "drizzle-orm";
 import {
-  and,
-  eq,
-  gt,
-  inArray,
-  isNotNull,
-  sql,
-} from "drizzle-orm";
-import { writeFileSync, appendFileSync, mkdirSync, statSync } from "fs";
+  writeFileSync,
+  appendFileSync,
+  mkdirSync,
+  statSync,
+  chmodSync,
+  renameSync,
+} from "fs";
 import path from "path";
 
 // ════════════════════════════════════════════════════════════════════
@@ -40,7 +42,8 @@ const args = process.argv.slice(2);
 const countryIdx = args.indexOf("--country");
 const countryFilter = countryIdx !== -1 ? args[countryIdx + 1]! : null;
 const limitIdx = args.indexOf("--limit");
-const profileLimitOverride = limitIdx !== -1 ? parseInt(args[limitIdx + 1]!, 10) : null;
+const profileLimitOverride =
+  limitIdx !== -1 ? parseInt(args[limitIdx + 1]!, 10) : null;
 
 const CONFIG = {
   /** Number of profiles to export */
@@ -94,7 +97,10 @@ async function selectProfileIds(): Promise<string[]> {
 
   // Add country filter via user table join
   const finalQuery = countryFilter
-    ? baseQuery.innerJoin(userTable, eq(tinderProfileTable.userId, userTable.id))
+    ? baseQuery.innerJoin(
+        userTable,
+        eq(tinderProfileTable.userId, userTable.id),
+      )
     : baseQuery;
 
   if (countryFilter) {
@@ -124,14 +130,16 @@ async function selectProfileIds(): Promise<string[]> {
 // STEP 2: BATCH FETCH & WRITE JSONL
 // ════════════════════════════════════════════════════════════════════
 
-async function exportProfiles(
+export async function exportProfiles(
   profileIds: string[],
   outputPath: string,
 ): Promise<void> {
   console.log(bold("\n═══ Step 2: Export profiles to JSONL ═══\n"));
 
   // Create/truncate output file
-  writeFileSync(outputPath, "");
+  const partialPath = `${outputPath}.partial`;
+  writeFileSync(partialPath, "", { mode: 0o600 });
+  chmodSync(partialPath, 0o600);
 
   let totalMatches = 0;
   let totalMessages = 0;
@@ -195,9 +203,7 @@ async function exportProfiles(
     // Index by profile ID for fast lookup
     const profileMap = new Map(profiles.map((p) => [p.tinderId, p]));
     const userMap = new Map(users.map((u) => [u.tinderId, u]));
-    const metaMap = new Map(
-      metas.map((m) => [m.tinderProfileId, m]),
-    );
+    const metaMap = new Map(metas.map((m) => [m.tinderProfileId, m]));
 
     // Group usage by profile
     const usageByProfile = new Map<string, (typeof usageRows)[number][]>();
@@ -362,8 +368,7 @@ async function exportProfiles(
               longestConversationDays: meta.longestConversationDays,
               averageMessagesPerConversation:
                 meta.averageMessagesPerConversation,
-              medianMessagesPerConversation:
-                meta.medianMessagesPerConversation,
+              medianMessagesPerConversation: meta.medianMessagesPerConversation,
             }
           : null,
         usage: usage.map((u) => ({
@@ -398,7 +403,7 @@ async function exportProfiles(
 
     // Append batch to file
     if (lines.length > 0) {
-      appendFileSync(outputPath, lines.join("\n") + "\n");
+      appendFileSync(partialPath, lines.join("\n") + "\n");
     }
 
     console.log(
@@ -410,6 +415,7 @@ async function exportProfiles(
     );
   }
 
+  renameSync(partialPath, outputPath);
   console.log(`\n  ${green("Export complete!")}`);
   console.log(`  Profiles: ${cyan(fmtNum(profileIds.length))}`);
   console.log(`  Total matches: ${cyan(fmtNum(totalMatches))}`);
@@ -423,19 +429,13 @@ async function exportProfiles(
 
 async function main() {
   console.log(
-    bold(
-      "\n╔═══════════════════════════════════════════════════════╗",
-    ),
+    bold("\n╔═══════════════════════════════════════════════════════╗"),
   );
   console.log(
-    bold(
-      "║  Research Dataset Export Pipeline                      ║",
-    ),
+    bold("║  Research Dataset Export Pipeline                      ║"),
   );
   console.log(
-    bold(
-      "╚═══════════════════════════════════════════════════════╝\n",
-    ),
+    bold("╚═══════════════════════════════════════════════════════╝\n"),
   );
 
   console.log(`  PROFILE_LIMIT: ${CONFIG.PROFILE_LIMIT}`);
@@ -472,7 +472,8 @@ async function main() {
   process.exit(0);
 }
 
-main().catch((err) => {
-  console.error(red("\nFatal error:"), err);
-  process.exit(1);
-});
+if (import.meta.main)
+  main().catch((err) => {
+    console.error(red("\nFatal error:"), err);
+    process.exit(1);
+  });
