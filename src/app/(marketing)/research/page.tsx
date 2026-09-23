@@ -344,7 +344,7 @@ function ValueSection() {
     {
       icon: ShieldCheckIcon,
       title: "Anonymized & consent-based",
-      body: "Profiles are voluntarily uploaded by their owners. Self-serve exports omit account links, original bios, photos, and raw conversation text.",
+      body: "Profiles are voluntarily uploaded by their owners. Purchased exports omit account links, original bios, photos, and raw conversation text.",
     },
     {
       icon: DocumentDuplicateIcon,
@@ -482,7 +482,7 @@ function SchemaSection() {
           center
           eyebrow="The data model"
           title="What each profile record contains"
-          lead="Each profile line contains profile fields, computed statistics, daily activity, and a match count. Raw conversations and photos are excluded from self-serve downloads."
+          lead="Each profile line contains profile fields, computed statistics, daily activity, and a match count. Raw conversations and photos are excluded from purchased downloads."
         />
 
         <div className="mt-9 grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -629,7 +629,7 @@ function DashboardSection() {
           center
           eyebrow="See it before you buy"
           title="A glimpse of what's inside"
-          lead="Explore analytics for an example profile. Self-serve datasets contain the fields listed above; this interface shows analyses you can build from dating-app exports."
+          lead="Explore analytics for an example profile. Purchased datasets contain the fields listed above; this interface shows analyses you can build from dating-app exports."
         />
 
         {/* the real, data-driven insights (same charts that ship), framed as the live demo */}
@@ -1173,13 +1173,13 @@ function HowItWorksSection() {
     },
     {
       n: 2,
-      title: "Instant download",
-      body: "Most datasets download immediately with a license key. Academic licenses are processed within 24 hours.",
+      title: "Get access",
+      body: "After purchase, you receive a license key to download your file once it is ready. We arrange academic delivery with you after agreeing on the scope.",
     },
     {
       n: 3,
       title: "Start analyzing",
-      body: "Decompress the JSONL and load profile records into Python, R, or pandas. The file includes metadata and a suggested citation.",
+      body: "Load a JSONL download into Python or R, or query your academic database snapshot with SQL. We can help you understand the data for your study.",
     },
   ];
   return (
@@ -1188,7 +1188,7 @@ function HowItWorksSection() {
         <SectionHead
           center
           eyebrow="How it works"
-          title="From checkout to analysis in minutes"
+          title="From choosing a dataset to analyzing it"
         />
         <div className="mt-12 grid grid-cols-1 gap-7 md:grid-cols-3">
           {steps.map((s) => (
@@ -1216,12 +1216,16 @@ function FAQSection() {
   const faqs = [
     {
       q: "Where does the data come from?",
-      a: "Users voluntarily upload their Tinder exports. Self-serve research downloads include profile fields, calculated statistics, daily usage, and match counts. Account links, original bios, photos, and raw conversation text are excluded. Check the license terms for your intended use.",
+      a: "Users voluntarily upload their Tinder exports. Purchased research downloads include profile fields, calculated statistics, daily usage, and match counts. Account links, original bios, photos, and raw conversation text are excluded. Check the license terms for your intended use.",
       open: true,
     },
     {
       q: "What format is the data in?",
-      a: "Gzip-compressed JSONL. Each profile record contains profile, meta, usage, and matchCount fields. The file also has metadata and citation records, distinguished by their type field. Decompress it and load the profile records into Python, R, or pandas.",
+      a: "Purchased datasets use JSONL: one JSON object per line, one line per profile. You can load it into Python or R. Academic packages can use a dated, read-only Postgres snapshot, with the included tables and fields agreed before delivery.",
+    },
+    {
+      q: "Can I get a larger dataset or message-level data?",
+      a: "Contact us about an academic research package. We will confirm the available profile count and the fields you need, including whether message-level data is part of your package. Database access is prepared individually, and we agree on delivery timing with you.",
     },
     {
       q: "Can I use this for commercial projects?",
@@ -1233,7 +1237,7 @@ function FAQSection() {
     },
     {
       q: "How recent is the data?",
-      a: "Starter and Standard mix timeframes. Fresh and Premium ship the most recent profiles available. Academic licenses can request specific periods. New data is added continuously as users upload their exports.",
+      a: "Starter and Standard mix timeframes. Fresh and Premium ship the most recent profiles available. Academic packages can request specific periods. A delivered snapshot stays fixed for reproducible analysis; later refreshes are arranged separately. New profiles continue to arrive in SwipeStats.",
     },
     {
       q: "How do I cite this in research?",

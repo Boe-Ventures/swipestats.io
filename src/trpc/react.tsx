@@ -24,7 +24,8 @@ const getQueryClient = () => {
   return (clientQueryClientSingleton ??= createQueryClient());
 };
 
-export const { useTRPC, TRPCProvider } = createTRPCContext<AppRouter>();
+export const { useTRPC, useTRPCClient, TRPCProvider } =
+  createTRPCContext<AppRouter>();
 
 /**
  * Inference helper for inputs.
@@ -50,6 +51,15 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
           enabled: (op) =>
             process.env.NODE_ENV === "development" ||
             (op.direction === "down" && op.result instanceof Error),
+          logger: (event) => {
+            // Both request and response log payloads include operation inputs.
+            if (event.path.startsWith("research.")) return;
+            if (event.direction === "down" && event.result instanceof Error) {
+              console.error(`[tRPC] ${event.path}`, event);
+            } else {
+              console.log(`[tRPC] ${event.path}`, event);
+            }
+          },
         }),
         // TODO: Consider using splitLink to route mutations through httpBatchLink.
         // httpBatchStreamLink always returns HTTP 200 (headers sent before procedure runs),

@@ -7,9 +7,10 @@ import { userTable } from "@/server/db/schema";
 import {
   verifyWebhookSignature,
   getTierFromVariantId,
-  getDatasetTierFromVariant,
   getOrderDetails,
+  getDatasetTierFromVariant,
   DATASET_PRODUCTS,
+  validateDatasetLicenseKey,
   SWIPESTATS_PRODUCTS,
 } from "@/server/services/lemonSqueezy.service";
 import {
@@ -204,12 +205,15 @@ export async function POST(request: Request) {
         });
       }
 
+      const validation = await validateDatasetLicenseKey(licenseKey);
       // Fulfillment follows the purchased order item, never editable checkout metadata.
       if (!orderId) throw new Error("License event is missing its order ID");
       const orderDetails = await getOrderDetails(orderId);
       if (!orderDetails)
         throw new Error("Unable to retrieve the purchased order item");
-      const datasetTier = getDatasetTierFromVariant(orderDetails.variantId);
+      const orderTier = getDatasetTierFromVariant(orderDetails.variantId);
+      const datasetTier =
+        validation.valid && validation.tier === orderTier ? orderTier : null;
       const customerEmail = orderDetails.customerEmail;
 
       if (!datasetTier) {

@@ -1,10 +1,14 @@
-import { eq, sql, gte, inArray } from "drizzle-orm";
+import { and, desc, eq, sql, gte, inArray } from "drizzle-orm";
 import { put } from "@vercel/blob";
 import { createGzip } from "node:zlib";
 import { PassThrough, Readable, Transform } from "node:stream";
 import { pipeline } from "node:stream/promises";
 
 import { db } from "@/server/db";
+import {
+  serializeResearchProfile,
+  RESEARCH_DATASET_VERSION,
+} from "@/lib/research/dataset-contract";
 import {
   datasetExportTable,
   tinderProfileTable,
@@ -82,6 +86,7 @@ export async function generateDatasetForExport(
   exportId: string,
 ): Promise<void> {
   let exportRecord: typeof datasetExportTable.$inferSelect | undefined;
+  let ownsGeneration = false;
 
   try {
     // Get the export record
@@ -94,10 +99,18 @@ export async function generateDatasetForExport(
     }
 
     // Update status to GENERATING
-    await db
+    const claimed = await db
       .update(datasetExportTable)
       .set({ status: "GENERATING" })
-      .where(eq(datasetExportTable.id, exportId));
+      .where(
+        and(
+          eq(datasetExportTable.id, exportId),
+          eq(datasetExportTable.status, "PENDING"),
+        ),
+      )
+      .returning({ id: datasetExportTable.id });
+    if (!claimed.length) return;
+    ownsGeneration = true;
 
     // Get random profiles based on tier and recency
     const profiles = await getRandomProfiles(
@@ -176,7 +189,7 @@ export async function generateDatasetForExport(
       .set({
         status: "READY",
         blobUrl: blobResult.url,
-        blobSize: rawSize,
+        blobSize: compressedSize,
         profileIds: profileIds,
         generatedAt: new Date(),
       })
@@ -193,6 +206,8 @@ export async function generateDatasetForExport(
     });
   } catch (error) {
     console.error(`Failed to generate dataset ${exportId}:`, error);
+
+    if (!ownsGeneration) throw error;
 
     // Update status to FAILED with error message
     const errorMessage = error instanceof Error ? error.message : String(error);
@@ -238,7 +253,8 @@ export async function* streamDatasetJsonl({
     tier: exportRecord.tier,
     profileCount: profiles.length,
     generatedAt: new Date().toISOString(),
-    version: "1.0",
+    version: RESEARCH_DATASET_VERSION,
+    includesMessageContent: false,
     format: "jsonl",
     recency: exportRecord.recency,
   })}\n`;
@@ -282,25 +298,14 @@ export async function* streamDatasetJsonl({
       const usage = usageById.get(profile.tinderId) ?? [];
       const matchCount = countById.get(profile.tinderId) ?? 0;
 
-      // Strip internal fields, keep everything researchers need.
-      const {
-        userId,
-        computed,
-        createdAt,
-        updatedAt,
-        llmAnalyzedAt,
-        bioOriginal,
-        swipestatsVersion,
-        ...profileData
-      } = profile;
-
-      return JSON.stringify({
-        type: "profile",
-        profile: profileData,
-        meta: meta ?? null,
-        usage,
-        matchCount,
-      });
+      return JSON.stringify(
+        serializeResearchProfile({
+          profile,
+          meta: meta ?? null,
+          usage,
+          matchCount,
+        }),
+      );
     });
 
     for (const line of batchLines) {
@@ -339,8 +344,10 @@ async function getRandomProfiles(count: number, recency: "MIXED" | "RECENT") {
   return db
     .select()
     .from(tinderProfileTable)
-    .where(whereCondition)
-    .orderBy(sql`RANDOM()`)
+    .where(and(eq(tinderProfileTable.computed, false), whereCondition))
+    .orderBy(
+      recency === "RECENT" ? desc(tinderProfileTable.createdAt) : sql`RANDOM()`,
+    )
     .limit(count);
 }
 
@@ -353,12 +360,15 @@ export async function assertDatasetAvailability(
     .select({ count: sql<number>`count(*)::int` })
     .from(tinderProfileTable)
     .where(
-      product.recency === "RECENT"
-        ? gte(
-            tinderProfileTable.createdAt,
-            new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1000),
-          )
-        : undefined,
+      and(
+        eq(tinderProfileTable.computed, false),
+        product.recency === "RECENT"
+          ? gte(
+              tinderProfileTable.createdAt,
+              new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1000),
+            )
+          : undefined,
+      ),
     );
   if ((row?.count ?? 0) < product.profileCount * quantity) {
     throw new Error(
@@ -370,6 +380,7 @@ export async function assertDatasetAvailability(
 export async function getStandardDatasetAvailability() {
   const [row] = await db
     .select({ count: sql<number>`count(*)::int` })
-    .from(tinderProfileTable);
+    .from(tinderProfileTable)
+    .where(eq(tinderProfileTable.computed, false));
   return { maxQuantity: Math.min(12, Math.floor((row?.count ?? 0) / 1000)) };
 }

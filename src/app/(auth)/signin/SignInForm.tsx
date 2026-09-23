@@ -1,5 +1,6 @@
 "use client";
 
+import { ClientAuthForm } from "../../../components/auth/ClientAuthForm";
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -94,7 +95,7 @@ export function SignInForm() {
             </Alert>
           )}
 
-          <form onSubmit={handleSignIn} className="space-y-4">
+          <ClientAuthForm onSubmit={handleSignIn} className="space-y-4">
             <Field>
               <FieldLabel htmlFor="username">Username</FieldLabel>
               <Input
@@ -109,16 +110,7 @@ export function SignInForm() {
             </Field>
 
             <Field>
-              <div className="flex items-center justify-between">
-                <FieldLabel htmlFor="password">Password</FieldLabel>
-                <button
-                  type="button"
-                  onClick={() => setIsForgotPasswordOpen(true)}
-                  className="text-sm text-rose-600 hover:text-rose-500 hover:underline"
-                >
-                  Forgot password?
-                </button>
-              </div>
+              <FieldLabel htmlFor="password">Password</FieldLabel>
               <Input
                 id="password"
                 type="password"
@@ -129,6 +121,15 @@ export function SignInForm() {
                 minLength={8}
                 disabled={isLoading}
               />
+              <div className="text-right">
+                <button
+                  type="button"
+                  onClick={() => setIsForgotPasswordOpen(true)}
+                  className="text-sm text-rose-600 hover:text-rose-500 hover:underline"
+                >
+                  Forgot password?
+                </button>
+              </div>
             </Field>
 
             <Button
@@ -145,7 +146,7 @@ export function SignInForm() {
                 "Sign in"
               )}
             </Button>
-          </form>
+          </ClientAuthForm>
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">

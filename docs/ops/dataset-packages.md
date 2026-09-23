@@ -19,7 +19,7 @@ instead of marking a short file READY.
 
 Exports retain the existing gzip JSONL format: metadata, profile records,
 and a citation. Profile records contain `profile`, `meta`, `usage`, and
-`matchCount`. Self-serve exports exclude raw conversations and photos.
+`matchCount`. Purchased exports exclude raw conversations and photos.
 Generation reads 25 profiles per batch, with three database queries per
 batch, and streams to Blob with backpressure. The webhook and tRPC routes
 allow 800 seconds, matching the current Vercel Pro Fluid configuration.
