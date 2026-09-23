@@ -85,28 +85,28 @@ const tiers: Tier[] = [
     cta: "Buy dataset",
   },
   {
-    name: "Academic License",
+    name: "Academic Research",
     id: "academic",
     apiTier: null,
     price: "From $1,500",
-    description: "For universities and institutional research.",
+    description: "A dataset scoped to your study, prepared with our team.",
     badge: { label: "Institutions", variant: "gray" },
     dark: true,
     twoCol: true,
     features: [
       "5,000+ profiles",
-      "Custom data requests",
-      "Student distribution rights",
-      "Monthly ongoing support",
+      "Dated read-only database snapshot",
+      "Message data by agreement",
+      "Help working with the data",
     ],
-    cta: "Contact us",
+    cta: "Discuss your study",
   },
 ];
 
 function Badge({ badge }: { badge: NonNullable<Tier["badge"]> }) {
   if (badge.variant === "pill") {
     return (
-      <span className="inline-flex items-center gap-2 rounded-full border border-rose-600/20 bg-rose-50 px-3 py-1.5 text-[13px] font-semibold leading-none text-rose-700">
+      <span className="inline-flex items-center gap-2 rounded-full border border-rose-600/20 bg-rose-50 px-3 py-1.5 text-[13px] leading-none font-semibold text-rose-700">
         {badge.label}
       </span>
     );
@@ -114,7 +114,7 @@ function Badge({ badge }: { badge: NonNullable<Tier["badge"]> }) {
   return (
     <span
       className={cn(
-        "rounded-md border px-2 py-1 font-mono text-[11px] font-medium uppercase tracking-[0.04em] whitespace-nowrap",
+        "rounded-md border px-2 py-1 font-mono text-[11px] font-medium tracking-[0.04em] whitespace-nowrap uppercase",
         badge.variant === "rose"
           ? "border-rose-600/20 bg-rose-50 text-rose-700"
           : "border-gray-200 bg-gray-100 text-gray-600",
@@ -176,7 +176,9 @@ function TierCard({
       <ul
         className={cn(
           "mt-5 flex-1",
-          tier.twoCol ? "grid grid-cols-2 gap-[11px]" : "flex flex-col gap-[11px]",
+          tier.twoCol
+            ? "grid grid-cols-2 gap-[11px]"
+            : "flex flex-col gap-[11px]",
         )}
       >
         {tier.features.map((feature) => (
@@ -264,8 +266,32 @@ export function ResearchPricingSection() {
           center
           eyebrow="Pricing"
           title="Choose your dataset"
-          lead="For a blog, a paper, or plain curiosity, a SwipeStats dataset gets you on the right track. Start free."
+          lead="Buy a fixed-size download, or work with us on a larger academic dataset."
         />
+
+        <div className="mt-8 grid gap-6 rounded-2xl bg-gray-50 p-6 sm:grid-cols-2">
+          <div>
+            <h3 className="font-semibold text-gray-900">
+              Self-service downloads
+            </h3>
+            <p className="mt-2 text-sm leading-6 text-gray-600">
+              Choose Starter, Standard, Fresh, or Premium. After checkout, use
+              your emailed license key to download the JSONL file once it is
+              ready. Each package contains a fixed number of profiles.
+            </p>
+          </div>
+          <div>
+            <h3 className="font-semibold text-gray-900">
+              Academic research packages
+            </h3>
+            <p className="mt-2 text-sm leading-6 text-gray-600">
+              For larger studies, we agree on the profile count, fields, and
+              delivery date with you. We can prepare a dated database snapshot
+              with read-only access. Message-level data and later refreshes are
+              agreed as part of your package.
+            </p>
+          </div>
+        </div>
 
         <div className="mt-12 grid grid-cols-1 gap-5 max-[900px]:mx-auto max-[900px]:max-w-[420px] lg:grid-cols-3">
           {topTiers.map((tier) => (
