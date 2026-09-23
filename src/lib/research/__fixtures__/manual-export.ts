@@ -3,6 +3,7 @@ import { mkdtempSync, readFileSync, statSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { getTableName } from "drizzle-orm";
+import { PgDialect } from "drizzle-orm/pg-core";
 const profile = {
   tinderId: "stable-profile",
   userId: "account-private",
@@ -36,7 +37,16 @@ await mock.module("@/server/db", () => ({
                 : [];
         const builder = {
           innerJoin: () => builder,
-          where: () => builder,
+          where: (condition: Parameters<PgDialect["sqlToQuery"]>[0]) => {
+            if (tableName === "tinder_profile" && !columns) {
+              const query = new PgDialect({ casing: "snake_case" }).sqlToQuery(
+                condition,
+              );
+              expect(query.sql).toContain('"computed"');
+              expect(query.params).toContain(false);
+            }
+            return builder;
+          },
           orderBy: () => builder,
           then: (resolve: (value: unknown[]) => void) =>
             Promise.resolve(rows).then(resolve),

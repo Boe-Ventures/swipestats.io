@@ -1,6 +1,6 @@
 # Research delivery boundaries
 
-Purchased files use selected research tables and the existing internal profile-field exclusions in `src/lib/research/dataset-contract.ts`. Research columns flow through as the schema evolves, preserving the research fields and stable IDs. Review new columns on these tables for suitability in research exports.
+Purchased files use selected research tables and a short set of profile-field exclusions in `src/lib/research/dataset-contract.ts`. Research columns flow through as the schema evolves, preserving the research fields and stable IDs. Review new columns on these tables for suitability in research exports.
 
 | Product     | Cohort                    | Current contents                                                  |
 | ----------- | ------------------------- | ----------------------------------------------------------------- |
@@ -13,7 +13,7 @@ Purchased files use selected research tables and the existing internal profile-f
 
 ## Data contract
 
-Regular exports query Tinder profiles, aggregate metrics, daily usage and match counts. They do not query account, session, verification or payment tables. Research fields include bios, interests, geography and education. Application `userId` and other previously excluded internal profile fields remain excluded. Joined metrics and usage must belong to the selected Tinder profile.
+Paid and manual research selection excludes synthetic profiles (`computed = true`). The public sample deliberately selects named demo profiles. Regular exports query Tinder profiles, aggregate metrics, daily usage and match counts. They do not query account, session, verification or payment tables. Research fields include bios, interests, geography and education. The profile excludes `userId`, `computed`, `llmAnalyzedAt` and `bioOriginal`. Version and database creation/update timestamps are included; these timestamps describe the SwipeStats record, not Tinder account creation. Original bio text remains available to the separate manual redaction workflow. Joined metrics and usage must belong to the selected Tinder profile.
 
 Existing purchased artifacts are immutable in content: changing storage must preserve their bytes, cohort, IDs and dates. Regular files contain message counts. Message-level academic deliveries follow the agreed field manifest. Field selection alone does not establish that text has been redacted or that a dataset is anonymous.
 
@@ -23,19 +23,11 @@ Export inventory requires a verified admin and returns no customer emails, licen
 
 Receipt links prefill the license using a URL fragment. Client instrumentation removes it before analytics initialization; old query-string receipts remain supported and are scrubbed too. Lookup and downloads use POST bodies. The download server streams bytes with `private, no-store` headers, preserving legacy JSON and compressed JSONL formats. A reusable native POST target waits for a response acknowledgement before allowing another request. The page reports download initiation; the browser reports transfer progress. Status refreshes preserve the visible export and remain scoped to its license. Generation and download reservations use conditional database updates.
 
-## Storage rollout
+## Storage plan
 
-The app can read both existing public Blob files and private Blob files. Without `RESEARCH_BLOB_READ_WRITE_TOKEN`, new generation retains the existing public store and `BLOB_READ_WRITE_TOKEN`. Setting the dedicated private token switches new uploads to private storage. Once configured, a private upload failure never falls back to public storage.
+This PR keeps the existing public Blob store and server-side streaming download route. The route validates entitlement before reading the file and does not return its storage URL. Anyone who already has a public source URL can still read that object directly.
 
-This compatibility keeps existing purchases usable during deployment. Updating an export pointer leaves the source object in its original store until the source-removal step.
-
-1. Deploy the dual-reader and access checks first.
-2. Provision a dedicated private Vercel Blob store. Set `RESEARCH_BLOB_READ_WRITE_TOKEN` in the intended environments. Verify a new paid export and entitled download in a test environment.
-3. With separate operational authorization, run `bun src/scripts/research/migrate-purchased-files.ts` for a dry-run inventory, then `--apply --manifest /private/path/research-migration.jsonl` to copy existing artifacts. Choose a private manifest path appropriate to the operator environment. The tool streams the original bytes, verifies the entire private copy with SHA-256 and byte count, records a private manifest, then conditionally switches the export pointer. It preserves license terms and download counts.
-4. Verify real entitled downloads. Source retirement needs deletion authorization: `--apply --manifest /private/path/research-migration.jsonl --remove-public-source` removes each public source after switching and checks its URL. For staged retirement, use the old URLs recorded in the private manifest. A previously migrated object is no longer selected on rerun.
-5. Keep the manifest for rollback and recovery. If interrupted, inspect the recorded phase and current pointer before resuming.
-
-Run storage provisioning, migration and source removal as explicit deployment steps. Verify downloads in the target environment before completing the rollout.
+Private storage configuration, migration tooling and source retirement are deferred to the broader [private Blob rollout plan](private-tinder-export-blob-handoff.md). This PR adds no private-store environment variable or migration command.
 
 ## Manual export and anonymization
 
@@ -51,4 +43,4 @@ Use an isolated dated snapshot with a SQL-created research login, no role member
 
 ## Verification
 
-Run `bun test src/lib/research` and the repository gate `bun check`. Tests cover the data contract, source-file preservation, product entitlement, admin authorization, status/retry/download checks, storage selection, receipt handling, webhook provider failure and manual pipeline compatibility. Provider configuration and live delivery still need the rollout checks above.
+Run `bun test src/lib/research` and the repository gate `bun check`. Tests cover the data contract, product entitlement, admin authorization, status/retry/download checks, public storage URL validation, receipt handling, webhook provider failure and manual pipeline compatibility. Live delivery still needs browser verification; the private storage plan has its own acceptance checks.

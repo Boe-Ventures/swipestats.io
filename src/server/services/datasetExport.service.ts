@@ -9,7 +9,6 @@ import {
   serializeResearchProfile,
   RESEARCH_DATASET_VERSION,
 } from "@/lib/research/dataset-contract";
-import { researchUploadOptions } from "@/server/services/research-storage";
 import {
   datasetExportTable,
   tinderProfileTable,
@@ -111,7 +110,6 @@ export async function generateDatasetForExport(
       .returning({ id: datasetExportTable.id });
     if (!claimed.length) return;
     ownsGeneration = true;
-    const storage = researchUploadOptions();
 
     // Get random profiles based on tier and recency
     const profiles = await getRandomProfiles(
@@ -158,7 +156,7 @@ export async function generateDatasetForExport(
       `[dataset-export] ${exportId} — streaming gzip upload to blob...`,
     );
     const uploadPromise = put(pathname, uploadBody, {
-      ...storage,
+      access: "public",
       contentType: "application/gzip",
       addRandomSuffix: false,
       multipart: true,
@@ -329,7 +327,7 @@ async function getRandomProfiles(count: number, recency: "MIXED" | "RECENT") {
   return db
     .select()
     .from(tinderProfileTable)
-    .where(whereCondition)
+    .where(and(eq(tinderProfileTable.computed, false), whereCondition))
     .orderBy(
       recency === "RECENT" ? desc(tinderProfileTable.createdAt) : sql`RANDOM()`,
     )

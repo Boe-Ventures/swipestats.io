@@ -27,11 +27,8 @@ export function serializeResearchProfile(input: {
   const {
     userId: _userId,
     computed: _computed,
-    createdAt: _createdAt,
-    updatedAt: _updatedAt,
     llmAnalyzedAt: _llmAnalyzedAt,
     bioOriginal: _bioOriginal,
-    swipestatsVersion: _swipestatsVersion,
     ...profile
   } = input.profile;
   return {

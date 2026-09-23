@@ -57,7 +57,16 @@ await mock.module("@/server/db", () => ({
               ? [{ count: "2" }]
               : [];
         const builder = {
-          where: () => builder,
+          where: (condition: Parameters<PgDialect["sqlToQuery"]>[0]) => {
+            if (name === "tinder_profile") {
+              const query = new PgDialect({ casing: "snake_case" }).sqlToQuery(
+                condition,
+              );
+              expect(query.sql).toContain('"computed"');
+              expect(query.params).toContain(false);
+            }
+            return builder;
+          },
           orderBy: () => builder,
           limit: async () => {
             selected++;
@@ -70,9 +79,6 @@ await mock.module("@/server/db", () => ({
       },
     }),
   },
-}));
-await mock.module("@/server/services/research-storage", () => ({
-  researchUploadOptions: () => ({ access: "public", token: "fixture" }),
 }));
 await mock.module("@/server/services/lemonSqueezy.service", () => ({
   DATASET_PRODUCTS: {},

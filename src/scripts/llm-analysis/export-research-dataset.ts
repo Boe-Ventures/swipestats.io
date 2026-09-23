@@ -79,6 +79,7 @@ async function selectProfileIds(): Promise<string[]> {
 
   // Random sample of profiles that have messages and geo data (userId)
   const conditions = [
+    eq(tinderProfileTable.computed, false),
     gt(profileMetaTable.messagesSentTotal, 0),
     isNotNull(tinderProfileTable.userId),
   ];
@@ -162,7 +163,12 @@ export async function exportProfiles(
       db
         .select()
         .from(tinderProfileTable)
-        .where(inArray(tinderProfileTable.tinderId, batchIds)),
+        .where(
+          and(
+            eq(tinderProfileTable.computed, false),
+            inArray(tinderProfileTable.tinderId, batchIds),
+          ),
+        ),
 
       // 2. User geo data (via profile's userId)
       db

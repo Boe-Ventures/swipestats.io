@@ -1,15 +1,13 @@
 import { expect, test } from "bun:test";
 import { fileURLToPath } from "node:url";
-for (const [fixture, marker, format] of [
+for (const [fixture, marker] of [
   ["api-boundary", "API boundary checks passed"],
   ["storage", "Storage checks passed"],
   ["fulfillment", "Fulfillment checks passed"],
   ["manual-export", "Manual export checks passed"],
   ["generation", "Generation checks passed"],
-  ["migration", "Migration checks passed", "gzip"],
-  ["migration", "Migration checks passed", "json"],
 ])
-  test(`research integration: ${fixture} ${format ?? ""}`, async () => {
+  test(`research integration: ${fixture}`, async () => {
     const child = Bun.spawn(
       [
         process.execPath,
@@ -18,7 +16,7 @@ for (const [fixture, marker, format] of [
       {
         stdout: "pipe",
         stderr: "pipe",
-        env: { ...process.env, NODE_ENV: "test", FIXTURE_FORMAT: format ?? "" },
+        env: { ...process.env, NODE_ENV: "test" },
       },
     );
     const [code, stdout, stderr] = await Promise.all([

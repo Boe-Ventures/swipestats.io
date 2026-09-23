@@ -16,7 +16,7 @@ const record = {
   status: "READY",
   profileCount: 1000,
   blobUrl:
-    "https://private-store.private.blob.vercel-storage.com/datasets/one.jsonl.gz",
+    "https://source-store.public.blob.vercel-storage.com/datasets/one.jsonl.gz",
   blobSize: 4,
   downloadCount: 0,
   maxDownloads: 1,
@@ -138,7 +138,7 @@ const status = await publicCaller.getExportByLicenseKey({
 const text = JSON.stringify(status);
 expect(text).not.toContain("license-secret");
 expect(text).not.toContain("buyer@example.com");
-expect(text).not.toContain("private-store");
+expect(text).not.toContain("source-store");
 valid = false;
 await denied(
   publicCaller.getExportByLicenseKey({ licenseKey: "license-secret" }),

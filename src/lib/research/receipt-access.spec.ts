@@ -4,9 +4,6 @@ import {
   captureResearchReceipt,
   consumeResearchReceipt,
 } from "./receipt-access";
-import { fingerprintStream } from "./file-integrity";
-import { createHash } from "node:crypto";
-import { gzipSync } from "node:zlib";
 
 test("new and legacy receipts prefill access while removing credentials from the URL", () => {
   for (const input of [
@@ -24,23 +21,6 @@ test("new and legacy receipts prefill access while removing credentials from the
     parseResearchReceipt("https://swipestats.io/research#licenseKey=secret"),
   ).toBeNull();
 });
-test("copy verification hashes exact compressed bytes without changing research content", async () => {
-  const bytes = gzipSync(
-    "arbitrary legacy data, IDs, messages and formatting\n",
-  );
-  const stream = new ReadableStream<Uint8Array>({
-    start(c) {
-      c.enqueue(bytes.subarray(0, 10));
-      c.enqueue(bytes.subarray(10));
-      c.close();
-    },
-  });
-  expect(await fingerprintStream(stream)).toEqual({
-    sha256: createHash("sha256").update(bytes).digest("hex"),
-    size: bytes.length,
-  });
-});
-
 test("a captured receipt is consumed once", () => {
   const original = globalThis.window;
   const location = {

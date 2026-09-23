@@ -1,18 +1,5 @@
-import { expect, mock } from "bun:test";
-const env = {
-  RESEARCH_BLOB_READ_WRITE_TOKEN: undefined as string | undefined,
-  BLOB_READ_WRITE_TOKEN: "public-token",
-};
-let privateReads = 0;
+import { expect } from "bun:test";
 let publicReads = 0;
-await mock.module("@/env", () => ({ env }));
-await mock.module("@vercel/blob", () => ({
-  get: async (_url: string, options: { token: string }) => {
-    expect(options.token).toBe("private-token");
-    privateReads++;
-    return { statusCode: 200 };
-  },
-}));
 const originalFetch = globalThis.fetch;
 globalThis.fetch = (async (_url: string, options: RequestInit) => {
   publicReads++;
@@ -20,39 +7,28 @@ globalThis.fetch = (async (_url: string, options: RequestInit) => {
   return new Response("legacy-byte-content");
 }) as typeof fetch;
 try {
-  const { researchUploadOptions, readResearchBlob } =
+  const { readResearchBlob } =
     await import("@/server/services/research-storage");
-  expect(researchUploadOptions()).toEqual({
-    access: "public",
-    token: "public-token",
-  });
-  const old = await readResearchBlob(
+  const file = await readResearchBlob(
     "https://store.public.blob.vercel-storage.com/datasets/old.jsonl.gz",
   );
-  expect(await new Response(old!.stream).text()).toBe("legacy-byte-content");
-  env.RESEARCH_BLOB_READ_WRITE_TOKEN = "private-token";
-  expect(researchUploadOptions()).toEqual({
-    access: "private",
-    token: "private-token",
-  });
-  await readResearchBlob(
-    "https://store.private.blob.vercel-storage.com/datasets/new.jsonl.gz",
-  );
+  expect(await new Response(file.stream).text()).toBe("legacy-byte-content");
   for (const url of [
     "http://store.public.blob.vercel-storage.com/datasets/x",
     "https://example.com/datasets/x",
     "https://store.public.blob.vercel-storage.com/other/x",
+    "https://store.private.blob.vercel-storage.com/datasets/x",
   ]) {
-    let denied = false;
+    let rejected = false;
     try {
       await readResearchBlob(url);
-    } catch {
-      denied = true;
+    } catch (error) {
+      rejected = true;
+      expect((error as Error).message).toBe("Unsupported research storage URL");
     }
-    expect(denied).toBe(true);
+    expect(rejected).toBe(true);
   }
   expect(publicReads).toBe(1);
-  expect(privateReads).toBe(1);
   console.log("Storage checks passed");
 } finally {
   globalThis.fetch = originalFetch;

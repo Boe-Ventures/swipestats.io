@@ -25,11 +25,11 @@ test("research columns flow through while established internal fields stay exclu
     interests: ["music"],
     userId: "account-secret",
     computed: true,
-    createdAt: "internal",
-    updatedAt: "internal",
+    createdAt: "2026-01-01",
+    updatedAt: "2026-01-02",
     llmAnalyzedAt: "internal",
     bioOriginal: "internal",
-    swipestatsVersion: "internal",
+    swipestatsVersion: "V4",
     futureResearchMetric: 42,
   };
   const meta = {
@@ -56,6 +56,9 @@ test("research columns flow through while established internal fields stay exclu
     bio: "Agreed research bio",
     interests: ["music"],
     futureResearchMetric: 42,
+    createdAt: "2026-01-01",
+    updatedAt: "2026-01-02",
+    swipestatsVersion: "V4",
   });
   expect(result.meta?.id).toBe("meta-id");
   expect(result.usage[0]?.tinderProfileId).toBe("stable-id");
