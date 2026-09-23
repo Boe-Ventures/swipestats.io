@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;600;700;800&display=swap">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; font-family: "Inter Tight", -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; color: #ffffff; -webkit-font-smoothing: antialiased; }
+  .card { background:#2a1220; border:1px solid rgba(255,128,181,0.18); border-radius:20px; padding:22px 24px; display:flex; flex-direction:column; gap:6px; justify-content:center; }
+  .num { font-size:40px; font-weight:800; color:#ff80b5; line-height:1; letter-spacing:-0.01em; }
+  .lbl { font-size:18px; font-weight:800; color:#ffffff; line-height:1.25; }
+  .note { font-size:15px; color:#c4a0b0; line-height:1.4; }
+</style>
+</head>
+<body>
+<div id="infographic" style="width:1200px; height:900px; background:radial-gradient(60% 50% at 12% 6%, rgba(255,70,148,0.20) 0%, rgba(0,0,0,0) 62%), #120810; display:flex; flex-direction:column; padding:52px 60px 0;">
+
+  <div style="display:flex; flex-direction:column; gap:10px;">
+    <div style="font-size:13px; font-weight:800; letter-spacing:0.10em; text-transform:uppercase; color:#ff80b5;">The SwipeStats verdict</div>
+    <div style="font-size:46px; font-weight:800; color:#ffffff; line-height:1.12; letter-spacing:-0.01em;">Is Tinder Gold worth it? 3.5 out of 5.</div>
+    <div style="font-size:19px; color:#c4a0b0; line-height:1.4;">Useful features, but not the miracle worker the upgrade screen promises.</div>
+  </div>
+
+  <div style="flex:1; display:grid; grid-template-columns:1fr 1.25fr; gap:24px; padding:30px 0 0; align-items:stretch;">
+
+    <div style="background:linear-gradient(150deg,#E11D48,#ff4694); border-radius:22px; padding:34px 32px; display:flex; flex-direction:column; justify-content:center; gap:16px;">
+      <div style="display:inline-flex; align-self:flex-start; background:rgba(18,8,16,0.32); color:#ffffff; font-size:14px; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; padding:8px 18px; border-radius:26px;">Overall score</div>
+      <div style="font-size:96px; font-weight:800; color:#ffffff; line-height:1; letter-spacing:-0.02em;">3.5<span style="font-size:44px; font-weight:700; opacity:0.7;">/5</span></div>
+      <div style="font-size:20px; color:rgba(255,255,255,0.94); line-height:1.4;">Worth it if you are short on time, travel often, or already have a profile that works.</div>
+      <div style="border-top:1px solid rgba(18,8,16,0.28); padding-top:16px; font-size:17px; color:rgba(255,255,255,0.92); line-height:1.4;">Skip it if your photos are the bottleneck. Gold cannot fix a bad profile.</div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:18px;">
+      <div class="card">
+        <div class="num">4/5</div>
+        <div class="lbl">User base</div>
+        <div class="note">One of the largest pools in dating, especially in cities. Quantity, not quality.</div>
+      </div>
+      <div class="card">
+        <div class="num">3.5/5</div>
+        <div class="lbl">Match rate</div>
+        <div class="note">See Who Likes You and Boosts help, but your profile still does the work.</div>
+      </div>
+      <div class="card">
+        <div class="num">3/5</div>
+        <div class="lbl">Match attractiveness</div>
+        <div class="note">Roughly the same faces as free Tinder. You just find them faster.</div>
+      </div>
+      <div class="card">
+        <div class="num">3/5</div>
+        <div class="lbl">Pricing</div>
+        <div class="note">Dynamic pricing by age and location, and pricier than rival premium tiers.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="display:flex; align-items:center; justify-content:space-between; border-top:1px solid #2a1220; padding:20px 0 26px; margin-top:24px;">
+    <img src="/home/pawvej/Developer/paw-server/kit/brands/swipestats/logo.png" alt="SwipeStats" style="height:28px; width:auto;">
+    <div style="font-size:15px; font-weight:600; color:#c4a0b0;">swipestats.io/blog/is-tinder-gold-worth-it</div>
+  </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;600;700;800&display=swap">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; font-family: "Inter Tight", -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; color: #ffffff; -webkit-font-smoothing: antialiased; }
+  .card { background:#2a1220; border:1px solid rgba(255,128,181,0.18); border-radius:18px; padding:24px 24px; display:flex; flex-direction:column; gap:9px; }
+  .tag { font-size:12px; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#ff80b5; }
+  .lbl { font-size:23px; font-weight:800; color:#ffffff; line-height:1.2; }
+  .note { font-size:16px; color:#c4a0b0; line-height:1.45; }
+  .cost { margin-top:auto; font-size:15px; font-weight:700; color:#ffffff; border-top:1px solid rgba(255,128,181,0.18); padding-top:12px; }
+  .steps { list-style:none; margin:4px 0 0; padding:0; display:flex; flex-direction:column; gap:10px; }
+  .steps li { display:flex; gap:11px; align-items:flex-start; font-size:15px; color:#ffffff; line-height:1.35; }
+  .steps li span { flex:0 0 auto; width:22px; height:22px; border-radius:11px; background:rgba(255,70,148,0.22); color:#ff80b5; font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center; margin-top:1px; }
+  .timer { display:flex; flex-direction:column; gap:2px; }
+  .tnum { font-size:30px; font-weight:800; color:#ffffff; line-height:1; letter-spacing:-0.01em; }
+  .ttxt { font-size:14px; color:rgba(255,255,255,0.82); line-height:1.3; }
+</style>
+</head>
+<body>
+<div id="infographic" style="width:1200px; height:790px; background:radial-gradient(60% 50% at 12% 6%, rgba(255,70,148,0.20) 0%, rgba(0,0,0,0) 62%), #120810; display:flex; flex-direction:column; padding:46px 58px 0;">
+
+  <div style="display:flex; flex-direction:column; gap:10px;">
+    <div style="font-size:13px; font-weight:800; letter-spacing:0.10em; text-transform:uppercase; color:#ff80b5;">How to change your name on Tinder</div>
+    <div style="font-size:44px; font-weight:800; color:#ffffff; line-height:1.12; letter-spacing:-0.01em;">Three routes out of the name you typed at 1 AM</div>
+    <div style="font-size:18px; color:#c4a0b0; line-height:1.4;">Your name locks at signup and there is no edit button. These are the only three methods that work, ranked by what they cost you.</div>
+  </div>
+
+  <div style="flex:1; display:grid; grid-template-columns:1fr 1fr 1fr; gap:18px; padding:26px 0 0;">
+
+    <div class="card">
+      <div class="tag">Method 01 &middot; easiest</div>
+      <div class="lbl">Change it on Facebook</div>
+      <div class="note">Only works if the account was created through Facebook in the first place.</div>
+      <ul class="steps">
+        <li><span>1</span>Facebook, Settings, Personal Information, Name, Edit.</li>
+        <li><span>2</span>Tinder, Settings, scroll down, Logout.</li>
+        <li><span>3</span>Log back in with Facebook.</li>
+      </ul>
+      <div class="cost">Updates within <span style="color:#ff80b5;">24 hours</span></div>
+    </div>
+
+    <div class="card">
+      <div class="tag">Method 02 &middot; underrated</div>
+      <div class="lbl">Email Tinder Support</div>
+      <div class="note">Free, no risk, and almost nobody bothers trying it first.</div>
+      <ul class="steps">
+        <li><span>1</span>Open the Tinder help center.</li>
+        <li><span>2</span>Submit a request, general inquiry.</li>
+        <li><span>3</span>Say exactly what is wrong, in one line.</li>
+      </ul>
+      <div class="note" style="font-size:15px;">Best odds: typos, legal name changes, or a name pulled wrong from your Apple ID.</div>
+      <div class="cost">Takes about <span style="color:#ff80b5;">5 minutes</span></div>
+    </div>
+
+    <div class="card">
+      <div class="tag">Method 03 &middot; nuclear</div>
+      <div class="lbl">Delete and start over</div>
+      <div class="note">The only guaranteed route if you signed up with a phone number, email, or Google.</div>
+      <ul class="steps">
+        <li><span>1</span>Profile icon, then Settings.</li>
+        <li><span>2</span>Scroll to the bottom, Delete Account.</li>
+        <li><span>3</span>Decline the offer to "pause" instead.</li>
+      </ul>
+      <div class="note" style="font-size:15px;">Ask support about moving your subscription before you confirm, not after.</div>
+      <div class="cost">Costs <span style="color:#ff80b5;">all matches, messages, likes</span></div>
+    </div>
+
+  </div>
+
+  <div style="background:linear-gradient(120deg,#E11D48,#ff4694); border-radius:20px; padding:20px 28px; margin-top:20px; display:flex; align-items:center; gap:30px;">
+    <div style="display:inline-flex; background:rgba(18,8,16,0.32); color:#ffffff; font-size:13px; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; padding:8px 16px; border-radius:24px; white-space:nowrap;">Before you delete</div>
+    <div class="timer"><div class="tnum">90 days</div><div class="ttxt">Tinder keeps your deleted<br>account data</div></div>
+    <div class="timer"><div class="tnum">30 days</div><div class="ttxt">Face check ties your identity<br>to your photos</div></div>
+    <div class="timer"><div class="tnum">1 to 2 weeks</div><div class="ttxt">How long the new<br>user boost lasts</div></div>
+    <div class="timer"><div class="tnum">60 days</div><div class="ttxt">Facebook waiting period<br>between name changes</div></div>
+  </div>
+
+  <div style="display:flex; align-items:center; justify-content:space-between; border-top:1px solid #2a1220; padding:18px 0 24px; margin-top:16px;">
+    <img src="/home/pawvej/Developer/paw-server/kit/brands/swipestats/logo.png" alt="SwipeStats" style="height:28px; width:auto;">
+    <div style="font-size:15px; font-weight:600; color:#c4a0b0;">swipestats.io/blog/how-to-change-name-on-tinder</div>
+  </div>
+
+</div>
+</body>
+</html>

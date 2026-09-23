@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;600;700;800&display=swap">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; font-family: "Inter Tight", -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; color: #ffffff; -webkit-font-smoothing: antialiased; }
+  .card { background:#2a1220; border:1px solid rgba(255,128,181,0.18); border-radius:20px; padding:24px 26px; display:flex; flex-direction:column; gap:8px; justify-content:center; }
+  .num { font-size:44px; font-weight:800; color:#ff80b5; line-height:1; letter-spacing:-0.01em; }
+  .lbl { font-size:19px; font-weight:800; color:#ffffff; line-height:1.25; }
+  .note { font-size:16px; color:#c4a0b0; line-height:1.4; }
+</style>
+</head>
+<body>
+<div id="infographic" style="width:1200px; height:900px; background:radial-gradient(60% 50% at 12% 6%, rgba(255,70,148,0.20) 0%, rgba(0,0,0,0) 62%), #120810; display:flex; flex-direction:column; padding:52px 60px 0;">
+
+  <div style="display:flex; flex-direction:column; gap:10px;">
+    <div style="font-size:13px; font-weight:800; letter-spacing:0.10em; text-transform:uppercase; color:#ff80b5;">Hinge like limits</div>
+    <div style="font-size:46px; font-weight:800; color:#ffffff; line-height:1.12; letter-spacing:-0.01em;">When do Hinge likes reset? 4 AM.</div>
+    <div style="font-size:19px; color:#c4a0b0; line-height:1.4;">Local time, every day. Not midnight, and the app never tells you.</div>
+  </div>
+
+  <div style="flex:1; display:grid; grid-template-columns:1fr 1.15fr; gap:24px; padding:32px 0 0; align-items:stretch;">
+
+    <div style="background:linear-gradient(150deg,#E11D48,#ff4694); border-radius:22px; padding:36px 34px; display:flex; flex-direction:column; justify-content:center; gap:18px;">
+      <div style="display:inline-flex; align-self:flex-start; background:rgba(18,8,16,0.32); color:#ffffff; font-size:14px; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; padding:8px 18px; border-radius:26px;">Daily reset</div>
+      <div style="font-size:92px; font-weight:800; color:#ffffff; line-height:1; letter-spacing:-0.02em;">4:00 AM</div>
+      <div style="font-size:21px; color:rgba(255,255,255,0.94); line-height:1.4;">Local time, adjusted to your time zone. Unused likes do not roll over.</div>
+      <div style="border-top:1px solid rgba(18,8,16,0.28); padding-top:18px; font-size:17px; color:rgba(255,255,255,0.92); line-height:1.4;">Roses run on a separate clock: 1 free Rose a week, resetting Sunday.</div>
+    </div>
+
+    <div style="display:grid; grid-template-rows:1fr 1fr 1fr; gap:20px;">
+      <div class="card">
+        <div class="num">8</div>
+        <div class="lbl">Free likes you can send per day</div>
+        <div class="note">No cap on likes you receive. The limit only applies to what you send.</div>
+      </div>
+      <div class="card">
+        <div class="num">8+</div>
+        <div class="lbl">Unanswered chats and likes get blocked</div>
+        <div class="note">Your Turn Limits applies to free and paid accounts alike. Reply or unmatch to clear it.</div>
+      </div>
+      <div class="card">
+        <div class="num">3x</div>
+        <div class="lbl">More replies when a like carries a comment</div>
+        <div class="note">With only 8 to spend, the comment does more work than the timing.</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div style="display:flex; align-items:center; justify-content:space-between; border-top:1px solid #2a1220; padding:20px 0 26px; margin-top:26px;">
+    <img src="/home/pawvej/Developer/paw-server/kit/brands/swipestats/logo.png" alt="SwipeStats" style="height:28px; width:auto;">
+    <div style="font-size:15px; font-weight:600; color:#c4a0b0;">swipestats.io/blog/when-do-hinge-likes-reset</div>
+  </div>
+
+</div>
+</body>
+</html>
