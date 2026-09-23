@@ -77,24 +77,18 @@ export const researchRouter = {
       }
     }),
 
-  // Validate license key and get export status (creates on-demand if needed)
+  // Read local export status; validate with the provider only for missing exports.
   getExportByLicenseKey: publicProcedure
     .input(z.object({ licenseKey: z.string().min(1).max(512) }))
     .mutation(async ({ ctx, input }) => {
-      const validation = await validateDatasetLicenseKey(input.licenseKey);
-      if (!validation.valid)
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "This dataset license is invalid or no longer active.",
-        });
-      // 1. Check local DB first (fast path)
+      // The stored license is the bearer credential for this status summary.
       const existingExport = await ctx.db.query.datasetExportTable.findFirst({
         where: eq(datasetExportTable.licenseKey, input.licenseKey),
       });
 
       if (existingExport) {
         if (
-          validation.tier !== existingExport.tier ||
+          existingExport.tier === "ACADEMIC" ||
           isExportExpired(existingExport.expiresAt)
         ) {
           throw new TRPCError({
@@ -127,7 +121,15 @@ export const researchRouter = {
         };
       }
 
-      // 3. Fetch the order to determine tier
+      // Recover a missing export only after current purchase validation.
+      const validation = await validateDatasetLicenseKey(input.licenseKey);
+      if (!validation.valid)
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: "This dataset license is invalid or no longer active.",
+        });
+
+      // Fetch the order to determine tier
       const orderDetails = await getOrderFromLicenseKey(input.licenseKey);
 
       if (!orderDetails || !isDatasetVariant(orderDetails.variantId)) {

@@ -6,6 +6,8 @@ let reads = 0;
 let listCalls = 0;
 let listOptions: { columns?: Record<string, boolean> } = {};
 let valid = true;
+let validations = 0;
+let exists = true;
 let tier = "STANDARD";
 let remaining = 1;
 let storageFails = false;
@@ -31,7 +33,7 @@ const fakeDb = {
     datasetExportTable: {
       findFirst: async () => {
         reads++;
-        return record;
+        return exists ? record : undefined;
       },
       findMany: async (options: typeof listOptions) => {
         listCalls++;
@@ -69,7 +71,10 @@ await mock.module("@/server/services/lemonSqueezy.service", () => ({
   DATASET_PRODUCTS: {
     STANDARD: { price: 5000, profileCount: 1000, recency: "MIXED" },
   },
-  validateDatasetLicenseKey: async () => ({ valid, tier }),
+  validateDatasetLicenseKey: async () => {
+    validations++;
+    return { valid, tier };
+  },
   createDatasetCheckout: async () => ({}),
   getOrderFromLicenseKey: async () => null,
   isDatasetVariant: () => true,
@@ -139,10 +144,25 @@ const text = JSON.stringify(status);
 expect(text).not.toContain("license-secret");
 expect(text).not.toContain("buyer@example.com");
 expect(text).not.toContain("source-store");
+expect(validations).toBe(0);
 valid = false;
+// Existing status does not depend on the provider. Revocation is checked on delivery.
+await publicCaller.getExportByLicenseKey({ licenseKey: "license-secret" });
+expect(validations).toBe(0);
+record.expiresAt = new Date("2000-01-01");
 await denied(
   publicCaller.getExportByLicenseKey({ licenseKey: "license-secret" }),
 );
+record.expiresAt = null;
+record.tier = "ACADEMIC";
+await denied(
+  publicCaller.getExportByLicenseKey({ licenseKey: "license-secret" }),
+);
+record.tier = "STANDARD";
+exists = false;
+await denied(publicCaller.getExportByLicenseKey({ licenseKey: "unknown" }));
+expect(validations).toBe(1);
+exists = true;
 await denied(publicCaller.retryGeneration({ licenseKey: "license-secret" }));
 valid = true;
 const { POST } = await import("@/app/api/download/route");
