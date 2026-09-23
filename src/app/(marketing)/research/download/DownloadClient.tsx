@@ -165,7 +165,7 @@ export function DownloadClient() {
           </h1>
           <p className="mt-6 text-lg leading-8 text-gray-600">
             Enter your license key from the LemonSqueezy email to access and
-            download your self-service dataset.
+            download your purchased dataset.
           </p>
         </div>
 

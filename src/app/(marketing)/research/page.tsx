@@ -1180,7 +1180,7 @@ function HowItWorksSection() {
     {
       n: 2,
       title: "Get access",
-      body: "Self-service buyers receive a license key to download their file once it is ready. We arrange academic delivery with you after agreeing on the scope.",
+      body: "After purchase, you receive a license key to download your file once it is ready. We arrange academic delivery with you after agreeing on the scope.",
     },
     {
       n: 3,
@@ -1227,7 +1227,7 @@ function FAQSection() {
     },
     {
       q: "What format is the data in?",
-      a: "Self-service downloads use JSONL: one JSON object per line, one line per profile. You can load it into Python or R. Academic packages can use a dated, read-only Postgres snapshot, with the included tables and fields agreed before delivery.",
+      a: "Purchased datasets use JSONL: one JSON object per line, one line per profile. You can load it into Python or R. Academic packages can use a dated, read-only Postgres snapshot, with the included tables and fields agreed before delivery.",
     },
     {
       q: "Can I get a larger dataset or message-level data?",

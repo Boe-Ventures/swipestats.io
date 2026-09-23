@@ -271,9 +271,7 @@ export function ResearchPricingSection() {
 
         <div className="mt-8 grid gap-6 rounded-2xl bg-gray-50 p-6 sm:grid-cols-2">
           <div>
-            <h3 className="font-semibold text-gray-900">
-              Self-service downloads
-            </h3>
+            <h3 className="font-semibold text-gray-900">Purchased datasets</h3>
             <p className="mt-2 text-sm leading-6 text-gray-600">
               Choose Starter, Standard, Fresh, or Premium. After checkout, use
               your emailed license key to download the JSONL file once it is
