@@ -169,6 +169,25 @@ export function DownloadClient() {
           </p>
         </div>
 
+        <aside className="mt-8 rounded-lg border border-gray-200 p-5">
+          <h2 className="text-base font-semibold text-gray-900">
+            Academic database access
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-gray-600">
+            If we prepared a database snapshot for your study, use the
+            connection details sent to you by email. Your research package has
+            its own agreed dataset and delivery date. For access help or a
+            refreshed snapshot,{" "}
+            <a
+              href="mailto:kris@swipestats.io?subject=Academic%20database%20access"
+              className="font-medium text-rose-600 hover:text-rose-500"
+            >
+              email kris@swipestats.io
+            </a>
+            .
+          </p>
+        </aside>
+
         <div className="mt-16">
           {!licenseKey ? (
             // License key input form

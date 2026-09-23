@@ -1179,13 +1179,13 @@ function HowItWorksSection() {
     },
     {
       n: 2,
-      title: "Instant download",
-      body: "Most datasets download immediately with a license key. Academic licenses are processed within 24 hours.",
+      title: "Get access",
+      body: "After purchase, you receive a license key to download your file once it is ready. We arrange academic delivery with you after agreeing on the scope.",
     },
     {
       n: 3,
       title: "Start analyzing",
-      body: "Load the JSONL into Python, R, or pandas. The full data dictionary ships with every download.",
+      body: "Load a JSONL download into Python or R, or query your academic database snapshot with SQL. We can help you understand the data for your study.",
     },
   ];
   return (
@@ -1194,7 +1194,7 @@ function HowItWorksSection() {
         <SectionHead
           center
           eyebrow="How it works"
-          title="From checkout to analysis in minutes"
+          title="From choosing a dataset to analyzing it"
         />
         <div className="mt-12 grid grid-cols-1 gap-7 md:grid-cols-3">
           {steps.map((s) => (
@@ -1227,7 +1227,11 @@ function FAQSection() {
     },
     {
       q: "What format is the data in?",
-      a: "JSONL: one JSON object per line, one line per profile. It imports cleanly into Python, R, pandas, or any tool you prefer. A full data dictionary defining every field ships with each download.",
+      a: "Purchased datasets use JSONL: one JSON object per line, one line per profile. You can load it into Python or R. Academic packages can use a dated, read-only Postgres snapshot, with the included tables and fields agreed before delivery.",
+    },
+    {
+      q: "Can I get a larger dataset or message-level data?",
+      a: "Contact us about an academic research package. We will confirm the available profile count and the fields you need, including whether message-level data is part of your package. Database access is prepared individually, and we agree on delivery timing with you.",
     },
     {
       q: "Can I use this for commercial projects?",
@@ -1239,7 +1243,7 @@ function FAQSection() {
     },
     {
       q: "How recent is the data?",
-      a: "Starter and Standard mix timeframes. Fresh and Premium ship the most recent profiles available. Academic licenses can request specific periods. New data is added continuously as users upload their exports.",
+      a: "Starter and Standard mix timeframes. Fresh and Premium ship the most recent profiles available. Academic packages can request specific periods. A delivered snapshot stays fixed for reproducible analysis; later refreshes are arranged separately. New profiles continue to arrive in SwipeStats.",
     },
     {
       q: "How do I cite this in research?",
