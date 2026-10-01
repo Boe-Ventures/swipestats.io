@@ -310,7 +310,6 @@ export function SwipeRankLeaderboard() {
             variant="secondary"
             className="mb-5 gap-2 font-mono tracking-[0.14em] uppercase"
           >
-            <span className="bg-primary h-px w-4" />
             Tinder · observed match rate
           </Badge>
           <h1 className="max-w-4xl text-5xl font-bold tracking-[-0.04em] sm:text-7xl">

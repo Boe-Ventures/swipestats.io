@@ -98,9 +98,7 @@ function Hero() {
       <RoseGlow className="top-[-160px] left-1/2 h-[560px] w-[680px] -translate-x-1/2" />
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
         <div className="mx-auto max-w-[820px] text-center">
-          <Eyebrow noRule center>
-            Tinder · Hinge · Bumble
-          </Eyebrow>
+          <Eyebrow center>Tinder · Hinge · Bumble</Eyebrow>
           {/* Backup: render <HeroHeadlineRotating /> here for the rotating
               Tinder/Hinge/Bumble typewriter variant (_components/HeroHeadlineRotating). */}
           <h1 className="dark:text-foreground mt-5 text-[clamp(40px,6vw,68px)] leading-[1.02] font-bold tracking-[-0.035em] text-balance text-gray-900">
@@ -657,7 +655,7 @@ function DataRequestBand() {
         <div className="relative overflow-hidden rounded-[28px] bg-gray-950 px-6 pt-20 pb-44 text-center max-[720px]:pb-40">
           <RoseGlow className="top-[-160px] left-1/2 h-[520px] w-[680px] -translate-x-1/2" />
           <div className="relative">
-            <Eyebrow noRule center className="text-rose-500">
+            <Eyebrow center className="text-rose-500">
               Get your data
             </Eyebrow>
             <h2 className="mx-auto mt-3.5 max-w-[620px] text-[clamp(30px,4vw,46px)] leading-[1.06] font-bold tracking-[-0.03em] text-balance text-white">

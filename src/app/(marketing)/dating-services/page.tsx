@@ -119,7 +119,6 @@ export default async function DatingServicesPage() {
         <div className="relative mx-auto max-w-7xl px-6 py-20 lg:px-8 lg:py-28">
           <div className="max-w-4xl">
             <div className="flex items-center gap-3 font-mono text-[12px] font-medium tracking-[0.12em] text-rose-600 uppercase dark:text-rose-400">
-              <span className="h-px w-6 bg-rose-400" />
               Dating services
             </div>
             <h1 className="mt-6 max-w-4xl text-[clamp(44px,7vw,76px)] leading-[0.98] font-bold tracking-[-0.045em] text-balance">
