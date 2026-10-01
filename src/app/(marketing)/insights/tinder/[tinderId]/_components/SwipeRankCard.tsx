@@ -74,7 +74,7 @@ function RankBlock({
       <div className="mt-5">
         <p className="text-4xl font-bold tracking-tight tabular-nums">
           {placement.rank === null
-            ? "—"
+            ? "N/A"
             : `#${placement.rank.toLocaleString()}`}
         </p>
         <p className="text-muted-foreground mt-2 text-sm">

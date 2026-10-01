@@ -186,7 +186,7 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
   };
 
   // "Build with AI" in the Add Profile dialog: compose a column straight into
-  // THIS comparison (the router takes a comparisonId), so there's no redirect —
+  // THIS comparison (the router takes a comparisonId), so there's no redirect  -
   // the dialog closes and the new column appears. Only offered for the apps the
   // composer supports, and gated like the rest of the AI features.
   const { effectiveTier } = useSubscription();
@@ -199,7 +199,7 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
   const composeColumnMutation = useMutation(
     trpc.profileCompose.compose.mutationOptions({
       onSuccess: () => {
-        toast.success("AI profile added — tweak it however you like");
+        toast.success("AI profile added - tweak it however you like");
         void queryClient.invalidateQueries(
           trpc.profileCompare.get.queryOptions({ id: comparison.id }),
         );
@@ -302,7 +302,7 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
   );
 
   const onSubmit = (data: SettingsFormValues) => {
-    // Cleared fields are sent as null (= clear in the DB) — undefined would
+    // Cleared fields are sent as null (= clear in the DB) - undefined would
     // mean "leave unchanged", making it impossible to remove a value.
     updateMutation.mutate(
       {
@@ -355,7 +355,7 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
   };
 
   // The whole comparison is empty when it has profiles but none of them have
-  // any content yet — the cue to guide the user to upload photos first.
+  // any content yet - the cue to guide the user to upload photos first.
   const hasNoContent =
     comparison.columns.length > 0 &&
     comparison.columns.every((c) => c.content.length === 0);
@@ -379,14 +379,14 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
     !!seedTinderId && (seedMediaQuery.data ?? []).some((m) => m.url);
 
   // "Use my uploaded Tinder photos" imports those photos into the shared library
-  // only — like the "Upload your photos" button beside it, it doesn't auto-fill
+  // only - like the "Upload your photos" button beside it, it doesn't auto-fill
   // the comparison's columns. The user then adds them to each profile.
   const importTinderMutation = useMutation(
     trpc.profileCompare.importTinderMediaToLibrary.mutationOptions({
       onSuccess: (res) => {
         const n = res.photoCount;
         toast.success(
-          `Added ${n} Tinder ${n === 1 ? "photo" : "photos"} to your library — now add them to each profile below`,
+          `Added ${n} Tinder ${n === 1 ? "photo" : "photos"} to your library - now add them to each profile below`,
         );
         // Refresh the library so the per-column picker shows the imported photos.
         void queryClient.invalidateQueries(
@@ -512,7 +512,7 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
         </div>
       </div>
 
-      {/* Shared getting-started empty state — uploading photos is step 1 */}
+      {/* Shared getting-started empty state - uploading photos is step 1 */}
       {hasNoContent && (
         <Empty className="dark:via-card overflow-hidden rounded-2xl border border-rose-200 bg-gradient-to-br from-rose-50 via-white to-rose-100/60 shadow-sm dark:border-rose-800 dark:from-rose-950/40 dark:to-rose-950/60">
           <EmptyHeader>
@@ -527,7 +527,7 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
             </EmptyTitle>
             <EmptyDescription className="text-base">
               Upload your photos to your library, then add the ones you want to
-              each profile below — reorder, caption, and tweak per app.
+              each profile below - reorder, caption, and tweak per app.
             </EmptyDescription>
           </EmptyHeader>
           <EmptyContent>
@@ -541,7 +541,7 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
               className="hidden"
             />
             <div className="flex flex-col items-center gap-3 sm:flex-row sm:flex-wrap sm:justify-center">
-              {/* Fastest path for returning users — pull the photos they already
+              {/* Fastest path for returning users - pull the photos they already
                   uploaded with Tinder into their library (no re-uploading). */}
               {canSeedFromTinder && seedTinderId && (
                 <Button
@@ -599,11 +599,11 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
             </div>
             <p className="text-muted-foreground text-xs">
               {canSeedFromTinder ? (
-                "Pulled from a profile you already uploaded — no re-uploading needed."
+                "Pulled from a profile you already uploaded - no re-uploading needed."
               ) : (
                 <>
                   Photos are all you need to compare. Uploading your Tinder or
-                  Hinge data is optional — it unlocks your full dating analytics
+                  Hinge data is optional - it unlocks your full dating analytics
                   and imports your photos.{" "}
                   <Link
                     href="https://www.swipestats.io/how-to-request-your-data"
@@ -646,7 +646,7 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
             onMove={(direction) => handleMoveColumn(column.id, direction)}
           />
         ))}
-        {/* Add Profile — the whole dashed box is the button so hover/click
+        {/* Add Profile - the whole dashed box is the button so hover/click
             covers the entire area. Doesn't stretch to match tall content
             columns; stays compact, top-aligned, and visible while scrolling. */}
         <Button
@@ -726,7 +726,7 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
         )}
       </div>
 
-      {/* Photo library — upload, analyze, build an AI draft, see results */}
+      {/* Photo library - upload, analyze, build an AI draft, see results */}
       <PhotoLibraryDialog
         open={libraryOpen}
         onOpenChange={setLibraryOpen}
@@ -1102,12 +1102,12 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
           )}
 
           {/* Roasts publish separately (their own shareKey + page), so neither
-              link above includes them — worth a heads-up here. */}
+              link above includes them - worth a heads-up here. */}
           <div className="flex items-start gap-2 rounded-md border border-rose-200/70 bg-rose-50/50 p-3 dark:border-rose-900/40 dark:bg-rose-950/20">
             <Flame className="mt-0.5 h-4 w-4 shrink-0 text-rose-600 dark:text-rose-400" />
             <p className="text-muted-foreground text-sm">
               AI roasts aren&apos;t included in these links. Each profile&apos;s
-              roast has its own share link — open the roast to share it.
+              roast has its own share link - open the roast to share it.
             </p>
           </div>
 
@@ -1154,7 +1154,7 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
               </Select>
               {canCompose && (
                 <p className="text-muted-foreground mt-2 text-xs">
-                  Or let AI build it from your analyzed photos — it picks the
+                  Or let AI build it from your analyzed photos - it picks the
                   best shots, orders them, and drafts a bio and prompts.
                 </p>
               )}

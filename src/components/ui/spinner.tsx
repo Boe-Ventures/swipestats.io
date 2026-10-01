@@ -4,7 +4,7 @@ import type * as React from "react";
 import { cn } from "./lib/utils";
 
 /**
- * Spinner — the canonical loading indicator (shadcn spec).
+ * Spinner - the canonical loading indicator (shadcn spec).
  *
  * Compose it inside a Button to show a loading state. Add
  * `data-icon="inline-start"` (or `"inline-end"`) so it gets the right spacing:

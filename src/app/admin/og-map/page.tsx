@@ -190,10 +190,14 @@ function FacebookPreview({ entry }: { entry: ParsedMeta }) {
       <div className="space-y-0.5 px-2 pt-1 pb-1.5">
         <div className="text-[9px] text-gray-400 uppercase">{domain}</div>
         <div className="line-clamp-2 text-[11px] leading-tight font-semibold text-[#1d2129]">
-          {title ? (title.length > 50 ? title.slice(0, 50) + "…" : title) : "—"}
+          {title
+            ? title.length > 50
+              ? title.slice(0, 50) + "…"
+              : title
+            : "N/A"}
         </div>
         <div className="line-clamp-1 text-[10px] text-gray-500">
-          {desc ? (desc.length > 70 ? desc.slice(0, 70) + "…" : desc) : "—"}
+          {desc ? (desc.length > 70 ? desc.slice(0, 70) + "…" : desc) : "N/A"}
         </div>
       </div>
     </div>
@@ -208,7 +212,11 @@ function LinkedInPreview({ entry }: { entry: ParsedMeta }) {
       <OgThumb src={entry.ogImage} alt="" className="h-[105px] w-full" />
       <div className="space-y-0.5 border-t px-2 pt-1 pb-1.5">
         <div className="line-clamp-2 text-[11px] leading-tight font-semibold text-[#000000e6]">
-          {title ? (title.length > 50 ? title.slice(0, 50) + "…" : title) : "—"}
+          {title
+            ? title.length > 50
+              ? title.slice(0, 50) + "…"
+              : title
+            : "N/A"}
         </div>
         <div className="text-[9px] text-gray-500">{domain}</div>
       </div>
@@ -228,7 +236,11 @@ function XPreview({ entry }: { entry: ParsedMeta }) {
       />
       <div className="px-2 pt-1 pb-1.5">
         <div className="line-clamp-1 text-[11px] leading-tight font-medium text-white">
-          {title ? (title.length > 45 ? title.slice(0, 45) + "…" : title) : "—"}
+          {title
+            ? title.length > 45
+              ? title.slice(0, 45) + "…"
+              : title
+            : "N/A"}
         </div>
         <div className="mt-0.5 text-[9px] text-gray-500">{domain}</div>
       </div>
@@ -244,7 +256,11 @@ function InstagramPreview({ entry }: { entry: ParsedMeta }) {
       <OgThumb src={entry.ogImage} alt="" className="h-[140px] w-full" />
       <div className="px-1.5 pt-0.5 pb-1">
         <div className="line-clamp-1 text-[10px] font-semibold text-gray-900">
-          {title ? (title.length > 30 ? title.slice(0, 30) + "…" : title) : "—"}
+          {title
+            ? title.length > 30
+              ? title.slice(0, 30) + "…"
+              : title
+            : "N/A"}
         </div>
         <div className="text-[9px] text-gray-400">{domain}</div>
       </div>
@@ -302,7 +318,7 @@ function MissingBadge({ label }: { label: string }) {
 }
 
 function Truncate({ text, max }: { text: string | null; max: number }) {
-  if (!text) return <span className="text-xs text-red-400">—</span>;
+  if (!text) return <span className="text-xs text-red-400"> - </span>;
   return (
     <span className="text-xs">
       {text.length > max ? text.slice(0, max) + "…" : text}
@@ -372,7 +388,7 @@ function MetaRow({ entry }: { entry: ParsedMeta }) {
         )}
       </div>
 
-      {/* Meta details — collapsed when title/OG title match */}
+      {/* Meta details - collapsed when title/OG title match */}
       <div>
         <div className="space-y-1 text-sm">
           <div>
@@ -416,7 +432,7 @@ function MetaRow({ entry }: { entry: ParsedMeta }) {
               Twitter:
             </span>
             <span className="dark:text-muted-foreground text-xs text-gray-500">
-              {entry.twitterCard ? `card=${entry.twitterCard}` : "—"}
+              {entry.twitterCard ? `card=${entry.twitterCard}` : "N/A"}
               {entry.twitterTitle && entry.twitterTitle !== entry.ogTitle
                 ? ` · ${entry.twitterTitle.slice(0, 40)}`
                 : ""}

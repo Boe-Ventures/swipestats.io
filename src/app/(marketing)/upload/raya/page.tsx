@@ -5,7 +5,7 @@ import { marketingOgImage } from "@/lib/og-images";
 
 const rayaUploadOgImage = marketingOgImage({
   title: "Upload your Raya data",
-  subtitle: "Explore your dating activity from a private archive—anonymously.",
+  subtitle: "Explore your dating activity anonymously from a private archive.",
   path: "/upload/raya",
   screenshot: "/images/og/screenshots/upload-picker.jpg",
 });
@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Upload Your Raya Data | SwipeStats",
     description:
-      "Explore your dating activity from a private archive—anonymously.",
+      "Explore your dating activity anonymously from a private archive.",
     url: "/upload/raya",
     images: [
       {
@@ -34,7 +34,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Upload Your Raya Data",
     description:
-      "Explore your dating activity from a private archive—anonymously.",
+      "Explore your dating activity anonymously from a private archive.",
     images: [rayaUploadOgImage],
   },
 };

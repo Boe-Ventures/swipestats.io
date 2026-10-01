@@ -27,7 +27,7 @@ export const FullWidthList = () => (
       <TabsTrigger value="chats">Conversations</TabsTrigger>
     </TabsList>
     <TabsContent value="usage" className="pt-3 text-sm text-gray-600">
-      Swipes, matches, and messages per day — the core usage chart lives here.
+      Swipes, matches, and messages per day - the core usage chart lives here.
     </TabsContent>
   </Tabs>
 );

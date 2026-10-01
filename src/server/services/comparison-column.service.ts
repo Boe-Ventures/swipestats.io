@@ -6,7 +6,7 @@ import { comparisonColumnTable } from "@/server/db/schema";
 
 /**
  * Load a comparison column the caller OWNS, or throw NOT_FOUND. Ownership is via
- * the parent comparison's `userId` — this is the authorization-critical lookup
+ * the parent comparison's `userId` - this is the authorization-critical lookup
  * the roast/suggest mutations all share, so it lives in one place instead of
  * being hand-rolled per handler (where the ownership check could drift or be
  * forgotten). NOT_FOUND (not FORBIDDEN) on purpose: don't reveal that a column

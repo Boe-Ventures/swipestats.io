@@ -416,7 +416,7 @@ type SimpleDialogProps = {
   children: React.ReactNode;
   trigger?: React.ReactNode;
   /**
-   * Fixed content rendered between the header and the (scrollable) body —
+   * Fixed content rendered between the header and the (scrollable) body  -
    * e.g. tabs or a toolbar that should stay put while the body scrolls.
    * Use this instead of `sticky` inside the body: the body's padding offsets
    * sticky children, letting scrolled content peek through above them.
@@ -461,7 +461,7 @@ export function SimpleDialog({
         className={cn(
           className,
           // Cap the WHOLE dialog (header included) at 90dvh and let the body
-          // row shrink — capping only the body would push the total past the
+          // row shrink - capping only the body would push the total past the
           // viewport by the header's height.
           scrollable &&
             footer &&

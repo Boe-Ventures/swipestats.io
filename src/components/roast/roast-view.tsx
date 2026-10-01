@@ -24,7 +24,7 @@ export const SECTION_HEADER =
   "text-muted-foreground text-xs font-semibold tracking-widest uppercase";
 
 /**
- * The fields `RoastView` renders — the read-only intersection of the dialog's
+ * The fields `RoastView` renders - the read-only intersection of the dialog's
  * `getProfileRoast` and the share page's `getPublicProfileRoast` (both produced
  * by `hydrateRoast`, so they agree structurally). Typed loosely so either
  * caller's richer object satisfies it.
@@ -58,7 +58,7 @@ export interface RoastViewData {
  * "look again", copy, apply) and is intentionally NOT routed through here.
  *
  * Photo tiles keep their verdict text even when the image is withheld (roast
- * shared without the preview) — the tile falls back to a numbered placeholder.
+ * shared without the preview) - the tile falls back to a numbered placeholder.
  */
 export function RoastView({
   data,

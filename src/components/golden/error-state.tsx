@@ -1,7 +1,7 @@
 import { cn } from "@/components/ui/lib/utils";
 
 /**
- * Golden empty / error state — a centered column in the "golden" dialect
+ * Golden empty / error state - a centered column in the "golden" dialect
  * (white/gray surfaces, rose-600 accent, mono uppercase kicker). Use for 404s,
  * empty lists, and recoverable error screens. Server-safe (no hooks).
  *

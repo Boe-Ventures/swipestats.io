@@ -6,7 +6,8 @@
   "scripts": {
     "build": "velite build && next build && bun db:migrate",
     "postinstall": "velite build",
-    "check": "bun db:check && velite build && eslint . && tsc --noEmit && bun test",
+    "check": "bun copy:check && bun db:check && velite build && eslint . && tsc --noEmit && bun test",
+    "copy:check": "bun src/scripts/check-copy-style.ts",
     "clean": "rm -rf node_modules .next .turbo .cache .velite .eslintcache bun.lock",
     "reinstall": "bun run clean && bun install",
     "db:generate": "drizzle-kit generate",

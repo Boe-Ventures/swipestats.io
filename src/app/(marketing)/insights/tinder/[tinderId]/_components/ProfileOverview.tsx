@@ -104,7 +104,7 @@ export function ProfileOverview({ className }: { className?: string }) {
                     (globalMeta.swipeLikesTotal ?? 0) +
                     (globalMeta.swipePassesTotal ?? 0)
                   ).toLocaleString()
-                : "—"
+                : "N/A"
             }
           />
           <StatItem
@@ -112,7 +112,7 @@ export function ProfileOverview({ className }: { className?: string }) {
             value={
               globalMeta?.matchesTotal != null
                 ? globalMeta.matchesTotal.toLocaleString()
-                : "—"
+                : "N/A"
             }
           />
           <StatItem
@@ -120,7 +120,7 @@ export function ProfileOverview({ className }: { className?: string }) {
             value={
               globalMeta?.messagesSentTotal != null
                 ? globalMeta.messagesSentTotal.toLocaleString()
-                : "—"
+                : "N/A"
             }
           />
           <StatItem
@@ -128,7 +128,7 @@ export function ProfileOverview({ className }: { className?: string }) {
             value={
               globalMeta?.matchRate != null
                 ? `${(globalMeta.matchRate * 100).toFixed(1)}%`
-                : "—"
+                : "N/A"
             }
           />
         </div>

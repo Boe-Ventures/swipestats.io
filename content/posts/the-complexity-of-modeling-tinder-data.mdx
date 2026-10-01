@@ -2,7 +2,7 @@
 h1: "The Complexity of Modeling Tinder Data: Sparse Timelines, Synthetic Zeros, and Statistical Truth"
 h1Subtitle: "What happens when your data has gaps, and why the difference between storage and visualization matters more than you think"
 metaTitle: "Modeling Tinder Data: Gaps, Statistics & Visualization"
-metaDescription: "A deep dive into the engineering challenges of representing dating app data accurately—from sparse timelines to statistical integrity."
+metaDescription: "A deep dive into the engineering challenges of representing dating app data accurately - from sparse timelines to statistical integrity."
 publishedAt: "2025-02-01"
 updatedAt: "2026-02-17"
 author: "kristian"
@@ -19,11 +19,11 @@ No swipes on Tuesday? Tuesday doesn't exist in your export.
 
 Took a three-month break for a relationship? Those months are simply... absent.
 
-This sparse representation is actually quite elegant from Tinder's perspective—why store zeros? But it creates interesting challenges when you're trying to visualize and analyze that data.
+This sparse representation is actually quite elegant from Tinder's perspective - why store zeros? But it creates interesting challenges when you're trying to visualize and analyze that data.
 
 ## The Gap Problem
 
-I was looking at my own SwipeStats profile recently—eight years of Tinder history from 2015 to 2023. The activity chart showed a continuous timeline of swipes, matches, and app opens.
+I was looking at my own SwipeStats profile recently - eight years of Tinder history from 2015 to 2023. The activity chart showed a continuous timeline of swipes, matches, and app opens.
 
 But I knew that wasn't the whole story. I had a girlfriend for most of 2022. I wasn't swiping.
 
@@ -115,7 +115,7 @@ With synthetic days in the database, every statistical query needed this filter:
 const realDays = usage.filter(day => !day.isSynthetic);
 ```
 
-Miss it once, and your statistics include thousands of zeros that never happened. The effect is subtle—averages shift slightly, percentiles skew toward zero—but it compounds across millions of calculations.
+Miss it once, and your statistics include thousands of zeros that never happened. The effect is subtle - averages shift slightly, percentiles skew toward zero - but it compounds across millions of calculations.
 
 ### The Definition Problem
 
@@ -140,7 +140,7 @@ This answers: "When you swipe, how much do you swipe?" A meaningful metric.
 
 Here's the key insight: **gaps in your data are meaningful**.
 
-If you took six months off Tinder because you were in a relationship, that's part of your dating story. The chart should show that gap—not paper over it with fake activity.
+If you took six months off Tinder because you were in a relationship, that's part of your dating story. The chart should show that gap - not paper over it with fake activity.
 
 Now when you view your SwipeStats profile, inactive periods appear as flat lines at zero. That's not a bug; it's the truth.
 
@@ -150,7 +150,7 @@ Real-world data is messy. Tinder's export has quirks we had to handle:
 
 ### Matches on Inactive Days
 
-You can receive matches on days you didn't open the app—Tinder matches you in the background. So you might have:
+You can receive matches on days you didn't open the app - Tinder matches you in the background. So you might have:
 
 - Day 1: 50 swipes, 5 matches
 - Day 2: 0 app opens, 0 swipes, 3 matches (background)
@@ -226,7 +226,7 @@ If every query needs a filter, the schema is wrong. Design data so the default q
 
 **4. Gaps are data too.**
 
-A six-month gap in your Tinder usage tells a story. Don't hide it—display it.
+A six-month gap in your Tinder usage tells a story. Don't hide it - display it.
 
 **5. Your own data is the best test.**
 
@@ -236,7 +236,7 @@ I only noticed the gap problem because I knew my own dating history. Use real da
 
 When you upload your Tinder data to SwipeStats, here's what happens:
 
-1. We store exactly what Tinder gave us—no more, no less
+1. We store exactly what Tinder gave us - no more, no less
 2. Statistics are computed from real activity only
 3. Charts show your complete timeline, with gaps visible as flat periods
 4. Comparisons use the same methodology across all users

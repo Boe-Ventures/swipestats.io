@@ -5,7 +5,7 @@ import { Toaster, toast } from "swipestats";
 // expand keeps both fully visible instead of stacked.
 // The sized wrapper matters: the capture harness renders single-mode cells
 // inside a transformed div, so sonner's position:fixed list anchors to that
-// wrapper — without an explicit height the toasts render cut off at the top.
+// wrapper - without an explicit height the toasts render cut off at the top.
 export const Toasts = () => {
   useEffect(() => {
     toast.success("Insights are ready", { id: "t1", duration: Infinity });

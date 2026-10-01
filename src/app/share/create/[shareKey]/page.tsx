@@ -259,7 +259,7 @@ export default function FriendCreationPage() {
             </Empty>
           ) : (
             <div className="grid gap-8 lg:grid-cols-[minmax(0,360px)_1fr]">
-              {/* Live preview — same StackView the share page renders */}
+              {/* Live preview - same StackView the share page renders */}
               <div className="lg:sticky lg:top-6 lg:self-start">
                 <div className="mx-auto w-full max-w-sm">
                   {selectedPhotos.length > 0 ? (

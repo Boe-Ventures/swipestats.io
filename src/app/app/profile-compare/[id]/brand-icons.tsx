@@ -10,7 +10,7 @@ interface BrandIconProps {
   className?: string;
 }
 
-/** Tinder flame — official symbol path. */
+/** Tinder flame - official symbol path. */
 export function TinderIcon({ className }: BrandIconProps) {
   return (
     <svg
@@ -25,7 +25,7 @@ export function TinderIcon({ className }: BrandIconProps) {
 }
 
 /**
- * Raya — two interlocking rings. Rebuilt as vector geometry (the official
+ * Raya - two interlocking rings. Rebuilt as vector geometry (the official
  * asset is a raster PNG of symbol-over-wordmark). Uses `currentColor` for the
  * stroke so it reads as white rings on the black Raya chip.
  */

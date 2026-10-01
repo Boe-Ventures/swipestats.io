@@ -402,7 +402,7 @@ async function generateVideo(
       },
       body: JSON.stringify({
         image_url: imageUrl,
-        prompt: `LANGUAGE: English. ACCENT: American. DIALOGUE: "${spokenText}" — Woman speaking to camera, confident and knowledgeable, warm delivery. Like giving advice to a friend.`,
+        prompt: `LANGUAGE: English. ACCENT: American. DIALOGUE: "${spokenText}" - Woman speaking to camera, confident and knowledgeable, warm delivery. Like giving advice to a friend.`,
         aspect_ratio: "9:16",
         duration: "8s",
         resolution: "1080p",

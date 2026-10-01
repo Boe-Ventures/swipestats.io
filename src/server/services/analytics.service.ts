@@ -32,7 +32,7 @@ import { headers } from "next/headers";
 /**
  * Read the user's durable analytics consent (mirror of their localStorage
  * decision). Returns null if undecided, unknown, or the column isn't migrated
- * yet — all treated as "no analytics consent on record".
+ * yet - all treated as "no analytics consent on record".
  */
 async function loadConsent(userId: string): Promise<ConsentRecord | null> {
   try {
@@ -164,7 +164,7 @@ export function trackServerEvent<T extends ServerAnalyticsEventName>(
       const operational = OPERATIONAL_SERVER_EVENTS.has(event);
 
       // Consent: prefer what the request context passed (ctx.analyticsConsent);
-      // otherwise load it — but only for BEHAVIORAL events, which actually gate
+      // otherwise load it - but only for BEHAVIORAL events, which actually gate
       // on it. Operational events fire regardless, so they skip the lookup and
       // default to no IP (the privacy-safe choice when consent is unknown).
       const consent =
@@ -179,7 +179,7 @@ export function trackServerEvent<T extends ServerAnalyticsEventName>(
       // legitimate interest.
       if (!operational && !analyticsAllowed) return;
 
-      // IP (PostHog GeoIP) is personal data — only forward it with consent,
+      // IP (PostHog GeoIP) is personal data - only forward it with consent,
       // and strip any caller-provided IP when consent is absent.
       const ip = analyticsAllowed
         ? (meta?.ip ?? ipAddress({ headers: await headers() }))
@@ -207,9 +207,9 @@ export function trackServerEvent<T extends ServerAnalyticsEventName>(
 /**
  * Set the user's traits across analytics providers (PostHog + Amplitude).
  *
- * Gated strictly on `analytics` consent — identifying is pure analytics, so it
+ * Gated strictly on `analytics` consent - identifying is pure analytics, so it
  * never runs under legitimate interest (unlike operational events). This is
- * where server-only traits (tier, city, country) reach analytics — the client
+ * where server-only traits (tier, city, country) reach analytics - the client
  * session doesn't carry them. Fire-and-forget via waitUntil.
  */
 export function identifyServerUser(userId: string, traits: UserTraits): void {
@@ -229,7 +229,7 @@ export function identifyServerUser(userId: string, traits: UserTraits): void {
 
 /**
  * Merge an anonymous user's analytics history into the real user on conversion
- * (PostHog alias + Amplitude user mapping). Gated on the ANON user's consent — they're the one whose
+ * (PostHog alias + Amplitude user mapping). Gated on the ANON user's consent - they're the one whose
  * tracked history we're merging; without their analytics consent there's
  * nothing to merge anyway. Fire-and-forget via waitUntil.
  */

@@ -1,3 +1,4 @@
+import { normalizeGeneratedCopy } from "@/lib/ai/copy-style";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { eq, and } from "drizzle-orm";
@@ -65,7 +66,7 @@ function statsTarget(input: {
 
 /** Map a stats ai_output row to the flat shape the insights UI consumes. */
 function mapStatsRoast(row: AiOutputRow) {
-  const output = row.output as StatsRoastResult;
+  const output = normalizeGeneratedCopy(row.output as StatsRoastResult);
   return {
     id: row.id,
     shareKey: row.shareKey,
@@ -103,7 +104,7 @@ type RoastContentItem = {
 };
 
 /**
- * Resolve a stored (id-keyed) roast against live content — adds photo URLs +
+ * Resolve a stored (id-keyed) roast against live content - adds photo URLs +
  * prompt text, and threads the live bio text in for cliché highlighting.
  * URLs/text are resolved live (never frozen), same philosophy as photos.
  */
@@ -232,7 +233,7 @@ export const roastRouter = {
         benchmarks,
       };
 
-      // One stats roast per profile — upsert overwrites in place, preserving the
+      // One stats roast per profile - upsert overwrites in place, preserving the
       // existing id / shareKey / isPublic.
       const row = await upsertAiOutput({
         db: ctx.db,
@@ -310,7 +311,7 @@ export const roastRouter = {
         });
       }
 
-      const output = row.output as StatsRoastResult;
+      const output = normalizeGeneratedCopy(row.output as StatsRoastResult);
       // Return only first 3 lines publicly (the hook)
       return {
         id: row.id,
@@ -368,7 +369,7 @@ export const roastRouter = {
    *
    * Sharing a roast shares the roasted PROFILE: verdicts, photos, and the
    * single column's preview (name/age/bio). It never touches the parent
-   * comparison's isPublic flag — the multi-column compare view is an internal
+   * comparison's isPublic flag - the multi-column compare view is an internal
    * tool for the owner and has its own share flow.
    */
   publishProfileRoast: protectedProcedure
@@ -435,10 +436,10 @@ export const roastRouter = {
         });
       }
 
-      const result = row.output as ProfileRoastResult;
+      const result = normalizeGeneratedCopy(row.output as ProfileRoastResult);
 
       // profile_roast rows always carry columnId (exclusive-arc CHECK), but it's
-      // typed nullable — guard so the orphan branch below handles a missing one.
+      // typed nullable - guard so the orphan branch below handles a missing one.
       const column = row.columnId
         ? await ctx.db.query.comparisonColumnTable.findFirst({
             where: eq(comparisonColumnTable.id, row.columnId),
@@ -452,7 +453,7 @@ export const roastRouter = {
           })
         : null;
 
-      // Sharing a roast shares the roasted PROFILE — verdicts, photos, and the
+      // Sharing a roast shares the roasted PROFILE - verdicts, photos, and the
       // single column's preview (name/age/bio). What is NOT exposed is the
       // parent comparison itself (the multi-column compare view stays private
       // with its own share flow); we surface only this column's display fields,
@@ -492,7 +493,7 @@ export const roastRouter = {
 
   /**
    * Vision roast of a single profile-compare profile (one column): its photos,
-   * prompts and bio. Persisted as one roast per profile (upsert) — regenerating
+   * prompts and bio. Persisted as one roast per profile (upsert) - regenerating
    * overwrites it. Tone adjusts the voice; `steer` is optional free-text nudge.
    */
   roastProfile: aiProcedure
@@ -516,7 +517,7 @@ export const roastRouter = {
         userId,
       );
 
-      // Ordered photo/prompt items — index in these arrays is what the model
+      // Ordered photo/prompt items - index in these arrays is what the model
       // references, so we map the roast back to real content/attachment IDs.
       const photoItems = column.content.flatMap((c) => {
         if (c.type !== "photo") return [];
@@ -593,7 +594,7 @@ export const roastRouter = {
         lens: input.lens,
       };
 
-      // One roast per profile — overwrite on regeneration.
+      // One roast per profile - overwrite on regeneration.
       const row = await upsertAiOutput({
         db: ctx.db,
         userId,
@@ -632,7 +633,7 @@ export const roastRouter = {
 
   /**
    * Re-roast a SINGLE photo with a user correction (e.g. "there's no wine glass
-   * — look again"). Re-uses the saved roast's tone, patches just that photo's
+   * - look again"). Re-uses the saved roast's tone, patches just that photo's
    * verdict in the stored result, and returns the refreshed (hydrated) photo.
    */
   reroastPhoto: aiProcedure
@@ -668,7 +669,7 @@ export const roastRouter = {
           message: "Roast this profile before correcting a photo.",
         });
       }
-      const result = row.output as ProfileRoastResult;
+      const result = normalizeGeneratedCopy(row.output as ProfileRoastResult);
 
       const photoContent = column.content.find(
         (c) => c.id === input.contentId && c.type === "photo",
@@ -682,7 +683,7 @@ export const roastRouter = {
       }
 
       // The verdict must already exist in the stored roast; if not, the roast
-      // predates this photo — a full re-roast is the right move.
+      // predates this photo - a full re-roast is the right move.
       const targetIndex = result.photos.findIndex(
         (p) => p.contentId === input.contentId,
       );
@@ -690,7 +691,7 @@ export const roastRouter = {
         throw new TRPCError({
           code: "BAD_REQUEST",
           message:
-            "This photo isn't in the current roast — re-roast to include it.",
+            "This photo isn't in the current roast - re-roast to include it.",
         });
       }
 
@@ -770,7 +771,7 @@ export const roastRouter = {
       });
       if (!row) return null;
 
-      const result = row.output as ProfileRoastResult;
+      const result = normalizeGeneratedCopy(row.output as ProfileRoastResult);
       const effectiveBio = column.bio ?? column.comparison.defaultBio ?? null;
 
       return {
@@ -784,7 +785,7 @@ export const roastRouter = {
     }),
 
   /**
-   * Apply a saved roast's deterministic fixes to a profile — either in place or
+   * Apply a saved roast's deterministic fixes to a profile - either in place or
    * onto a fresh duplicate ("Create improved version"). Non-destructive:
    * photos are REORDERED (keep → maybe → cut), never deleted; the bio is set to
    * the chosen rewrite. Non-mechanical fixes (e.g. "add a prompt") are left to
@@ -823,9 +824,11 @@ export const roastRouter = {
           message: "Roast this profile before applying changes.",
         });
       }
-      const roastResult = roastRow.output as ProfileRoastResult;
+      const roastResult = normalizeGeneratedCopy(
+        roastRow.output as ProfileRoastResult,
+      );
 
-      // keep/maybe/cut keyed by the ORDER of the source photo it was given for —
+      // keep/maybe/cut keyed by the ORDER of the source photo it was given for  -
       // order survives duplication, so the same map drives both modes. Stale-safe:
       // verdicts for since-deleted photos simply won't match any live content.
       const verdictByOrder = new Map<number, "keep" | "maybe" | "cut">();
@@ -861,7 +864,7 @@ export const roastRouter = {
       }
 
       // Reorder: photos sorted keep(0) → maybe(1) → cut(2) (stable within bucket,
-      // cuts land at the end — never deleted), then non-photo content trailing.
+      // cuts land at the end - never deleted), then non-photo content trailing.
       const rank = (c: (typeof targetContent)[number]) =>
         c.type === "photo" ? RANK[verdictByOrder.get(c.order) ?? "maybe"] : 99;
       const reordered = [...targetContent].sort(

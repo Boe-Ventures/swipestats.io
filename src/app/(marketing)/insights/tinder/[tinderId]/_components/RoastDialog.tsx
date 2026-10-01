@@ -187,7 +187,7 @@ export function RoastDialog({ open, onOpenChange }: RoastDialogProps) {
             </DialogTitle>
           </DialogHeader>
 
-          {/* Generating — the loading theater owns the screen */}
+          {/* Generating - the loading theater owns the screen */}
           {isGenerating && <RoastLoadingState />}
 
           {/* Loading existing */}
@@ -204,7 +204,7 @@ export function RoastDialog({ open, onOpenChange }: RoastDialogProps) {
             </div>
           )}
 
-          {/* No roast yet — owner without one: pick a heat level to generate */}
+          {/* No roast yet - owner without one: pick a heat level to generate */}
           {!isGenerating && !roastQuery.isLoading && isOwner && !roast && (
             <div className="space-y-5 py-6 text-center">
               <div className="relative mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-rose-400 to-rose-600 shadow-lg shadow-rose-500/40">
@@ -214,7 +214,7 @@ export function RoastDialog({ open, onOpenChange }: RoastDialogProps) {
               <div className="space-y-1">
                 <p className="text-lg font-bold text-white">Pick your heat</p>
                 <p className="text-sm text-white/60">
-                  A data-driven roast of your stats — you choose how hard we go.
+                  A data-driven roast of your stats - you choose how hard we go.
                 </p>
               </div>
               {!isPaid ? (
@@ -257,7 +257,7 @@ export function RoastDialog({ open, onOpenChange }: RoastDialogProps) {
           {/* Roast content */}
           {!isGenerating && roast && (
             <div className="space-y-6">
-              {/* Hero — tagline + headline + verdict */}
+              {/* Hero - tagline + headline + verdict */}
               <div className="overflow-hidden rounded-2xl bg-gradient-to-br from-zinc-900 via-zinc-900 to-zinc-800 p-5 sm:p-6">
                 <div className="space-y-3 text-center sm:text-left">
                   <Badge
@@ -277,7 +277,7 @@ export function RoastDialog({ open, onOpenChange }: RoastDialogProps) {
                 </div>
               </div>
 
-              {/* Tone dial — re-roll at a different heat */}
+              {/* Tone dial - re-roll at a different heat */}
               <div className="flex flex-wrap items-center gap-2">
                 <span className="mr-1 text-xs font-medium text-white/40">
                   Re-roast:
@@ -310,7 +310,7 @@ export function RoastDialog({ open, onOpenChange }: RoastDialogProps) {
                   The Roast
                 </h3>
 
-                {/* First 3 lines — always visible */}
+                {/* First 3 lines - always visible */}
                 <ul className="space-y-2">
                   {roast.roastLines.slice(0, 3).map((line, i) => (
                     <li
@@ -369,7 +369,7 @@ export function RoastDialog({ open, onOpenChange }: RoastDialogProps) {
                 )}
               </section>
 
-              {/* Real Talk — PLUS/ELITE only */}
+              {/* Real Talk - PLUS/ELITE only */}
               {isPaid &&
                 roast.realTalkInsights &&
                 roast.realTalkInsights.length > 0 && (
@@ -393,7 +393,7 @@ export function RoastDialog({ open, onOpenChange }: RoastDialogProps) {
                   </section>
                 )}
 
-              {/* Share section — owner only */}
+              {/* Share section - owner only */}
               {isOwner && (
                 <section className="space-y-3 rounded-2xl border border-rose-500/30 bg-rose-500/10 p-4">
                   <p className="text-center text-sm font-semibold text-white/80">

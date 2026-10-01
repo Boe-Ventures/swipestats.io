@@ -66,7 +66,7 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
       <span className="dark:text-muted-foreground text-gray-500">{label}</span>
       <span className="dark:text-foreground text-right font-mono text-xs break-all text-gray-900">
         {value ?? (
-          <span className="dark:text-muted-foreground text-gray-400">—</span>
+          <span className="dark:text-muted-foreground text-gray-400"> - </span>
         )}
       </span>
     </div>
@@ -298,7 +298,7 @@ export default function AdminAnalyticsPage() {
             Fires <code className="text-xs">admin_test_event_fired</code>.
             Client goes through the consent-gated provider array (needs{" "}
             <code className="text-xs">analytics</code> consent); server goes
-            through the fan-out service. Both reach Amplitude now — client via
+            through the fan-out service. Both reach Amplitude now - client via
             the browser SDK, server via the Node adapter (server is operational,
             so it fires regardless of consent).
           </p>
@@ -329,7 +329,7 @@ export default function AdminAnalyticsPage() {
         {/* Granular consent */}
         <Section title="Consent (granular)" icon={ShieldCheck}>
           <p className="dark:text-muted-foreground text-sm text-gray-600">
-            Per-category — written to localStorage via the consent core and
+            Per-category - written to localStorage via the consent core and
             applied to the provider array live (no reload). Essential is always
             on.
           </p>

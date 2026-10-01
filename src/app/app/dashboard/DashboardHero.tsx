@@ -180,20 +180,20 @@ export function DashboardHero({
                         label: "Matches",
                         value:
                           latestTinder.stats?.matchesTotal?.toLocaleString() ??
-                          "—",
+                          "N/A",
                       },
                       {
                         label: "Messages",
                         value:
                           latestTinder.stats?.messagesSentTotal?.toLocaleString() ??
-                          "—",
+                          "N/A",
                       },
                       {
                         label: "Match rate",
                         value:
                           latestTinder.stats?.matchRate != null
                             ? `${(latestTinder.stats.matchRate * 100).toFixed(1)}%`
-                            : "—",
+                            : "N/A",
                       },
                     ]
                   : undefined
@@ -253,7 +253,7 @@ export function DashboardHero({
                         label: "Matches",
                         value:
                           latestHinge.stats?.matchesTotal?.toLocaleString() ??
-                          "—",
+                          "N/A",
                       },
                       {
                         label: "Swipes",
@@ -266,7 +266,7 @@ export function DashboardHero({
                         label: "Messages",
                         value:
                           latestHinge.stats?.messagesSentTotal?.toLocaleString() ??
-                          "—",
+                          "N/A",
                       },
                     ]
                   : undefined
@@ -382,7 +382,7 @@ function SectionHeader({
 }
 
 function formatTotal(a?: number | null, b?: number | null) {
-  if (a == null || b == null) return "—";
+  if (a == null || b == null) return "N/A";
   return (a + b).toLocaleString();
 }
 

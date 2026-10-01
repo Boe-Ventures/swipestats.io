@@ -4,7 +4,7 @@
 >
 > Internal/code name: **`profile-compare`** (routes), **`profileCompare`** (tRPC),
 > `ProfileComparisonService` (service). Sometimes referred to loosely as
-> "profile preview". This doc is the planning/status source of truth — the
+> "profile preview". This doc is the planning/status source of truth - the
 > behavioral source of truth is the code (`profile-comparison.service.ts`).
 
 ## What it is
@@ -15,11 +15,12 @@ Let a user build a side-by-side **comparison of their dating profiles across app
 algorithm that scores which photos perform best from the collected feedback.
 
 The pitch (from the waitlist gate copy):
+
 - A/B test different profile versions
 - Get feedback from other users
 - Optimize for better matches
 
-## Current state — one-line summary
+## Current state - one-line summary
 
 **Backend is complete (DB + API + service). Frontend is fully scaffolded but the
 authenticated editor is locked behind a `ComingSoonWrapper` waitlist gate. The
@@ -32,13 +33,13 @@ public share + feedback flow is NOT gated and appears functional.** All on
 
 ### Database (`src/server/db/schema.ts`)
 
-| Table | Lines | Purpose |
-|---|---|---|
-| `profile_comparison` | ~1000 | Container: `name`, `profileName`, `defaultBio`, age, city/state/country, hometown, nationality, `heightCm`, `educationLevel`, `isPublic`, **`shareKey`** (unique), timestamps |
-| `comparison_column` | ~1045 | One column per app — `dataProvider` enum, `order`, `bio`, `title` |
-| `comparison_column_content` | ~1079 | Items in a column — `type: "photo" \| "prompt"`, `attachmentId`, `caption`, `prompt`, `answer`, `order` |
-| `profile_comparison_feedback` | ~1123 | Ratings + comments. **Polymorphic**: targets `contentId` OR `columnId`. `authorId`, `actorType: "user" \| "system"`, `rating` (-1..5), `body`, soft-delete via `deletedAt` |
-| `attachment` | ~962 | Blob-backed media. `resourceType` enum (`profile_comparison`, `comparison_column`, `user_photo`, …), `resourceId`, `url`, `metadata`, soft-delete |
+| Table                         | Lines | Purpose                                                                                                                                                                       |
+| ----------------------------- | ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `profile_comparison`          | ~1000 | Container: `name`, `profileName`, `defaultBio`, age, city/state/country, hometown, nationality, `heightCm`, `educationLevel`, `isPublic`, **`shareKey`** (unique), timestamps |
+| `comparison_column`           | ~1045 | One column per app - `dataProvider` enum, `order`, `bio`, `title`                                                                                                             |
+| `comparison_column_content`   | ~1079 | Items in a column - `type: "photo" \| "prompt"`, `attachmentId`, `caption`, `prompt`, `answer`, `order`                                                                       |
+| `profile_comparison_feedback` | ~1123 | Ratings + comments. **Polymorphic**: targets `contentId` OR `columnId`. `authorId`, `actorType: "user" \| "system"`, `rating` (-1..5), `body`, soft-delete via `deletedAt`    |
+| `attachment`                  | ~962  | Blob-backed media. `resourceType` enum (`profile_comparison`, `comparison_column`, `user_photo`, …), `resourceId`, `url`, `metadata`, soft-delete                             |
 
 Relations defined ~1504-1565. `dataProvider` enum values (schema:15): `TINDER, HINGE, BUMBLE, GRINDER, BADOO, BOO, OK_CUPID, FEELD`.
 
@@ -49,7 +50,7 @@ Relations defined ~1504-1565. `dataProvider` enum values (schema:15): `TINDER, H
 **Comparisons:** `list`, `get`, `getPublic` (public), `create`, `update`, `delete`
 **Columns:** `addColumn`, `updateColumn`
 **Content:** `addContentToColumn`, `reorderContent`, `updateContent`, `deleteContent`
-**Content (LEGACY — see cleanup):** `addPhotoToColumn`, `reorderPhotos`, `deletePhoto`
+**Content (LEGACY - see cleanup):** `addPhotoToColumn`, `reorderPhotos`, `deletePhoto`
 **Feedback:** `createFeedback`, `updateFeedback`, `deleteFeedback`, `getFeedback` (public), `getFeedbackForAttachment` (public)
 **Anonymous / friends:** `updateAnonymousUserName`, `getForFriendCreation` (public), `createFriendColumn`
 **Ranking:** `getPhotoSummary`
@@ -68,23 +69,26 @@ the friend-column creation workflow.
 
 ### UI
 
-**Authenticated editor — `src/app/app/profile-compare/`** (GATED)
-- `page.tsx` — dashboard listing the user's comparisons. Wrapped in
+**Authenticated editor - `src/app/app/profile-compare/`** (GATED)
+
+- `page.tsx` - dashboard listing the user's comparisons. Wrapped in
   `ComingSoonWrapper` (`page.tsx:37`, `topic="waitlist-profile-compare"`). The
   real dashboard is `ProfileCompareDashboardContent` rendered as its child.
-- `[id]/page.tsx` — single comparison editor; `[id]/summary/page.tsx` — photo
-  summary/ranking; `photos/page.tsx` — photo gallery/upload; `layout.tsx`;
+- `[id]/page.tsx` - single comparison editor; `[id]/summary/page.tsx` - photo
+  summary/ranking; `photos/page.tsx` - photo gallery/upload; `layout.tsx`;
   `create-comparison-dialog.tsx`.
 - `[id]/` components: `comparison-detail`, `comparison-column`, `stack-view`,
   `flow-view`, `summary-tab`, `add-content-dialog`, `edit-content-dialog`,
   `photo-summary-item`, `prompt-selector`, `provider-config.ts`.
 
-**Public share — `src/app/share/profile-compare/[shareKey]/`** (NOT gated)
-- `page.tsx` — view-only comparison; viewers can leave feedback.
+**Public share - `src/app/share/profile-compare/[shareKey]/`** (NOT gated)
+
+- `page.tsx` - view-only comparison; viewers can leave feedback.
 - `view-only-column.tsx`, `feedback-summary.tsx`, `feedback-dialog.tsx`,
   `anonymous-name-prompt.tsx`.
 
-**Marketing teasers — `src/app/(marketing)/insights/tinder/[tinderId]/`**
+**Marketing teasers - `src/app/(marketing)/insights/tinder/[tinderId]/`**
+
 - `_components/SwipestatsProfilePreview.tsx`, `_components/ProfileCompareCtaCard.tsx`,
   `ComparisonProvider.tsx`, `compare/page.tsx` (+ `compare/_components/`).
 - Dashboard entry point: `src/app/app/dashboard/ProfileCompareSection.tsx`.
@@ -117,13 +121,13 @@ the friend-column creation workflow.
 
 ---
 
-## To launch — checklist
+## To launch - checklist
 
 - [ ] Walk the authenticated editor flow end-to-end (create → columns →
       content → publish → public share → feedback → photo summary/ranking).
 - [ ] Remove the legacy photo endpoints (`addPhotoToColumn`, `reorderPhotos`,
       `deletePhoto`) after confirming no callers.
-- [ ] Decide rating scale UX (schema allows -1..5 — confirm what the UI sends).
+- [ ] Decide rating scale UX (schema allows -1..5 - confirm what the UI sends).
 - [ ] Remove / flip the `ComingSoonWrapper` gate in
       `src/app/app/profile-compare/page.tsx` (and check
       `ProfileCompareSection.tsx`).

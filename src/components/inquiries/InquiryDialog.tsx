@@ -139,7 +139,7 @@ export function InquiryDialog({
               <CheckCircle2 className="size-6" />
             </span>
             <div>
-              <DialogTitle>Thanks — we have it</DialogTitle>
+              <DialogTitle>Thanks, we have it</DialogTitle>
               <DialogDescription className="mt-2 max-w-sm">
                 We&apos;ll review your note and reply to the email you provided.
               </DialogDescription>

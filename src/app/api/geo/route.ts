@@ -3,7 +3,7 @@ import type { NextRequest } from "next/server";
 
 /**
  * Returns geolocation information derived from Vercel's IP headers.
- * Only works in production on Vercel — locally all values will be undefined.
+ * Only works in production on Vercel - locally all values will be undefined.
  *
  * Headers used:
  *  - X-Vercel-IP-City

@@ -58,7 +58,7 @@ export function TinderEducationalContent() {
             </span>
             <div className="flex-1 space-y-0.5">
               <p className="dark:text-foreground text-sm font-medium text-gray-900">
-                Upload your file — we strip identifying info first
+                Upload your file. We strip identifying info first
               </p>
               <p className="dark:text-muted-foreground text-xs text-gray-500">
                 Your name, email, and phone are removed in your browser before
@@ -90,9 +90,9 @@ export function TinderEducationalContent() {
           <p className="text-xs text-rose-800 dark:text-rose-200">
             <strong>Privacy first:</strong> Direct identifiers (name, email,
             phone, username) are stripped in your browser before upload. Your
-            profile is linked to a hashed anonymous ID — not your real identity.
-            We&apos;re open source and actively maintain our anonymization as
-            data formats evolve.{" "}
+            profile is linked to a hashed anonymous ID, keeping your real
+            identity private. We&apos;re open source and actively maintain our
+            anonymization as data formats evolve.{" "}
             <a
               href="https://github.com/Boe-Ventures/swipestats.io"
               target="_blank"

@@ -38,7 +38,7 @@ export const createTRPCContext = async (opts: { headers: Headers }) => {
   return {
     db,
     session,
-    // Consent rides the session (additionalFields) — resolved once per request,
+    // Consent rides the session (additionalFields) - resolved once per request,
     // so procedures pass it to trackServerEvent instead of re-querying.
     analyticsConsent: readConsent(session?.user?.analyticsConsent),
     ...opts,
@@ -219,7 +219,7 @@ export const tinderProfileOwnerProcedure = t.procedure
  * AI feature procedure
  *
  * Gate for every paid AI feature (roast, profile roast, photo analysis,
- * compose, prompt suggestions) — all share the single `aiRoast` entitlement.
+ * compose, prompt suggestions) - all share the single `aiRoast` entitlement.
  * Resolves auth + entitlement ONCE and injects the loaded `ctx.user`, so AI
  * handlers stay thin and can't ship ungated by omission (the gate was copy-
  * pasted into 6 handlers before, with 5 drifted FORBIDDEN messages).

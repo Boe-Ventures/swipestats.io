@@ -1,7 +1,7 @@
 import { HeroAppWord } from "./HeroAppWord";
 
 /**
- * BACKUP hero headline — the playful rotating Tinder → Hinge → Bumble variant.
+ * BACKUP hero headline - the playful rotating Tinder → Hinge → Bumble variant.
  *
  * Not wired into the live home, which uses the static
  * "Your dating data, finally visualized." headline. To bring this back, render

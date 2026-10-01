@@ -1,20 +1,20 @@
-# SwipeStats UI — conventions
+# SwipeStats UI - conventions
 
 SwipeStats is a dating-app analytics product (upload your Tinder/Hinge export,
 see your insights). The kit is shadcn-derived on **Tailwind v4** with a
-**rose brand theme** — light surface, `rose-600` primary. Voice: confident,
+**rose brand theme** - light surface, `rose-600` primary. Voice: confident,
 data-forward, privacy-first ("identifiers are stripped in your browser").
 
 ## Setup
 
-Wrap the app in `ThemeProvider` (exported from the kit) — it manages the
+Wrap the app in `ThemeProvider` (exported from the kit) - it manages the
 `light`/`dark`/`auto` class on `<html>`. The app ships light; dark tokens
 exist but are not the product surface. `Toaster` (sonner) mounts once at the
 root; fire notifications with `toast.success(…)` / `toast.error(…)`.
 
 ## Styling idiom
 
-Style with Tailwind utilities against the theme tokens — never hard-code
+Style with Tailwind utilities against the theme tokens - never hard-code
 rose hexes:
 
 - Surfaces: `bg-background`, `bg-card`, `bg-muted`, `bg-popover`
@@ -28,26 +28,26 @@ rose hexes:
   `font-bold tracking-tight tabular-nums`
 
 Token definitions live in the `styles.css` import closure (the `:root` block
-in `_ds_bundle.css`) — read it before inventing a color.
+in `_ds_bundle.css`) - read it before inventing a color.
 
 ## Component notes (where the API deviates from stock shadcn)
 
 - **Button**: has `loading` (renders `Spinner` for you) and a sibling
   `ButtonLink` for link-styled-as-button; `asChild` merges onto any element.
   `SmartLink` is the inline text link.
-- **Alert**: use the semantic helpers — `InfoAlert`, `SuccessAlert`,
+- **Alert**: use the semantic helpers - `InfoAlert`, `SuccessAlert`,
   `WarningAlert`, `ErrorAlert` (also `PrimaryAlert`, `NeutralAlert`,
-  `SwipestatsAlert`) — instead of composing `Alert` by hand.
+  `SwipestatsAlert`) - instead of composing `Alert` by hand.
 - **Forms**: react-hook-form. `useForm` + `Controller` +
   the `Field` family (`Field`, `FieldLabel`, `FieldDescription`,
-  `FieldError`, `FieldSet`, `FieldLegend`, `FieldGroup`) — all exported from
+  `FieldError`, `FieldSet`, `FieldLegend`, `FieldGroup`) - all exported from
   the kit; ready-made bound inputs exist (`TextField`, `NumberField`,
   `DatePickerField`, `CountrySelect`, `CitySelect`, …).
 - **Select**: `SimpleSelect` takes `{placeholder, options: [{value, label}]}`
-  — prefer it for plain dropdowns; the composable `Select` family exists too.
+  - prefer it for plain dropdowns; the composable `Select` family exists too.
 - **Dialog**: `SimpleDialog` takes `{title, description, trigger, children}`.
-- **TypographyList** takes `items: [{text}]` — children are ignored.
-- **Banner** has demo defaults — always pass `title`/`message`/`ctaText`.
+- **TypographyList** takes `items: [{text}]` - children are ignored.
+- **Banner** has demo defaults - always pass `title`/`message`/`ctaText`.
 - **Empty** is compound: `Empty > EmptyHeader > EmptyTitle/EmptyDescription`.
 - **Tooltip** requires a `TooltipProvider` ancestor.
 
@@ -60,10 +60,14 @@ in `_ds_bundle.css`) — read it before inventing a color.
     <CardDescription>Tinder · all time</CardDescription>
   </CardHeader>
   <CardContent>
-    <span className="text-3xl font-bold tracking-tight tabular-nums">19.9%</span>
+    <span className="text-3xl font-bold tracking-tight tabular-nums">
+      19.9%
+    </span>
   </CardContent>
   <CardFooter>
-    <Button size="sm" variant="outline">View details</Button>
+    <Button size="sm" variant="outline">
+      View details
+    </Button>
   </CardFooter>
 </Card>
 ```

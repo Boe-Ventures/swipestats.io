@@ -87,7 +87,7 @@ CONTENT-PLAN.md
 # Claude (local only)
 .claude/
 
-# design-sync (claude.ai/design) — machinery + build output stay local
+# design-sync (claude.ai/design) - machinery + build output stay local
 .ds-sync/
 ds-bundle/
 .ds-dist/

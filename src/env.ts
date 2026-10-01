@@ -36,7 +36,7 @@ export const env = createEnv({
     SLACK_WEBHOOK_BOT_DEVELOPER: z.string().url(),
     SLACK_WEBHOOK_SALES: z.string().url(),
     SLACK_WEBHOOK_RICH_MESSAGE_TEST: z.string().url(),
-    // Amplitude SECRET key (server-only — never expose to the client).
+    // Amplitude SECRET key (server-only - never expose to the client).
     // Pairs with NEXT_PUBLIC_AMPLITUDE_API_KEY for Basic Auth on the
     // Amplitude Taxonomy API. Optional: taxonomy tooling no-ops when unset.
     AMPLITUDE_SECRET_KEY: z.string().optional(),

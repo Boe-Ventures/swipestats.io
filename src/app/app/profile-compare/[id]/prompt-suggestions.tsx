@@ -82,7 +82,7 @@ export function PromptSuggestions({
             const v = values[0];
             if (!v || v === mode) return;
             // Cards carry mode-specific shape (answers in "full"), so drop
-            // stale ones when switching — the next Generate matches the toggle.
+            // stale ones when switching - the next Generate matches the toggle.
             setMode(v as SuggestMode);
             setCards([]);
           }}
@@ -100,7 +100,7 @@ export function PromptSuggestions({
       <p className="text-muted-foreground text-xs">
         {isFull
           ? "Personalised prompt + answer ideas based on your app, bio and existing prompts."
-          : "Prompt ideas that fit you — pick one and write your own answer."}
+          : "Prompt ideas that fit you. Pick one and write your own answer."}
       </p>
 
       <Button
@@ -273,7 +273,7 @@ function SuggestionCard({
         </Button>
       </div>
 
-      {/* Steering input — free-text direction for regenerating this one */}
+      {/* Steering input - free-text direction for regenerating this one */}
       {steerOpen && (
         <div className="flex items-center gap-2 pt-1">
           <Input

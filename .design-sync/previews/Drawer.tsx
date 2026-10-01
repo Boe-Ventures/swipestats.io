@@ -9,7 +9,7 @@ import {
   DrawerTrigger,
 } from "swipestats";
 
-// Rendered statically open (cardMode single) — vaul bottom drawer.
+// Rendered statically open (cardMode single) - vaul bottom drawer.
 export const QuickActions = () => (
   <Drawer open>
     <DrawerTrigger asChild>

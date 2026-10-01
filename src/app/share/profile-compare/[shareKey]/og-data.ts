@@ -5,7 +5,7 @@ import { profileComparisonTable } from "@/server/db/schema";
 
 /**
  * Public, share-gated comparison for `generateMetadata` + `opengraph-image`.
- * Returns `null` (never throws) when the comparison is missing or not public —
+ * Returns `null` (never throws) when the comparison is missing or not public  -
  * so the share card falls back to a generic branded image. Mirrors the gating
  * in `getPublicComparison` (shareKey + isPublic), but non-throwing.
  */

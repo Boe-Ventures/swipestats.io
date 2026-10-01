@@ -98,12 +98,12 @@ export function ProfileOverview({ className }: { className?: string }) {
         <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:gap-x-8 xl:grid-cols-4">
           <StatItem
             label="Total Matches"
-            value={meta?.matchesTotal?.toLocaleString() ?? "—"}
+            value={meta?.matchesTotal?.toLocaleString() ?? "N/A"}
           />
           <StatItem label="Messages" value={totalMessages.toLocaleString()} />
           <StatItem
             label="Conversations"
-            value={meta?.conversationsWithMessages?.toLocaleString() ?? "—"}
+            value={meta?.conversationsWithMessages?.toLocaleString() ?? "N/A"}
           />
           <StatItem label="We Met" value={weMetStats.yes.toString()} />
         </div>

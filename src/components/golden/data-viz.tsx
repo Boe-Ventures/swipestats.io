@@ -1,7 +1,7 @@
 import { cn } from "@/components/ui/lib/utils";
 
 /**
- * Golden DATA-VIZ primitives — lightweight, presentational chart shapes.
+ * Golden DATA-VIZ primitives - lightweight, presentational chart shapes.
  * (Full interactive charts live in InsightsShowcase / Recharts; these are the
  * simple reusable shapes from golden.css: the dating funnel and percentile
  * comparison bars.) Server-safe.

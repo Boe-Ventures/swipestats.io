@@ -185,17 +185,17 @@ JSON-LD, breadcrumb JSON-LD, and generated social images.
 
 ## Relevant files
 
-- `velite.config.ts` — schema and compilation configuration
-- `content/posts/*.mdx` — article source
-- `src/app/(marketing)/blog/[slug]/page.tsx` — article route
-- `src/components/mdx/MDXContent.tsx` — MDX component registry
-- `src/components/mdx/CtaInjector.tsx` — automatic fallback injection
-- `src/components/mdx/ProductCard.tsx` — contextual product cards
-- `src/components/mdx/SponsorCard.tsx` — inline sponsorship campaigns
-- `src/lib/sponsorship.ts` — active campaign copy and placement rules
-- `src/app/dev/blog-product-cards/page.tsx` — non-production preview gallery
-- `src/app/(marketing)/blog/page.tsx` — blog index
-- `src/app/(marketing)/blog/BlogGrid.tsx` — article cards and thumbnails
+- `velite.config.ts` - schema and compilation configuration
+- `content/posts/*.mdx` - article source
+- `src/app/(marketing)/blog/[slug]/page.tsx` - article route
+- `src/components/mdx/MDXContent.tsx` - MDX component registry
+- `src/components/mdx/CtaInjector.tsx` - automatic fallback injection
+- `src/components/mdx/ProductCard.tsx` - contextual product cards
+- `src/components/mdx/SponsorCard.tsx` - inline sponsorship campaigns
+- `src/lib/sponsorship.ts` - active campaign copy and placement rules
+- `src/app/dev/blog-product-cards/page.tsx` - non-production preview gallery
+- `src/app/(marketing)/blog/page.tsx` - blog index
+- `src/app/(marketing)/blog/BlogGrid.tsx` - article cards and thumbnails
 
 ## Validation
 

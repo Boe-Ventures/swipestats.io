@@ -5,7 +5,7 @@ symlink to this file.
 
 ## What this is
 
-**SwipeStats** — a dating app analytics platform that helps users understand
+**SwipeStats** - a dating app analytics platform that helps users understand
 their Tinder and Hinge data. T3 stack: Next.js 16 (App Router), tRPC, Drizzle
 on Neon Postgres, Better Auth, Tailwind 4 + Radix, Velite for MDX, React Email
 
@@ -37,7 +37,7 @@ review requirements for collaborator-authored PRs, including Paw's, unless
 Kristian explicitly authorizes an exception. Do not disable repository-wide
 review rules.
 
-## Migrations — the important one
+## Migrations - the important one
 
 SwipeStats intentionally runs **separate long-lived Neon `production` and
 shared `dev` branches**; local development and Preview deployments both share
@@ -50,7 +50,7 @@ shared `dev` branches**; local development and Preview deployments both share
 
 Branch and recovery policy is in `docs/ops/database-migrations.md`.
 
-This is why `bun check` validates migration history — a broken chain here is
+This is why `bun check` validates migration history - a broken chain here is
 expensive to unwind.
 
 ## Domain knowledge
@@ -81,7 +81,7 @@ comparisons. System cohorts key on gender + data provider (e.g.
 **`adminProcedure` requires an admin email in production but is unauthenticated
 in dev.** Don't mistake local access for real authorization.
 
-**Better Auth runs an anonymous plugin**, so guest sessions exist — a session
+**Better Auth runs an anonymous plugin**, so guest sessions exist - a session
 being present does not mean the user is registered.
 
 **`snake_case` in the database, `camelCase` in TypeScript.** Configured in
@@ -91,7 +91,7 @@ being present does not mean the user is registered.
 and `.velite/` is gitignored.
 
 **Local auth:** `GET /api/dev/login` mints a real Better Auth session for an
-existing user. Dev-only — production and preview return 404. Add `?mode=token`
+existing user. Dev-only - production and preview return 404. Add `?mode=token`
 for a cookie header instead of a browser redirect.
 
 ## Conventions
@@ -107,7 +107,7 @@ for a cookie header instead of a browser redirect.
 - Import from `src/` with the `@/*` alias.
 - Client modules need `"use client"`.
 - Prettier owns formatting (2-space, double quotes, 80 cols, sorted Tailwind
-  classes) — run `bun format:write` before committing.
+  classes) - run `bun format:write` before committing.
 
 For tRPC query/mutation/prefetch patterns, use the **`trpc-patterns`** skill.
 For commit and PR conventions, use the **`git-conventions`** skill.
@@ -121,4 +121,11 @@ manual QA in the PR until automation lands.
 
 ## Deeper docs
 
-- `docs/ops/database-migrations.md` — Neon branch and recovery policy
+- `docs/ops/database-migrations.md` - Neon branch and recovery policy
+
+## Copy style
+
+Do not use em dashes in UI copy, metadata, blog posts, generated copy, comments,
+or documentation. Prefer commas, periods, colons, or parentheses. Use `N/A`
+for missing values. `bun copy:check` enforces this policy as part of `bun check`.
+Preserve user-authored imports; normalize only product-generated prose.

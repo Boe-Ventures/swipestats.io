@@ -29,7 +29,7 @@ export const ResearchAnnouncement = () => (
   <div className="w-full">
     <Banner
       title="SwipeStats research"
-      message="Women match roughly 6× more often than men — see what the data says."
+      message="Women match roughly 6× more often than men - see what the data says."
       ctaText="Read the report"
       ctaHref="/research"
     />

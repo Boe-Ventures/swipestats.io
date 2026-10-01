@@ -222,13 +222,13 @@ export function MediaGalleryCard({ media }: MediaGalleryCardProps) {
                       <span className="text-muted-foreground font-medium">
                         Faces detected:
                       </span>{" "}
-                      {selectedMedia.item.swipeRankAnonymizedFaceCount ?? "—"}
+                      {selectedMedia.item.swipeRankAnonymizedFaceCount ?? "N/A"}
                     </p>
                     <p>
                       <span className="text-muted-foreground font-medium">
                         Reviewed by:
                       </span>{" "}
-                      {selectedMedia.item.swipeRankAnonymizationModel ?? "—"}
+                      {selectedMedia.item.swipeRankAnonymizationModel ?? "N/A"}
                     </p>
                   </div>
                 )}

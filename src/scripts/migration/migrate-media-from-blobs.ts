@@ -3,7 +3,7 @@
  *
  * Extracts Tinder photo data from the old database's OriginalAnonymizedFile
  * JSONB column and inserts into the new media table. Focuses on "new format"
- * TinderPhoto objects with HTTPS URLs. The old Media table is empty — all
+ * TinderPhoto objects with HTTPS URLs. The old Media table is empty - all
  * media lives in JSON blobs only.
  *
  * IDEMPOTENT: Profiles that already have media in the new DB are skipped.
@@ -122,7 +122,7 @@ function transformPhotosToMedia(
   const photos = data.Photos;
 
   if (!isNewPhotoFormat(photos)) {
-    // Old format — skip (all non-HTTPS per our analysis)
+    // Old format - skip (all non-HTTPS per our analysis)
     return { media: [], skippedNonHttps: 0 };
   }
 
@@ -453,7 +453,7 @@ async function migrateMedia(options: {
     }
 
     if (dryRun) {
-      printWarning("This was a DRY RUN — no data was written");
+      printWarning("This was a DRY RUN - no data was written");
       printWarning("Run without DRY_RUN=true to apply changes");
     } else {
       printSuccess("Media migration completed successfully!");

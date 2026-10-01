@@ -156,7 +156,7 @@ export async function generateDatasetForExport(
     const uploadBody = new PassThrough();
 
     console.log(
-      `[dataset-export] ${exportId} — streaming gzip upload to blob...`,
+      `[dataset-export] ${exportId} - streaming gzip upload to blob...`,
     );
     const uploadPromise = put(pathname, uploadBody, {
       access: "public",
@@ -180,7 +180,7 @@ export async function generateDatasetForExport(
     const rawMB = (rawSize / 1024 / 1024).toFixed(1);
     const gzMB = (compressedSize / 1024 / 1024).toFixed(1);
     console.log(
-      `[dataset-export] ${exportId} — done! ${profiles.length} profiles, ${rawMB}MB raw, ${gzMB}MB gzipped, ${totalTime}s total`,
+      `[dataset-export] ${exportId} - done! ${profiles.length} profiles, ${rawMB}MB raw, ${gzMB}MB gzipped, ${totalTime}s total`,
     );
 
     // Update export record with success
@@ -314,7 +314,7 @@ export async function* streamDatasetJsonl({
 
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
     console.log(
-      `[dataset-export] ${exportId} — batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(profiles.length / batchSize)} done (${i + batch.length}/${profiles.length} profiles, ${elapsed}s)`,
+      `[dataset-export] ${exportId} - batch ${Math.floor(i / batchSize) + 1}/${Math.ceil(profiles.length / batchSize)} done (${i + batch.length}/${profiles.length} profiles, ${elapsed}s)`,
     );
   }
 

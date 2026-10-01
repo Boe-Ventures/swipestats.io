@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Design System — SwipeStats",
+  title: "Design System - SwipeStats",
   description: "Living component reference: marketing, blog, and app surfaces.",
   robots: { index: false, follow: false },
 };

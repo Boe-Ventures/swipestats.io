@@ -60,7 +60,7 @@ export function ProfileStatsCard({ profile, meta }: ProfileStatsCardProps) {
                 ? (
                     (meta.swipeLikesTotal ?? 0) + (meta.swipePassesTotal ?? 0)
                   ).toLocaleString()
-                : "—"
+                : "N/A"
             }
           />
           <StatItem
@@ -68,7 +68,7 @@ export function ProfileStatsCard({ profile, meta }: ProfileStatsCardProps) {
             value={
               meta?.matchesTotal != null
                 ? meta.matchesTotal.toLocaleString()
-                : "—"
+                : "N/A"
             }
           />
           <StatItem
@@ -76,7 +76,7 @@ export function ProfileStatsCard({ profile, meta }: ProfileStatsCardProps) {
             value={
               meta?.messagesSentTotal != null
                 ? meta.messagesSentTotal.toLocaleString()
-                : "—"
+                : "N/A"
             }
           />
           <StatItem
@@ -84,7 +84,7 @@ export function ProfileStatsCard({ profile, meta }: ProfileStatsCardProps) {
             value={
               meta?.matchRate != null
                 ? `${(meta.matchRate * 100).toFixed(1)}%`
-                : "—"
+                : "N/A"
             }
           />
         </div>

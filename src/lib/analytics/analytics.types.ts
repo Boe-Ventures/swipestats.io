@@ -127,7 +127,7 @@ export type ServerAnalyticsEventName =
   | "life_event_deleted" // User deleted an event
 
   // ─────────────────────────────────────────────────
-  // Admin / debug (internal — fired from the admin test harness)
+  // Admin / debug (internal - fired from the admin test harness)
   // ─────────────────────────────────────────────────
   | "admin_test_event_fired";
 
@@ -213,7 +213,7 @@ export type ClientAnalyticsEventName =
   | "comparison_shared_viewed" // Public comparison share page viewed
 
   // ─────────────────────────────────────────────────
-  // Admin / debug (internal — fired from the admin test harness)
+  // Admin / debug (internal - fired from the admin test harness)
   // ─────────────────────────────────────────────────
   | "admin_test_event_fired";
 

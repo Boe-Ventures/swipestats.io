@@ -75,7 +75,7 @@ export function FlowView({
 
   // Vitals card, Hinge-style: a horizontally scrolling band of the headline
   // numbers (age · height · location) over icon rows for the rest. Driven by
-  // the comparison's real profile fields — unset fields drop out, and the card
+  // the comparison's real profile fields - unset fields drop out, and the card
   // hides entirely when nothing is set.
   const vitalsBand = [
     age ? { icon: Cake, label: String(age) } : null,
@@ -157,7 +157,7 @@ export function FlowView({
     >
       {/* Mock Device Frame. The empty state is rendered directly in the frame
           (not inside ScrollArea) so its h-full stretches to the full aspect
-          ratio — content scrolls, but the placeholder should fill the card
+          ratio - content scrolls, but the placeholder should fill the card
           like the stack view does. */}
       <div className="dark:bg-card relative aspect-[2/3] overflow-hidden rounded-xl bg-white">
         {hasContent ? (
@@ -226,7 +226,7 @@ export function FlowView({
                         </div>
                       </div>
                       {/* Inject vitals after the first photo, bio after the
-                          second — the Hinge rhythm. */}
+                          second - the Hinge rhythm. */}
                       {index === vitalsAfterIndex && vitalsSection}
                       {index === bioAfterIndex && bioSection}
                     </Fragment>

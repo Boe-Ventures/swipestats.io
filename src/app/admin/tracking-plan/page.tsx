@@ -43,7 +43,7 @@ const ALL_DESTINATIONS: AnalyticsDestination[] = [
 ];
 const ALL_SURFACES: EventSurface[] = ["server", "client"];
 
-/** Property lookup for an entry — keyed by name within its surface. */
+/** Property lookup for an entry - keyed by name within its surface. */
 function propertiesFor(entry: TrackingPlanEntry): Record<string, PropertyMeta> {
   const registry =
     entry.surface === "server"
@@ -141,7 +141,7 @@ function PropertyTable({
   if (names.length === 0) {
     return (
       <p className="dark:text-muted-foreground px-4 py-3 text-xs text-gray-400 italic">
-        No properties — this event carries no payload.
+        No properties. This event carries no payload.
       </p>
     );
   }
@@ -182,7 +182,7 @@ function PropertyTable({
                 {meta.description}
                 {meta.values && (
                   <span className="dark:text-muted-foreground ml-1 font-mono text-gray-400">
-                    {meta.description ? " — " : ""}
+                    {meta.description ? " - " : ""}
                     {meta.values.join(" | ")}
                   </span>
                 )}
@@ -217,7 +217,7 @@ function EventRow({ entry }: { entry: TrackingPlanEntry }) {
             <span className="dark:text-muted-foreground ml-1 text-[10px] font-normal text-gray-400">
               {propCount > 0
                 ? `${propCount} prop${propCount === 1 ? "" : "s"}`
-                : "—"}
+                : "N/A"}
             </span>
           </span>
         </td>
@@ -349,7 +349,7 @@ function SharedProperties() {
         </span>
       </h2>
       <p className="dark:text-muted-foreground text-sm text-gray-600">
-        Property names used by more than one event — keep these consistent so
+        Property names used by more than one event - keep these consistent so
         cross-event analysis (filters, breakdowns) lines up in PostHog and
         Amplitude.
       </p>

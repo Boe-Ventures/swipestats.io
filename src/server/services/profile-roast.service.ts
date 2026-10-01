@@ -41,12 +41,12 @@ export interface ProfileRoastPrompt {
 }
 
 export interface ProfileRoastInput {
-  /** DataProvider enum value, e.g. "TINDER" — maps to display name + app-specific vibe. */
+  /** DataProvider enum value, e.g. "TINDER" - maps to display name + app-specific vibe. */
   providerKey: string;
   tone: RoastTone;
-  /** Ordered — the model references each as "Photo 1..N"; caller maps back to IDs. */
+  /** Ordered - the model references each as "Photo 1..N"; caller maps back to IDs. */
   photos: ProfileRoastPhoto[];
-  /** Ordered — referenced as "Prompt 1..N". */
+  /** Ordered - referenced as "Prompt 1..N". */
   prompts: ProfileRoastPrompt[];
   bio?: string;
   /** Optional free-text steer, e.g. "go harder on the sunsets" or "be kinder about the bio". */
@@ -64,7 +64,7 @@ const photoVerdictShape = {
   caption: z
     .string()
     .describe(
-      "Neutral, FACTUAL description of what's actually visible — setting, pose, what they're doing, lighting. NOT a joke. e.g. 'Beach at golden hour · arms crossed, dive watch'",
+      "Neutral, FACTUAL description of what's actually visible - setting, pose, what they're doing, lighting. NOT a joke. e.g. 'Beach at golden hour · arms crossed, dive watch'",
     ),
   title: z
     .string()
@@ -72,7 +72,7 @@ const photoVerdictShape = {
   body: z
     .string()
     .describe(
-      "The roast of this photo — ONE punchy sentence (~140 chars max) referencing a specific visible detail. Do not ramble.",
+      "The roast of this photo - ONE punchy sentence (~140 chars max) referencing a specific visible detail. Do not ramble.",
     ),
   keepOrCut: z
     .enum(["keep", "maybe", "cut"])
@@ -81,7 +81,7 @@ const photoVerdictShape = {
 
 const singlePhotoRoastSchema = z.object(photoVerdictShape);
 
-/** One photo's verdict — caption/title/body/keepOrCut, no index. */
+/** One photo's verdict - caption/title/body/keepOrCut, no index. */
 export type PhotoVerdict = z.infer<typeof singlePhotoRoastSchema>;
 
 const profileRoastSchema = z.object({
@@ -94,12 +94,12 @@ const profileRoastSchema = z.object({
     headline: z
       .string()
       .describe(
-        "One punchy, shareable line — the single best roast, <100 chars",
+        "One punchy, shareable line - the single best roast, <100 chars",
       ),
     verdict: z
       .string()
       .describe(
-        "The overall take — punchy, 2 sentences MAX (~240 chars). No rambling.",
+        "The overall take - punchy, 2 sentences MAX (~240 chars). No rambling.",
       ),
   }),
   photos: z
@@ -121,12 +121,12 @@ const profileRoastSchema = z.object({
         roast: z
           .string()
           .describe(
-            "The roast of this answer — ONE punchy sentence, no rambling",
+            "The roast of this answer - ONE punchy sentence, no rambling",
           ),
         rewrite: z
           .string()
           .describe(
-            "A sharper rewrite of this prompt's ANSWER they could use instead — concrete, in their voice, ~1 sentence",
+            "A sharper rewrite of this prompt's ANSWER they could use instead - concrete, in their voice, ~1 sentence",
           ),
       }),
     )
@@ -135,7 +135,7 @@ const profileRoastSchema = z.object({
     .object({
       roast: z
         .string()
-        .describe("The roast of the bio — punchy, 2 sentences MAX"),
+        .describe("The roast of the bio - punchy, 2 sentences MAX"),
       rewrites: z
         .array(
           z.object({
@@ -145,7 +145,7 @@ const profileRoastSchema = z.object({
             text: z
               .string()
               .describe(
-                "A full rewritten bio in that style — concise, ~1-2 sentences",
+                "A full rewritten bio in that style - concise, ~1-2 sentences",
               ),
           }),
         )
@@ -199,7 +199,7 @@ export async function roastProfile(
   const promptLines =
     prompts.length > 0
       ? prompts
-          .map((p, i) => `Prompt ${i + 1}: "${p.prompt}" — "${p.answer}"`)
+          .map((p, i) => `Prompt ${i + 1}: "${p.prompt}" - "${p.answer}"`)
           .join("\n")
       : "(no prompts)";
 
@@ -223,7 +223,7 @@ export async function roastProfile(
     .join(", ");
 
   const tagSection = perPhotoTags
-    ? `\nThe photos have been auto-tagged. Tags per photo:\n${perPhotoTags}\n\nPhoto mix across the profile: ${mixSummary}.\nThese counts are AUTHORITATIVE: when you state how many photos are of a kind (e.g. group shots), use these exact numbers — never a higher count. Use them to flag repetition and gaps (e.g. no group or full-body shot), and to justify the photo order — surface concrete fixes in "real talk" with action "reorder".\n`
+    ? `\nThe photos have been auto-tagged. Tags per photo:\n${perPhotoTags}\n\nPhoto mix across the profile: ${mixSummary}.\nThese counts are AUTHORITATIVE: when you state how many photos are of a kind (e.g. group shots), use these exact numbers - never a higher count. Use them to flag repetition and gaps (e.g. no group or full-body shot), and to justify the photo order - surface concrete fixes in "real talk" with action "reorder".\n`
     : "";
 
   const instructions = `You are ${TONE_PERSONA[tone]}
@@ -231,7 +231,7 @@ export async function roastProfile(
 You're reviewing someone's ${provider} dating profile.
 
 About ${provider}: ${vibe}
-Weight your roast accordingly — judge this profile by what actually matters on ${provider}.
+Weight your roast accordingly - judge this profile by what actually matters on ${provider}.
 ${lensPrompt ? `\n${lensPrompt}\n` : ""}
 
 ${photos.length} photo(s) are attached below, in order, labeled Photo 1 through Photo ${photos.length}. Reference each photo by its number.
@@ -241,26 +241,27 @@ ${promptLines}
 
 Bio: ${bio?.trim() ? bio : "(no bio written)"}
 
-BE CONCISE. This is a punchy roast, not an essay — favour one sharp line over three soft ones. Every field below is SHORT (one or two sentences max). No rambling, no repeating yourself.
+BE CONCISE. This is a punchy roast, not an essay - favour one sharp line over three soft ones. Every field below is SHORT (one or two sentences max). No rambling, no repeating yourself.
 
 Give:
 1. Overall: a short "tagline" badge (2-5 words capturing the verdict, e.g. "Solid, but playing it safe"), one shareable "headline" punchline, and a "verdict" summary of 2 sentences MAX. No letter grade, and no numeric score unless a creator lens above explicitly asks for one.
-2. For EACH photo: a "caption" — a neutral, factual description of what is actually visible (setting, pose, activity, lighting; NOT a joke — this proves you looked); a bold "title" zinger; a "body" roast of ONE punchy sentence citing a specific visible detail; and a keep/maybe/cut call.
-3. For EACH prompt: a one-sentence "roast" of their answer, plus a "rewrite" — a sharper answer to the SAME prompt they could actually use (concrete, in their voice).
+2. For EACH photo: a "caption" - a neutral, factual description of what is actually visible (setting, pose, activity, lighting; NOT a joke - this proves you looked); a bold "title" zinger; a "body" roast of ONE punchy sentence citing a specific visible detail; and a keep/maybe/cut call.
+3. For EACH prompt: a one-sentence "roast" of their answer, plus a "rewrite" - a sharper answer to the SAME prompt they could actually use (concrete, in their voice).
 4. Bio (or null if there's none): a "roast" of 2 sentences max; and "rewrites" = at least two concise replacement bios in distinct named styles (default "Witty" and "Sincere").
 5. "Real talk": 2-5 prioritized, actionable fixes, each a { title, optional detail, optional action }. Put the highest-impact fix first. Tag "action" when a fix is mechanical: "reorder" (photo order), "editBio", or "addPrompt".
 
-CALIBRATION (photo verdicts): judge each photo by its role in the full set, not in isolation. One or two group shots are an asset (social proof), not a flaw — don't cut a photo just for being a group shot. Reserve the group-shot roast for when groups dominate the set, the subject is genuinely hard to pick out, or Photo 1 is a group shot (the lead must be an unmistakable solo).
+CALIBRATION (photo verdicts): judge each photo by its role in the full set, not in isolation. One or two group shots are an asset (social proof), not a flaw - don't cut a photo just for being a group shot. Reserve the group-shot roast for when groups dominate the set, the subject is genuinely hard to pick out, or Photo 1 is a group shot (the lead must be an unmistakable solo).
 
-CONSISTENCY: your "overall" and "real talk" must agree with your per-photo verdicts. Before citing a count (e.g. "five group shots"), count it against the photos you actually flagged as such — never claim more than that. Don't reference a "Photo N" that doesn't exist (there are only ${photos.length}).
+CONSISTENCY: your "overall" and "real talk" must agree with your per-photo verdicts. Before citing a count (e.g. "five group shots"), count it against the photos you actually flagged as such - never claim more than that. Don't reference a "Photo N" that doesn't exist (there are only ${photos.length}).
 
-Reference specific details you can actually see in the photos — that's what makes it land.${
+Reference specific details you can actually see in the photos - that's what makes it land.${
     steer?.trim()
       ? `\n\nExtra direction from the user (follow it): ${steer.trim()}`
       : ""
   }`;
 
   return generateStructured({
+    normalizeCopy: true,
     schema: profileRoastSchema,
     name: "ProfileRoast",
     description:
@@ -290,7 +291,7 @@ export interface SinglePhotoRoastInput {
   photo: { url: string; caption?: string };
   /**
    * What the user wants the AI to look at / correct, e.g. "there's no wine
-   * glass — look again" or "focus on the dog, not the background".
+   * glass - look again" or "focus on the dog, not the background".
    */
   steer: string;
 }
@@ -314,10 +315,10 @@ You're taking a SECOND look at one photo from someone's ${provider} dating profi
 
 About ${provider}: ${vibe}
 
-What the user told you to look for / correct (this is authoritative — trust it over your previous read):
+What the user told you to look for / correct (this is authoritative - trust it over your previous read):
 "${steer.trim()}"
 
-Look at the attached photo again, carefully. Base everything ONLY on what is genuinely visible — do not invent props, people, or details that aren't there. If your earlier take assumed something that the user says isn't in the photo, drop it.
+Look at the attached photo again, carefully. Base everything ONLY on what is genuinely visible - do not invent props, people, or details that aren't there. If your earlier take assumed something that the user says isn't in the photo, drop it.
 
 Return a fresh verdict for THIS photo only:
 - "caption": a neutral, factual description of what's actually visible (proves you looked).
@@ -325,11 +326,12 @@ Return a fresh verdict for THIS photo only:
 - "body": ONE punchy sentence (~140 chars) citing a specific visible detail.
 - "keepOrCut": keep / maybe / cut.
 
-CALIBRATION: a group shot isn't a flaw by itself — it's social proof. Only hold "group photo" against it if the subject is genuinely hard to pick out.
+CALIBRATION: a group shot isn't a flaw by itself - it's social proof. Only hold "group photo" against it if the subject is genuinely hard to pick out.
 
-BE CONCISE — one sharp line beats three soft ones.`;
+BE CONCISE - one sharp line beats three soft ones.`;
 
   return generateStructured({
+    normalizeCopy: true,
     schema: singlePhotoRoastSchema,
     name: "PhotoVerdict",
     description:

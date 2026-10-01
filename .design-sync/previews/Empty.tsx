@@ -41,8 +41,8 @@ export const WithIconAndAction = () => (
         </EmptyMedia>
         <EmptyTitle>No exports uploaded</EmptyTitle>
         <EmptyDescription>
-          Your Tinder or Hinge data file stays in your browser — identifiers
-          are stripped before anything is analyzed.
+          Your Tinder or Hinge data file stays in your browser - identifiers are
+          stripped before anything is analyzed.
         </EmptyDescription>
       </EmptyHeader>
       <EmptyContent>

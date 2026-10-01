@@ -3,7 +3,7 @@ import { z } from "zod";
 /**
  * Canonical zod schemas + inferred types for the roast `ai_output` payloads.
  *
- * This is a LEAF module — it imports only `zod`, so `schema.ts` (the Drizzle
+ * This is a LEAF module - it imports only `zod`, so `schema.ts` (the Drizzle
  * schema) can re-export the inferred types without creating an import cycle
  * (services import FROM schema.ts, never the other way). The persisted TS shape
  * and the runtime schema now derive from one definition, so a field added on
@@ -18,12 +18,12 @@ export const statsRoastSchema = z.object({
   tagline: z
     .string()
     .describe(
-      "A short verdict badge, 2-5 words, capturing the overall read — e.g. 'Elite stats, zero follow-through' or 'Casanova in volume only'.",
+      "A short verdict badge, 2-5 words, capturing the overall read - e.g. 'Elite stats, zero follow-through' or 'Casanova in volume only'.",
     ),
   headline: z
     .string()
     .describe(
-      "The single best one-liner from the roast — punchy, shareable, under 100 characters",
+      "The single best one-liner from the roast - punchy, shareable, under 100 characters",
     ),
   verdict: z
     .string()
@@ -42,7 +42,7 @@ export const statsRoastSchema = z.object({
     ),
 });
 
-/** Stats-roast payload — output for the *_roast stats kinds. */
+/** Stats-roast payload - output for the *_roast stats kinds. */
 export type StatsRoastResult = z.infer<typeof statsRoastSchema>;
 
 // ---- PROFILE (VISION) ROAST (kind="profile_roast") -----------------
@@ -50,7 +50,7 @@ export type StatsRoastResult = z.infer<typeof statsRoastSchema>;
 // The PERSISTED shape, keyed by content id. The model returns a sibling schema
 // keyed by 1-based `index` (see `profileRoastSchema` in profile-roast.service.ts);
 // the router remaps index -> contentId before persisting. Photos/prompts store
-// only the verdict text — image URLs are resolved live on read so the roast
+// only the verdict text - image URLs are resolved live on read so the roast
 // always renders against the current profile.
 export const persistedProfileRoastSchema = z.object({
   overall: z.object({
@@ -89,5 +89,5 @@ export const persistedProfileRoastSchema = z.object({
   ),
 });
 
-/** Profile-roast `output` payload — shape stored for kind="profile_roast" rows. */
+/** Profile-roast `output` payload - shape stored for kind="profile_roast" rows. */
 export type ProfileRoastResult = z.infer<typeof persistedProfileRoastSchema>;

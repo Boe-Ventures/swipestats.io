@@ -1,12 +1,12 @@
 import { cn } from "@/components/ui/lib/utils";
 
 /**
- * Golden PREMIUM-GATE primitives — the paywall dialect.
+ * Golden PREMIUM-GATE primitives - the paywall dialect.
  * Consolidates the two prior patterns into one golden set:
  *  - LockedValue: blurs premium content behind the paywall (ports BlurredValue).
  *  - UpsellCard: the rose upsell card (golden re-skin of PremiumFeatureWrapper's
  *    upgrade CTA).
- * Server-safe (no hooks). Gating logic stays with the caller — these are pure
+ * Server-safe (no hooks). Gating logic stays with the caller - these are pure
  * presentational shells.
  */
 

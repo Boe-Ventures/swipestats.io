@@ -25,7 +25,7 @@ interface CookieBannerProps {
 
 /**
  * First-layer consent banner. "Accept all" and "Reject all" are rendered with
- * identical prominence (same variant, size, and width) — GDPR requires
+ * identical prominence (same variant, size, and width) - GDPR requires
  * rejecting to be as easy as accepting. "Customize" links to /cookies for
  * per-category control.
  */
@@ -33,7 +33,7 @@ export const CookieBanner = ({
   isOpen,
   onAcceptAll,
   onRejectAll,
-  description = "We use cookies for analytics and to improve SwipeStats. Choose what you're comfortable with — you can change this anytime.",
+  description = "We use cookies for analytics and to improve SwipeStats. Choose what you're comfortable with. You can change this anytime.",
   className,
 }: CookieBannerProps) => {
   const [isAnimatingOut, setIsAnimatingOut] = React.useState(false);
@@ -80,7 +80,7 @@ export const CookieBanner = ({
           </a>
         </CardContent>
         <CardFooter className="flex flex-col gap-2 pt-2">
-          {/* "Reject all" and "Accept all" are equally easy — same size, same
+          {/* "Reject all" and "Accept all" are equally easy - same size, same
               row, one click each. Accept is colored as the recommended action
               (the accepted reading of "equal weight"); reject is never hidden
               or made harder. */}

@@ -94,11 +94,9 @@ export default function SharedComparisonPage() {
   const displayBio = comparison.defaultBio || "";
 
   // Public viewers can't act on an empty profile column, so we hide them here.
-  // This is purely a render-time filter — the columns still exist, so the
+  // This is purely a render-time filter - the columns still exist, so the
   // moment the owner adds content they reappear on the next load.
-  const visibleColumns = comparison.columns.filter(
-    (c) => c.content.length > 0,
-  );
+  const visibleColumns = comparison.columns.filter((c) => c.content.length > 0);
 
   return (
     <>
@@ -172,7 +170,7 @@ export default function SharedComparisonPage() {
           </div>
         </header>
 
-        {/* Main Content — extra bottom padding leaves room for the sticky tray */}
+        {/* Main Content - extra bottom padding leaves room for the sticky tray */}
         <main className="container mx-auto px-4 py-8 pb-28">
           {/* Desktop: Side-by-side columns */}
           <div className="hidden gap-6 md:grid-cols-2 lg:grid lg:grid-cols-4">
@@ -265,7 +263,7 @@ export default function SharedComparisonPage() {
         {/* Sticky feedback tray */}
         <FeedbackTray comparison={comparison} />
 
-        {/* Footer — extra bottom padding clears the sticky tray */}
+        {/* Footer - extra bottom padding clears the sticky tray */}
         <ShareFooter className="pb-28" />
       </div>
     </>

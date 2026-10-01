@@ -62,7 +62,7 @@ export default function PhotoGalleryPage() {
   const router = useRouter();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [photoToDelete, setPhotoToDelete] = useState<string | null>(null);
-  // Attachment ids currently being analyzed by the "Analyze all" pool — each
+  // Attachment ids currently being analyzed by the "Analyze all" pool - each
   // card reflects its own status from this set.
   const [analyzingIds, setAnalyzingIds] = useState<Set<string>>(new Set());
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -77,7 +77,7 @@ export default function PhotoGalleryPage() {
     trpc.photoAnalysis.analyze.mutationOptions(),
   );
 
-  // How many images still need analysis — drives the "Analyze N photos" button.
+  // How many images still need analysis - drives the "Analyze N photos" button.
   const unanalyzedCount = (photos ?? []).filter(
     (p) => p.mimeType.startsWith("image/") && !readPhotoAnalysis(p.metadata),
   ).length;
@@ -138,7 +138,7 @@ export default function PhotoGalleryPage() {
     }
   };
 
-  // How many images are analyzed — the composer needs tagged photos to work
+  // How many images are analyzed - the composer needs tagged photos to work
   // from, so the "Build a profile" CTA only shows once there's something to use.
   const analyzedCount = (photos ?? []).filter(
     (p) => p.mimeType.startsWith("image/") && readPhotoAnalysis(p.metadata),

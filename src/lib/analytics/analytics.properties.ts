@@ -1,5 +1,5 @@
 // =====================================================
-// ANALYTICS PROPERTY REGISTRY — DERIVED FROM TYPES
+// ANALYTICS PROPERTY REGISTRY - DERIVED FROM TYPES
 // =====================================================
 //
 // `analytics.types.ts` remains the single source of truth for event property
@@ -10,7 +10,7 @@
 // HOW DRIFT IS PREVENTED
 // ----------------------
 // The `EventPropertyRegistry<Defs>` mapped type forces, for every event, a
-// `PropertyMeta` entry for *every* property name — including names that only
+// `PropertyMeta` entry for *every* property name - including names that only
 // appear in one variant of a discriminated union. `AllPropKeys<T>` distributes
 // across union members and strips index signatures, so:
 //   - rename / add / remove / typo a property in analytics.types.ts
@@ -19,7 +19,7 @@
 //     => resolves to `Record<never, _>` = `{}` (author an empty object).
 //
 // What is NOT compiler-checked: the `type` / `required` / `values` *values*
-// themselves. Those are hand-authored display metadata — if one goes stale it
+// themselves. Those are hand-authored display metadata - if one goes stale it
 // is a cosmetic label in an admin table, never a runtime bug. Keep them honest.
 // =====================================================
 
@@ -175,7 +175,7 @@ export const SERVER_EVENT_PROPERTIES: EventPropertyRegistry<ServerEventPropertie
         type: "number",
         required: true,
         description:
-          "Delta: new photos (always 0 — additive updates skip photos).",
+          "Delta: new photos (always 0 - additive updates skip photos).",
       },
       usageDays: { type: "number", required: true },
       hasPhotos: { type: "boolean", required: true },
@@ -1011,7 +1011,7 @@ export const CLIENT_EVENT_PROPERTIES: EventPropertyRegistry<ClientEventPropertie
   };
 
 // =====================================================
-// IDENTIFY — USER TRAITS
+// IDENTIFY - USER TRAITS
 // =====================================================
 //
 // Traits attached to the user profile (not events) via PostHog `identifyUser`
@@ -1019,7 +1019,7 @@ export const CLIENT_EVENT_PROPERTIES: EventPropertyRegistry<ClientEventPropertie
 //
 // NOT compiler-pinned to `UserTraits`: that interface carries a
 // `[key: string]: unknown` index signature, and TypeScript's `keyof` collapses
-// named keys into `string` when an index signature is present — so the named
+// named keys into `string` when an index signature is present - so the named
 // keys can't be recovered at the type level. This list mirrors the named
 // fields of `UserTraits` by hand; keep it in sync if those change.
 

@@ -22,7 +22,7 @@ export async function downloadFromUrl(
       const body = (await res.json()) as { error?: string };
       if (body?.error) message = body.error;
     } catch {
-      // Non-JSON error body — keep the generic message.
+      // Non-JSON error body - keep the generic message.
     }
     throw new Error(message);
   }

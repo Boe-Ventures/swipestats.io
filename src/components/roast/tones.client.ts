@@ -1,7 +1,7 @@
 /**
  * The client-facing roast "tone dial" (label / emoji / blurb), shared by the
  * profile-compare roast dialog and the marketing stats-roast dialog so the two
- * can't drift (the `helpful` blurb already had — "Constructive," vs "Honest,").
+ * can't drift (the `helpful` blurb already had - "Constructive," vs "Honest,").
  *
  * Distinct from the SERVER tone personas in `roast-tone.ts` (`TONE_PERSONA`),
  * which are the prompt-injection voice strings. The tone KEYS match the server

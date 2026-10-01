@@ -13,7 +13,7 @@ import {
  * Current output-format version for ai_output rows. Bump when a payload SHAPE
  * changes; rows below this are flagged outdated on read so the UI can offer a
  * one-click regenerate instead of rendering a stale-shaped payload. Single
- * source of truth — both the writer (`upsertAiOutput`) and the readers
+ * source of truth - both the writer (`upsertAiOutput`) and the readers
  * (roastRouter's `isOutdated`) point here.
  */
 export const AI_OUTPUT_VERSION = 1;
@@ -31,7 +31,7 @@ function subjectColumns(kind: AiOutputKind, subjectId: string) {
 }
 
 /**
- * WHERE fragment matching the row for (kind, subjectId) — selects the right FK
+ * WHERE fragment matching the row for (kind, subjectId) - selects the right FK
  * column so callers don't repeat the kind→column mapping. Combine with
  * `eq(aiOutputTable.scope, …)` for the full identity key.
  *
@@ -51,7 +51,7 @@ export function aiOutputSubjectEq(kind: AiOutputKind, subjectId: string) {
 
 /**
  * Upsert one ai_output row. There's exactly one artifact per
- * (kind, subject, scope) — regenerating OVERWRITES it in place, preserving the
+ * (kind, subject, scope) - regenerating OVERWRITES it in place, preserving the
  * existing id / shareKey / isPublic (never touched here). Owns the conflict
  * target, the `set` keys, and `version`, so the two roast writers can't drift on
  * which columns get updated. The subject is written to one of the exclusive-arc
@@ -103,7 +103,7 @@ export async function upsertAiOutput(args: {
         aiOutputTable.hingeProfileId,
         aiOutputTable.columnId,
       ],
-      // Note: `userId` is intentionally NOT reassigned on conflict — never
+      // Note: `userId` is intentionally NOT reassigned on conflict - never
       // re-owner an existing artifact.
       set: {
         tone,

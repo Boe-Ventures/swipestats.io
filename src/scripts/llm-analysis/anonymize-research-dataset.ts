@@ -2,10 +2,10 @@
  * Research Dataset Anonymization Pipeline
  *
  * Reads a JSONL research dataset and anonymizes:
- * 1. Bios (bio + bioOriginal) — PII redaction via LLM
- * 2. Messages (content + contentRaw) — per-conversation language detection + PII redaction
+ * 1. Bios (bio + bioOriginal) - PII redaction via LLM
+ * 2. Messages (content + contentRaw) - per-conversation language detection + PII redaction
  *
- * No DB access — operates entirely on JSONL files.
+ * No DB access - operates entirely on JSONL files.
  *
  * Usage:
  *   bun run src/scripts/llm-analysis/anonymize-research-dataset.ts [input-file] [--sonnet] [--limit N]
@@ -191,7 +191,7 @@ Your job: detect languages and remove information that could be used to CONTACT 
 
 ## Why this matters
 
-Researchers need natural, authentic conversation data. Every false redaction destroys research value. A message like "Hey Sarah! How was your weekend?" is perfectly safe and common — there are millions of Sarahs. But "my number is 555-867-5309" lets someone contact that person directly. That's the difference.
+Researchers need natural, authentic conversation data. Every false redaction destroys research value. A message like "Hey Sarah! How was your weekend?" is perfectly safe and common - there are millions of Sarahs. But "my number is 555-867-5309" lets someone contact that person directly. That's the difference.
 
 The most valuable parts of the dataset for researchers are:
 - Natural greetings and how people address each other (first names)
@@ -203,43 +203,43 @@ None of these should be redacted. Only redact things that function as a direct l
 
 ## What to redact (things that let you CONTACT or LOCATE someone)
 
-PHONE_NUMBER — Actual phone digit sequences that someone could dial or text.
+PHONE_NUMBER - Actual phone digit sequences that someone could dial or text.
   "5551234567", "+1 555 867 5309", "call me at 07943756021"
 
-EMAIL — Actual email addresses someone could write to.
+EMAIL - Actual email addresses someone could write to.
   "jane.doe@gmail.com"
 
-SOCIAL_HANDLE — Actual account usernames someone could search and find.
+SOCIAL_HANDLE - Actual account usernames someone could search and find.
   "@janedoe99", "my snap is coolcat_22", "Snapchat: jdoe42"
 
-FULL_NAME — First AND last name together, enough to find someone on social media or public records.
+FULL_NAME - First AND last name together, enough to find someone on social media or public records.
   "Keegan Hoover", "I'm Jose David Gonzalez", "Kristen Gonzalez is not that bad"
 
-ADDRESS — A physical street address with a number that someone could visit.
+ADDRESS - A physical street address with a number that someone could visit.
   "742 Evergreen Terrace Springfield IL", "3013 N 4th Street Minneapolis MN"
 
-URL_WITH_PII — URLs that lead to a personal profile or reveal someone's identity.
+URL_WITH_PII - URLs that lead to a personal profile or reveal someone's identity.
   "facebook.com/john.doe.5", "instagram.com/personal_handle"
 
-OTHER — Full dates of birth only (month/day/year together). Nothing else.
+OTHER - Full dates of birth only (month/day/year together). Nothing else.
 
 ## What to NEVER redact (things researchers need)
 
-- First names alone: "Hey Sarah", "What's up Jake", "SARAHHHHH!!!!!", "hola Katya", "Привет Маша". A first name cannot be used to contact or locate anyone. There are millions of people with any given first name. This is the #1 most common false positive — do not flag first names.
+- First names alone: "Hey Sarah", "What's up Jake", "SARAHHHHH!!!!!", "hola Katya", "Привет Маша". A first name cannot be used to contact or locate anyone. There are millions of people with any given first name. This is the #1 most common false positive - do not flag first names.
 - Cities, towns, neighborhoods, regions: "I live in Austin", "I'm from Schaumburg", "Chapel Hill", "East Islip", "San Diego", "Denver". These are geographic data points, not addresses. You cannot show up at someone's door with just a city name.
 - Platform names without handles: "do you have snap?", "IG?", "wanna move to snapchat?", "you got snap?". The word "snap" is not a username.
 - School/university names: "I go to UMich", "Northeastern University", "BME"
 - Company/employer names, hotel names, restaurant names, building names
-- YouTube links, TikTok links, Spotify playlist links, product links, Google Maps links — these are content links, not personal profiles
+- YouTube links, TikTok links, Spotify playlist links, product links, Google Maps links - these are content links, not personal profiles
 - Pet names, nicknames, celebrity names
 - Messages that merely DISCUSS sharing contact info: "what's your number?", "give me your snap", "do you have insta?"
 
 ## Input format
-Messages: [index] USER/MATCH: message text. The prefix is metadata — your redactedContent must contain ONLY the message text, never the [index] or USER:/MATCH: prefix.
+Messages: [index] USER/MATCH: message text. The prefix is metadata - your redactedContent must contain ONLY the message text, never the [index] or USER:/MATCH: prefix.
 
 ## Output rules
 1. redactedContent = the EXACT original message with ONLY the contactable/locatable PII replaced by tokens. No rephrasing, no reordering, no adding or removing words.
-2. Most conversations have ZERO PII. Return empty piiMessages array — this should be the common case.
+2. Most conversations have ZERO PII. Return empty piiMessages array - this should be the common case.
 3. When uncertain, do NOT flag. A missed redaction of a first name is fine. A missed redaction of a phone number is not.`;
 
 function formatConversationForLLM(messages: ExportedMessage[]): string {
@@ -501,7 +501,7 @@ function printSummary(stats: Stats) {
     }
   }
 
-  // Cost estimate — Haiku: $0.80/$4.00 per MTok, Sonnet: $3.00/$15.00 per MTok
+  // Cost estimate - Haiku: $0.80/$4.00 per MTok, Sonnet: $3.00/$15.00 per MTok
   const inputRate = useSonnet ? 3.0 : 0.8;
   const outputRate = useSonnet ? 15.0 : 4.0;
   const inputCost = (stats.inputTokens / 1e6) * inputRate;
@@ -665,7 +665,7 @@ async function main() {
     const eta = (lines.length - profilesDone) / rate;
     console.log(
       bold(
-        `  Batch ${batchNum}/${totalBatches} done — ${profilesDone}/${lines.length} profiles (${((profilesDone / lines.length) * 100).toFixed(0)}%) | ` +
+        `  Batch ${batchNum}/${totalBatches} done - ${profilesDone}/${lines.length} profiles (${((profilesDone / lines.length) * 100).toFixed(0)}%) | ` +
           `${rate.toFixed(1)} profiles/s | ETA: ${Math.ceil(eta / 60)}min | ` +
           `convs: ${fmtNum(stats.conversationsAnalyzed)} | PII: bio=${stats.biosWithPii} msg=${stats.messagesWithPii} | errs=${stats.errors}`,
       ),

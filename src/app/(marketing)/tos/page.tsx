@@ -32,14 +32,13 @@ export default function TosPage() {
           deal:
         </p>
         <ul>
-          <li>You upload your own data — never someone else&apos;s</li>
+          <li>You upload your own data - never someone else&apos;s</li>
           <li>
             You own your raw data; we can use anonymized versions of it for
             research
           </li>
           <li>
-            We sell anonymized research datasets — you can opt out of future
-            ones
+            We sell anonymized research datasets. You can opt out of future ones
           </li>
           <li>Payments are handled by LemonSqueezy (a Stripe company)</li>
           <li>Norwegian law applies; disputes go to Oslo courts</li>
@@ -71,7 +70,7 @@ export default function TosPage() {
           <li>Access premium features through paid plans</li>
         </ul>
         <p>
-          We also run a research data business — we provide anonymized,
+          We also run a research data business. We provide anonymized,
           aggregated datasets to researchers, journalists, and commercial
           partners. More on that in Section 5.
         </p>
@@ -158,7 +157,7 @@ export default function TosPage() {
 
         <h3>License for anonymized data (permanent)</h3>
         <p>
-          <strong>This is important — please read carefully.</strong>
+          <strong>This is important. Please read carefully.</strong>
         </p>
         <p>
           By uploading data, you also give us a permanent, worldwide,
@@ -197,7 +196,7 @@ export default function TosPage() {
 
         <h3>Can I opt out?</h3>
         <p>
-          Yes — you can opt out of having your data included in <em>future</em>{" "}
+          Yes, you can opt out of having your data included in <em>future</em>{" "}
           anonymized research datasets through your account settings or by
           emailing{" "}
           <SmartLink href="mailto:privacy@swipestats.io">
@@ -281,7 +280,7 @@ export default function TosPage() {
 
         <h3>Our voluntary refund policy</h3>
         <p>
-          We may still offer refunds at our discretion — for example, if
+          We may still offer refunds at our discretion, for example, if
           technical issues prevent you from using the service. To request one,
           email{" "}
           <SmartLink href="mailto:privacy@swipestats.io">
@@ -325,8 +324,7 @@ export default function TosPage() {
         </p>
         <p>
           <strong>This is not relationship advice.</strong> SwipeStats provides
-          informational analytics only — not professional counseling or
-          guidance.
+          informational analytics only, not professional counseling or guidance.
         </p>
         <p>
           You&apos;re responsible for verifying your own data, any decisions you
@@ -337,7 +335,7 @@ export default function TosPage() {
         <p>
           TO THE MAXIMUM EXTENT PERMITTED BY LAW, SWIPESTATS IS NOT LIABLE FOR
           ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES
-          — INCLUDING LOSS OF PROFITS, DATA, GOODWILL, OR COST OF SUBSTITUTE
+          - INCLUDING LOSS OF PROFITS, DATA, GOODWILL, OR COST OF SUBSTITUTE
           SERVICES.
         </p>
         <p>
@@ -348,7 +346,7 @@ export default function TosPage() {
           These limits don&apos;t apply to liability for death or personal
           injury caused by negligence, fraud, or anything else that can&apos;t
           be excluded by law. Some jurisdictions don&apos;t allow these
-          limitations — in that case, our liability is limited to the greatest
+          limitations. In that case, our liability is limited to the greatest
           extent the law allows.
         </p>
 

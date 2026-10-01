@@ -74,7 +74,7 @@ function isGender(value: string | null): value is Gender {
 }
 
 function formatPercent(value: number | null) {
-  if (value === null) return "—";
+  if (value === null) return "N/A";
   return (
     (value * 100).toLocaleString(undefined, {
       minimumFractionDigits: 1,
@@ -84,7 +84,7 @@ function formatPercent(value: number | null) {
 }
 
 function formatNumber(value: number | null) {
-  if (value === null) return "—";
+  if (value === null) return "N/A";
   return value.toLocaleString(undefined, {
     minimumFractionDigits: value < 10 ? 1 : 0,
     maximumFractionDigits: 1,
@@ -451,7 +451,7 @@ export function CohortBenchmarksSection() {
                       undefined,
                       { dateStyle: "medium", timeStyle: "short" },
                     )
-                  : "—"}
+                  : "N/A"}
               </span>
               <Badge variant="outline">
                 {effectiveMode === "PEER" ? "Same gender + interest" : "Global"}

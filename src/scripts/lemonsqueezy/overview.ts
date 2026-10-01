@@ -2,7 +2,7 @@
  * LemonSqueezy catalog overview (read-only).
  *
  * Lists stores + products + variants for whichever API key is in the
- * environment. LemonSqueezy uses SEPARATE keys for test vs live — the key
+ * environment. LemonSqueezy uses SEPARATE keys for test vs live - the key
  * decides the mode (there is no test_mode query param).
  *
  * Usage:
@@ -61,9 +61,7 @@ async function main() {
     );
   }
 
-  const products = await get(
-    "/products?include=variants&page%5Bsize%5D=100",
-  );
+  const products = await get("/products?include=variants&page%5Bsize%5D=100");
 
   const variantsByProduct = new Map<string, JsonApiResource[]>();
   for (const it of products.included ?? []) {
@@ -74,7 +72,9 @@ async function main() {
     variantsByProduct.set(pid, arr);
   }
 
-  console.log(`\n=== PRODUCTS + VARIANTS (${(products.data ?? []).length}) ===`);
+  console.log(
+    `\n=== PRODUCTS + VARIANTS (${(products.data ?? []).length}) ===`,
+  );
   for (const p of products.data ?? []) {
     const a = p.attributes;
     console.log(

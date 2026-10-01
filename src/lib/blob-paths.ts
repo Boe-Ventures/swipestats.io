@@ -1,11 +1,11 @@
 /**
  * Centralized Vercel Blob path conventions.
  *
- * Blob is a flat key/value store — a "folder" is just a `/` in the pathname.
+ * Blob is a flat key/value store - a "folder" is just a `/` in the pathname.
  * Keeping these builders in one place stops the convention from drifting across
  * the several upload call sites (which is how user photos previously ended up at
  * the bucket root while data files were namespaced). A consistent prefix gives
- * the dashboard — and `list({ mode: "folded" })` — a browsable folder tree, and
+ * the dashboard - and `list({ mode: "folded" })` - a browsable folder tree, and
  * makes per-owner cleanup a single prefix operation.
  *
  * The client-upload route independently validates these paths before issuing a

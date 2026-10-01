@@ -786,13 +786,13 @@ export default function AdminSwipeRankPage() {
                                 ? entry.gender.charAt(0) +
                                   entry.gender.slice(1).toLowerCase()
                                 : "Unknown"}
-                              , age {entry.ageInPeriod ?? "—"}
+                              , age {entry.ageInPeriod ?? "N/A"}
                             </p>
                           </TableCell>
                           <TableCell className="text-sm">
                             {[entry.city, entry.region, entry.country]
                               .filter(Boolean)
-                              .join(", ") || "—"}
+                              .join(", ") || "N/A"}
                           </TableCell>
                           <TableCell className="text-right">
                             <p className="font-semibold tabular-nums">

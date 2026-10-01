@@ -60,7 +60,7 @@ interface PhotoLibraryDialogProps {
  * The manage-everything photo library, in a dialog, opened from the comparison
  * edit page. This is the home for uploading, analyzing (so the AI features have
  * something to reason about), building an AI draft, and seeing the analysis
- * results — distinct from `AddContentDialog`, which is the lean picker for
+ * results - distinct from `AddContentDialog`, which is the lean picker for
  * dropping photos onto a single column.
  *
  * It deliberately duplicates the standalone `/photos` page's orchestration
@@ -81,7 +81,7 @@ export function PhotoLibraryDialog({
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  // Attachment ids currently being analyzed by the "Analyze all" pool — each
+  // Attachment ids currently being analyzed by the "Analyze all" pool - each
   // card reflects its own status from this set.
   const [analyzingIds, setAnalyzingIds] = useState<Set<string>>(new Set());
 

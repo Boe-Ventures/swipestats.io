@@ -154,10 +154,10 @@ export const auth = betterAuth({
         type: "string",
         required: false,
       },
-      // Granular analytics consent (jsonb mirror of the cookie choice) — rides
+      // Granular analytics consent (jsonb mirror of the cookie choice) - rides
       // the per-request session so procedures read it without an extra query.
-      // input:false — only consentRouter writes it. (Read via readConsent(),
-      // which isolates the better-auth json-inference cast — #5900.)
+      // input:false - only consentRouter writes it. (Read via readConsent(),
+      // which isolates the better-auth json-inference cast - #5900.)
       analyticsConsent: {
         type: "json",
         required: false,
@@ -211,9 +211,9 @@ export const auth = betterAuth({
       // new device, expired session). Hooking session.create fired
       // user_signed_in for all five, inflating the metric ~25x (2026-07:
       // 666 "sign-ins" ≈ 531 anonymous guests + 110 sign-ups + ~25 genuine
-      // logins). The endpoint path is the only reliable signal of intent — a
+      // logins). The endpoint path is the only reliable signal of intent - a
       // user-age check alone would still miscount delayed /verify-email
-      // sessions and impersonation — so we filter on ctx.path, which is only
+      // sessions and impersonation - so we filter on ctx.path, which is only
       // available in this middleware.
       // Note: sign-ins are rare by design (sessions are long-lived and refresh
       // on activity), so this event measures re-authentication, not engagement.
@@ -287,7 +287,7 @@ export const auth = betterAuth({
     },
     session: {
       // user_signed_in is tracked in hooks.after (path-filtered) instead of
-      // session.create — sessions are also created on sign-up, anonymous
+      // session.create - sessions are also created on sign-up, anonymous
       // sign-in, email verification, and impersonation, which are not sign-ins.
       delete: {
         after: async (session) => {
@@ -307,7 +307,7 @@ export const auth = betterAuth({
     ...developmentTrustedOrigins,
     // Trust all of THIS project's Vercel preview + per-deployment URLs. The
     // stable branch alias is already covered via baseURL (VERCEL_BRANCH_URL),
-    // but the per-deployment hash URLs are not — this wildcard covers both.
+    // but the per-deployment hash URLs are not - this wildcard covers both.
     // better-auth's matchesOriginPattern supports `*`; scoped to `swipestats-*`
     // so we don't trust unrelated *.vercel.app apps. No baseURL change needed:
     // we use email/password only (no OAuth callbacks) and cookies are host-only.

@@ -1,7 +1,7 @@
 import { cn } from "@/components/ui/lib/utils";
 
 /**
- * Golden APP-MODE primitives — the "data, quiet chrome" dialect.
+ * Golden APP-MODE primitives - the "data, quiet chrome" dialect.
  * Functional type scale, big tabular numbers, neutral surfaces. Ported from
  * golden.css. Server-safe (no hooks). Pairs with the marketing-ui primitives.
  */

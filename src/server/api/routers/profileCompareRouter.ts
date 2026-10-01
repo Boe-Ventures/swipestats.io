@@ -92,7 +92,7 @@ export const profileCompareRouter = createTRPCRouter({
     }),
 
   // Import the user's uploaded Tinder photos into their shared photo library
-  // (library only — does not auto-fill comparison columns)
+  // (library only - does not auto-fill comparison columns)
   importTinderMediaToLibrary: protectedProcedure
     .input(z.object({ tinderId: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {

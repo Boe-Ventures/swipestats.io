@@ -28,7 +28,7 @@ import { useTRPC } from "@/trpc/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { authClient } from "@/server/better-auth/client";
 
-/** What the feedback is about — renders the photo-aware dialog header. */
+/** What the feedback is about - renders the photo-aware dialog header. */
 export interface FeedbackContext {
   title: string;
   subtitle?: string;
@@ -41,7 +41,7 @@ interface FeedbackDialogProps {
   contentId?: string;
   columnId?: string;
   comparisonId?: string;
-  /** Whose profile this is — personalizes the empty state. */
+  /** Whose profile this is - personalizes the empty state. */
   profileName?: string;
   /** The photo/prompt being discussed; omit for plain column-level feedback. */
   context?: FeedbackContext;

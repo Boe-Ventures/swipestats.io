@@ -4,7 +4,7 @@
  * READ-ONLY exploration script. Queries the old database to understand
  * what Tinder photo data exists in OriginalAnonymizedFile JSON blobs,
  * and cross-references with the new media table to identify what still
- * needs migrating. (The old Media table is empty — all media lives in
+ * needs migrating. (The old Media table is empty - all media lives in
  * the JSON blobs only.)
  *
  * Focuses on "new format" TinderPhoto objects with https URLs.

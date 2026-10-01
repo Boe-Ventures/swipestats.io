@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const subject = comparison.profileName ?? "this profile";
   const versions = comparison.columns.length;
 
-  // No " | SwipeStats" suffix — the root layout's title.template adds the brand
+  // No " | SwipeStats" suffix - the root layout's title.template adds the brand
   // to the document <title>, while og/twitter title stay clean for the unfurl.
   const title = comparison.name ?? `${subject}'s profile, compared`;
   const description =

@@ -1115,7 +1115,7 @@ function ComparisonTableSection() {
       return (
         <span className="font-bold text-rose-600 dark:text-rose-400">✓</span>
       );
-    if (c === false) return <span className="text-gray-300">—</span>;
+    if (c === false) return <span className="text-gray-300"> - </span>;
     if (c === "Priority")
       return (
         <span className="font-bold text-rose-600 dark:text-rose-400">

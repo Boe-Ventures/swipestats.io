@@ -9,7 +9,7 @@ import { comparisonColumnTable } from "@/server/db/schema";
 /**
  * Dev-only: export a SINGLE comparison column as JSON. Emits the same
  * `swipestats.profile-comparison.v1` shape as the full-comparison export, but
- * with exactly one column — so the existing importer recreates it unchanged as
+ * with exactly one column - so the existing importer recreates it unchanged as
  * a one-column comparison (photo blob URLs are public and survive a DB wipe).
  */
 export async function GET(
@@ -50,7 +50,7 @@ export async function GET(
       "(one column) and its content in `order`.",
     comparison: {
       // Name it after the source comparison + column so it's identifiable.
-      name: `${cmp.name ?? "Comparison"} — ${colLabel}`,
+      name: `${cmp.name ?? "Comparison"} - ${colLabel}`,
       profileName: cmp.profileName,
       defaultBio: cmp.defaultBio,
       age: cmp.age,
@@ -61,7 +61,7 @@ export async function GET(
       nationality: cmp.nationality,
       heightCm: cmp.heightCm,
       educationLevel: cmp.educationLevel,
-      // A single extracted column starts private — re-share intentionally.
+      // A single extracted column starts private - re-share intentionally.
       isPublic: false,
     },
     columns: [

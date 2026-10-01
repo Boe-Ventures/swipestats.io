@@ -6,6 +6,7 @@ import {
   Output,
 } from "ai";
 import type { z } from "zod";
+import { GENERATED_COPY_STYLE, normalizeGeneratedCopy } from "./copy-style";
 
 /** `messages` shape, taken straight from the SDK so vision parts type-check. */
 type GenerateTextMessages = NonNullable<
@@ -16,15 +17,17 @@ type GenerateTextProviderOptions = Parameters<
 >[0]["providerOptions"];
 
 interface GenerateStructuredArgs<T> {
+  /** Apply the product's punctuation policy to generated prose. */
+  normalizeCopy?: boolean;
   /** Zod schema describing the structured output. */
   schema: z.ZodType<T>;
   /** Output object name (shown to the model). */
   name: string;
   /** Optional output description. */
   description?: string;
-  /** Model id — pass an `AI_MODELS` value. */
+  /** Model id - pass an `AI_MODELS` value. */
   model: string;
-  /** Sampling temperature (the services vary this — no default on purpose). */
+  /** Sampling temperature (the services vary this - no default on purpose). */
   temperature?: number;
   /** Optional output ceiling for bounded classification jobs. */
   maxOutputTokens?: number;
@@ -45,9 +48,10 @@ interface GenerateStructuredArgs<T> {
  * output pattern, plus the `NoObjectGeneratedError` logging every AI service
  * was hand-rolling identically (only the log tag differed). The per-call args
  * (prompt vs messages, vision images, temperature, model) genuinely vary, so
- * they stay parameters — only the envelope and the error log are shared here.
+ * they stay parameters - only the envelope and the error log are shared here.
  */
 export async function generateStructured<T>({
+  normalizeCopy = false,
   schema,
   name,
   description,
@@ -65,6 +69,7 @@ export async function generateStructured<T>({
   const maxAttempts = validationRetries + 1;
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     const shared = {
+      system: normalizeCopy ? GENERATED_COPY_STYLE : undefined,
       model: anthropic(model),
       temperature,
       maxOutputTokens,
@@ -75,7 +80,9 @@ export async function generateStructured<T>({
       const { output } = messages
         ? await generateText({ ...shared, messages })
         : await generateText({ ...shared, prompt: prompt ?? "" });
-      return output;
+      return normalizeCopy
+        ? schema.parse(normalizeGeneratedCopy(output))
+        : output;
     } catch (error) {
       const structuralFailure =
         NoObjectGeneratedError.isInstance(error) ||

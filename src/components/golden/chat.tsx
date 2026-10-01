@@ -14,10 +14,10 @@ import {
 } from "@/lib/chat-turn-state";
 
 /**
- * Golden CHAT primitives — the streaming-assistant dialect.
+ * Golden CHAT primitives - the streaming-assistant dialect.
  *
  * Built against the AI SDK's `UIMessage` shape (`role` + `parts`) so a live
- * `useChat()` result drops straight in — verified to compile against
+ * `useChat()` result drops straight in - verified to compile against
  * `@ai-sdk/react` v7's return type:
  *
  *   const { messages, status } = useChat({ transport });
@@ -27,8 +27,8 @@ import {
  * design-system fixtures type-check without casting.
  *
  * The waiting behaviour is the part worth getting right, and it lives in
- * `@/lib/chat-turn-state`. A streaming turn is not one wait but three — before
- * the reply exists, while a tool runs, and between steps — and a transcript
+ * `@/lib/chat-turn-state`. A streaming turn is not one wait but three - before
+ * the reply exists, while a tool runs, and between steps - and a transcript
  * that only handles the first leaves the user staring at an empty pane. See
  * that module for why status alone is not enough to drive this.
  */
@@ -50,7 +50,7 @@ function toolName(part: ChatTurnPartLike): string {
 }
 
 /**
- * One tool call, in any lifecycle state. Renders in every state on purpose —
+ * One tool call, in any lifecycle state. Renders in every state on purpose  -
  * an in-flight tool that draws nothing is indistinguishable from a stall.
  */
 export function ChatToolCard({
@@ -92,7 +92,7 @@ export function ChatToolCard({
 /* ---------------------------------------------------------------- waiting */
 
 /**
- * The full pending turn — avatar, name, and a labelled wait. Shown while the
+ * The full pending turn - avatar, name, and a labelled wait. Shown while the
  * reply does not exist on screen yet, which is the longest wait in a turn.
  */
 export function ChatPendingTurn({

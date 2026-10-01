@@ -1,7 +1,7 @@
 import { cn } from "@/components/ui/lib/utils";
 
 /**
- * Golden FAQ accordion — native <details> with a plus→× chevron. Shared
+ * Golden FAQ accordion - native <details> with a plus→× chevron. Shared
  * across marketing pages (golden home; extract target for research / how-to,
  * which currently inline the same markup).
  */

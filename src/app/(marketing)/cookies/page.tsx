@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { CookiePreferences } from "./CookiePreferences";
 
 export const metadata: Metadata = {
-  title: "Cookie Preferences — SwipeStats",
+  title: "Cookie Preferences - SwipeStats",
   description: "Manage your cookie and tracking preferences on SwipeStats.",
 };
 

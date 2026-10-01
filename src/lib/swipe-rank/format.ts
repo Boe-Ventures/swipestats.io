@@ -30,7 +30,7 @@ export function formatMatchYield(
   value: number | null,
   locales?: Intl.LocalesArgument,
 ) {
-  if (value === null) return "—";
+  if (value === null) return "N/A";
   return `${(value * 100).toLocaleString(locales, {
     minimumFractionDigits: 1,
     maximumFractionDigits: 1,

@@ -7,7 +7,7 @@ import { getProviderMeta } from "./providers";
 /**
  * AI profile *composer*: given the user's already-analyzed gallery photos and a
  * target app, pick the best photos and put them in the ideal order, and write a
- * short app-appropriate bio. Think of it as the roast in reverse — instead of
+ * short app-appropriate bio. Think of it as the roast in reverse - instead of
  * critiquing an existing profile it assembles an optimal one.
  *
  * Text-only and cheap: it reasons over the tagger's structured output
@@ -27,7 +27,7 @@ const composeSchema = z.object({
   bio: z
     .string()
     .describe(
-      "A short, specific, first-person bio in this app's voice — 1-2 sentences, concrete, no clichés.",
+      "A short, specific, first-person bio in this app's voice - 1-2 sentences, concrete, no clichés.",
     ),
   leadReason: z
     .string()
@@ -57,7 +57,7 @@ export async function composeProfilePhotos(input: {
   const photoLines = input.photos
     .map(
       (p, i) =>
-        `${i}: ${p.name} — ${p.description} [${p.tags.join(", ") || "no tags"}]`,
+        `${i}: ${p.name} - ${p.description} [${p.tags.join(", ") || "no tags"}]`,
     )
     .join("\n");
 
@@ -65,11 +65,11 @@ export async function composeProfilePhotos(input: {
 
 About ${provider}: ${guidance}
 
-Their analyzed photos (index: name — description [tags]):
+Their analyzed photos (index: name - description [tags]):
 ${photoLines}
 
 Choose the best ~${input.count} photos for ${provider} and put them in the ideal order:
-- Lead with the single strongest photo — clear face, solo, well-lit, inviting. The lead matters most.
+- Lead with the single strongest photo - clear face, solo, well-lit, inviting. The lead matters most.
 - Maximise variety across the set: mix headshot/close-up, full-body, social/group, and activity/hobby. Each photo should add something new.
 - NEVER include near-duplicates or more than one of the same flavour (e.g. not three sunglasses shots, not three selfies).
 - Use ONLY the indexes listed above. If there aren't enough good photos, use fewer rather than padding with weak ones.
@@ -77,6 +77,7 @@ Choose the best ~${input.count} photos for ${provider} and put them in the ideal
 Then write a short ${provider}-style bio for this person.`;
 
   return generateStructured({
+    normalizeCopy: true,
     schema: composeSchema,
     name: "ProfileComposition",
     description:

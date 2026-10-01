@@ -537,7 +537,7 @@ export const fullTinderDataSchema = z
     Messages: tinderJsonMatchesSchema,
     Photos: photosSchema.optional().default([]),
 
-    // Non-extraction types — pass through without validation
+    // Non-extraction types - pass through without validation
     Campaigns: z.unknown().optional(),
     Experiences: z.unknown().optional(),
     Purchases: z.unknown().optional(),

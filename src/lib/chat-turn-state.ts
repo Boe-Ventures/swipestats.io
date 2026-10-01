@@ -2,7 +2,7 @@
  * Waiting-state logic for streaming chat transcripts.
  *
  * The AI SDK appends the assistant message the moment the response stream
- * opens — before the model has emitted a single token — and flips `status` to
+ * opens - before the model has emitted a single token - and flips `status` to
  * "streaming" at the same time. Any waiting indicator gated on "the last
  * message is still the user's" therefore disappears exactly when the wait is
  * longest, leaving an avatar and a name floating over blank space for the
@@ -49,7 +49,7 @@ export function isToolPart(part: ChatTurnPartLike): boolean {
   return part.type.startsWith("tool-") || part.type === "dynamic-tool";
 }
 
-/** A tool call that has finished — its card is static from here on. */
+/** A tool call that has finished - its card is static from here on. */
 export function isSettledToolPart(part: ChatTurnPartLike): boolean {
   return isToolPart(part) && SETTLED_TOOL_STATES.has(partState(part));
 }
@@ -81,7 +81,7 @@ export function isChatBusy(status: string): boolean {
  * Whether the turn is in flight with nothing on screen visibly moving.
  *
  * False while prose streams or a tool card runs under its own label, and while
- * a tool waits on the user's approval — that wait belongs to the user, so
+ * a tool waits on the user's approval - that wait belongs to the user, so
  * nagging about it would be wrong.
  */
 function turnIsWaiting({
@@ -107,7 +107,7 @@ function turnIsWaiting({
 /**
  * Show the full pending bubble: the reply does not exist on screen yet, either
  * because the request just went out or because the stream has opened an empty
- * assistant shell. This is the long wait — it deserves an avatar and a label.
+ * assistant shell. This is the long wait - it deserves an avatar and a label.
  *
  * Mutually exclusive with {@link shouldShowMidTurnShimmer}.
  */

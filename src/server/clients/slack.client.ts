@@ -660,7 +660,7 @@ function sanitizeSlackText(text: string | undefined | null): string {
 // =====================================================
 
 /**
- * Events we want to send to Slack — the canonical list lives in
+ * Events we want to send to Slack - the canonical list lives in
  * analytics.registry.ts (the tracking-plan governance layer) so the catalog's
  * Slack badge and this provider's filter can never disagree.
  */

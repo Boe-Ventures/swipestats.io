@@ -273,7 +273,7 @@ export function SwipeRankLeaderboard() {
           <p className="text-muted-foreground mt-5 max-w-3xl text-lg leading-8">
             A playful leaderboard for uploaded Tinder activity. Observed match
             rate is matches reported in a season divided by right swipes
-            reported in that season—not a literal per-swipe conversion rate.
+            reported in that season - not a literal per-swipe conversion rate.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <ButtonLink

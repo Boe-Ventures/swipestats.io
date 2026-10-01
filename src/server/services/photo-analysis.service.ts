@@ -29,14 +29,14 @@ const photoAnalysisSchema = z.object({
   description: z
     .string()
     .describe(
-      "ONE factual sentence describing what's actually visible — setting, subject, pose, activity, lighting. Neutral, not a judgement.",
+      "ONE factual sentence describing what's actually visible - setting, subject, pose, activity, lighting. Neutral, not a judgement.",
     ),
   tags: z
     .array(z.enum(PHOTO_TAGS))
     .describe(
       "Every tag from the fixed set that clearly applies to this photo. Only include a tag if it is genuinely visible; an empty list is fine when none fit.",
     ),
-  // Required here so the model always produces it — but optional on the
+  // Required here so the model always produces it - but optional on the
   // persisted `PhotoAnalysis` type, since older stored analyses predate it.
   // Research-only: never shown in the UI (see PHOTO_ANALYSIS_VERSION).
   score: z
@@ -45,7 +45,7 @@ const photoAnalysisSchema = z.object({
     .min(1)
     .max(10)
     .describe(
-      "How strong this is AS A DATING-APP PHOTO, integer 1-10. Anchors: 2 = clearly weak (blurry, unflattering, awkward crop), 5 = a typical median dating-app photo, 7 = clearly strong (sharp, flattering light, engaging subject), 9-10 = exceptional, scroll-stopping. Use the full range — do not cluster around 6-7.",
+      "How strong this is AS A DATING-APP PHOTO, integer 1-10. Anchors: 2 = clearly weak (blurry, unflattering, awkward crop), 5 = a typical median dating-app photo, 7 = clearly strong (sharp, flattering light, engaging subject), 9-10 = exceptional, scroll-stopping. Use the full range - do not cluster around 6-7.",
     ),
 });
 
@@ -56,7 +56,7 @@ export interface AnalyzePhotoInput {
   url: string;
   /**
    * Optional correction, e.g. "that's a kayak, not a car" or "this is my
-   * brother, not me". Authoritative — trusted over the model's first read.
+   * brother, not me". Authoritative - trusted over the model's first read.
    */
   steer?: string;
 }
@@ -69,12 +69,12 @@ export async function analyzePhoto(
   const tagList = PHOTO_TAGS.join(", ");
   const instructions = `You are tagging a single photo from someone's dating-app photo library so they can organise their gallery and plan which shots to use.
 
-Look ONLY at what is genuinely visible — never invent props, people, or details that aren't there.
+Look ONLY at what is genuinely visible - never invent props, people, or details that aren't there.
 
 Return:
 - "name": a short, friendly 2-5 word name for the photo (e.g. "Sunset beach selfie", "Gym mirror pic").
 - "description": ONE factual sentence describing what's visible (setting, subject, pose, activity, lighting). Neutral.
-- "tags": every tag from this fixed set that clearly applies — ${tagList}. A few are easy to confuse, so judge them precisely:
+- "tags": every tag from this fixed set that clearly applies - ${tagList}. A few are easy to confuse, so judge them precisely:
   • "selfie" = arm's-length self-portrait; "mirror-selfie" = shot into a mirror (often phone visible).
   • "duo" = exactly one other person alongside the subject; "group" = three or more people total (the subject plus two or more others). Never use both on one photo.
   • "thirst-trap" = deliberately revealing / shirtless / gym-body / posed for sex appeal.
@@ -87,13 +87,14 @@ Return:
   • "blurred" = the photo is noticeably blurry, low-resolution, or out of focus.
   • "sunset" = a sunset/sunrise sky is a clear feature.
 Only include tags you can actually see. It's fine to return one tag, several, or none.
-- "score": rate the photo 1-10 as a dating-app photo. 2 = clearly weak (blurry, unflattering, awkward crop), 5 = a typical median dating-app photo, 7 = clearly strong (sharp, flattering light, engaging subject), 9-10 = exceptional and scroll-stopping. This is internal research data the user never sees — be honest, not kind, and use the full range instead of clustering around 6-7.${
+- "score": rate the photo 1-10 as a dating-app photo. 2 = clearly weak (blurry, unflattering, awkward crop), 5 = a typical median dating-app photo, 7 = clearly strong (sharp, flattering light, engaging subject), 9-10 = exceptional and scroll-stopping. This is internal research data the user never sees - be honest, not kind, and use the full range instead of clustering around 6-7.${
     steer?.trim()
-      ? `\n\nExtra direction from the user (authoritative — trust it over your first read): ${steer.trim()}`
+      ? `\n\nExtra direction from the user (authoritative - trust it over your first read): ${steer.trim()}`
       : ""
   }`;
 
   return generateStructured({
+    normalizeCopy: true,
     schema: photoAnalysisSchema,
     name: "PhotoAnalysis",
     description:
