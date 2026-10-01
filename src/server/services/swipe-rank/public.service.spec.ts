@@ -58,6 +58,58 @@ function leaderboardRow(
 }
 
 describe("SwipeRank public leaderboard", () => {
+  test("paginates matching rows while retaining frozen season ranks and field size", async () => {
+    execute.mockResolvedValueOnce({
+      rows: [
+        leaderboardRow({
+          matching_count: "101",
+          profile_id: "srp_one",
+          rank: "102",
+          top_share: "7.3",
+          metric_value: "1.048",
+          metric_numerator: "285",
+          metric_denominator: "272",
+        }),
+      ],
+    });
+    const result = await getPublicSwipeRankLeaderboard({
+      period: MONTH,
+      page: 2,
+      filters: { gender: "FEMALE", ageBand: "25-34" },
+    });
+    expect(result).toMatchObject({
+      fieldSize: 1406,
+      matchingCount: 101,
+      pageSize: 100,
+      totalPages: 2,
+    });
+    expect(result.entries[0]).toMatchObject({
+      rank: 102,
+      matches: 285,
+      rightSwipes: 272,
+      matchYieldPercent: 104.8,
+    });
+  });
+
+  test("returns zero matching pages without suppressing the published field", async () => {
+    execute.mockResolvedValueOnce({
+      rows: [leaderboardRow({ matching_count: "0" })],
+    });
+    const result = await getPublicSwipeRankLeaderboard({
+      period: MONTH,
+      page: 1,
+      filters: { ageBand: "55+" },
+    });
+    expect(result).toMatchObject({
+      ready: true,
+      fieldSize: 1406,
+      matchingCount: 0,
+      totalPages: 0,
+      countsSuppressed: false,
+      entries: [],
+    });
+  });
+
   beforeEach(() => {
     execute.mockClear();
   });

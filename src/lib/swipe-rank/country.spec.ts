@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 import {
+  countryDisplayName,
   areCountriesEquivalent,
   canonicalCountryCode,
   countryComparisonValues,
@@ -35,4 +36,11 @@ describe("SwipeRank country comparison", () => {
     expect(values.aliases).toContain("norway");
     expect(values.keys).toContain("norway");
   });
+});
+
+test("displays full country names and preserves unknown labels", () => {
+  expect(countryDisplayName("HU")).toBe("Hungary");
+  expect(countryDisplayName("US")).toBe("United States");
+  expect(countryDisplayName("UK")).toBe("United Kingdom");
+  expect(countryDisplayName("unknown place")).toBe("unknown place");
 });

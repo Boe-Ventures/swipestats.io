@@ -1,8 +1,8 @@
 "use client";
 
-import { Share2, BarChart3 } from "lucide-react";
-import { Button, ButtonLink } from "@/components/ui/button";
-import { toast } from "sonner";
+import { BarChart3 } from "lucide-react";
+import { ButtonLink } from "@/components/ui/button";
+import { ShareButton } from "@/components/ShareButton";
 import { useComparison } from "../../ComparisonProvider";
 import { useTinderProfile } from "../../TinderProfileProvider";
 import { CompareInsightsContent } from "./CompareInsightsContent";
@@ -11,32 +11,6 @@ import { CompareInsightsSkeleton } from "../../_components/LoadingSkeletons";
 export function CompareInsightsPageContent() {
   const { loading } = useComparison();
   const { tinderId } = useTinderProfile();
-
-  const handleShare = async () => {
-    const url = window.location.href;
-
-    // Try native share API first (mobile)
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: "My SwipeStats Comparison",
-          text: "Check out my Tinder profile comparison!",
-          url: url,
-        });
-        toast.success("Shared successfully!");
-      } catch (err) {
-        // User cancelled or error - fallback to clipboard
-        if ((err as Error).name !== "AbortError") {
-          await navigator.clipboard.writeText(url);
-          toast.success("Link copied to clipboard!");
-        }
-      }
-    } else {
-      // Fallback: copy to clipboard
-      await navigator.clipboard.writeText(url);
-      toast.success("Link copied to clipboard!");
-    }
-  };
 
   if (loading) {
     return <CompareInsightsSkeleton />;
@@ -58,15 +32,10 @@ export function CompareInsightsPageContent() {
 
           {/* Action Buttons */}
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleShare}
-              className="gap-2"
-            >
-              <Share2 className="h-4 w-4" />
-              <span className="hidden sm:inline">Share</span>
-            </Button>
+            <ShareButton
+              title="My SwipeStats Comparison"
+              text="Check out my Tinder profile comparison!"
+            />
             <ButtonLink
               variant="outline"
               size="sm"

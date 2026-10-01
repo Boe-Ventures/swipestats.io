@@ -107,3 +107,9 @@ export function areCountriesEquivalent(left: string, right: string): boolean {
     normalizeCountryComparisonKey(left) === normalizeCountryComparisonKey(right)
   );
 }
+
+/** Human-readable country label, retaining unrecognized source labels. */
+export function countryDisplayName(value: string): string {
+  const code = canonicalCountryCode(value);
+  return code ? (countryIdentityByCode.get(code)?.aliases[2] ?? value) : value;
+}
