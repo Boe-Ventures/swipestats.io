@@ -1,7 +1,7 @@
 "use client";
 
 import { Fragment, useEffect, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import {
   ArrowRight,
   CalendarDays,
@@ -9,20 +9,23 @@ import {
   ChevronRight,
   Info,
   Loader2,
-  ShieldCheck,
   Sparkles,
   Trophy,
 } from "lucide-react";
 
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { countryDisplayName } from "@/lib/swipe-rank/country";
+import {
+  PUBLIC_AGE_BANDS,
+  type PublicAgeBand,
+} from "@/lib/swipe-rank/public-filters";
 import { Badge } from "@/components/ui/badge";
 import { Button, ButtonLink } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -137,6 +140,40 @@ function OrientationPill({
   );
 }
 
+function MatchRateExplainer() {
+  return (
+    <Popover>
+      <PopoverTrigger
+        render={
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-slate-500"
+          />
+        }
+        aria-label="Why is this match rate over 100%?"
+      >
+        <Info className="h-4 w-4" />
+      </PopoverTrigger>
+      <PopoverContent
+        align="end"
+        className="max-w-[calc(100vw-2rem)] space-y-2 text-left"
+      >
+        <h3 className="font-semibold">Why over 100%?</h3>
+        <p className="text-muted-foreground text-sm leading-6">
+          Matches and right swipes are counted in the season when Tinder reports
+          them. Some matches may come from right swipes in an earlier season, so
+          matches can outnumber this season’s right swipes.
+        </p>
+        <p className="text-muted-foreground text-sm">
+          This is an activity ratio, not the percentage of swipes that became
+          matches.
+        </p>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 function genderLabel(value: string | null): string {
   if (!value) return "Dater";
   return (GENDER_PRESENTATION[value] ?? UNKNOWN_GENDER_PRESENTATION).label;
@@ -148,6 +185,7 @@ function formatLocation(
   country: string | null,
 ): string {
   const locality = city ?? region;
+  country = country ? countryDisplayName(country) : null;
   if (locality && country && locality !== country) {
     return `${locality}, ${country}`;
   }
@@ -186,6 +224,9 @@ export function SwipeRankLeaderboard() {
     DEFAULT_SWIPE_RANK_PERIOD_KIND,
   );
   const [page, setPage] = useState(1);
+  const [gender, setGender] = useState<"ALL" | "MALE" | "FEMALE">("ALL");
+  const [ageBand, setAgeBand] = useState<"ALL" | PublicAgeBand>("ALL");
+  const filtered = gender !== "ALL" || ageBand !== "ALL";
   const availablePeriods = useQuery(
     trpc.swipeRank.publicAvailablePeriods.queryOptions(undefined, {
       staleTime: 5 * 60 * 1000,
@@ -221,9 +262,14 @@ export function SwipeRankLeaderboard() {
           end: selected.end,
         },
         page,
+        filters: {
+          gender: gender === "ALL" ? undefined : gender,
+          ageBand: ageBand === "ALL" ? undefined : ageBand,
+        },
       },
       {
         enabled: availablePeriods.isSuccess && options.length > 0,
+        placeholderData: keepPreviousData,
         refetchInterval: 60 * 1000,
         refetchOnWindowFocus: true,
       },
@@ -273,7 +319,7 @@ export function SwipeRankLeaderboard() {
           <p className="text-muted-foreground mt-5 max-w-3xl text-lg leading-8">
             A playful leaderboard for uploaded Tinder activity. Observed match
             rate is matches reported in a season divided by right swipes
-            reported in that season - not a literal per-swipe conversion rate.
+            reported in that season, not a literal per-swipe conversion rate.
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             <ButtonLink
@@ -303,7 +349,7 @@ export function SwipeRankLeaderboard() {
                     The leaderboards worth opening first
                   </p>
                 </div>
-                <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
                   {quickJumps.map((jump) => {
                     const active =
                       swipeRankPeriodKey(jump.period) ===
@@ -365,9 +411,7 @@ export function SwipeRankLeaderboard() {
                 </Select>
                 <Select
                   value={
-                    options.length > 0
-                      ? swipeRankPeriodKey(selected)
-                      : undefined
+                    options.length > 0 ? swipeRankPeriodKey(selected) : null
                   }
                   disabled={options.length === 0}
                   onValueChange={(value) => {
@@ -412,10 +456,6 @@ export function SwipeRankLeaderboard() {
                   </span>
                   <span aria-hidden>·</span>
                   <span>{data.minimumActiveDays}+ active days</span>
-                  <span aria-hidden>·</span>
-                  <span className="inline-flex items-center gap-1">
-                    <ShieldCheck className="h-3.5 w-3.5" /> stable pseudonyms
-                  </span>
                 </div>
               )}
             </div>
@@ -454,13 +494,79 @@ export function SwipeRankLeaderboard() {
         {data && (
           <Card className="dark:border-border gap-0 overflow-hidden border-slate-300 py-0 shadow-sm">
             <CardHeader className="border-b border-slate-800 bg-slate-950 py-5 text-white">
-              <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="flex flex-wrap items-center justify-between gap-4">
                 <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1">
-                  <CardTitle>{periodLabel} leaderboard</CardTitle>
-                  <CardDescription className="dark:text-muted-foreground text-slate-400">
-                    Exact rank throughout; rows are grouped by their share of
-                    the eligible field.
-                  </CardDescription>
+                  <CardTitle className="text-xl leading-tight tracking-tight sm:text-2xl">
+                    {periodLabel} leaderboard
+                  </CardTitle>
+                  {leaderboard.isFetching && (
+                    <span className="text-xs text-slate-400" role="status">
+                      Updating…
+                    </span>
+                  )}
+                  {filtered && (
+                    <p className="text-xs text-slate-400">
+                      {data.matchingCount?.toLocaleString()} matching profiles ·
+                      season ranks unchanged
+                    </p>
+                  )}
+                </div>
+                <div className="flex w-full flex-wrap gap-2 sm:w-auto">
+                  <Select
+                    value={gender}
+                    onValueChange={(value) => {
+                      if (value) {
+                        setGender(value);
+                        setPage(1);
+                      }
+                    }}
+                  >
+                    <SelectTrigger
+                      aria-label="Filter gender"
+                      className="w-36 bg-white text-slate-950 hover:bg-slate-50 data-popup-open:bg-slate-50"
+                    >
+                      <SelectValue>
+                        {gender === "ALL"
+                          ? "Everyone"
+                          : gender === "MALE"
+                            ? "Men"
+                            : "Women"}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">Everyone</SelectItem>
+                      <SelectItem value="MALE">Men</SelectItem>
+                      <SelectItem value="FEMALE">Women</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Select
+                    value={ageBand}
+                    onValueChange={(value) => {
+                      if (value) {
+                        setAgeBand(value);
+                        setPage(1);
+                      }
+                    }}
+                  >
+                    <SelectTrigger
+                      aria-label="Filter age"
+                      className="w-36 bg-white text-slate-950 hover:bg-slate-50 data-popup-open:bg-slate-50"
+                    >
+                      <SelectValue>
+                        {ageBand === "ALL"
+                          ? "All ages"
+                          : PUBLIC_AGE_BANDS[ageBand].label}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">All ages</SelectItem>
+                      {Object.entries(PUBLIC_AGE_BANDS).map(([value, band]) => (
+                        <SelectItem key={value} value={value}>
+                          {band.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </CardHeader>
@@ -478,11 +584,17 @@ export function SwipeRankLeaderboard() {
               ) : data.entries.length === 0 ? (
                 <EmptyLeaderboard
                   title="No profiles found on this page"
-                  description="Try another season or return to the first page of this leaderboard."
+                  description="Try another season, clear the filters, or return to the first page."
                 />
               ) : (
                 <div>
-                  <div className="overflow-x-auto">
+                  <div
+                    aria-busy={leaderboard.isPlaceholderData}
+                    className={cn(
+                      "overflow-x-auto",
+                      leaderboard.isPlaceholderData && "opacity-50",
+                    )}
+                  >
                     <Table className="min-w-[760px] lg:min-w-[1080px]">
                       <TableHeader>
                         <TableRow className="dark:bg-background/80 dark:hover:bg-background/80 bg-slate-50/80 hover:bg-slate-50/80">
@@ -532,7 +644,7 @@ export function SwipeRankLeaderboard() {
                                         : `Top ${band}%`}
                                     </span>
                                     <span className="dark:text-muted-foreground ml-3 text-slate-400">
-                                      up to{" "}
+                                      Ranks 1–
                                       {Math.min(
                                         data.fieldSize!,
                                         Math.max(
@@ -542,7 +654,6 @@ export function SwipeRankLeaderboard() {
                                           ),
                                         ),
                                       ).toLocaleString()}{" "}
-                                      entries
                                     </span>
                                   </TableCell>
                                 </TableRow>
@@ -608,16 +719,21 @@ export function SwipeRankLeaderboard() {
                                 </TableCell>
                                 <TableCell className="px-7 text-right">
                                   <div className="ml-auto max-w-64">
-                                    <span className="text-2xl font-bold tabular-nums">
-                                      {entry.matchYieldPercent.toLocaleString(
-                                        undefined,
-                                        {
-                                          minimumFractionDigits: 1,
-                                          maximumFractionDigits: 1,
-                                        },
+                                    <div className="flex items-center justify-end gap-2">
+                                      {entry.matches > entry.rightSwipes && (
+                                        <MatchRateExplainer />
                                       )}
-                                      %
-                                    </span>
+                                      <span className="text-2xl font-bold tabular-nums">
+                                        {entry.matchYieldPercent.toLocaleString(
+                                          undefined,
+                                          {
+                                            minimumFractionDigits: 1,
+                                            maximumFractionDigits: 1,
+                                          },
+                                        )}
+                                        %
+                                      </span>
+                                    </div>
                                     <p className="text-muted-foreground mt-1 font-mono text-xs whitespace-nowrap tabular-nums">
                                       {entry.matches.toLocaleString()} m /{" "}
                                       {entry.rightSwipes.toLocaleString()} rs ·{" "}
@@ -648,34 +764,47 @@ export function SwipeRankLeaderboard() {
                       export. Each monthly field is frozen when that season is
                       published.
                     </p>
-                    {data.totalPages > 1 && (
-                      <div className="flex shrink-0 items-center gap-3">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          disabled={data.page <= 1}
-                          onClick={() => setPage((current) => current - 1)}
-                          aria-label="Previous leaderboard page"
-                        >
-                          <ChevronLeft />
-                        </Button>
-                        <p className="text-muted-foreground text-sm whitespace-nowrap tabular-nums">
-                          Page {data.page.toLocaleString()} of{" "}
-                          {data.totalPages.toLocaleString()}
-                        </p>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          disabled={data.page >= data.totalPages}
-                          onClick={() => setPage((current) => current + 1)}
-                          aria-label="Next leaderboard page"
-                        >
-                          <ChevronRight />
-                        </Button>
-                      </div>
-                    )}
+                    <div className="flex shrink-0 flex-col items-end gap-2">
+                      <p className="text-muted-foreground text-xs tabular-nums">
+                        Showing{" "}
+                        {((data.page - 1) * data.pageSize + 1).toLocaleString()}
+                        –
+                        {(
+                          (data.page - 1) * data.pageSize +
+                          data.entries.length
+                        ).toLocaleString()}{" "}
+                        of {data.matchingCount?.toLocaleString()} profiles · 100
+                        per page
+                      </p>
+                      {data.totalPages > 1 && (
+                        <div className="flex shrink-0 items-center gap-3">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={data.page <= 1}
+                            onClick={() => setPage((current) => current - 1)}
+                            aria-label="Previous leaderboard page"
+                          >
+                            <ChevronLeft />
+                          </Button>
+                          <p className="text-muted-foreground text-sm whitespace-nowrap tabular-nums">
+                            Page {data.page.toLocaleString()} of{" "}
+                            {data.totalPages.toLocaleString()}
+                          </p>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            disabled={data.page >= data.totalPages}
+                            onClick={() => setPage((current) => current + 1)}
+                            aria-label="Next leaderboard page"
+                          >
+                            <ChevronRight />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}

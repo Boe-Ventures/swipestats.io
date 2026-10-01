@@ -1,7 +1,7 @@
 "use client";
 
-import { Share2, Users } from "lucide-react";
-import { Button, ButtonLink } from "@/components/ui/button";
+import { Users } from "lucide-react";
+import { ButtonLink } from "@/components/ui/button";
 import { useTinderProfile } from "../TinderProfileProvider";
 import { DataRequestCTA } from "../../../_shared/DataRequestCTA";
 import { DirectoryCtaCard } from "./DirectoryCtaCard";
@@ -19,36 +19,10 @@ import { MainInsightsSkeleton } from "./LoadingSkeletons";
 import { CohortBenchmarksSection } from "./CohortBenchmarksSection";
 import { RoastCtaCard } from "./RoastCtaCard";
 import { SwipeRankCard } from "./SwipeRankCard";
-import { toast } from "sonner";
+import { ShareButton } from "@/components/ShareButton";
 
 export function MainInsightsPageContent() {
   const { usageLoading, tinderId, isOwner, isAnonymous } = useTinderProfile();
-
-  const handleShare = async () => {
-    const url = window.location.href;
-
-    // Try native share API first (mobile)
-    if (navigator.share) {
-      try {
-        await navigator.share({
-          title: "My SwipeStats",
-          text: "Check out my Tinder analytics!",
-          url: url,
-        });
-        toast.success("Shared successfully!");
-      } catch (err) {
-        // User cancelled or error - fallback to clipboard
-        if ((err as Error).name !== "AbortError") {
-          await navigator.clipboard.writeText(url);
-          toast.success("Link copied to clipboard!");
-        }
-      }
-    } else {
-      // Fallback: copy to clipboard
-      await navigator.clipboard.writeText(url);
-      toast.success("Link copied to clipboard!");
-    }
-  };
 
   if (usageLoading) {
     return <MainInsightsSkeleton />;
@@ -70,15 +44,10 @@ export function MainInsightsPageContent() {
 
           {/* Action Buttons */}
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleShare}
-              className="gap-2"
-            >
-              <Share2 className="h-4 w-4" />
-              <span className="hidden sm:inline">Share</span>
-            </Button>
+            <ShareButton
+              title="My SwipeStats"
+              text="Check out my Tinder analytics!"
+            />
 
             <ButtonLink
               href={`/insights/tinder/${tinderId}/compare`}

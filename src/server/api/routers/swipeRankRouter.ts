@@ -82,7 +82,7 @@ const periodSchema = z
 
 const cachedPublicSwipeRankLeaderboard = unstable_cache(
   getPublicSwipeRankLeaderboard,
-  ["swipe-rank-public-leaderboard-v7", SWIPE_RANK_PUBLIC_CACHE_NAMESPACE],
+  ["swipe-rank-public-leaderboard-v8", SWIPE_RANK_PUBLIC_CACHE_NAMESPACE],
   { revalidate: 60, tags: [SWIPE_RANK_PUBLIC_CACHE_TAG] },
 );
 const cachedPublicSwipeRankPeriods = unstable_cache(
@@ -131,6 +131,15 @@ export const swipeRankRouter = {
       z.object({
         period: periodSchema,
         page: z.number().int().min(1).max(10_000).default(1),
+        filters: z
+          .object({
+            gender: z.enum(["MALE", "FEMALE"]).optional(),
+            ageBand: z
+              .enum(["18-24", "25-34", "35-44", "45-54", "55+"])
+              .optional(),
+          })
+          .strict()
+          .optional(),
       }),
     )
     .query(async ({ input }) => {

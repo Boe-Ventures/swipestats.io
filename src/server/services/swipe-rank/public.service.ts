@@ -2,6 +2,11 @@ import { createHmac } from "node:crypto";
 
 import { sql } from "drizzle-orm";
 
+import {
+  PUBLIC_AGE_BANDS,
+  type PublicLeaderboardFilters,
+} from "@/lib/swipe-rank/public-filters";
+
 import { env } from "@/env";
 import { db } from "@/server/db";
 import type { Gender } from "@/server/db/schema";
@@ -44,6 +49,7 @@ export interface PublicSwipeRankLeaderboard {
   minimumActiveDays: number;
   minimumPublicFieldSize: number;
   fieldSize: number | null;
+  matchingCount: number | null;
   countsSuppressed: boolean;
   page: number;
   pageSize: number;
@@ -57,6 +63,7 @@ interface LeaderboardRow extends Record<string, unknown> {
   rank: number | string | null;
   top_share: number | string | null;
   field_size: number | string;
+  matching_count?: number | string;
   metric_value: number | string | null;
   metric_numerator: number | string | null;
   metric_denominator: number | string | null;
@@ -121,12 +128,17 @@ export function getPublicSwipeRankPseudonym(
 export async function getPublicSwipeRankLeaderboard(input: {
   period: SwipeRankPeriodBounds;
   page: number;
+  filters?: PublicLeaderboardFilters;
   metricVersion?: string;
 }): Promise<PublicSwipeRankLeaderboard> {
   assertClosedSwipeRankPeriod(input.period);
   if (!Number.isSafeInteger(input.page) || input.page < 1) {
     throw new Error("SwipeRank page must be a positive integer.");
   }
+  const filters = input.filters ?? {};
+  const ageBand = filters.ageBand
+    ? PUBLIC_AGE_BANDS[filters.ageBand]
+    : undefined;
   const metricVersion = input.metricVersion ?? SWIPE_RANK_METRIC_VERSION;
   const offset = (input.page - 1) * SWIPE_RANK_PUBLIC_PAGE_SIZE;
   const result = await db.execute<LeaderboardRow>(sql`
@@ -175,13 +187,16 @@ export async function getPublicSwipeRankLeaderboard(input: {
       ) profile_media ON true
       WHERE profile.is_synthetic = false
         AND profile.is_swipe_rank_excluded = false
+        ${filters.gender ? sql`AND profile.gender = ${filters.gender}` : sql``}
+        ${ageBand ? sql`AND entry.age_in_period BETWEEN ${ageBand.min} AND ${ageBand.max}` : sql``}
     ), stats AS (
       SELECT
         snapshot.id AS snapshot_id,
         snapshot.published_at AS as_of,
         snapshot.minimum_rate_denominator,
         snapshot.minimum_active_days,
-        snapshot.field_size::bigint AS field_size
+        snapshot.field_size::bigint AS field_size,
+        (SELECT count(*)::bigint FROM field) AS matching_count
       FROM selected_snapshot snapshot
       GROUP BY snapshot.id, snapshot.published_at,
         snapshot.minimum_rate_denominator, snapshot.minimum_active_days,
@@ -222,6 +237,7 @@ export async function getPublicSwipeRankLeaderboard(input: {
   const ready = Boolean(first?.snapshot_id);
   const fieldSize = first ? Number(first.field_size) : 0;
   const countsSuppressed = fieldSize < SWIPE_RANK_PUBLIC_MINIMUM_FIELD_SIZE;
+  const matchingCount = Number(first?.matching_count ?? fieldSize);
   const secret = publicIdentitySecret();
   const entries = countsSuppressed
     ? []
@@ -271,12 +287,13 @@ export async function getPublicSwipeRankLeaderboard(input: {
     minimumActiveDays: Number(first?.minimum_active_days ?? 5),
     minimumPublicFieldSize: SWIPE_RANK_PUBLIC_MINIMUM_FIELD_SIZE,
     fieldSize: countsSuppressed ? null : fieldSize,
+    matchingCount: countsSuppressed ? null : matchingCount,
     countsSuppressed,
     page: input.page,
     pageSize: SWIPE_RANK_PUBLIC_PAGE_SIZE,
     totalPages: countsSuppressed
       ? 0
-      : Math.ceil(fieldSize / SWIPE_RANK_PUBLIC_PAGE_SIZE),
+      : Math.ceil(matchingCount / SWIPE_RANK_PUBLIC_PAGE_SIZE),
     entries,
   };
 }
