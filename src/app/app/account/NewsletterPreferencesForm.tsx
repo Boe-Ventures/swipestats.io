@@ -6,11 +6,7 @@ import { useTRPC } from "@/trpc/react";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
-import {
-  Field,
-  FieldDescription,
-  FieldLabel,
-} from "@/components/ui/form-new";
+import { Field, FieldDescription, FieldLabel } from "@/components/ui/form-new";
 import { toast } from "sonner";
 import { Mail, Loader2, Info } from "lucide-react";
 import { useNewsletter } from "@/hooks/useNewsletter";
@@ -254,18 +250,19 @@ export function NewsletterPreferencesForm() {
         {VISIBLE_TOPICS.map((topic) => {
           const info = TOPIC_INFO[topic];
           return (
-            <Field key={topic} orientation="horizontal" className="items-start gap-3">
+            <Field
+              key={topic}
+              orientation="horizontal"
+              className="grid-cols-[auto_1fr] items-start gap-3"
+            >
               <Checkbox
                 id={topic}
                 checked={localTopics[topic] ?? false}
                 onCheckedChange={() => handleToggle(topic)}
                 className="mt-0.5"
               />
-              <div className="flex-1 space-y-0.5">
-                <FieldLabel
-                  htmlFor={topic}
-                  className="cursor-pointer"
-                >
+              <div className="min-w-0 space-y-0.5">
+                <FieldLabel htmlFor={topic} className="cursor-pointer">
                   {info.name}
                 </FieldLabel>
                 <FieldDescription className="text-xs">

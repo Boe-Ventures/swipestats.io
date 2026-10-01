@@ -7,6 +7,8 @@ import {
   CreditCard,
   Calendar,
   AlertCircle,
+  Check,
+  Infinity as InfinityIcon,
 } from "lucide-react";
 import { Button, ButtonLink } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -61,21 +63,42 @@ export function SubscriptionCard() {
   // Lifetime subscription
   if (isLifetime) {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center gap-3">
-          <Badge className="bg-linear-to-r from-pink-500 to-rose-500 text-white">
-            <Crown className="mr-1 h-3 w-3" />
-            {tier} - Lifetime
-          </Badge>
+      <div className="space-y-6">
+        <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-4">
+            <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-rose-100 bg-rose-50 text-rose-600">
+              <Crown className="size-6" aria-hidden="true" />
+            </div>
+            <div>
+              <h3 className="text-2xl leading-tight font-bold tracking-tight text-gray-900 sm:text-3xl">
+                SwipeStats {tier === "ELITE" ? "Elite" : "Plus"}
+              </h3>
+              <p className="mt-2 max-w-md text-sm leading-relaxed text-gray-600">
+                All your {tier === "ELITE" ? "Elite" : "Plus"} features, yours
+                for good. Thank you for supporting SwipeStats.
+              </p>
+            </div>
+          </div>
+          <span className="inline-flex w-fit shrink-0 items-center gap-2 rounded-full border border-rose-200 bg-white px-3 py-1.5 text-xs font-semibold text-rose-700">
+            <InfinityIcon className="size-4" aria-hidden="true" />
+            Lifetime access
+          </span>
         </div>
-        <p className="text-muted-foreground text-sm">
-          Thank you for your support! You have lifetime access to all {tier}{" "}
-          features.
-        </p>
-        <div className="flex items-center gap-2 text-sm text-green-600">
-          <Crown className="h-4 w-4" />
-          <span>No recurring charges - you own it forever</span>
-        </div>
+        <dl className="grid gap-4 rounded-2xl border border-gray-200/80 bg-white/80 p-5 sm:grid-cols-2 sm:gap-6">
+          <div>
+            <dt className="text-xs font-medium text-gray-500">Plan status</dt>
+            <dd className="mt-2 flex items-center gap-2 text-sm font-semibold text-gray-900">
+              <Check className="size-4 text-emerald-600" aria-hidden="true" />
+              Active for life
+            </dd>
+          </div>
+          <div>
+            <dt className="text-xs font-medium text-gray-500">Billing</dt>
+            <dd className="mt-2 text-sm font-semibold text-gray-900">
+              No recurring charges
+            </dd>
+          </div>
+        </dl>
       </div>
     );
   }

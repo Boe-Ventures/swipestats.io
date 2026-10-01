@@ -113,6 +113,11 @@ export function LocationForm() {
         </CardAction>
       </CardHeader>
       <CardContent>
+        {detectMutation.isError && (
+          <p role="alert" className="text-destructive mb-4 text-sm">
+            {detectMutation.error.message}
+          </p>
+        )}
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
           {/* Timezone */}
           <Controller

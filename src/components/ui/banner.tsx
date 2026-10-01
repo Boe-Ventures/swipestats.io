@@ -114,7 +114,7 @@ export function Banner({
                     href={ctaHref}
                     className="font-semibold text-rose-600 hover:text-rose-700"
                   >
-                    {ctaText} <span aria-hidden="true">&rarr;</span>
+                    {ctaText}
                   </Link>
                 </>
               )}
@@ -138,7 +138,7 @@ export function Banner({
               compactMobile && "hidden sm:flex",
             )}
           >
-            {ctaText} <span aria-hidden="true">&rarr;</span>
+            {ctaText}
           </Link>
         )}
         {ctaText && !ctaHref && ctaOnClick && (
@@ -153,7 +153,7 @@ export function Banner({
               compactCta && "px-2 py-0.5 text-xs sm:py-0.5",
             )}
           >
-            {ctaText} <span aria-hidden="true">&rarr;</span>
+            {ctaText}
           </a>
         )}
       </div>

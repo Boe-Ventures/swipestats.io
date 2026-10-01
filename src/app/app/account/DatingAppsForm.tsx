@@ -103,7 +103,7 @@ export function DatingAppsForm() {
         </Field>
 
         {activeOnOther && (
-          <div className="space-y-2 pl-4">
+          <div className="space-y-2">
             <Field>
               <FieldLabel
                 htmlFor="otherApps"

@@ -125,12 +125,11 @@ export default async function AccountPage() {
           </div>
 
           <div className="space-y-6">
-            <Card>
+            <Card className="overflow-hidden border-rose-100 bg-linear-to-br from-white via-white to-rose-50/70 shadow-sm">
               <CardHeader>
-                <CardTitle>Your Plan</CardTitle>
-                <p className="text-muted-foreground text-sm">
-                  View your current subscription status and manage your billing.
-                </p>
+                <CardTitle className="text-xs font-semibold tracking-wider text-gray-500 uppercase">
+                  Your Plan
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <Suspense fallback={<div>Loading subscription...</div>}>

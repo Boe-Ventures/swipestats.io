@@ -36,11 +36,19 @@ export const userRouter = {
     const request = new Request("http://localhost", { headers: headersList });
     const geo = geolocation(request);
 
-    const city = geo?.city ?? null;
-    const country = geo?.country ?? null;
-    const region = geo?.countryRegion ?? null;
-    const timeZone = headersList.get("x-vercel-ip-timezone") ?? null;
-    const continent = country ? getContinentFromCountry(country) : null;
+    const country = geo?.country;
+    if (!country) {
+      throw new TRPCError({
+        code: "PRECONDITION_FAILED",
+        message:
+          "Location detection is unavailable here. Enter your location manually; your saved location has not changed.",
+      });
+    }
+
+    const city = geo?.city || undefined;
+    const region = geo?.countryRegion || undefined;
+    const timeZone = headersList.get("x-vercel-ip-timezone") || undefined;
+    const continent = getContinentFromCountry(country) || undefined;
 
     const updatedUser = await updateUserLocation({
       userId: ctx.session.user.id,

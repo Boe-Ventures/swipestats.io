@@ -807,7 +807,7 @@ function AboutImage() {
               alt="Kristian, founder of SwipeStats"
               fill
               sizes="(max-width: 1024px) 100vw, 50vw"
-              className="scale-105 object-cover opacity-35 blur-[2px] saturate-[0.65]"
+              className="scale-105 object-cover opacity-35 saturate-[0.65]"
             />
             <div className="absolute inset-0 bg-linear-to-t from-gray-950/90 via-gray-950/60 to-gray-950/30" />
             <RoseGlow className="bottom-[-160px] left-[-120px] h-[420px] w-[420px]" />
@@ -876,13 +876,13 @@ function AboutImage() {
               </p>
               <div className="mt-5 flex flex-wrap gap-2 text-[12px] font-semibold text-[#184B7A]">
                 <span className="rounded-full bg-white px-3 py-1.5 ring-1 ring-[#CFE3FF]">
-                  saved listings
+                  Saved Listings
                 </span>
                 <span className="rounded-full bg-white px-3 py-1.5 ring-1 ring-[#CFE3FF]">
-                  family notes
+                  Family Notes
                 </span>
                 <span className="rounded-full bg-white px-3 py-1.5 ring-1 ring-[#CFE3FF]">
-                  agent context
+                  Agent Context
                 </span>
               </div>
               <div className="mt-7 flex flex-wrap items-center gap-3">
