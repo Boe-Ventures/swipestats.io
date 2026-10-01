@@ -4,6 +4,22 @@
 
 A modern dating app analytics platform that helps you understand your Tinder and Hinge performance through beautiful insights and data visualizations.
 
+## Merge workflow
+
+When project owner Kristian (`kristianeboe`) says "yeet to main", "get to
+main", or equivalent wording, complete the current agreed work through a
+verified merge into `main`: validate, commit, push, open or update the PR,
+check its status, and merge. Use an admin merge for his own PRs or PRs
+prepared on his behalf if the required-review rule blocks merging; no
+separate confirmation is needed.
+
+Failed checks must be reported and fixed before merging. This does not
+authorize bypassing unrelated protections, disabling repository review
+rules, or waiving review for collaborator-authored PRs without an explicit
+exception. Preserve unrelated changes in other checkouts. See
+[AGENTS.md](./AGENTS.md) for the full agent instructions; `CLAUDE.md` links
+to the same file.
+
 ## How to Use
 
 1. **Get your data** from Tinder at [account.gotinder.com/data](https://account.gotinder.com/data) or Hinge

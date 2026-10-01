@@ -16,6 +16,26 @@ Scripts, env vars, directory layout, and the table list are discoverable from
 `package.json`, `.env.example`, `src/env.ts`, and the file tree. This file
 covers what they don't tell you.
 
+## Kristian's merge shorthand
+
+For `Boe-Ventures/swipestats.io`, owner Kristian (`kristianeboe`) saying
+"yeet to main", "get to main", "get this to main", or equivalent wording
+authorizes completing the current work through a merge into `main`. Include
+all changes in the agreed task scope, including changes he explicitly asked
+to integrate; preserve unrelated work in other checkouts.
+
+Run relevant validation, commit and push the changes, create or update the
+PR, inspect its checks, and finish the merge without asking again. Use an
+admin merge for his own PR or a PR prepared on his behalf when a required
+review blocks the merge. Do not stop after merely opening a PR or enabling
+auto-merge; verify that the PR is merged and the changes are on `main`.
+
+This authorization does not permit ignoring failed checks or bypassing
+unrelated protections. Report failures and fix them before merging. Keep
+review requirements for collaborator-authored PRs, including Paw's, unless
+Kristian explicitly authorizes an exception. Do not disable repository-wide
+review rules.
+
 ## Migrations — the important one
 
 SwipeStats intentionally runs **separate long-lived Neon `production` and
