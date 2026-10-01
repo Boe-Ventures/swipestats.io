@@ -295,9 +295,7 @@ function ReminderSection() {
             className="pointer-events-none absolute -top-[180px] -right-[120px] h-[720px] w-[720px] rounded-full blur-[10px] [background:radial-gradient(circle,oklch(0.586_0.253_17.585/0.5),transparent_65%)]"
           />
           <div className="relative z-[2]">
-            <Eyebrow noRule className="text-rose-500">
-              Don&apos;t lose track
-            </Eyebrow>
+            <Eyebrow className="text-rose-500">Don&apos;t lose track</Eyebrow>
             <h3 className="mt-3 text-[24px] font-bold tracking-[-0.02em] text-white">
               Get a reminder when to upload
             </h3>

@@ -469,7 +469,7 @@ export default function DesignSystemPage() {
                   />
                   <div className="relative grid grid-cols-1 items-center gap-7 md:grid-cols-[1fr_auto]">
                     <div>
-                      <Eyebrow noRule className="text-rose-500">
+                      <Eyebrow className="text-rose-500">
                         Don&apos;t lose track
                       </Eyebrow>
                       <h3 className="mt-3 text-[24px] font-bold tracking-[-0.02em] text-white">

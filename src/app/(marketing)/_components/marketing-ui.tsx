@@ -41,12 +41,10 @@ export type MarketingButtonProps = VariantProps<typeof marketingButton>;
 export function Eyebrow({
   children,
   center,
-  noRule,
   className,
 }: {
   children: React.ReactNode;
   center?: boolean;
-  noRule?: boolean;
   className?: string;
 }) {
   return (
@@ -57,9 +55,6 @@ export function Eyebrow({
         className,
       )}
     >
-      {!noRule && (
-        <span className="h-px w-[18px] bg-rose-600 opacity-50" aria-hidden />
-      )}
       {children}
     </span>
   );
@@ -88,9 +83,7 @@ export function SectionHead({
         className,
       )}
     >
-      <Eyebrow center={center} noRule={center}>
-        {eyebrow}
-      </Eyebrow>
+      <Eyebrow center={center}>{eyebrow}</Eyebrow>
       <h2 className="dark:text-foreground mt-3.5 text-[clamp(30px,4vw,46px)] leading-[1.06] font-bold tracking-[-0.03em] text-balance text-gray-900">
         {title}
       </h2>

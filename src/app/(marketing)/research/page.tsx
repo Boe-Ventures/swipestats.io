@@ -241,7 +241,7 @@ function HeroSection() {
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
         <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
           <div>
-            <Eyebrow noRule>
+            <Eyebrow>
               <span className="inline-flex items-center gap-2 rounded-full border border-rose-600/20 bg-rose-50 px-3 py-1.5 text-[13px] font-semibold tracking-normal text-rose-700 normal-case dark:bg-rose-950/40 dark:text-rose-400">
                 Trusted by researchers
               </span>

@@ -128,7 +128,6 @@ export default async function DatingServicesCategoryPage({
           <div className="mt-8 flex flex-wrap items-end justify-between gap-6">
             <div className="max-w-3xl">
               <div className="flex items-center gap-3 font-mono text-[11px] font-medium tracking-[0.1em] text-rose-600 uppercase dark:text-rose-400">
-                <span className="h-px w-6 bg-rose-400" />
                 {config.label}
               </div>
               <h1 className="mt-4 text-[clamp(36px,5vw,56px)] leading-[1.02] font-bold tracking-[-0.04em]">

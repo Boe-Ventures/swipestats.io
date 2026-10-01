@@ -47,10 +47,7 @@ export function CtaBand({
         )}
       >
         {eyebrow && (
-          <Eyebrow
-            noRule
-            className={cn("text-rose-500", center && "justify-center")}
-          >
+          <Eyebrow className={cn("text-rose-500", center && "justify-center")}>
             {eyebrow}
           </Eyebrow>
         )}
