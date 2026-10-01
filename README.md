@@ -48,8 +48,9 @@ Learn more: [SHA256 on Wikipedia](https://en.wikipedia.org/wiki/SHA-2)
 
 ### Development
 
-Install Bun and the Vercel CLI, then clone the repository. Sign in to Vercel
-with access to the Boe Ventures `swipestats` project.
+Install Node.js 24 (the version used by Vercel), Bun, and the Vercel CLI, then
+clone the repository. Sign in to Vercel with access to the Boe Ventures
+`swipestats` project.
 
 ```bash
 vercel login
