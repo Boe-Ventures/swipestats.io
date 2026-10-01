@@ -1,6 +1,10 @@
 import { afterEach, expect, spyOn, test } from "bun:test";
-import { db } from "@/server/db";
-import { streamDatasetJsonl } from "./datasetExport.service";
+
+process.env.SKIP_ENV_VALIDATION = "1";
+process.env.DATABASE_URL ??= "postgresql://test:test@localhost:5432/test";
+
+const { db } = await import("@/server/db");
+const { streamDatasetJsonl } = await import("./datasetExport.service");
 
 let selectSpy: ReturnType<typeof spyOn<typeof db, "select">> | undefined;
 afterEach(() => selectSpy?.mockRestore());

@@ -48,12 +48,42 @@ Learn more: [SHA256 on Wikipedia](https://en.wikipedia.org/wiki/SHA-2)
 
 ### Development
 
-```bash
-# Install dependencies
-bun install
+Install Node.js 24 (the version used by Vercel), Bun, and the Vercel CLI, then
+clone the repository. Sign in to Vercel with access to the Boe Ventures
+`swipestats` project.
 
-# Start development server
+```bash
+vercel login
+vercel link
+vercel env pull .env.local --environment=development
+bun install --frozen-lockfile
 bun dev
+```
+
+Choose the Boe Ventures `swipestats` project when linking. Development and
+Preview use the shared Neon `dev` branch. Pull the **Development** environment;
+the Production `DATABASE_URL` points at a different, long-lived database. Keep
+`.env.local` out of Git. `bun dev` starts Portless, which gives the app a stable
+local URL. LocalCan is optional, and the dev script skips tunnel sync when it
+isn't installed. The URL printed by Portless is the one to open.
+
+The Vercel Development pull includes the required app credentials. You can use
+`.env.example` to see their names or to configure a separate local database.
+It contains placeholders, so copying it alone does not start the app. Run the
+repository gate before a PR:
+
+```bash
+bun check
+```
+
+Use `bun db:generate` and `bun db:migrate` for schema changes. `bun build`
+also runs migrations after Next.js builds, so use it only with the intended
+database URL. See [database migrations](docs/ops/database-migrations.md) before
+changing the schema. For a local build check without a migration or PostHog
+source-map upload, run:
+
+```bash
+POSTHOG_PERSONAL_API_KEY='' bunx next build
 ```
 
 ## Tech Stack
