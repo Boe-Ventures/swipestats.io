@@ -460,7 +460,7 @@ export const hingeProfileRouter = {
         });
 
         // Skip the event when the same export was re-uploaded (nothing new
-        // merged in) — otherwise it reads as a noisy "0 new" update.
+        // merged in) - otherwise it reads as a noisy "0 new" update.
         if (!result.isNoOp) {
           trackServerEvent(ctx.session.user.id, "hinge_profile_updated", {
             hingeId: input.hingeId,
@@ -812,7 +812,7 @@ export const hingeProfileRouter = {
           transientUpload: preparedUpload.binding,
         });
 
-        // Track success with rich metrics — skip when the same export was
+        // Track success with rich metrics - skip when the same export was
         // re-uploaded (nothing new merged in) to avoid a noisy "0 new" update.
         if (!result.isNoOp) {
           trackServerEvent(ctx.session.user.id, "hinge_profile_updated", {

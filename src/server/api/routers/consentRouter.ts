@@ -68,7 +68,7 @@ export const consentRouter = createTRPCRouter({
         .set({ analyticsConsent: record })
         .where(eq(userTable.id, ctx.session.user.id));
 
-      // On grant, set the user's traits in analytics — server-side, so this is
+      // On grant, set the user's traits in analytics - server-side, so this is
       // where tier/city/country (absent from the client session) reach PostHog
       // + Amplitude. Gated on consent inside identifyServerUser.
       if (record.preferences.analytics) {

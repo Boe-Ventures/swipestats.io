@@ -1,5 +1,5 @@
 /**
- * Apps the AI profile composer supports — a subset of DataProvider (all have a
+ * Apps the AI profile composer supports - a subset of DataProvider (all have a
  * prompt bank). Single source of truth across the boundary: the server router
  * validates input with `z.enum(COMPOSE_PROVIDER_KEYS)`, and the client pickers
  * render `COMPOSE_PROVIDERS`. Pure data (no client/server-only imports) so both

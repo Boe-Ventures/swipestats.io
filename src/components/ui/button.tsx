@@ -78,7 +78,7 @@ function Button({
 }
 
 /**
- * ButtonLink — a Next.js `<Link>` styled as a button.
+ * ButtonLink - a Next.js `<Link>` styled as a button.
  *
  * The ergonomic, crash-safe way to render a link that looks like a button
  * (handles icons + text). Does not support `loading` because links navigate.

@@ -48,7 +48,7 @@ import {
 } from "../compose-providers";
 import { isPromptSource, type Prompt } from "@/lib/prompt-bank";
 
-/** A prompt already on this profile — shown for context in the Prompt tab. */
+/** A prompt already on this profile - shown for context in the Prompt tab. */
 export interface ExistingPromptItem {
   id: string;
   prompt: string;
@@ -211,7 +211,7 @@ export function AddContentDialog({
 
   // Upload new photos into the shared library. They appear in the grid and are
   // pre-selected so the user can add them with one more tap (the library nature
-  // is preserved — they're available to every comparison too).
+  // is preserved - they're available to every comparison too).
   const handleUploadNewPhotos = async (files: File[]) => {
     if (files.length === 0) return;
 
@@ -224,7 +224,7 @@ export function AddContentDialog({
       return next;
     });
     toast.success(
-      `${attachments.length} ${attachments.length === 1 ? "photo" : "photos"} uploaded — tap Add to put ${attachments.length === 1 ? "it" : "them"} on ${displayApp}`,
+      `${attachments.length} ${attachments.length === 1 ? "photo" : "photos"} uploaded - tap Add to put ${attachments.length === 1 ? "it" : "them"} on ${displayApp}`,
     );
   };
 
@@ -470,7 +470,7 @@ export function AddContentDialog({
 
   // Fixed region between the dialog header and the scrollable grid: tabs +
   // (image) library toolbar. Lives in SimpleDialog's subHeader slot so it
-  // stays put while the grid scrolls — no sticky/z-index tricks needed.
+  // stays put while the grid scrolls - no sticky/z-index tricks needed.
   const subHeader = (
     <>
       <div className="bg-muted grid grid-cols-2 gap-1 rounded-lg p-1">
@@ -592,7 +592,7 @@ export function AddContentDialog({
         subHeader={subHeader}
         footer={contentType === "image" ? imageFooter : promptFooter}
       >
-        {/* Hidden file input — driven by the Upload button + upload tile. */}
+        {/* Hidden file input - driven by the Upload button + upload tile. */}
         <input
           ref={fileInputRef}
           type="file"
@@ -612,7 +612,7 @@ export function AddContentDialog({
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {/* Upload tile — first cell */}
+              {/* Upload tile - first cell */}
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
@@ -719,7 +719,7 @@ export function AddContentDialog({
         {/* ===== PROMPT TAB ===== */}
         {contentType === "prompt" && (
           <div className="space-y-4">
-            {/* Your current prompts on this profile — context before adding */}
+            {/* Your current prompts on this profile - context before adding */}
             {existingPrompts.length > 0 && (
               <div className="space-y-2">
                 <Label>On this profile ({existingPrompts.length})</Label>

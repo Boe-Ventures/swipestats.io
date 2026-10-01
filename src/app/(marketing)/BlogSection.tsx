@@ -27,7 +27,7 @@ export const posts: BlogPost[] = [
   {
     id: "1",
     title:
-      "I analyzed hundreds of user’s Tinder data — including messages — so you don’t have to.",
+      "I analyzed hundreds of user’s Tinder data - including messages - so you don’t have to.",
     //href: "https://towardsdatascience.com/i-analyzed-hundreds-of-users-tinder-data-including-messages-so-you-dont-have-to-14c6dc4a5fdd",
     href: "https://medium.com/data-science/i-analyzed-hundreds-of-users-tinder-data-including-messages-so-you-dont-have-to-14c6dc4a5fdd",
     description:

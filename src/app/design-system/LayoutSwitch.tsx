@@ -19,7 +19,7 @@ const OPTIONS: { id: Layout; label: string; Icon: typeof Bars3Icon }[] = [
 /**
  * Per-section layout toggle: render the children stacked (full-width),
  * in a 2-up grid, or in a horizontal-scroll track. Lets each section pick
- * what reads best — wide components stack, small ones grid, dense compares
+ * what reads best - wide components stack, small ones grid, dense compares
  * scroll.
  */
 export function LayoutSwitch({

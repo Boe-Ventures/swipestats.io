@@ -6,7 +6,7 @@ import Typewriter from "typewriter-effect";
  * The rotating dating-app name in the hero headline (Tinder → Hinge → Bumble).
  *
  * The transparent placeholder reserves a fixed slot sized to the widest word,
- * so the centered H1 never reflows as the word changes — and it gives the
+ * so the centered H1 never reflows as the word changes - and it gives the
  * heading real text server-side / with JS off, keeping it crawlable. The
  * animated typewriter is an absolutely-positioned, decorative overlay.
  */

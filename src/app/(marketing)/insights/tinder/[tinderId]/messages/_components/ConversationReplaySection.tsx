@@ -48,7 +48,7 @@ function HighlightCard({
       </CardHeader>
       <CardContent className="space-y-1">
         <p className="text-2xl font-bold tabular-nums">
-          {metric ? value(metric) : "—"}
+          {metric ? value(metric) : "N/A"}
         </p>
         <p className="text-muted-foreground text-sm">
           {metric
@@ -77,8 +77,8 @@ export function ConversationReplaySection() {
           </div>
           <p className="text-muted-foreground max-w-3xl text-sm sm:text-base">
             Your export contains your outgoing messages, not the other
-            person&apos;s replies. These are momentum signals from your
-            behavior—not proof of replies, chemistry, or success.
+            person&apos;s replies. These are momentum signals from your behavior
+            - not proof of replies, chemistry, or success.
           </p>
         </div>
       </div>

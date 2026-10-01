@@ -2,7 +2,7 @@ import { SmartLink } from "swipestats";
 
 export const InlineInCopy = () => (
   <span className="text-sm text-gray-600">
-    Inline <SmartLink href="/privacy">SmartLink</SmartLink> in copy — internal
+    Inline <SmartLink href="/privacy">SmartLink</SmartLink> in copy - internal
     routes render through Next.js Link.
   </span>
 );
@@ -18,9 +18,7 @@ export const ExternalLinks = () => (
     </span>
     <span>
       Contact:{" "}
-      <SmartLink href="mailto:kris@swipestats.io">
-        kris@swipestats.io
-      </SmartLink>
+      <SmartLink href="mailto:kris@swipestats.io">kris@swipestats.io</SmartLink>
     </span>
   </div>
 );

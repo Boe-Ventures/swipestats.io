@@ -13,7 +13,7 @@ import {
 
 /**
  * Dev-only: download the user's entire photo library (every `user_photo`
- * attachment) as a single zip — the gallery that backs all their comparisons.
+ * attachment) as a single zip - the gallery that backs all their comparisons.
  */
 export async function GET() {
   const guard = await resolveDevUser();
@@ -39,7 +39,9 @@ export async function GET() {
 
   const entries = images.map((attachment, index) => {
     const base = sanitizeFilename(
-      attachment.originalFilename || attachment.filename || `photo-${index + 1}`,
+      attachment.originalFilename ||
+        attachment.filename ||
+        `photo-${index + 1}`,
     );
     return {
       url: attachment.url,

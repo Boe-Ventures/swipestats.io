@@ -156,15 +156,15 @@ interface TinderUserBase {
   // New fields in 2026+ exports
   bio_suppression?: boolean;
   plus_subscription?: string; // e.g. "plus_subscription_0035_1m"
-  // "Modes" feature (Music Mode, Astrology Mode) — deeply nested settings/engagement
+  // "Modes" feature (Music Mode, Astrology Mode) - deeply nested settings/engagement
   modes?: { modes?: Record<string, unknown> } & Record<string, unknown>;
-  // "Duo"/Matchmaker feature. NOTE: partner_uid is a foreign Tinder user id (third-party PII) — stripped during anonymization
+  // "Duo"/Matchmaker feature. NOTE: partner_uid is a foreign Tinder user id (third-party PII) - stripped during anonymization
   duo_groups?: {
     group_id: string;
     partner_uid: string;
     created_at: string;
   }[];
-  // Matchmaker invites. NOTE: contains share_id referencing invites between users — stripped during anonymization
+  // Matchmaker invites. NOTE: contains share_id referencing invites between users - stripped during anonymization
   invites_received?: {
     state: string;
     share_id: string;

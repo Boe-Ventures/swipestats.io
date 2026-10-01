@@ -48,7 +48,7 @@ const PRESETS: Preset[] = [
     label: "Home (/)",
     title: "Your dating data, finally visualized",
     subtitle:
-      "Every swipe, match, and message—turned into charts and ranked against 12,000+ profiles.",
+      "Every swipe, match, and message, turned into charts and ranked against 12,000+ profiles.",
     path: "/",
     screenshot: "/images/og/screenshots/home-dashboard.jpg",
     variant: "hero",
@@ -100,7 +100,7 @@ const PRESETS: Preset[] = [
   {
     label: "Tinder Stats",
     title: "Your Tinder Statistics",
-    subtitle: "Swipes, matches, messages — see how you compare.",
+    subtitle: "Swipes, matches, messages - see how you compare.",
     path: "/insights/tinder",
     screenshot: "",
     variant: "centered",
@@ -108,7 +108,7 @@ const PRESETS: Preset[] = [
   {
     label: "Hinge Stats",
     title: "Your Hinge Statistics",
-    subtitle: "Likes, matches, conversations — decoded.",
+    subtitle: "Likes, matches, conversations - decoded.",
     path: "/insights/hinge",
     screenshot: "",
     variant: "centered",

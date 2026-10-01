@@ -1,5 +1,5 @@
 /**
- * Amplitude server adapter (Node SDK — @amplitude/analytics-node).
+ * Amplitude server adapter (Node SDK - @amplitude/analytics-node).
  *
  * Lets server events reach Amplitude alongside PostHog/Vercel, instead of
  * Amplitude being client-only. Mirrors the PostHog server client's posture:
@@ -30,7 +30,7 @@ async function ensureInitialized(): Promise<boolean> {
     initializationPromise = amplitude
       .init(env.NEXT_PUBLIC_AMPLITUDE_API_KEY!, {
         serverZone: "EU",
-        flushQueueSize: 1, // send promptly — serverless has no background window
+        flushQueueSize: 1, // send promptly - serverless has no background window
       })
       .promise.then(() => undefined);
   }

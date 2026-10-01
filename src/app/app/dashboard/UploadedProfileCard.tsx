@@ -86,7 +86,7 @@ export function UploadedProfileCard({
             <div className="dark:bg-background rounded-lg border bg-gray-50 p-3 text-center">
               <Heart className="text-muted-foreground mx-auto mb-1 h-4 w-4" />
               <p className="dark:text-foreground text-lg font-semibold text-gray-900">
-                {stats.matchesTotal?.toLocaleString() ?? "—"}
+                {stats.matchesTotal?.toLocaleString() ?? "N/A"}
               </p>
               <p className="text-muted-foreground text-xs">Matches</p>
             </div>
@@ -98,7 +98,7 @@ export function UploadedProfileCard({
                   ? (
                       stats.swipeLikesTotal + stats.swipePassesTotal
                     ).toLocaleString()
-                  : "—"}
+                  : "N/A"}
               </p>
               <p className="text-muted-foreground text-xs">Swipes</p>
             </div>
@@ -106,7 +106,7 @@ export function UploadedProfileCard({
             <div className="dark:bg-background rounded-lg border bg-gray-50 p-3 text-center">
               <MessageCircle className="text-muted-foreground mx-auto mb-1 h-4 w-4" />
               <p className="dark:text-foreground text-lg font-semibold text-gray-900">
-                {stats.messagesSentTotal?.toLocaleString() ?? "—"}
+                {stats.messagesSentTotal?.toLocaleString() ?? "N/A"}
               </p>
               <p className="text-muted-foreground text-xs">Messages</p>
             </div>

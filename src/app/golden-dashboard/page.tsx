@@ -34,7 +34,7 @@ export default function GoldenDashboardPage() {
         {/* preview banner */}
         <div className="mb-8 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-center text-[12.5px] font-medium text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
           <LockClosedIcon className="mr-1 inline h-3.5 w-3.5" />
-          Golden insights — preview composed entirely from the golden primitives
+          Golden insights - preview composed entirely from the golden primitives
           (noindex). The live dashboard is unchanged.
         </div>
 

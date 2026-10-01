@@ -1,9 +1,9 @@
 // =====================================================
-// CONSENT CORE — portable, platform-neutral
+// CONSENT CORE - portable, platform-neutral
 // =====================================================
 //
 // Types + pure helpers for granular cookie/tracking consent. No React, no
-// `window`, no storage — so it imports cleanly on both client and server, and
+// `window`, no storage - so it imports cleanly on both client and server, and
 // is copy-paste portable to other projects (the only thing that differs per
 // project is the `ConsentPolicy`).
 //
@@ -26,7 +26,7 @@ export type ConsentCategory = (typeof CONSENT_CATEGORIES)[number];
 export type ConsentPreferences = Record<ConsentCategory, boolean>;
 
 /**
- * Bump when categories (or what they cover) change — a stored decision with an
+ * Bump when categories (or what they cover) change - a stored decision with an
  * older version is treated as stale and the banner is shown again.
  */
 export const CONSENT_VERSION = 1;
@@ -37,7 +37,7 @@ export interface ConsentRecord {
   decidedAt: string; // ISO-8601
 }
 
-/** EU/strict default — only essential on. */
+/** EU/strict default - only essential on. */
 export const ALL_OFF: ConsentPreferences = {
   essential: true,
   functional: false,
@@ -85,7 +85,7 @@ export function isAllowed(
   return preferences?.[category] === true;
 }
 
-// GDPR-strict everywhere: the initial (pre-decision) state is always ALL_OFF —
+// GDPR-strict everywhere: the initial (pre-decision) state is always ALL_OFF  -
 // nothing non-essential runs until the user explicitly opts in. (No geo/opt-out
 // policy: we're GDPR-forward in every region.)
 
@@ -106,7 +106,7 @@ export const CONSENT_CATEGORY_META: ConsentCategoryMeta[] = [
     key: "essential",
     label: "Essential",
     description:
-      "Required for the site to work — sign-in, security, and remembering your cookie choice. These can't be turned off.",
+      "Required for the site to work - sign-in, security, and remembering your cookie choice. These can't be turned off.",
     locked: true,
   },
   {
@@ -119,7 +119,7 @@ export const CONSENT_CATEGORY_META: ConsentCategoryMeta[] = [
     key: "analytics",
     label: "Analytics",
     description:
-      "Helps us understand how the product is used so we can improve it — anonymous usage events and session replays (PostHog, Amplitude, Vercel). Inputs are masked in replays.",
+      "Helps us understand how the product is used so we can improve it - anonymous usage events and session replays (PostHog, Amplitude, Vercel). Inputs are masked in replays.",
   },
   {
     key: "advertising",

@@ -89,7 +89,7 @@ export function AnonymousNamePrompt({
   return (
     // Deliberately non-dismissable: every visitor on a share page has a named
     // session, so feedback surfaces never have to handle "unauthenticated".
-    // Close attempts (X, escape, outside click) are ignored — the only way
+    // Close attempts (X, escape, outside click) are ignored - the only way
     // through is submitting a name, which closes via the success path above.
     <Dialog
       open={open}

@@ -16,7 +16,7 @@ export type RoastOutput = StatsRoastResult;
 
 /**
  * One metric's standing vs the user's cohort. The roast uses these so it knows
- * what's actually good vs bad — otherwise it dunks on elite numbers as if they
+ * what's actually good vs bad - otherwise it dunks on elite numbers as if they
  * were failures (e.g. a top-10% match yield read as "a coin flip").
  */
 export interface RoastBenchmark {
@@ -35,7 +35,7 @@ export interface RoastInput {
   tone: RoastTone;
   gender?: string;
   dataProvider?: string;
-  /** Cohort percentile context — when present, the roast is benchmark-aware. */
+  /** Cohort percentile context - when present, the roast is benchmark-aware. */
   benchmarks?: RoastBenchmark[];
 }
 
@@ -165,17 +165,17 @@ export async function generateRoast(input: RoastInput): Promise<RoastOutput> {
 
   const benchmarkBlock =
     benchmarks.length > 0
-      ? `\nHOW THEY RANK vs other ${benchmarks[0]!.cohortLabel} (this is the truth — respect it):
+      ? `\nHOW THEY RANK vs other ${benchmarks[0]!.cohortLabel} (this is the truth - respect it):
 ${benchmarks
-  .map((b) => `- ${b.label}: ${b.valueLabel} — ${b.bucket} of their cohort`)
+  .map((b) => `- ${b.label}: ${b.valueLabel} - ${b.bucket} of their cohort`)
   .join("\n")}
 
-CRITICAL: do NOT roast strong numbers as if they were bad. A top-10%/top-25% stat is genuinely impressive — acknowledge it. The funniest, sharpest roast targets the CONTRADICTIONS (e.g. elite match yield but few matches messaged; tons of matches but barely messages), not the good stats themselves.`
-      : `\n(No cohort benchmark available — judge the numbers on their own merits and avoid assuming a number is "bad" without context.)`;
+CRITICAL: do NOT roast strong numbers as if they were bad. A top-10%/top-25% stat is genuinely impressive - acknowledge it. The funniest, sharpest roast targets the CONTRADICTIONS (e.g. elite match yield but few matches messaged; tons of matches but barely messages), not the good stats themselves.`
+      : `\n(No cohort benchmark available - judge the numbers on their own merits and avoid assuming a number is "bad" without context.)`;
 
   const prompt = `You are ${TONE_PERSONA[tone]}
 
-You have someone's ${providerName} dating app statistics and your job is to roast them — data-driven and punchy.
+You have someone's ${providerName} dating app statistics and your job is to roast them - data-driven and punchy.
 
 Here are their stats:
 - Total swipes: ${totalSwipes.toLocaleString()} (${profileMeta.swipeLikesTotal.toLocaleString()} likes, ${profileMeta.swipePassesTotal.toLocaleString()} passes)
@@ -194,17 +194,18 @@ ${gender ? `- Gender: ${gender}` : ""}
 ${benchmarkBlock}
 
 Roast rules:
-1. Reference specific numbers — that's what makes it land
+1. Reference specific numbers - that's what makes it land
 2. Draw absurd but accurate conclusions from the data
 3. Compare to relatable everyday things (e.g., "you've spent more time on ${providerName} than...")
-4. Keep each line to ONE punchy sentence under 140 characters — no rambling
+4. Keep each line to ONE punchy sentence under 140 characters - no rambling
 5. Vary the angle across the lines (pickiness, match yield, matches not messaged, app addiction, messaging)
 6. Never infer replies or ghosting: Tinder exports only the uploader's message bodies
 7. Make the headline the single sharpest, most shareable line
 
-For the "Real Talk" insights, be genuinely helpful — what would actually move the needle for someone with these stats and this ranking?`;
+For the "Real Talk" insights, be genuinely helpful - what would actually move the needle for someone with these stats and this ranking?`;
 
   return generateStructured({
+    normalizeCopy: true,
     schema: statsRoastSchema,
     name: "DatingStatsRoast",
     description:

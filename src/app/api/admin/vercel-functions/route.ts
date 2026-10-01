@@ -10,7 +10,7 @@ import { isAdminRequestAuthorized } from "@/lib/admin-request-auth";
  * GET /api/admin/vercel-functions
  * Authorization: Bearer $ADMIN_TOKEN (or a verified admin browser session)
  *
- * Only works in production on Vercel — locally most values will be undefined/empty.
+ * Only works in production on Vercel - locally most values will be undefined/empty.
  */
 export async function GET(request: NextRequest) {
   if (!(await isAdminRequestAuthorized(request))) {

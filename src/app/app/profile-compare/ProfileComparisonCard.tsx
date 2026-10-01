@@ -34,7 +34,7 @@ export function ProfileComparisonCard({
 
   return (
     <Card className="dark:border-border dark:bg-card relative flex flex-row gap-0 overflow-hidden border-gray-200 bg-white p-0 shadow-sm transition-shadow hover:shadow-lg">
-      {/* Thumbnail — left rail */}
+      {/* Thumbnail - left rail */}
       <div className="bg-muted relative w-28 shrink-0 self-stretch overflow-hidden sm:w-44">
         {thumbnail ? (
           <Image
@@ -76,14 +76,14 @@ export function ProfileComparisonCard({
                 })}
               </p>
             </Link>
-            {/* Status, not an action — non-interactive badge */}
+            {/* Status, not an action - non-interactive badge */}
             <Badge
               variant={comparison.isPublic ? "secondary" : "outline"}
               className="text-muted-foreground shrink-0 gap-1 font-normal"
               title={
                 comparison.isPublic
-                  ? "Public — anyone with the link can view"
-                  : "Private — only you can view"
+                  ? "Public - anyone with the link can view"
+                  : "Private - only you can view"
               }
             >
               {comparison.isPublic ? (
@@ -107,7 +107,7 @@ export function ProfileComparisonCard({
           </div>
         </div>
 
-        {/* Actions — sit above the stretched card link */}
+        {/* Actions - sit above the stretched card link */}
         <div className="relative z-10 ml-auto flex items-center gap-0.5">
           {comparison.isPublic && comparison.shareKey && (
             <Link

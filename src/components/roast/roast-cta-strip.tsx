@@ -9,17 +9,17 @@ import { cn } from "@/components/ui/lib/utils";
 interface RoastCtaStripProps {
   title: string;
   description?: string;
-  /** Small pill next to the title — e.g. the roast tagline or tone. */
+  /** Small pill next to the title - e.g. the roast tagline or tone. */
   badge?: string | null;
   /** Optional word next to the chevron. The whole card is clickable and the
-   * chevron alone signals that — only add a label when the action needs naming. */
+   * chevron alone signals that - only add a label when the action needs naming. */
   actionLabel?: string;
   onClick: () => void;
   className?: string;
 }
 
 /**
- * Slim rose call-to-action strip for AI roasts. Purely presentational — the
+ * Slim rose call-to-action strip for AI roasts. Purely presentational - the
  * insights page and the profile-compare editor wire it to their own roast
  * queries and dialogs.
  */
@@ -46,7 +46,7 @@ export function RoastCtaStrip({
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            {/* Clamp instead of truncate — taglines are short sentences and a
+            {/* Clamp instead of truncate - taglines are short sentences and a
                 mid-word cut ("Great passport, emp…") reads broken. */}
             <h3 className="line-clamp-2 text-sm font-semibold">{title}</h3>
             {badge && (
@@ -65,7 +65,7 @@ export function RoastCtaStrip({
           )}
         </div>
 
-        {/* The whole card is the click target — this is just the affordance. */}
+        {/* The whole card is the click target - this is just the affordance. */}
         <span className="flex shrink-0 items-center gap-0.5 text-xs font-semibold text-rose-600 dark:text-rose-400">
           {actionLabel}
           <ChevronRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />

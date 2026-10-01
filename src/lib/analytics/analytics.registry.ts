@@ -1,11 +1,11 @@
 // =====================================================
-// ANALYTICS TRACKING PLAN — RUNTIME REGISTRY
+// ANALYTICS TRACKING PLAN - RUNTIME REGISTRY
 // =====================================================
 //
 // This is the runtime companion to `analytics.types.ts`.
 //
 // `analytics.types.ts` owns the *property shapes* (rich, type-only,
-// discriminated unions — erased at runtime). `analytics.properties.ts` owns
+// discriminated unions - erased at runtime). `analytics.properties.ts` owns
 // the human-readable *property metadata* derived from those shapes. This file
 // owns the *catalog metadata* (category, description, status) and the routing
 // policy (which events reach Slack) that power the /admin/tracking-plan page.
@@ -24,7 +24,7 @@
 //
 // NOTE on `status`: this is a *manual declaration* of whether the event is
 // wired up in code today. It is not yet auto-derived from live PostHog
-// volume — that cross-reference is a deliberate future step. Keep it honest
+// volume - that cross-reference is a deliberate future step. Keep it honest
 // when adding/removing emit sites.
 // =====================================================
 
@@ -52,7 +52,7 @@ export interface EventMeta {
 //
 // The subset of server events that additionally fan out to Slack for operator
 // visibility. Consumed by slack.client.ts (`isSlackEvent` filter) AND by the
-// destination derivation below — so the catalog and the pipeline can never
+// destination derivation below - so the catalog and the pipeline can never
 // disagree about what reaches Slack.
 
 export const SLACK_EVENTS = [
@@ -79,8 +79,8 @@ const SLACK_EVENT_SET = new Set<string>(SLACK_EVENTS);
 // =====================================================
 //
 // Server events split by lawful basis. OPERATIONAL events run under legitimate
-// interest — they're necessary to deliver the service, bill, secure, or alert
-// operators — so they fire even without `analytics` consent (still IP-dropped).
+// interest - they're necessary to deliver the service, bill, secure, or alert
+// operators - so they fire even without `analytics` consent (still IP-dropped).
 // Everything NOT in this set is behavioral product analytics and is skipped
 // when the user hasn't consented to the `analytics` category. Move an event
 // between the two by editing this one list.
@@ -91,7 +91,7 @@ export const OPERATIONAL_SERVER_EVENTS = new Set<ServerAnalyticsEventName>([
   "user_account_created",
   "user_signed_in",
   "user_signed_out",
-  // Anonymous lifecycle — fires at account creation, before any consent can
+  // Anonymous lifecycle - fires at account creation, before any consent can
   // exist; recording the account record is a service action (legitimate
   // interest), so it isn't dropped for want of a not-yet-possible consent.
   "anonymous_user_created",
@@ -429,7 +429,7 @@ export const CLIENT_EVENT_REGISTRY = {
   },
   upload_preview_loaded: {
     category: "Upload Flow",
-    description: "Preview reached — key success milestone.",
+    description: "Preview reached - key success milestone.",
     status: "live",
   },
   upload_consent_photos_toggled: {

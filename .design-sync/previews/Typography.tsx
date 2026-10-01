@@ -25,8 +25,8 @@ export const BodyCopy = () => (
     </TypographyLead>
     <TypographyP>
       Women match roughly six times more often than men, and response time is
-      the strongest predictor of conversation length. Upload your export and
-      see where you land — identifiers are stripped in your browser via{" "}
+      the strongest predictor of conversation length. Upload your export and see
+      where you land - identifiers are stripped in your browser via{" "}
       <TypographyInlineCode>anonymize()</TypographyInlineCode> before anything
       is uploaded.
     </TypographyP>

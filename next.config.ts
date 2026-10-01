@@ -17,8 +17,8 @@ const projectRoot = dirname(fileURLToPath(import.meta.url));
 const postHogPersonalApiKey = process.env.POSTHOG_PERSONAL_API_KEY;
 
 // RFC 8288 Link header for agent discovery on the homepage. Points crawlers
-// and LLMs at machine-readable resources — llms.txt, sitemap, the public
-// research dataset, and key policy/help pages — without them having to parse
+// and LLMs at machine-readable resources - llms.txt, sitemap, the public
+// research dataset, and key policy/help pages - without them having to parse
 // HTML first. Relation types are IANA-registered where possible; the dataset
 // uses "alternate" as the closest registered fit for a downloadable data
 // representation of the site.
@@ -135,7 +135,7 @@ const config: NextConfig = {
         destination: "/insights/tinder/:tinderId",
         permanent: true, // 308 redirect for SEO
       },
-      // /app has no index page — redirect to dashboard
+      // /app has no index page - redirect to dashboard
       {
         source: "/app",
         destination: "/app/dashboard",

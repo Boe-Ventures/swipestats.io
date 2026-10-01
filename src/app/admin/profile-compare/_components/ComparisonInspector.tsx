@@ -322,10 +322,10 @@ export function ComparisonInspector({ id }: { id: string }) {
                   {prompts.map((p) => (
                     <div key={p.id} className="rounded-md border p-3 text-sm">
                       <p className="dark:text-muted-foreground font-medium text-gray-700">
-                        {p.prompt ?? "—"}
+                        {p.prompt ?? "N/A"}
                       </p>
                       <p className="dark:text-muted-foreground mt-1 text-gray-600">
-                        {p.answer ?? "—"}
+                        {p.answer ?? "N/A"}
                       </p>
                     </div>
                   ))}

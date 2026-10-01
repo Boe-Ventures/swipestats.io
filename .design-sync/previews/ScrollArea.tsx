@@ -1,21 +1,21 @@
 import { ScrollArea } from "swipestats";
 
 const conversations = [
-  "Emma — Tinder",
-  "Sofia — Hinge",
-  "Olivia — Tinder",
-  "Maja — Bumble",
-  "Ingrid — Tinder",
-  "Nora — Hinge",
-  "Thea — Tinder",
-  "Frida — Bumble",
-  "Julie — Tinder",
-  "Amalie — Hinge",
-  "Ida — Tinder",
-  "Sara — Bumble",
-  "Vilde — Tinder",
-  "Hedda — Hinge",
-  "Tuva — Tinder",
+  "Emma - Tinder",
+  "Sofia - Hinge",
+  "Olivia - Tinder",
+  "Maja - Bumble",
+  "Ingrid - Tinder",
+  "Nora - Hinge",
+  "Thea - Tinder",
+  "Frida - Bumble",
+  "Julie - Tinder",
+  "Amalie - Hinge",
+  "Ida - Tinder",
+  "Sara - Bumble",
+  "Vilde - Tinder",
+  "Hedda - Hinge",
+  "Tuva - Tinder",
 ];
 
 // type="always" keeps the scrollbar visible for the static capture.

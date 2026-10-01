@@ -267,7 +267,7 @@ const CHAT_SETTLED = [
       { type: "tool-cohortBenchmark", state: "output-available" },
       {
         type: "text",
-        text: "You match at **12.4%**, against a cohort median of 7.1%. Your response time is the bigger lever — replies under an hour more than double your conversation length.",
+        text: "You match at **12.4%**, against a cohort median of 7.1%. Your response time is the bigger lever - replies under an hour more than double your conversation length.",
       },
     ],
   },
@@ -929,7 +929,7 @@ export default function DesignSystemPage() {
                 label="<ErrorState> (golden)"
                 surface="shared"
                 status="golden"
-                note="src/components/golden/error-state.tsx — the golden empty/error page state. Now powers the 404 (/not-found)."
+                note="src/components/golden/error-state.tsx - the golden empty/error page state. Now powers the 404 (/not-found)."
               >
                 <div className="w-full">
                   <ErrorState
@@ -1159,7 +1159,7 @@ export default function DesignSystemPage() {
                 label="<HeroStats>"
                 surface="app"
                 status="golden"
-                note="src/components/golden/app.tsx — the page-opening headline number + supporting grid."
+                note="src/components/golden/app.tsx - the page-opening headline number + supporting grid."
               >
                 <HeroStats
                   lead={{
@@ -1210,7 +1210,7 @@ export default function DesignSystemPage() {
                 label="<Funnel> + <PercentileBars>"
                 surface="app"
                 status="golden"
-                note="src/components/golden/data-viz.tsx — the dating funnel + how-you-compare bars. (Full charts stay in InsightsShowcase / Recharts.)"
+                note="src/components/golden/data-viz.tsx - the dating funnel + how-you-compare bars. (Full charts stay in InsightsShowcase / Recharts.)"
               >
                 <div className="grid w-full grid-cols-1 gap-6 md:grid-cols-2">
                   <Funnel
@@ -1288,7 +1288,7 @@ export default function DesignSystemPage() {
                 label="<GoldenAppHeader>"
                 surface="app"
                 status="golden"
-                note="src/components/golden/app-shell.tsx — the app dialect's solid chrome (also a <GoldenSidebar>). The marketing surface keeps its translucent blur header."
+                note="src/components/golden/app-shell.tsx - the app dialect's solid chrome (also a <GoldenSidebar>). The marketing surface keeps its translucent blur header."
               >
                 <div className="dark:border-border w-full overflow-hidden rounded-xl border border-gray-200">
                   <GoldenAppHeader active="dashboard" userInitials="KB" />
@@ -1298,7 +1298,7 @@ export default function DesignSystemPage() {
                 label="Chart palette (GOLDEN_CHART_COLORS)"
                 surface="app"
                 status="golden"
-                note="src/components/golden/charts.tsx — charts are the real data-driven Recharts (InsightsShowcase, live on /golden), themed with this palette. No hand-rolled fakes."
+                note="src/components/golden/charts.tsx - charts are the real data-driven Recharts (InsightsShowcase, live on /golden), themed with this palette. No hand-rolled fakes."
               >
                 <div className="flex w-full flex-wrap gap-3">
                   {Object.entries(GOLDEN_CHART_COLORS).map(([name, value]) => (
@@ -1318,7 +1318,7 @@ export default function DesignSystemPage() {
                 label="<UpsellCard> + <LockedValue>"
                 surface="app"
                 status="golden"
-                note="src/components/golden/premium-gate.tsx — one golden gate, consolidating BlurredValue + PremiumFeatureWrapper."
+                note="src/components/golden/premium-gate.tsx - one golden gate, consolidating BlurredValue + PremiumFeatureWrapper."
               >
                 <div className="flex w-full flex-col gap-4">
                   <UpsellCard
@@ -1366,7 +1366,7 @@ export default function DesignSystemPage() {
                 label="<Prose>"
                 surface="blog"
                 status="golden"
-                note="src/components/golden/blog.tsx — wraps MDX/article body with the golden type scale."
+                note="src/components/golden/blog.tsx - wraps MDX/article body with the golden type scale."
               >
                 <Prose>
                   <h2>What the data actually says</h2>
@@ -1430,14 +1430,14 @@ export default function DesignSystemPage() {
             <SectionTitle
               n="12"
               title="Chat & streaming assistant"
-              sub="Waiting states for a streaming AI turn, rendered through the real ChatTranscript. A turn is not one wait but three — before the reply exists, while a tool runs, and between steps — and the transcript has to stay alive through all of them. Fixtures only; no request is made."
+              sub="Waiting states for a streaming AI turn, rendered through the real ChatTranscript. A turn is not one wait but three - before the reply exists, while a tool runs, and between steps - and the transcript has to stay alive through all of them. Fixtures only; no request is made."
             />
             <LayoutSwitch defaultLayout="grid">
               <Specimen
                 label="<ChatTranscript> · awaiting first token"
                 surface="app"
                 status="golden"
-                note="The SDK creates the assistant message when the stream opens, before any token arrives. The empty shell is skipped and the pending turn holds the space — gating on status alone leaves a bare avatar over blank space here."
+                note="The SDK creates the assistant message when the stream opens, before any token arrives. The empty shell is skipped and the pending turn holds the space - gating on status alone leaves a bare avatar over blank space here."
               >
                 <div className="w-full max-w-md">
                   <ChatTranscript
@@ -1465,7 +1465,7 @@ export default function DesignSystemPage() {
                 label="<ChatToolCard> · running"
                 surface="app"
                 status="golden"
-                note="A tool card renders in every lifecycle state on purpose — an in-flight tool that draws nothing is indistinguishable from a stall."
+                note="A tool card renders in every lifecycle state on purpose - an in-flight tool that draws nothing is indistinguishable from a stall."
               >
                 <div className="w-full max-w-md">
                   <ChatTranscript

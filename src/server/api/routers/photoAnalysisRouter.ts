@@ -15,7 +15,7 @@ export const photoAnalysisRouter = createTRPCRouter({
   /**
    * Analyze (or re-analyze, with an optional steer) a single gallery photo and
    * persist the result onto the attachment's metadata. Gated behind PLUS/ELITE
-   * — same `aiRoast` entitlement as the roast. The caller fans these out one per
+   * - same `aiRoast` entitlement as the roast. The caller fans these out one per
    * photo, so each call stays small and independently retryable.
    */
   analyze: aiProcedure

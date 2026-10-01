@@ -19,7 +19,7 @@ const COMPARISON_ROWS = [
   { label: "Match Rate", avg: "5.3%", you: "7.8%" },
   { label: "Like Rate", avg: "46%", you: "29%" },
   { label: "Swipes/Day", avg: "54", you: "38" },
-  { label: "Percentile", avg: "—", you: "Top 12%" },
+  { label: "Percentile", avg: "N/A", you: "Top 12%" },
 ];
 
 function ComparisonTable() {

@@ -1,4 +1,4 @@
-# Billing — LemonSqueezy (how we interface)
+# Billing - LemonSqueezy (how we interface)
 
 How to work with our LemonSqueezy (LS) account programmatically, so we never have to relearn it. SwipeStats runs billing on LS: **subscriptions** (SwipeStats+), **lifetime** purchases, and **research datasets** (license-key based).
 
@@ -8,13 +8,13 @@ How to work with our LemonSqueezy (LS) account programmatically, so we never hav
 
 - **No CLI exists.** Use the REST API (JSON:API) at `https://api.lemonsqueezy.com/v1`, or the `@lemonsqueezy/lemonsqueezy.js` SDK (already a dependency).
 - **Auth:** header `Authorization: Bearer $LEMON_SQUEEZY_API_KEY` + `Accept: application/vnd.api+json` (and `Content-Type: application/vnd.api+json` for writes).
-- **⚠️ Test and Live use SEPARATE API keys.** The key decides the mode — there is **no** `test_mode` query param. A test key returns `404` for live objects and vice-versa.
+- **⚠️ Test and Live use SEPARATE API keys.** The key decides the mode - there is **no** `test_mode` query param. A test key returns `404` for live objects and vice-versa.
   - **Test/dev key:** in the worktree `.env` (`LEMON_SQUEEZY_API_KEY`).
   - **Live/prod key:** Vercel production env (operator-owned). Not in local `.env`.
 - **Store:** `97795` ("Swipestats"). Same store id in both modes; the data you get back depends on which key you use.
 - The mode the _app_ uses is driven by `NEXT_PUBLIC_IS_PRODUCTION` via `envSelect({ test, prod })` in `src/env.ts`.
 
-## Quick start — read the catalog
+## Quick start - read the catalog
 
 ```bash
 # Uses the key in .env (test/dev):
@@ -69,8 +69,8 @@ Pagination is `page[size]` + `page[number]` (URL-encode brackets as `%5B%5D`).
 
 ## How the app uses LS (code map)
 
-- **`src/server/services/lemonSqueezy.service.ts`** — SDK init; variant config via `envSelect({ test, prod })`; `createUpgradeCheckout`, `createDatasetCheckout`, `getSubscriptionDetails`, `getCustomerPortalUrl`, `validateDatasetLicenseKey`, `getOrderFromLicenseKey`, `getTierFromVariantId`, `getDatasetTierFromVariant`, `verifyWebhookSignature`.
-- **`src/app/api/webhooks/lemon-squeezy/route.ts`** — verifies signature, then maps `order_created/refunded` + `subscription_created/updated/resumed/cancelled/expired` onto `userTable`: `swipestatsTier`, `subscriptionProviderId`, `subscriptionCurrentPeriodEnd`, `isLifetime`. The user id comes from checkout `custom_data.user_id`. It also handles `license_key_created` for dataset purchases and queues dataset generation.
+- **`src/server/services/lemonSqueezy.service.ts`** - SDK init; variant config via `envSelect({ test, prod })`; `createUpgradeCheckout`, `createDatasetCheckout`, `getSubscriptionDetails`, `getCustomerPortalUrl`, `validateDatasetLicenseKey`, `getOrderFromLicenseKey`, `getTierFromVariantId`, `getDatasetTierFromVariant`, `verifyWebhookSignature`.
+- **`src/app/api/webhooks/lemon-squeezy/route.ts`** - verifies signature, then maps `order_created/refunded` + `subscription_created/updated/resumed/cancelled/expired` onto `userTable`: `swipestatsTier`, `subscriptionProviderId`, `subscriptionCurrentPeriodEnd`, `isLifetime`. The user id comes from checkout `custom_data.user_id`. It also handles `license_key_created` for dataset purchases and queues dataset generation.
 - **Datasets** are fulfilled by license key in `researchRouter` + `datasetExport.service.ts`. The preferred path is webhook pre-provisioning from `license_key_created`; the download page still validates and creates on demand if a webhook was missed or an older order exists.
 - **Env:** `LEMON_SQUEEZY_API_KEY`, `LEMON_SQUEEZY_WEBHOOK_SECRET`.
 
@@ -78,7 +78,7 @@ Pagination is `page[size]` + `page[number]` (URL-encode brackets as `%5B%5D`).
 
 HMAC-SHA256 of the raw request body keyed with `LEMON_SQUEEZY_WEBHOOK_SECRET`, compared to the `X-Signature` header (see `verifyWebhookSignature`). Also validate `X-Event-Name` matches `meta.event_name`.
 
-## Live catalog snapshot — store `97795` (as of 2026-07-06, $4,025 revenue / 152 sales)
+## Live catalog snapshot - store `97795` (as of 2026-07-06, $4,025 revenue / 152 sales)
 
 | Product                  | Variant              | ID (live)             | Price    | Wired in code        |
 | ------------------------ | -------------------- | --------------------- | -------- | -------------------- |
@@ -92,13 +92,13 @@ HMAC-SHA256 of the raw request body keyed with `LEMON_SQUEEZY_WEBHOOK_SECRET`, c
 | AI Dating Photos         | from Swipestats      | `455719`              | $199     | not wired            |
 | AI Dating Profile Review | Unlimited / 1 review | `1223203` / `1223211` | $19 / $5 | not wired            |
 
-(Test/dev store has its own variant ids — e.g. PLUS monthly `624661`, lifetime `433959`, dataset Starter `537493`, Standard `1269608`, Fresh `1269609`, Premium `1876702`.)
+(Test/dev store has its own variant ids - e.g. PLUS monthly `624661`, lifetime `433959`, dataset Starter `537493`, Standard `1269608`, Fresh `1269609`, Premium `1876702`.)
 
 ## Gotchas / known issues
 
-- **Separate keys per mode** is the #1 source of confusion — a `404` usually means "wrong-mode key," not "doesn't exist."
+- **Separate keys per mode** is the #1 source of confusion - a `404` usually means "wrong-mode key," not "doesn't exist."
 - **Variant `status`:** the auto-created "Default" variant often shows `pending`; the real, sellable ones are `published`.
-- **One-time products report `interval: year`** in the API — ignore the interval for non-subscription products.
+- **One-time products report `interval: year`** in the API - ignore the interval for non-subscription products.
 - **Dataset Premium (`1783971`, $300) is live + published, wired in code, and has license keys enabled as of 2026-06-27.**
 - **Dataset test/dev parity:** Research Dataset variants now exist in test mode for Starter (`537493`), Standard (`1269608`), Fresh (`1269609`), and Premium (`1876702`), all published with license keys enabled as of 2026-07-06.
 - **Duplicate "Plus" products** in the live catalog: `805039` (Swipestats+, the live $9/mo we use), `420882` (Swipestats Plus), `748773` (Swipestats Plus (Copy), draft), `408932` (Lifetime). Cleanup candidate.
@@ -106,4 +106,4 @@ HMAC-SHA256 of the raw request body keyed with `LEMON_SQUEEZY_WEBHOOK_SECRET`, c
 
 ## Polar (parked)
 
-A subscriptions-only Polar integration was built on the `review-billing-lemonsqueezy-vs-polar` branch (`polar.service.ts`, `/api/webhooks/polar`, `billingRouter` switched to Polar) but is **not in use** — we're staying on LS. If that branch is ever merged, revert the `billingRouter` import back to `lemonSqueezy.service` or keep both behind a provider switch. Polar's one advantage over LS is an official MCP server; both are equally scriptable via REST.
+A subscriptions-only Polar integration was built on the `review-billing-lemonsqueezy-vs-polar` branch (`polar.service.ts`, `/api/webhooks/polar`, `billingRouter` switched to Polar) but is **not in use** - we're staying on LS. If that branch is ever merged, revert the `billingRouter` import back to `lemonSqueezy.service` or keep both behind a provider switch. Polar's one advantage over LS is an official MCP server; both are equally scriptable via REST.

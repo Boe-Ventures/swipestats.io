@@ -63,13 +63,13 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         // client-side by the `blob.createAttachmentFromBlob` mutation, which
         // runs right after the upload resolves and carries the real File
         // metadata (size/filename/mimeType). This webhook exists to recover
-        // orphaned blobs — the rare case where the client uploaded but never
+        // orphaned blobs - the rare case where the client uploaded but never
         // called the mutation (navigated away / crashed). It is also never
         // delivered to localhost, so it must not be the primary path.
         //
         // The insert is therefore idempotent on the blob URL: `onConflictDoNothing`
         // means we only create a placeholder row if the client mutation hasn't
-        // already written the real one — no double-inserts, and the client's
+        // already written the real one - no double-inserts, and the client's
         // good data is never clobbered.
         console.log("Client upload completed");
 
@@ -111,7 +111,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
               return; // Skip attachment creation but don't fail upload
             }
 
-            // Idempotent insert — no-op if the client mutation already recorded this URL.
+            // Idempotent insert - no-op if the client mutation already recorded this URL.
             const [attachment] = await db
               .insert(attachmentTable)
               .values({
@@ -137,7 +137,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
               );
             } else {
               console.log(
-                `↩️ Attachment already recorded by client mutation — webhook no-op`,
+                `↩️ Attachment already recorded by client mutation - webhook no-op`,
               );
             }
           } else {

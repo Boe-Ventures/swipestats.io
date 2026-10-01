@@ -1,5 +1,6 @@
+import { normalizeGeneratedCopy } from "@/lib/ai/copy-style";
 // Public share page for the STATS roast (ai_output kinds tinder_roast /
-// hinge_roast) — the data-driven roast of a profile's ProfileMeta numbers.
+// hinge_roast) - the data-driven roast of a profile's ProfileMeta numbers.
 // Distinct from /share/profile-roast (kind profile_roast, the vision roast).
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -23,13 +24,13 @@ async function getRoast(shareKey: string) {
   ) {
     return null;
   }
-  const output = row.output as StatsRoastResult;
+  const output = normalizeGeneratedCopy(row.output as StatsRoastResult);
   // Defensive on the public path: a malformed/older-version payload renders the
   // not-found state rather than throwing for an anonymous viewer.
   if (!Array.isArray(output.roastLines)) return null;
   // PAYWALL: only the first 3 lines may reach the browser. CSS blur is not
   // access control, so the locked lines must never enter the server-rendered
-  // HTML — mirror roast.getPublic and drop them here.
+  // HTML - mirror roast.getPublic and drop them here.
   return {
     tagline: output.tagline,
     headline: output.headline,
@@ -50,7 +51,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   // The dynamic share card lives in opengraph-image.tsx (colocated); Next wires
   // it into both og:image and twitter:image automatically.
   const title = roast.tagline
-    ? `${roast.tagline} — My Dating App Roast`
+    ? `${roast.tagline} - My Dating App Roast`
     : "My Dating App Roast";
   const description = roast.verdict ?? roast.headline;
 

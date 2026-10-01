@@ -30,7 +30,7 @@ const THEME_OPTIONS: { mode: ThemeMode; label: string; icon: typeof Sun }[] = [
 
 /**
  * Dev-only theme switcher. Hidden on real production (VERCEL_ENV=production)
- * since dark mode isn't a supported user-facing feature yet — it's exposed
+ * since dark mode isn't a supported user-facing feature yet - it's exposed
  * in local dev and preview deploys for testing.
  */
 function ThemeSwitcher() {

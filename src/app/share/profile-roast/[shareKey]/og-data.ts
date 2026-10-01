@@ -1,3 +1,4 @@
+import { normalizeGeneratedCopy } from "@/lib/ai/copy-style";
 import { eq } from "drizzle-orm";
 
 import { db } from "@/server/db";
@@ -20,7 +21,7 @@ export type ShareProfileRoast = {
 
 /**
  * Public, share-gated profile roast for `generateMetadata` + `opengraph-image`.
- * Returns `null` (never throws) when the roast is missing or not public — so the
+ * Returns `null` (never throws) when the roast is missing or not public - so the
  * share card falls back to a generic branded image. Mirrors the gating in
  * `roast.getPublicProfileRoast` (kind === "profile_roast" && isPublic).
  */
@@ -32,7 +33,7 @@ export async function getPublicProfileRoastForShare(
   });
   if (!row?.isPublic || row.kind !== "profile_roast") return null;
 
-  const result = row.output as ProfileRoastResult;
+  const result = normalizeGeneratedCopy(row.output as ProfileRoastResult);
 
   // columnId is the profile_roast subject; with FK cascade a deleted column
   // takes its roast with it, but guard the nullable type just in case.
@@ -50,8 +51,8 @@ export async function getPublicProfileRoastForShare(
     : null;
 
   // The roasted photos ride with any shared roast (mirrors
-  // roast.getPublicProfileRoast, where only the profile preview — name, age,
-  // bio — stays gated behind the comparison being public), so the unfurl can
+  // roast.getPublicProfileRoast, where only the profile preview - name, age,
+  // bio - stays gated behind the comparison being public), so the unfurl can
   // always lead with the first photo.
   const photoUrl =
     column?.content.find((c) => c.type === "photo" && c.attachment?.url)

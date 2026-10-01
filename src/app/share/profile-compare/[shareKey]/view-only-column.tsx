@@ -80,7 +80,7 @@ export function ViewOnlyColumn({
   const selectedContent = column.content.find((c) => c.id === feedbackTarget);
   const feedbackOpen = feedbackTarget === column.id || !!selectedContent;
 
-  // Header context for the dialog — derived here because the column already
+  // Header context for the dialog - derived here because the column already
   // owns its content; nothing needs to be threaded through Stack/Flow views.
   const feedbackContext = useMemo(() => {
     if (!selectedContent) return undefined;
@@ -245,7 +245,7 @@ export function ViewOnlyColumn({
         )}
       </Button>
 
-      {/* Published roast teaser — deliberately below the profile and comment
+      {/* Published roast teaser - deliberately below the profile and comment
           affordances so friends form their own take before reading the AI's. */}
       {publishedRoast && (
         <RoastCtaStrip

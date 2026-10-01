@@ -44,7 +44,7 @@ export async function generateMetadata({
 
   const category = CATALOG_CATEGORIES[entry.primaryCategory];
   return {
-    title: `${entry.name} — ${category.label}`,
+    title: `${entry.name} - ${category.label}`,
     description: entry.data.editorialSummary,
     alternates: { canonical: `/dating-services/listing/${entry.slug}` },
   };

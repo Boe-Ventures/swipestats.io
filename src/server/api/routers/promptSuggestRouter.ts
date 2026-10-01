@@ -31,7 +31,7 @@ async function loadColumnContext(
     .filter((c) => c.type === "prompt")
     .map((c) => ({ prompt: c.prompt ?? "", answer: c.answer ?? "" }));
 
-  // Photo captions are real app content but not Q&A prompts — feeding them to
+  // Photo captions are real app content but not Q&A prompts - feeding them to
   // the suggester yields nonsense like an "answer" to "Just me being iconic".
   const bankPrompts = isPromptSource(column.dataProvider)
     ? getPromptsByApp(column.dataProvider)

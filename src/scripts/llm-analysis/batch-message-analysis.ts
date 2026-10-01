@@ -47,7 +47,7 @@ import { getTinderExportMessageAuthor } from "@/lib/tinder-message-semantics";
 // ════════════════════════════════════════════════════════════════════
 
 const CONFIG = {
-  /** No API calls or DB writes — just generate JSONL for inspection */
+  /** No API calls or DB writes - just generate JSONL for inspection */
   DRY_RUN: true,
   /** Max matches to process. null = all matches */
   MATCH_LIMIT: 1000 as number | null,
@@ -524,7 +524,7 @@ async function pollAndDownloadResults(
       failed++;
       console.log(
         yellow(
-          `  Warning: ${matchId} — ${result.result.type}: ${JSON.stringify(result.result)}`,
+          `  Warning: ${matchId} - ${result.result.type}: ${JSON.stringify(result.result)}`,
         ),
       );
       continue;
@@ -537,7 +537,7 @@ async function pollAndDownloadResults(
     if (toolUse?.type !== "tool_use") {
       failed++;
       console.log(
-        yellow(`  Warning: ${matchId} — no tool_use block in response`),
+        yellow(`  Warning: ${matchId} - no tool_use block in response`),
       );
       continue;
     }
@@ -549,7 +549,7 @@ async function pollAndDownloadResults(
     } catch (parseErr) {
       failed++;
       console.log(
-        yellow(`  Warning: ${matchId} — failed to parse: ${String(parseErr)}`),
+        yellow(`  Warning: ${matchId} - failed to parse: ${String(parseErr)}`),
       );
     }
   }
@@ -579,7 +579,7 @@ async function processResults(
   console.log(bold("\n═══ Step 5: Write results to database ═══\n"));
 
   if (CONFIG.DRY_RUN) {
-    console.log(yellow("  DRY RUN — skipping DB writes\n"));
+    console.log(yellow("  DRY RUN - skipping DB writes\n"));
     printResultsSummary(results);
     return;
   }
@@ -693,7 +693,7 @@ async function aggregateUserLanguages(): Promise<void> {
   console.log(bold("\n═══ Step 6: Aggregate user languages ═══\n"));
 
   if (CONFIG.DRY_RUN) {
-    console.log(yellow("  DRY RUN — skipping user language aggregation\n"));
+    console.log(yellow("  DRY RUN - skipping user language aggregation\n"));
     return;
   }
 

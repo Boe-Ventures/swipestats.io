@@ -199,7 +199,7 @@ export function StackView({
                 </div>
               )}
 
-              {/* Comment button — z-20 lifts it above the full-photo
+              {/* Comment button - z-20 lifts it above the full-photo
                   prev/next nav overlay (z-10) so it stays clickable. */}
               <div className="absolute right-5 bottom-3 z-20 flex items-center gap-2">
                 {onFeedbackClick && currentPhoto && (

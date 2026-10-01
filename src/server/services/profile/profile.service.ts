@@ -89,7 +89,7 @@ async function hasRemainingAnonymousUserData(
 export type TinderProfileResult = {
   profile: TinderProfile;
   /**
-   * True when an additive re-upload added no new matches or messages — i.e. the
+   * True when an additive re-upload added no new matches or messages - i.e. the
    * same export uploaded again. The router uses this to suppress the no-op
    * `tinder_profile_updated` event. Undefined for creates/merges (always real).
    */
@@ -537,7 +537,7 @@ export async function createTinderProfile(data: {
   );
   console.log(`────────────────────────────────────────\n`);
 
-  // Use Usage.matches (daily aggregates) for match count — this is the
+  // Use Usage.matches (daily aggregates) for match count - this is the
   // authoritative source. Messages.length only counts conversation records,
   // which can be 0 even when the user has matches (e.g. unmatched before messaging).
   const usageMatchTotal = Object.values(
@@ -766,7 +766,7 @@ export async function resetTinderProfile(tinderId: string): Promise<void> {
       .where(eq(profileMetaTable.tinderProfileId, tinderId));
     await purgeTinderSwipeRankProfilesInTx(tx, [tinderId]);
     // The stats roast (ai_output.tinderProfileId FK, onDelete cascade) goes when
-    // the profile row below is deleted — no explicit delete needed.
+    // the profile row below is deleted - no explicit delete needed.
     await tx
       .delete(tinderProfileTable)
       .where(eq(tinderProfileTable.tinderId, tinderId));

@@ -6,13 +6,13 @@ styles, interaction logic, and content.
 
 ## Views
 
-- [`business-model.html`](business-model.html) — SwipeStats' connected consumer,
+- [`business-model.html`](business-model.html) - SwipeStats' connected consumer,
   media, and research-data model, with current evidence, hypotheses, tensions,
   and proposed validation.
-- [`jobs-to-be-done.html`](jobs-to-be-done.html) — a user job map from immediate
+- [`jobs-to-be-done.html`](jobs-to-be-done.html) - a user job map from immediate
   intent and export access through trustworthy interpretation, improvement, and
   longitudinal learning.
-- [`evidence-to-iteration.html`](evidence-to-iteration.html) — candidate paths
+- [`evidence-to-iteration.html`](evidence-to-iteration.html) - candidate paths
   from customer evidence through desired outcomes and experiments to
   business-model consequences.
 

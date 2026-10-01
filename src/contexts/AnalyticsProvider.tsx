@@ -92,7 +92,7 @@ interface ClientAnalyticsProvider {
     meta?: AnalyticsMetadata,
   ) => void;
   identify?: (userId: string, traits: Record<string, unknown>) => void;
-  /** No-op today — SwipeStats has no org/group concept (cf. homi's groups). */
+  /** No-op today - SwipeStats has no org/group concept (cf. homi's groups). */
   group?: (
     groupType: string,
     groupId: string,
@@ -347,7 +347,7 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
   );
 
   // ── Bring each provider up/down as its category flips ────────────────
-  // The whole lifecycle now goes through the provider list — no PostHog- or
+  // The whole lifecycle now goes through the provider list - no PostHog- or
   // Amplitude-specific code here.
   const appliedRef = useRef<Map<string, boolean>>(new Map());
   useEffect(() => {
@@ -388,10 +388,10 @@ export function AnalyticsProvider({ children }: { children: ReactNode }) {
     const userId = session.data.user.id;
     if (lastIdentifiedUserId.current === userId) return;
 
-    // Send only the curated UserTraits — not the raw user object (which would
+    // Send only the curated UserTraits - not the raw user object (which would
     // leak every Better Auth field into analytics person profiles).
     // Only the fields the client session actually carries. tier/city/country
-    // live on the server user (not inferred client-side) — they'd need a
+    // live on the server user (not inferred client-side) - they'd need a
     // server-side identify, which we don't have yet.
     const u = session.data.user;
     const traits: UserTraits = {

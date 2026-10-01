@@ -1,8 +1,8 @@
-// design-sync barrel entry — the SwipeStats kit lives in the app (no workspace
+// design-sync barrel entry - the SwipeStats kit lives in the app (no workspace
 // package; index.ts only exports cn), so this barrel re-exports the public API
 // for the window.SwipeStatsUI bundle. Regenerate when components are added.
 // Deliberately excluded: tan-form.tsx + country-select.tsx (legacy duplicates of
-// form-new.tsx / form-inputs/CountrySelect.tsx — name collisions), *.example/
+// form-new.tsx / form-inputs/CountrySelect.tsx - name collisions), *.example/
 // *.test files, upload/ImageUploadDialog (no named component export).
 import "./.ds-shim.ts";
 

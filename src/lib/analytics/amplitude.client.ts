@@ -1,5 +1,5 @@
 /**
- * Amplitude provider (client-side only) — @amplitude/unified.
+ * Amplitude provider (client-side only) - @amplitude/unified.
  *
  * Posture for SwipeStats (privacy-first, but Session Replay is acceptable here
  * because users are anonymous: anon accounts + usernames, no email unless they
@@ -7,10 +7,10 @@
  *
  * - DEFAULT OFF for everything. Nothing initializes until the user consents,
  *   so no Amplitude cookies/storage are created pre-consent (Method 1 in
- *   Amplitude's privacy guide — the cleanest model to explain to auditors).
+ *   Amplitude's privacy guide - the cleanest model to explain to auditors).
  * - On consent we `initAll` → analytics autocapture + Session Replay together.
  * - EU data residency (`serverZone: "EU"`), matching PostHog.
- * - Honors Global Privacy Control (GPC) — handled at the consent-default layer
+ * - Honors Global Privacy Control (GPC) - handled at the consent-default layer
  *   (AnalyticsProvider), so this module only runs on an explicit opt-in.
  * - No-ops entirely when `NEXT_PUBLIC_AMPLITUDE_API_KEY` is unset.
  *
@@ -31,7 +31,7 @@ let initialized = false;
  *
  * GPC is honored at the consent-default layer (AnalyticsProvider): under GPC the
  * `analytics` category defaults off and the banner is skipped, so this only runs
- * on an explicit opt-in — which overrides the GPC default for all providers
+ * on an explicit opt-in - which overrides the GPC default for all providers
  * consistently (PostHog + Amplitude), rather than one honoring it and one not.
  */
 export function enableAmplitude(): void {

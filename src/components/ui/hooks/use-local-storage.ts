@@ -14,7 +14,7 @@ export type UseStorageOptions<T> = {
   key: string;
   /** Value used if nothing in storage or storage unavailable */
   defaultValue?: T;
-  /** Sync across tabs & same tab (multiple hooks) — default: true */
+  /** Sync across tabs & same tab (multiple hooks) - default: true */
   sync?: boolean;
   /** Optional namespace prefix; default "" */
   namespace?: string;

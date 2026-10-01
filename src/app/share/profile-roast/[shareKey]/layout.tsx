@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     return { title: "Roast Not Found" };
   }
 
-  // No " | SwipeStats" suffix — the root layout's title.template adds the brand
+  // No " | SwipeStats" suffix - the root layout's title.template adds the brand
   // to the document <title>, while og/twitter title stay clean for the unfurl.
   const title = roast.subject
     ? `${roast.subject}'s profile got roasted`

@@ -12,7 +12,7 @@ import {
 
 import { createId } from "./utils";
 // Roast payload types are inferred from canonical zod schemas in this leaf
-// module (zod-only — no import cycle, since services import FROM schema.ts).
+// module (zod-only - no import cycle, since services import FROM schema.ts).
 import type {
   StatsRoastResult,
   ProfileRoastResult,
@@ -307,7 +307,7 @@ export const userTable = pgTable("user", (t) => ({
   country: t.text(),
   region: t.text(), // state/province (e.g., "California", "Bavaria")
   continent: t.text(), // "North America", "Europe", "Asia", etc.
-  // Granular analytics consent — durable, server-readable mirror of the
+  // Granular analytics consent - durable, server-readable mirror of the
   // localStorage decision (synced on login). Null = no decision made yet.
   analyticsConsent: t.jsonb().$type<ConsentRecord>(),
   languages: t.jsonb().$type<LanguageCode[]>().default([]).notNull(), // aggregated from match-level analysis
@@ -2451,28 +2451,28 @@ export type ProfileComparisonFeedbackInsert =
 // ---- AI OUTPUT ----------------------------------------------------
 //
 // One table for every PERSISTED, regenerable, shareable AI artifact about a
-// subject the user owns — profile roasts today, "your year"/Wrapped-style
+// subject the user owns - profile roasts today, "your year"/Wrapped-style
 // recaps later. Ephemeral AI (prompt suggestions, on-the-fly analysis) does NOT
 // belong here; it's returned to the client and never stored.
 //
 // Shape:
-//  - `kind` (plain text, validated at the edge — adding a kind needs no
+//  - `kind` (plain text, validated at the edge - adding a kind needs no
 //    migration) + the subject + `scope` identify the artifact. One row per
 //    (kind, subject, scope); regenerating OVERWRITES it (a user expects one
 //    current version, not a history).
 //  - The subject is an EXCLUSIVE ARC of typed FKs: exactly one of
 //    `tinderProfileId` / `hingeProfileId` / `columnId` is set (enforced by the
 //    `ai_output_one_subject` CHECK). Each FK is `onDelete: cascade`, so deleting
-//    the subject deletes its artifacts — no app-layer prune to forget. `kind`
+//    the subject deletes its artifacts - no app-layer prune to forget. `kind`
 //    is still the discriminant and is NOT derivable from which FK is set (a
-//    subject table can host several kinds — e.g. a future `tinder_wrapped` would
+//    subject table can host several kinds - e.g. a future `tinder_wrapped` would
 //    also point at `tinderProfileId`).
 //  - `input` records what we fed the model (reproducibility/debugging);
 //    `output` is the rendered result. Both jsonb. Each generator owns its
 //    `output` shape and validates it with a zod schema at write time.
 //  - `version` is the output-format version. Readers compare it to the current
 //    per-kind version and offer a manual "refresh" (regenerate) for rows left
-//    behind — so the payload can evolve without DB migrations or backfills.
+//    behind - so the payload can evolve without DB migrations or backfills.
 //  - `shareKey`/`isPublic` are the share primitive, built once for all kinds.
 
 export type AiOutputKind = "tinder_roast" | "hinge_roast" | "profile_roast";
@@ -2481,7 +2481,7 @@ export type AiOutputKind = "tinder_roast" | "hinge_roast" | "profile_roast";
 // "@/server/db/schema"`. Definitions live in the zod leaf (imported above).
 export type { StatsRoastResult, ProfileRoastResult };
 
-/** `output` payload — shape depends on `kind`, narrowed at the edge by zod. */
+/** `output` payload - shape depends on `kind`, narrowed at the edge by zod. */
 export type AiOutputPayload = StatsRoastResult | ProfileRoastResult;
 
 /** What was fed to the model, stored for reproducibility. Shape depends on kind. */
@@ -2513,7 +2513,7 @@ export const aiOutputTable = pgTable(
       .text()
       .notNull()
       .references(() => userTable.id, { onDelete: "cascade" }),
-    // `kind` is the artifact discriminant (plain text — a new kind needs no
+    // `kind` is the artifact discriminant (plain text - a new kind needs no
     // migration). NOT derivable from the FKs: a subject table can host several
     // kinds (e.g. tinder_roast and a future tinder_wrapped both → tinderProfileId).
     kind: t.text().$type<AiOutputKind>().notNull(),
@@ -2530,7 +2530,7 @@ export const aiOutputTable = pgTable(
       .references(() => comparisonColumnTable.id, { onDelete: "cascade" }),
     // "" = the whole subject; a period like "2024" / "2024-01" for recaps. Part
     // of the uniqueness key. NOT NULL (empty string, never NULL) so the unique
-    // index treats it as one slot — NULLs would be distinct and break overwrite.
+    // index treats it as one slot - NULLs would be distinct and break overwrite.
     scope: t.text().notNull().default(""),
     // Voice knob, promoted out of `input` because it's read back often. Nullable
     // (not every kind has a tone).
@@ -2557,12 +2557,12 @@ export const aiOutputTable = pgTable(
       .notNull(),
   }),
   (table) => [
-    // Exactly one subject FK is set — the exclusive arc.
+    // Exactly one subject FK is set - the exclusive arc.
     check(
       "ai_output_one_subject",
       sql`num_nonnulls(${table.tinderProfileId}, ${table.hingeProfileId}, ${table.columnId}) = 1`,
     ),
-    // One artifact per (kind, subject, scope) — the upsert overwrites in place.
+    // One artifact per (kind, subject, scope) - the upsert overwrites in place.
     // NULLS NOT DISTINCT so the two unused arc columns (always NULL for a given
     // kind) collapse to one slot; otherwise NULL <> NULL would let duplicates in.
     unique("ai_output_subject_key")
@@ -3044,7 +3044,7 @@ export const comparisonColumnRelations = relations(
     content: many(comparisonColumnContentTable),
     feedback: many(profileComparisonFeedbackTable),
     // Roast state (roasted? + tone + when) lives in `ai_output` keyed by
-    // (kind="profile_roast", subjectId=column.id) — no FK relation, queried
+    // (kind="profile_roast", subjectId=column.id) - no FK relation, queried
     // explicitly where the comparison is read.
   }),
 );

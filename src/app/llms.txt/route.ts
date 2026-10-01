@@ -8,7 +8,7 @@ const OVERVIEW = `# SwipeStats
 
 > Dating app analytics for the people who use them and the researchers who study them. Upload your Tinder or Hinge data export, get visualizations and cohort comparisons, and help build the largest anonymized dataset of real dating behavior.
 
-SwipeStats is a free tool that turns the JSON data exports dating apps give you into insights about your own swiping and messaging patterns — and benchmarks them against thousands of other users. The aggregated, anonymized data also powers a research dataset used by journalists, academics, and content creators.
+SwipeStats is a free tool that turns the JSON data exports dating apps give you into insights about your own swiping and messaging patterns - and benchmarks them against thousands of other users. The aggregated, anonymized data also powers a research dataset used by journalists, academics, and content creators.
 
 Currently supports Tinder and Hinge data exports. Messages are excluded from all shared data for privacy.`;
 
@@ -73,11 +73,11 @@ interface Post {
 const renderLink = (label: string, path: string, note?: string) => {
   const absolute = path.startsWith("http") ? path : `${BASE_URL}${path}`;
   const line = `- [${label}](${absolute})`;
-  return note ? `${line} — ${note}` : line;
+  return note ? `${line} - ${note}` : line;
 };
 
 const renderPost = (post: Post) =>
-  `- [${post.metaTitle}](${BASE_URL}${post.permalink}) — ${post.metaDescription}`;
+  `- [${post.metaTitle}](${BASE_URL}${post.permalink}) - ${post.metaDescription}`;
 
 const renderList = (links: [string, string, string?][]) =>
   links.map(([label, path, note]) => renderLink(label, path, note)).join("\n");

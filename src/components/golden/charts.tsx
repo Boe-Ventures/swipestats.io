@@ -1,5 +1,5 @@
 /**
- * Golden CHART theming — the cohesive data-viz palette for the golden surfaces.
+ * Golden CHART theming - the cohesive data-viz palette for the golden surfaces.
  *
  * There are intentionally NO hand-rolled chart components here: charts are the
  * real, data-driven Recharts components (see InsightsShowcase and the insights
@@ -8,7 +8,7 @@
  */
 
 /**
- * The cohesive golden data-viz palette — oklch values that sit with the
+ * The cohesive golden data-viz palette - oklch values that sit with the
  * rose-600 accent and neutral gray surfaces.
  */
 export const GOLDEN_CHART_COLORS = {

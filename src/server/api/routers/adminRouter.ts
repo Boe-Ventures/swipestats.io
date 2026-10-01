@@ -713,7 +713,7 @@ export const adminRouter = {
 
   // ---- PROFILE COMPARE (read-only inspector) ----------------------
   // Cross-user overview of everything people have built/shared in the
-  // profile-compare feature. View-only — no mutations.
+  // profile-compare feature. View-only - no mutations.
 
   // Header totals for the inspector landing page.
   comparisonStats: adminProcedure.query(async ({ ctx }) => {

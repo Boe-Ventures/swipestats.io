@@ -3,10 +3,10 @@ import { cn } from "@/components/ui/lib/utils";
 
 /**
  * Shared presentational primitives for the redesigned marketing pages
- * (/research, /how-to-request-your-data) — one source of truth for the
+ * (/research, /how-to-request-your-data) - one source of truth for the
  * handoff design system: Inter + Geist Mono, rose-600 on cool gray,
  * the rose eyebrow rule, section heads, the graph-paper hero texture, and
- * the CTA button. Pure/server-safe — usable from server or client components.
+ * the CTA button. Pure/server-safe - usable from server or client components.
  */
 
 /* ------------------------------------------------------------------ button */

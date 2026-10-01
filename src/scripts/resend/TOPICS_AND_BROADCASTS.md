@@ -11,6 +11,7 @@ This document provides guidance for implementing Resend Broadcasts with Topics f
 ## Current Implementation Status
 
 ### ✅ What We Have
+
 - **8 Topics defined** in `resend.constants.ts` and mapped to Resend UUIDs in `resend.client.ts`
 - **Topic management API** (`newsletterRouter.ts`) for subscribe/unsubscribe
 - **Client utilities** for creating contacts and managing topic subscriptions
@@ -18,6 +19,7 @@ This document provides guidance for implementing Resend Broadcasts with Topics f
 - **Transactional emails** (email verification) working via `resend.emails.send()`
 
 ### 🚧 What We Don't Have Yet
+
 - **Broadcast sending** functionality
 - **Segment management** (targeting specific user groups)
 - **Custom branded unsubscribe page** (still using default)
@@ -26,32 +28,35 @@ This document provides guidance for implementing Resend Broadcasts with Topics f
 ## Why Topics Matter for Broadcasts
 
 ### The Core Principle
-> **Topics don't define who receives a message—they define who asked not to receive that message.**
+
+> **Topics don't define who receives a message - they define who asked not to receive that message.**
 
 When you send a Broadcast:
+
 1. **Without Topics**: Users can only unsubscribe from ALL emails (nuclear option)
 2. **With Topics**: Users can say "no product updates" but keep "dating tips"
 
 ### Impact on Deliverability
 
 Topics improve sender reputation by:
+
 - **Reducing spam complaints** (users opt out of specific content instead of marking as spam)
 - **Increasing engagement rates** (only send to people who want that content type)
 - **Preventing list attrition** (users stay subscribed to what they value)
 
-Mailbox providers (Gmail, Outlook) track engagement. When you send "Product Updates" to everyone on your list, people who don't care about product updates won't open it—hurting your sender reputation.
+Mailbox providers (Gmail, Outlook) track engagement. When you send "Product Updates" to everyone on your list, people who don't care about product updates won't open it - hurting your sender reputation.
 
 ## When to Use Topics vs Segments
 
 This is critical: **Topics and Segments serve different purposes.**
 
-| Aspect              | Topics                                    | Segments                                   |
-| ------------------- | ----------------------------------------- | ------------------------------------------ |
-| **Who controls it** | Recipients (via preferences)              | You (the sender)                           |
-| **Visibility**      | Public (shown on unsubscribe page)        | Internal only                              |
-| **Purpose**         | Respect recipient content preferences     | Target specific user groups                |
-| **Example**         | "Newsletter", "Product Updates"           | "Active Users", "Premium Subscribers"      |
-| **Use for**         | "What are we sending"                     | "Who are we sending to"                    |
+| Aspect              | Topics                                | Segments                              |
+| ------------------- | ------------------------------------- | ------------------------------------- |
+| **Who controls it** | Recipients (via preferences)          | You (the sender)                      |
+| **Visibility**      | Public (shown on unsubscribe page)    | Internal only                         |
+| **Purpose**         | Respect recipient content preferences | Target specific user groups           |
+| **Example**         | "Newsletter", "Product Updates"       | "Active Users", "Premium Subscribers" |
+| **Use for**         | "What are we sending"                 | "Who are we sending to"               |
 
 ### How They Work Together
 
@@ -60,6 +65,7 @@ Broadcast = Segment (who) + Topic (what)
 ```
 
 **Example**: Send a product announcement to "Enterprise Customers" Segment, labeled with "Product Updates" Topic.
+
 - Everyone in the Segment receives it...
 - **EXCEPT** those who opted out of "Product Updates" Topic
 
@@ -69,16 +75,16 @@ Broadcast = Segment (who) + Topic (what)
 
 ```typescript
 // Newsletter Topics (regular content)
-"newsletter-general"          // Weekly/monthly general updates
-"newsletter-dating-tips"      // Dating advice and tips  
-"newsletter-product-updates"  // Product announcements
-"newsletter-research"         // Research findings and data
+"newsletter-general"; // Weekly/monthly general updates
+"newsletter-dating-tips"; // Dating advice and tips
+"newsletter-product-updates"; // Product announcements
+"newsletter-research"; // Research findings and data
 
 // Waitlist Topics (one-time notifications)
-"waitlist-profile-compare"    // Profile comparison feature launch
-"waitlist-bumble"            // Bumble integration launch
-"waitlist-message-analysis"   // Message analysis feature launch
-"waitlist-directory-profiles" // Profile directory feature launch
+"waitlist-profile-compare"; // Profile comparison feature launch
+"waitlist-bumble"; // Bumble integration launch
+"waitlist-message-analysis"; // Message analysis feature launch
+"waitlist-directory-profiles"; // Profile directory feature launch
 ```
 
 ### Topic Design Principles
@@ -90,6 +96,7 @@ Broadcast = Segment (who) + Topic (what)
 **Add descriptions**: Help users understand frequency and content expectations
 
 **Opt-in vs Opt-out defaults**:
+
 - **Opt-in** (current): All contacts can receive this content by default unless they unsubscribe (good for broad content like general newsletter)
 - **Opt-out**: Contacts must explicitly subscribe to receive this content (good for niche content like beta programs)
 
@@ -110,7 +117,7 @@ Add to `src/server/clients/resend.client.ts`:
 /**
  * Send a marketing email via Resend Broadcasts
  * Always requires a topic to protect recipients' preferences
- * 
+ *
  * @example
  * await sendBroadcast({
  *   topic: "newsletter-general",
@@ -128,7 +135,7 @@ export async function sendBroadcast(params: {
   scheduledAt?: string; // Optional: ISO 8601 date string for scheduled sending
 }) {
   const topicId = getTopicId(params.topic);
-  
+
   try {
     const payload = {
       from: params.from ?? "SwipeStats <noreply@mail.swipestats.io>",
@@ -140,7 +147,7 @@ export async function sendBroadcast(params: {
     };
 
     const response = await resend.broadcasts.send(payload);
-    
+
     console.log(`✅ Broadcast sent with topic ${params.topic}`);
     return { success: true, data: response };
   } catch (error) {
@@ -174,7 +181,7 @@ export const broadcastRouter = createTRPCRouter({
         from: z.string().email().optional(),
         segmentId: z.string().optional(),
         scheduledAt: z.string().datetime().optional(),
-      })
+      }),
     )
     .mutation(async ({ input }) => {
       return await sendBroadcast(input);
@@ -194,9 +201,13 @@ async function sendWeeklyNewsletter() {
   // Render email template
   const emailHtml = await render(
     WeeklyNewsletterEmail({
-      stats: { /* weekly stats */ },
-      articles: [ /* curated content */ ],
-    })
+      stats: {
+        /* weekly stats */
+      },
+      articles: [
+        /* curated content */
+      ],
+    }),
   );
 
   // Send broadcast
@@ -268,6 +279,7 @@ await sendBroadcast({
 Navigate to: **Resend Dashboard → Settings → Unsubscribe Page**
 
 Customization options:
+
 - **Title and description**
 - **Logo** (upload your SwipeStats logo)
 - **Colors**: Background, text, accent
@@ -276,6 +288,7 @@ Customization options:
 ### Why This Matters
 
 A branded unsubscribe page:
+
 - Looks professional and trustworthy
 - Encourages preference management over full unsubscribe
 - Reinforces your brand even during opt-out
@@ -283,6 +296,7 @@ A branded unsubscribe page:
 ### What Users See
 
 When they click "Unsubscribe" in a Broadcast, they see:
+
 1. Your logo and branding
 2. All **public** Topics (with your descriptions)
 3. Checkboxes to opt in/out of each Topic
@@ -292,7 +306,7 @@ When they click "Unsubscribe" in a Broadcast, they see:
 
 ### Always Label Broadcasts with a Topic
 
-⚠️ **CRITICAL**: If you send a Broadcast without a Topic and someone unsubscribes, they'll be unsubscribed from **ALL** your emails—not just that content type.
+⚠️ **CRITICAL**: If you send a Broadcast without a Topic and someone unsubscribes, they'll be unsubscribed from **ALL** your emails - not just that content type.
 
 ```typescript
 // ❌ BAD: No topic specified
@@ -315,14 +329,14 @@ await sendBroadcast({
 
 ```typescript
 // ❌ BAD
-"category_a"
-"misc"
-"emails_type_1"
+"category_a";
+"misc";
+"emails_type_1";
 
 // ✅ GOOD
-"newsletter-general"
-"newsletter-dating-tips"
-"newsletter-product-updates"
+"newsletter-general";
+"newsletter-dating-tips";
+"newsletter-product-updates";
 ```
 
 ### Respect Rate Limits
@@ -332,6 +346,7 @@ Resend has a 2 requests/second limit. Our `subscribeToTopics()` function already
 ### Monitor Engagement
 
 After sending broadcasts, track:
+
 - **Open rates** (are people interested?)
 - **Click rates** (are people engaging?)
 - **Unsubscribe rates** (are we sending too much?)
@@ -362,6 +377,7 @@ NEXT_PUBLIC_UNSUBSCRIBE_URL=https://swipestats.io/unsubscribe
 ### Before Going Live
 
 1. **Test with your own email**:
+
    ```typescript
    await sendBroadcast({
      topic: "newsletter-general",
@@ -395,12 +411,14 @@ bun src/scripts/resend/list-topics.ts
 ## Migration Path from Current Setup
 
 ### Phase 1: Infrastructure (Complete ✅)
+
 - [x] Topics created in Resend
 - [x] Topic IDs mapped in `resend.client.ts`
 - [x] Subscription management API (`newsletterRouter`)
 - [x] Frontend components for topic management
 
 ### Phase 2: Broadcast Setup (Next)
+
 - [ ] Implement `sendBroadcast()` function
 - [ ] Create email templates for broadcasts
 - [ ] Set up segments in Resend dashboard
@@ -408,6 +426,7 @@ bun src/scripts/resend/list-topics.ts
 - [ ] Create admin interface for sending broadcasts (optional)
 
 ### Phase 3: First Broadcast
+
 - [ ] Write content for first newsletter
 - [ ] Create React Email template
 - [ ] Send test broadcast to small segment
@@ -415,6 +434,7 @@ bun src/scripts/resend/list-topics.ts
 - [ ] Iterate based on feedback
 
 ### Phase 4: Automation (Future)
+
 - [ ] Scheduled weekly/monthly newsletters
 - [ ] Automated onboarding email sequences
 - [ ] Feature launch announcements

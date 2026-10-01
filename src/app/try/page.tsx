@@ -1,10 +1,10 @@
 "use client";
 
 /**
- * Try Page — Branded Gateway
+ * Try Page - Branded Gateway
  *
  * Ensures a session exists (creating an anonymous one if needed), then drops the
- * visitor straight into a profile comparison — so the marketing "Try it free"
+ * visitor straight into a profile comparison - so the marketing "Try it free"
  * CTA never hits the `/app` login wall and never lands on an empty hub.
  *
  * Default flow (no `?next`):
@@ -13,7 +13,7 @@
  *   - Forward to /app/profile-compare/[id], whose empty state guides next steps.
  *
  * With `?next=/app/...` the gateway skips creation and just forwards there
- * (internal app paths only, to avoid open redirects) — keeping it reusable as a
+ * (internal app paths only, to avoid open redirects) - keeping it reusable as a
  * generic "ensure session, then go here" entry point.
  *
  * Shows the SwipeStats mark with a gentle pulse so the brief wait reads as an
@@ -32,7 +32,7 @@ import {
   type AnonymousSource,
 } from "@/lib/analytics/analytics.types";
 
-/** Columns a freshly seeded comparison starts with — matches the create dialog. */
+/** Columns a freshly seeded comparison starts with - matches the create dialog. */
 const DEFAULT_COLUMNS = [
   { dataProvider: "TINDER" as const },
   { dataProvider: "HINGE" as const },
@@ -50,7 +50,7 @@ function resolveNext(next: string | null): string | null {
  * gateway. Validated against the shared allowlist so we never forward an
  * arbitrary value into analytics. The source rides along as the
  * `X-Anonymous-Source` header when we mint a guest session, and stays in the URL
- * for PostHog pageview attribution — it does not change where the visitor lands.
+ * for PostHog pageview attribution - it does not change where the visitor lands.
  */
 function resolveSource(source: string | null): AnonymousSource {
   if (source && (ANONYMOUS_SOURCES as readonly string[]).includes(source)) {
@@ -108,7 +108,7 @@ function TryGateway() {
 
     const run = async () => {
       try {
-        // 1. Ensure a session exists — create an anonymous one if needed.
+        // 1. Ensure a session exists - create an anonymous one if needed.
         const session = await authClient.getSession();
         if (!session.data?.user) {
           const result = await authClient.signIn.anonymous({
@@ -119,7 +119,7 @@ function TryGateway() {
           }
         }
 
-        // 2. An explicit destination wins — just forward there.
+        // 2. An explicit destination wins - just forward there.
         if (next) {
           router.replace(next);
           return;

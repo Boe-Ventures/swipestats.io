@@ -12,7 +12,7 @@ import { useNewsletter } from "@/hooks/useNewsletter";
  * One source of truth for the subscribe flow (useNewsletter wiring, the
  * real-user-vs-anonymous branching, loading/error/already-subscribed states),
  * with all presentation passed in via className/label props so each surface
- * keeps its own look — the home page's dark block and the data-request page's
+ * keeps its own look - the home page's dark block and the data-request page's
  * inline reminder band both render this.
  */
 
@@ -145,7 +145,9 @@ export function NewsletterSignup({
           type="submit"
           disabled={submitting}
           className={cn(
-            isRealUser ? (realButtonClassName ?? buttonClassName) : buttonClassName,
+            isRealUser
+              ? (realButtonClassName ?? buttonClassName)
+              : buttonClassName,
             submitting && "cursor-wait opacity-60",
           )}
         >

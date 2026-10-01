@@ -1,4 +1,4 @@
-# Globe Visualization — Porting Guide
+# Globe Visualization - Porting Guide
 
 A self-contained spec for re-implementing the SwipeStats interactive **globe map** (the
 `/directory` page) in a different domain/codebase. It uses **Mapbox GL** in `globe`
@@ -45,7 +45,7 @@ A Mapbox **public** access token (starts with `pk.`). In SwipeStats it's a valid
 
 ```ts
 // env.ts (client-exposed, must be NEXT_PUBLIC_*)
-NEXT_PUBLIC_MAPBOX_PUBLIC_API_KEY: z.string()
+NEXT_PUBLIC_MAPBOX_PUBLIC_API_KEY: z.string();
 ```
 
 Get one free at https://account.mapbox.com/access-tokens/. The free tier covers ~50k map
@@ -56,26 +56,26 @@ loads/month. Pass it as `mapboxAccessToken={...}` on the `<Map>`.
 ## 4. Data contract
 
 The globe only needs an array of records shaped roughly like this. Adapt field names to
-your domain — the **only hard requirement is a country (or any geocodable location) string
+your domain - the **only hard requirement is a country (or any geocodable location) string
 and a stable `id`.**
 
 ```ts
 type GlobeRecord = {
   id: string;
-  // location — at least one geocodable field
+  // location - at least one geocodable field
   country: string | null;
   city: string | null;
   // anything you want to show in marker/popup/feed:
   createdAt: Date;
-  category: "tinder" | "hinge";  // drives marker badge + color in our case
-  label: string;                 // e.g. "Male, 28"
+  category: "tinder" | "hinge"; // drives marker badge + color in our case
+  label: string; // e.g. "Male, 28"
   // ...domain stats shown in popup/feed (matches, rate, etc.)
 };
 ```
 
 In SwipeStats this is `DirectoryProfile` (`src/lib/types/directory.ts`). The server (a tRPC
 `directory.list` query backed by Drizzle/Postgres) returns ~21–100 records ordered newest-
-first. **Nothing about the globe requires tRPC or Postgres** — any fetch that yields the array
+first. **Nothing about the globe requires tRPC or Postgres** - any fetch that yields the array
 works. Keep the list small (tens, low hundreds) since each marker is a real DOM node.
 
 ---
@@ -84,16 +84,16 @@ works. Keep the list small (tens, low hundreds) since each marker is a real DOM 
 
 These live in `src/lib/country-coordinates.ts` and are fully portable (copy as-is).
 
-1. **Country → coordinates table** — a hardcoded `Record<string, {lat,lng}>` of ~100
+1. **Country → coordinates table** - a hardcoded `Record<string, {lat,lng}>` of ~100
    countries mapped to their approximate centers. This is what avoids needing a geocoding
    API. Extend/replace with your own location set if you key off something other than
    countries (cities, regions, etc.).
 
-2. **`getCountryCoordinates(country)`** — fuzzy lookup: exact match → normalized match
+2. **`getCountryCoordinates(country)`** - fuzzy lookup: exact match → normalized match
    (lowercase, strip punctuation) → partial/substring match → `null`. Returns `null` for
    unknown locations so the record is dropped from the map.
 
-3. **`addJitter(coords, index, maxJitter = 0.5)`** — spreads same-country markers apart
+3. **`addJitter(coords, index, maxJitter = 0.5)`** - spreads same-country markers apart
    **deterministically** (uses the golden angle `137.508°` seeded by a per-country index, so
    no `Math.random()` → stable across renders/SSR). Without this, every US profile lands on
    the exact same point.
@@ -104,14 +104,16 @@ These live in `src/lib/country-coordinates.ts` and are fully portable (copy as-i
 ```ts
 // usage inside the map component
 const countryIndexMap = new Map<string, number>();
-const withCoords = records.map((r) => {
-  const country = r.userCountry || r.country;
-  const coords = getCountryCoordinates(country);
-  if (!coords) return null;                      // drop un-geocodable
-  const i = countryIndexMap.get(country.toLowerCase()) ?? 0;
-  countryIndexMap.set(country.toLowerCase(), i + 1);
-  return { ...r, coordinates: addJitter(coords, i, 0.5) };
-}).filter(Boolean);
+const withCoords = records
+  .map((r) => {
+    const country = r.userCountry || r.country;
+    const coords = getCountryCoordinates(country);
+    if (!coords) return null; // drop un-geocodable
+    const i = countryIndexMap.get(country.toLowerCase()) ?? 0;
+    countryIndexMap.set(country.toLowerCase(), i + 1);
+    return { ...r, coordinates: addJitter(coords, i, 0.5) };
+  })
+  .filter(Boolean);
 ```
 
 ---
@@ -131,11 +133,11 @@ page.tsx                       Route: fetches records, renders <GlobeMapView>
 
 Supporting (optional): `MapViewToggle` (List ⇄ Map switch via a shadcn `Switch`).
 
-### 6a. GlobeMapView — the core (`DirectoryMapView.tsx`)
+### 6a. GlobeMapView - the core (`DirectoryMapView.tsx`)
 
 Key responsibilities and the patterns used:
 
-- **`"use client"`** — Mapbox is browser-only.
+- **`"use client"`** - Mapbox is browser-only.
 - Geocode + jitter records in a `useMemo` keyed on the records array (section 5).
 - **`initialViewState`** computed from the bounding box of all points: center =
   midpoint of min/max lat/lng; zoom chosen by the largest span (`<10°→4`, `<30°→2.5`,
@@ -162,14 +164,14 @@ Key responsibilities and the patterns used:
 - **Empty state:** if zero records geocode, render a centered "No location data" panel
   instead of the map.
 - Container sizing: `relative h-[calc(100vh-300px)] min-h-[500px] w-full overflow-hidden
-  rounded-lg border`. The map fills it via `style={{width:"100%",height:"100%"}}`.
+rounded-lg border`. The map fills it via `style={{width:"100%",height:"100%"}}`.
 
 ### 6b. AvatarMarker (`AvatarMarker.tsx`)
 
 Pure presentational pin. A 40px rounded circle, colored by a category field (in our case
 gender → blue/pink/purple/gray), with a generic person SVG, a small platform badge
 (Flame/Heart) bottom-right, and effects on hover: `scale-125`, a colored ring, and an
-`animate-ping` pulse. Props: `{ record, isHovered?, isFiltered? }`. No Mapbox dependency —
+`animate-ping` pulse. Props: `{ record, isHovered?, isFiltered? }`. No Mapbox dependency -
 reusable in the activity feed too.
 
 ### 6c. ActivityFeed (`DirectoryActivityFeed.tsx`)
@@ -178,17 +180,17 @@ Absolutely-positioned panel: `absolute top-4 left-4 z-10 hidden lg:block w-64`,
 `bg-background/95 backdrop-blur-sm`, scrollable. Sorts records by `createdAt` desc, takes
 top ~15, each a `<Link>` row with an `AvatarMarker`, label, location, stats, and
 `formatDistanceToNow(createdAt)`. Staggered entrance via
-`style={{ animationDelay: \`${i*50}ms\` }}` + `animate-in fade-in slide-in-from-left-2`.
+`style={{ animationDelay: \`${i\*50}ms\` }}`+`animate-in fade-in slide-in-from-left-2`.
 
 ### 6d. MapStats (`DirectoryMapStats.tsx`)
 
 Absolutely-positioned panel `absolute top-4 right-4 z-10 w-64`. Collapsible. Computes
 aggregates in a `useMemo` over records: top countries, category distribution, gender split,
 averages, totals. In SwipeStats the richer aggregates are gated behind a subscription tier
-(`useSubscription`) with a blurred preview + upgrade CTA for free users — **drop this gating
+(`useSubscription`) with a blurred preview + upgrade CTA for free users - **drop this gating
 entirely** unless your domain has tiers.
 
-### 6e. MapViewToggle (`MapViewToggle.tsx`) — optional
+### 6e. MapViewToggle (`MapViewToggle.tsx`) - optional
 
 A shadcn `<Switch>` between `"list"` and `"map"`. The current SwipeStats page actually
 shows map **and** grid stacked (no toggle), so this is optional.
@@ -198,7 +200,7 @@ shows map **and** grid stacked (no toggle), so this is optional.
 ## 7. Styling notes
 
 - Tailwind throughout; uses shadcn/ui design tokens (`bg-background`, `text-muted-
-  foreground`, `border`, `bg-primary`…). If your target lacks shadcn, swap for literal
+foreground`, `border`, `bg-primary`…). If your target lacks shadcn, swap for literal
   colors.
 - `mapStyle="mapbox://styles/mapbox/dark-v11"` gives the dark globe. Swap for `light-v11`,
   `satellite-v9`, or a custom Studio style.
@@ -209,16 +211,16 @@ shows map **and** grid stacked (no toggle), so this is optional.
 
 ## 8. Files to copy / adapt
 
-| File | Portability |
-|------|-------------|
-| `lib/country-coordinates.ts` | **Copy as-is** (extend the table). The reusable core. |
-| `_components/AvatarMarker.tsx` | Copy; re-map category→color + badge to your domain. |
-| `_components/DirectoryMapView.tsx` | Copy as skeleton; rewrite popup body + field names. |
-| `_components/DirectoryActivityFeed.tsx` | Copy; rewrite the row content. |
-| `_components/DirectoryMapStats.tsx` | Copy; **delete subscription gating**; redefine aggregates. |
-| `_components/MapViewToggle.tsx` | Optional. |
-| `lib/types/directory.ts` | Replace with your own record type. |
-| `directoryRouter.ts` / page fetch | Domain-specific; just return `GlobeRecord[]`. |
+| File                                    | Portability                                                |
+| --------------------------------------- | ---------------------------------------------------------- |
+| `lib/country-coordinates.ts`            | **Copy as-is** (extend the table). The reusable core.      |
+| `_components/AvatarMarker.tsx`          | Copy; re-map category→color + badge to your domain.        |
+| `_components/DirectoryMapView.tsx`      | Copy as skeleton; rewrite popup body + field names.        |
+| `_components/DirectoryActivityFeed.tsx` | Copy; rewrite the row content.                             |
+| `_components/DirectoryMapStats.tsx`     | Copy; **delete subscription gating**; redefine aggregates. |
+| `_components/MapViewToggle.tsx`         | Optional.                                                  |
+| `lib/types/directory.ts`                | Replace with your own record type.                         |
+| `directoryRouter.ts` / page fetch       | Domain-specific; just return `GlobeRecord[]`.              |
 
 ---
 
@@ -238,9 +240,9 @@ shows map **and** grid stacked (no toggle), so this is optional.
 
 - **Browser-only:** every map component needs `"use client"`; never render `<Map>` on the
   server. In Next App Router, lazy-load or keep it under a client boundary.
-- **Token must be public** (`pk.`) and `NEXT_PUBLIC_` — it ships to the browser. Restrict it
+- **Token must be public** (`pk.`) and `NEXT_PUBLIC_` - it ships to the browser. Restrict it
   by URL in the Mapbox dashboard rather than hiding it.
-- **Don't use `Math.random()` for jitter** — it breaks SSR hydration and reshuffles pins each
+- **Don't use `Math.random()` for jitter** - it breaks SSR hydration and reshuffles pins each
   render. The golden-angle deterministic jitter is deliberate.
 - **Marker count = DOM nodes.** Hundreds is fine; thousands will jank. For large sets switch
   to Mapbox's `Source`/`Layer` with clustering (GeoJSON circle layers) instead of React

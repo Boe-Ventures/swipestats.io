@@ -11,7 +11,7 @@ import {
   Switch,
 } from "swipestats";
 
-// Rendered statically open (cardMode single) — right-side sheet.
+// Rendered statically open (cardMode single) - right-side sheet.
 export const Filters = () => (
   <Sheet open>
     <SheetTrigger render={<Button variant="outline">Open sheet</Button>} />

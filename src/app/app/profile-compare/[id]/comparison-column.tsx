@@ -128,7 +128,7 @@ function SortableContent({
 
   // The tile is both the drag handle and the click-to-edit target. The
   // PointerSensor's distance constraint keeps a plain click from starting a
-  // drag, but after a real drag the browser still fires a click on drop —
+  // drag, but after a real drag the browser still fires a click on drop  -
   // remember the drag so that click doesn't open the edit dialog.
   const wasDragged = useRef(false);
   useEffect(() => {
@@ -189,7 +189,7 @@ function SortableContent({
     </div>
   );
 
-  // Purely visual "you can drag this" hint — the tile itself is the handle.
+  // Purely visual "you can drag this" hint - the tile itself is the handle.
   const dragHint = (
     <span className="dark:bg-card/90 pointer-events-none absolute top-1.5 left-1.5 z-[2] grid h-7 w-7 place-items-center rounded-full bg-white/90 opacity-0 shadow-sm backdrop-blur transition group-hover:opacity-100">
       <GripVertical className="text-foreground h-3.5 w-3.5" />
@@ -218,7 +218,7 @@ function SortableContent({
             {content.caption}
           </div>
         )}
-        {/* Subtle hover affordance — the photo stays visible while reordering */}
+        {/* Subtle hover affordance - the photo stays visible while reordering */}
         <div className="pointer-events-none absolute inset-0 rounded-md transition group-hover:bg-black/10 group-hover:ring-2 group-hover:ring-black/10 group-hover:ring-inset" />
         {dragHint}
         {actionButtons}
@@ -317,7 +317,7 @@ export function ComparisonColumn({
   const queryClient = useQueryClient();
 
   // Drag & drop sensors. The whole tile is both the drag handle and the
-  // click-to-edit target, so a drag only starts after 8px of movement — a
+  // click-to-edit target, so a drag only starts after 8px of movement - a
   // plain click stays a click.
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -374,7 +374,7 @@ export function ComparisonColumn({
   const duplicateColumnMutation = useMutation(
     trpc.profileCompare.duplicateColumn.mutationOptions({
       onSuccess: () => {
-        toast.success("Profile duplicated — tweak it and compare");
+        toast.success("Profile duplicated - tweak it and compare");
         void queryClient.invalidateQueries(
           trpc.profileCompare.get.queryOptions({ id: comparisonId }),
         );
@@ -437,7 +437,7 @@ export function ComparisonColumn({
     setLocalContentOrder(column.content.map((c) => c.id));
   };
 
-  // Send "" through (rather than coercing to undefined) — the service treats
+  // Send "" through (rather than coercing to undefined) - the service treats
   // undefined as "leave unchanged", which would make these impossible to clear.
   const handleSaveBio = () => {
     updateColumnMutation.mutate({
@@ -482,7 +482,7 @@ export function ComparisonColumn({
         onValueChange={(v) => setDisplayMode(v as DisplayMode)}
       >
         <CardHeader>
-          {/* Identity on the left, view toggle + menu right-aligned — same
+          {/* Identity on the left, view toggle + menu right-aligned - same
               layout as the share page header. */}
           <div className="flex items-center justify-between gap-2">
             <div className="flex min-w-0 items-center gap-2">
@@ -700,7 +700,7 @@ export function ComparisonColumn({
             </TabsContent>
           </div>
 
-          {/* Roast strip — the roast entry point, surfaced as an insight under
+          {/* Roast strip - the roast entry point, surfaced as an insight under
               the preview instead of hiding in the column menu. Once roasted it
               collapses to a single line: the tagline IS the summary; details
               are one tap away in the dialog. */}
@@ -723,7 +723,7 @@ export function ComparisonColumn({
             onClick={() => setRoastDialogOpen(true)}
           />
 
-          {/* Edit Section Divider — two real line segments with a gap for the
+          {/* Edit Section Divider - two real line segments with a gap for the
             label, so there's no background box that can stand out against the
             card surface. */}
           <div className="text-muted-foreground flex items-center gap-3 text-xs uppercase">
@@ -857,7 +857,7 @@ export function ComparisonColumn({
             )}
           </div>
 
-          {/* Column label (stored as `title` in the DB) — overrides the app
+          {/* Column label (stored as `title` in the DB) - overrides the app
               name wherever this column is shown. Low priority, kept at the
               bottom. */}
           <div>

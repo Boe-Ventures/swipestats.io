@@ -291,7 +291,7 @@ export function CreateComparisonDialog({
             )}
           />
 
-          {/* About you — the cross-app identity fields. Stored on the parent
+          {/* About you - the cross-app identity fields. Stored on the parent
               comparison and rendered into every column's preview; all optional
               and editable later in Settings. */}
           <div>
@@ -404,7 +404,7 @@ export function CreateComparisonDialog({
               />
             </div>
             <FieldDescription className="mt-2">
-              Shared across all your app profiles — shown in the previews and on
+              Shared across all your app profiles - shown in the previews and on
               your share page.
             </FieldDescription>
           </div>

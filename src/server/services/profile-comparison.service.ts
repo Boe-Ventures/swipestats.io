@@ -1,3 +1,4 @@
+import { normalizeGeneratedCopy } from "@/lib/ai/copy-style";
 import { and, eq, isNull, inArray, or } from "drizzle-orm";
 import { nanoid } from "nanoid";
 
@@ -159,7 +160,9 @@ export async function getComparison(comparisonId: string, userId: string) {
   const columns = comparison.columns.map((column) => {
     const roast = roastBySubject.get(column.id);
     // kind="profile_roast" rows always hold a ProfileRoastResult payload.
-    const overall = roast ? (roast.output as ProfileRoastResult).overall : null;
+    const overall = roast
+      ? normalizeGeneratedCopy(roast.output as ProfileRoastResult).overall
+      : null;
     const roastStatus = roast
       ? {
           roasted: true as const,
@@ -209,7 +212,7 @@ export async function getPublicComparison(shareKey: string) {
     throw new Error("Comparison not found or not public");
   }
 
-  // Surface each column's roast on the share page — but only when the owner
+  // Surface each column's roast on the share page - but only when the owner
   // published that roast too. Comparison-public and roast-public are separate
   // consent bits, so an unpublished roast never leaks here.
   const columnIds = comparison.columns.map((c) => c.id);
@@ -234,7 +237,7 @@ export async function getPublicComparison(shareKey: string) {
     columns: comparison.columns.map((column) => {
       const roast = roastByColumn.get(column.id);
       const overall = roast
-        ? (roast.output as ProfileRoastResult).overall
+        ? normalizeGeneratedCopy(roast.output as ProfileRoastResult).overall
         : null;
       return {
         ...column,
@@ -284,7 +287,7 @@ export async function listComparisons(userId: string) {
  *
  * Supports a visibility filter (all/public/private) and a few sort orders.
  * The per-comparison aggregates (column/photo/prompt/feedback counts, the set
- * of providers, a thumbnail) are folded in-memory over the matching set — fine
+ * of providers, a thumbnail) are folded in-memory over the matching set - fine
  * at admin scale and far simpler than correlated-subquery SQL. Only the page's
  * thumbnails are resolved, to avoid loading every blob URL.
  */
@@ -543,7 +546,9 @@ export async function getComparisonForAdmin(comparisonId: string) {
 
   const columns = comparison.columns.map((column) => {
     const roast = roastByColumn.get(column.id);
-    const overall = roast ? (roast.output as ProfileRoastResult).overall : null;
+    const overall = roast
+      ? normalizeGeneratedCopy(roast.output as ProfileRoastResult).overall
+      : null;
     return {
       ...column,
       roast: roast
@@ -624,7 +629,7 @@ export async function updateComparison(data: {
  */
 export async function deleteComparison(id: string, userId: string) {
   // Deleting the comparison cascades to its columns, which cascade to their
-  // ai_output roasts (columnId FK, onDelete cascade) — nothing to prune.
+  // ai_output roasts (columnId FK, onDelete cascade) - nothing to prune.
   const [deleted] = await db
     .delete(profileComparisonTable)
     .where(
@@ -692,7 +697,7 @@ export async function addColumn(data: {
 }
 
 /**
- * Duplicate a column (and all its content) into the same comparison — the
+ * Duplicate a column (and all its content) into the same comparison - the
  * "fork to tweak & compare side by side" action. Photos are shared gallery
  * items, so we reuse the same attachment references rather than re-uploading.
  */
@@ -722,7 +727,7 @@ export async function duplicateColumn(data: {
   });
   const order = lastColumn.length > 0 ? lastColumn[0]!.order + 1 : 0;
 
-  // neon-http has no transaction support — withTransaction runs on the
+  // neon-http has no transaction support - withTransaction runs on the
   // WebSocket (neon-serverless) driver, which does.
   return await withTransaction(async (tx) => {
     const [column] = await tx
@@ -1815,7 +1820,7 @@ export async function getPhotoSummary(comparisonId: string, userId: string) {
 /**
  * Bridge a user's already-uploaded Tinder photos (the `media` table) into
  * `attachment` rows (resourceType "user_photo") by pointing at the same public
- * URLs — no blob copy needed. The unique index on attachment.url keeps this
+ * URLs - no blob copy needed. The unique index on attachment.url keeps this
  * idempotent, so it can run repeatedly without piling up duplicate gallery
  * photos. Returns the attachment ids in media order.
  */
@@ -1910,7 +1915,7 @@ export async function createFromTinderMedia(data: {
 /**
  * Import the user's already-uploaded Tinder photos into their shared photo
  * library (as `user_photo` attachments) without touching any comparison column.
- * This backs the empty-state "Use my uploaded Tinder photos" button — like the
+ * This backs the empty-state "Use my uploaded Tinder photos" button - like the
  * adjacent "Upload your photos" action, it only populates the library; the user
  * then curates each profile deliberately rather than getting the same photos
  * auto-dumped into every column.

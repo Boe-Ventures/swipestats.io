@@ -3,10 +3,7 @@ import { z } from "zod";
 import { and, eq, isNull } from "drizzle-orm";
 
 import { createTRPCRouter, aiProcedure } from "../trpc";
-import {
-  attachmentTable,
-  profileComparisonTable,
-} from "@/server/db/schema";
+import { attachmentTable, profileComparisonTable } from "@/server/db/schema";
 import { composeProfilePhotos } from "@/server/services/compose-profile.service";
 import { suggestPrompts } from "@/server/services/prompt-suggest.service";
 import { ProfileComparisonService } from "@/server/services/profile-comparison.service";
@@ -35,7 +32,7 @@ export const profileComposeRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id;
 
-      // Gather the user's analyzed gallery photos — the composer reasons over
+      // Gather the user's analyzed gallery photos - the composer reasons over
       // the tagger output, so un-analyzed photos can't take part.
       const attachments = await ctx.db.query.attachmentTable.findMany({
         where: and(
@@ -51,8 +48,12 @@ export const profileComposeRouter = createTRPCRouter({
         .filter((a) => a.mimeType.startsWith("image/"))
         .map((a) => ({ a, analysis: readPhotoAnalysis(a.metadata) }))
         .filter(
-          (x): x is { a: (typeof attachments)[number]; analysis: PhotoAnalysis } =>
-            x.analysis !== null,
+          (
+            x,
+          ): x is {
+            a: (typeof attachments)[number];
+            analysis: PhotoAnalysis;
+          } => x.analysis !== null,
         );
 
       if (analyzed.length === 0) {
@@ -90,7 +91,7 @@ export const profileComposeRouter = createTRPCRouter({
           : Promise.resolve([]),
       ]);
 
-      // Map the model's indexes back to attachment ids — validate, dedupe, cap.
+      // Map the model's indexes back to attachment ids - validate, dedupe, cap.
       // Never trust model-emitted ids; it only ever references our list indexes.
       const seen = new Set<string>();
       const orderedAttachmentIds: string[] = [];

@@ -27,7 +27,7 @@ import { SWIPESTATS_ORGANIZATION_JSON_LD } from "@/lib/agent-metadata";
 const homeOgImage = marketingOgImage({
   title: "Your dating data, finally visualized",
   subtitle:
-    "Every swipe, match, and message—turned into charts and ranked against 12,000+ profiles.",
+    "Every swipe, match, and message, turned into charts and ranked against 12,000+ profiles.",
   path: "/",
   screenshot: "/images/og/screenshots/home-dashboard.jpg",
 });
@@ -58,7 +58,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Your dating data, finally visualized",
     description:
-      "Every swipe, match, and message—turned into charts and ranked against 12,000+ profiles.",
+      "Every swipe, match, and message, turned into charts and ranked against 12,000+ profiles.",
     images: [homeOgImage],
   },
 };

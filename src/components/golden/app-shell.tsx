@@ -3,7 +3,7 @@ import { cn } from "@/components/ui/lib/utils";
 import { Button } from "@/components/ui/button";
 
 /**
- * Golden APP-SHELL chrome — the functional, solid dialect of the golden
+ * Golden APP-SHELL chrome - the functional, solid dialect of the golden
  * design language (NOT the translucent marketing blur header). White surfaces,
  * gray-200 hairlines, rose-600 accent, shadow-xs. A real golden design pass for
  * the authenticated app, pairing with the app.tsx data primitives.
@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 /* ---------------------------------------------------------------- brand mark */
 
 /**
- * The flame brand mark — 30px rose-600 rounded square holding the white
+ * The flame brand mark - 30px rose-600 rounded square holding the white
  * SwipeStats flame. Path reused from src/components/ui/NewOldLogo (viewBox
  * 25 25 160 160). Kept inline so the shell has no client deps.
  */
@@ -151,7 +151,7 @@ export function GoldenAppHeader({
       <div className="mx-auto flex h-16 max-w-[1216px] items-center gap-6 px-6 lg:px-8">
         <Brand />
 
-        {/* pill nav — sits left, after the brand */}
+        {/* pill nav - sits left, after the brand */}
         <nav className="hidden items-center gap-1 md:flex">
           {links.map((link) => {
             const isActive = link.key === active;
@@ -192,7 +192,7 @@ export function GoldenAppHeader({
 /* ---------------------------------------------------------------- sidebar */
 
 /**
- * GoldenSidebar — narrow vertical nav for desktop app layouts. Same links as
+ * GoldenSidebar - narrow vertical nav for desktop app layouts. Same links as
  * the header, rendered as icon + label rows. Minimal by design; pair it with
  * the header (which carries the brand + account cluster) or drop the brand in
  * via `header`.

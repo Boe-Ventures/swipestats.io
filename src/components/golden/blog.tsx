@@ -1,7 +1,7 @@
 import { cn } from "@/components/ui/lib/utils";
 
 /**
- * Golden BLOG primitives — editorial prose dialect. Ported from golden.css.
+ * Golden BLOG primitives - editorial prose dialect. Ported from golden.css.
  * Server-safe. Use <Prose> to wrap MDX/article body, plus the inline callouts.
  */
 

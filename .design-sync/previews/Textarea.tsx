@@ -13,7 +13,7 @@ export const WithValue = () => (
     <Textarea
       id="ta-notes"
       className="mt-1.5"
-      defaultValue="Requested my Tinder export on Monday — Bumble can take up to 30 days."
+      defaultValue="Requested my Tinder export on Monday - Bumble can take up to 30 days."
     />
   </div>
 );

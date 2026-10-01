@@ -11,7 +11,7 @@ export interface LoadingStep {
 }
 
 /**
- * The roast "loading theater" — the wait is the entertainment. A dark hero with
+ * The roast "loading theater" - the wait is the entertainment. A dark hero with
  * a pulsing flame, a rotating status line, and a sequential analysis tracker.
  * Shared verbatim by the profile-compare roast dialog and the marketing stats
  * roast; the bits that legitimately differ (the rotating copy, the tracker
@@ -33,7 +33,7 @@ export function RoastLoadingTheater({
   steps: readonly LoadingStep[];
   /**
    * True while actively generating: rotate `lines` + advance the tracker. False
-   * = "loading an existing roast" — a quick fetch, so show `staticLine` and no
+   * = "loading an existing roast" - a quick fetch, so show `staticLine` and no
    * tracker.
    */
   active?: boolean;

@@ -121,7 +121,7 @@ async function generateDemoDataset() {
 This is a FREE sample dataset containing ${profiles.length} anonymized dating app profiles.
 
 ## Format
-JSONL (JSON Lines) — one JSON object per line.
+JSONL (JSON Lines) - one JSON object per line.
 
 - Line 1: metadata object (export info)
 - Lines 2–N: profile objects (one per profile)

@@ -1,5 +1,5 @@
 // =====================================================
-// CONSENT STORAGE — web (localStorage)
+// CONSENT STORAGE - web (localStorage)
 // =====================================================
 //
 // Browser-specific read/write for the consent record. Pre-login this IS the
@@ -46,7 +46,7 @@ export function setStoredConsent(
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(record));
     } catch {
-      // localStorage unavailable — non-fatal
+      // localStorage unavailable - non-fatal
     }
   }
   return record;
@@ -67,7 +67,7 @@ export function setStoredConsentRecord(record: ConsentRecord): ConsentRecord {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(storedRecord));
     } catch {
-      // localStorage unavailable — non-fatal
+      // localStorage unavailable - non-fatal
     }
   }
 
@@ -89,7 +89,7 @@ export function isConsentStale(record: ConsentRecord | null): boolean {
   return !record || record.version < CONSENT_VERSION;
 }
 
-/** Browser Global Privacy Control signal — a legally recognized opt-out. */
+/** Browser Global Privacy Control signal - a legally recognized opt-out. */
 export function isGpcEnabled(): boolean {
   if (typeof navigator === "undefined") return false;
   return (

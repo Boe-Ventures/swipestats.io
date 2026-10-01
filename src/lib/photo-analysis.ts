@@ -9,7 +9,7 @@
 
 /**
  * Fixed tag vocabulary. A closed set (not free text) so tags stay consistent
- * and countable — that's what lets us later flag "3× sunglasses, no group
+ * and countable - that's what lets us later flag "3× sunglasses, no group
  * photo" style advice. Keep in sync with `PHOTO_TAG_LABELS`.
  */
 export const PHOTO_TAGS = [
@@ -75,7 +75,7 @@ export const PHOTO_TAG_LABELS: Record<PhotoTag, string> = {
  * analysis so aggregate research can group or filter by version.
  *
  * v2: added the 1-10 research score.
- * v3: expanded the "pile-up feature" vocabulary — added "crossed-arms", "duo",
+ * v3: expanded the "pile-up feature" vocabulary - added "crossed-arms", "duo",
  *     "hat", "filter", "alcohol", and "blurred", and split two-person shots
  *     ("duo") out of "group" (which now means 3+ people total).
  */
@@ -90,7 +90,7 @@ export interface PhotoAnalysis {
   /** Every applicable tag from `PHOTO_TAGS`. */
   tags: PhotoTag[];
   /**
-   * 1-10 strength as a dating-app photo. Research-only — collected for
+   * 1-10 strength as a dating-app photo. Research-only - collected for
    * aggregate analysis (e.g. avg photo score vs match rate), deliberately
    * never shown in the UI. Optional: analyses from before v2 don't have it.
    */

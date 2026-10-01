@@ -100,7 +100,7 @@ export function RoastProfileDialog({
   const { openUpgradeModal } = useUpgrade();
   const isPaid = effectiveTier === "PLUS" || effectiveTier === "ELITE";
 
-  // Which bio rewrite is selected — shared between the bio toggle and the
+  // Which bio rewrite is selected - shared between the bio toggle and the
   // "Create improved version" apply action so they stay in sync.
   const [rewriteIndex, setRewriteIndex] = useState(0);
 
@@ -201,7 +201,7 @@ export function RoastProfileDialog({
     !roast && !isGenerating && !isLoadingExisting && !notEnoughToRoast;
 
   // AI Roast is a PLUS/ELITE feature. With no global kill-switch anymore, a free
-  // user would otherwise just hit a FORBIDDEN error toast — so show an upgrade
+  // user would otherwise just hit a FORBIDDEN error toast - so show an upgrade
   // card instead (a pre-existing roast from a prior subscription still shows
   // read-only; runRoast guards re-rolls).
   const showUpgrade = !isPaid && !roast;
@@ -224,7 +224,7 @@ export function RoastProfileDialog({
     }),
   );
 
-  // Sharing a roast shares the roasted profile (verdicts, photos, preview) —
+  // Sharing a roast shares the roasted profile (verdicts, photos, preview)  -
   // never the parent comparison, which stays the owner's internal view.
   const handleShare = async () => {
     const { shareKey } = await publishMutation.mutateAsync({
@@ -239,7 +239,7 @@ export function RoastProfileDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      {/* [&>*]:min-w-0 — DialogContent is a CSS grid; without it, grid children
+      {/* [&>*]:min-w-0 - DialogContent is a CSS grid; without it, grid children
           keep their min-content width and text overflows instead of wrapping. */}
       <DialogContent
         size="lg"
@@ -264,14 +264,14 @@ export function RoastProfileDialog({
           />
         )}
 
-        {/* Upgrade — free user, no roast: surface the paywall, not an error */}
+        {/* Upgrade - free user, no roast: surface the paywall, not an error */}
         {showUpgrade && (
           <RoastUpgradeCard
             onUpgrade={() => openUpgradeModal({ feature: "aiRoast" })}
           />
         )}
 
-        {/* Empty — not enough material to roast yet */}
+        {/* Empty - not enough material to roast yet */}
         {notEnoughToRoast && !showUpgrade && (
           <RoastEmptyState
             displayName={displayName}
@@ -313,7 +313,7 @@ export function RoastProfileDialog({
             />
           )}
 
-        {/* Loading — the wait is the show */}
+        {/* Loading - the wait is the show */}
         {(isGenerating || isLoadingExisting) && (
           <RoastLoadingState
             tone={reRoastTone}
@@ -504,7 +504,7 @@ function LensAvatar({ lens }: { lens: ProfileRoastLens }) {
 }
 
 /* ---------------------------------------------------------------- *
- * Loading — the wait is the entertainment: dark hero matching the
+ * Loading - the wait is the entertainment: dark hero matching the
  * result, a pulsing flame, rotating tone-aware status lines, and a
  * sequential analysis tracker.
  * ---------------------------------------------------------------- */
@@ -518,7 +518,7 @@ const LOADING_LINES: Record<Tone, string[]> = {
     "Lining up some honest notes…",
     "Finding the easy wins…",
     "Being constructive, promise…",
-    "Plating it up — gently…",
+    "Plating it up - gently…",
   ],
   mild: [
     "Warming up the grill…",
@@ -558,7 +558,7 @@ function RoastLoadingState({
 }) {
   return (
     <RoastLoadingTheater
-      // Loading an existing roast is a quick fetch — no theater, just a label.
+      // Loading an existing roast is a quick fetch - no theater, just a label.
       active={mode === "roasting"}
       lines={LOADING_LINES[tone] ?? LOADING_LINES.mild}
       steps={LOADING_STEPS}
@@ -570,7 +570,7 @@ function RoastLoadingState({
 }
 
 /* ---------------------------------------------------------------- *
- * Idle — has content, no roast yet. Make the choice the moment: three
+ * Idle - has content, no roast yet. Make the choice the moment: three
  * heat levels as tappable cards, each owning its own vibe, so picking a
  * tone IS the call to action instead of "pick a tone above".
  * ---------------------------------------------------------------- */
@@ -687,7 +687,7 @@ function CreatorLensIdleState({
 }
 
 /* ---------------------------------------------------------------- *
- * Empty — "not enough to roast". Guide, don't scold: cheeky art, a
+ * Empty - "not enough to roast". Guide, don't scold: cheeky art, a
  * short requirements checklist tied to the real backend gate, and a
  * jump into the add-content flow.
  * ---------------------------------------------------------------- */
@@ -717,8 +717,8 @@ function RoastEmptyState({
         Nothing to roast… yet
       </h3>
       <p className="text-muted-foreground mx-auto mt-2 max-w-sm text-sm leading-relaxed text-pretty">
-        A good roast needs something to work with. Add a photo or two — and a
-        bio if you&apos;re feeling brave — then come back. We&apos;ll tear it
+        A good roast needs something to work with. Add a photo or two - and a
+        bio if you&apos;re feeling brave - then come back. We&apos;ll tear it
         apart. Lovingly.
       </p>
 
@@ -905,7 +905,7 @@ function HeroCard({
             variant="outline"
             disabled={isDeleting}
             onClick={onDeleteRoast}
-            title="Dev only — delete this saved roast from the database"
+            title="Dev only - delete this saved roast from the database"
             className="border-red-400/30 bg-red-500/10 text-red-300 hover:bg-red-500/20 hover:text-red-200 sm:ml-auto"
           >
             <Trash2 className="mr-1.5 h-4 w-4" />
@@ -1011,7 +1011,7 @@ function PhotoVerdict({
         onReplace(updated);
         setSteer("");
         setLookAgainOpen(false);
-        // Keep the fresh caption visible — it's the proof the AI actually
+        // Keep the fresh caption visible - it's the proof the AI actually
         // looked again and saw what the user said it should.
         setShowCaption(true);
         toast.success("Took another look");
@@ -1022,7 +1022,7 @@ function PhotoVerdict({
   );
 
   // The caption is what the user is correcting against, so always reveal it
-  // alongside the input — you can't fix a misread you can't see.
+  // alongside the input - you can't fix a misread you can't see.
   const openLookAgain = () => {
     setShowCaption(true);
     setLookAgainOpen(true);
@@ -1051,7 +1051,7 @@ function PhotoVerdict({
             className="object-cover"
           />
         )}
-        {/* "What the AI saw" is hidden by default — peek it via this icon. */}
+        {/* "What the AI saw" is hidden by default - peek it via this icon. */}
         {photo.caption && (
           <button
             type="button"
@@ -1092,7 +1092,7 @@ function PhotoVerdict({
           </p>
         )}
 
-        {/* "Look again" — correct a misread or point the AI at something. Only
+        {/* "Look again" - correct a misread or point the AI at something. Only
             offered for photos the roast can map back to a content item. */}
         {photo.contentId && (
           <div className="mt-1.5">
@@ -1120,7 +1120,7 @@ function PhotoVerdict({
                     if (e.key === "Escape") setLookAgainOpen(false);
                   }}
                   maxLength={500}
-                  placeholder={`Correct it — e.g. "that's a shaka sign, not a wine glass"`}
+                  placeholder={`Correct it - e.g. "that's a shaka sign, not a wine glass"`}
                   className="h-8 text-sm"
                   disabled={busy}
                 />
@@ -1289,7 +1289,7 @@ function RoastUpgradeCard({ onUpgrade }: { onUpgrade: () => void }) {
       <div className="space-y-1">
         <h3 className="text-lg font-bold">AI Roast is a SwipeStats+ feature</h3>
         <p className="text-muted-foreground mx-auto max-w-sm text-sm">
-          A brutally honest, data-driven roast of this profile — photo-by-photo
+          A brutally honest, data-driven roast of this profile - photo-by-photo
           verdicts, a sharper bio, and one-tap fixes.
         </p>
       </div>
@@ -1342,7 +1342,7 @@ function ApplyCard({
     <section className="rounded-2xl border border-rose-200 bg-rose-50/60 p-4 dark:border-rose-900/40 dark:bg-rose-950/20">
       <p className="font-semibold">Like the notes? Let&apos;s fix it.</p>
       <p className="text-muted-foreground mt-1 text-sm">
-        Spin up an improved version with the photo order and bio applied — your
+        Spin up an improved version with the photo order and bio applied - your
         current profile stays untouched.
       </p>
       <div className="mt-3 flex flex-col gap-2 sm:flex-row">
