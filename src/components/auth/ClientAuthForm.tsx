@@ -19,7 +19,7 @@ export function ClientAuthForm({
   );
   return (
     <form {...props} method="post">
-      <fieldset disabled={!hydrated} style={{ display: "contents" }}>
+      <fieldset disabled={!hydrated} className={props.className}>
         {children}
       </fieldset>
       <noscript>
