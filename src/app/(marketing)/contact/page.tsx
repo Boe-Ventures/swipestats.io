@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 
 export default function ContactPage() {
   return (
-    <div className="relative isolate bg-white px-6 py-24 sm:py-32 lg:px-8">
+    <div className="dark:bg-card relative isolate bg-white px-6 py-24 sm:py-32 lg:px-8">
       <svg
         aria-hidden="true"
         className="absolute inset-0 -z-10 size-full mask-[radial-gradient(100%_100%_at_top_right,white,transparent)] stroke-gray-200"
@@ -65,10 +65,10 @@ export default function ContactPage() {
       </div>
 
       <div className="mx-auto max-w-xl lg:max-w-4xl">
-        <h2 className="text-4xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-5xl">
+        <h2 className="dark:text-foreground text-4xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-5xl">
           Let&apos;s talk about your dating data
         </h2>
-        <p className="mt-2 text-lg/8 text-gray-600">
+        <p className="dark:text-muted-foreground mt-2 text-lg/8 text-gray-600">
           Schedule a call with our team to learn how SwipeStats can help you
           gain insights from your dating app data, or discuss research
           opportunities.
@@ -87,7 +87,7 @@ export default function ContactPage() {
               </svg>
             </div>
             <figure className="mt-10">
-              <blockquote className="text-lg/8 font-semibold text-gray-900">
+              <blockquote className="dark:text-foreground text-lg/8 font-semibold text-gray-900">
                 <p>
                   &quot;SwipeStats helped me understand my dating patterns and
                   gave me valuable insights. The data visualizations are
@@ -97,44 +97,48 @@ export default function ContactPage() {
               <figcaption className="mt-10 flex gap-x-6">
                 <div className="size-12 flex-none rounded-full bg-linear-to-br from-rose-400 to-rose-600" />
                 <div>
-                  <div className="text-base font-semibold text-gray-900">
+                  <div className="dark:text-foreground text-base font-semibold text-gray-900">
                     Sarah M.
                   </div>
-                  <div className="text-sm/6 text-gray-600">SwipeStats User</div>
+                  <div className="dark:text-muted-foreground text-sm/6 text-gray-600">
+                    SwipeStats User
+                  </div>
                 </div>
               </figcaption>
             </figure>
 
             {/* Additional contact info */}
-            <div className="mt-10 border-t border-gray-200 pt-10">
-              <h3 className="text-base font-semibold text-gray-900">
+            <div className="dark:border-border mt-10 border-t border-gray-200 pt-10">
+              <h3 className="dark:text-foreground text-base font-semibold text-gray-900">
                 Other ways to reach us
               </h3>
               <div className="mt-6 space-y-4">
                 <div>
-                  <dt className="text-sm font-medium text-gray-900">Email</dt>
+                  <dt className="dark:text-foreground text-sm font-medium text-gray-900">
+                    Email
+                  </dt>
                   <dd className="mt-1">
                     <a
                       href="mailto:kris@swipestats.io"
-                      className="text-sm text-gray-600 transition-colors hover:text-rose-600"
+                      className="dark:text-muted-foreground text-sm text-gray-600 transition-colors hover:text-rose-600 dark:hover:text-rose-400"
                     >
                       kris@swipestats.io
                     </a>
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-900">
+                  <dt className="dark:text-foreground text-sm font-medium text-gray-900">
                     Response time
                   </dt>
-                  <dd className="mt-1 text-sm text-gray-600">
+                  <dd className="dark:text-muted-foreground mt-1 text-sm text-gray-600">
                     We typically respond within 24 hours during business days.
                   </dd>
                 </div>
                 <div>
-                  <dt className="text-sm font-medium text-gray-900">
+                  <dt className="dark:text-foreground text-sm font-medium text-gray-900">
                     Research inquiries
                   </dt>
-                  <dd className="mt-1 text-sm text-gray-600">
+                  <dd className="dark:text-muted-foreground mt-1 text-sm text-gray-600">
                     For academic research or data requests, please mention this
                     in your booking.
                   </dd>

@@ -176,7 +176,7 @@ export function EnhancedMatchTimeline() {
                         <span className="text-muted-foreground text-[0.70rem] uppercase">
                           Matches
                         </span>
-                        <span className="font-bold text-purple-600">
+                        <span className="font-bold text-purple-600 dark:text-purple-400">
                           {data.matches}
                         </span>
                       </div>

@@ -93,13 +93,13 @@ export function FAQ({ children }: { children: React.ReactNode }) {
           <AccordionItem
             key={index}
             value={`faq-${index}`}
-            className="border-b border-gray-200"
+            className="dark:border-border border-b border-gray-200"
           >
-            <AccordionTrigger className="cursor-pointer py-5 text-left text-base leading-7 font-semibold text-gray-900 transition-colors hover:text-rose-600 hover:no-underline data-panel-open:text-rose-600 lg:text-lg">
+            <AccordionTrigger className="dark:text-foreground cursor-pointer py-5 text-left text-base leading-7 font-semibold text-gray-900 transition-colors hover:text-rose-600 hover:no-underline data-panel-open:text-rose-600 lg:text-lg dark:hover:text-rose-400 dark:data-panel-open:text-rose-400">
               {item.question}
             </AccordionTrigger>
             <AccordionContent className="pb-5">
-              <div className="prose prose-gray max-w-none text-base leading-7 text-gray-600 [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
+              <div className="prose prose-gray dark:text-muted-foreground max-w-none text-base leading-7 text-gray-600 [&>*:first-child]:mt-0 [&>*:last-child]:mb-0">
                 {item.answerElements}
               </div>
             </AccordionContent>

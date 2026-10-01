@@ -209,10 +209,10 @@ export function HingeGuidedUpload({
         className={cn(
           "group relative cursor-pointer overflow-hidden rounded-xl border-2 border-dashed px-6 py-16 transition-all duration-200 sm:px-8 sm:py-20",
           isDragActive
-            ? "scale-[1.02] border-purple-500 bg-linear-to-br from-purple-50 to-indigo-50 shadow-lg"
+            ? "scale-[1.02] border-purple-500 bg-linear-to-br from-purple-50 to-indigo-50 shadow-lg dark:from-purple-950/40 dark:to-indigo-950/40"
             : isReady
-              ? "border-green-500 bg-linear-to-br from-green-50 to-emerald-50"
-              : "border-gray-300 bg-linear-to-br from-gray-50 to-white hover:border-purple-400 hover:shadow-md",
+              ? "border-green-500 bg-linear-to-br from-green-50 to-emerald-50 dark:from-green-950/40 dark:to-emerald-950/40"
+              : "dark:border-border dark:from-background dark:to-card border-gray-300 bg-linear-to-br from-gray-50 to-white hover:border-purple-400 hover:shadow-md",
           isProcessing && "cursor-not-allowed opacity-60",
         )}
       >
@@ -221,8 +221,8 @@ export function HingeGuidedUpload({
         {/* Decorative background gradient on hover */}
         {!isReady && (
           <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            <div className="absolute -top-12 -right-12 h-48 w-48 rounded-full bg-purple-100/30 blur-3xl" />
-            <div className="absolute -bottom-12 -left-12 h-48 w-48 rounded-full bg-indigo-100/30 blur-3xl" />
+            <div className="absolute -top-12 -right-12 h-48 w-48 rounded-full bg-purple-100/30 blur-3xl dark:bg-purple-950/30" />
+            <div className="absolute -bottom-12 -left-12 h-48 w-48 rounded-full bg-indigo-100/30 blur-3xl dark:bg-indigo-950/30" />
           </div>
         )}
 
@@ -232,41 +232,43 @@ export function HingeGuidedUpload({
             className={cn(
               "rounded-2xl p-4 transition-all duration-200",
               isDragActive
-                ? "bg-purple-100 shadow-md"
+                ? "bg-purple-100 shadow-md dark:bg-purple-950/40"
                 : isReady
-                  ? "bg-green-100"
-                  : "bg-gray-100 group-hover:bg-purple-50",
+                  ? "bg-green-100 dark:bg-green-950/40"
+                  : "dark:bg-muted bg-gray-100 group-hover:bg-purple-50 dark:group-hover:bg-purple-950/40",
             )}
           >
             <CloudArrowUpIcon
               className={cn(
                 "h-16 w-16 transition-colors duration-200 sm:h-20 sm:w-20",
                 isDragActive
-                  ? "text-purple-600"
+                  ? "text-purple-600 dark:text-purple-400"
                   : isReady
-                    ? "text-green-600"
-                    : "text-gray-400 group-hover:text-purple-500",
+                    ? "text-green-600 dark:text-green-400"
+                    : "dark:text-muted-foreground text-gray-400 group-hover:text-purple-500",
               )}
             />
           </div>
 
           {/* Text content */}
           <div className="space-y-2 sm:space-y-3">
-            <p className="text-base font-medium text-gray-700 sm:text-lg">
+            <p className="dark:text-muted-foreground text-base font-medium text-gray-700 sm:text-lg">
               Select your{" "}
-              <span className="font-semibold text-purple-600">.json files</span>{" "}
+              <span className="font-semibold text-purple-600 dark:text-purple-400">
+                .json files
+              </span>{" "}
               or{" "}
-              <span className="font-semibold text-purple-600">
+              <span className="font-semibold text-purple-600 dark:text-purple-400">
                 .zip archive
               </span>
             </p>
 
             {!isProcessing && (
               <>
-                <p className="text-sm text-gray-500 sm:hidden">
+                <p className="dark:text-muted-foreground text-sm text-gray-500 sm:hidden">
                   Tap to browse files
                 </p>
-                <p className="hidden text-sm text-gray-500 sm:block">
+                <p className="dark:text-muted-foreground hidden text-sm text-gray-500 sm:block">
                   or drag and drop your files here
                 </p>
               </>
@@ -276,7 +278,7 @@ export function HingeGuidedUpload({
           {/* Drag active state */}
           {isDragActive && (
             <div className="animate-bounce">
-              <p className="text-base font-semibold text-purple-600">
+              <p className="text-base font-semibold text-purple-600 dark:text-purple-400">
                 Drop to upload
               </p>
             </div>
@@ -286,7 +288,7 @@ export function HingeGuidedUpload({
           {isProcessing && (
             <div className="flex items-center gap-2.5">
               <div className="h-5 w-5 animate-spin rounded-full border-2 border-purple-600 border-t-transparent" />
-              <p className="text-sm font-medium text-gray-700">
+              <p className="dark:text-muted-foreground text-sm font-medium text-gray-700">
                 Processing your data...
               </p>
             </div>
@@ -295,8 +297,8 @@ export function HingeGuidedUpload({
       </div>
 
       {/* File checklist */}
-      <div className="rounded-lg border border-gray-200 bg-white p-4">
-        <h3 className="mb-3 text-sm font-semibold text-gray-700">
+      <div className="dark:border-border dark:bg-card rounded-lg border border-gray-200 bg-white p-4">
+        <h3 className="dark:text-muted-foreground mb-3 text-sm font-semibold text-gray-700">
           Required Files
         </h3>
         <div className="space-y-2">
@@ -309,15 +311,15 @@ export function HingeGuidedUpload({
                 ) : status === "error" ? (
                   <XCircleIcon className="h-5 w-5 text-red-500" />
                 ) : (
-                  <div className="h-5 w-5 rounded-full border-2 border-gray-300" />
+                  <div className="dark:border-border h-5 w-5 rounded-full border-2 border-gray-300" />
                 )}
                 <span
                   className={cn(
                     status === "loaded"
-                      ? "text-green-700"
+                      ? "text-green-700 dark:text-green-400"
                       : status === "error"
-                        ? "text-red-700"
-                        : "text-gray-600",
+                        ? "text-red-700 dark:text-red-400"
+                        : "dark:text-muted-foreground text-gray-600",
                   )}
                 >
                   {fileName}
@@ -327,7 +329,7 @@ export function HingeGuidedUpload({
           })}
         </div>
 
-        <h4 className="mt-4 mb-2 text-sm font-semibold text-gray-700">
+        <h4 className="dark:text-muted-foreground mt-4 mb-2 text-sm font-semibold text-gray-700">
           Optional Files
         </h4>
         <div className="space-y-2">
@@ -340,15 +342,15 @@ export function HingeGuidedUpload({
                 ) : status === "error" ? (
                   <XCircleIcon className="h-5 w-5 text-red-500" />
                 ) : (
-                  <div className="h-5 w-5 rounded-full border-2 border-gray-300" />
+                  <div className="dark:border-border h-5 w-5 rounded-full border-2 border-gray-300" />
                 )}
                 <span
                   className={cn(
                     status === "loaded"
-                      ? "text-green-700"
+                      ? "text-green-700 dark:text-green-400"
                       : status === "error"
-                        ? "text-red-700"
-                        : "text-gray-500",
+                        ? "text-red-700 dark:text-red-400"
+                        : "dark:text-muted-foreground text-gray-500",
                   )}
                 >
                   {fileName}
@@ -360,21 +362,23 @@ export function HingeGuidedUpload({
       </div>
 
       {error && (
-        <div className="rounded-md bg-red-50 p-4">
-          <p className="text-sm font-medium text-red-800">Error</p>
-          <p className="mt-1 text-sm text-red-700">{error}</p>
+        <div className="rounded-md bg-red-50 p-4 dark:bg-red-950/40">
+          <p className="text-sm font-medium text-red-800 dark:text-red-200">
+            Error
+          </p>
+          <p className="mt-1 text-sm text-red-700 dark:text-red-400">{error}</p>
         </div>
       )}
 
       {extractedPayload && (
-        <div className="rounded-lg border border-green-200 bg-green-50 p-4">
+        <div className="rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-950/40">
           <div className="flex items-start gap-3">
-            <CheckCircleIcon className="h-6 w-6 flex-shrink-0 text-green-600" />
+            <CheckCircleIcon className="h-6 w-6 flex-shrink-0 text-green-600 dark:text-green-400" />
             <div className="flex-1">
-              <h3 className="text-base font-semibold text-green-900">
+              <h3 className="text-base font-semibold text-green-900 dark:text-green-200">
                 Required data is ready
               </h3>
-              <p className="mt-1 text-sm text-green-700">
+              <p className="mt-1 text-sm text-green-700 dark:text-green-400">
                 Add prompts.json or media.json now if you want them included,
                 then continue.
               </p>

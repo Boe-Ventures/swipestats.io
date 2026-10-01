@@ -87,22 +87,27 @@ export default async function DatingServicesLocationPage({
   })).filter((group) => group.entries.length > 0);
 
   return (
-    <main className="min-h-screen bg-white text-gray-900">
-      <section className="border-b border-gray-200">
+    <main className="dark:bg-card dark:text-foreground min-h-screen bg-white text-gray-900">
+      <section className="dark:border-border border-b border-gray-200">
         <div className="mx-auto max-w-7xl px-6 py-12 lg:px-8 lg:py-16">
-          <nav className="flex items-center gap-2 font-mono text-[12px] text-gray-500">
-            <Link href="/dating-services" className="hover:text-rose-600">
+          <nav className="dark:text-muted-foreground flex items-center gap-2 font-mono text-[12px] text-gray-500">
+            <Link
+              href="/dating-services"
+              className="hover:text-rose-600 dark:hover:text-rose-400"
+            >
               Services
             </Link>
             {breadcrumb.map((place) => (
               <span key={place.id} className="flex items-center gap-2">
                 <span>/</span>
                 {place.id === selectedPlace.id ? (
-                  <span className="text-gray-800">{place.shortName}</span>
+                  <span className="dark:text-foreground text-gray-800">
+                    {place.shortName}
+                  </span>
                 ) : (
                   <Link
                     href={locationHref(place.slug, includeRemote)}
-                    className="hover:text-rose-600"
+                    className="hover:text-rose-600 dark:hover:text-rose-400"
                   >
                     {place.shortName}
                   </Link>
@@ -113,19 +118,19 @@ export default async function DatingServicesLocationPage({
 
           <div className="mt-8 flex flex-wrap items-end justify-between gap-6">
             <div className="max-w-3xl">
-              <div className="flex items-center gap-3 font-mono text-[11px] font-medium tracking-[0.1em] text-rose-600 uppercase">
+              <div className="flex items-center gap-3 font-mono text-[11px] font-medium tracking-[0.1em] text-rose-600 uppercase dark:text-rose-400">
                 <span className="h-px w-6 bg-rose-400" />
                 Local catalog
               </div>
               <h1 className="mt-4 text-[clamp(38px,5vw,58px)] leading-[1.02] font-bold tracking-[-0.04em]">
                 Dating services in {selectedPlace.name}
               </h1>
-              <p className="mt-5 max-w-2xl text-[17px] leading-7 text-gray-600">
+              <p className="dark:text-muted-foreground mt-5 max-w-2xl text-[17px] leading-7 text-gray-600">
                 Browse local providers and apps with a meaningful presence in
                 this market. Remote services stay optional.
               </p>
             </div>
-            <div className="font-mono text-[12px] text-gray-500">
+            <div className="dark:text-muted-foreground font-mono text-[12px] text-gray-500">
               {totalCount} {totalCount === 1 ? "listing" : "listings"} ·{" "}
               {groupedEntries.length}{" "}
               {groupedEntries.length === 1 ? "category" : "categories"}
@@ -140,8 +145,8 @@ export default async function DatingServicesLocationPage({
                 className={cn(
                   "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-semibold transition",
                   location === place.slug
-                    ? "border-rose-300 bg-rose-50 text-rose-700"
-                    : "border-gray-200 bg-white text-gray-600 hover:border-gray-300",
+                    ? "border-rose-300 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-400"
+                    : "dark:border-border dark:bg-card dark:text-muted-foreground dark:hover:border-border border-gray-200 bg-white text-gray-600 hover:border-gray-300",
                 )}
               >
                 <MapPin className="h-3.5 w-3.5" />
@@ -155,8 +160,8 @@ export default async function DatingServicesLocationPage({
                 className={cn(
                   "rounded-full border px-3.5 py-2 text-sm font-semibold transition",
                   location === place.slug
-                    ? "border-rose-300 bg-rose-50 text-rose-700"
-                    : "border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300",
+                    ? "border-rose-300 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-400"
+                    : "dark:border-border dark:bg-background dark:text-muted-foreground dark:hover:border-border border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300",
                 )}
               >
                 {place.shortName}
@@ -167,8 +172,8 @@ export default async function DatingServicesLocationPage({
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-semibold transition",
                 includeRemote
-                  ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-                  : "border-gray-200 bg-white text-gray-600 hover:border-gray-300",
+                  ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400"
+                  : "dark:border-border dark:bg-card dark:text-muted-foreground dark:hover:border-border border-gray-200 bg-white text-gray-600 hover:border-gray-300",
               )}
             >
               <Globe2 className="h-3.5 w-3.5" />
@@ -187,7 +192,7 @@ export default async function DatingServicesLocationPage({
                 <section key={group.category}>
                   <div className="flex flex-wrap items-end justify-between gap-4">
                     <div>
-                      <div className="font-mono text-[11px] text-gray-500 uppercase">
+                      <div className="dark:text-muted-foreground font-mono text-[11px] text-gray-500 uppercase">
                         {group.entries.length}{" "}
                         {group.entries.length === 1 ? "listing" : "listings"}
                       </div>
@@ -197,7 +202,7 @@ export default async function DatingServicesLocationPage({
                     </div>
                     <Link
                       href={`/dating-services/${config.slug}?location=${location}`}
-                      className="text-sm font-semibold text-rose-600 hover:text-rose-700"
+                      className="text-sm font-semibold text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-400"
                     >
                       View only {config.shortLabel.toLowerCase()} →
                     </Link>
@@ -216,11 +221,11 @@ export default async function DatingServicesLocationPage({
             })}
           </div>
         ) : (
-          <div className="rounded-3xl border border-dashed border-gray-300 bg-gray-50 px-6 py-16 text-center">
+          <div className="dark:border-border dark:bg-background rounded-3xl border border-dashed border-gray-300 bg-gray-50 px-6 py-16 text-center">
             <h2 className="text-2xl font-bold tracking-[-0.03em]">
               No local listings in {selectedPlace.name} yet
             </h2>
-            <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-gray-600">
+            <p className="dark:text-muted-foreground mx-auto mt-3 max-w-xl text-sm leading-6 text-gray-600">
               Include remote services, or browse by category while the local
               catalog fills in.
             </p>
@@ -240,7 +245,7 @@ export default async function DatingServicesLocationPage({
           </div>
         )}
 
-        <div className="mt-14 border-t border-gray-200 pt-8">
+        <div className="dark:border-border mt-14 border-t border-gray-200 pt-8">
           <ButtonLink variant="ghost" href="/dating-services">
             <ArrowLeft className="h-4 w-4" />
             All services

@@ -15,17 +15,19 @@ export function FaqList({
   className?: string;
 }) {
   return (
-    <div className={cn("border-t border-gray-200", className)}>
+    <div
+      className={cn("dark:border-border border-t border-gray-200", className)}
+    >
       {items.map((item, i) => (
         <details
           key={item.q}
           open={openFirst && i === 0}
-          className="group border-b border-gray-200"
+          className="group dark:border-border border-b border-gray-200"
         >
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-5 py-[22px] text-[16.5px] font-semibold text-gray-900 [&::-webkit-details-marker]:hidden">
+          <summary className="dark:text-foreground flex cursor-pointer list-none items-center justify-between gap-5 py-[22px] text-[16.5px] font-semibold text-gray-900 [&::-webkit-details-marker]:hidden">
             {item.q}
             <svg
-              className="h-[22px] w-[22px] flex-none text-rose-600 transition-transform group-open:rotate-45"
+              className="h-[22px] w-[22px] flex-none text-rose-600 transition-transform group-open:rotate-45 dark:text-rose-400"
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -36,7 +38,7 @@ export function FaqList({
               <path d="M12 5v14M5 12h14" />
             </svg>
           </summary>
-          <div className="max-w-[760px] pb-6 text-[14.5px] leading-[1.7] text-gray-600">
+          <div className="dark:text-muted-foreground max-w-[760px] pb-6 text-[14.5px] leading-[1.7] text-gray-600">
             {item.a}
           </div>
         </details>

@@ -192,7 +192,7 @@ export function LocationForm() {
           </Button>
 
           {updateLocation.isSuccess && (
-            <p className="text-sm text-green-600">
+            <p className="text-sm text-green-600 dark:text-green-400">
               Location updated successfully!
             </p>
           )}

@@ -220,24 +220,24 @@ export default function DataRequestSupport() {
           {supportLinks.map((link) => (
             <div
               key={link.name}
-              className="flex flex-col rounded-2xl bg-white shadow-xl"
+              className="dark:bg-card flex flex-col rounded-2xl bg-white shadow-xl"
             >
               <div className="relative flex-1 px-6 pt-16 pb-8 md:px-8">
                 <div className="absolute top-0 inline-block -translate-y-1/2 transform rounded-xl bg-rose-600 p-5 shadow-lg">
                   <link.icon />
                 </div>
-                <h3 className="text-xl font-medium text-gray-900">
+                <h3 className="dark:text-foreground text-xl font-medium text-gray-900">
                   {link.name}
                 </h3>
-                <p className="mt-4 text-base text-gray-500">
+                <p className="dark:text-muted-foreground mt-4 text-base text-gray-500">
                   {link.description}
                 </p>
               </div>
-              <div className="rounded-br-2xl rounded-bl-2xl bg-gray-50 p-6 md:px-8">
+              <div className="dark:bg-background rounded-br-2xl rounded-bl-2xl bg-gray-50 p-6 md:px-8">
                 <a
                   href={link.href}
                   target="_blank"
-                  className="text-base font-medium text-rose-700 hover:text-rose-600"
+                  className="text-base font-medium text-rose-700 hover:text-rose-600 dark:text-rose-400 dark:hover:text-rose-400"
                   rel="noreferrer"
                 >
                   Start here<span aria-hidden="true"> &rarr;</span>

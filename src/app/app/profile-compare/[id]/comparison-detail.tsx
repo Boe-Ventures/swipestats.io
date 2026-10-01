@@ -514,7 +514,7 @@ export function ComparisonDetail({ comparison }: ComparisonDetailProps) {
 
       {/* Shared getting-started empty state — uploading photos is step 1 */}
       {hasNoContent && (
-        <Empty className="overflow-hidden rounded-2xl border border-rose-200 bg-gradient-to-br from-rose-50 via-white to-rose-100/60 shadow-sm">
+        <Empty className="dark:via-card overflow-hidden rounded-2xl border border-rose-200 bg-gradient-to-br from-rose-50 via-white to-rose-100/60 shadow-sm dark:border-rose-800 dark:from-rose-950/40 dark:to-rose-950/60">
           <EmptyHeader>
             <EmptyMedia
               variant="icon"

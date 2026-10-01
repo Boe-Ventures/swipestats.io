@@ -103,7 +103,7 @@ function TokCmt({ children }: { children: React.ReactNode }) {
 function HeroDataCard() {
   return (
     <div className="relative">
-      <span className="absolute -top-4 right-[18px] z-[5] inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 font-mono text-[11px] font-semibold text-gray-700 shadow-[0_2px_6px_oklch(0.2_0.02_286/0.05),0_12px_28px_oklch(0.2_0.02_286/0.08)]">
+      <span className="dark:border-border dark:bg-card dark:text-muted-foreground absolute -top-4 right-[18px] z-[5] inline-flex items-center rounded-full border border-gray-200 bg-white px-3 py-1.5 font-mono text-[11px] font-semibold text-gray-700 shadow-[0_2px_6px_oklch(0.2_0.02_286/0.05),0_12px_28px_oklch(0.2_0.02_286/0.08)]">
         research-2026-02-23.jsonl
       </span>
 
@@ -112,10 +112,10 @@ function HeroDataCard() {
           <span className="h-[11px] w-[11px] rounded-full bg-[#ff5f57]" />
           <span className="h-[11px] w-[11px] rounded-full bg-[#febc2e]" />
           <span className="h-[11px] w-[11px] rounded-full bg-[#28c840]" />
-          <span className="ml-2.5 font-mono text-[12.5px] text-gray-400">
+          <span className="dark:text-muted-foreground ml-2.5 font-mono text-[12.5px] text-gray-400">
             profile · line 1 of 11,000+
           </span>
-          <span className="ml-auto rounded-md bg-white/[0.06] px-2.5 py-[3px] font-mono text-[11px] text-gray-500">
+          <span className="dark:text-muted-foreground ml-auto rounded-md bg-white/[0.06] px-2.5 py-[3px] font-mono text-[11px] text-gray-500">
             JSONL
           </span>
         </div>
@@ -214,17 +214,17 @@ function HeroDataCard() {
         </pre>
       </div>
 
-      <div className="grid grid-cols-3 gap-px overflow-hidden rounded-b-2xl border border-t-0 border-gray-200 bg-gray-200">
+      <div className="dark:border-border dark:bg-accent grid grid-cols-3 gap-px overflow-hidden rounded-b-2xl border border-t-0 border-gray-200 bg-gray-200">
         {[
           { k: "Profiles", v: "11,000+" },
           { k: "Daily records", v: "2.4M" },
           { k: "Messages", v: "1.1M" },
         ].map((s) => (
-          <div key={s.k} className="bg-white px-4 py-3.5">
-            <div className="font-mono text-[10.5px] tracking-[0.05em] text-gray-500 uppercase">
+          <div key={s.k} className="dark:bg-card bg-white px-4 py-3.5">
+            <div className="dark:text-muted-foreground font-mono text-[10.5px] tracking-[0.05em] text-gray-500 uppercase">
               {s.k}
             </div>
-            <div className="mt-[3px] text-[21px] font-bold tracking-[-0.02em] text-gray-900 tabular-nums">
+            <div className="dark:text-foreground mt-[3px] text-[21px] font-bold tracking-[-0.02em] text-gray-900 tabular-nums">
               {s.v}
             </div>
           </div>
@@ -242,17 +242,19 @@ function HeroSection() {
         <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
           <div>
             <Eyebrow noRule>
-              <span className="inline-flex items-center gap-2 rounded-full border border-rose-600/20 bg-rose-50 px-3 py-1.5 text-[13px] font-semibold tracking-normal text-rose-700 normal-case">
+              <span className="inline-flex items-center gap-2 rounded-full border border-rose-600/20 bg-rose-50 px-3 py-1.5 text-[13px] font-semibold tracking-normal text-rose-700 normal-case dark:bg-rose-950/40 dark:text-rose-400">
                 Trusted by researchers
               </span>
-              <span className="text-gray-500">University of Chicago · APA</span>
+              <span className="dark:text-muted-foreground text-gray-500">
+                University of Chicago · APA
+              </span>
             </Eyebrow>
-            <h1 className="mt-[22px] text-[clamp(40px,6vw,68px)] leading-[1.02] font-bold tracking-[-0.035em] text-balance text-gray-900">
+            <h1 className="dark:text-foreground mt-[22px] text-[clamp(40px,6vw,68px)] leading-[1.02] font-bold tracking-[-0.035em] text-balance text-gray-900">
               The dating data that&apos;s almost impossible to get.
             </h1>
-            <p className="mt-[22px] max-w-[540px] text-[clamp(17px,2vw,20px)] leading-[1.6] text-gray-600">
+            <p className="dark:text-muted-foreground mt-[22px] max-w-[540px] text-[clamp(17px,2vw,20px)] leading-[1.6] text-gray-600">
               Anonymized, consent-based behavior from{" "}
-              <strong className="font-semibold text-gray-900">
+              <strong className="dark:text-foreground font-semibold text-gray-900">
                 11,000+ real dating-app users
               </strong>
               : swipes, matches, and message statistics. Ready to analyze,
@@ -282,12 +284,16 @@ function HeroSection() {
                 { n: "50+", l: "research citations" },
               ].map((t, i) => (
                 <div key={t.l} className="flex items-center gap-7">
-                  {i > 0 && <div className="h-[34px] w-px bg-gray-200" />}
+                  {i > 0 && (
+                    <div className="dark:bg-accent h-[34px] w-px bg-gray-200" />
+                  )}
                   <div className="flex flex-col gap-0.5">
-                    <span className="text-[22px] font-bold tracking-[-0.02em] text-gray-900 tabular-nums">
+                    <span className="dark:text-foreground text-[22px] font-bold tracking-[-0.02em] text-gray-900 tabular-nums">
                       {t.n}
                     </span>
-                    <span className="text-[12.5px] text-gray-500">{t.l}</span>
+                    <span className="dark:text-muted-foreground text-[12.5px] text-gray-500">
+                      {t.l}
+                    </span>
                   </div>
                 </div>
               ))}
@@ -311,18 +317,18 @@ function LogoStrip() {
     { icon: UsersIcon, label: "Data scientists" },
   ];
   return (
-    <section className="border-y border-gray-200 bg-gray-50 py-14">
+    <section className="dark:border-border dark:bg-background border-y border-gray-200 bg-gray-50 py-14">
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
-        <p className="mb-7 text-center font-mono text-[12px] tracking-[0.08em] text-gray-500 uppercase">
+        <p className="dark:text-muted-foreground mb-7 text-center font-mono text-[12px] tracking-[0.08em] text-gray-500 uppercase">
           Used by researchers, journalists &amp; creators worldwide
         </p>
         <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-3.5">
           {logos.map((l) => (
             <span
               key={l.label}
-              className="flex items-center gap-2.5 text-[15px] font-semibold text-gray-500"
+              className="dark:text-muted-foreground flex items-center gap-2.5 text-[15px] font-semibold text-gray-500"
             >
-              <l.icon className="h-[22px] w-[22px] text-gray-400" />
+              <l.icon className="dark:text-muted-foreground h-[22px] w-[22px] text-gray-400" />
               {l.label}
             </span>
           ))}
@@ -384,14 +390,14 @@ function ValueSection() {
         <div className="mt-14 grid grid-cols-1 gap-x-14 gap-y-7 md:grid-cols-2">
           {valueProps.map((p) => (
             <div key={p.title} className="flex gap-4">
-              <div className="grid h-11 w-11 flex-none place-items-center rounded-[11px] border border-rose-600/15 bg-rose-50 text-rose-600">
+              <div className="grid h-11 w-11 flex-none place-items-center rounded-[11px] border border-rose-600/15 bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400">
                 <p.icon className="h-[22px] w-[22px]" />
               </div>
               <div>
-                <h3 className="text-[17px] font-bold tracking-[-0.02em] text-gray-900">
+                <h3 className="dark:text-foreground text-[17px] font-bold tracking-[-0.02em] text-gray-900">
                   {p.title}
                 </h3>
-                <p className="mt-1.5 text-[14.5px] leading-[1.6] text-gray-600">
+                <p className="dark:text-muted-foreground mt-1.5 text-[14.5px] leading-[1.6] text-gray-600">
                   {p.body}
                 </p>
               </div>
@@ -400,33 +406,33 @@ function ValueSection() {
         </div>
 
         <div className="mt-11 grid grid-cols-1 gap-5 md:grid-cols-2">
-          <div className="rounded-2xl border border-gray-200 bg-gray-50 p-6">
-            <h4 className="font-mono text-[13px] tracking-[0.06em] text-gray-500 uppercase">
+          <div className="dark:border-border dark:bg-background rounded-2xl border border-gray-200 bg-gray-50 p-6">
+            <h4 className="dark:text-muted-foreground font-mono text-[13px] tracking-[0.06em] text-gray-500 uppercase">
               Typical survey data
             </h4>
             <ul className="mt-4 flex flex-col gap-3">
               {surveyBad.map((t) => (
                 <li
                   key={t}
-                  className="flex items-start gap-2.5 text-[14.5px] text-gray-700"
+                  className="dark:text-muted-foreground flex items-start gap-2.5 text-[14.5px] text-gray-700"
                 >
-                  <XCircleIcon className="mt-px h-[18px] w-[18px] flex-none text-gray-400" />
+                  <XCircleIcon className="dark:text-muted-foreground mt-px h-[18px] w-[18px] flex-none text-gray-400" />
                   {t}
                 </li>
               ))}
             </ul>
           </div>
-          <div className="rounded-2xl border border-rose-600/30 bg-white p-6 shadow-[0_1px_2px_oklch(0.2_0.02_286/0.06),0_1px_3px_oklch(0.2_0.02_286/0.05)]">
-            <h4 className="font-mono text-[13px] tracking-[0.06em] text-rose-600 uppercase">
+          <div className="dark:bg-card rounded-2xl border border-rose-600/30 bg-white p-6 shadow-[0_1px_2px_oklch(0.2_0.02_286/0.06),0_1px_3px_oklch(0.2_0.02_286/0.05)]">
+            <h4 className="font-mono text-[13px] tracking-[0.06em] text-rose-600 uppercase dark:text-rose-400">
               SwipeStats datasets
             </h4>
             <ul className="mt-4 flex flex-col gap-3">
               {surveyGood.map((t) => (
                 <li
                   key={t}
-                  className="flex items-start gap-2.5 text-[14.5px] text-gray-700"
+                  className="dark:text-muted-foreground flex items-start gap-2.5 text-[14.5px] text-gray-700"
                 >
-                  <CheckIcon className="mt-px h-[18px] w-[18px] flex-none text-rose-600" />
+                  <CheckIcon className="mt-px h-[18px] w-[18px] flex-none text-rose-600 dark:text-rose-400" />
                   {t}
                 </li>
               ))}
@@ -475,7 +481,7 @@ function SchemaSection() {
   return (
     <section
       id="schema"
-      className="border-y border-gray-200 bg-gray-50 py-[88px] max-[720px]:py-[60px]"
+      className="dark:border-border dark:bg-background border-y border-gray-200 bg-gray-50 py-[88px] max-[720px]:py-[60px]"
     >
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
         <SectionHead
@@ -489,17 +495,17 @@ function SchemaSection() {
           {keys.map((k) => (
             <div
               key={k.name}
-              className="rounded-xl border border-gray-200 bg-white p-4"
+              className="dark:border-border dark:bg-card rounded-xl border border-gray-200 bg-white p-4"
             >
               <div className="flex items-center justify-between">
-                <span className="font-mono text-[14px] font-semibold text-gray-900">
+                <span className="dark:text-foreground font-mono text-[14px] font-semibold text-gray-900">
                   {k.name}
                 </span>
-                <span className="rounded-[5px] bg-rose-50 px-[7px] py-0.5 font-mono text-[11px] text-rose-600">
+                <span className="rounded-[5px] bg-rose-50 px-[7px] py-0.5 font-mono text-[11px] text-rose-600 dark:bg-rose-950/40 dark:text-rose-400">
                   {k.cnt}
                 </span>
               </div>
-              <p className="mt-2 text-[12.5px] leading-[1.5] text-gray-500">
+              <p className="dark:text-muted-foreground mt-2 text-[12.5px] leading-[1.5] text-gray-500">
                 {k.body}
               </p>
             </div>
@@ -507,13 +513,15 @@ function SchemaSection() {
         </div>
 
         <div className="mt-10 grid grid-cols-1 items-start gap-8 lg:grid-cols-2">
-          <div className="rounded-2xl border border-gray-200 bg-white p-[22px] shadow-[0_1px_2px_oklch(0.2_0.02_286/0.05)]">
+          <div className="dark:border-border dark:bg-card rounded-2xl border border-gray-200 bg-white p-[22px] shadow-[0_1px_2px_oklch(0.2_0.02_286/0.05)]">
             <div className="mb-[18px] flex items-baseline justify-between">
-              <span className="text-[14px] font-bold text-gray-900">
+              <span className="dark:text-foreground text-[14px] font-bold text-gray-900">
                 Sample rows:{" "}
-                <span className="font-mono text-gray-500">meta</span>
+                <span className="dark:text-muted-foreground font-mono text-gray-500">
+                  meta
+                </span>
               </span>
-              <span className="font-mono text-[11px] text-gray-500">
+              <span className="dark:text-muted-foreground font-mono text-[11px] text-gray-500">
                 5 of 11,000+
               </span>
             </div>
@@ -531,7 +539,7 @@ function SchemaSection() {
                         <th
                           key={h}
                           className={cn(
-                            "border-b border-gray-200 bg-gray-50 px-4 py-3 font-mono text-[12px] font-medium tracking-[0.04em] text-gray-500 uppercase",
+                            "dark:border-border dark:bg-background dark:text-muted-foreground border-b border-gray-200 bg-gray-50 px-4 py-3 font-mono text-[12px] font-medium tracking-[0.04em] text-gray-500 uppercase",
                             i === 0 ? "text-left" : "text-right",
                           )}
                         >
@@ -543,15 +551,18 @@ function SchemaSection() {
                 </thead>
                 <tbody>
                   {rows.map((r, ri) => (
-                    <tr key={ri} className="hover:bg-gray-50">
+                    <tr
+                      key={ri}
+                      className="dark:hover:bg-background hover:bg-gray-50"
+                    >
                       {r.map((c, ci) => (
                         <td
                           key={ci}
                           className={cn(
-                            "border-b border-gray-200 px-4 py-3",
+                            "dark:border-border border-b border-gray-200 px-4 py-3",
                             ci === 0
-                              ? "font-mono text-[13px] font-medium text-gray-900"
-                              : "text-right font-mono text-gray-700 tabular-nums",
+                              ? "dark:text-foreground font-mono text-[13px] font-medium text-gray-900"
+                              : "dark:text-muted-foreground text-right font-mono text-gray-700 tabular-nums",
                           )}
                         >
                           {c}
@@ -565,7 +576,7 @@ function SchemaSection() {
           </div>
 
           <div>
-            <p className="text-[15px] leading-[1.7] text-gray-600">
+            <p className="dark:text-muted-foreground text-[15px] leading-[1.7] text-gray-600">
               Downloads are gzip-compressed JSONL, with metadata and citation
               records alongside the profile lines. Preview the sample to explore
               the fields. Custom conversation datasets require a separate
@@ -588,26 +599,26 @@ function SchemaSection() {
                 Explore a live profile
               </Link>
             </div>
-            <div className="mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-gray-200 bg-gray-200">
-              <div className="bg-white px-6 py-[22px]">
-                <div className="font-mono text-[11.5px] tracking-[0.06em] text-gray-500 uppercase">
+            <div className="dark:border-border dark:bg-accent mt-6 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-gray-200 bg-gray-200">
+              <div className="dark:bg-card bg-white px-6 py-[22px]">
+                <div className="dark:text-muted-foreground font-mono text-[11.5px] tracking-[0.06em] text-gray-500 uppercase">
                   Format
                 </div>
-                <div className="mt-2 text-[24px] font-bold tracking-[-0.03em] text-gray-900">
+                <div className="dark:text-foreground mt-2 text-[24px] font-bold tracking-[-0.03em] text-gray-900">
                   JSONL
                 </div>
-                <div className="mt-2 text-[13px] text-gray-500">
+                <div className="dark:text-muted-foreground mt-2 text-[13px] text-gray-500">
                   Python · R · pandas ready
                 </div>
               </div>
-              <div className="bg-white px-6 py-[22px]">
-                <div className="font-mono text-[11.5px] tracking-[0.06em] text-gray-500 uppercase">
+              <div className="dark:bg-card bg-white px-6 py-[22px]">
+                <div className="dark:text-muted-foreground font-mono text-[11.5px] tracking-[0.06em] text-gray-500 uppercase">
                   Per profile
                 </div>
-                <div className="mt-2 text-[24px] font-bold tracking-[-0.03em] text-gray-900 tabular-nums">
+                <div className="dark:text-foreground mt-2 text-[24px] font-bold tracking-[-0.03em] text-gray-900 tabular-nums">
                   70+
                 </div>
-                <div className="mt-2 text-[13px] text-gray-500">
+                <div className="dark:text-muted-foreground mt-2 text-[13px] text-gray-500">
                   documented variables
                 </div>
               </div>
@@ -634,8 +645,8 @@ function DashboardSection() {
 
         {/* the real, data-driven insights (same charts that ship), framed as the live demo */}
         <div className="mt-11">
-          <div className="rounded-3xl border border-gray-200 bg-gray-50 p-4 shadow-[0_10px_30px_oklch(0.2_0.02_286/0.1),0_30px_60px_oklch(0.2_0.02_286/0.12)] sm:p-6 [&_[data-slot=card]]:border-gray-200/70 [&_[data-slot=card]]:shadow-none!">
-            <p className="mb-3 flex items-center justify-center gap-2 text-[12.5px] font-semibold text-gray-600">
+          <div className="dark:border-border dark:bg-background dark:[&_[data-slot=card]]:border-border/70 rounded-3xl border border-gray-200 bg-gray-50 p-4 shadow-[0_10px_30px_oklch(0.2_0.02_286/0.1),0_30px_60px_oklch(0.2_0.02_286/0.12)] sm:p-6 [&_[data-slot=card]]:border-gray-200/70 [&_[data-slot=card]]:shadow-none!">
+            <p className="dark:text-muted-foreground mb-3 flex items-center justify-center gap-2 text-[12.5px] font-semibold text-gray-600">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
               Explore an example profile in the SwipeStats interface.
             </p>
@@ -694,7 +705,7 @@ function MiniBars({
 function UseCaseVisual({ kind }: { kind: UseCaseVisualKind }) {
   if (kind === "creator") {
     return (
-      <div className="relative h-[188px] overflow-hidden border-b border-gray-200 bg-gray-950 p-5 text-white">
+      <div className="dark:border-border relative h-[188px] overflow-hidden border-b border-gray-200 bg-gray-950 p-5 text-white">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_22%_18%,rgba(244,63,94,0.38),transparent_34%),radial-gradient(circle_at_78%_20%,rgba(20,184,166,0.22),transparent_30%)]" />
         <div className="relative flex h-full flex-col justify-between">
           <div className="flex items-center justify-between">
@@ -724,27 +735,27 @@ function UseCaseVisual({ kind }: { kind: UseCaseVisualKind }) {
 
   if (kind === "research") {
     return (
-      <div className="relative h-[188px] overflow-hidden border-b border-gray-200 bg-white p-5">
+      <div className="dark:border-border dark:bg-card relative h-[188px] overflow-hidden border-b border-gray-200 bg-white p-5">
         <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(244,63,94,0.05)_0_25%,transparent_25%_50%,rgba(20,184,166,0.06)_50%_75%,transparent_75%)] bg-[length:28px_28px]" />
         <div className="relative grid h-full grid-cols-[minmax(0,1fr)_112px] gap-4 sm:grid-cols-[1fr_150px] sm:gap-5">
-          <div className="flex min-w-0 flex-col justify-between rounded-[14px] border border-gray-200 bg-white p-3 shadow-[0_1px_2px_oklch(0.2_0.02_286/0.04)] sm:p-4">
+          <div className="dark:border-border dark:bg-card flex min-w-0 flex-col justify-between rounded-[14px] border border-gray-200 bg-white p-3 shadow-[0_1px_2px_oklch(0.2_0.02_286/0.04)] sm:p-4">
             <div className="flex min-w-0 items-center gap-2">
-              <DocumentTextIcon className="h-5 w-5 text-rose-600" />
-              <span className="truncate font-mono text-[11px] tracking-[0.06em] text-gray-500 uppercase">
+              <DocumentTextIcon className="h-5 w-5 text-rose-600 dark:text-rose-400" />
+              <span className="dark:text-muted-foreground truncate font-mono text-[11px] tracking-[0.06em] text-gray-500 uppercase">
                 manuscript figure
               </span>
             </div>
             <div>
               <div className="h-2.5 w-5/6 rounded-full bg-gray-900" />
-              <div className="mt-2 h-2 w-full rounded-full bg-gray-200" />
-              <div className="mt-2 h-2 w-4/5 rounded-full bg-gray-200" />
+              <div className="dark:bg-accent mt-2 h-2 w-full rounded-full bg-gray-200" />
+              <div className="dark:bg-accent mt-2 h-2 w-4/5 rounded-full bg-gray-200" />
             </div>
-            <span className="font-mono text-[11px] text-rose-600">
+            <span className="font-mono text-[11px] text-rose-600 dark:text-rose-400">
               n = 11,000+ profiles
             </span>
           </div>
           <div className="self-end">
-            <div className="mb-2 flex items-center gap-2 text-[12px] font-semibold text-gray-500">
+            <div className="dark:text-muted-foreground mb-2 flex items-center gap-2 text-[12px] font-semibold text-gray-500">
               <PresentationChartLineIcon className="h-4 w-4" />
               effect size
             </div>
@@ -757,23 +768,23 @@ function UseCaseVisual({ kind }: { kind: UseCaseVisualKind }) {
 
   if (kind === "journalism") {
     return (
-      <div className="relative h-[188px] overflow-hidden border-b border-gray-200 bg-gray-50 p-5">
-        <div className="absolute right-6 bottom-5 left-6 h-px bg-gray-200" />
+      <div className="dark:border-border dark:bg-background relative h-[188px] overflow-hidden border-b border-gray-200 bg-gray-50 p-5">
+        <div className="dark:bg-accent absolute right-6 bottom-5 left-6 h-px bg-gray-200" />
         <div className="relative grid h-full grid-cols-[minmax(0,1fr)_108px] gap-4 sm:grid-cols-[1fr_132px] sm:gap-5">
           <div className="flex min-w-0 flex-col justify-between">
-            <span className="inline-flex w-fit items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1 font-mono text-[11px] text-gray-500">
-              <NewspaperIcon className="h-4 w-4 text-rose-600" />
+            <span className="dark:border-border dark:bg-card dark:text-muted-foreground inline-flex w-fit items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1 font-mono text-[11px] text-gray-500">
+              <NewspaperIcon className="h-4 w-4 text-rose-600 dark:text-rose-400" />
               data story
             </span>
             <div>
-              <div className="text-[26px] leading-[1.05] font-bold tracking-[-0.03em] text-gray-900">
+              <div className="dark:text-foreground text-[26px] leading-[1.05] font-bold tracking-[-0.03em] text-gray-900">
                 The patterns surveys miss
               </div>
               <div className="mt-3 flex flex-wrap gap-1.5">
                 {["swipes", "matches", "messages"].map((label) => (
                   <span
                     key={label}
-                    className="rounded-[8px] border border-gray-200 bg-white px-2 py-1.5 font-mono text-[10.5px] whitespace-nowrap text-gray-500"
+                    className="dark:border-border dark:bg-card dark:text-muted-foreground rounded-[8px] border border-gray-200 bg-white px-2 py-1.5 font-mono text-[10.5px] whitespace-nowrap text-gray-500"
                   >
                     {label}
                   </span>
@@ -791,7 +802,7 @@ function UseCaseVisual({ kind }: { kind: UseCaseVisualKind }) {
   }
 
   return (
-    <div className="relative h-[188px] overflow-hidden border-b border-gray-200 bg-gray-950 p-5 text-white">
+    <div className="dark:border-border relative h-[188px] overflow-hidden border-b border-gray-200 bg-gray-950 p-5 text-white">
       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[length:22px_22px]" />
       <div className="relative grid h-full grid-cols-[minmax(0,1fr)_108px] gap-4 sm:grid-cols-[1fr_138px] sm:gap-5">
         <div className="flex min-w-0 flex-col justify-between">
@@ -878,7 +889,7 @@ function UseCasesSection() {
   ];
 
   return (
-    <section className="border-y border-gray-200 bg-gray-50 py-[88px] max-[720px]:py-[60px]">
+    <section className="dark:border-border dark:bg-background border-y border-gray-200 bg-gray-50 py-[88px] max-[720px]:py-[60px]">
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
         <SectionHead
           center
@@ -889,17 +900,17 @@ function UseCasesSection() {
           {cases.map((c) => (
             <article
               key={c.title}
-              className="flex flex-col overflow-hidden rounded-3xl border border-gray-200 bg-white transition hover:-translate-y-0.5 hover:shadow-[0_2px_6px_oklch(0.2_0.02_286/0.05),0_12px_28px_oklch(0.2_0.02_286/0.08)]"
+              className="dark:border-border dark:bg-card flex flex-col overflow-hidden rounded-3xl border border-gray-200 bg-white transition hover:-translate-y-0.5 hover:shadow-[0_2px_6px_oklch(0.2_0.02_286/0.05),0_12px_28px_oklch(0.2_0.02_286/0.08)]"
             >
               <UseCaseVisual kind={c.visual} />
               <div className="flex flex-1 flex-col p-6">
-                <span className="font-mono text-[11.5px] tracking-[0.06em] text-rose-600 uppercase">
+                <span className="font-mono text-[11.5px] tracking-[0.06em] text-rose-600 uppercase dark:text-rose-400">
                   {c.role}
                 </span>
-                <h3 className="mt-2.5 text-[19px] font-bold tracking-[-0.02em] text-gray-900">
+                <h3 className="dark:text-foreground mt-2.5 text-[19px] font-bold tracking-[-0.02em] text-gray-900">
                   {c.title}
                 </h3>
-                <p className="mt-2.5 flex-1 text-[14.5px] leading-[1.6] text-gray-600">
+                <p className="dark:text-muted-foreground mt-2.5 flex-1 text-[14.5px] leading-[1.6] text-gray-600">
                   {c.body}
                 </p>
                 <div className="mt-4 flex flex-col gap-2">
@@ -909,7 +920,7 @@ function UseCasesSection() {
                       href={l.href}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-[13.5px] font-semibold text-rose-600 hover:text-rose-700"
+                      className="text-[13.5px] font-semibold text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-400"
                     >
                       {l.label}
                     </a>
@@ -991,7 +1002,7 @@ function AITrainingSection() {
                   Discuss a custom dataset
                 </a>
               </div>
-              <p className="mt-5 text-[12.5px] leading-5 text-gray-500">
+              <p className="dark:text-muted-foreground mt-5 text-[12.5px] leading-5 text-gray-500">
                 AI training and evaluation rights are available through a custom
                 agreement.
               </p>
@@ -999,7 +1010,7 @@ function AITrainingSection() {
 
             <div className="rounded-3xl border border-white/10 bg-white/[0.05] p-3 shadow-2xl backdrop-blur">
               <div className="flex items-center justify-between border-b border-white/10 px-3 py-3">
-                <span className="font-mono text-[11px] tracking-[0.08em] text-gray-400 uppercase">
+                <span className="dark:text-muted-foreground font-mono text-[11px] tracking-[0.08em] text-gray-400 uppercase">
                   Custom dataset layers
                 </span>
                 <BeakerIcon className="h-5 w-5 text-rose-300" />
@@ -1017,7 +1028,7 @@ function AITrainingSection() {
                       <div className="text-[14px] font-semibold text-white">
                         {layer.label}
                       </div>
-                      <div className="mt-1 text-[12.5px] leading-5 text-gray-400">
+                      <div className="dark:text-muted-foreground mt-1 text-[12.5px] leading-5 text-gray-400">
                         {layer.detail}
                       </div>
                     </div>
@@ -1034,7 +1045,7 @@ function AITrainingSection() {
                     <div className="text-[18px] font-bold tabular-nums">
                       {item.value}
                     </div>
-                    <div className="mt-0.5 text-[10px] tracking-[0.05em] text-gray-500 uppercase">
+                    <div className="dark:text-muted-foreground mt-0.5 text-[10px] tracking-[0.05em] text-gray-500 uppercase">
                       {item.label}
                     </div>
                   </div>
@@ -1100,34 +1111,43 @@ function ComparisonTableSection() {
     ];
 
   const cell = (c: string | boolean) => {
-    if (c === true) return <span className="font-bold text-rose-600">✓</span>;
+    if (c === true)
+      return (
+        <span className="font-bold text-rose-600 dark:text-rose-400">✓</span>
+      );
     if (c === false) return <span className="text-gray-300">—</span>;
     if (c === "Priority")
-      return <span className="font-bold text-rose-600">Priority</span>;
+      return (
+        <span className="font-bold text-rose-600 dark:text-rose-400">
+          Priority
+        </span>
+      );
     return c;
   };
 
   return (
-    <section className="border-y border-gray-200 bg-gray-50 py-[88px] max-[720px]:py-[60px]">
+    <section className="dark:border-border dark:bg-background border-y border-gray-200 bg-gray-50 py-[88px] max-[720px]:py-[60px]">
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
         <SectionHead
           center
           eyebrow="Compare"
           title="Every plan, side by side"
         />
-        <div className="mt-11 overflow-x-auto rounded-2xl border border-gray-200">
+        <div className="dark:border-border mt-11 overflow-x-auto rounded-2xl border border-gray-200">
           <table className="w-full min-w-[860px] border-collapse text-[13.5px]">
             <thead>
               <tr>
-                <th className="sticky left-0 border-b border-gray-200 bg-gray-50 px-[18px] py-3.5 text-left text-[12px] font-bold text-gray-900">
+                <th className="dark:border-border dark:bg-background dark:text-foreground sticky left-0 border-b border-gray-200 bg-gray-50 px-[18px] py-3.5 text-left text-[12px] font-bold text-gray-900">
                   Feature
                 </th>
                 {cols.map((c, i) => (
                   <th
                     key={c}
                     className={cn(
-                      "border-b border-gray-200 bg-gray-50 px-[18px] py-3.5 text-center text-[12px] font-bold whitespace-nowrap",
-                      i === popIdx ? "text-rose-600" : "text-gray-900",
+                      "dark:border-border dark:bg-background border-b border-gray-200 bg-gray-50 px-[18px] py-3.5 text-center text-[12px] font-bold whitespace-nowrap",
+                      i === popIdx
+                        ? "text-rose-600 dark:text-rose-400"
+                        : "dark:text-foreground text-gray-900",
                     )}
                   >
                     {c}
@@ -1138,14 +1158,14 @@ function ComparisonTableSection() {
             <tbody>
               {rows.map((r) => (
                 <tr key={r.label} className="group">
-                  <td className="sticky left-0 border-b border-gray-200 bg-white px-[18px] py-3.5 text-left font-semibold whitespace-nowrap text-gray-900 group-hover:bg-gray-50">
+                  <td className="dark:border-border dark:bg-card dark:text-foreground dark:group-hover:bg-background sticky left-0 border-b border-gray-200 bg-white px-[18px] py-3.5 text-left font-semibold whitespace-nowrap text-gray-900 group-hover:bg-gray-50">
                     {r.label}
                   </td>
                   {r.cells.map((c, i) => (
                     <td
                       key={i}
                       className={cn(
-                        "border-b border-gray-200 px-[18px] py-3.5 text-center whitespace-nowrap text-gray-700 group-hover:bg-gray-50",
+                        "dark:border-border dark:text-muted-foreground dark:group-hover:bg-background border-b border-gray-200 px-[18px] py-3.5 text-center whitespace-nowrap text-gray-700 group-hover:bg-gray-50",
                         r.mono && "font-mono tabular-nums",
                       )}
                     >
@@ -1196,10 +1216,10 @@ function HowItWorksSection() {
               <div className="grid h-10 w-10 place-items-center rounded-[11px] bg-rose-600 font-mono font-bold text-white">
                 {s.n}
               </div>
-              <h3 className="mt-[18px] text-[17px] font-bold tracking-[-0.02em] text-gray-900">
+              <h3 className="dark:text-foreground mt-[18px] text-[17px] font-bold tracking-[-0.02em] text-gray-900">
                 {s.title}
               </h3>
-              <p className="mt-2 text-[14.5px] leading-[1.6] text-gray-600">
+              <p className="dark:text-muted-foreground mt-2 text-[14.5px] leading-[1.6] text-gray-600">
                 {s.body}
               </p>
             </div>
@@ -1248,22 +1268,22 @@ function FAQSection() {
   return (
     <section
       id="faq"
-      className="border-t border-gray-200 bg-gray-50 py-[88px] max-[720px]:py-[60px]"
+      className="dark:border-border dark:bg-background border-t border-gray-200 bg-gray-50 py-[88px] max-[720px]:py-[60px]"
     >
       <div className="mx-auto max-w-[880px] px-6 lg:px-8">
         <SectionHead center eyebrow="FAQ" title="Questions, answered" />
-        <div className="mt-10 border-t border-gray-200">
+        <div className="dark:border-border mt-10 border-t border-gray-200">
           {faqs.map((f) => (
             <details
               key={f.q}
               open={f.open}
-              className="group border-b border-gray-200"
+              className="group dark:border-border border-b border-gray-200"
             >
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-5 py-[22px] text-[16.5px] font-semibold text-gray-900 [&::-webkit-details-marker]:hidden">
+              <summary className="dark:text-foreground flex cursor-pointer list-none items-center justify-between gap-5 py-[22px] text-[16.5px] font-semibold text-gray-900 [&::-webkit-details-marker]:hidden">
                 {f.q}
-                <PlusIcon className="h-[22px] w-[22px] flex-none text-rose-600 transition-transform group-open:rotate-45" />
+                <PlusIcon className="h-[22px] w-[22px] flex-none text-rose-600 transition-transform group-open:rotate-45 dark:text-rose-400" />
               </summary>
-              <div className="max-w-[760px] pb-6 text-[14.5px] leading-[1.7] text-gray-600">
+              <div className="dark:text-muted-foreground max-w-[760px] pb-6 text-[14.5px] leading-[1.7] text-gray-600">
                 {f.a}
               </div>
             </details>

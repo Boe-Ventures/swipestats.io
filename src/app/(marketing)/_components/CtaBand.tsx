@@ -65,7 +65,7 @@ export function CtaBand({
         {lead && (
           <p
             className={cn(
-              "mt-4 text-[clamp(17px,2vw,20px)] leading-[1.6] text-gray-400",
+              "dark:text-muted-foreground mt-4 text-[clamp(17px,2vw,20px)] leading-[1.6] text-gray-400",
               center && "mx-auto max-w-[520px]",
             )}
           >

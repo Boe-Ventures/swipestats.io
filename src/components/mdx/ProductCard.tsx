@@ -48,28 +48,30 @@ function InsightsVisual() {
   ];
 
   return (
-    <div className="w-full rounded-2xl border border-gray-200 bg-white p-4 shadow-[0_16px_36px_oklch(0.2_0.02_286/0.12)]">
-      <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+    <div className="dark:border-border dark:bg-card w-full rounded-2xl border border-gray-200 bg-white p-4 shadow-[0_16px_36px_oklch(0.2_0.02_286/0.12)]">
+      <div className="dark:border-border flex items-center justify-between border-b border-gray-100 pb-3">
         <div>
-          <div className="font-mono text-[10px] font-semibold tracking-[0.08em] text-gray-400 uppercase">
+          <div className="dark:text-muted-foreground font-mono text-[10px] font-semibold tracking-[0.08em] text-gray-400 uppercase">
             Example profile
           </div>
-          <div className="mt-1 text-sm font-bold text-gray-900">
+          <div className="dark:text-foreground mt-1 text-sm font-bold text-gray-900">
             Your performance
           </div>
         </div>
-        <BarChart3 className="h-5 w-5 text-rose-600" />
+        <BarChart3 className="h-5 w-5 text-rose-600 dark:text-rose-400" />
       </div>
       <div className="mt-4 space-y-3.5">
         {rows.map((row) => (
           <div key={row.label}>
             <div className="mb-1.5 flex items-center justify-between text-[11px]">
-              <span className="font-medium text-gray-500">{row.label}</span>
-              <span className="font-bold text-gray-900 tabular-nums">
+              <span className="dark:text-muted-foreground font-medium text-gray-500">
+                {row.label}
+              </span>
+              <span className="dark:text-foreground font-bold text-gray-900 tabular-nums">
                 {row.value}
               </span>
             </div>
-            <div className="h-1.5 overflow-hidden rounded-full bg-gray-100">
+            <div className="dark:bg-muted h-1.5 overflow-hidden rounded-full bg-gray-100">
               <div
                 className="h-full rounded-full bg-rose-500"
                 style={{ width: row.width }}
@@ -84,24 +86,26 @@ function InsightsVisual() {
 
 function ProfilePreview({ app, tint }: { app: string; tint: string }) {
   return (
-    <div className="w-[46%] rounded-[18px] border border-gray-200 bg-white p-2.5 shadow-sm">
+    <div className="dark:border-border dark:bg-card w-[46%] rounded-[18px] border border-gray-200 bg-white p-2.5 shadow-sm">
       <div className="flex items-center justify-between">
-        <span className="text-[10px] font-bold text-gray-800">{app}</span>
+        <span className="dark:text-foreground text-[10px] font-bold text-gray-800">
+          {app}
+        </span>
         <span className={cn("h-1.5 w-1.5 rounded-full", tint)} />
       </div>
       <div className="mt-2 aspect-[4/5] rounded-xl bg-[linear-gradient(145deg,#e5e7eb,#f9fafb_55%,#d1d5db)]" />
-      <div className="mt-2 h-1.5 w-3/4 rounded-full bg-gray-200" />
-      <div className="mt-1.5 h-1.5 w-1/2 rounded-full bg-gray-100" />
+      <div className="dark:bg-accent mt-2 h-1.5 w-3/4 rounded-full bg-gray-200" />
+      <div className="dark:bg-muted mt-1.5 h-1.5 w-1/2 rounded-full bg-gray-100" />
     </div>
   );
 }
 
 function ProfileCompareVisual() {
   return (
-    <div className="relative flex min-h-52 w-full items-center justify-center gap-3 rounded-2xl border border-violet-200/70 bg-violet-50 p-4">
+    <div className="relative flex min-h-52 w-full items-center justify-center gap-3 rounded-2xl border border-violet-200/70 bg-violet-50 p-4 dark:border-violet-800/70 dark:bg-violet-950/40">
       <ProfilePreview app="Tinder" tint="bg-rose-500" />
       <ProfilePreview app="Hinge" tint="bg-violet-500" />
-      <div className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full border border-violet-200 bg-white px-3 py-1 font-mono text-[9px] font-semibold tracking-[0.08em] whitespace-nowrap text-violet-700 uppercase shadow-sm">
+      <div className="dark:bg-card absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full border border-violet-200 bg-white px-3 py-1 font-mono text-[9px] font-semibold tracking-[0.08em] whitespace-nowrap text-violet-700 uppercase shadow-sm dark:border-violet-800 dark:text-violet-400">
         Side by side
       </div>
     </div>
@@ -110,26 +114,43 @@ function ProfileCompareVisual() {
 
 function ProfileRoastVisual() {
   return (
-    <div className="w-full rotate-[1.5deg] rounded-2xl border border-orange-200 bg-white p-4 shadow-[0_16px_36px_oklch(0.2_0.02_286/0.12)]">
+    <div className="dark:bg-card w-full rotate-[1.5deg] rounded-2xl border border-orange-200 bg-white p-4 shadow-[0_16px_36px_oklch(0.2_0.02_286/0.12)] dark:border-orange-800">
       <div className="flex items-center justify-between">
-        <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-50 px-2.5 py-1 font-mono text-[9px] font-bold tracking-[0.08em] text-orange-700 uppercase">
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-orange-50 px-2.5 py-1 font-mono text-[9px] font-bold tracking-[0.08em] text-orange-700 uppercase dark:bg-orange-950/40 dark:text-orange-400">
           <Flame className="h-3 w-3" /> Mild roast
         </span>
-        <span className="text-[10px] font-semibold text-gray-400">
+        <span className="dark:text-muted-foreground text-[10px] font-semibold text-gray-400">
           AI review
         </span>
       </div>
-      <p className="mt-4 text-[17px] leading-snug font-bold tracking-[-0.02em] text-gray-900">
+      <p className="dark:text-foreground mt-4 text-[17px] leading-snug font-bold tracking-[-0.02em] text-gray-900">
         “Strong profile. Your third photo is doing unpaid overtime.”
       </p>
       <div className="mt-4 grid grid-cols-3 gap-2">
         {[
-          ["Photo 1", "Keep", "text-emerald-700 bg-emerald-50"],
-          ["Photo 2", "Maybe", "text-amber-700 bg-amber-50"],
-          ["Photo 3", "Cut", "text-rose-700 bg-rose-50"],
+          [
+            "Photo 1",
+            "Keep",
+            "text-emerald-700 bg-emerald-50 dark:text-emerald-400 dark:bg-emerald-950/40",
+          ],
+          [
+            "Photo 2",
+            "Maybe",
+            "text-amber-700 bg-amber-50 dark:text-amber-400 dark:bg-amber-950/40",
+          ],
+          [
+            "Photo 3",
+            "Cut",
+            "text-rose-700 bg-rose-50 dark:text-rose-400 dark:bg-rose-950/40",
+          ],
         ].map(([label, verdict, classes]) => (
-          <div key={label} className="rounded-xl border border-gray-100 p-2">
-            <div className="text-[9px] font-medium text-gray-400">{label}</div>
+          <div
+            key={label}
+            className="dark:border-border rounded-xl border border-gray-100 p-2"
+          >
+            <div className="dark:text-muted-foreground text-[9px] font-medium text-gray-400">
+              {label}
+            </div>
             <div
               className={cn(
                 "mt-1 inline-flex rounded-full px-1.5 py-0.5 text-[9px] font-bold",
@@ -147,23 +168,23 @@ function ProfileRoastVisual() {
 
 function PromptAssistantVisual() {
   return (
-    <div className="w-full rounded-2xl border border-amber-200 bg-white p-4 shadow-[0_16px_36px_oklch(0.2_0.02_286/0.1)]">
-      <div className="flex items-center gap-2 font-mono text-[9px] font-bold tracking-[0.08em] text-amber-700 uppercase">
+    <div className="dark:bg-card w-full rounded-2xl border border-amber-200 bg-white p-4 shadow-[0_16px_36px_oklch(0.2_0.02_286/0.1)] dark:border-amber-800">
+      <div className="flex items-center gap-2 font-mono text-[9px] font-bold tracking-[0.08em] text-amber-700 uppercase dark:text-amber-400">
         <Sparkles className="h-3.5 w-3.5" /> Suggested for you
       </div>
-      <div className="mt-3 rounded-xl bg-amber-50/80 p-3">
-        <p className="text-[10px] font-semibold text-amber-800">
+      <div className="mt-3 rounded-xl bg-amber-50/80 p-3 dark:bg-amber-950/80">
+        <p className="text-[10px] font-semibold text-amber-800 dark:text-amber-200">
           Together we could…
         </p>
-        <p className="mt-1.5 text-sm leading-snug font-semibold text-gray-900">
+        <p className="dark:text-foreground mt-1.5 text-sm leading-snug font-semibold text-gray-900">
           Find Oslo’s best cinnamon bun and defend our ranking in public.
         </p>
       </div>
       <div className="mt-3 flex items-center justify-between">
-        <span className="text-[10px] text-gray-400">
+        <span className="dark:text-muted-foreground text-[10px] text-gray-400">
           Specific · playful · easy reply
         </span>
-        <span className="rounded-lg border border-gray-200 px-2 py-1 text-[9px] font-semibold text-gray-600">
+        <span className="dark:border-border dark:text-muted-foreground rounded-lg border border-gray-200 px-2 py-1 text-[9px] font-semibold text-gray-600">
           Try another
         </span>
       </div>
@@ -181,7 +202,7 @@ function DirectoryVisual() {
   ];
 
   return (
-    <div className="relative min-h-52 w-full overflow-hidden rounded-2xl border border-sky-200 bg-sky-50 [background-image:linear-gradient(to_right,oklch(0.88_0.03_240)_1px,transparent_1px),linear-gradient(to_bottom,oklch(0.88_0.03_240)_1px,transparent_1px)] [background-size:32px_32px]">
+    <div className="relative min-h-52 w-full overflow-hidden rounded-2xl border border-sky-200 bg-sky-50 [background-image:linear-gradient(to_right,oklch(0.88_0.03_240)_1px,transparent_1px),linear-gradient(to_bottom,oklch(0.88_0.03_240)_1px,transparent_1px)] [background-size:32px_32px] dark:border-sky-800 dark:bg-sky-950/40">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_50%,transparent_20%,oklch(0.97_0.02_240/0.85)_75%)]" />
       {dots.map(([left, top], index) => (
         <span
@@ -192,14 +213,16 @@ function DirectoryVisual() {
           {index + 1}
         </span>
       ))}
-      <div className="absolute right-3 bottom-3 left-3 flex items-center justify-between rounded-xl border border-sky-100 bg-white/95 px-3 py-2 shadow-sm backdrop-blur-sm">
+      <div className="dark:bg-card/95 absolute right-3 bottom-3 left-3 flex items-center justify-between rounded-xl border border-sky-100 bg-white/95 px-3 py-2 shadow-sm backdrop-blur-sm dark:border-sky-800">
         <div>
-          <div className="text-[9px] font-medium text-gray-400">
+          <div className="dark:text-muted-foreground text-[9px] font-medium text-gray-400">
             Recent profiles
           </div>
-          <div className="text-sm font-bold text-gray-900">Tinder + Hinge</div>
+          <div className="dark:text-foreground text-sm font-bold text-gray-900">
+            Tinder + Hinge
+          </div>
         </div>
-        <Globe2 className="h-5 w-5 text-sky-600" />
+        <Globe2 className="h-5 w-5 text-sky-600 dark:text-sky-400" />
       </div>
     </div>
   );
@@ -215,8 +238,9 @@ const PRODUCT_CONFIG: Record<BlogProductKey, ProductCardConfig> = {
     buttonHref: "/upload",
     badge: "Free · no account required",
     icon: BarChart3,
-    accent: "bg-rose-50/70",
-    iconClassName: "bg-rose-100 text-rose-700",
+    accent: "bg-rose-50/70 dark:bg-rose-950/70",
+    iconClassName:
+      "bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400",
     visual: <InsightsVisual />,
   },
   "profile-compare": {
@@ -228,8 +252,9 @@ const PRODUCT_CONFIG: Record<BlogProductKey, ProductCardConfig> = {
     buttonHref: "/try",
     badge: "Free · no signup",
     icon: LayoutGrid,
-    accent: "bg-violet-50/70",
-    iconClassName: "bg-violet-100 text-violet-700",
+    accent: "bg-violet-50/70 dark:bg-violet-950/70",
+    iconClassName:
+      "bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-400",
     visual: <ProfileCompareVisual />,
   },
   "profile-roast": {
@@ -241,8 +266,9 @@ const PRODUCT_CONFIG: Record<BlogProductKey, ProductCardConfig> = {
     buttonHref: "/try",
     badge: "AI feature · PLUS",
     icon: Flame,
-    accent: "bg-orange-50/70",
-    iconClassName: "bg-orange-100 text-orange-700",
+    accent: "bg-orange-50/70 dark:bg-orange-950/70",
+    iconClassName:
+      "bg-orange-100 text-orange-700 dark:bg-orange-950/40 dark:text-orange-400",
     visual: <ProfileRoastVisual />,
   },
   "prompt-assistant": {
@@ -254,8 +280,9 @@ const PRODUCT_CONFIG: Record<BlogProductKey, ProductCardConfig> = {
     buttonHref: "/try",
     badge: "AI feature · PLUS",
     icon: Sparkles,
-    accent: "bg-amber-50/70",
-    iconClassName: "bg-amber-100 text-amber-700",
+    accent: "bg-amber-50/70 dark:bg-amber-950/70",
+    iconClassName:
+      "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400",
     visual: <PromptAssistantVisual />,
   },
   directory: {
@@ -267,8 +294,9 @@ const PRODUCT_CONFIG: Record<BlogProductKey, ProductCardConfig> = {
     buttonHref: "/directory",
     badge: "Explore real profiles",
     icon: Globe2,
-    accent: "bg-sky-50/70",
-    iconClassName: "bg-sky-100 text-sky-700",
+    accent: "bg-sky-50/70 dark:bg-sky-950/70",
+    iconClassName:
+      "bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-400",
     visual: <DirectoryVisual />,
   },
 };
@@ -303,14 +331,14 @@ export function ProductCard({
   return (
     <aside
       className={cn(
-        "not-prose my-9 overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-[0_1px_2px_oklch(0.2_0.02_286/0.04),0_18px_50px_oklch(0.2_0.02_286/0.08)]",
+        "not-prose dark:border-border dark:bg-card my-9 overflow-hidden rounded-3xl border border-gray-200 bg-white shadow-[0_1px_2px_oklch(0.2_0.02_286/0.04),0_18px_50px_oklch(0.2_0.02_286/0.08)]",
         className,
       )}
       data-blog-product={product}
     >
       <div className="grid lg:grid-cols-[minmax(0,1.08fr)_minmax(260px,0.92fr)]">
         <div className="flex flex-col justify-center p-6 sm:p-8 lg:p-9">
-          <div className="flex items-center gap-2.5 font-mono text-[11px] font-semibold tracking-[0.1em] text-gray-500 uppercase">
+          <div className="dark:text-muted-foreground flex items-center gap-2.5 font-mono text-[11px] font-semibold tracking-[0.1em] text-gray-500 uppercase">
             <span
               className={cn(
                 "grid h-8 w-8 place-items-center rounded-[10px]",
@@ -322,10 +350,10 @@ export function ProductCard({
             {config.eyebrow}
           </div>
 
-          <h2 className="mt-5 text-[clamp(26px,4vw,34px)] leading-[1.08] font-bold tracking-[-0.035em] text-balance text-gray-950">
+          <h2 className="dark:text-foreground mt-5 text-[clamp(26px,4vw,34px)] leading-[1.08] font-bold tracking-[-0.035em] text-balance text-gray-950">
             {title ?? config.title}
           </h2>
-          <p className="mt-3.5 max-w-xl text-[16px] leading-7 text-gray-600">
+          <p className="dark:text-muted-foreground mt-3.5 max-w-xl text-[16px] leading-7 text-gray-600">
             {description ?? config.description}
           </p>
 
@@ -341,7 +369,7 @@ export function ProductCard({
               {buttonText ?? config.buttonText}
               <ArrowRight className="h-4 w-4" />
             </Link>
-            <span className="text-[12.5px] font-medium text-gray-500">
+            <span className="dark:text-muted-foreground text-[12.5px] font-medium text-gray-500">
               {badge ?? config.badge}
             </span>
           </div>
@@ -349,11 +377,11 @@ export function ProductCard({
 
         <div
           className={cn(
-            "relative flex min-h-64 items-center justify-center overflow-hidden border-t border-gray-200 p-6 sm:p-8 lg:border-t-0 lg:border-l",
+            "dark:border-border relative flex min-h-64 items-center justify-center overflow-hidden border-t border-gray-200 p-6 sm:p-8 lg:border-t-0 lg:border-l",
             config.accent,
           )}
         >
-          <div className="pointer-events-none absolute -top-16 -right-16 h-44 w-44 rounded-full bg-white/80 blur-3xl" />
+          <div className="dark:bg-card/80 pointer-events-none absolute -top-16 -right-16 h-44 w-44 rounded-full bg-white/80 blur-3xl" />
           <div className="relative w-full max-w-[310px]">{config.visual}</div>
         </div>
       </div>

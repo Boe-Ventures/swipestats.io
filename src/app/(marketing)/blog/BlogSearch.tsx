@@ -84,19 +84,19 @@ export function BlogSearch({ allPosts, resultCount }: BlogSearchProps) {
       {/* Search Input */}
       <div className="relative">
         <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4">
-          <Search className="size-5 text-gray-400" />
+          <Search className="dark:text-muted-foreground size-5 text-gray-400" />
         </div>
         <input
           type="text"
           placeholder="Search posts by title, description, category, tags, or author..."
           value={searchQuery}
           onChange={(e) => handleSearchChange(e.target.value)}
-          className="block w-full rounded-lg border border-gray-300 bg-white py-3 pr-12 pl-11 text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 focus:outline-none sm:text-sm"
+          className="dark:border-border dark:bg-card dark:text-foreground dark:placeholder:text-muted-foreground block w-full rounded-lg border border-gray-300 bg-white py-3 pr-12 pl-11 text-gray-900 shadow-sm placeholder:text-gray-400 focus:border-pink-500 focus:ring-2 focus:ring-pink-500/20 focus:outline-none sm:text-sm"
         />
         {searchQuery && (
           <button
             onClick={() => handleSearchChange("")}
-            className="absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 transition-colors hover:text-gray-600"
+            className="dark:text-muted-foreground dark:hover:text-muted-foreground absolute inset-y-0 right-0 flex items-center pr-4 text-gray-400 transition-colors hover:text-gray-600"
             aria-label="Clear search"
           >
             <X className="size-5" />
@@ -107,7 +107,9 @@ export function BlogSearch({ allPosts, resultCount }: BlogSearchProps) {
       {/* Category Filters - Flat Layout */}
       {allCategories.length > 0 && (
         <div className="flex flex-wrap items-center gap-2">
-          <span className="text-sm font-medium text-gray-700">Category:</span>
+          <span className="dark:text-muted-foreground text-sm font-medium text-gray-700">
+            Category:
+          </span>
           {allCategories.map((category) => {
             const isActive =
               selectedCategory?.toLowerCase() === category.toLowerCase();
@@ -118,7 +120,7 @@ export function BlogSearch({ allPosts, resultCount }: BlogSearchProps) {
                 className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-all ${
                   isActive
                     ? "bg-linear-to-r from-pink-600 to-rose-600 text-white shadow-sm"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    : "dark:bg-muted dark:text-muted-foreground dark:hover:bg-accent bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
                 {category}
@@ -128,7 +130,7 @@ export function BlogSearch({ allPosts, resultCount }: BlogSearchProps) {
           {selectedCategory && (
             <button
               onClick={() => handleCategoryClick(selectedCategory)}
-              className="text-sm font-medium text-pink-600 transition-colors hover:text-pink-700"
+              className="text-sm font-medium text-pink-600 transition-colors hover:text-pink-700 dark:text-pink-400 dark:hover:text-pink-400"
             >
               Clear
             </button>
@@ -139,7 +141,9 @@ export function BlogSearch({ allPosts, resultCount }: BlogSearchProps) {
       {/* Active Tag Filter */}
       {selectedTag && (
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-700">Tag:</span>
+          <span className="dark:text-muted-foreground text-sm font-medium text-gray-700">
+            Tag:
+          </span>
           <button
             onClick={() => void setSelectedTag(null)}
             className="inline-flex items-center gap-1 rounded-full bg-gray-900 px-3 py-1 text-sm font-medium text-white transition-colors hover:bg-gray-700"
@@ -151,17 +155,22 @@ export function BlogSearch({ allPosts, resultCount }: BlogSearchProps) {
       )}
 
       {/* Results Info & Clear Button - Flat Layout */}
-      <div className="flex items-center justify-between border-t border-gray-200 pt-4">
-        <p className="text-sm text-gray-600">
+      <div className="dark:border-border flex items-center justify-between border-t border-gray-200 pt-4">
+        <p className="dark:text-muted-foreground text-sm text-gray-600">
           {isPending ? (
             <span className="opacity-50">Searching...</span>
           ) : (
             <>
               Showing{" "}
-              <span className="font-semibold text-gray-900">{resultCount}</span>{" "}
+              <span className="dark:text-foreground font-semibold text-gray-900">
+                {resultCount}
+              </span>{" "}
               {resultCount === 1 ? "post" : "posts"}
               {hasActiveFilters && (
-                <span className="text-gray-500"> (filtered)</span>
+                <span className="dark:text-muted-foreground text-gray-500">
+                  {" "}
+                  (filtered)
+                </span>
               )}
             </>
           )}
@@ -169,7 +178,7 @@ export function BlogSearch({ allPosts, resultCount }: BlogSearchProps) {
         {hasActiveFilters && (
           <button
             onClick={handleClearAll}
-            className="text-sm font-medium text-pink-600 transition-colors hover:text-pink-700"
+            className="text-sm font-medium text-pink-600 transition-colors hover:text-pink-700 dark:text-pink-400 dark:hover:text-pink-400"
           >
             Clear all filters
           </button>

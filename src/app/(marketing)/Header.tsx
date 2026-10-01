@@ -82,7 +82,7 @@ export default function Header({
             {/* <OldSwipestatsLogo className="h-8 w-auto" /> */}
 
             {/* White flame in red container */}
-            <div className="bg-primary text-primary-foreground flex size-7 items-center justify-center rounded-md sm:size-8">
+            <div className="bg-primary text-primary-foreground flex size-7 items-center justify-center rounded-md sm:size-8 dark:bg-rose-600 dark:text-white">
               <NewOldLogo className="size-5 sm:size-6" />
             </div>
 

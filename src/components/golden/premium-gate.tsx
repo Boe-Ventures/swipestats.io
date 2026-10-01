@@ -26,7 +26,7 @@ export function LockedValue({
   return (
     <span
       className={cn(
-        "pointer-events-none select-none opacity-70 blur-[5px]",
+        "pointer-events-none opacity-70 blur-[5px] select-none",
         className,
       )}
       aria-hidden
@@ -54,7 +54,7 @@ export function UpsellCard({
   return (
     <div
       className={cn(
-        "flex items-center gap-3.5 rounded-2xl border border-rose-600/25 bg-rose-50 p-[18px] shadow-xs",
+        "flex items-center gap-3.5 rounded-2xl border border-rose-600/25 bg-rose-50 p-[18px] shadow-xs dark:bg-rose-950/40",
         className,
       )}
     >
@@ -64,11 +64,11 @@ export function UpsellCard({
         </span>
       )}
       <div className="min-w-0 flex-1">
-        <div className="text-[15px] font-bold tracking-[-0.01em] text-gray-900">
+        <div className="dark:text-foreground text-[15px] font-bold tracking-[-0.01em] text-gray-900">
           {title}
         </div>
         {description && (
-          <div className="mt-0.5 text-[13.5px] leading-[1.5] text-gray-600">
+          <div className="dark:text-muted-foreground mt-0.5 text-[13.5px] leading-[1.5] text-gray-600">
             {description}
           </div>
         )}

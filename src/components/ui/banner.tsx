@@ -44,7 +44,7 @@ export function Banner({
   return (
     <div
       className={cn(
-        "relative isolate z-40 flex items-start gap-3 overflow-hidden bg-gray-50 px-4 py-3 sm:items-center sm:gap-x-6 sm:px-3.5 sm:py-2.5 sm:before:flex-1",
+        "dark:bg-background relative isolate z-40 flex items-start gap-3 overflow-hidden bg-gray-50 px-4 py-3 sm:items-center sm:gap-x-6 sm:px-3.5 sm:py-2.5 sm:before:flex-1",
         compactMobile && "items-center gap-1 py-2.5",
       )}
     >
@@ -80,7 +80,7 @@ export function Banner({
       >
         <p
           className={cn(
-            "min-w-0 text-[13px]/5 text-gray-900 sm:text-sm/6",
+            "dark:text-foreground min-w-0 text-[13px]/5 text-gray-900 sm:text-sm/6",
             compactMobile && "w-full sm:w-auto",
           )}
         >
@@ -105,14 +105,14 @@ export function Banner({
             <circle r={1} cx={1} cy={1} />
           </svg>
           {compactMobile && (
-            <span className="block truncate text-gray-600 sm:hidden">
+            <span className="dark:text-muted-foreground block truncate text-gray-600 sm:hidden">
               {mobileMessage ?? message}
               {ctaText && ctaHref && (
                 <>
                   <span aria-hidden="true"> · </span>
                   <Link
                     href={ctaHref}
-                    className="font-semibold text-rose-600 hover:text-rose-700"
+                    className="font-semibold text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-400"
                   >
                     {ctaText}
                   </Link>
@@ -122,7 +122,7 @@ export function Banner({
           )}
           <span
             className={cn(
-              "mt-0.5 block text-gray-700 sm:mt-0 sm:inline sm:text-gray-900",
+              "dark:text-muted-foreground dark:sm:text-foreground mt-0.5 block text-gray-700 sm:mt-0 sm:inline sm:text-gray-900",
               compactMobile && "hidden sm:inline",
             )}
           >
@@ -168,7 +168,10 @@ export function Banner({
             )}
           >
             <span className="sr-only">Dismiss</span>
-            <XMarkIcon aria-hidden="true" className="size-5 text-gray-900" />
+            <XMarkIcon
+              aria-hidden="true"
+              className="dark:text-foreground size-5 text-gray-900"
+            />
           </button>
         </div>
       )}

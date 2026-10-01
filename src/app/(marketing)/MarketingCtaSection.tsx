@@ -16,7 +16,7 @@ export function MarketingCtaSection() {
         />
       </div> */}
       <div className="mx-auto max-w-2xl pt-32 text-center">
-        <h2 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+        <h2 className="dark:text-foreground text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
           Ready to explore?
           <br />
           Upload your data today
@@ -34,7 +34,7 @@ export function MarketingCtaSection() {
           </Link>
           <Link
             href="#how-it-works"
-            className="text-sm leading-6 font-semibold text-gray-900"
+            className="dark:text-foreground text-sm leading-6 font-semibold text-gray-900"
           >
             How to request your data <span aria-hidden="true">→</span>
           </Link>

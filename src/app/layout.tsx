@@ -7,7 +7,7 @@ import { NuqsAdapter } from "nuqs/adapters/next/app";
 import { env } from "@/env";
 
 import { cn } from "@/components/ui/lib/utils";
-import { ThemeProvider } from "@/components/ui/theme";
+import { ThemeProvider, themeDetectorScript } from "@/components/ui/theme";
 import { Toaster } from "@/components/ui/toast";
 
 import { TRPCReactProvider } from "@/trpc/react";
@@ -74,17 +74,20 @@ export default function RootLayout({
       suppressHydrationWarning
       className={cn(inter.variable, geistMono.variable)}
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeDetectorScript }} />
+      </head>
       <body className="bg-background text-foreground min-h-screen font-sans antialiased">
         <TRPCReactProvider>
           <ThemeProvider>
             <AnalyticsProvider>
               <UpgradeProvider>
                 <NuqsAdapter>{children}</NuqsAdapter>
+                <Toaster />
               </UpgradeProvider>
             </AnalyticsProvider>
           </ThemeProvider>
         </TRPCReactProvider>
-        <Toaster />
         <VercelAnalytics />
         <SpeedInsights />
       </body>

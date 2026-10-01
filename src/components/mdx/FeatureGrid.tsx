@@ -65,11 +65,11 @@ export function FeatureGrid({
         {features.map((feature, index) => (
           <div
             key={index}
-            className="group relative overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:shadow-md"
+            className="group dark:border-border dark:bg-card relative overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:shadow-md"
           >
             {/* Image section */}
             {feature.image && (
-              <div className="relative aspect-video w-full overflow-hidden bg-slate-50">
+              <div className="dark:bg-background relative aspect-video w-full overflow-hidden bg-slate-50">
                 <Image
                   src={feature.image}
                   alt={feature.imageAlt || feature.title}
@@ -81,18 +81,20 @@ export function FeatureGrid({
             {/* Content section */}
             <div className="p-6">
               {feature.icon && iconMap[feature.icon] && (
-                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-rose-100">
+                <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-rose-100 dark:bg-rose-950/40">
                   {(() => {
                     const IconComponent = iconMap[feature.icon];
-                    // @ts-expect-error - this is ok
-                    return <IconComponent className="h-6 w-6 text-rose-600" />;
+                    if (!IconComponent) return null;
+                    return (
+                      <IconComponent className="h-6 w-6 text-rose-600 dark:text-rose-400" />
+                    );
                   })()}
                 </div>
               )}
-              <h3 className="mb-2 text-xl font-semibold text-slate-900">
+              <h3 className="dark:text-foreground mb-2 text-xl font-semibold text-slate-900">
                 {feature.title}
               </h3>
-              <p className="text-sm leading-relaxed text-slate-600">
+              <p className="dark:text-muted-foreground text-sm leading-relaxed text-slate-600">
                 {feature.description}
               </p>
             </div>
@@ -109,16 +111,21 @@ export function FeatureGrid({
         const IconComponent = feature.icon ? iconMap[feature.icon] : null;
 
         return (
-          <div key={index} className="rounded-lg border border-gray-200 p-6">
+          <div
+            key={index}
+            className="dark:border-border rounded-lg border border-gray-200 p-6"
+          >
             {IconComponent && (
-              <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-rose-100">
-                <IconComponent className="h-6 w-6 text-rose-600" />
+              <div className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-lg bg-rose-100 dark:bg-rose-950/40">
+                <IconComponent className="h-6 w-6 text-rose-600 dark:text-rose-400" />
               </div>
             )}
-            <h3 className="mb-2 text-lg font-semibold text-gray-900">
+            <h3 className="dark:text-foreground mb-2 text-lg font-semibold text-gray-900">
               {feature.title}
             </h3>
-            <p className="text-gray-600">{feature.description}</p>
+            <p className="dark:text-muted-foreground text-gray-600">
+              {feature.description}
+            </p>
           </div>
         );
       })}

@@ -51,7 +51,7 @@ export function InsightsUpgradeCard() {
               </p>
             </div>
             <div className="mt-2 flex items-center gap-2 rounded-lg bg-amber-100 px-4 py-2 dark:bg-amber-950/50">
-              <Crown className="h-4 w-4 text-amber-600" />
+              <Crown className="h-4 w-4 text-amber-600 dark:text-amber-400" />
               <span className="text-sm font-semibold text-amber-900 dark:text-amber-100">
                 Top Tier Unlocked
               </span>
@@ -90,9 +90,9 @@ export function InsightsUpgradeCard() {
             <div className="flex-1">
               <div className="mb-4 flex items-center gap-3">
                 {displayTier === "PLUS" ? (
-                  <Sparkles className="h-6 w-6 text-pink-600" />
+                  <Sparkles className="h-6 w-6 text-pink-600 dark:text-pink-400" />
                 ) : (
-                  <Crown className="h-6 w-6 text-amber-600" />
+                  <Crown className="h-6 w-6 text-amber-600 dark:text-amber-400" />
                 )}
                 <h3 className="text-2xl font-bold tracking-tight">
                   SwipeStats {displayTier === "PLUS" ? "Plus" : "Elite"}
@@ -119,8 +119,8 @@ export function InsightsUpgradeCard() {
                       className={cn(
                         "mt-0.5 h-5 w-5 flex-shrink-0",
                         displayTier === "PLUS"
-                          ? "text-pink-600"
-                          : "text-amber-600",
+                          ? "text-pink-600 dark:text-pink-400"
+                          : "text-amber-600 dark:text-amber-400",
                       )}
                     />
                     <span className="text-sm">{feature}</span>
@@ -169,7 +169,10 @@ export function InsightsUpgradeCard() {
                     ${selectedPeriod === "monthly" ? 15 : pricing.lifetime}
                   </span>
                   <span className="text-4xl font-bold tracking-tight">
-                    ${selectedPeriod === "monthly" ? pricing.monthly : pricing.lifetimeLaunchPrice}
+                    $
+                    {selectedPeriod === "monthly"
+                      ? pricing.monthly
+                      : pricing.lifetimeLaunchPrice}
                   </span>
                   <span className="text-muted-foreground text-sm font-semibold">
                     {selectedPeriod === "monthly" ? "/mo" : "USD"}

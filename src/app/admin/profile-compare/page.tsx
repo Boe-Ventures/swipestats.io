@@ -73,25 +73,27 @@ export default function AdminProfileComparePage() {
       {/* Header */}
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Profile Compare</h1>
-          <p className="mt-1 text-sm text-gray-600">
+          <h1 className="dark:text-foreground text-3xl font-bold text-gray-900">
+            Profile Compare
+          </h1>
+          <p className="dark:text-muted-foreground mt-1 text-sm text-gray-600">
             Inspect every profile comparison people have built and shared.
           </p>
           {stats && (
-            <p className="mt-2 text-sm text-gray-500">
-              <span className="font-medium text-gray-700">
+            <p className="dark:text-muted-foreground mt-2 text-sm text-gray-500">
+              <span className="dark:text-muted-foreground font-medium text-gray-700">
                 {stats.totalComparisons}
               </span>{" "}
               comparisons ·{" "}
-              <span className="font-medium text-gray-700">
+              <span className="dark:text-muted-foreground font-medium text-gray-700">
                 {stats.publicComparisons}
               </span>{" "}
               shared publicly ·{" "}
-              <span className="font-medium text-gray-700">
+              <span className="dark:text-muted-foreground font-medium text-gray-700">
                 {stats.totalFeedback}
               </span>{" "}
               feedback ·{" "}
-              <span className="font-medium text-gray-700">
+              <span className="dark:text-muted-foreground font-medium text-gray-700">
                 {stats.totalRoasts}
               </span>{" "}
               roasts
@@ -100,7 +102,7 @@ export default function AdminProfileComparePage() {
         </div>
 
         <div className="flex items-center gap-3">
-          <Filter className="h-4 w-4 text-gray-500" />
+          <Filter className="dark:text-muted-foreground h-4 w-4 text-gray-500" />
           <Select
             value={visibility}
             onValueChange={(nextVisibility) => {
@@ -141,7 +143,7 @@ export default function AdminProfileComparePage() {
       {/* Loading */}
       {isLoading && (
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+          <Loader2 className="dark:text-muted-foreground h-8 w-8 animate-spin text-gray-400" />
         </div>
       )}
 
@@ -155,12 +157,12 @@ export default function AdminProfileComparePage() {
                 <Card key={c.id} className="transition-shadow hover:shadow-md">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-4">
-                      <span className="w-6 shrink-0 text-sm font-medium text-gray-400">
+                      <span className="dark:text-muted-foreground w-6 shrink-0 text-sm font-medium text-gray-400">
                         #{globalIndex + 1}
                       </span>
 
                       {/* Thumbnail */}
-                      <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-md border bg-gray-100">
+                      <div className="dark:bg-muted relative h-16 w-16 shrink-0 overflow-hidden rounded-md border bg-gray-100">
                         {c.thumbnailUrl ? (
                           <Image
                             src={c.thumbnailUrl}
@@ -181,7 +183,7 @@ export default function AdminProfileComparePage() {
                         <div className="flex flex-wrap items-center gap-2">
                           <Link
                             href={`/admin/profile-compare/${c.id}`}
-                            className="truncate font-semibold text-gray-900 hover:underline"
+                            className="dark:text-foreground truncate font-semibold text-gray-900 hover:underline"
                           >
                             {c.name ?? c.profileName ?? "Untitled comparison"}
                           </Link>
@@ -200,11 +202,11 @@ export default function AdminProfileComparePage() {
                             </Badge>
                           ))}
                         </div>
-                        <p className="mt-0.5 truncate text-xs text-gray-500">
+                        <p className="dark:text-muted-foreground mt-0.5 truncate text-xs text-gray-500">
                           {ownerLabel(c.user)} · updated{" "}
                           {formatDate(c.updatedAt)}
                         </p>
-                        <div className="mt-1 flex items-center gap-4 text-xs text-gray-500">
+                        <div className="dark:text-muted-foreground mt-1 flex items-center gap-4 text-xs text-gray-500">
                           <span className="flex items-center gap-1">
                             <Columns3 className="h-3 w-3" />
                             {c.columnCount}
@@ -252,7 +254,7 @@ export default function AdminProfileComparePage() {
                     {c.photos.length > 0 && (
                       <Accordion>
                         <AccordionItem value="photos" className="border-b-0">
-                          <AccordionTrigger className="py-2 text-xs font-normal text-gray-500 hover:no-underline">
+                          <AccordionTrigger className="dark:text-muted-foreground py-2 text-xs font-normal text-gray-500 hover:no-underline">
                             Show all {c.photos.length} photo
                             {c.photos.length === 1 ? "" : "s"}
                           </AccordionTrigger>
@@ -261,7 +263,7 @@ export default function AdminProfileComparePage() {
                               {c.photos.map((p, i) => (
                                 <div
                                   key={i}
-                                  className="relative h-11 w-11 overflow-hidden rounded border bg-gray-100"
+                                  className="dark:bg-muted relative h-11 w-11 overflow-hidden rounded border bg-gray-100"
                                   title={p.caption ?? undefined}
                                 >
                                   <Image
@@ -286,7 +288,7 @@ export default function AdminProfileComparePage() {
 
           {/* Pagination */}
           <div className="flex items-center justify-between border-t pt-4">
-            <p className="text-sm text-gray-600">
+            <p className="dark:text-muted-foreground text-sm text-gray-600">
               Page {data.page} of {data.totalPages} ({data.totalCount} total)
             </p>
             <div className="flex gap-2">
@@ -317,7 +319,7 @@ export default function AdminProfileComparePage() {
       {!isLoading && data?.comparisons.length === 0 && (
         <Card className="py-12">
           <CardContent className="flex flex-col items-center justify-center text-center">
-            <Columns3 className="mb-4 h-12 w-12 text-gray-400" />
+            <Columns3 className="dark:text-muted-foreground mb-4 h-12 w-12 text-gray-400" />
             <h3 className="text-lg font-semibold">No comparisons</h3>
             <CardDescription className="mt-1">
               No profile comparisons match the selected filter.

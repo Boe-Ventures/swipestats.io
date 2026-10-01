@@ -1,3 +1,5 @@
+import { useId, useLayoutEffect, useRef, useState } from "react";
+
 import {
   calculateStageWidth,
   createTransitionPath,
@@ -48,6 +50,12 @@ export function TinderInsightsFunnelSVG({
   variant,
   theme,
 }: TinderInsightsFunnelSVGProps) {
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [textWidths, setTextWidths] = useState<Record<string, number>>({});
+  const instanceId = useId().replace(/:/g, "");
+  const backgroundId = `funnel-background-${instanceId}`;
+  const dropoutId = `funnel-dropout-${instanceId}`;
+  const shadowId = `funnel-shadow-${instanceId}`;
   // Get theme-appropriate colors with variant
   const colors = getFunnelColors(theme, variant);
 
@@ -68,6 +76,41 @@ export function TinderInsightsFunnelSVG({
     0,
   );
   const maxValue = combinedSwipesTotal || 1; // Avoid division by zero
+
+  useLayoutEffect(() => {
+    let active = true;
+    const measure = () => {
+      if (!active || !svgRef.current) return;
+      const widths: Record<string, number> = {};
+      svgRef.current
+        .querySelectorAll<SVGTextElement>("[data-bubble-text]")
+        .forEach((text) => {
+          widths[text.dataset.bubbleText!] = text.getComputedTextLength();
+        });
+      setTextWidths((previous) =>
+        Object.keys(widths).length === Object.keys(previous).length &&
+        Object.entries(widths).every(
+          ([id, width]) => Math.abs(width - (previous[id] ?? 0)) < 0.5,
+        )
+          ? previous
+          : widths,
+      );
+    };
+    measure();
+    void document.fonts.ready.then(measure);
+    return () => {
+      active = false;
+    };
+  }, [
+    combinedSwipesTotal,
+    globalMeta.swipeLikesTotal,
+    globalMeta.matchesTotal,
+    globalMeta.conversationsWithMessages,
+    hasCustomData,
+    customData?.dateAttended,
+    customData?.sleptWithEventually,
+    customData?.relationshipsStarted,
+  ]);
 
   // Calculate viewBox dimensions based on content
   // For shareable variant: include space for title (225) and footer (1970)
@@ -289,13 +332,13 @@ export function TinderInsightsFunnelSVG({
   return (
     <div className="relative w-full overflow-hidden rounded-lg">
       <svg
+        ref={svgRef}
         viewBox={`0 ${viewBoxStartY} ${viewBoxWidth} ${viewBoxHeight}`}
         className="h-auto w-full"
         role="img"
         aria-label="Observed Tinder activity and reported outcomes"
-        style={{ maxHeight: "1200px" }}
+        style={{ maxHeight: "1200px", fontVariantNumeric: "tabular-nums" }}
       >
-        <title>Your Tinder Insights</title>
         <desc>
           A funnel visualization of exported Tinder activity from{" "}
           {combinedSwipesTotal.toLocaleString()} total swipes through match and
@@ -305,50 +348,35 @@ export function TinderInsightsFunnelSVG({
 
         <defs>
           {/* Background gradient - SwipeStats subtle rose */}
-          <linearGradient id="bgGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+          <linearGradient id={backgroundId} x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor={colors.bgGradientStart} />
             <stop offset="100%" stopColor={colors.bgGradientEnd} />
           </linearGradient>
 
           {/* Rose gradient for dropout paths */}
-          <linearGradient
-            id="dropoutGradient"
-            x1="0%"
-            y1="0%"
-            x2="0%"
-            y2="100%"
-          >
+          <linearGradient id={dropoutId} x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="30%" stopColor={colors.pathDropoutGradientStart} />
             <stop offset="100%" stopColor={colors.pathDropoutGradientEnd} />
           </linearGradient>
 
           {/* Drop shadow for bubbles */}
-          <filter
-            id="bubbleShadow"
-            x="-50%"
-            y="-50%"
-            width="200%"
-            height="200%"
-          >
-            <feGaussianBlur in="SourceAlpha" stdDeviation="4" />
-            <feOffset dx="0" dy="3" result="offsetblur" />
-            <feComponentTransfer>
-              <feFuncA type="linear" slope="0.4" />
-            </feComponentTransfer>
-            <feMerge>
-              <feMergeNode />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
+          <filter id={shadowId} x="-50%" y="-50%" width="200%" height="200%">
+            <feDropShadow
+              dx="0"
+              dy="2"
+              stdDeviation="3"
+              floodColor={colors.bubbleShadowColor}
+            />
           </filter>
         </defs>
 
         {/* Background */}
         <rect
           x="0"
-          y="0"
+          y={viewBoxStartY}
           width={viewBoxWidth}
           height={viewBoxHeight}
-          fill="url(#bgGradient)"
+          fill={`url(#${backgroundId})`}
         />
 
         {/* Title at top - only show in shareable variant */}
@@ -391,9 +419,7 @@ export function TinderInsightsFunnelSVG({
                   stageHalfWidth,
                   stageSpacing,
                 )}
-                fill={
-                  stage.isDropout ? "url(#dropoutGradient)" : colors.pathMain
-                }
+                fill={stage.isDropout ? `url(#${dropoutId})` : colors.pathMain}
                 opacity={
                   stage.isDropout
                     ? colors.pathDropoutOpacity
@@ -412,7 +438,20 @@ export function TinderInsightsFunnelSVG({
             maxValue,
             maxWidth,
           );
-          const bubble = calculateBubbleDimensions(stageWidth, isTopBubble);
+          const numberText = stage.value.toLocaleString();
+          const estimatedTextWidth =
+            (isTopBubble ? `You swiped ${numberText} times` : numberText)
+              .length * 19;
+          const bubble = calculateBubbleDimensions(
+            stageWidth,
+            isTopBubble,
+            textWidths[stage.id] ?? estimatedTextWidth,
+          );
+          const labelBelow =
+            stage.labelPosition === "left"
+              ? stage.x + bubble.x - 20 - stage.label.length * 17 < 24
+              : stage.labelPosition === "right" &&
+                stage.x + bubble.width / 2 + 20 + 110 > viewBoxWidth - 24;
 
           return (
             <g key={stage.id} transform={`translate(${stage.x},${stage.y})`}>
@@ -474,13 +513,14 @@ export function TinderInsightsFunnelSVG({
                     rx="28"
                     ry="28"
                     fill={colors.bubbleFill}
-                    filter="url(#bubbleShadow)"
+                    filter={`url(#${shadowId})`}
                   />
 
                   {/* Label text - positioned based on labelPosition */}
                   {stage.labelPosition === "above" ? (
                     // Top bubble - "You swiped X times" inside the bubble
                     <text
+                      data-bubble-text={stage.id}
                       x="0"
                       y="40"
                       fill={colors.textNumber}
@@ -496,6 +536,7 @@ export function TinderInsightsFunnelSVG({
                   ) : (
                     // Regular bubbles - just the number inside
                     <text
+                      data-bubble-text={stage.id}
                       x="0"
                       y="40"
                       fill={colors.textNumber}
@@ -508,7 +549,7 @@ export function TinderInsightsFunnelSVG({
                   )}
 
                   {/* Side labels for non-top bubbles */}
-                  {stage.labelPosition === "left" && (
+                  {stage.labelPosition === "left" && !labelBelow && (
                     <text
                       x={bubble.x - 20}
                       y="40"
@@ -521,7 +562,7 @@ export function TinderInsightsFunnelSVG({
                     </text>
                   )}
 
-                  {stage.labelPosition === "right" && (
+                  {stage.labelPosition === "right" && !labelBelow && (
                     <>
                       <text
                         x={bubble.x + bubble.width + 20}
@@ -546,7 +587,7 @@ export function TinderInsightsFunnelSVG({
                     </>
                   )}
 
-                  {stage.labelPosition === "below" && (
+                  {(stage.labelPosition === "below" || labelBelow) && (
                     <text
                       x="0"
                       y="90"

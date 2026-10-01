@@ -42,10 +42,12 @@ export function Funnel({
             }}
           >
             <span className="text-[13.5px]">{s.label}</span>
-            <span className="font-mono text-[15px] tabular-nums">{s.value}</span>
+            <span className="font-mono text-[15px] tabular-nums">
+              {s.value}
+            </span>
           </div>
           {s.drop && (
-            <div className="mt-1 pl-0.5 font-mono text-[11px] text-gray-400">
+            <div className="dark:text-muted-foreground mt-1 pl-0.5 font-mono text-[11px] text-gray-400">
               {s.drop}
             </div>
           )}
@@ -77,19 +79,22 @@ export function PercentileBars({
           key={r.name}
           className={cn(
             "grid grid-cols-[120px_1fr_auto] items-center gap-3.5 py-[9px]",
-            i > 0 && "border-t border-gray-200",
+            i > 0 && "dark:border-border border-t border-gray-200",
           )}
         >
-          <span className="text-[13.5px] font-semibold text-gray-800">
+          <span className="dark:text-foreground text-[13.5px] font-semibold text-gray-800">
             {r.name}
           </span>
-          <div className="h-2.5 overflow-hidden rounded-full bg-gray-100">
+          <div className="dark:bg-muted h-2.5 overflow-hidden rounded-full bg-gray-100">
             <div
               className="h-full rounded-full"
-              style={{ width: r.width, background: r.color ?? "var(--color-rose-600)" }}
+              style={{
+                width: r.width,
+                background: r.color ?? "var(--color-rose-600)",
+              }}
             />
           </div>
-          <span className="font-mono text-[13px] font-semibold tabular-nums text-gray-900">
+          <span className="dark:text-foreground font-mono text-[13px] font-semibold text-gray-900 tabular-nums">
             {r.value}
           </span>
         </div>

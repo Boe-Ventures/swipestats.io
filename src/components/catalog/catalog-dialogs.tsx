@@ -43,11 +43,13 @@ function Field({
   hint?: string;
 }) {
   return (
-    <label className="grid gap-1.5 text-sm font-medium text-gray-800">
+    <label className="dark:text-foreground grid gap-1.5 text-sm font-medium text-gray-800">
       {label}
       {children}
       {hint && (
-        <span className="text-xs font-normal text-gray-500">{hint}</span>
+        <span className="dark:text-muted-foreground text-xs font-normal text-gray-500">
+          {hint}
+        </span>
       )}
     </label>
   );
@@ -60,9 +62,12 @@ function formValue(data: FormData, name: string) {
 
 function CatalogPrivacyNotice() {
   return (
-    <p className="text-xs leading-5 text-gray-500">
+    <p className="dark:text-muted-foreground text-xs leading-5 text-gray-500">
       We use these details to review and respond to your submission. See our{" "}
-      <Link className="underline hover:text-gray-700" href="/privacy">
+      <Link
+        className="dark:hover:text-muted-foreground underline hover:text-gray-700"
+        href="/privacy"
+      >
         privacy policy
       </Link>
       .
@@ -154,10 +159,10 @@ export function CatalogRequestDialog({
       >
         {trigger != null && !isValidElement(trigger) ? trigger : undefined}
       </DialogTrigger>
-      <DialogContent className="rounded-2xl border-gray-200 bg-white sm:max-w-xl">
+      <DialogContent className="dark:border-border dark:bg-card rounded-2xl border-gray-200 bg-white sm:max-w-xl">
         {submitted ? (
           <div className="grid justify-items-center gap-4 py-8 text-center">
-            <span className="grid h-12 w-12 place-items-center rounded-full bg-emerald-50 text-emerald-600">
+            <span className="grid h-12 w-12 place-items-center rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
               <CheckCircle2 className="h-6 w-6" />
             </span>
             <div>
@@ -174,7 +179,7 @@ export function CatalogRequestDialog({
         ) : (
           <form onSubmit={submit}>
             <DialogHeader>
-              <div className="font-mono text-[11px] font-medium tracking-[0.07em] text-rose-600 uppercase">
+              <div className="font-mono text-[11px] font-medium tracking-[0.07em] text-rose-600 uppercase dark:text-rose-400">
                 Dating services
               </div>
               <DialogTitle className="text-2xl tracking-[-0.02em]">
@@ -208,7 +213,7 @@ export function CatalogRequestDialog({
                 >
                   <select
                     name="locationKey"
-                    className="h-9 rounded-md border border-gray-200 bg-white px-3 text-sm outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
+                    className="dark:border-border dark:bg-card h-9 rounded-md border border-gray-200 bg-white px-3 text-sm outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100 dark:focus:ring-rose-800"
                   >
                     <option value="">No location preference</option>
                     <CatalogLocationOptions />
@@ -234,7 +239,7 @@ export function CatalogRequestDialog({
                 <Input name="budget" placeholder="$300–600" />
               </Field>
               {categoryConfig.locationMode === "service_area" && (
-                <label className="flex items-start gap-2 text-sm text-gray-600 sm:col-span-2">
+                <label className="dark:text-muted-foreground flex items-start gap-2 text-sm text-gray-600 sm:col-span-2">
                   <input
                     name="remote"
                     type="checkbox"
@@ -243,7 +248,7 @@ export function CatalogRequestDialog({
                   Remote providers are okay
                 </label>
               )}
-              <label className="flex items-start gap-2 text-sm text-gray-600 sm:col-span-2">
+              <label className="dark:text-muted-foreground flex items-start gap-2 text-sm text-gray-600 sm:col-span-2">
                 <input
                   name="broadcastConsent"
                   type="checkbox"
@@ -256,7 +261,7 @@ export function CatalogRequestDialog({
 
             <CatalogPrivacyNotice />
 
-            <DialogFooter className="border-t border-gray-100 px-0 pb-0">
+            <DialogFooter className="dark:border-border border-t border-gray-100 px-0 pb-0">
               <Button
                 type="button"
                 variant="ghost"
@@ -340,12 +345,12 @@ export function CatalogSubmissionDialog({ trigger }: { trigger?: ReactNode }) {
         {trigger != null && !isValidElement(trigger) ? trigger : undefined}
       </DialogTrigger>
       <DialogContent
-        className="rounded-2xl border-gray-200 bg-white sm:max-w-xl"
+        className="dark:border-border dark:bg-card rounded-2xl border-gray-200 bg-white sm:max-w-xl"
         scrollable
       >
         {submitted ? (
           <div className="grid justify-items-center gap-4 py-8 text-center">
-            <span className="grid h-12 w-12 place-items-center rounded-full bg-emerald-50 text-emerald-600">
+            <span className="grid h-12 w-12 place-items-center rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
               <CheckCircle2 className="h-6 w-6" />
             </span>
             <div>
@@ -362,7 +367,7 @@ export function CatalogSubmissionDialog({ trigger }: { trigger?: ReactNode }) {
         ) : (
           <form onSubmit={submit}>
             <DialogHeader>
-              <div className="font-mono text-[11px] font-medium tracking-[0.07em] text-rose-600 uppercase">
+              <div className="font-mono text-[11px] font-medium tracking-[0.07em] text-rose-600 uppercase dark:text-rose-400">
                 Listing intake
               </div>
               <DialogTitle className="text-2xl tracking-[-0.02em]">
@@ -393,7 +398,7 @@ export function CatalogSubmissionDialog({ trigger }: { trigger?: ReactNode }) {
                       event.target.value as CatalogCategoryKey | "",
                     )
                   }
-                  className="h-9 rounded-md border border-gray-200 bg-white px-3 text-sm outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
+                  className="dark:border-border dark:bg-card h-9 rounded-md border border-gray-200 bg-white px-3 text-sm outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100 dark:focus:ring-rose-800"
                 >
                   <option value="" disabled>
                     Choose a category
@@ -427,7 +432,7 @@ export function CatalogSubmissionDialog({ trigger }: { trigger?: ReactNode }) {
                   >
                     <select
                       name="locationKey"
-                      className="h-9 rounded-md border border-gray-200 bg-white px-3 text-sm outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
+                      className="dark:border-border dark:bg-card h-9 rounded-md border border-gray-200 bg-white px-3 text-sm outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100 dark:focus:ring-rose-800"
                     >
                       <option value="">Not location-specific</option>
                       <CatalogLocationOptions />
@@ -435,7 +440,7 @@ export function CatalogSubmissionDialog({ trigger }: { trigger?: ReactNode }) {
                   </Field>
                 )}
               {selectedCategoryConfig?.locationMode === "service_area" && (
-                <label className="flex items-center gap-2 self-end pb-2 text-sm text-gray-600">
+                <label className="dark:text-muted-foreground flex items-center gap-2 self-end pb-2 text-sm text-gray-600">
                   <input
                     name="remote"
                     type="checkbox"
@@ -462,7 +467,7 @@ export function CatalogSubmissionDialog({ trigger }: { trigger?: ReactNode }) {
 
             <CatalogPrivacyNotice />
 
-            <DialogFooter className="border-t border-gray-100 px-0 pb-0">
+            <DialogFooter className="dark:border-border border-t border-gray-100 px-0 pb-0">
               <Button
                 type="button"
                 variant="ghost"
@@ -536,10 +541,10 @@ export function CatalogClaimDialog({
       >
         {trigger != null && !isValidElement(trigger) ? trigger : undefined}
       </DialogTrigger>
-      <DialogContent className="rounded-2xl border-gray-200 bg-white sm:max-w-lg">
+      <DialogContent className="dark:border-border dark:bg-card rounded-2xl border-gray-200 bg-white sm:max-w-lg">
         {submitted ? (
           <div className="grid justify-items-center gap-4 py-8 text-center">
-            <CheckCircle2 className="h-10 w-10 text-emerald-600" />
+            <CheckCircle2 className="h-10 w-10 text-emerald-600 dark:text-emerald-400" />
             <DialogTitle>Claim submitted</DialogTitle>
             <DialogDescription>
               We&apos;ll verify your relationship to {entryName} before enabling
@@ -578,7 +583,7 @@ export function CatalogClaimDialog({
               </Field>
             </div>
             <CatalogPrivacyNotice />
-            <DialogFooter className="border-t border-gray-100 px-0 pb-0">
+            <DialogFooter className="dark:border-border border-t border-gray-100 px-0 pb-0">
               <Button
                 type="button"
                 variant="ghost"

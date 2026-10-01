@@ -77,11 +77,11 @@ export function ImageGalleryDisplay({
           <div key={`${url}-${index}`} className="group relative">
             <div
               className={cn(
-                "cursor-pointer overflow-hidden rounded-lg bg-gray-100 transition-all duration-200",
+                "dark:bg-muted cursor-pointer overflow-hidden rounded-lg bg-gray-100 transition-all duration-200",
                 aspectClass,
                 isBanner && showBannerBadges
                   ? "ring-2 ring-blue-500 hover:ring-4 hover:ring-blue-400"
-                  : "ring-2 ring-transparent hover:ring-2 hover:ring-blue-300",
+                  : "ring-2 ring-transparent hover:ring-2 hover:ring-blue-300 dark:hover:ring-blue-800",
               )}
               onClick={() => onImageClick?.(url, index)}
               title={

@@ -191,9 +191,11 @@ export function TinderDataExtractor({
       />
 
       {error && (
-        <div className="rounded-md bg-red-50 p-4">
-          <p className="text-sm font-medium text-red-800">Error</p>
-          <p className="mt-1 text-sm text-red-700">{error}</p>
+        <div className="rounded-md bg-red-50 p-4 dark:bg-red-950/40">
+          <p className="text-sm font-medium text-red-800 dark:text-red-200">
+            Error
+          </p>
+          <p className="mt-1 text-sm text-red-700 dark:text-red-400">{error}</p>
         </div>
       )}
 

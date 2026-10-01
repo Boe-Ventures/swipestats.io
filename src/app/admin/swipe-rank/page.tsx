@@ -276,11 +276,11 @@ export default function AdminSwipeRankPage() {
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <ButtonLinkBack />
-          <h1 className="mt-2 flex items-center gap-3 text-3xl font-bold text-gray-900">
+          <h1 className="dark:text-foreground mt-2 flex items-center gap-3 text-3xl font-bold text-gray-900">
             <Trophy className="h-8 w-8 text-amber-500" />
             SwipeRank Explorer
           </h1>
-          <p className="mt-2 max-w-3xl text-gray-600">
+          <p className="dark:text-muted-foreground mt-2 max-w-3xl text-gray-600">
             Private exploration over versioned Tinder facts and published closed
             seasons. Observed match rate is matches divided by right swipes and
             is never capped at 100%.
@@ -349,15 +349,19 @@ export default function AdminSwipeRankPage() {
               </Button>
             </div>
           </div>
-          {filterError && <p className="text-sm text-red-600">{filterError}</p>}
+          {filterError && (
+            <p className="text-sm text-red-600 dark:text-red-400">
+              {filterError}
+            </p>
+          )}
         </CardContent>
       </Card>
 
       {(exclusionsQuery.data?.length ?? 0) > 0 && (
-        <Card className="border-amber-200">
+        <Card className="border-amber-200 dark:border-amber-800">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
-              <Ban className="h-4 w-4 text-amber-700" />
+              <Ban className="h-4 w-4 text-amber-700 dark:text-amber-400" />
               Held from SwipeRank
             </CardTitle>
             <CardDescription>
@@ -370,12 +374,12 @@ export default function AdminSwipeRankPage() {
             {exclusionsQuery.data?.map((entry) => (
               <div
                 key={entry.profileId}
-                className="flex flex-col gap-3 rounded-lg border bg-amber-50/50 p-3 sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-3 rounded-lg border bg-amber-50/50 p-3 sm:flex-row sm:items-center sm:justify-between dark:bg-amber-950/50"
               >
                 <div className="flex min-w-0 items-start gap-3">
                   {entry.photoUrls.length > 0 && (
                     <div className="shrink-0">
-                      <p className="mb-1 text-[10px] font-medium tracking-wide text-gray-500 uppercase">
+                      <p className="dark:text-muted-foreground mb-1 text-[10px] font-medium tracking-wide text-gray-500 uppercase">
                         Originals
                       </p>
                       <div className="flex -space-x-2">
@@ -386,7 +390,7 @@ export default function AdminSwipeRankPage() {
                             target="_blank"
                             aria-label={`Open held profile from original image ${photoIndex + 1}`}
                           >
-                            <Avatar className="h-14 w-14 rounded-lg border-2 border-white bg-gray-100 shadow-sm">
+                            <Avatar className="dark:bg-muted h-14 w-14 rounded-lg border-2 border-white bg-gray-100 shadow-sm">
                               <AvatarImage
                                 src={photoUrl}
                                 alt=""
@@ -404,12 +408,14 @@ export default function AdminSwipeRankPage() {
                   <div className="min-w-0">
                     <Link
                       href={`/admin/insights/tinder/${entry.providerProfileId}`}
-                      className="block truncate font-mono text-xs text-blue-700 hover:underline"
+                      className="block truncate font-mono text-xs text-blue-700 hover:underline dark:text-blue-400"
                     >
                       {entry.providerProfileId}
                     </Link>
-                    <p className="mt-1 text-sm text-gray-800">{entry.reason}</p>
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="dark:text-foreground mt-1 text-sm text-gray-800">
+                      {entry.reason}
+                    </p>
+                    <p className="dark:text-muted-foreground mt-1 text-xs text-gray-500">
                       {entry.excludedAt
                         ? new Date(entry.excludedAt).toLocaleString()
                         : "Unknown time"}{" "}
@@ -439,13 +445,13 @@ export default function AdminSwipeRankPage() {
 
       <Card className="gap-0 overflow-hidden py-0">
         {quickJumps.length > 0 && (
-          <div className="border-b bg-gradient-to-r from-rose-50/80 via-white to-slate-50 px-5 py-4">
+          <div className="dark:via-card dark:to-background border-b bg-gradient-to-r from-rose-50/80 via-white to-slate-50 px-5 py-4 dark:from-rose-950/80">
             <div className="mb-3 flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-rose-500" />
-              <p className="text-sm font-semibold text-slate-900">
+              <p className="dark:text-foreground text-sm font-semibold text-slate-900">
                 Quick jumps
               </p>
-              <p className="text-xs text-slate-500">
+              <p className="dark:text-muted-foreground text-xs text-slate-500">
                 The leaderboards worth opening first
               </p>
             </div>
@@ -459,8 +465,9 @@ export default function AdminSwipeRankPage() {
                     key={jump.key}
                     type="button"
                     className={cn(
-                      "group flex items-center gap-3 rounded-xl border bg-white px-3 py-2.5 text-left shadow-sm transition hover:border-rose-200 hover:bg-rose-50/30",
-                      active && "border-rose-300 bg-rose-50/60",
+                      "group dark:bg-card flex items-center gap-3 rounded-xl border bg-white px-3 py-2.5 text-left shadow-sm transition hover:border-rose-200 hover:bg-rose-50/30 dark:hover:border-rose-800 dark:hover:bg-rose-950/30",
+                      active &&
+                        "border-rose-300 bg-rose-50/60 dark:border-rose-800 dark:bg-rose-950/60",
                     )}
                     onClick={() => {
                       setSelectedPeriodKey(key);
@@ -469,8 +476,8 @@ export default function AdminSwipeRankPage() {
                   >
                     <span
                       className={cn(
-                        "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500",
-                        active && "bg-white text-rose-500",
+                        "dark:bg-muted dark:text-muted-foreground flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500",
+                        active && "dark:bg-card bg-white text-rose-500",
                       )}
                     >
                       <Icon className="h-4 w-4" />
@@ -479,11 +486,11 @@ export default function AdminSwipeRankPage() {
                       <span className="block text-sm font-semibold">
                         {jump.label}
                       </span>
-                      <span className="block truncate text-xs text-slate-500">
+                      <span className="dark:text-muted-foreground block truncate text-xs text-slate-500">
                         {formatSwipeRankPeriodLabel(jump.period)}
                       </span>
                     </span>
-                    <ArrowRight className="h-4 w-4 text-slate-400 transition-transform group-hover:translate-x-0.5" />
+                    <ArrowRight className="dark:text-muted-foreground h-4 w-4 text-slate-400 transition-transform group-hover:translate-x-0.5" />
                   </button>
                 );
               })}
@@ -495,7 +502,7 @@ export default function AdminSwipeRankPage() {
             <div className="min-w-[280px]">
               <label
                 htmlFor="swipe-rank-period"
-                className="mb-2 block text-sm font-medium text-gray-700"
+                className="dark:text-muted-foreground mb-2 block text-sm font-medium text-gray-700"
               >
                 Available period
               </label>
@@ -528,7 +535,7 @@ export default function AdminSwipeRankPage() {
             <div className="min-w-[220px]">
               <label
                 htmlFor="swipe-rank-ai-review"
-                className="mb-2 block text-sm font-medium text-gray-700"
+                className="dark:text-muted-foreground mb-2 block text-sm font-medium text-gray-700"
               >
                 Sonnet review
               </label>
@@ -575,13 +582,13 @@ export default function AdminSwipeRankPage() {
 
       {(periodsQuery.isLoading || leaderboardQuery.isLoading) && (
         <div className="flex items-center justify-center py-16">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+          <Loader2 className="dark:text-muted-foreground h-8 w-8 animate-spin text-gray-400" />
         </div>
       )}
 
       {(periodsQuery.isError || leaderboardQuery.isError) && (
-        <Card className="border-red-200">
-          <CardContent className="flex gap-3 p-5 text-sm text-red-800">
+        <Card className="border-red-200 dark:border-red-800">
+          <CardContent className="flex gap-3 p-5 text-sm text-red-800 dark:text-red-200">
             <AlertTriangle className="h-5 w-5 shrink-0" />
             SwipeRank facts could not be loaded. Confirm the migration and a
             completed fact build are present.
@@ -591,7 +598,7 @@ export default function AdminSwipeRankPage() {
 
       {!periodsQuery.isLoading && periods.length === 0 && (
         <Card>
-          <CardContent className="p-10 text-center text-gray-500">
+          <CardContent className="dark:text-muted-foreground p-10 text-center text-gray-500">
             No SwipeRank periods are available for this cohort yet.
           </CardContent>
         </Card>
@@ -605,12 +612,12 @@ export default function AdminSwipeRankPage() {
                 <CardTitle>
                   {formatSwipeRankPeriodLabel(leaderboard.period)} leaderboard
                 </CardTitle>
-                <CardDescription className="mt-1 text-slate-400">
+                <CardDescription className="dark:text-muted-foreground mt-1 text-slate-400">
                   Exact ranks in the filtered sample, grouped into percentile
                   bands.
                 </CardDescription>
               </div>
-              <p className="text-xs text-slate-400">
+              <p className="dark:text-muted-foreground text-xs text-slate-400">
                 As of{" "}
                 {leaderboard.asOf
                   ? new Date(leaderboard.asOf).toLocaleString()
@@ -622,7 +629,7 @@ export default function AdminSwipeRankPage() {
             <div className="overflow-x-auto">
               <Table className="min-w-[1380px]">
                 <TableHeader>
-                  <TableRow className="bg-slate-50/80 hover:bg-slate-50/80">
+                  <TableRow className="dark:bg-background/80 dark:hover:bg-background/80 bg-slate-50/80 hover:bg-slate-50/80">
                     <TableHead className="w-20">Rank</TableHead>
                     <TableHead>Profile & images</TableHead>
                     <TableHead>Orientation</TableHead>
@@ -636,7 +643,7 @@ export default function AdminSwipeRankPage() {
                     <TableHead className="text-right">Activity</TableHead>
                     <TableHead className="w-24">Quality</TableHead>
                     <TableHead className="w-72">Sonnet review</TableHead>
-                    <TableHead className="sticky right-0 z-10 w-28 border-l bg-white shadow-[-8px_0_12px_-12px_rgba(15,23,42,0.35)]">
+                    <TableHead className="dark:bg-card sticky right-0 z-10 w-28 border-l bg-white shadow-[-8px_0_12px_-12px_rgba(15,23,42,0.35)]">
                       Actions
                     </TableHead>
                   </TableRow>
@@ -658,15 +665,15 @@ export default function AdminSwipeRankPage() {
                     return (
                       <Fragment key={entry.profileId}>
                         {showBand && (
-                          <TableRow className="border-y bg-slate-50 hover:bg-slate-50">
+                          <TableRow className="dark:bg-background dark:hover:bg-background border-y bg-slate-50 hover:bg-slate-50">
                             <TableCell
                               colSpan={10}
                               className="py-2 font-mono text-[11px] tracking-[0.12em] uppercase"
                             >
-                              <span className="font-bold text-slate-900">
+                              <span className="dark:text-foreground font-bold text-slate-900">
                                 {band === 100 ? "Full field" : `Top ${band}%`}
                               </span>
-                              <span className="ml-3 text-slate-400">
+                              <span className="dark:text-muted-foreground ml-3 text-slate-400">
                                 up to{" "}
                                 {Math.min(
                                   leaderboard.fieldSize,
@@ -682,17 +689,17 @@ export default function AdminSwipeRankPage() {
                             </TableCell>
                           </TableRow>
                         )}
-                        <TableRow className="h-[88px] bg-white hover:bg-rose-50/30">
+                        <TableRow className="dark:bg-card h-[88px] bg-white hover:bg-rose-50/30 dark:hover:bg-rose-950/30">
                           <TableCell>
                             <p
                               className={cn(
                                 "flex h-10 min-w-10 items-center justify-center rounded-xl border font-bold tabular-nums",
                                 entry.rank === 1
-                                  ? "border-amber-300 bg-amber-50 text-amber-800"
+                                  ? "border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
                                   : entry.rank === 2
-                                    ? "border-slate-300 bg-white text-slate-700"
+                                    ? "dark:border-border dark:bg-card dark:text-muted-foreground border-slate-300 bg-white text-slate-700"
                                     : entry.rank === 3
-                                      ? "border-orange-200 bg-orange-50 text-orange-800"
+                                      ? "border-orange-200 bg-orange-50 text-orange-800 dark:border-orange-800 dark:bg-orange-950/40 dark:text-orange-200"
                                       : "border-transparent",
                               )}
                             >
@@ -701,7 +708,7 @@ export default function AdminSwipeRankPage() {
                                 : `#${entry.rank.toLocaleString()}`}
                             </p>
                             {entry.tieCount > 1 && (
-                              <p className="text-xs text-gray-500">
+                              <p className="dark:text-muted-foreground text-xs text-gray-500">
                                 {entry.tieCount}-way tie
                               </p>
                             )}
@@ -720,7 +727,7 @@ export default function AdminSwipeRankPage() {
                                     className="relative"
                                     aria-label={`Open profile inspector${photoUrl ? ` from image ${photoIndex + 1}` : ""}`}
                                   >
-                                    <Avatar className="h-12 w-12 rounded-lg border-2 border-white bg-gray-100 shadow-sm">
+                                    <Avatar className="dark:bg-muted h-12 w-12 rounded-lg border-2 border-white bg-gray-100 shadow-sm">
                                       {photoUrl && (
                                         <AvatarImage
                                           src={photoUrl}
@@ -745,12 +752,12 @@ export default function AdminSwipeRankPage() {
                                 <Link
                                   href={`/admin/insights/tinder/${entry.providerProfileId}`}
                                   target="_blank"
-                                  className="inline-flex max-w-48 items-center gap-1 truncate font-mono text-xs text-blue-700 hover:underline"
+                                  className="inline-flex max-w-48 items-center gap-1 truncate font-mono text-xs text-blue-700 hover:underline dark:text-blue-400"
                                 >
                                   {entry.providerProfileId}
                                   <ExternalLink className="h-3 w-3 shrink-0" />
                                 </Link>
-                                <p className="mt-1 text-xs text-gray-500">
+                                <p className="dark:text-muted-foreground mt-1 text-xs text-gray-500">
                                   {entry.anonymizedPhotoCount > 0
                                     ? `${entry.anonymizedPhotoCount.toLocaleString()} of ${entry.photoCount.toLocaleString()} images admin-safe`
                                     : entry.privacyHoldPhotoCount > 0
@@ -774,7 +781,7 @@ export default function AdminSwipeRankPage() {
                                 entry.interestedIn,
                               )}
                             </Badge>
-                            <p className="text-xs text-gray-500">
+                            <p className="dark:text-muted-foreground text-xs text-gray-500">
                               {entry.gender
                                 ? entry.gender.charAt(0) +
                                   entry.gender.slice(1).toLowerCase()
@@ -798,7 +805,7 @@ export default function AdminSwipeRankPage() {
                           </TableCell>
                           <TableCell className="text-right text-sm">
                             <p>{entry.activeDays} active days</p>
-                            <p className="text-xs text-gray-500">
+                            <p className="dark:text-muted-foreground text-xs text-gray-500">
                               {entry.observedDays} observed
                             </p>
                           </TableCell>
@@ -806,7 +813,7 @@ export default function AdminSwipeRankPage() {
                             {entry.hasQualityAnomaly ? (
                               <Badge
                                 title={entry.qualityFlags.join(", ")}
-                                className="bg-amber-100 text-amber-900 hover:bg-amber-100"
+                                className="bg-amber-100 text-amber-900 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-200 dark:hover:bg-amber-950/40"
                               >
                                 Review
                               </Badge>
@@ -821,12 +828,12 @@ export default function AdminSwipeRankPage() {
                                   title={`${entry.aiReview.model} · ${new Date(entry.aiReview.reviewedAt).toLocaleString()}`}
                                   className={cn(
                                     entry.aiReview.verdict === "CLEAR" &&
-                                      "bg-emerald-100 text-emerald-900 hover:bg-emerald-100",
+                                      "bg-emerald-100 text-emerald-900 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-200 dark:hover:bg-emerald-950/40",
                                     entry.aiReview.verdict === "NEEDS_REVIEW" &&
-                                      "bg-amber-100 text-amber-900 hover:bg-amber-100",
+                                      "bg-amber-100 text-amber-900 hover:bg-amber-100 dark:bg-amber-950/40 dark:text-amber-200 dark:hover:bg-amber-950/40",
                                     entry.aiReview.verdict ===
                                       "EXCLUDE_RECOMMENDED" &&
-                                      "bg-red-100 text-red-900 hover:bg-red-100",
+                                      "bg-red-100 text-red-900 hover:bg-red-100 dark:bg-red-950/40 dark:text-red-200 dark:hover:bg-red-950/40",
                                   )}
                                 >
                                   {entry.aiReview.verdict === "CLEAR"
@@ -838,7 +845,7 @@ export default function AdminSwipeRankPage() {
                                   {Math.round(entry.aiReview.confidence * 100)}%
                                 </Badge>
                                 <p
-                                  className="line-clamp-3 text-xs leading-5 text-gray-600"
+                                  className="dark:text-muted-foreground line-clamp-3 text-xs leading-5 text-gray-600"
                                   title={`${entry.aiReview.summary}\n\n${entry.aiReview.recommendedAction}`}
                                 >
                                   {entry.aiReview.summary}
@@ -848,7 +855,7 @@ export default function AdminSwipeRankPage() {
                               <Badge variant="outline">Unreviewed</Badge>
                             )}
                           </TableCell>
-                          <TableCell className="sticky right-0 z-[1] border-l bg-white shadow-[-8px_0_12px_-12px_rgba(15,23,42,0.35)]">
+                          <TableCell className="dark:bg-card sticky right-0 z-[1] border-l bg-white shadow-[-8px_0_12px_-12px_rgba(15,23,42,0.35)]">
                             <div className="flex flex-col gap-2">
                               <ButtonLink
                                 href={`/admin/insights/tinder/${entry.providerProfileId}`}
@@ -863,7 +870,7 @@ export default function AdminSwipeRankPage() {
                               <Button
                                 variant="outline"
                                 size="xs"
-                                className="gap-1.5 text-violet-800"
+                                className="gap-1.5 text-violet-800 dark:text-violet-200"
                                 disabled={
                                   reviewMutation.isPending &&
                                   reviewMutation.variables?.profileId ===
@@ -888,7 +895,7 @@ export default function AdminSwipeRankPage() {
                               <Button
                                 variant="outline"
                                 size="xs"
-                                className="gap-1.5 text-amber-800"
+                                className="gap-1.5 text-amber-800 dark:text-amber-200"
                                 onClick={() =>
                                   openModeration({
                                     providerProfileId: entry.providerProfileId,
@@ -913,14 +920,14 @@ export default function AdminSwipeRankPage() {
       )}
 
       {reviewMutation.isError && (
-        <p className="text-sm text-red-700">
+        <p className="text-sm text-red-700 dark:text-red-400">
           Sonnet review failed: {reviewMutation.error.message}
         </p>
       )}
 
       {leaderboard?.fieldSize === 0 && (
         <Card>
-          <CardContent className="p-10 text-center text-gray-500">
+          <CardContent className="dark:text-muted-foreground p-10 text-center text-gray-500">
             This period has facts, but no profiles meet the eligibility
             thresholds inside the selected cohort.
           </CardContent>
@@ -929,7 +936,7 @@ export default function AdminSwipeRankPage() {
 
       {(leaderboard?.fieldSize ?? 0) > 0 && leaderboard && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-gray-500">
+          <p className="dark:text-muted-foreground text-sm text-gray-500">
             Page {leaderboard.page} of {Math.max(leaderboard.totalPages, 1)}
           </p>
           <div className="flex gap-2">
@@ -978,7 +985,7 @@ export default function AdminSwipeRankPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
 
-          <p className="rounded-md bg-gray-50 p-2 font-mono text-xs break-all">
+          <p className="dark:bg-background rounded-md bg-gray-50 p-2 font-mono text-xs break-all">
             {moderationTarget?.providerProfileId}
           </p>
 
@@ -997,14 +1004,14 @@ export default function AdminSwipeRankPage() {
                 placeholder="Why should this profile be excluded?"
                 onChange={(event) => setExclusionReason(event.target.value)}
               />
-              <p className="mt-1 text-right text-xs text-gray-500">
+              <p className="dark:text-muted-foreground mt-1 text-right text-xs text-gray-500">
                 {exclusionReason.trim().length}/500
               </p>
             </div>
           )}
 
           {exclusionMutation.isError && (
-            <p className="text-sm text-red-700">
+            <p className="text-sm text-red-700 dark:text-red-400">
               {exclusionMutation.error.message}
             </p>
           )}
@@ -1061,7 +1068,7 @@ function FilterSelect({
     <div>
       <label
         htmlFor={controlId}
-        className="mb-2 block text-sm font-medium text-gray-700"
+        className="dark:text-muted-foreground mb-2 block text-sm font-medium text-gray-700"
       >
         {label}
       </label>
@@ -1101,7 +1108,7 @@ function FilterInput({
     <div>
       <label
         htmlFor={controlId}
-        className="mb-2 block text-sm font-medium text-gray-700"
+        className="dark:text-muted-foreground mb-2 block text-sm font-medium text-gray-700"
       >
         {label}
       </label>

@@ -109,27 +109,32 @@ export default async function DatingServicesCategoryPage({
   );
 
   return (
-    <main className="min-h-screen bg-white text-gray-900">
-      <section className="border-b border-gray-200">
+    <main className="dark:bg-card dark:text-foreground min-h-screen bg-white text-gray-900">
+      <section className="dark:border-border border-b border-gray-200">
         <div className="mx-auto max-w-7xl px-6 py-12 lg:px-8 lg:py-16">
-          <nav className="flex items-center gap-2 font-mono text-[12px] text-gray-500">
-            <Link href="/dating-services" className="hover:text-rose-600">
+          <nav className="dark:text-muted-foreground flex items-center gap-2 font-mono text-[12px] text-gray-500">
+            <Link
+              href="/dating-services"
+              className="hover:text-rose-600 dark:hover:text-rose-400"
+            >
               Services
             </Link>
             <span>/</span>
-            <span className="text-gray-800">{config.label}</span>
+            <span className="dark:text-foreground text-gray-800">
+              {config.label}
+            </span>
           </nav>
 
           <div className="mt-8 flex flex-wrap items-end justify-between gap-6">
             <div className="max-w-3xl">
-              <div className="flex items-center gap-3 font-mono text-[11px] font-medium tracking-[0.1em] text-rose-600 uppercase">
+              <div className="flex items-center gap-3 font-mono text-[11px] font-medium tracking-[0.1em] text-rose-600 uppercase dark:text-rose-400">
                 <span className="h-px w-6 bg-rose-400" />
                 {config.label}
               </div>
               <h1 className="mt-4 text-[clamp(36px,5vw,56px)] leading-[1.02] font-bold tracking-[-0.04em]">
                 {config.headline}
               </h1>
-              <p className="mt-5 max-w-2xl text-[17px] leading-7 text-gray-600">
+              <p className="dark:text-muted-foreground mt-5 max-w-2xl text-[17px] leading-7 text-gray-600">
                 {config.description} Browse a deliberately small, editor-curated
                 catalog
                 {config.locationMode === "service_area"
@@ -139,7 +144,7 @@ export default async function DatingServicesCategoryPage({
                     : " available wherever you use your dating apps."}
               </p>
             </div>
-            <div className="font-mono text-[12px] text-gray-500">
+            <div className="dark:text-muted-foreground font-mono text-[12px] text-gray-500">
               {totalCount} {totalCount === 1 ? "listing" : "listings"}
               {selectedPlace ? ` · ${selectedPlace.name}` : ""}
             </div>
@@ -155,8 +160,8 @@ export default async function DatingServicesCategoryPage({
                 className={cn(
                   "rounded-full border px-3.5 py-2 text-sm font-semibold transition",
                   !location
-                    ? "border-rose-300 bg-rose-50 text-rose-700"
-                    : "border-gray-200 bg-white text-gray-600 hover:border-gray-300",
+                    ? "border-rose-300 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-400"
+                    : "dark:border-border dark:bg-card dark:text-muted-foreground dark:hover:border-border border-gray-200 bg-white text-gray-600 hover:border-gray-300",
                 )}
               >
                 All locations
@@ -172,8 +177,8 @@ export default async function DatingServicesCategoryPage({
                   className={cn(
                     "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-semibold transition",
                     location === place.slug
-                      ? "border-rose-300 bg-rose-50 text-rose-700"
-                      : "border-gray-200 bg-white text-gray-600 hover:border-gray-300",
+                      ? "border-rose-300 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-400"
+                      : "dark:border-border dark:bg-card dark:text-muted-foreground dark:hover:border-border border-gray-200 bg-white text-gray-600 hover:border-gray-300",
                   )}
                 >
                   <MapPin className="h-3.5 w-3.5" />
@@ -191,8 +196,8 @@ export default async function DatingServicesCategoryPage({
                   className={cn(
                     "rounded-full border px-3.5 py-2 text-sm font-semibold transition",
                     location === place.slug
-                      ? "border-rose-300 bg-rose-50 text-rose-700"
-                      : "border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300",
+                      ? "border-rose-300 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-400"
+                      : "dark:border-border dark:bg-background dark:text-muted-foreground dark:hover:border-border border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300",
                   )}
                 >
                   {place.shortName}
@@ -208,8 +213,8 @@ export default async function DatingServicesCategoryPage({
                   className={cn(
                     "inline-flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm font-semibold transition",
                     includeRemote
-                      ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-                      : "border-gray-200 bg-white text-gray-600 hover:border-gray-300",
+                      ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400"
+                      : "dark:border-border dark:bg-card dark:text-muted-foreground dark:hover:border-border border-gray-200 bg-white text-gray-600 hover:border-gray-300",
                   )}
                 >
                   <Globe2 className="h-3.5 w-3.5" />
@@ -229,12 +234,12 @@ export default async function DatingServicesCategoryPage({
             ))}
           </div>
         ) : (
-          <div className="rounded-3xl border border-dashed border-gray-300 bg-gray-50 px-6 py-16 text-center">
+          <div className="dark:border-border dark:bg-background rounded-3xl border border-dashed border-gray-300 bg-gray-50 px-6 py-16 text-center">
             <h2 className="text-2xl font-bold tracking-[-0.03em]">
               No {config.shortLabel.toLowerCase()}{" "}
               {location ? `in ${selectedPlace?.name ?? location}` : "here yet"}
             </h2>
-            <p className="mx-auto mt-3 max-w-xl text-sm leading-6 text-gray-600">
+            <p className="dark:text-muted-foreground mx-auto mt-3 max-w-xl text-sm leading-6 text-gray-600">
               {supportsRemote
                 ? "Try remote-friendly providers, or send a private request and we’ll use it to prioritize who gets added next."
                 : "Send a private request and we’ll use it to prioritize what gets reviewed and added next."}
@@ -260,7 +265,7 @@ export default async function DatingServicesCategoryPage({
           </div>
         )}
 
-        <div className="mt-12 flex flex-wrap items-center justify-between gap-4 border-t border-gray-200 pt-8">
+        <div className="dark:border-border mt-12 flex flex-wrap items-center justify-between gap-4 border-t border-gray-200 pt-8">
           <ButtonLink variant="ghost" href="/dating-services">
             <ArrowLeft className="h-4 w-4" />
             All services

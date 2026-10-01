@@ -79,7 +79,7 @@ export function HingeProfilePreview({
   }, [brokenImageUrls, onBrokenImagesDetected]);
 
   return (
-    <div className="relative max-w-xl overflow-hidden rounded-lg bg-white shadow-lg">
+    <div className="dark:bg-card relative max-w-xl overflow-hidden rounded-lg bg-white shadow-lg">
       {/* Header with Photos */}
       <div className="rounded-t-lg bg-linear-to-r from-purple-700 via-purple-500 to-pink-400 p-4">
         {hasPhotos ? (
@@ -106,11 +106,13 @@ export function HingeProfilePreview({
               {genderDisplay.text}, {age}
             </div>
             {location?.country && (
-              <p className="text-sm text-gray-600">{location.country}</p>
+              <p className="dark:text-muted-foreground text-sm text-gray-600">
+                {location.country}
+              </p>
             )}
           </div>
           {signupDate && (
-            <div className="text-right text-xs text-gray-500">
+            <div className="dark:text-muted-foreground text-right text-xs text-gray-500">
               <div>Joined {format(signupDate, "MMM d, yyyy")}</div>
             </div>
           )}
@@ -121,7 +123,7 @@ export function HingeProfilePreview({
           profile.workplaces_displayed ||
           profile.schools_displayed) && (
           <div className="mt-4">
-            <h3 className="text-sm font-semibold text-gray-700">
+            <h3 className="dark:text-muted-foreground text-sm font-semibold text-gray-700">
               Profile Details
             </h3>
             <div className="mt-2 space-y-2 text-sm">
@@ -129,8 +131,10 @@ export function HingeProfilePreview({
                 profile.job_title_displayed &&
                 profile.job_title && (
                   <div>
-                    <span className="font-medium text-gray-600">Job:</span>
-                    <span className="ml-2 text-gray-800">
+                    <span className="dark:text-muted-foreground font-medium text-gray-600">
+                      Job:
+                    </span>
+                    <span className="dark:text-foreground ml-2 text-gray-800">
                       {profile.job_title}
                     </span>
                   </div>
@@ -139,8 +143,10 @@ export function HingeProfilePreview({
                 profile.workplaces_displayed &&
                 profile.workplaces && (
                   <div>
-                    <span className="font-medium text-gray-600">Company:</span>
-                    <span className="ml-2 text-gray-800">
+                    <span className="dark:text-muted-foreground font-medium text-gray-600">
+                      Company:
+                    </span>
+                    <span className="dark:text-foreground ml-2 text-gray-800">
                       {typeof profile.workplaces === "string"
                         ? (JSON.parse(profile.workplaces) as string[]).join(
                             ", ",
@@ -151,8 +157,10 @@ export function HingeProfilePreview({
                 )}
               {profile.schools_displayed && profile.schools && (
                 <div>
-                  <span className="font-medium text-gray-600">School:</span>
-                  <span className="ml-2 text-gray-800">
+                  <span className="dark:text-muted-foreground font-medium text-gray-600">
+                    School:
+                  </span>
+                  <span className="dark:text-foreground ml-2 text-gray-800">
                     {typeof profile.schools === "string"
                       ? (JSON.parse(profile.schools) as string[]).join(", ")
                       : profile.schools}
@@ -166,26 +174,31 @@ export function HingeProfilePreview({
         {/* Prompts Preview */}
         {activePrompts.length > 0 && (
           <div className="mt-4">
-            <h3 className="text-sm font-semibold text-gray-700">
+            <h3 className="dark:text-muted-foreground text-sm font-semibold text-gray-700">
               Prompt Answers
             </h3>
             <div className="mt-2 space-y-3">
               {activePrompts.map((prompt, index) => (
-                <div key={index} className="rounded-lg bg-gray-50 p-3">
-                  <p className="text-xs font-medium text-gray-600">
+                <div
+                  key={index}
+                  className="dark:bg-background rounded-lg bg-gray-50 p-3"
+                >
+                  <p className="dark:text-muted-foreground text-xs font-medium text-gray-600">
                     {prompt.prompt}
                   </p>
                   {prompt.text ? (
-                    <p className="mt-1 text-sm text-gray-800">{prompt.text}</p>
+                    <p className="dark:text-foreground mt-1 text-sm text-gray-800">
+                      {prompt.text}
+                    </p>
                   ) : prompt.options ? (
-                    <div className="mt-1 text-sm text-gray-800">
+                    <div className="dark:text-foreground mt-1 text-sm text-gray-800">
                       {prompt.options.join(" • ")}
                     </div>
                   ) : null}
                 </div>
               ))}
               {totalPrompts > 3 && (
-                <p className="text-xs text-gray-500">
+                <p className="dark:text-muted-foreground text-xs text-gray-500">
                   +{totalPrompts - 3} more in history
                 </p>
               )}
@@ -196,14 +209,16 @@ export function HingeProfilePreview({
         {/* Preferences */}
         {user.preferences && (
           <div className="mt-4">
-            <h3 className="text-sm font-semibold text-gray-700">Preferences</h3>
+            <h3 className="dark:text-muted-foreground text-sm font-semibold text-gray-700">
+              Preferences
+            </h3>
             <div className="mt-2 space-y-2 text-sm">
               {user.preferences.gender_preference && (
                 <div>
-                  <span className="font-medium text-gray-600">
+                  <span className="dark:text-muted-foreground font-medium text-gray-600">
                     Looking for:
                   </span>
-                  <span className="ml-2 text-gray-800">
+                  <span className="dark:text-foreground ml-2 text-gray-800">
                     {user.preferences.gender_preference}
                   </span>
                 </div>
@@ -211,11 +226,13 @@ export function HingeProfilePreview({
               {user.preferences.age_min !== undefined &&
                 user.preferences.age_max !== undefined && (
                   <div>
-                    <span className="font-medium text-gray-600">Age:</span>
-                    <span className="ml-2 text-gray-800">
+                    <span className="dark:text-muted-foreground font-medium text-gray-600">
+                      Age:
+                    </span>
+                    <span className="dark:text-foreground ml-2 text-gray-800">
                       {user.preferences.age_min}-{user.preferences.age_max}
                       {user.preferences.age_dealbreaker && (
-                        <span className="ml-1 text-xs text-red-600">
+                        <span className="ml-1 text-xs text-red-600 dark:text-red-400">
                           (dealbreaker)
                         </span>
                       )}
@@ -224,8 +241,10 @@ export function HingeProfilePreview({
                 )}
               {user.preferences.distance_miles_max !== undefined && (
                 <div>
-                  <span className="font-medium text-gray-600">Distance:</span>
-                  <span className="ml-2 text-gray-800">
+                  <span className="dark:text-muted-foreground font-medium text-gray-600">
+                    Distance:
+                  </span>
+                  <span className="dark:text-foreground ml-2 text-gray-800">
                     Up to {user.preferences.distance_miles_max} miles
                   </span>
                 </div>
@@ -236,12 +255,14 @@ export function HingeProfilePreview({
                 (user.preferences.height_min > 92 ||
                   user.preferences.height_max < 214) && (
                   <div>
-                    <span className="font-medium text-gray-600">Height:</span>
-                    <span className="ml-2 text-gray-800">
+                    <span className="dark:text-muted-foreground font-medium text-gray-600">
+                      Height:
+                    </span>
+                    <span className="dark:text-foreground ml-2 text-gray-800">
                       {Math.round(user.preferences.height_min)}-
                       {Math.round(user.preferences.height_max)} cm
                       {user.preferences.height_dealbreaker && (
-                        <span className="ml-1 text-xs text-red-600">
+                        <span className="ml-1 text-xs text-red-600 dark:text-red-400">
                           (dealbreaker)
                         </span>
                       )}
@@ -253,9 +274,11 @@ export function HingeProfilePreview({
         )}
 
         {/* Profile ID */}
-        <div className="mt-4 rounded-lg bg-gray-50 p-3">
-          <p className="text-xs text-gray-500">Your anonymous SwipeStats ID:</p>
-          <p className="mt-1 font-mono text-xs break-all text-gray-700">
+        <div className="dark:bg-background mt-4 rounded-lg bg-gray-50 p-3">
+          <p className="dark:text-muted-foreground text-xs text-gray-500">
+            Your anonymous SwipeStats ID:
+          </p>
+          <p className="dark:text-muted-foreground mt-1 font-mono text-xs break-all text-gray-700">
             {payload.hingeId}
           </p>
         </div>

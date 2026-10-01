@@ -88,10 +88,10 @@ export function FAQ() {
     <div id="faq" className="">
       <div className="mx-auto max-w-2xl px-6 py-24 sm:py-32 lg:max-w-7xl lg:px-8 lg:py-40">
         <div className="mx-auto max-w-3xl">
-          <h2 className="mb-3 text-3xl leading-tight font-bold tracking-tight text-gray-900 sm:text-4xl">
+          <h2 className="dark:text-foreground mb-3 text-3xl leading-tight font-bold tracking-tight text-gray-900 sm:text-4xl">
             Frequently asked questions
           </h2>
-          <p className="mb-10 text-lg leading-8 text-gray-600">
+          <p className="dark:text-muted-foreground mb-10 text-lg leading-8 text-gray-600">
             Everything you need to know about SwipeStats
           </p>
           <Accordion>
@@ -99,12 +99,12 @@ export function FAQ() {
               <AccordionItem
                 key={faq.question}
                 value={`item-${index}`}
-                className="border-b border-gray-200 py-6 first:pt-0"
+                className="dark:border-border border-b border-gray-200 py-6 first:pt-0"
               >
-                <AccordionTrigger className="group cursor-pointer text-left text-lg leading-7 font-semibold text-gray-900 transition-colors hover:text-rose-600 hover:no-underline data-panel-open:text-rose-600">
+                <AccordionTrigger className="group dark:text-foreground cursor-pointer text-left text-lg leading-7 font-semibold text-gray-900 transition-colors hover:text-rose-600 hover:no-underline data-panel-open:text-rose-600 dark:hover:text-rose-400 dark:data-panel-open:text-rose-400">
                   {faq.question}
                 </AccordionTrigger>
-                <AccordionContent className="mt-3 pr-12 pb-3 text-base leading-7 text-gray-600">
+                <AccordionContent className="dark:text-muted-foreground mt-3 pr-12 pb-3 text-base leading-7 text-gray-600">
                   {faq.answer}
                 </AccordionContent>
               </AccordionItem>
@@ -119,7 +119,7 @@ export function FAQ() {
 export function FAQ2() {
   return (
     <div className="mx-auto max-w-2xl divide-y divide-gray-900/10 px-6 pb-8 sm:pt-12 sm:pb-24 lg:max-w-7xl lg:px-8 lg:pb-32">
-      <h2 className="text-2xl leading-10 font-bold tracking-tight text-gray-900">
+      <h2 className="dark:text-foreground text-2xl leading-10 font-bold tracking-tight text-gray-900">
         Frequently asked questions
       </h2>
       <dl className="mt-10 space-y-8 divide-y divide-gray-900/10">
@@ -128,11 +128,13 @@ export function FAQ2() {
             key={faq.question}
             className="pt-8 lg:grid lg:grid-cols-12 lg:gap-8"
           >
-            <dt className="text-base leading-7 font-semibold text-gray-900 lg:col-span-5">
+            <dt className="dark:text-foreground text-base leading-7 font-semibold text-gray-900 lg:col-span-5">
               {faq.question}
             </dt>
             <dd className="mt-4 lg:col-span-7 lg:mt-0">
-              <p className="text-base leading-7 text-gray-600">{faq.answer}</p>
+              <p className="dark:text-muted-foreground text-base leading-7 text-gray-600">
+                {faq.answer}
+              </p>
             </dd>
           </div>
         ))}

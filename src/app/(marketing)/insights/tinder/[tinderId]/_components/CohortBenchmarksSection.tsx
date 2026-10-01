@@ -132,14 +132,16 @@ function BenchmarkMetric({
   ] as const;
 
   return (
-    <div className="rounded-xl border bg-white p-5">
+    <div className="dark:bg-card rounded-xl border bg-white p-5">
       <div>
         <h3 className="font-semibold">{label}</h3>
         <p className="text-muted-foreground mt-1 text-xs">{description}</p>
       </div>
 
       <div className="mt-4 rounded-lg bg-slate-950 p-4 text-white">
-        <p className="text-xs font-medium text-slate-400">You</p>
+        <p className="dark:text-muted-foreground text-xs font-medium text-slate-400">
+          You
+        </p>
         <p className="mt-1 text-3xl font-bold tabular-nums">{format(value)}</p>
         {placement.rank !== null && placement.fieldSize !== null && (
           <p className="mt-2 text-xs text-slate-300">
@@ -157,7 +159,7 @@ function BenchmarkMetric({
       </div>
 
       {suppressed ? (
-        <p className="text-muted-foreground mt-4 rounded-lg bg-slate-50 p-3 text-xs">
+        <p className="text-muted-foreground dark:bg-background mt-4 rounded-lg bg-slate-50 p-3 text-xs">
           Distribution hidden until this field reaches the privacy minimum.
         </p>
       ) : (
@@ -334,7 +336,7 @@ export function CohortBenchmarksSection() {
         )}
 
         {benchmark.isError && (
-          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
             This benchmark could not be computed for the selected period.
           </div>
         )}
@@ -374,7 +376,7 @@ export function CohortBenchmarksSection() {
             </div>
 
             {benchmark.data.insufficientSample && (
-              <div className="rounded-lg border border-violet-200 bg-violet-50 p-4 text-sm text-violet-950">
+              <div className="rounded-lg border border-violet-200 bg-violet-50 p-4 text-sm text-violet-950 dark:border-violet-800 dark:bg-violet-950/40 dark:text-violet-200">
                 This field has fewer than{" "}
                 {benchmark.data.minimumPrivateSampleSize.toLocaleString()}{" "}
                 eligible profiles. To protect individual privacy, its exact
@@ -384,7 +386,7 @@ export function CohortBenchmarksSection() {
             )}
 
             {benchmark.data.target.excludedFromSwipeRank && (
-              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
                 This profile is not currently included in SwipeRank. Its own
                 values remain visible, but it receives no placement and is not
                 part of the comparison distribution.
@@ -405,7 +407,7 @@ export function CohortBenchmarksSection() {
             {!benchmark.data.target.excludedFromSwipeRank &&
               benchmark.data.target.eligibility.eligible &&
               !benchmark.data.target.matchesFilters && (
-                <div className="rounded-lg border border-sky-200 bg-sky-50 p-4 text-sm text-sky-950">
+                <div className="rounded-lg border border-sky-200 bg-sky-50 p-4 text-sm text-sky-950 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-200">
                   You are outside this descriptor filter, so your own fact is
                   not inserted into the distribution.{" "}
                   {benchmark.data.insufficientSample
@@ -415,11 +417,11 @@ export function CohortBenchmarksSection() {
               )}
 
             {benchmark.data.target.hasQualityAnomaly && (
-              <div className="flex gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950">
+              <div className="flex gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                 <div>
                   <p className="font-medium">Unusual source totals</p>
-                  <p className="mt-1 text-amber-800">
+                  <p className="mt-1 text-amber-800 dark:text-amber-200">
                     Match yield is shown as reported and is never capped at
                     100%. Quality flags:{" "}
                     {benchmark.data.target.qualityFlags.join(", ")}.

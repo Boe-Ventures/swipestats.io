@@ -56,7 +56,7 @@ export function UserInfoCard({ user, tinderId }: UserInfoCardProps) {
             User ID
           </label>
           <div className="flex items-center gap-2">
-            <code className="flex-1 rounded bg-gray-100 px-3 py-2 text-sm">
+            <code className="dark:bg-muted flex-1 rounded bg-gray-100 px-3 py-2 text-sm">
               {user.id}
             </code>
             <Button
@@ -79,7 +79,7 @@ export function UserInfoCard({ user, tinderId }: UserInfoCardProps) {
             Email
           </label>
           <div className="flex items-center gap-2">
-            <code className="flex-1 rounded bg-gray-100 px-3 py-2 text-sm">
+            <code className="dark:bg-muted flex-1 rounded bg-gray-100 px-3 py-2 text-sm">
               {user.email || "No email"}
             </code>
             {user.email && (
@@ -103,7 +103,7 @@ export function UserInfoCard({ user, tinderId }: UserInfoCardProps) {
           <label className="text-muted-foreground mb-1 block text-xs font-medium">
             Username
           </label>
-          <div className="rounded bg-gray-100 px-3 py-2 text-sm">
+          <div className="dark:bg-muted rounded bg-gray-100 px-3 py-2 text-sm">
             {user.username || "No username"}
           </div>
         </div>
@@ -137,7 +137,7 @@ export function UserInfoCard({ user, tinderId }: UserInfoCardProps) {
           <Link
             href={`/insights/tinder/${tinderId}`}
             target="_blank"
-            className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800"
+            className="inline-flex items-center gap-2 text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200"
           >
             View Public Insights Page
             <ExternalLink className="h-4 w-4" />

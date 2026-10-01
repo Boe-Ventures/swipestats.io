@@ -11,11 +11,11 @@ interface QuoteProps {
 
 export function Quote({ children, author, role, avatar }: QuoteProps) {
   return (
-    <div className="my-8 rounded-lg bg-gray-50 p-6">
+    <div className="dark:bg-background my-8 rounded-lg bg-gray-50 p-6">
       <div className="mb-4">
-        <QuoteIcon className="h-8 w-8 text-gray-400" />
+        <QuoteIcon className="dark:text-muted-foreground h-8 w-8 text-gray-400" />
       </div>
-      <blockquote className="text-lg text-gray-800 italic">
+      <blockquote className="dark:text-foreground text-lg text-gray-800 italic">
         {children}
       </blockquote>
       {author && (
@@ -30,8 +30,14 @@ export function Quote({ children, author, role, avatar }: QuoteProps) {
             />
           )}
           <div>
-            <div className="font-semibold text-gray-900">{author}</div>
-            {role && <div className="text-sm text-gray-600">{role}</div>}
+            <div className="dark:text-foreground font-semibold text-gray-900">
+              {author}
+            </div>
+            {role && (
+              <div className="dark:text-muted-foreground text-sm text-gray-600">
+                {role}
+              </div>
+            )}
           </div>
         </div>
       )}

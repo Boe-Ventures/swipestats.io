@@ -103,22 +103,22 @@ export function DatasetPricingSection() {
     <div id="pricing" className="py-24 sm:pt-48">
       <div className="mx-auto max-w-7xl px-6 lg:px-8">
         <div className="mx-auto max-w-4xl text-center">
-          <h2 className="text-base leading-7 font-semibold text-rose-600">
+          <h2 className="text-base leading-7 font-semibold text-rose-600 dark:text-rose-400">
             Pricing
           </h2>
-          <p className="mt-2 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+          <p className="dark:text-foreground mt-2 text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
             Get your own dataset
           </p>
         </div>
-        <p className="mx-auto mt-6 max-w-2xl text-center text-lg leading-8 text-gray-600">
+        <p className="dark:text-muted-foreground mx-auto mt-6 max-w-2xl text-center text-lg leading-8 text-gray-600">
           Whether it&apos;s for a blog, a research paper, or plain curiosity, a
           dataset from SwipeStats will get you on the right track.
         </p>
 
         {/* Error message */}
         {error && (
-          <div className="mx-auto mt-8 max-w-2xl rounded-lg bg-red-50 p-4">
-            <p className="text-center text-sm font-medium text-red-800">
+          <div className="mx-auto mt-8 max-w-2xl rounded-lg bg-red-50 p-4 dark:bg-red-950/40">
+            <p className="text-center text-sm font-medium text-red-800 dark:text-red-200">
               {error}
             </p>
           </div>
@@ -132,7 +132,7 @@ export function DatasetPricingSection() {
                 tier.mostPopular ? "lg:z-10 lg:rounded-b-none" : "lg:mt-8",
                 tierIdx === 0 ? "lg:rounded-r-none" : "",
                 tierIdx === tiers.length - 1 ? "lg:rounded-l-none" : "",
-                "flex flex-col justify-between rounded-3xl bg-white p-8 ring-1 ring-gray-200 xl:p-10",
+                "dark:bg-card dark:ring-border flex flex-col justify-between rounded-3xl bg-white p-8 ring-1 ring-gray-200 xl:p-10",
               )}
             >
               <div>
@@ -140,31 +140,33 @@ export function DatasetPricingSection() {
                   <h3
                     id={tier.id}
                     className={cn(
-                      tier.mostPopular ? "text-rose-600" : "text-gray-900",
+                      tier.mostPopular
+                        ? "text-rose-600 dark:text-rose-400"
+                        : "dark:text-foreground text-gray-900",
                       "text-lg leading-8 font-semibold",
                     )}
                   >
                     {tier.name}
                   </h3>
                   {tier.mostPopular ? (
-                    <p className="rounded-full bg-rose-600/10 px-2.5 py-1 text-xs leading-5 font-semibold text-rose-600">
+                    <p className="rounded-full bg-rose-600/10 px-2.5 py-1 text-xs leading-5 font-semibold text-rose-600 dark:text-rose-400">
                       Most popular
                     </p>
                   ) : null}
                 </div>
                 <p className="mt-6 flex items-baseline gap-x-1">
-                  <span className="text-4xl font-bold tracking-tight text-gray-900">
+                  <span className="dark:text-foreground text-4xl font-bold tracking-tight text-gray-900">
                     {tier.price}
                   </span>
                 </p>
                 <ul
                   role="list"
-                  className="mt-8 space-y-3 text-sm leading-6 text-gray-600"
+                  className="dark:text-muted-foreground mt-8 space-y-3 text-sm leading-6 text-gray-600"
                 >
                   {tier.features.map((feature) => (
                     <li key={feature} className="flex gap-x-3">
                       <CheckIcon
-                        className="h-6 w-5 flex-none text-rose-600"
+                        className="h-6 w-5 flex-none text-rose-600 dark:text-rose-400"
                         aria-hidden="true"
                       />
                       {feature}
@@ -179,7 +181,7 @@ export function DatasetPricingSection() {
                 className={cn(
                   tier.mostPopular
                     ? "bg-rose-600 text-white shadow-sm hover:bg-rose-500"
-                    : "text-rose-600 ring-1 ring-rose-200 ring-inset hover:ring-rose-300",
+                    : "text-rose-600 ring-1 ring-rose-200 ring-inset hover:ring-rose-300 dark:text-rose-400 dark:ring-rose-800 dark:hover:ring-rose-800",
                   "mt-8 flex cursor-pointer items-center justify-center gap-2 rounded-md px-3 py-2 text-center text-sm leading-6 font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600",
                   loadingTier === tier.id &&
                     "cursor-not-allowed opacity-50 disabled:opacity-50",
@@ -201,10 +203,10 @@ export function DatasetPricingSection() {
         </div>
         <div className="mt-10 flex flex-col items-start gap-x-8 gap-y-6 rounded-3xl p-8 ring-1 ring-gray-900/10 sm:gap-y-10 sm:p-10 lg:col-span-2 lg:flex-row lg:items-center">
           <div className="lg:min-w-0 lg:flex-1">
-            <h3 className="text-lg leading-8 font-semibold tracking-tight text-rose-600">
+            <h3 className="text-lg leading-8 font-semibold tracking-tight text-rose-600 dark:text-rose-400">
               Curious about the data model?
             </h3>
-            <p className="mt-1 text-base leading-7 text-gray-600">
+            <p className="dark:text-muted-foreground mt-1 text-base leading-7 text-gray-600">
               Download one demo profile for free, or explore the documentation
             </p>
           </div>
@@ -218,7 +220,7 @@ export function DatasetPricingSection() {
           <a
             href="https://github.com/Boe-Ventures/swipestats.io"
             target="_blank"
-            className="rounded-md px-3.5 py-2 text-sm leading-6 font-semibold text-rose-600 ring-1 ring-rose-200 ring-inset hover:ring-rose-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600"
+            className="rounded-md px-3.5 py-2 text-sm leading-6 font-semibold text-rose-600 ring-1 ring-rose-200 ring-inset hover:ring-rose-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-rose-600 dark:text-rose-400 dark:ring-rose-800 dark:hover:ring-rose-800"
             rel="noreferrer"
           >
             Explore the code <span aria-hidden="true">&rarr;</span>

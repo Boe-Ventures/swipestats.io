@@ -44,7 +44,7 @@ export function SelfAssessmentForm() {
         <Field className="space-y-3">
           <div className="flex items-center justify-between">
             <FieldLabel htmlFor="hotness">Current Hotness</FieldLabel>
-            <span className="text-lg font-semibold text-purple-600">
+            <span className="text-lg font-semibold text-purple-600 dark:text-purple-400">
               {currentHotness}/10
             </span>
           </div>
@@ -75,7 +75,7 @@ export function SelfAssessmentForm() {
         <Field className="space-y-3">
           <div className="flex items-center justify-between">
             <FieldLabel htmlFor="happiness">Current Happiness</FieldLabel>
-            <span className="text-lg font-semibold text-pink-600">
+            <span className="text-lg font-semibold text-pink-600 dark:text-pink-400">
               {currentHappiness}/10
             </span>
           </div>
@@ -109,7 +109,7 @@ export function SelfAssessmentForm() {
       </Button>
 
       {updateSelfAssessment.isSuccess && (
-        <p className="text-sm text-green-600">
+        <p className="text-sm text-green-600 dark:text-green-400">
           Self assessment updated successfully!
         </p>
       )}

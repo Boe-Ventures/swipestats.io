@@ -93,16 +93,16 @@ export function FlowView({
 
   const vitalsSection = hasVitals ? (
     <div className="px-4 pb-3">
-      <div className="rounded-2xl bg-white shadow-sm ring-1 ring-gray-200">
+      <div className="dark:bg-card dark:ring-border rounded-2xl bg-white shadow-sm ring-1 ring-gray-200">
         {vitalsBand.length > 0 && (
-          <div className="flex items-stretch divide-x divide-gray-200 overflow-x-auto border-b border-gray-200 px-4">
+          <div className="dark:divide-border dark:border-border flex items-stretch divide-x divide-gray-200 overflow-x-auto border-b border-gray-200 px-4">
             {vitalsBand.map(({ icon: Icon, label }) => (
               <div
                 key={label}
                 className="flex shrink-0 items-center gap-2 px-3 py-3 first:pl-0 last:pr-0"
               >
-                <Icon className="h-4 w-4 text-gray-500" />
-                <span className="text-sm whitespace-nowrap text-gray-900">
+                <Icon className="dark:text-muted-foreground h-4 w-4 text-gray-500" />
+                <span className="dark:text-foreground text-sm whitespace-nowrap text-gray-900">
                   {label}
                 </span>
               </div>
@@ -110,11 +110,13 @@ export function FlowView({
           </div>
         )}
         {vitalsRows.length > 0 && (
-          <div className="divide-y divide-gray-100 px-4">
+          <div className="dark:divide-border divide-y divide-gray-100 px-4">
             {vitalsRows.map(({ icon: Icon, label }) => (
               <div key={label} className="flex items-center gap-3 py-2.5">
-                <Icon className="h-4 w-4 shrink-0 text-gray-500" />
-                <span className="text-sm text-gray-900">{label}</span>
+                <Icon className="dark:text-muted-foreground h-4 w-4 shrink-0 text-gray-500" />
+                <span className="dark:text-foreground text-sm text-gray-900">
+                  {label}
+                </span>
               </div>
             ))}
           </div>
@@ -134,11 +136,15 @@ export function FlowView({
   const bioAfterIndex = photoContentIndexes[1] ?? -1;
 
   const bioSection = displayBio ? (
-    <div className="bg-white px-4 pb-4">
+    <div className="dark:bg-card bg-white px-4 pb-4">
       <div className="mb-3">
-        <h3 className="text-lg font-bold text-gray-900">My bio</h3>
+        <h3 className="dark:text-foreground text-lg font-bold text-gray-900">
+          My bio
+        </h3>
       </div>
-      <p className="text-base leading-relaxed text-gray-900">{displayBio}</p>
+      <p className="dark:text-foreground text-base leading-relaxed text-gray-900">
+        {displayBio}
+      </p>
     </div>
   ) : null;
 
@@ -153,14 +159,14 @@ export function FlowView({
           (not inside ScrollArea) so its h-full stretches to the full aspect
           ratio — content scrolls, but the placeholder should fill the card
           like the stack view does. */}
-      <div className="relative aspect-[2/3] overflow-hidden rounded-xl bg-white">
+      <div className="dark:bg-card relative aspect-[2/3] overflow-hidden rounded-xl bg-white">
         {hasContent ? (
           <ScrollArea className="h-full">
             <div className="space-y-0">
               {/* Profile Header - Hinge Style. Sits inline at the top of the
                   flow and scrolls away with the content (no longer floats). */}
               <div className="flex items-center gap-2 px-4 pt-4 pb-3">
-                <h2 className="text-xl font-bold text-gray-900">
+                <h2 className="dark:text-foreground text-xl font-bold text-gray-900">
                   {profileName || "Name"}
                   {age && `, ${age}`}
                 </h2>
@@ -230,13 +236,13 @@ export function FlowView({
                 if (item.type === "prompt") {
                   return (
                     <div key={item.id} className="px-4 pb-3">
-                      <div className="relative rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-200">
+                      <div className="dark:bg-card dark:ring-border relative rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-200">
                         {onFeedbackClick && (
                           <div className="absolute top-3 right-3">
                             <Button
                               size="icon"
                               variant="secondary"
-                              className="h-8 w-8 border-0 bg-gray-100 text-gray-700 hover:bg-gray-200"
+                              className="dark:bg-muted dark:text-muted-foreground dark:hover:bg-accent h-8 w-8 border-0 bg-gray-100 text-gray-700 hover:bg-gray-200"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 onFeedbackClick(item.id);
@@ -253,10 +259,12 @@ export function FlowView({
                             </Button>
                           </div>
                         )}
-                        <p className="mb-3 text-sm font-semibold text-gray-600">
+                        <p className="dark:text-muted-foreground mb-3 text-sm font-semibold text-gray-600">
                           {item.prompt}
                         </p>
-                        <p className="text-base text-gray-900">{item.answer}</p>
+                        <p className="dark:text-foreground text-base text-gray-900">
+                          {item.answer}
+                        </p>
                       </div>
                     </div>
                   );
@@ -272,11 +280,13 @@ export function FlowView({
             </div>
           </ScrollArea>
         ) : (
-          <div className="flex h-full w-full flex-col items-center justify-center bg-linear-to-b from-gray-100 to-gray-200 p-6 text-center transition-all hover:from-gray-200 hover:to-gray-300">
-            <div className="mb-4 rounded-full bg-white/80 p-4 shadow-sm">
+          <div className="dark:from-muted dark:to-accent dark:hover:from-accent flex h-full w-full flex-col items-center justify-center bg-linear-to-b from-gray-100 to-gray-200 p-6 text-center transition-all hover:from-gray-200 hover:to-gray-300">
+            <div className="dark:bg-card/80 mb-4 rounded-full bg-white/80 p-4 shadow-sm">
               <Plus className="text-muted-foreground h-8 w-8" />
             </div>
-            <p className="mb-2 font-medium text-gray-900">No photos yet</p>
+            <p className="dark:text-foreground mb-2 font-medium text-gray-900">
+              No photos yet
+            </p>
             <p className="text-muted-foreground mb-4 text-sm">
               Click to add photos and preview your {providerConfig.name} profile
             </p>
@@ -284,7 +294,7 @@ export function FlowView({
               <Button
                 size="sm"
                 variant="outline"
-                className="bg-white"
+                className="dark:bg-card bg-white"
                 onClick={() => onAddContent?.()}
               >
                 <Plus className="mr-2 h-3.5 w-3.5" />

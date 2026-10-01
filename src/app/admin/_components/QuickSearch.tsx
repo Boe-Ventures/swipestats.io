@@ -39,7 +39,7 @@ export function QuickSearch() {
             Search Profile
           </Button>
         </form>
-        <p className="mt-2 text-sm text-gray-500">
+        <p className="dark:text-muted-foreground mt-2 text-sm text-gray-500">
           Enter a full tinderId to view detailed profile information
         </p>
       </CardContent>

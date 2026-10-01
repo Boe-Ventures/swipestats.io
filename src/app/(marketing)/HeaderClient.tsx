@@ -77,7 +77,7 @@ export default function HeaderClient({ navigation }: HeaderClientProps) {
               href="/signin"
               variant="ghost"
               size="sm"
-              className="hidden h-7 px-2 py-1.5 text-xs font-semibold text-gray-900 min-[375px]:inline-flex"
+              className="dark:text-foreground hidden h-7 px-2 py-1.5 text-xs font-semibold text-gray-900 min-[375px]:inline-flex"
             >
               Sign in
             </ButtonLink>
@@ -94,7 +94,7 @@ export default function HeaderClient({ navigation }: HeaderClientProps) {
         <button
           type="button"
           onClick={() => setMobileMenuOpen(true)}
-          className="-m-2.5 inline-flex items-center justify-center rounded-md p-2.5 text-gray-700"
+          className="dark:text-muted-foreground -m-2.5 inline-flex items-center justify-center rounded-md p-2.5 text-gray-700"
         >
           <span className="sr-only">Open main menu</span>
           <Bars3Icon aria-hidden="true" className="size-6" />
@@ -214,7 +214,7 @@ export default function HeaderClient({ navigation }: HeaderClientProps) {
               href="/signin"
               variant="ghost"
               size="sm"
-              className="text-sm/6 font-semibold text-gray-900"
+              className="dark:text-foreground text-sm/6 font-semibold text-gray-900"
             >
               Sign in
             </ButtonLink>
@@ -237,7 +237,7 @@ export default function HeaderClient({ navigation }: HeaderClientProps) {
         className="lg:hidden"
       >
         <div className="fixed inset-0 z-50" />
-        <DialogPanel className="fixed inset-y-0 right-0 z-50 flex w-full flex-col justify-between overflow-y-auto bg-white/95 backdrop-blur-sm sm:max-w-sm sm:ring-1 sm:ring-gray-900/10">
+        <DialogPanel className="dark:bg-card/95 fixed inset-y-0 right-0 z-50 flex w-full flex-col justify-between overflow-y-auto bg-white/95 backdrop-blur-sm sm:max-w-sm sm:ring-1 sm:ring-gray-900/10">
           <div className="p-6">
             <div className="flex items-center justify-between">
               <Link
@@ -267,7 +267,7 @@ export default function HeaderClient({ navigation }: HeaderClientProps) {
               <button
                 type="button"
                 onClick={() => setMobileMenuOpen(false)}
-                className="-m-2.5 rounded-md p-2.5 text-gray-700"
+                className="dark:text-muted-foreground -m-2.5 rounded-md p-2.5 text-gray-700"
               >
                 <span className="sr-only">Close menu</span>
                 <XMarkIcon aria-hidden="true" className="size-6" />
@@ -337,7 +337,7 @@ export default function HeaderClient({ navigation }: HeaderClientProps) {
                         href="/signin"
                         variant="ghost"
                         size="sm"
-                        className="w-full justify-center text-base/7 font-semibold text-gray-900"
+                        className="dark:text-foreground w-full justify-center text-base/7 font-semibold text-gray-900"
                         onClick={() => setMobileMenuOpen(false)}
                       >
                         Sign in
@@ -359,7 +359,7 @@ export default function HeaderClient({ navigation }: HeaderClientProps) {
           </div>
 
           {/* Call to action buttons at bottom */}
-          <div className="sticky bottom-0 grid grid-cols-1 divide-y divide-gray-900/5 bg-gray-50 text-center">
+          <div className="dark:bg-background sticky bottom-0 grid grid-cols-1 divide-y divide-gray-900/5 bg-gray-50 text-center">
             {navigation.callsToAction.map((item) => {
               const IconComponent = item.icon ? getIcon(item.icon) : null;
 
@@ -367,7 +367,7 @@ export default function HeaderClient({ navigation }: HeaderClientProps) {
                 <Link
                   key={item.name}
                   href={item.href}
-                  className="flex items-center justify-center gap-x-2.5 p-3 text-base/7 font-semibold text-gray-900 hover:bg-gray-100"
+                  className="dark:text-foreground dark:hover:bg-muted flex items-center justify-center gap-x-2.5 p-3 text-base/7 font-semibold text-gray-900 hover:bg-gray-100"
                   onClick={(event) => {
                     setMobileMenuOpen(false);
                     if (item.action !== "contact") return;
@@ -378,7 +378,7 @@ export default function HeaderClient({ navigation }: HeaderClientProps) {
                   {IconComponent && (
                     <IconComponent
                       aria-hidden="true"
-                      className="size-5 flex-none text-gray-400"
+                      className="dark:text-muted-foreground size-5 flex-none text-gray-400"
                     />
                   )}
                   {item.name}

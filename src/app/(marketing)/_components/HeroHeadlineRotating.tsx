@@ -10,7 +10,7 @@ import { HeroAppWord } from "./HeroAppWord";
  */
 export function HeroHeadlineRotating() {
   return (
-    <h1 className="mt-5 text-[clamp(40px,6vw,68px)] leading-[1.02] font-bold tracking-[-0.035em] text-balance text-gray-900">
+    <h1 className="dark:text-foreground mt-5 text-[clamp(40px,6vw,68px)] leading-[1.02] font-bold tracking-[-0.035em] text-balance text-gray-900">
       Your <HeroAppWord /> data, finally visualized.
     </h1>
   );

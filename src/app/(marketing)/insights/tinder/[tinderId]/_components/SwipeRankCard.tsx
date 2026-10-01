@@ -59,23 +59,27 @@ function RankBlock({
   const topShare = formatTopShare(placement.topShare);
 
   return (
-    <div className="rounded-xl border bg-white p-4">
+    <div className="bg-card flex min-w-0 flex-col rounded-xl border p-5">
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-sm font-semibold">{title}</p>
-          <p className="text-muted-foreground mt-1 text-xs">{definition}</p>
-        </div>
-        {topShare && <Badge variant="secondary">{topShare}</Badge>}
+        <p className="text-sm font-semibold">{title}</p>
+        {topShare && (
+          <Badge variant="secondary" className="shrink-0">
+            {topShare}
+          </Badge>
+        )}
       </div>
-      <div className="mt-4 flex items-baseline gap-2">
-        <span className="text-3xl font-bold tabular-nums">
+      <p className="text-muted-foreground mt-2 min-h-10 text-sm">
+        {definition}
+      </p>
+      <div className="mt-5">
+        <p className="text-4xl font-bold tracking-tight tabular-nums">
           {placement.rank === null
             ? "—"
             : `#${placement.rank.toLocaleString()}`}
-        </span>
-        <span className="text-muted-foreground text-sm">
+        </p>
+        <p className="text-muted-foreground mt-2 text-sm">
           of {placement.fieldSize.toLocaleString()} eligible profiles
-        </span>
+        </p>
       </div>
     </div>
   );
@@ -170,17 +174,17 @@ export function SwipeRankCard() {
   });
 
   return (
-    <Card className="overflow-hidden">
-      <CardHeader className="border-b bg-gradient-to-r from-amber-50 via-white to-rose-50">
+    <Card className="gap-0 overflow-hidden py-0">
+      <CardHeader className="dark:via-card border-b bg-gradient-to-r from-amber-50 via-white to-rose-50 p-6 dark:from-amber-950/40 dark:to-rose-950/40">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
+          <div className="min-w-0 flex-1 basis-64">
             <CardTitle className="flex items-center gap-2 text-2xl">
               <Trophy className="h-6 w-6 text-amber-500" />
               SwipeRank
             </CardTitle>
             <CardDescription className="mt-2 max-w-2xl">
               Match yield is matches divided by right swipes. It describes the
-              uploaded activity data—not human worth or attractiveness.
+              uploaded activity data, not human worth or attractiveness.
             </CardDescription>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -190,8 +194,13 @@ export function SwipeRankCard() {
                 next !== null && setSelectedPeriodKey(next)
               }
             >
-              <SelectTrigger className="w-[190px] bg-white">
-                <SelectValue />
+              <SelectTrigger
+                className="dark:bg-card w-[190px] bg-white"
+                aria-label="SwipeRank season"
+              >
+                <SelectValue>
+                  {formatSwipeRankPeriodLabel(selectedPeriod.period)}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {kindPeriods.map((item) => (
@@ -238,18 +247,18 @@ export function SwipeRankCard() {
               {selected.matchRateNumerator.toLocaleString()} matches /{" "}
               {selected.matchRateDenominator.toLocaleString()} right swipes
             </p>
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="dark:text-muted-foreground mt-1 text-xs text-slate-400">
               {selected.activeDays.toLocaleString()} active days ·{" "}
               {selected.observedDays.toLocaleString()} observed days
             </p>
           </div>
 
           {selected.excludedFromSwipeRank ? (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-5">
-              <p className="font-semibold text-amber-950">
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-5 dark:border-amber-800 dark:bg-amber-950/40">
+              <p className="font-semibold text-amber-950 dark:text-amber-200">
                 This profile is not currently included in SwipeRank
               </p>
-              <p className="mt-2 text-sm text-amber-800">
+              <p className="mt-2 text-sm text-amber-800 dark:text-amber-200">
                 Your underlying activity and private insights remain available,
                 but this profile is omitted from published ranks and benchmarks.
               </p>
@@ -263,7 +272,11 @@ export function SwipeRankCard() {
               />
               <RankBlock
                 title="Peer rank"
-                definition={selected.peer.definition}
+                definition={selected.peer.definition
+                  .replace(/\b(MALE|FEMALE)\b/g, (gender) =>
+                    gender === "MALE" ? "men" : "women",
+                  )
+                  .replace(/^./, (letter) => letter.toUpperCase())}
                 placement={selected.peer}
               />
             </div>
@@ -277,7 +290,7 @@ export function SwipeRankCard() {
                 days.
               </p>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-lg bg-slate-50 p-3 text-sm">
+                <div className="dark:bg-background rounded-lg bg-slate-50 p-3 text-sm">
                   <span className="font-semibold tabular-nums">
                     {selected.matchRateDenominator.toLocaleString()}
                   </span>{" "}
@@ -285,7 +298,7 @@ export function SwipeRankCard() {
                   {selected.eligibility.minimumRateDenominator.toLocaleString()}{" "}
                   right swipes
                 </div>
-                <div className="rounded-lg bg-slate-50 p-3 text-sm">
+                <div className="dark:bg-background rounded-lg bg-slate-50 p-3 text-sm">
                   <span className="font-semibold tabular-nums">
                     {selected.activeDays.toLocaleString()}
                   </span>{" "}
@@ -297,11 +310,11 @@ export function SwipeRankCard() {
         </div>
 
         {selected.hasQualityAnomaly && (
-          <div className="flex gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950">
+          <div className="flex gap-3 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
             <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
             <div>
               <p className="font-medium">Unusual source totals</p>
-              <p className="mt-1 text-amber-800">
+              <p className="mt-1 text-amber-800 dark:text-amber-200">
                 The value is shown as reported and is not capped at 100%.
                 Quality flags: {selected.qualityFlags.join(", ")}.
               </p>

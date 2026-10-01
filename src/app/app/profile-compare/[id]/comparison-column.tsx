@@ -154,7 +154,7 @@ function SortableContent({
   // are *visible*, not just possible. pointer-down must not bubble into the
   // tile's drag listeners, and click must not bubble into click-to-edit.
   const cornerButtonClass =
-    "text-foreground grid h-7 w-7 place-items-center rounded-full bg-white/90 opacity-0 shadow-sm backdrop-blur transition group-hover:opacity-100 hover:bg-white focus-visible:opacity-100 disabled:pointer-events-none";
+    "text-foreground grid h-7 w-7 place-items-center rounded-full bg-white/90 opacity-0 shadow-sm backdrop-blur transition group-hover:opacity-100 hover:bg-white focus-visible:opacity-100 disabled:pointer-events-none dark:bg-card/90 dark:hover:bg-card";
 
   const actionButtons = (
     <div className="absolute top-1.5 right-1.5 z-[2] flex gap-1">
@@ -179,7 +179,10 @@ function SortableContent({
           e.stopPropagation();
           onDelete(content.id);
         }}
-        className={cn(cornerButtonClass, "hover:text-red-600")}
+        className={cn(
+          cornerButtonClass,
+          "hover:text-red-600 dark:hover:text-red-400",
+        )}
       >
         <Trash2 className="h-3.5 w-3.5" />
       </button>
@@ -188,7 +191,7 @@ function SortableContent({
 
   // Purely visual "you can drag this" hint — the tile itself is the handle.
   const dragHint = (
-    <span className="pointer-events-none absolute top-1.5 left-1.5 z-[2] grid h-7 w-7 place-items-center rounded-full bg-white/90 opacity-0 shadow-sm backdrop-blur transition group-hover:opacity-100">
+    <span className="dark:bg-card/90 pointer-events-none absolute top-1.5 left-1.5 z-[2] grid h-7 w-7 place-items-center rounded-full bg-white/90 opacity-0 shadow-sm backdrop-blur transition group-hover:opacity-100">
       <GripVertical className="text-foreground h-3.5 w-3.5" />
     </span>
   );

@@ -12,11 +12,13 @@ export const metadata: Metadata = {
 
 export default function SignUpPage() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-6">
+    <div className="dark:bg-background flex min-h-screen flex-col items-center justify-center bg-gray-50 p-6">
       <div className="w-full max-w-md space-y-6">
         <div className="flex justify-center">
           <Link href="/" className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-gray-900">SwipeStats</span>
+            <span className="dark:text-foreground text-2xl font-bold text-gray-900">
+              SwipeStats
+            </span>
           </Link>
         </div>
 

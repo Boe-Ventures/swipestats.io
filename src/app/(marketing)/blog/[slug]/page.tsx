@@ -35,7 +35,7 @@ function getPostBySlug(slug: string) {
 
 function BlogCover({ src, title }: { src: string; title: string }) {
   return (
-    <figure className="mx-auto mt-10 max-w-5xl overflow-hidden rounded-3xl border border-gray-200 bg-gray-100 shadow-[0_18px_55px_rgba(15,23,42,0.12)]">
+    <figure className="dark:border-border dark:bg-muted mx-auto mt-10 max-w-5xl overflow-hidden rounded-3xl border border-gray-200 bg-gray-100 shadow-[0_18px_55px_rgba(15,23,42,0.12)]">
       <Image
         src={src}
         alt={`Editorial illustration for ${title}`}
@@ -50,13 +50,13 @@ function BlogCover({ src, title }: { src: string; title: string }) {
 
 function BoeVenturesNote() {
   return (
-    <p className="mt-6 text-center text-sm/6 text-gray-600">
+    <p className="dark:text-muted-foreground mt-6 text-center text-sm/6 text-gray-600">
       Also from Kristian:{" "}
       <a
         href={homiLandingUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="font-semibold text-gray-900 hover:text-rose-600"
+        className="dark:text-foreground font-semibold text-gray-900 hover:text-rose-600 dark:hover:text-rose-400"
       >
         Homi
       </a>{" "}
@@ -212,16 +212,16 @@ export default async function BlogPostPage({
   // Simple layout without sticky CTA
   if (!showStickyCTA) {
     return (
-      <div className="bg-white" lang={meta.language}>
+      <div className="dark:bg-card bg-white" lang={meta.language}>
         {schemaScripts}
         <div className="mx-auto max-w-4xl px-6 py-24 lg:px-8">
           <div className="mt-8">
-            <h1 className="text-4xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-5xl">
+            <h1 className="dark:text-foreground text-4xl font-semibold tracking-tight text-pretty text-gray-900 sm:text-5xl">
               {meta.h1}
             </h1>
 
             {meta.h1Subtitle && (
-              <p className="mt-6 text-xl leading-8 text-gray-700">
+              <p className="dark:text-muted-foreground mt-6 text-xl leading-8 text-gray-700">
                 {meta.h1Subtitle}
               </p>
             )}
@@ -252,14 +252,14 @@ export default async function BlogPostPage({
         </div>
 
         {/* Author section */}
-        <div className="bg-white py-16">
+        <div className="dark:bg-card bg-white py-16">
           <div className="mx-auto max-w-4xl px-6 lg:px-8">
-            <h2 className="text-center text-3xl font-bold tracking-tight text-gray-900">
+            <h2 className="dark:text-foreground text-center text-3xl font-bold tracking-tight text-gray-900">
               About the Author
             </h2>
 
             <div className="mx-auto mt-10 max-w-2xl">
-              <div className="flex flex-col items-center rounded-2xl border border-gray-200 bg-white p-8 shadow-lg">
+              <div className="dark:border-border dark:bg-card flex flex-col items-center rounded-2xl border border-gray-200 bg-white p-8 shadow-lg">
                 <Image
                   src={authorInfo.image}
                   alt={authorInfo.name}
@@ -269,7 +269,7 @@ export default async function BlogPostPage({
                 />
 
                 <div className="mt-4 flex items-center gap-2">
-                  <h3 className="text-xl font-bold text-gray-900">
+                  <h3 className="dark:text-foreground text-xl font-bold text-gray-900">
                     {authorInfo.name}
                   </h3>
                   {authorInfo.instagram && (
@@ -277,7 +277,7 @@ export default async function BlogPostPage({
                       href={authorInfo.instagram}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-gray-600 hover:text-rose-600"
+                      className="dark:text-muted-foreground text-gray-600 hover:text-rose-600 dark:hover:text-rose-400"
                       aria-label="Instagram"
                     >
                       <Instagram className="h-5 w-5" />
@@ -285,10 +285,12 @@ export default async function BlogPostPage({
                   )}
                 </div>
 
-                <p className="mt-2 text-gray-600">{authorInfo.description}</p>
+                <p className="dark:text-muted-foreground mt-2 text-gray-600">
+                  {authorInfo.description}
+                </p>
 
                 {/* Meta info */}
-                <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-gray-500">
+                <div className="dark:text-muted-foreground mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-gray-500">
                   <div className="flex items-center gap-x-2">
                     <Calendar className="h-4 w-4" />
                     <time dateTime={meta.updatedAt || meta.publishedAt}>
@@ -305,17 +307,17 @@ export default async function BlogPostPage({
                 </div>
 
                 {meta.updatedAt && meta.updatedAt !== meta.publishedAt && (
-                  <div className="mt-2 text-xs text-gray-400">
+                  <div className="dark:text-muted-foreground mt-2 text-xs text-gray-400">
                     First published{" "}
                     {format(parseISO(meta.publishedAt), "MMM dd, yyyy")}
                   </div>
                 )}
 
                 {/* Back to Blog */}
-                <div className="mt-8 w-full border-t border-gray-200 pt-6">
+                <div className="dark:border-border mt-8 w-full border-t border-gray-200 pt-6">
                   <Link
                     href="/blog"
-                    className="flex items-center justify-center gap-2 text-base font-semibold text-rose-600 hover:text-rose-700"
+                    className="flex items-center justify-center gap-2 text-base font-semibold text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-400"
                   >
                     <ArrowLeft className="h-4 w-4" />
                     Back to Blog
@@ -337,7 +339,7 @@ export default async function BlogPostPage({
 
   // Sticky CTA layout (default)
   return (
-    <div className="mt-12 bg-white" lang={meta.language}>
+    <div className="dark:bg-card mt-12 bg-white" lang={meta.language}>
       {schemaScripts}
       {/* Hero Section */}
       <div className="relative isolate px-6 pt-14 lg:px-8">
@@ -370,11 +372,11 @@ export default async function BlogPostPage({
         {/* Hero Content */}
         <div className="mx-auto max-w-2xl py-16">
           <div className="text-center">
-            <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
+            <h1 className="dark:text-foreground text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl">
               {meta.h1}
             </h1>
             {meta.h1Subtitle && (
-              <p className="mt-6 text-lg leading-8 text-gray-600">
+              <p className="dark:text-muted-foreground mt-6 text-lg leading-8 text-gray-600">
                 {meta.h1Subtitle}
               </p>
             )}
@@ -425,14 +427,14 @@ export default async function BlogPostPage({
       </div>
 
       {/* Author section */}
-      <div className="bg-white py-16">
+      <div className="dark:bg-card bg-white py-16">
         <div className="mx-auto max-w-7xl px-6 lg:px-8">
-          <h2 className="text-center text-3xl font-bold tracking-tight text-gray-900">
+          <h2 className="dark:text-foreground text-center text-3xl font-bold tracking-tight text-gray-900">
             About the Author
           </h2>
 
           <div className="mx-auto mt-10 max-w-2xl">
-            <div className="flex flex-col items-center rounded-2xl border border-gray-200 bg-white p-8 shadow-lg">
+            <div className="dark:border-border dark:bg-card flex flex-col items-center rounded-2xl border border-gray-200 bg-white p-8 shadow-lg">
               <Image
                 src={authorInfo.image}
                 alt={authorInfo.name}
@@ -442,7 +444,7 @@ export default async function BlogPostPage({
               />
 
               <div className="mt-4 flex items-center gap-2">
-                <h3 className="text-xl font-bold text-gray-900">
+                <h3 className="dark:text-foreground text-xl font-bold text-gray-900">
                   {authorInfo.name}
                 </h3>
                 {authorInfo.instagram && (
@@ -450,7 +452,7 @@ export default async function BlogPostPage({
                     href={authorInfo.instagram}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-gray-600 hover:text-rose-600"
+                    className="dark:text-muted-foreground text-gray-600 hover:text-rose-600 dark:hover:text-rose-400"
                     aria-label="Instagram"
                   >
                     <Instagram className="h-5 w-5" />
@@ -458,10 +460,12 @@ export default async function BlogPostPage({
                 )}
               </div>
 
-              <p className="mt-2 text-gray-600">{authorInfo.description}</p>
+              <p className="dark:text-muted-foreground mt-2 text-gray-600">
+                {authorInfo.description}
+              </p>
 
               {/* Meta info */}
-              <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-gray-500">
+              <div className="dark:text-muted-foreground mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm text-gray-500">
                 <div className="flex items-center gap-x-2">
                   <Calendar className="h-4 w-4" />
                   <time dateTime={meta.updatedAt || meta.publishedAt}>
@@ -478,17 +482,17 @@ export default async function BlogPostPage({
               </div>
 
               {meta.updatedAt && meta.updatedAt !== meta.publishedAt && (
-                <div className="mt-2 text-xs text-gray-400">
+                <div className="dark:text-muted-foreground mt-2 text-xs text-gray-400">
                   First published{" "}
                   {format(parseISO(meta.publishedAt), "MMM dd, yyyy")}
                 </div>
               )}
 
               {/* Back to Blog */}
-              <div className="mt-8 w-full border-t border-gray-200 pt-6">
+              <div className="dark:border-border mt-8 w-full border-t border-gray-200 pt-6">
                 <Link
                   href="/blog"
-                  className="flex items-center justify-center gap-2 text-base font-semibold text-rose-600 hover:text-rose-700"
+                  className="flex items-center justify-center gap-2 text-base font-semibold text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-400"
                 >
                   <ArrowLeft className="h-4 w-4" />
                   Back to Blog

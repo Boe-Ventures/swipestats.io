@@ -26,21 +26,21 @@ export default function BlogProductCardsPreviewPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-100 text-gray-950">
-      <header className="border-b border-gray-200 bg-white">
+    <main className="dark:bg-muted dark:text-foreground min-h-screen bg-gray-100 text-gray-950">
+      <header className="dark:border-border dark:bg-card border-b border-gray-200 bg-white">
         <div className="mx-auto max-w-6xl px-6 py-14 lg:px-8">
-          <div className="font-mono text-[11px] font-semibold tracking-[0.12em] text-rose-600 uppercase">
+          <div className="font-mono text-[11px] font-semibold tracking-[0.12em] text-rose-600 uppercase dark:text-rose-400">
             Non-production · MDX specimens
           </div>
           <h1 className="mt-3 text-4xl font-bold tracking-[-0.04em] sm:text-5xl">
             Blog product cards
           </h1>
-          <p className="mt-4 max-w-2xl text-lg leading-8 text-gray-600">
+          <p className="dark:text-muted-foreground mt-4 max-w-2xl text-lg leading-8 text-gray-600">
             The actual reusable cards intended for manual placement in
             high-performing posts. Each one can be rendered in MDX with a single
             product key.
           </p>
-          <code className="mt-6 inline-flex rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 font-mono text-[12px] text-gray-700">
+          <code className="dark:border-border dark:bg-background dark:text-muted-foreground mt-6 inline-flex rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 font-mono text-[12px] text-gray-700">
             {'<ProductCard product="profile-compare" />'}
           </code>
         </div>
@@ -49,14 +49,14 @@ export default function BlogProductCardsPreviewPage() {
       <section className="mx-auto max-w-6xl px-6 py-16 lg:px-8">
         <div className="mb-10 flex items-end justify-between gap-6">
           <div>
-            <div className="font-mono text-[11px] font-semibold tracking-[0.1em] text-gray-400 uppercase">
+            <div className="dark:text-muted-foreground font-mono text-[11px] font-semibold tracking-[0.1em] text-gray-400 uppercase">
               01 · Product-aware
             </div>
             <h2 className="mt-2 text-3xl font-bold tracking-[-0.03em]">
               Manual MDX variants
             </h2>
           </div>
-          <p className="hidden max-w-sm text-right text-sm leading-6 text-gray-500 md:block">
+          <p className="dark:text-muted-foreground hidden max-w-sm text-right text-sm leading-6 text-gray-500 md:block">
             Same shell, different promise and a miniature preview of the real
             destination surface.
           </p>
@@ -66,10 +66,10 @@ export default function BlogProductCardsPreviewPage() {
           {BLOG_PRODUCT_KEYS.map((product) => (
             <div key={product} className="mb-12">
               <div className="mb-3 flex items-center gap-3">
-                <span className="font-mono text-[11px] font-semibold tracking-[0.08em] text-gray-500 uppercase">
+                <span className="dark:text-muted-foreground font-mono text-[11px] font-semibold tracking-[0.08em] text-gray-500 uppercase">
                   {product}
                 </span>
-                <span className="h-px flex-1 bg-gray-200" />
+                <span className="dark:bg-accent h-px flex-1 bg-gray-200" />
               </div>
               <ProductCard product={product} />
             </div>
@@ -77,15 +77,15 @@ export default function BlogProductCardsPreviewPage() {
         </div>
       </section>
 
-      <section className="border-y border-gray-200 bg-white">
+      <section className="dark:border-border dark:bg-card border-y border-gray-200 bg-white">
         <div className="mx-auto max-w-6xl px-6 py-16 lg:px-8">
-          <div className="font-mono text-[11px] font-semibold tracking-[0.1em] text-gray-400 uppercase">
+          <div className="dark:text-muted-foreground font-mono text-[11px] font-semibold tracking-[0.1em] text-gray-400 uppercase">
             02 · Sponsorship
           </div>
           <h2 className="mt-2 text-3xl font-bold tracking-[-0.03em]">
             House and paid campaigns
           </h2>
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-gray-500">
+          <p className="dark:text-muted-foreground mt-3 max-w-2xl text-sm leading-6 text-gray-500">
             The house card sells the placement using SwipeStats audience proof.
             A paid campaign keeps the shell but carries its own sponsor
             identity, destination, and reporting.
@@ -98,17 +98,17 @@ export default function BlogProductCardsPreviewPage() {
         </div>
       </section>
 
-      <section className="border-b border-gray-200 bg-white">
+      <section className="dark:border-border dark:bg-card border-b border-gray-200 bg-white">
         <div className="mx-auto max-w-6xl px-6 py-16 lg:px-8">
-          <div className="font-mono text-[11px] font-semibold tracking-[0.1em] text-gray-400 uppercase">
+          <div className="dark:text-muted-foreground font-mono text-[11px] font-semibold tracking-[0.1em] text-gray-400 uppercase">
             03 · In context
           </div>
           <h2 className="mt-2 text-3xl font-bold tracking-[-0.03em]">
             Inside an article
           </h2>
 
-          <article className="mx-auto mt-10 max-w-3xl text-[17px] leading-[1.75] text-gray-700">
-            <h3 className="text-2xl font-bold tracking-[-0.025em] text-gray-950">
+          <article className="dark:text-muted-foreground mx-auto mt-10 max-w-3xl text-[17px] leading-[1.75] text-gray-700">
+            <h3 className="dark:text-foreground text-2xl font-bold tracking-[-0.025em] text-gray-950">
               Your prompt should make replying easy
             </h3>
             <p className="mt-4">
@@ -119,7 +119,7 @@ export default function BlogProductCardsPreviewPage() {
 
             <ProductCard product="prompt-assistant" />
 
-            <h3 className="mt-12 text-2xl font-bold tracking-[-0.025em] text-gray-950">
+            <h3 className="dark:text-foreground mt-12 text-2xl font-bold tracking-[-0.025em] text-gray-950">
               Specific beats impressive
             </h3>
             <p className="mt-4">
@@ -131,13 +131,13 @@ export default function BlogProductCardsPreviewPage() {
       </section>
 
       <section className="mx-auto max-w-6xl px-6 py-16 lg:px-8">
-        <div className="font-mono text-[11px] font-semibold tracking-[0.1em] text-gray-400 uppercase">
+        <div className="dark:text-muted-foreground font-mono text-[11px] font-semibold tracking-[0.1em] text-gray-400 uppercase">
           04 · Current system
         </div>
         <h2 className="mt-2 text-3xl font-bold tracking-[-0.03em]">
           Fallback cards for comparison
         </h2>
-        <p className="mt-3 max-w-2xl text-base leading-7 text-gray-600">
+        <p className="dark:text-muted-foreground mt-3 max-w-2xl text-base leading-7 text-gray-600">
           These are the existing generic auto-injected card and the wide-screen
           sidebar card. They remain useful as the long-tail fallback.
         </p>

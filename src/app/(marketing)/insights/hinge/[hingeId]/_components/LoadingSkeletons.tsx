@@ -10,7 +10,7 @@ export function SkeletonBox({
 }) {
   return (
     <div
-      className={`rounded-lg bg-gray-200 ${animated ? "animate-pulse" : ""} ${className}`}
+      className={`dark:bg-accent rounded-lg bg-gray-200 ${animated ? "animate-pulse" : ""} ${className}`}
     />
   );
 }
@@ -25,11 +25,11 @@ export function SkeletonCard({
   return (
     <Card className={className}>
       <CardHeader>
-        <div className="h-6 w-32 animate-pulse rounded bg-gray-200" />
+        <div className="dark:bg-accent h-6 w-32 animate-pulse rounded bg-gray-200" />
       </CardHeader>
       <CardContent>
         <div
-          className={`w-full animate-pulse rounded-lg bg-gray-200 ${height}`}
+          className={`dark:bg-accent w-full animate-pulse rounded-lg bg-gray-200 ${height}`}
         />
       </CardContent>
     </Card>
@@ -44,12 +44,12 @@ export function HingeInsightsSkeleton() {
         {/* Page Header */}
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-2">
-            <div className="h-10 w-64 animate-pulse rounded-lg bg-gray-200 sm:h-12 lg:h-14" />
-            <div className="h-5 w-48 animate-pulse rounded bg-gray-200 sm:h-6" />
+            <div className="dark:bg-accent h-10 w-64 animate-pulse rounded-lg bg-gray-200 sm:h-12 lg:h-14" />
+            <div className="dark:bg-accent h-5 w-48 animate-pulse rounded bg-gray-200 sm:h-6" />
           </div>
           {/* Action buttons skeleton */}
           <div className="flex gap-2">
-            <div className="h-9 w-20 animate-pulse rounded-md bg-gray-200" />
+            <div className="dark:bg-accent h-9 w-20 animate-pulse rounded-md bg-gray-200" />
           </div>
         </div>
 

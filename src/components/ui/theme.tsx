@@ -15,12 +15,16 @@ import {
 const ThemeModeSchema = z.enum(["light", "dark", "auto"]);
 
 const themeKey = "swipestats-theme";
+const themeChangeEvent = "swipestats-theme-change";
+// Retain a selection for this tab even when browser storage is unavailable.
+let transientTheme: ThemeMode | undefined;
 
 export type ThemeMode = z.output<typeof ThemeModeSchema>;
 export type ResolvedTheme = Exclude<ThemeMode, "auto">;
 
 const getStoredThemeMode = (): ThemeMode => {
   if (typeof window === "undefined") return "light";
+  if (transientTheme) return transientTheme;
   try {
     const storedTheme = localStorage.getItem(themeKey);
     return ThemeModeSchema.parse(storedTheme);
@@ -30,12 +34,13 @@ const getStoredThemeMode = (): ThemeMode => {
 };
 
 const setStoredThemeMode = (theme: ThemeMode) => {
+  transientTheme = ThemeModeSchema.parse(theme);
   try {
-    const parsedTheme = ThemeModeSchema.parse(theme);
-    localStorage.setItem(themeKey, parsedTheme);
+    localStorage.setItem(themeKey, transientTheme);
   } catch {
-    // Silently fail if localStorage is unavailable
+    // The in-memory selection still works if localStorage is unavailable.
   }
+  window.dispatchEvent(new Event(themeChangeEvent));
 };
 
 const getSystemTheme = () => {
@@ -56,12 +61,27 @@ const updateThemeClass = (themeMode: ThemeMode) => {
   }
 };
 
-const setupPreferredListener = () => {
-  const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-  const handler = () => updateThemeClass("auto");
-  mediaQuery.addEventListener("change", handler);
-  return () => mediaQuery.removeEventListener("change", handler);
+const subscribeTheme = (onChange: () => void) => {
+  const onStorage = (event: StorageEvent) => {
+    if (event.key !== themeKey && event.key !== null) return;
+    transientTheme = undefined;
+    onChange();
+  };
+  window.addEventListener("storage", onStorage);
+  window.addEventListener(themeChangeEvent, onChange);
+  return () => {
+    window.removeEventListener("storage", onStorage);
+    window.removeEventListener(themeChangeEvent, onChange);
+  };
 };
+
+const subscribeSystemTheme = (onChange: () => void) => {
+  const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+  mediaQuery.addEventListener("change", onChange);
+  return () => mediaQuery.removeEventListener("change", onChange);
+};
+
+const getServerTheme = (): ResolvedTheme => "light";
 
 const getNextTheme = (current: ThemeMode): ThemeMode => {
   const themes: ThemeMode[] =
@@ -111,17 +131,25 @@ const ThemeContext = React.createContext<ThemeContextProps | undefined>(
 );
 
 export function ThemeProvider({ children }: React.PropsWithChildren) {
-  const [themeMode, setThemeMode] = React.useState(getStoredThemeMode);
+  const themeMode = React.useSyncExternalStore(
+    subscribeTheme,
+    getStoredThemeMode,
+    getServerTheme,
+  );
+  const systemTheme = React.useSyncExternalStore(
+    subscribeSystemTheme,
+    getSystemTheme,
+    getServerTheme,
+  );
+  const resolvedTheme = themeMode === "auto" ? systemTheme : themeMode;
 
   React.useEffect(() => {
-    if (themeMode !== "auto") return;
-    return setupPreferredListener();
-  }, [themeMode]);
-
-  const resolvedTheme = themeMode === "auto" ? getSystemTheme() : themeMode;
+    // During hydration the server snapshot is light. Read the actual preference
+    // so this effect cannot briefly undo the theme applied by the head script.
+    updateThemeClass(getStoredThemeMode());
+  }, [themeMode, resolvedTheme]);
 
   const setTheme = (newTheme: ThemeMode) => {
-    setThemeMode(newTheme);
     setStoredThemeMode(newTheme);
     updateThemeClass(newTheme);
   };
@@ -139,10 +167,6 @@ export function ThemeProvider({ children }: React.PropsWithChildren) {
         toggleMode,
       }}
     >
-      <script
-        dangerouslySetInnerHTML={{ __html: themeDetectorScript }}
-        suppressHydrationWarning
-      />
       {children}
     </ThemeContext>
   );

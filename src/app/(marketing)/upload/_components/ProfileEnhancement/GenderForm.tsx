@@ -87,7 +87,7 @@ export function GenderForm({
         name="gender"
         render={({ field, fieldState }) => (
           <FieldSet data-invalid={fieldState.invalid}>
-            <FieldLegend className="text-sm font-medium text-gray-900">
+            <FieldLegend className="dark:text-foreground text-sm font-medium text-gray-900">
               What is your gender?
             </FieldLegend>
             <FieldGroup>
@@ -98,10 +98,14 @@ export function GenderForm({
                 className="flex flex-wrap gap-2"
               >
                 {GENDER_OPTIONS.map((gender) => (
-                  <Field key={gender} orientation="horizontal" data-invalid={fieldState.invalid}>
+                  <Field
+                    key={gender}
+                    orientation="horizontal"
+                    data-invalid={fieldState.invalid}
+                  >
                     <Label
                       htmlFor={`gender-${gender}`}
-                      className="flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-50 active:bg-gray-100 sm:min-h-[40px] [&:has(:checked)]:border-red-500 [&:has(:checked)]:bg-red-50 [&:has(:checked)]:text-red-700"
+                      className="dark:border-border dark:bg-card dark:hover:bg-background dark:active:bg-muted flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-50 active:bg-gray-100 sm:min-h-[40px] [&:has(:checked)]:border-red-500 [&:has(:checked)]:bg-red-50 [&:has(:checked)]:text-red-700 dark:[&:has(:checked)]:bg-red-950/40 dark:[&:has(:checked)]:text-red-400"
                     >
                       <RadioGroupItem
                         id={`gender-${gender}`}
@@ -125,7 +129,7 @@ export function GenderForm({
         name="genderFilter"
         render={({ field, fieldState }) => (
           <FieldSet data-invalid={fieldState.invalid}>
-            <FieldLegend className="text-sm font-medium text-gray-900">
+            <FieldLegend className="dark:text-foreground text-sm font-medium text-gray-900">
               Who are you looking for?
             </FieldLegend>
             <FieldGroup>
@@ -136,10 +140,14 @@ export function GenderForm({
                 className="flex flex-wrap gap-2"
               >
                 {GENDER_OPTIONS.map((gender) => (
-                  <Field key={gender} orientation="horizontal" data-invalid={fieldState.invalid}>
+                  <Field
+                    key={gender}
+                    orientation="horizontal"
+                    data-invalid={fieldState.invalid}
+                  >
                     <Label
                       htmlFor={`genderFilter-${gender}`}
-                      className="flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-50 active:bg-gray-100 sm:min-h-[40px] [&:has(:checked)]:border-red-500 [&:has(:checked)]:bg-red-50 [&:has(:checked)]:text-red-700"
+                      className="dark:border-border dark:bg-card dark:hover:bg-background dark:active:bg-muted flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-50 active:bg-gray-100 sm:min-h-[40px] [&:has(:checked)]:border-red-500 [&:has(:checked)]:bg-red-50 [&:has(:checked)]:text-red-700 dark:[&:has(:checked)]:bg-red-950/40 dark:[&:has(:checked)]:text-red-400"
                     >
                       <RadioGroupItem
                         id={`genderFilter-${gender}`}

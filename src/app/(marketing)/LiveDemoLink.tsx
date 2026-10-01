@@ -9,7 +9,7 @@ export default function LiveDemoLink() {
   return (
     <Link
       href="/"
-      className="group text-sm leading-6 font-semibold text-gray-900 transition-colors hover:text-gray-700"
+      className="group dark:text-foreground dark:hover:text-muted-foreground text-sm leading-6 font-semibold text-gray-900 transition-colors hover:text-gray-700"
       // eslint-disable-next-line @typescript-eslint/no-empty-function
       onClick={() => startTransition(() => {})}
     >

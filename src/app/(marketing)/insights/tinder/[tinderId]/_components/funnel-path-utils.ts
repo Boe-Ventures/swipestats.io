@@ -67,24 +67,24 @@ export function calculateStageWidth(
 }
 
 /**
- * Calculate pill bubble dimensions based on funnel width
- * Bubbles are approximately 1.3x wider than the funnel at that stage
+ * Keep flow proportions while reserving padding around the rendered text.
  */
 export function calculateBubbleDimensions(
   funnelWidth: number,
   isTopBubble = false,
+  textWidth = 0,
 ): {
   width: number;
   x: number;
 } {
   // Top bubble is special - fixed large size to fit "You swiped X times"
   if (isTopBubble) {
-    const width = 436; // Matching original exactly
+    const width = Math.max(436, textWidth + 48);
     return { width, x: -width / 2 };
   }
 
   // Regular bubbles are 1.3x the funnel width at that stage, with minimum 80px
-  const width = Math.max(80, funnelWidth * 1.3);
+  const width = Math.max(80, funnelWidth * 1.3, textWidth + 40);
   const x = -width / 2;
 
   return { width, x };

@@ -19,16 +19,19 @@ import {
 } from "@/lib/analytics/analytics.properties";
 
 const statusStyles: Record<EventStatus, string> = {
-  live: "bg-green-100 text-green-800",
-  planned: "bg-amber-100 text-amber-800",
-  deprecated: "bg-gray-200 text-gray-600",
+  live: "bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-200",
+  planned:
+    "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200",
+  deprecated:
+    "bg-gray-200 text-gray-600 dark:bg-accent dark:text-muted-foreground",
 };
 
 const destStyles: Record<AnalyticsDestination, string> = {
-  posthog: "bg-blue-100 text-blue-700",
+  posthog: "bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400",
   vercel: "bg-gray-900 text-white",
-  slack: "bg-purple-100 text-purple-700",
-  amplitude: "bg-sky-100 text-sky-700",
+  slack:
+    "bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-400",
+  amplitude: "bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-400",
 };
 
 const ALL_STATUSES: EventStatus[] = ["live", "planned", "deprecated"];
@@ -46,9 +49,9 @@ function propertiesFor(entry: TrackingPlanEntry): Record<string, PropertyMeta> {
     entry.surface === "server"
       ? SERVER_EVENT_PROPERTIES
       : CLIENT_EVENT_PROPERTIES;
-  return (registry as Record<string, Record<string, PropertyMeta>>)[
-    entry.name
-  ] ?? {};
+  return (
+    (registry as Record<string, Record<string, PropertyMeta>>)[entry.name] ?? {}
+  );
 }
 
 function StatusBadge({ status }: { status: EventStatus }) {
@@ -80,12 +83,22 @@ function DestinationBadges({
   );
 }
 
-function SummaryStat({ label, value }: { label: string; value: string | number }) {
+function SummaryStat({
+  label,
+  value,
+}: {
+  label: string;
+  value: string | number;
+}) {
   return (
     <Card>
       <CardContent className="p-4">
-        <div className="text-2xl font-bold text-gray-900">{value}</div>
-        <div className="text-sm text-gray-600">{label}</div>
+        <div className="dark:text-foreground text-2xl font-bold text-gray-900">
+          {value}
+        </div>
+        <div className="dark:text-muted-foreground text-sm text-gray-600">
+          {label}
+        </div>
       </CardContent>
     </Card>
   );
@@ -110,7 +123,7 @@ function FilterChip({
       className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
         active
           ? `border-transparent ${className ?? "bg-gray-900 text-white"}`
-          : "border-gray-200 bg-white text-gray-500 hover:border-gray-300"
+          : "dark:border-border dark:bg-card dark:text-muted-foreground dark:hover:border-border border-gray-200 bg-white text-gray-500 hover:border-gray-300"
       }`}
     >
       {children}
@@ -118,12 +131,16 @@ function FilterChip({
   );
 }
 
-function PropertyTable({ properties }: { properties: Record<string, PropertyMeta> }) {
+function PropertyTable({
+  properties,
+}: {
+  properties: Record<string, PropertyMeta>;
+}) {
   const names = Object.keys(properties);
 
   if (names.length === 0) {
     return (
-      <p className="px-4 py-3 text-xs italic text-gray-400">
+      <p className="dark:text-muted-foreground px-4 py-3 text-xs text-gray-400 italic">
         No properties — this event carries no payload.
       </p>
     );
@@ -131,7 +148,7 @@ function PropertyTable({ properties }: { properties: Record<string, PropertyMeta
 
   return (
     <table className="w-full text-left text-xs">
-      <thead className="text-gray-400">
+      <thead className="dark:text-muted-foreground text-gray-400">
         <tr>
           <th className="px-4 py-1 font-medium">Property</th>
           <th className="px-4 py-1 font-medium">Type</th>
@@ -144,19 +161,27 @@ function PropertyTable({ properties }: { properties: Record<string, PropertyMeta
           const meta = properties[name]!;
           return (
             <tr key={name} className="align-top">
-              <td className="px-4 py-1 font-mono text-gray-800">{name}</td>
-              <td className="px-4 py-1 font-mono text-gray-500">{meta.type}</td>
+              <td className="dark:text-foreground px-4 py-1 font-mono text-gray-800">
+                {name}
+              </td>
+              <td className="dark:text-muted-foreground px-4 py-1 font-mono text-gray-500">
+                {meta.type}
+              </td>
               <td className="px-4 py-1">
                 {meta.required ? (
-                  <span className="text-gray-700">required</span>
+                  <span className="dark:text-muted-foreground text-gray-700">
+                    required
+                  </span>
                 ) : (
-                  <span className="text-gray-400">optional</span>
+                  <span className="dark:text-muted-foreground text-gray-400">
+                    optional
+                  </span>
                 )}
               </td>
-              <td className="px-4 py-1 text-gray-500">
+              <td className="dark:text-muted-foreground px-4 py-1 text-gray-500">
                 {meta.description}
                 {meta.values && (
-                  <span className="ml-1 font-mono text-gray-400">
+                  <span className="dark:text-muted-foreground ml-1 font-mono text-gray-400">
                     {meta.description ? " — " : ""}
                     {meta.values.join(" | ")}
                   </span>
@@ -178,19 +203,21 @@ function EventRow({ entry }: { entry: TrackingPlanEntry }) {
   return (
     <>
       <tr
-        className="cursor-pointer align-top hover:bg-gray-50"
+        className="dark:hover:bg-background cursor-pointer align-top hover:bg-gray-50"
         onClick={() => setOpen((v) => !v)}
       >
-        <td className="px-4 py-2 font-mono text-xs text-gray-900">
+        <td className="dark:text-foreground px-4 py-2 font-mono text-xs text-gray-900">
           <span className="flex items-center gap-1">
             <ChevronRight
-              className={`h-3 w-3 text-gray-400 transition-transform ${
+              className={`dark:text-muted-foreground h-3 w-3 text-gray-400 transition-transform ${
                 open ? "rotate-90" : ""
               }`}
             />
             {entry.name}
-            <span className="ml-1 text-[10px] font-normal text-gray-400">
-              {propCount > 0 ? `${propCount} prop${propCount === 1 ? "" : "s"}` : "—"}
+            <span className="dark:text-muted-foreground ml-1 text-[10px] font-normal text-gray-400">
+              {propCount > 0
+                ? `${propCount} prop${propCount === 1 ? "" : "s"}`
+                : "—"}
             </span>
           </span>
         </td>
@@ -200,11 +227,16 @@ function EventRow({ entry }: { entry: TrackingPlanEntry }) {
         <td className="px-4 py-2">
           <DestinationBadges destinations={entry.destinations} />
         </td>
-        <td className="px-4 py-2 text-gray-600">{entry.description}</td>
+        <td className="dark:text-muted-foreground px-4 py-2 text-gray-600">
+          {entry.description}
+        </td>
       </tr>
       {open && (
         <tr>
-          <td colSpan={4} className="border-t border-gray-100 bg-gray-50/50 p-0">
+          <td
+            colSpan={4}
+            className="dark:border-border dark:bg-background/50 border-t border-gray-100 bg-gray-50/50 p-0"
+          >
             <PropertyTable properties={properties} />
           </td>
         </tr>
@@ -236,9 +268,9 @@ function SurfaceSection({
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-semibold text-gray-900">
+      <h2 className="dark:text-foreground text-xl font-semibold text-gray-900">
         {surface === "server" ? "Server events" : "Client events"}
-        <span className="ml-2 text-sm font-normal text-gray-500">
+        <span className="dark:text-muted-foreground ml-2 text-sm font-normal text-gray-500">
           {entries.length} event{entries.length === 1 ? "" : "s"}
         </span>
       </h2>
@@ -246,7 +278,7 @@ function SurfaceSection({
       <Card>
         <CardContent className="p-0">
           <table className="w-full text-left text-sm">
-            <thead className="border-b bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+            <thead className="dark:bg-background dark:text-muted-foreground border-b bg-gray-50 text-xs tracking-wide text-gray-500 uppercase">
               <tr>
                 <th className="px-4 py-2 font-medium">Event</th>
                 <th className="px-4 py-2 font-medium">Status</th>
@@ -254,7 +286,7 @@ function SurfaceSection({
                 <th className="px-4 py-2 font-medium">Description</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="dark:divide-border divide-y divide-gray-100">
               {grouped.map(([category, rows]) => (
                 <CategoryRows key={category} category={category} rows={rows} />
               ))}
@@ -275,10 +307,10 @@ function CategoryRows({
 }) {
   return (
     <>
-      <tr className="bg-gray-50/60">
+      <tr className="dark:bg-background/60 bg-gray-50/60">
         <td
           colSpan={4}
-          className="px-4 py-1.5 text-xs font-semibold uppercase tracking-wide text-gray-500"
+          className="dark:text-muted-foreground px-4 py-1.5 text-xs font-semibold tracking-wide text-gray-500 uppercase"
         >
           {category}
         </td>
@@ -310,13 +342,13 @@ function SharedProperties() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-semibold text-gray-900">
+      <h2 className="dark:text-foreground text-xl font-semibold text-gray-900">
         Shared properties
-        <span className="ml-2 text-sm font-normal text-gray-500">
+        <span className="dark:text-muted-foreground ml-2 text-sm font-normal text-gray-500">
           {shared.length} reused across events
         </span>
       </h2>
-      <p className="text-sm text-gray-600">
+      <p className="dark:text-muted-foreground text-sm text-gray-600">
         Property names used by more than one event — keep these consistent so
         cross-event analysis (filters, breakdowns) lines up in PostHog and
         Amplitude.
@@ -324,26 +356,26 @@ function SharedProperties() {
       <Card>
         <CardContent className="p-0">
           <table className="w-full text-left text-sm">
-            <thead className="border-b bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+            <thead className="dark:bg-background dark:text-muted-foreground border-b bg-gray-50 text-xs tracking-wide text-gray-500 uppercase">
               <tr>
                 <th className="px-4 py-2 font-medium">Property</th>
                 <th className="px-4 py-2 font-medium">Type(s)</th>
                 <th className="px-4 py-2 font-medium">Used by</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="dark:divide-border divide-y divide-gray-100">
               {shared.map(([propName, r]) => (
                 <tr key={propName} className="align-top">
-                  <td className="px-4 py-2 font-mono text-xs text-gray-900">
+                  <td className="dark:text-foreground px-4 py-2 font-mono text-xs text-gray-900">
                     {propName}
-                    <span className="ml-1 text-[10px] font-normal text-gray-400">
+                    <span className="dark:text-muted-foreground ml-1 text-[10px] font-normal text-gray-400">
                       ×{r.events.length}
                     </span>
                   </td>
-                  <td className="px-4 py-2 font-mono text-xs text-gray-500">
+                  <td className="dark:text-muted-foreground px-4 py-2 font-mono text-xs text-gray-500">
                     {[...r.types].join(", ")}
                   </td>
-                  <td className="px-4 py-2 font-mono text-xs text-gray-500">
+                  <td className="dark:text-muted-foreground px-4 py-2 font-mono text-xs text-gray-500">
                     {r.events.join(", ")}
                   </td>
                 </tr>
@@ -360,41 +392,45 @@ function IdentifyTraits() {
   const names = Object.keys(USER_TRAITS);
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-semibold text-gray-900">
+      <h2 className="dark:text-foreground text-xl font-semibold text-gray-900">
         Identify · user traits
-        <span className="ml-2 text-sm font-normal text-gray-500">
+        <span className="dark:text-muted-foreground ml-2 text-sm font-normal text-gray-500">
           {names.length} traits
         </span>
       </h2>
-      <p className="text-sm text-gray-600">
+      <p className="dark:text-muted-foreground text-sm text-gray-600">
         Attached to the user profile (not events) via PostHog{" "}
-        <code className="rounded bg-gray-100 px-1 py-0.5 text-xs">identifyUser</code>{" "}
+        <code className="dark:bg-muted rounded bg-gray-100 px-1 py-0.5 text-xs">
+          identifyUser
+        </code>{" "}
         (server) and Amplitude{" "}
-        <code className="rounded bg-gray-100 px-1 py-0.5 text-xs">identify</code>{" "}
+        <code className="dark:bg-muted rounded bg-gray-100 px-1 py-0.5 text-xs">
+          identify
+        </code>{" "}
         (client).
       </p>
       <Card>
         <CardContent className="p-0">
           <table className="w-full text-left text-sm">
-            <thead className="border-b bg-gray-50 text-xs uppercase tracking-wide text-gray-500">
+            <thead className="dark:bg-background dark:text-muted-foreground border-b bg-gray-50 text-xs tracking-wide text-gray-500 uppercase">
               <tr>
                 <th className="px-4 py-2 font-medium">Trait</th>
                 <th className="px-4 py-2 font-medium">Type</th>
                 <th className="px-4 py-2 font-medium">Notes</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody className="dark:divide-border divide-y divide-gray-100">
               {names.map((name) => {
                 const meta = USER_TRAITS[name]!;
                 return (
                   <tr key={name} className="align-top">
-                    <td className="px-4 py-2 font-mono text-xs text-gray-900">
+                    <td className="dark:text-foreground px-4 py-2 font-mono text-xs text-gray-900">
                       {name}
                     </td>
-                    <td className="px-4 py-2 font-mono text-xs text-gray-500">
+                    <td className="dark:text-muted-foreground px-4 py-2 font-mono text-xs text-gray-500">
                       {meta.type}
                     </td>
-                    <td className="px-4 py-2 text-xs text-gray-500">
+                    <td className="dark:text-muted-foreground px-4 py-2 text-xs text-gray-500">
                       {meta.description}
                     </td>
                   </tr>
@@ -455,17 +491,23 @@ export default function TrackingPlanPage() {
   const plannedCount = TRACKING_PLAN.filter(
     (e) => e.status === "planned",
   ).length;
-  const totalServer = TRACKING_PLAN.filter((e) => e.surface === "server").length;
-  const totalClient = TRACKING_PLAN.filter((e) => e.surface === "client").length;
+  const totalServer = TRACKING_PLAN.filter(
+    (e) => e.surface === "server",
+  ).length;
+  const totalClient = TRACKING_PLAN.filter(
+    (e) => e.surface === "client",
+  ).length;
 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Tracking Plan</h1>
-        <p className="mt-2 text-gray-600">
+        <h1 className="dark:text-foreground text-3xl font-bold text-gray-900">
+          Tracking Plan
+        </h1>
+        <p className="dark:text-muted-foreground mt-2 text-gray-600">
           The single source of truth for analytics events, pinned to the typed
           taxonomy in{" "}
-          <code className="rounded bg-gray-100 px-1 py-0.5 text-sm">
+          <code className="dark:bg-muted rounded bg-gray-100 px-1 py-0.5 text-sm">
             analytics.types.ts
           </code>
           . Destinations are derived from the routing policy; status is a manual
@@ -487,17 +529,17 @@ export default function TrackingPlanPage() {
       <Card>
         <CardContent className="space-y-3 p-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <Search className="dark:text-muted-foreground absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search events, descriptions, properties…"
-              className="w-full rounded-md border border-gray-200 py-2 pl-9 pr-3 text-sm focus:border-gray-400 focus:outline-none"
+              className="dark:border-border w-full rounded-md border border-gray-200 py-2 pr-3 pl-9 text-sm focus:border-gray-400 focus:outline-none"
             />
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-medium uppercase text-gray-400">
+            <span className="dark:text-muted-foreground text-xs font-medium text-gray-400 uppercase">
               Destination
             </span>
             {ALL_DESTINATIONS.map((d) => (
@@ -512,7 +554,7 @@ export default function TrackingPlanPage() {
             ))}
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-xs font-medium uppercase text-gray-400">
+            <span className="dark:text-muted-foreground text-xs font-medium text-gray-400 uppercase">
               Status
             </span>
             {ALL_STATUSES.map((s) => (
@@ -525,7 +567,7 @@ export default function TrackingPlanPage() {
                 {s}
               </FilterChip>
             ))}
-            <span className="ml-2 text-xs font-medium uppercase text-gray-400">
+            <span className="dark:text-muted-foreground ml-2 text-xs font-medium text-gray-400 uppercase">
               Surface
             </span>
             {ALL_SURFACES.map((s) => (
@@ -544,7 +586,7 @@ export default function TrackingPlanPage() {
       <SurfaceSection surface="server" entries={serverEvents} />
       <SurfaceSection surface="client" entries={clientEvents} />
       {filtered.length === 0 && (
-        <p className="text-center text-sm text-gray-400">
+        <p className="dark:text-muted-foreground text-center text-sm text-gray-400">
           No events match the current filters.
         </p>
       )}

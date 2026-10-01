@@ -26,7 +26,7 @@ export function UnsubscribeClient() {
     return (
       <Card>
         <CardContent className="flex gap-3 py-8 text-sm">
-          <AlertTriangle className="mt-0.5 size-4 text-destructive" />
+          <AlertTriangle className="text-destructive mt-0.5 size-4" />
           <div>
             <p className="font-medium">This unsubscribe link is invalid.</p>
             <p className="text-muted-foreground">
@@ -50,7 +50,7 @@ export function UnsubscribeClient() {
     return (
       <Card>
         <CardContent className="flex gap-3 py-8 text-sm">
-          <CheckCircle2 className="mt-0.5 size-4 text-green-600" />
+          <CheckCircle2 className="mt-0.5 size-4 text-green-600 dark:text-green-400" />
           <div>
             <p className="font-medium">You have been unsubscribed.</p>
             <p className="text-muted-foreground">
@@ -66,7 +66,7 @@ export function UnsubscribeClient() {
 
   return (
     <Card>
-      <CardContent className="py-8 text-sm text-muted-foreground">
+      <CardContent className="text-muted-foreground py-8 text-sm">
         Unsubscribing...
       </CardContent>
     </Card>

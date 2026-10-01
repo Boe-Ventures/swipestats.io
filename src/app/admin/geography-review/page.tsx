@@ -91,10 +91,10 @@ export default function GeographyReviewPage() {
               </Button>
             </Link>
           </div>
-          <h1 className="mt-2 text-3xl font-bold text-gray-900">
+          <h1 className="dark:text-foreground mt-2 text-3xl font-bold text-gray-900">
             Geography Review
           </h1>
-          <p className="mt-2 text-gray-600">
+          <p className="dark:text-muted-foreground mt-2 text-gray-600">
             Review profile distribution by location
           </p>
         </div>
@@ -108,7 +108,7 @@ export default function GeographyReviewPage() {
         <CardContent>
           <div className="grid gap-4 sm:grid-cols-3">
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">
+              <label className="dark:text-muted-foreground mb-2 block text-sm font-medium text-gray-700">
                 Platform
               </label>
               <Select
@@ -128,7 +128,7 @@ export default function GeographyReviewPage() {
               </Select>
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">
+              <label className="dark:text-muted-foreground mb-2 block text-sm font-medium text-gray-700">
                 Group By
               </label>
               <Select
@@ -148,7 +148,7 @@ export default function GeographyReviewPage() {
               </Select>
             </div>
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">
+              <label className="dark:text-muted-foreground mb-2 block text-sm font-medium text-gray-700">
                 Sort By
               </label>
               <Select
@@ -173,7 +173,7 @@ export default function GeographyReviewPage() {
       {/* Loading State */}
       {isLoading && (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+          <Loader2 className="dark:text-muted-foreground h-8 w-8 animate-spin text-gray-400" />
         </div>
       )}
 
@@ -204,12 +204,12 @@ export default function GeographyReviewPage() {
                   const rank = (page - 1) * 20 + index + 1;
                   return (
                     <TableRow key={location.location}>
-                      <TableCell className="font-medium text-gray-500">
+                      <TableCell className="dark:text-muted-foreground font-medium text-gray-500">
                         {rank}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Icon className="h-4 w-4 text-gray-400" />
+                          <Icon className="dark:text-muted-foreground h-4 w-4 text-gray-400" />
                           <span className="font-medium">
                             {location.location}
                           </span>
@@ -232,13 +232,13 @@ export default function GeographyReviewPage() {
                           </TableCell>
                         </>
                       )}
-                      <TableCell className="text-right text-gray-600">
+                      <TableCell className="dark:text-muted-foreground text-right text-gray-600">
                         {location.maleCount.toLocaleString()}
                       </TableCell>
-                      <TableCell className="text-right text-gray-600">
+                      <TableCell className="dark:text-muted-foreground text-right text-gray-600">
                         {location.femaleCount.toLocaleString()}
                       </TableCell>
-                      <TableCell className="text-right text-gray-600">
+                      <TableCell className="dark:text-muted-foreground text-right text-gray-600">
                         {location.otherCount.toLocaleString()}
                       </TableCell>
                       <TableCell>
@@ -275,11 +275,11 @@ export default function GeographyReviewPage() {
       {!isLoading && data?.locations.length === 0 && (
         <Card>
           <CardContent className="py-12 text-center">
-            <Icon className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-4 text-lg font-medium text-gray-900">
+            <Icon className="dark:text-muted-foreground mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="dark:text-foreground mt-4 text-lg font-medium text-gray-900">
               No locations found
             </h3>
-            <p className="mt-2 text-sm text-gray-500">
+            <p className="dark:text-muted-foreground mt-2 text-sm text-gray-500">
               Try adjusting your filters to see results
             </p>
           </CardContent>
@@ -289,7 +289,7 @@ export default function GeographyReviewPage() {
       {/* Pagination */}
       {!isLoading && data && data.totalPages > 1 && (
         <div className="flex items-center justify-between">
-          <p className="text-sm text-gray-600">
+          <p className="dark:text-muted-foreground text-sm text-gray-600">
             Showing {((page - 1) * 20 + 1).toLocaleString()} -{" "}
             {Math.min(page * 20, data.totalCount).toLocaleString()} of{" "}
             {data.totalCount.toLocaleString()} locations
@@ -305,7 +305,7 @@ export default function GeographyReviewPage() {
               Previous
             </Button>
             <div className="flex items-center gap-2 px-4">
-              <span className="text-sm text-gray-600">
+              <span className="dark:text-muted-foreground text-sm text-gray-600">
                 Page {page} of {data.totalPages}
               </span>
             </div>

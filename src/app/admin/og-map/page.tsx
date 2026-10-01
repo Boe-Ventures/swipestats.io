@@ -187,9 +187,9 @@ function FacebookPreview({ entry }: { entry: ParsedMeta }) {
   return (
     <div className="w-[200px] shrink-0 overflow-hidden rounded-md border bg-white shadow-sm">
       <OgThumb src={entry.ogImage} alt="" className="h-[105px] w-full" />
-      <div className="space-y-0.5 px-2 pb-1.5 pt-1">
-        <div className="text-[9px] uppercase text-gray-400">{domain}</div>
-        <div className="line-clamp-2 text-[11px] font-semibold leading-tight text-[#1d2129]">
+      <div className="space-y-0.5 px-2 pt-1 pb-1.5">
+        <div className="text-[9px] text-gray-400 uppercase">{domain}</div>
+        <div className="line-clamp-2 text-[11px] leading-tight font-semibold text-[#1d2129]">
           {title ? (title.length > 50 ? title.slice(0, 50) + "…" : title) : "—"}
         </div>
         <div className="line-clamp-1 text-[10px] text-gray-500">
@@ -206,8 +206,8 @@ function LinkedInPreview({ entry }: { entry: ParsedMeta }) {
   return (
     <div className="w-[200px] shrink-0 overflow-hidden rounded-md border bg-white shadow-sm">
       <OgThumb src={entry.ogImage} alt="" className="h-[105px] w-full" />
-      <div className="space-y-0.5 border-t px-2 pb-1.5 pt-1">
-        <div className="line-clamp-2 text-[11px] font-semibold leading-tight text-[#000000e6]">
+      <div className="space-y-0.5 border-t px-2 pt-1 pb-1.5">
+        <div className="line-clamp-2 text-[11px] leading-tight font-semibold text-[#000000e6]">
           {title ? (title.length > 50 ? title.slice(0, 50) + "…" : title) : "—"}
         </div>
         <div className="text-[9px] text-gray-500">{domain}</div>
@@ -226,8 +226,8 @@ function XPreview({ entry }: { entry: ParsedMeta }) {
         alt=""
         className="h-[105px] w-full"
       />
-      <div className="px-2 pb-1.5 pt-1">
-        <div className="line-clamp-1 text-[11px] font-medium leading-tight text-white">
+      <div className="px-2 pt-1 pb-1.5">
+        <div className="line-clamp-1 text-[11px] leading-tight font-medium text-white">
           {title ? (title.length > 45 ? title.slice(0, 45) + "…" : title) : "—"}
         </div>
         <div className="mt-0.5 text-[9px] text-gray-500">{domain}</div>
@@ -242,7 +242,7 @@ function InstagramPreview({ entry }: { entry: ParsedMeta }) {
   return (
     <div className="w-[140px] shrink-0 overflow-hidden rounded-lg border bg-white shadow-sm">
       <OgThumb src={entry.ogImage} alt="" className="h-[140px] w-full" />
-      <div className="px-1.5 pb-1 pt-0.5">
+      <div className="px-1.5 pt-0.5 pb-1">
         <div className="line-clamp-1 text-[10px] font-semibold text-gray-900">
           {title ? (title.length > 30 ? title.slice(0, 30) + "…" : title) : "—"}
         </div>
@@ -255,7 +255,7 @@ function InstagramPreview({ entry }: { entry: ParsedMeta }) {
 function SharePreviews({ entry }: { entry: ParsedMeta }) {
   return (
     <div className="mt-3 border-t pt-3">
-      <div className="mb-2 text-[10px] font-medium uppercase tracking-wider text-gray-400">
+      <div className="mb-2 text-[10px] font-medium tracking-wider text-gray-400 uppercase">
         Share previews
       </div>
       <div className="flex flex-wrap gap-3">
@@ -292,7 +292,10 @@ function SharePreviews({ entry }: { entry: ParsedMeta }) {
 
 function MissingBadge({ label }: { label: string }) {
   return (
-    <Badge variant="outline" className="border-amber-300 text-[10px] text-amber-600">
+    <Badge
+      variant="outline"
+      className="border-amber-300 text-[10px] text-amber-600 dark:border-amber-800 dark:text-amber-400"
+    >
       {label}
     </Badge>
   );
@@ -307,13 +310,19 @@ function Truncate({ text, max }: { text: string | null; max: number }) {
   );
 }
 
-function CharCount({ text, type }: { text: string | null; type: "title" | "description" }) {
+function CharCount({
+  text,
+  type,
+}: {
+  text: string | null;
+  type: "title" | "description";
+}) {
   if (!text) return null;
   const max = type === "title" ? 60 : 160;
   const isOver = text.length > max;
   return (
     <span
-      className={`ml-1 text-[10px] ${isOver ? "font-medium text-amber-500" : "text-gray-400"}`}
+      className={`ml-1 text-[10px] ${isOver ? "font-medium text-amber-500" : "dark:text-muted-foreground text-gray-400"}`}
     >
       {text.length}/{max}
     </span>
@@ -341,7 +350,7 @@ function MetaRow({ entry }: { entry: ParsedMeta }) {
           href={entry.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="font-mono text-sm font-medium text-blue-600 hover:underline"
+          className="font-mono text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
         >
           {entry.path}
         </a>
@@ -354,7 +363,10 @@ function MetaRow({ entry }: { entry: ParsedMeta }) {
           <MissingBadge key={f} label={f} />
         ))}
         {missingFields.length === 0 && !entry.fetchError && (
-          <Badge variant="secondary" className="bg-green-100 text-[10px] text-green-700">
+          <Badge
+            variant="secondary"
+            className="bg-green-100 text-[10px] text-green-700 dark:bg-green-950/40 dark:text-green-400"
+          >
             ✓ Complete
           </Badge>
         )}
@@ -364,13 +376,17 @@ function MetaRow({ entry }: { entry: ParsedMeta }) {
       <div>
         <div className="space-y-1 text-sm">
           <div>
-            <span className="inline-block w-24 font-medium text-gray-500">Title:</span>
+            <span className="dark:text-muted-foreground inline-block w-24 font-medium text-gray-500">
+              Title:
+            </span>
             <Truncate text={entry.title} max={70} />
             <CharCount text={entry.title} type="title" />
           </div>
           {entry.ogTitle && entry.ogTitle !== entry.title && (
             <div>
-              <span className="inline-block w-24 font-medium text-amber-500">OG Title:</span>
+              <span className="inline-block w-24 font-medium text-amber-500">
+                OG Title:
+              </span>
               <Truncate text={entry.ogTitle} max={70} />
               <CharCount text={entry.ogTitle} type="title" />
               <span className="ml-1 text-[10px] text-amber-500">≠ title</span>
@@ -378,13 +394,17 @@ function MetaRow({ entry }: { entry: ParsedMeta }) {
           )}
 
           <div>
-            <span className="inline-block w-24 font-medium text-gray-500">Description:</span>
+            <span className="dark:text-muted-foreground inline-block w-24 font-medium text-gray-500">
+              Description:
+            </span>
             <Truncate text={entry.description} max={120} />
             <CharCount text={entry.description} type="description" />
           </div>
           {entry.ogDescription && entry.ogDescription !== entry.description && (
             <div>
-              <span className="inline-block w-24 font-medium text-amber-500">OG Desc:</span>
+              <span className="inline-block w-24 font-medium text-amber-500">
+                OG Desc:
+              </span>
               <Truncate text={entry.ogDescription} max={120} />
               <CharCount text={entry.ogDescription} type="description" />
               <span className="ml-1 text-[10px] text-amber-500">≠ desc</span>
@@ -392,8 +412,10 @@ function MetaRow({ entry }: { entry: ParsedMeta }) {
           )}
 
           <div>
-            <span className="inline-block w-24 font-medium text-gray-500">Twitter:</span>
-            <span className="text-xs text-gray-500">
+            <span className="dark:text-muted-foreground inline-block w-24 font-medium text-gray-500">
+              Twitter:
+            </span>
+            <span className="dark:text-muted-foreground text-xs text-gray-500">
               {entry.twitterCard ? `card=${entry.twitterCard}` : "—"}
               {entry.twitterTitle && entry.twitterTitle !== entry.ogTitle
                 ? ` · ${entry.twitterTitle.slice(0, 40)}`
@@ -403,19 +425,21 @@ function MetaRow({ entry }: { entry: ParsedMeta }) {
 
           {entry.ogImage && (
             <div>
-              <span className="inline-block w-24 font-medium text-gray-500">OG Image:</span>
+              <span className="dark:text-muted-foreground inline-block w-24 font-medium text-gray-500">
+                OG Image:
+              </span>
               <a
                 href={entry.ogImage}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="break-all text-xs text-blue-500 hover:underline"
+                className="text-xs break-all text-blue-500 hover:underline"
               >
                 {entry.ogImage.length > 80
                   ? entry.ogImage.slice(0, 80) + "…"
                   : entry.ogImage}
               </a>
               {entry.ogImageWidth && entry.ogImageHeight && (
-                <span className="ml-1 text-[10px] text-gray-400">
+                <span className="dark:text-muted-foreground ml-1 text-[10px] text-gray-400">
                   ({entry.ogImageWidth}×{entry.ogImageHeight})
                 </span>
               )}
@@ -443,7 +467,8 @@ export const dynamic = "force-dynamic";
 const DEFAULT_OPEN = new Set(["Marketing", "Blog"]);
 
 export default async function OgMapPage() {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.swipestats.io";
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL ?? "https://www.swipestats.io";
   const sitemapEntries = await sitemap();
   const refreshedAt = new Date().toLocaleTimeString("en-US", {
     hour: "2-digit",
@@ -524,8 +549,10 @@ export default async function OgMapPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">OG / Meta Audit</h1>
-        <p className="mt-1 text-gray-600">
+        <h1 className="dark:text-foreground text-3xl font-bold text-gray-900">
+          OG / Meta Audit
+        </h1>
+        <p className="dark:text-muted-foreground mt-1 text-gray-600">
           Live meta tag audit for all pages in the sitemap ({total} pages)
         </p>
         <a
@@ -537,27 +564,52 @@ export default async function OgMapPage() {
       </div>
 
       {/* Info */}
-      <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800">
+      <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-200">
         <strong>ℹ️ How this works:</strong> Pages fetched from{" "}
-        <code className="rounded bg-blue-100 px-1 py-0.5 font-mono text-xs">sitemap.ts</code>.
-        Meta tags parsed from server-rendered HTML. Last refreshed:{" "}
+        <code className="rounded bg-blue-100 px-1 py-0.5 font-mono text-xs dark:bg-blue-950/40">
+          sitemap.ts
+        </code>
+        . Meta tags parsed from server-rendered HTML. Last refreshed:{" "}
         <time className="font-medium">{refreshedAt}</time>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-6">
         <StatCard label="Total Pages" value={total} />
-        <StatCard label="Complete" value={complete} color="text-green-600" />
-        <StatCard label="Missing OG Image" value={missingOgImage} color="text-amber-600" />
-        <StatCard label="Missing Description" value={missingDescription} color="text-amber-600" />
-        <StatCard label="Missing Title" value={missingTitle} color="text-amber-600" />
-        <StatCard label="Fetch Errors" value={fetchErrors} color="text-red-600" />
+        <StatCard
+          label="Complete"
+          value={complete}
+          color="text-green-600 dark:text-green-400"
+        />
+        <StatCard
+          label="Missing OG Image"
+          value={missingOgImage}
+          color="text-amber-600 dark:text-amber-400"
+        />
+        <StatCard
+          label="Missing Description"
+          value={missingDescription}
+          color="text-amber-600 dark:text-amber-400"
+        />
+        <StatCard
+          label="Missing Title"
+          value={missingTitle}
+          color="text-amber-600 dark:text-amber-400"
+        />
+        <StatCard
+          label="Fetch Errors"
+          value={fetchErrors}
+          color="text-red-600 dark:text-red-400"
+        />
       </div>
 
       {/* Groups */}
       {groups.map((group) => {
         const groupComplete = group.entries.filter(isComplete).length;
-        const groupIssues = group.entries.reduce((sum, e) => sum + countIssues(e), 0);
+        const groupIssues = group.entries.reduce(
+          (sum, e) => sum + countIssues(e),
+          0,
+        );
         const allComplete = groupComplete === group.entries.length;
 
         return (
@@ -566,32 +618,45 @@ export default async function OgMapPage() {
             open={DEFAULT_OPEN.has(group.label)}
             className="group/details rounded-lg border"
           >
-            <summary className="flex cursor-pointer list-none items-center justify-between px-5 py-4 hover:bg-gray-50 [&::-webkit-details-marker]:hidden">
+            <summary className="dark:hover:bg-background flex cursor-pointer list-none items-center justify-between px-5 py-4 hover:bg-gray-50 [&::-webkit-details-marker]:hidden">
               <div className="flex items-center gap-3">
                 <svg
-                  className="h-4 w-4 shrink-0 text-gray-400 transition-transform group-open/details:rotate-90"
+                  className="dark:text-muted-foreground h-4 w-4 shrink-0 text-gray-400 transition-transform group-open/details:rotate-90"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
                   strokeWidth={2}
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M9 5l7 7-7 7"
+                  />
                 </svg>
-                <h2 className="text-lg font-semibold text-gray-900">{group.label}</h2>
+                <h2 className="dark:text-foreground text-lg font-semibold text-gray-900">
+                  {group.label}
+                </h2>
                 <Badge variant="outline" className="text-xs">
-                  {group.entries.length} page{group.entries.length !== 1 ? "s" : ""}
+                  {group.entries.length} page
+                  {group.entries.length !== 1 ? "s" : ""}
                 </Badge>
               </div>
               <div className="flex items-center gap-3 text-sm">
-                <span className="text-gray-500">
+                <span className="dark:text-muted-foreground text-gray-500">
                   {groupComplete}/{group.entries.length} complete
                 </span>
                 {allComplete ? (
-                  <Badge variant="secondary" className="bg-green-100 text-green-700">
+                  <Badge
+                    variant="secondary"
+                    className="bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400"
+                  >
                     ✓ All Complete
                   </Badge>
                 ) : (
-                  <Badge variant="outline" className="border-amber-300 text-amber-600">
+                  <Badge
+                    variant="outline"
+                    className="border-amber-300 text-amber-600 dark:border-amber-800 dark:text-amber-400"
+                  >
                     {groupIssues} issue{groupIssues !== 1 ? "s" : ""}
                   </Badge>
                 )}
@@ -622,7 +687,9 @@ function StatCard({
     <Card>
       <CardContent className="pt-0">
         <div className={`text-2xl font-bold ${color ?? ""}`}>{value}</div>
-        <div className="text-xs text-gray-500">{label}</div>
+        <div className="dark:text-muted-foreground text-xs text-gray-500">
+          {label}
+        </div>
       </CardContent>
     </Card>
   );

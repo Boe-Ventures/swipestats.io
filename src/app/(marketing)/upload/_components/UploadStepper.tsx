@@ -50,7 +50,7 @@ function StepCircle({
       <div
         className={cn(
           sizeClasses,
-          "flex flex-shrink-0 items-center justify-center rounded-full border-2 border-rose-600 bg-white",
+          "dark:bg-card flex flex-shrink-0 items-center justify-center rounded-full border-2 border-rose-600 bg-white",
         )}
       >
         <span className={cn(dotSize, "rounded-full bg-rose-600")} />
@@ -63,7 +63,7 @@ function StepCircle({
     <div
       className={cn(
         sizeClasses,
-        "flex flex-shrink-0 items-center justify-center rounded-full border-2 border-gray-300 bg-white",
+        "dark:border-border dark:bg-card flex flex-shrink-0 items-center justify-center rounded-full border-2 border-gray-300 bg-white",
       )}
     >
       <span className="sr-only">{step.name}</span>
@@ -114,7 +114,9 @@ export function UploadStepper({ currentStep = 1 }: UploadStepperProps) {
                 <div
                   className={cn(
                     "h-0.5 w-12",
-                    index < currentStepIndex ? "bg-rose-600" : "bg-gray-200",
+                    index < currentStepIndex
+                      ? "bg-rose-600"
+                      : "dark:bg-accent bg-gray-200",
                   )}
                 />
               )}
@@ -130,8 +132,8 @@ export function UploadStepper({ currentStep = 1 }: UploadStepperProps) {
                   className={cn(
                     "text-center text-[10px] font-medium whitespace-nowrap",
                     step.status === "current" || step.status === "complete"
-                      ? "text-gray-900"
-                      : "text-gray-500",
+                      ? "dark:text-foreground text-gray-900"
+                      : "dark:text-muted-foreground text-gray-500",
                   )}
                 >
                   {step.name}
@@ -156,7 +158,9 @@ export function UploadStepper({ currentStep = 1 }: UploadStepperProps) {
                 <div
                   className={cn(
                     "h-0.5 w-20",
-                    index < currentStepIndex ? "bg-rose-600" : "bg-gray-200",
+                    index < currentStepIndex
+                      ? "bg-rose-600"
+                      : "dark:bg-accent bg-gray-200",
                   )}
                 />
               )}
@@ -173,8 +177,8 @@ export function UploadStepper({ currentStep = 1 }: UploadStepperProps) {
                   className={cn(
                     "text-center text-xs font-medium whitespace-nowrap",
                     step.status === "current" || step.status === "complete"
-                      ? "text-gray-900"
-                      : "text-gray-500",
+                      ? "dark:text-foreground text-gray-900"
+                      : "dark:text-muted-foreground text-gray-500",
                   )}
                 >
                   {step.name}

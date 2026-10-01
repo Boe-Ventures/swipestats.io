@@ -75,11 +75,19 @@ function AuthorInfo({
       )}
       <div className="text-sm leading-6">
         <p
-          className={`font-semibold ${isDark ? "text-white" : "text-gray-900"}`}
+          className={`font-semibold ${isDark ? "text-white" : "dark:text-foreground text-gray-900"}`}
         >
           {author}
         </p>
-        <p className={isDark ? "text-gray-300" : "text-gray-600"}>Author</p>
+        <p
+          className={
+            isDark
+              ? "text-gray-300"
+              : "dark:text-muted-foreground text-gray-600"
+          }
+        >
+          Author
+        </p>
       </div>
     </div>
   );
@@ -94,11 +102,11 @@ function BlogCardSimple({
   basePath?: string;
 }) {
   return (
-    <article className="flex max-w-xl flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white transition duration-200 hover:-translate-y-0.5 hover:shadow-lg">
+    <article className="dark:border-border dark:bg-card flex max-w-xl flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white transition duration-200 hover:-translate-y-0.5 hover:shadow-lg">
       {post.thumbnail && (
         <Link
           href={`${basePath}/${post.slug}`}
-          className="relative block aspect-3/2 overflow-hidden bg-gray-100"
+          className="dark:bg-muted relative block aspect-3/2 overflow-hidden bg-gray-100"
         >
           <Image
             src={post.thumbnail}
@@ -116,11 +124,11 @@ function BlogCardSimple({
           </span>
         )}
         <div className="group relative grow">
-          <h3 className="mt-3 text-lg leading-6 font-semibold text-gray-900 group-hover:text-rose-700">
+          <h3 className="dark:text-foreground mt-3 text-lg leading-6 font-semibold text-gray-900 group-hover:text-rose-700 dark:group-hover:text-rose-400">
             <Link href={`${basePath}/${post.slug}`}>{post.h1}</Link>
           </h3>
           {(post.h1Subtitle || post.metaDescription) && (
-            <p className="mt-3 line-clamp-2 text-sm leading-6 text-gray-600">
+            <p className="dark:text-muted-foreground mt-3 line-clamp-2 text-sm leading-6 text-gray-600">
               {post.h1Subtitle || post.metaDescription}
             </p>
           )}
@@ -132,7 +140,7 @@ function BlogCardSimple({
                 key={tag}
                 href={`/blog?tag=${encodeURIComponent(tag)}`}
                 scroll={false}
-                className="relative z-10 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-700"
+                className="dark:bg-muted dark:text-muted-foreground dark:hover:bg-accent dark:hover:text-muted-foreground relative z-10 rounded-full bg-gray-100 px-2.5 py-0.5 text-xs text-gray-500 transition-colors hover:bg-gray-200 hover:text-gray-700"
               >
                 {tag}
               </Link>
@@ -150,22 +158,22 @@ function BlogCardSimple({
               alt={AUTHORS[post.author].name}
               width={32}
               height={32}
-              className="size-8 rounded-full bg-gray-50 object-cover"
+              className="dark:bg-background size-8 rounded-full bg-gray-50 object-cover"
             />
           ) : (
-            <div className="flex size-8 items-center justify-center rounded-full bg-gray-50">
-              <span className="text-xs font-semibold text-gray-600">
+            <div className="dark:bg-background flex size-8 items-center justify-center rounded-full bg-gray-50">
+              <span className="dark:text-muted-foreground text-xs font-semibold text-gray-600">
                 {AUTHORS[post.author].name.charAt(0)}
               </span>
             </div>
           )}
-          <p className="text-sm font-medium text-gray-900">
+          <p className="dark:text-foreground text-sm font-medium text-gray-900">
             {AUTHORS[post.author].name}
           </p>
           <span className="text-gray-300">·</span>
           <time
             dateTime={post.updatedAt || post.publishedAt}
-            className="text-sm text-gray-500"
+            className="dark:text-muted-foreground text-sm text-gray-500"
           >
             {format(
               parseISO(post.updatedAt || post.publishedAt),
@@ -205,7 +213,7 @@ export function BlogGrid({
 
         {/* Featured Posts Section - Isolated, not affected by search */}
         {showFeatured && featuredPosts.length > 0 && (
-          <div className="space-y-6 border-b border-gray-200 pb-12">
+          <div className="dark:border-border space-y-6 border-b border-gray-200 pb-12">
             <div>
               <h2 className="text-2xl font-bold tracking-tight">
                 Featured Posts
@@ -257,7 +265,7 @@ export function BlogGrid({
                       featuredPosts[0].tags.map((tag) => (
                         <span
                           key={tag}
-                          className="relative z-10 cursor-pointer rounded-full bg-gray-50/10 px-3 py-1.5 font-medium text-gray-300 transition-colors hover:bg-gray-50/30 hover:text-white"
+                          className="dark:bg-background/10 dark:hover:bg-background/30 relative z-10 cursor-pointer rounded-full bg-gray-50/10 px-3 py-1.5 font-medium text-gray-300 transition-colors hover:bg-gray-50/30 hover:text-white"
                         >
                           #{tag}
                         </span>
@@ -330,7 +338,7 @@ export function BlogGrid({
                       post.tags.slice(0, 2).map((tag) => (
                         <span
                           key={tag}
-                          className="relative z-10 cursor-pointer rounded-full bg-gray-50/10 px-3 py-1.5 font-medium text-gray-300 transition-colors hover:bg-gray-50/30 hover:text-white"
+                          className="dark:bg-background/10 dark:hover:bg-background/30 relative z-10 cursor-pointer rounded-full bg-gray-50/10 px-3 py-1.5 font-medium text-gray-300 transition-colors hover:bg-gray-50/30 hover:text-white"
                         >
                           #{tag}
                         </span>
@@ -389,9 +397,9 @@ export function BlogGrid({
             </div>
           ) : (
             <div className="flex items-center justify-center py-16">
-              <div className="rounded-xl border border-gray-200 bg-white px-6 py-12 text-center shadow-sm">
+              <div className="dark:border-border dark:bg-card rounded-xl border border-gray-200 bg-white px-6 py-12 text-center shadow-sm">
                 <svg
-                  className="mx-auto size-12 text-gray-400"
+                  className="dark:text-muted-foreground mx-auto size-12 text-gray-400"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -404,7 +412,7 @@ export function BlogGrid({
                     d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                   />
                 </svg>
-                <h3 className="mt-4 text-lg font-semibold text-gray-900">
+                <h3 className="dark:text-foreground mt-4 text-lg font-semibold text-gray-900">
                   No posts found
                 </h3>
                 <p className="text-muted-foreground mt-2 text-sm">

@@ -80,12 +80,12 @@ export function EmailVerificationForm() {
           {!isAnonymousEmail && (
             <>
               {isVerified ? (
-                <div className="flex shrink-0 items-center gap-1 text-xs text-green-600">
+                <div className="flex shrink-0 items-center gap-1 text-xs text-green-600 dark:text-green-400">
                   <CheckCircle2 className="h-4 w-4" />
                   Verified
                 </div>
               ) : (
-                <div className="flex shrink-0 items-center gap-1 text-xs text-yellow-600">
+                <div className="flex shrink-0 items-center gap-1 text-xs text-yellow-600 dark:text-yellow-400">
                   <ShieldCheck className="h-4 w-4" />
                   Not Verified
                 </div>
@@ -146,7 +146,7 @@ export function EmailVerificationForm() {
           </Button>
 
           {sendVerificationEmail.isSuccess && (
-            <p className="text-sm text-green-600">
+            <p className="text-sm text-green-600 dark:text-green-400">
               {sendVerificationEmail.data?.message || "Check your inbox!"}
             </p>
           )}
@@ -219,7 +219,7 @@ export function EmailVerificationForm() {
             </div>
 
             {updateEmail.isSuccess && (
-              <p className="text-sm text-green-600">
+              <p className="text-sm text-green-600 dark:text-green-400">
                 Email updated successfully!
               </p>
             )}

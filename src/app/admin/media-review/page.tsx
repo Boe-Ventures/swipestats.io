@@ -79,8 +79,10 @@ export default function AdminMediaReviewPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Media Review</h1>
-          <p className="mt-1 text-sm text-gray-600">
+          <h1 className="dark:text-foreground text-3xl font-bold text-gray-900">
+            Media Review
+          </h1>
+          <p className="dark:text-muted-foreground mt-1 text-sm text-gray-600">
             Review user media across all profiles
             {data && (
               <span className="ml-1 font-medium">
@@ -90,7 +92,7 @@ export default function AdminMediaReviewPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Filter className="h-4 w-4 text-gray-500" />
+          <Filter className="dark:text-muted-foreground h-4 w-4 text-gray-500" />
           <Select
             value={platform}
             onValueChange={(nextPlatform) => {
@@ -113,7 +115,7 @@ export default function AdminMediaReviewPage() {
       {/* Loading State */}
       {isLoading && (
         <div className="flex items-center justify-center py-20">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+          <Loader2 className="dark:text-muted-foreground h-8 w-8 animate-spin text-gray-400" />
         </div>
       )}
 
@@ -137,7 +139,7 @@ export default function AdminMediaReviewPage() {
                   <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <span className="text-sm font-medium text-gray-400">
+                        <span className="dark:text-muted-foreground text-sm font-medium text-gray-400">
                           #{globalIndex + 1}
                         </span>
                         <Badge
@@ -160,10 +162,10 @@ export default function AdminMediaReviewPage() {
                         </CardDescription>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-xs text-gray-500">
+                        <span className="dark:text-muted-foreground text-xs text-gray-500">
                           {profile.media.length} media
                           {invalidCount > 0 && (
-                            <span className="text-yellow-600">
+                            <span className="text-yellow-600 dark:text-yellow-400">
                               {" "}
                               ({invalidCount} invalid)
                             </span>
@@ -189,11 +191,11 @@ export default function AdminMediaReviewPage() {
                       </div>
                     </div>
                     {profile.bio && (
-                      <p className="mt-1 max-w-2xl truncate text-xs text-gray-500 italic">
+                      <p className="dark:text-muted-foreground mt-1 max-w-2xl truncate text-xs text-gray-500 italic">
                         &quot;{profile.bio}&quot;
                       </p>
                     )}
-                    <p className="font-mono text-xs text-gray-400">
+                    <p className="dark:text-muted-foreground font-mono text-xs text-gray-400">
                       {profile.profileId}
                     </p>
                   </CardHeader>
@@ -205,7 +207,7 @@ export default function AdminMediaReviewPage() {
                         {validMedia.map((item, mediaIdx) => (
                           <div
                             key={item.id}
-                            className="group relative aspect-square cursor-pointer overflow-hidden rounded-md border bg-gray-100 transition-all hover:ring-2 hover:ring-blue-300"
+                            className="group dark:bg-muted relative aspect-square cursor-pointer overflow-hidden rounded-md border bg-gray-100 transition-all hover:ring-2 hover:ring-blue-300 dark:hover:ring-blue-800"
                             onClick={() => openLightbox(validMedia, mediaIdx)}
                           >
                             {item.type === "photo" || item.type === "image" ? (
@@ -232,7 +234,7 @@ export default function AdminMediaReviewPage() {
                         ))}
                       </div>
                     ) : (
-                      <p className="py-2 text-center text-xs text-gray-400">
+                      <p className="dark:text-muted-foreground py-2 text-center text-xs text-gray-400">
                         No displayable media (all URLs invalid)
                       </p>
                     )}
@@ -244,7 +246,7 @@ export default function AdminMediaReviewPage() {
 
           {/* Pagination */}
           <div className="flex items-center justify-between border-t pt-4">
-            <p className="text-sm text-gray-600">
+            <p className="dark:text-muted-foreground text-sm text-gray-600">
               Page {data.page} of {data.totalPages} ({data.totalCount} profiles
               total)
             </p>
@@ -276,9 +278,9 @@ export default function AdminMediaReviewPage() {
       {!isLoading && data?.profiles.length === 0 && (
         <Card className="py-12">
           <CardContent className="flex flex-col items-center justify-center text-center">
-            <ImageIcon className="mb-4 h-12 w-12 text-gray-400" />
+            <ImageIcon className="dark:text-muted-foreground mb-4 h-12 w-12 text-gray-400" />
             <h3 className="text-lg font-semibold">No profiles with media</h3>
-            <p className="mt-1 text-sm text-gray-500">
+            <p className="dark:text-muted-foreground mt-1 text-sm text-gray-500">
               No profiles have associated media records for the selected
               platform.
             </p>
@@ -333,7 +335,7 @@ export default function AdminMediaReviewPage() {
 
           {lightbox?.media[lightbox.index] && (
             <div className="space-y-3">
-              <div className="relative aspect-3/4 w-full overflow-hidden rounded-lg bg-gray-100">
+              <div className="dark:bg-muted relative aspect-3/4 w-full overflow-hidden rounded-lg bg-gray-100">
                 {lightbox.media[lightbox.index]?.type === "photo" ||
                 lightbox.media[lightbox.index]?.type === "image" ? (
                   <Image
@@ -357,7 +359,7 @@ export default function AdminMediaReviewPage() {
                 <div className="space-y-1 text-sm">
                   {lightbox.media[lightbox.index]?.prompt && (
                     <p>
-                      <span className="font-medium text-gray-500">
+                      <span className="dark:text-muted-foreground font-medium text-gray-500">
                         Prompt:{" "}
                       </span>
                       {lightbox.media[lightbox.index]?.prompt}
@@ -365,7 +367,7 @@ export default function AdminMediaReviewPage() {
                   )}
                   {lightbox.media[lightbox.index]?.caption && (
                     <p>
-                      <span className="font-medium text-gray-500">
+                      <span className="dark:text-muted-foreground font-medium text-gray-500">
                         Caption:{" "}
                       </span>
                       {lightbox.media[lightbox.index]?.caption}

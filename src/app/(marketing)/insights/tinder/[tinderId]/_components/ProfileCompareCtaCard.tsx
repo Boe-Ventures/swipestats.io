@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { withInternalUtm } from "@/lib/cta-links";
 import { ArrowRight, LayoutGrid, Loader2 } from "lucide-react";
 
 import { useTRPC } from "@/trpc/react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/toast";
@@ -21,8 +22,13 @@ export function ProfileCompareCtaCard() {
   const { tinderId, isOwner, isAnonymous } = useTinderProfile();
   const trpc = useTRPC();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const canSeed = isOwner && !isAnonymous;
+  const comparisonsQuery = useQuery(
+    trpc.profileCompare.list.queryOptions(undefined, { enabled: canSeed }),
+  );
+  const existingComparison = comparisonsQuery.data?.[0];
 
   const mediaQuery = useQuery(
     trpc.profile.getMedia.queryOptions(
@@ -37,8 +43,17 @@ export function ProfileCompareCtaCard() {
   const createMutation = useMutation(
     trpc.profileCompare.createFromTinderMedia.mutationOptions({
       onSuccess: (comparison) => {
+        void queryClient.invalidateQueries(
+          trpc.profileCompare.list.queryFilter(),
+        );
         toast.success("Comparison created from your photos");
-        router.push(`/app/profile-compare/${comparison.id}`);
+        router.push(
+          withInternalUtm(`/app/profile-compare/${comparison.id}`, {
+            medium: "insights_comparison_card",
+            campaign: "profile_comparisons",
+            content: "build",
+          }),
+        );
       },
       onError: (error) => {
         toast.error(error.message || "Couldn't build your comparison");
@@ -47,7 +62,12 @@ export function ProfileCompareCtaCard() {
   );
 
   // Owner has photos to seed from → the magic one-tap path.
-  const showSeed = canSeed && (mediaQuery.isLoading || photos.length > 0);
+  const showSeed =
+    canSeed &&
+    (existingComparison ||
+      comparisonsQuery.isLoading ||
+      mediaQuery.isLoading ||
+      photos.length > 0);
 
   if (!showSeed) {
     // Generic promo for non-owners, anonymous, or owners without photos yet.
@@ -67,7 +87,13 @@ export function ProfileCompareCtaCard() {
             Bumble profiles. Share with friends or use for feedback.
           </p>
           <div className="mt-auto flex items-center gap-x-4 pt-2">
-            <Link href="/app/dashboard">
+            <Link
+              href={withInternalUtm("/app/dashboard", {
+                medium: "insights_comparison_card",
+                campaign: "profile_comparisons",
+                content: "get_started",
+              })}
+            >
               <Button>
                 Compare My Profiles
                 <ArrowRight className="ml-2 h-4 w-4" />
@@ -90,54 +116,80 @@ export function ProfileCompareCtaCard() {
             <LayoutGrid className="h-5 w-5 text-rose-600 dark:text-rose-400" />
           </div>
           <h3 className="text-2xl font-bold tracking-tight">
-            Turn your profile into a comparison
+            {existingComparison
+              ? "Continue your profile comparison"
+              : "Turn your profile into a comparison"}
           </h3>
         </div>
 
         <p className="text-muted-foreground mb-5 text-base leading-7">
-          Drop your Tinder photos into a shareable, side-by-side profile and get
-          honest feedback from friends — no re-uploading.
+          {existingComparison
+            ? "Pick up where you left off. Refine your side-by-side profiles and share them with friends for feedback."
+            : "Drop your Tinder photos into a shareable, side-by-side profile and get honest feedback from friends. No re-uploading."}
         </p>
 
         {/* Live strip of their actual photos */}
-        <div className="mb-6 flex items-center gap-2">
-          {mediaQuery.isLoading
-            ? Array.from({ length: 5 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="bg-muted h-14 w-14 shrink-0 animate-pulse rounded-lg"
-                />
-              ))
-            : previewPhotos.map((m) => (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  key={m.id}
-                  src={m.url}
-                  alt=""
-                  className="border-background h-14 w-14 shrink-0 rounded-lg border-2 object-cover shadow-sm"
-                />
-              ))}
-          {photos.length > previewPhotos.length && (
-            <span className="text-muted-foreground text-sm font-medium">
-              +{photos.length - previewPhotos.length}
-            </span>
-          )}
-        </div>
+        {!existingComparison && (
+          <div className="mb-6 flex items-center gap-2">
+            {mediaQuery.isLoading
+              ? Array.from({ length: 5 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="bg-muted h-14 w-14 shrink-0 animate-pulse rounded-lg"
+                  />
+                ))
+              : previewPhotos.map((m) => (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    key={m.id}
+                    src={m.url}
+                    alt=""
+                    className="border-background h-14 w-14 shrink-0 rounded-lg border-2 object-cover shadow-sm"
+                  />
+                ))}
+            {photos.length > previewPhotos.length && (
+              <span className="text-muted-foreground text-sm font-medium">
+                +{photos.length - previewPhotos.length}
+              </span>
+            )}
+          </div>
+        )}
 
         <div className="mt-auto flex items-center gap-x-4 pt-2">
           <Button
-            onClick={() => createMutation.mutate({ tinderId })}
-            disabled={createMutation.isPending}
+            onClick={() => {
+              if (comparisonsQuery.isError) {
+                void comparisonsQuery.refetch();
+              } else if (existingComparison) {
+                router.push(
+                  withInternalUtm(
+                    `/app/profile-compare/${existingComparison.id}`,
+                    {
+                      medium: "insights_comparison_card",
+                      campaign: "profile_comparisons",
+                      content: "continue",
+                    },
+                  ),
+                );
+              } else {
+                createMutation.mutate({ tinderId });
+              }
+            }}
+            disabled={createMutation.isPending || comparisonsQuery.isFetching}
             className="bg-rose-600 text-white hover:bg-rose-500"
           >
-            {createMutation.isPending ? (
+            {createMutation.isPending || comparisonsQuery.isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Building…
+                {createMutation.isPending ? "Building…" : "Checking…"}
               </>
             ) : (
               <>
-                Build my comparison
+                {comparisonsQuery.isError
+                  ? "Retry comparison check"
+                  : existingComparison
+                    ? "Continue my comparison"
+                    : "Build my comparison"}
                 <ArrowRight className="ml-2 h-4 w-4" />
               </>
             )}

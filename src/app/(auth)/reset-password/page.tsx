@@ -12,11 +12,13 @@ export const metadata: Metadata = {
 
 export default function ResetPasswordPage() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-6">
+    <div className="dark:bg-background flex min-h-screen flex-col items-center justify-center bg-gray-50 p-6">
       <div className="w-full max-w-md space-y-6">
         <div className="flex justify-center">
           <Link href="/" className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-gray-900">SwipeStats</span>
+            <span className="dark:text-foreground text-2xl font-bold text-gray-900">
+              SwipeStats
+            </span>
           </Link>
         </div>
 
@@ -25,7 +27,7 @@ export default function ResetPasswordPage() {
             <CardTitle className="text-center text-2xl">
               Reset Password
             </CardTitle>
-            <p className="text-center text-sm text-gray-600">
+            <p className="dark:text-muted-foreground text-center text-sm text-gray-600">
               Enter your new password below
             </p>
           </CardHeader>
@@ -36,11 +38,11 @@ export default function ResetPasswordPage() {
           </CardContent>
         </Card>
 
-        <div className="text-center text-xs text-gray-600">
+        <div className="dark:text-muted-foreground text-center text-xs text-gray-600">
           Remember your password?{" "}
           <Link
             href="/signin"
-            className="text-rose-600 hover:text-rose-500 hover:underline"
+            className="text-rose-600 hover:text-rose-500 hover:underline dark:text-rose-400"
           >
             Sign in
           </Link>

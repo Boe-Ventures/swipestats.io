@@ -11,11 +11,13 @@ export const metadata: Metadata = {
 
 export default function SignInPage() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-6">
+    <div className="dark:bg-background flex min-h-screen flex-col items-center justify-center bg-gray-50 p-6">
       <div className="w-full max-w-md space-y-6">
         <div className="flex justify-center">
           <Link href="/" className="flex items-center gap-2">
-            <span className="text-2xl font-bold text-gray-900">SwipeStats</span>
+            <span className="dark:text-foreground text-2xl font-bold text-gray-900">
+              SwipeStats
+            </span>
           </Link>
         </div>
 
@@ -23,13 +25,19 @@ export default function SignInPage() {
           <SignInForm />
         </Suspense>
 
-        <div className="text-center text-xs text-gray-600">
+        <div className="dark:text-muted-foreground text-center text-xs text-gray-600">
           By continuing, you agree to our{" "}
-          <Link href="/tos" className="underline hover:text-gray-900">
+          <Link
+            href="/tos"
+            className="dark:hover:text-foreground underline hover:text-gray-900"
+          >
             Terms of Service
           </Link>{" "}
           and{" "}
-          <Link href="/privacy" className="underline hover:text-gray-900">
+          <Link
+            href="/privacy"
+            className="dark:hover:text-foreground underline hover:text-gray-900"
+          >
             Privacy Policy
           </Link>
           .

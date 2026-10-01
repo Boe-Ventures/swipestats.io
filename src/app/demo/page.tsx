@@ -64,7 +64,7 @@ export default async function Home() {
                       {session.user?.name}
                     </span>
                     {session.user?.username && (
-                      <span className="text-gray-400">
+                      <span className="dark:text-muted-foreground text-gray-400">
                         {" "}
                         (@{session.user.username})
                       </span>

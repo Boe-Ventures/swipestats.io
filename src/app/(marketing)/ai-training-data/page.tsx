@@ -66,7 +66,7 @@ export const metadata: Metadata = {
 function DatasetPreview() {
   return (
     <div className="relative">
-      <div className="absolute -top-4 right-5 z-10 rounded-full border border-gray-200 bg-white px-3 py-1.5 font-mono text-[10.5px] font-semibold text-gray-700 shadow-lg">
+      <div className="dark:border-border dark:bg-card dark:text-muted-foreground absolute -top-4 right-5 z-10 rounded-full border border-gray-200 bg-white px-3 py-1.5 font-mono text-[10.5px] font-semibold text-gray-700 shadow-lg">
         custom-ai-dataset.jsonl
       </div>
       <div className="overflow-hidden rounded-3xl bg-gray-950 shadow-[0_20px_60px_oklch(0.2_0.02_286/0.2)]">
@@ -74,56 +74,84 @@ function DatasetPreview() {
           <span className="h-2.5 w-2.5 rounded-full bg-[#ff5f57]" />
           <span className="h-2.5 w-2.5 rounded-full bg-[#febc2e]" />
           <span className="h-2.5 w-2.5 rounded-full bg-[#28c840]" />
-          <span className="ml-2 font-mono text-[11px] text-gray-500">
+          <span className="dark:text-muted-foreground ml-2 font-mono text-[11px] text-gray-500">
             approved fields · sample record
           </span>
         </div>
         <div className="space-y-5 p-5 font-mono text-[12px] leading-[1.7] text-gray-300 sm:p-6 sm:text-[13px]">
           <div>
-            <span className="text-gray-600">{"{"}</span>
+            <span className="dark:text-muted-foreground text-gray-600">
+              {"{"}
+            </span>
             <div className="pl-4">
               <span className="text-cyan-300">&quot;profile&quot;</span>
-              <span className="text-gray-600">: {"{"}</span>
+              <span className="dark:text-muted-foreground text-gray-600">
+                : {"{"}
+              </span>
             </div>
             <div className="pl-8">
               <span className="text-cyan-300">&quot;ageAtUpload&quot;</span>
-              <span className="text-gray-600">: </span>
+              <span className="dark:text-muted-foreground text-gray-600">
+                :{" "}
+              </span>
               <span className="text-amber-300">27</span>
-              <span className="text-gray-600">,</span>
+              <span className="dark:text-muted-foreground text-gray-600">
+                ,
+              </span>
             </div>
             <div className="pl-8">
               <span className="text-cyan-300">&quot;country&quot;</span>
-              <span className="text-gray-600">: </span>
+              <span className="dark:text-muted-foreground text-gray-600">
+                :{" "}
+              </span>
               <span className="text-emerald-300">&quot;NO&quot;</span>
             </div>
-            <div className="pl-4 text-gray-600">{"},"}</div>
+            <div className="dark:text-muted-foreground pl-4 text-gray-600">
+              {"},"}
+            </div>
             <div className="pl-4">
               <span className="text-cyan-300">&quot;conversation&quot;</span>
-              <span className="text-gray-600">: {"{"}</span>
+              <span className="dark:text-muted-foreground text-gray-600">
+                : {"{"}
+              </span>
             </div>
             <div className="pl-8">
               <span className="text-cyan-300">&quot;primaryLanguage&quot;</span>
-              <span className="text-gray-600">: </span>
+              <span className="dark:text-muted-foreground text-gray-600">
+                :{" "}
+              </span>
               <span className="text-emerald-300">&quot;en&quot;</span>
-              <span className="text-gray-600">,</span>
+              <span className="dark:text-muted-foreground text-gray-600">
+                ,
+              </span>
             </div>
             <div className="pl-8">
               <span className="text-cyan-300">
                 &quot;totalMessageCount&quot;
               </span>
-              <span className="text-gray-600">: </span>
+              <span className="dark:text-muted-foreground text-gray-600">
+                :{" "}
+              </span>
               <span className="text-amber-300">18</span>
-              <span className="text-gray-600">,</span>
+              <span className="dark:text-muted-foreground text-gray-600">
+                ,
+              </span>
             </div>
             <div className="pl-8">
               <span className="text-cyan-300">
                 &quot;responseTimeMedianSeconds&quot;
               </span>
-              <span className="text-gray-600">: </span>
+              <span className="dark:text-muted-foreground text-gray-600">
+                :{" "}
+              </span>
               <span className="text-amber-300">420</span>
             </div>
-            <div className="pl-4 text-gray-600">{"}"}</div>
-            <span className="text-gray-600">{"}"}</span>
+            <div className="dark:text-muted-foreground pl-4 text-gray-600">
+              {"}"}
+            </div>
+            <span className="dark:text-muted-foreground text-gray-600">
+              {"}"}
+            </span>
           </div>
 
           <div className="grid grid-cols-2 gap-2 border-t border-white/10 pt-5">
@@ -137,7 +165,7 @@ function DatasetPreview() {
                 key={label}
                 className="rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5"
               >
-                <div className="text-[9px] tracking-[0.08em] text-gray-600 uppercase">
+                <div className="dark:text-muted-foreground text-[9px] tracking-[0.08em] text-gray-600 uppercase">
                   {label}
                 </div>
                 <div className="mt-1 text-[11px] font-semibold text-white">
@@ -159,14 +187,14 @@ function HeroSection() {
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
         <div className="grid items-center gap-12 lg:grid-cols-[1.04fr_0.96fr] lg:gap-16">
           <div>
-            <span className="inline-flex items-center gap-2 rounded-full border border-rose-600/20 bg-rose-50 px-3 py-1.5 text-[13px] font-semibold text-rose-700">
+            <span className="inline-flex items-center gap-2 rounded-full border border-rose-600/20 bg-rose-50 px-3 py-1.5 text-[13px] font-semibold text-rose-700 dark:bg-rose-950/40 dark:text-rose-400">
               <CpuChipIcon className="h-4 w-4" />
               AI training &amp; evaluation data
             </span>
-            <h1 className="mt-6 max-w-[720px] text-[clamp(42px,6vw,70px)] leading-[1.01] font-bold tracking-[-0.04em] text-balance text-gray-950">
+            <h1 className="dark:text-foreground mt-6 max-w-[720px] text-[clamp(42px,6vw,70px)] leading-[1.01] font-bold tracking-[-0.04em] text-balance text-gray-950">
               Real human interaction data for models that need social context
             </h1>
-            <p className="mt-6 max-w-[620px] text-[clamp(17px,2vw,20px)] leading-[1.65] text-gray-600">
+            <p className="dark:text-muted-foreground mt-6 max-w-[620px] text-[clamp(17px,2vw,20px)] leading-[1.65] text-gray-600">
               Custom datasets built from consent-based dating-app exports, with
               profile context, longitudinal behavior, conversation structure,
               and approved redacted text.
@@ -188,22 +216,22 @@ function HeroSection() {
                 Download sample
               </Link>
             </div>
-            <p className="mt-5 max-w-[590px] text-[12.5px] leading-5 text-gray-500">
+            <p className="dark:text-muted-foreground mt-5 max-w-[590px] text-[12.5px] leading-5 text-gray-500">
               Model-training and evaluation rights are scoped through a custom
               agreement. Field availability depends on the approved use case.
             </p>
-            <div className="mt-9 grid max-w-[610px] grid-cols-2 gap-px overflow-hidden rounded-2xl border border-gray-200 bg-gray-200 sm:grid-cols-4">
+            <div className="dark:border-border dark:bg-accent mt-9 grid max-w-[610px] grid-cols-2 gap-px overflow-hidden rounded-2xl border border-gray-200 bg-gray-200 sm:grid-cols-4">
               {[
                 ["12,000+", "profiles"],
                 ["294M", "swipes"],
                 ["3.1M", "matches"],
                 ["1.1M", "messages"],
               ].map(([value, label]) => (
-                <div key={label} className="bg-white px-4 py-4">
-                  <div className="text-[20px] font-bold tracking-[-0.02em] text-gray-950 tabular-nums">
+                <div key={label} className="dark:bg-card bg-white px-4 py-4">
+                  <div className="dark:text-foreground text-[20px] font-bold tracking-[-0.02em] text-gray-950 tabular-nums">
                     {value}
                   </div>
-                  <div className="mt-0.5 text-[10px] tracking-[0.06em] text-gray-500 uppercase">
+                  <div className="dark:text-muted-foreground mt-0.5 text-[10px] tracking-[0.06em] text-gray-500 uppercase">
                     {label}
                   </div>
                 </div>
@@ -247,7 +275,7 @@ function UseCasesSection() {
   ];
 
   return (
-    <section className="border-y border-gray-200 bg-gray-50 py-[88px] max-[720px]:py-[60px]">
+    <section className="dark:border-border dark:bg-background border-y border-gray-200 bg-gray-50 py-[88px] max-[720px]:py-[60px]">
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
         <SectionHead
           center
@@ -259,18 +287,18 @@ function UseCasesSection() {
           {useCases.map((item) => (
             <article
               key={item.title}
-              className="rounded-3xl border border-gray-200 bg-white p-6 shadow-[0_2px_6px_oklch(0.2_0.02_286/0.04)] sm:p-7"
+              className="dark:border-border dark:bg-card rounded-3xl border border-gray-200 bg-white p-6 shadow-[0_2px_6px_oklch(0.2_0.02_286/0.04)] sm:p-7"
             >
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
+              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400">
                 <item.icon className="h-5 w-5" />
               </div>
-              <div className="mt-5 font-mono text-[11px] tracking-[0.07em] text-rose-600 uppercase">
+              <div className="mt-5 font-mono text-[11px] tracking-[0.07em] text-rose-600 uppercase dark:text-rose-400">
                 {item.eyebrow}
               </div>
-              <h2 className="mt-2 text-[21px] leading-tight font-bold tracking-[-0.025em] text-gray-950">
+              <h2 className="dark:text-foreground mt-2 text-[21px] leading-tight font-bold tracking-[-0.025em] text-gray-950">
                 {item.title}
               </h2>
-              <p className="mt-3 text-[14.5px] leading-[1.65] text-gray-600">
+              <p className="dark:text-muted-foreground mt-3 text-[14.5px] leading-[1.65] text-gray-600">
                 {item.body}
               </p>
             </article>
@@ -313,13 +341,13 @@ function DataLayersSection() {
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
         <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
           <div>
-            <span className="font-mono text-[12px] tracking-[0.08em] text-rose-600 uppercase">
+            <span className="font-mono text-[12px] tracking-[0.08em] text-rose-600 uppercase dark:text-rose-400">
               Dataset layers
             </span>
-            <h2 className="mt-4 text-[clamp(32px,4.5vw,50px)] leading-[1.05] font-bold tracking-[-0.035em] text-balance text-gray-950">
+            <h2 className="dark:text-foreground mt-4 text-[clamp(32px,4.5vw,50px)] leading-[1.05] font-bold tracking-[-0.035em] text-balance text-gray-950">
               Scope the fields around the model objective
             </h2>
-            <p className="mt-5 text-[17px] leading-[1.7] text-gray-600">
+            <p className="dark:text-muted-foreground mt-5 text-[17px] leading-[1.7] text-gray-600">
               Every delivery begins with a field review. The resulting schema
               includes the minimum data required for the approved training or
               evaluation workflow.
@@ -327,7 +355,7 @@ function DataLayersSection() {
             <Link
               href={SAMPLE_DOWNLOAD}
               target="_blank"
-              className="mt-7 inline-flex items-center gap-2 text-[14px] font-semibold text-rose-600 hover:text-rose-700"
+              className="mt-7 inline-flex items-center gap-2 text-[14px] font-semibold text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-400"
             >
               Inspect the public sample
               <ArrowRightIcon className="h-4 w-4" />
@@ -338,20 +366,20 @@ function DataLayersSection() {
             {layers.map((layer, index) => (
               <div
                 key={layer.title}
-                className="rounded-3xl border border-gray-200 bg-white p-6"
+                className="dark:border-border dark:bg-card rounded-3xl border border-gray-200 bg-white p-6"
               >
                 <div className="flex items-center justify-between">
                   <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-gray-950 text-white">
                     <layer.icon className="h-5 w-5" />
                   </span>
-                  <span className="font-mono text-[11px] text-gray-400">
+                  <span className="dark:text-muted-foreground font-mono text-[11px] text-gray-400">
                     0{index + 1}
                   </span>
                 </div>
-                <h3 className="mt-5 text-[18px] font-bold tracking-[-0.02em] text-gray-950">
+                <h3 className="dark:text-foreground mt-5 text-[18px] font-bold tracking-[-0.02em] text-gray-950">
                   {layer.title}
                 </h3>
-                <p className="mt-2 text-[14px] leading-[1.6] text-gray-600">
+                <p className="dark:text-muted-foreground mt-2 text-[14px] leading-[1.6] text-gray-600">
                   {layer.fields}
                 </p>
               </div>
@@ -401,7 +429,7 @@ function GovernanceSection() {
               </div>
             ))}
           </div>
-          <div className="mt-7 border-t border-white/10 pt-6 text-[12.5px] leading-5 text-gray-500">
+          <div className="dark:text-muted-foreground mt-7 border-t border-white/10 pt-6 text-[12.5px] leading-5 text-gray-500">
             Final suitability, legal terms, and security requirements are
             reviewed for each customer and intended model use.
           </div>
@@ -447,15 +475,15 @@ function ProcessSection() {
           {steps.map((step) => (
             <div
               key={step.n}
-              className="rounded-3xl border border-gray-200 bg-white p-6"
+              className="dark:border-border dark:bg-card rounded-3xl border border-gray-200 bg-white p-6"
             >
-              <span className="font-mono text-[12px] font-semibold text-rose-600">
+              <span className="font-mono text-[12px] font-semibold text-rose-600 dark:text-rose-400">
                 {step.n}
               </span>
-              <h3 className="mt-4 text-[17px] leading-tight font-bold text-gray-950">
+              <h3 className="dark:text-foreground mt-4 text-[17px] leading-tight font-bold text-gray-950">
                 {step.title}
               </h3>
-              <p className="mt-3 text-[13.5px] leading-[1.6] text-gray-600">
+              <p className="dark:text-muted-foreground mt-3 text-[13.5px] leading-[1.6] text-gray-600">
                 {step.body}
               </p>
             </div>
@@ -487,7 +515,7 @@ function FAQSection() {
   ];
 
   return (
-    <section className="border-t border-gray-200 bg-gray-50 py-[88px] max-[720px]:py-[60px]">
+    <section className="dark:border-border dark:bg-background border-t border-gray-200 bg-gray-50 py-[88px] max-[720px]:py-[60px]">
       <div className="mx-auto max-w-[880px] px-6 lg:px-8">
         <SectionHead
           center
@@ -498,12 +526,12 @@ function FAQSection() {
           {faqs.map((faq) => (
             <details
               key={faq.q}
-              className="group rounded-2xl border border-gray-200 bg-white px-5 py-4 open:shadow-sm"
+              className="group dark:border-border dark:bg-card rounded-2xl border border-gray-200 bg-white px-5 py-4 open:shadow-sm"
             >
-              <summary className="cursor-pointer list-none pr-8 text-[15px] font-semibold text-gray-950">
+              <summary className="dark:text-foreground cursor-pointer list-none pr-8 text-[15px] font-semibold text-gray-950">
                 {faq.q}
               </summary>
-              <p className="mt-3 max-w-[760px] text-[14px] leading-[1.65] text-gray-600">
+              <p className="dark:text-muted-foreground mt-3 max-w-[760px] text-[14px] leading-[1.65] text-gray-600">
                 {faq.a}
               </p>
             </details>

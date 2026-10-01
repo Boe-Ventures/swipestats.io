@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { withInternalUtm } from "@/lib/cta-links";
 import {
   ArrowTopRightOnSquareIcon,
   CheckIcon,
@@ -99,7 +100,7 @@ function TrackedOfficialLink({
 
 function InlineCode({ children }: { children: React.ReactNode }) {
   return (
-    <code className="rounded-[5px] border border-gray-200 bg-gray-100 px-1.5 py-px font-mono text-[12.5px] whitespace-nowrap text-gray-800">
+    <code className="dark:border-border dark:bg-muted dark:text-foreground rounded-[5px] border border-gray-200 bg-gray-100 px-1.5 py-px font-mono text-[12.5px] whitespace-nowrap text-gray-800">
       {children}
     </code>
   );
@@ -504,23 +505,23 @@ function Phone({ provider }: { provider: Provider }) {
   const ctaInk = provider.id === "bumble" ? "#5c4300" : "#fff";
   return (
     <div className="sticky top-24 max-[900px]:static">
-      <div className="relative mx-auto aspect-[9/18] w-full max-w-[300px] rounded-[34px] border border-gray-300 bg-white p-3 shadow-[0_10px_30px_oklch(0.2_0.02_286/0.1),0_30px_60px_oklch(0.2_0.02_286/0.12)]">
-        <div className="absolute top-3.5 left-1/2 z-[3] h-[5px] w-[46px] -translate-x-1/2 rounded-full bg-gray-200" />
-        <div className="flex h-full flex-col overflow-hidden rounded-3xl bg-gray-50">
+      <div className="dark:border-border dark:bg-card relative mx-auto aspect-[9/18] w-full max-w-[300px] rounded-[34px] border border-gray-300 bg-white p-3 shadow-[0_10px_30px_oklch(0.2_0.02_286/0.1),0_30px_60px_oklch(0.2_0.02_286/0.12)]">
+        <div className="dark:bg-accent absolute top-3.5 left-1/2 z-[3] h-[5px] w-[46px] -translate-x-1/2 rounded-full bg-gray-200" />
+        <div className="dark:bg-background flex h-full flex-col overflow-hidden rounded-3xl bg-gray-50">
           <div className="flex h-[34px] flex-none items-center justify-center">
-            <span className="text-[12px] font-bold text-gray-700">
+            <span className="dark:text-muted-foreground text-[12px] font-bold text-gray-700">
               {phone.app}
             </span>
           </div>
           <div className="flex flex-1 flex-col gap-2.5 overflow-hidden p-3.5">
-            <div className="h-[14px] w-3/5 rounded-[5px] bg-gray-200" />
-            <div className="h-[11px] w-5/6 rounded-[5px] bg-gray-200" />
+            <div className="dark:bg-accent h-[14px] w-3/5 rounded-[5px] bg-gray-200" />
+            <div className="dark:bg-accent h-[11px] w-5/6 rounded-[5px] bg-gray-200" />
             {Array.from({ length: phone.rows }).map((_, i) => (
               <div
                 key={i}
                 className={cn(
-                  "flex items-center gap-2.5 rounded-[11px] border bg-white px-3 py-[11px]",
-                  i === phone.hl ? "" : "border-gray-200",
+                  "dark:bg-card flex items-center gap-2.5 rounded-[11px] border bg-white px-3 py-[11px]",
+                  i === phone.hl ? "" : "dark:border-border border-gray-200",
                 )}
                 style={
                   i === phone.hl
@@ -535,7 +536,7 @@ function Phone({ provider }: { provider: Provider }) {
                   className="h-[22px] w-[22px] flex-none rounded-md"
                   style={{ background: accent }}
                 />
-                <span className="h-2 flex-1 rounded bg-gray-200" />
+                <span className="dark:bg-accent h-2 flex-1 rounded bg-gray-200" />
               </div>
             ))}
             <div
@@ -547,7 +548,7 @@ function Phone({ provider }: { provider: Provider }) {
           </div>
         </div>
       </div>
-      <p className="mt-4 text-center font-mono text-[11px] text-gray-400">
+      <p className="dark:text-muted-foreground mt-4 text-center font-mono text-[11px] text-gray-400">
         {phone.cap}
       </p>
     </div>
@@ -569,10 +570,10 @@ function ProviderPanel({ provider }: { provider: Provider }) {
             iconClassName="h-7 w-7"
           />
           <div>
-            <h2 className="text-[26px] font-bold tracking-[-0.02em] text-gray-900">
+            <h2 className="dark:text-foreground text-[26px] font-bold tracking-[-0.02em] text-gray-900">
               {provider.name}
             </h2>
-            <div className="mt-0.5 text-[13.5px] text-gray-500">
+            <div className="dark:text-muted-foreground mt-0.5 text-[13.5px] text-gray-500">
               {provider.sub}
             </div>
           </div>
@@ -587,10 +588,10 @@ function ProviderPanel({ provider }: { provider: Provider }) {
                 className={cn(
                   "inline-flex items-center gap-[7px] rounded-full border px-3 py-[7px] text-[12.5px] font-semibold",
                   chip.variant === "warn"
-                    ? "border-amber-300 bg-amber-50 text-amber-700"
+                    ? "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-400"
                     : chip.variant === "good"
-                      ? "border-emerald-300 bg-emerald-50 text-emerald-700"
-                      : "border-gray-200 bg-white text-gray-700",
+                      ? "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400"
+                      : "dark:border-border dark:bg-card dark:text-muted-foreground border-gray-200 bg-white text-gray-700",
                 )}
               >
                 <ChipIcon
@@ -600,7 +601,7 @@ function ProviderPanel({ provider }: { provider: Provider }) {
                       ? "text-amber-500"
                       : chip.variant === "good"
                         ? "text-emerald-500"
-                        : "text-gray-400",
+                        : "dark:text-muted-foreground text-gray-400",
                   )}
                 />
                 {chip.label}
@@ -618,7 +619,7 @@ function ProviderPanel({ provider }: { provider: Provider }) {
                 className="relative pb-[22px] pl-[52px] last:pb-0"
               >
                 {!last && (
-                  <span className="absolute top-9 bottom-1 left-[17px] w-[1.5px] bg-gray-200" />
+                  <span className="dark:bg-accent absolute top-9 bottom-1 left-[17px] w-[1.5px] bg-gray-200" />
                 )}
                 <span
                   className="absolute top-[-2px] left-0 grid h-[34px] w-[34px] place-items-center rounded-[10px] font-mono text-[14px] font-semibold"
@@ -629,10 +630,10 @@ function ProviderPanel({ provider }: { provider: Provider }) {
                 >
                   {i + 1}
                 </span>
-                <div className="text-[15.5px] leading-[1.4] font-semibold text-gray-900">
+                <div className="dark:text-foreground text-[15.5px] leading-[1.4] font-semibold text-gray-900">
                   {step.title}
                 </div>
-                <div className="mt-[5px] text-[13.5px] leading-[1.6] text-gray-600">
+                <div className="dark:text-muted-foreground mt-[5px] text-[13.5px] leading-[1.6] text-gray-600">
                   {step.desc}
                 </div>
               </li>
@@ -659,7 +660,11 @@ function ProviderPanel({ provider }: { provider: Provider }) {
             <ArrowTopRightOnSquareIcon className="h-4 w-4" />
           </a>
           <Link
-            href={provider.secondaryCta.href}
+            href={withInternalUtm(provider.secondaryCta.href, {
+              medium: "data_request_provider_guide",
+              campaign: "upload_data",
+              content: provider.id,
+            })}
             onClick={() => {
               if (provider.secondaryCta.href.startsWith(UPLOAD_HREF)) {
                 trackEvent("data_request_upload_clicked", {
@@ -681,7 +686,9 @@ function ProviderPanel({ provider }: { provider: Provider }) {
         </div>
 
         {provider.note && (
-          <p className="mt-[18px] text-[13px] text-gray-600">{provider.note}</p>
+          <p className="dark:text-muted-foreground mt-[18px] text-[13px] text-gray-600">
+            {provider.note}
+          </p>
         )}
       </div>
 
@@ -718,7 +725,7 @@ export function ProviderGuides() {
                 "flex items-center gap-[11px] rounded-xl border px-[18px] py-3 transition",
                 isActive
                   ? "border-transparent shadow-[0_1px_2px_oklch(0.2_0.02_286/0.06),0_1px_3px_oklch(0.2_0.02_286/0.05)]"
-                  : "border-gray-200 bg-white hover:border-gray-400",
+                  : "dark:border-border dark:bg-card border-gray-200 bg-white hover:border-gray-400",
               )}
               style={isActive ? { background: p.tabActiveBg } : undefined}
             >
@@ -728,10 +735,10 @@ export function ProviderGuides() {
                 iconClassName="h-[17px] w-[17px]"
               />
               <span className="text-left">
-                <span className="block text-[15px] font-bold text-gray-900">
+                <span className="dark:text-foreground block text-[15px] font-bold text-gray-900">
                   {p.name}
                 </span>
-                <span className="block font-mono text-[10.5px] text-gray-500">
+                <span className="dark:text-muted-foreground block font-mono text-[10.5px] text-gray-500">
                   {p.tabMeta}
                 </span>
               </span>

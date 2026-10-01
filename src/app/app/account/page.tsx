@@ -125,9 +125,9 @@ export default async function AccountPage() {
           </div>
 
           <div className="space-y-6">
-            <Card className="overflow-hidden border-rose-100 bg-linear-to-br from-white via-white to-rose-50/70 shadow-sm">
+            <Card className="dark:from-card dark:via-card overflow-hidden border-rose-100 bg-linear-to-br from-white via-white to-rose-50/70 shadow-sm dark:border-rose-800 dark:to-rose-950/70">
               <CardHeader>
-                <CardTitle className="text-xs font-semibold tracking-wider text-gray-500 uppercase">
+                <CardTitle className="dark:text-muted-foreground text-xs font-semibold tracking-wider text-gray-500 uppercase">
                   Your Plan
                 </CardTitle>
               </CardHeader>

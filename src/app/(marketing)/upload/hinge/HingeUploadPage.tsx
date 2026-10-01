@@ -125,10 +125,10 @@ export function HingeUploadPage({ isUpdate, isDebug }: HingeUploadPageProps) {
         <div className="flex flex-col items-center justify-center">
           {/* Header */}
           <div className="mb-6 text-center">
-            <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
+            <h1 className="dark:text-foreground text-2xl font-bold text-gray-900 sm:text-3xl">
               {isUpdate ? "Update Your Hinge Data" : "Upload Your Hinge Data"}
             </h1>
-            <p className="mt-2 text-sm text-gray-600 sm:text-base">
+            <p className="dark:text-muted-foreground mt-2 text-sm text-gray-600 sm:text-base">
               {isUpdate
                 ? "Upload new data to update your profile and insights"
                 : "Upload your Hinge data files to get personalized insights"}
@@ -154,10 +154,10 @@ export function HingeUploadPage({ isUpdate, isDebug }: HingeUploadPageProps) {
         <>
           {/* Header */}
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">
+            <h1 className="dark:text-foreground text-2xl font-bold text-gray-900 sm:text-3xl">
               {isUpdate ? "Update Your Hinge Data" : "Upload Your Hinge Data"}
             </h1>
-            <p className="mt-2 text-sm text-gray-600 sm:text-base">
+            <p className="dark:text-muted-foreground mt-2 text-sm text-gray-600 sm:text-base">
               {isUpdate
                 ? "Upload new data to update your profile and insights"
                 : "Upload your Hinge data files to get personalized insights"}
@@ -198,16 +198,16 @@ export function HingeUploadPage({ isUpdate, isDebug }: HingeUploadPageProps) {
 
           {/* User-facing notification - scenario-based */}
           {uploadContext?.scenario === "same_hingeId" && (
-            <div className="mt-6 rounded-lg border-2 border-green-300 bg-green-50 p-4">
-              <h3 className="mb-1 text-sm font-semibold text-green-900">
+            <div className="mt-6 rounded-lg border-2 border-green-300 bg-green-50 p-4 dark:border-green-800 dark:bg-green-950/40">
+              <h3 className="mb-1 text-sm font-semibold text-green-900 dark:text-green-200">
                 Adding to Existing Profile
               </h3>
-              <p className="text-xs text-green-700">
+              <p className="text-xs text-green-700 dark:text-green-400">
                 Your data will be merged with your existing profile. New matches
                 and interactions will be added. Nothing will be lost.
               </p>
               {uploadContext.userProfile && (
-                <p className="mt-1 text-xs text-green-600">
+                <p className="mt-1 text-xs text-green-600 dark:text-green-400">
                   Existing profile created:{" "}
                   {new Date(
                     uploadContext.userProfile.createDate,
@@ -217,7 +217,7 @@ export function HingeUploadPage({ isUpdate, isDebug }: HingeUploadPageProps) {
               {uploadContext.userProfile && (
                 <a
                   href={`/insights/hinge/${uploadContext.userProfile.hingeId}`}
-                  className="mt-2 inline-block text-xs font-semibold text-green-800 underline underline-offset-4 hover:no-underline"
+                  className="mt-2 inline-block text-xs font-semibold text-green-800 underline underline-offset-4 hover:no-underline dark:text-green-200"
                 >
                   Already uploaded? View your insights instead →
                 </a>
@@ -228,16 +228,16 @@ export function HingeUploadPage({ isUpdate, isDebug }: HingeUploadPageProps) {
           {uploadContext?.scenario === "different_hingeId" &&
             !isBackwardMerge &&
             !uploadContext?.identityMismatch && (
-              <div className="mt-6 rounded-lg border-2 border-amber-300 bg-amber-50 p-4">
-                <h3 className="mb-1 text-sm font-semibold text-amber-900">
+              <div className="mt-6 rounded-lg border-2 border-amber-300 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/40">
+                <h3 className="mb-1 text-sm font-semibold text-amber-900 dark:text-amber-200">
                   Merging Accounts
                 </h3>
-                <p className="text-xs text-amber-700">
+                <p className="text-xs text-amber-700 dark:text-amber-400">
                   You have an existing profile with a different Hinge ID. This
                   upload will merge your old account data into your new account.
                 </p>
                 {uploadContext.userProfile && (
-                  <p className="mt-1 text-xs text-amber-600">
+                  <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
                     Old: {uploadContext.userProfile.hingeId.slice(0, 8)}... →
                     New: {hingeId?.slice(0, 8)}...
                   </p>
@@ -247,16 +247,16 @@ export function HingeUploadPage({ isUpdate, isDebug }: HingeUploadPageProps) {
 
           {uploadContext?.scenario === "different_hingeId" &&
             isBackwardMerge && (
-              <div className="mt-6 rounded-lg border-2 border-red-300 bg-red-50 p-4">
-                <h3 className="mb-1 text-sm font-semibold text-red-900">
+              <div className="mt-6 rounded-lg border-2 border-red-300 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950/40">
+                <h3 className="mb-1 text-sm font-semibold text-red-900 dark:text-red-200">
                   Wrong Order - Older Account Detected
                 </h3>
-                <p className="text-xs text-red-700">
+                <p className="text-xs text-red-700 dark:text-red-400">
                   This file is from an older Hinge account than your current
                   profile. Account merges must go from older to newer to avoid
                   data issues.
                 </p>
-                <p className="mt-2 text-xs text-red-600">
+                <p className="mt-2 text-xs text-red-600 dark:text-red-400">
                   <strong>To fix:</strong> Delete your current profile first,
                   then upload this older file, then upload your newer account.
                 </p>
@@ -278,16 +278,16 @@ export function HingeUploadPage({ isUpdate, isDebug }: HingeUploadPageProps) {
 
           {uploadContext?.scenario === "different_hingeId" &&
             uploadContext?.identityMismatch && (
-              <div className="mt-6 rounded-lg border-2 border-red-300 bg-red-50 p-4">
-                <h3 className="mb-1 text-sm font-semibold text-red-900">
+              <div className="mt-6 rounded-lg border-2 border-red-300 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950/40">
+                <h3 className="mb-1 text-sm font-semibold text-red-900 dark:text-red-200">
                   Identity Mismatch Detected
                 </h3>
-                <p className="text-xs text-red-700">
+                <p className="text-xs text-red-700 dark:text-red-400">
                   These profiles appear to be from different people
                   (age/birthdate mismatch). This usually happens when testing
                   with different users&apos; data.
                 </p>
-                <p className="mt-2 text-xs text-red-600">
+                <p className="mt-2 text-xs text-red-600 dark:text-red-400">
                   <strong>To fix:</strong> Delete your current profile first
                   before uploading test data.
                 </p>
@@ -295,22 +295,22 @@ export function HingeUploadPage({ isUpdate, isDebug }: HingeUploadPageProps) {
             )}
 
           {uploadContext?.scenario === "owned_by_other" && (
-            <div className="mt-6 rounded-lg border-2 border-red-300 bg-red-50 p-4">
-              <h3 className="mb-1 text-sm font-semibold text-red-900">
+            <div className="mt-6 rounded-lg border-2 border-red-300 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950/40">
+              <h3 className="mb-1 text-sm font-semibold text-red-900 dark:text-red-200">
                 Profile Already Exists
               </h3>
-              <p className="text-xs text-red-700">
+              <p className="text-xs text-red-700 dark:text-red-400">
                 This Hinge ID is already associated with another account.
               </p>
             </div>
           )}
 
           {uploadContext?.scenario === "needs_signin" && (
-            <div className="mt-6 rounded-lg border-2 border-yellow-300 bg-yellow-50 p-4">
-              <h3 className="mb-1 text-sm font-semibold text-yellow-900">
+            <div className="mt-6 rounded-lg border-2 border-yellow-300 bg-yellow-50 p-4 dark:border-yellow-800 dark:bg-yellow-950/40">
+              <h3 className="mb-1 text-sm font-semibold text-yellow-900 dark:text-yellow-200">
                 Sign In Required
               </h3>
-              <p className="text-xs text-yellow-700">
+              <p className="text-xs text-yellow-700 dark:text-yellow-400">
                 This profile is linked to an existing account. Please sign in to
                 update it, or contact support if you believe this is an error.
               </p>
@@ -341,7 +341,7 @@ export function HingeUploadPage({ isUpdate, isDebug }: HingeUploadPageProps) {
 
           {/* Debug Info */}
           {isDebug && (
-            <details className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+            <details className="dark:border-border dark:bg-background rounded-lg border border-gray-200 bg-gray-50 p-4">
               <summary className="cursor-pointer font-mono text-xs">
                 Debug: Raw Payload
               </summary>

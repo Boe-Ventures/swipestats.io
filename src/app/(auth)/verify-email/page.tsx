@@ -58,19 +58,19 @@ function VerifyEmailContent() {
   return (
     <Card className="w-full max-w-md">
       <CardHeader>
-        <CardTitle className="text-center text-2xl text-gray-900">
+        <CardTitle className="dark:text-foreground text-center text-2xl text-gray-900">
           Email Verification
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
         {!token ? (
           <div className="space-y-4 text-center">
-            <XCircle className="mx-auto h-16 w-16 text-red-600" />
+            <XCircle className="mx-auto h-16 w-16 text-red-600 dark:text-red-400" />
             <div className="space-y-2">
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="dark:text-foreground text-lg font-semibold text-gray-900">
                 Invalid Link
               </h3>
-              <p className="text-gray-600">
+              <p className="dark:text-muted-foreground text-gray-600">
                 No verification token found. Please check your email for the
                 correct link.
               </p>
@@ -84,12 +84,12 @@ function VerifyEmailContent() {
           </div>
         ) : isAnonymous ? (
           <div className="space-y-4 text-center">
-            <AlertTriangle className="mx-auto h-16 w-16 text-yellow-600" />
+            <AlertTriangle className="mx-auto h-16 w-16 text-yellow-600 dark:text-yellow-400" />
             <div className="space-y-2">
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="dark:text-foreground text-lg font-semibold text-gray-900">
                 Create an Account First
               </h3>
-              <p className="text-gray-600">
+              <p className="dark:text-muted-foreground text-gray-600">
                 You need to create a real account before verifying your email.
                 Anonymous accounts cannot verify email addresses.
               </p>
@@ -103,26 +103,28 @@ function VerifyEmailContent() {
           </div>
         ) : verifyEmail.isPending ? (
           <div className="space-y-4 text-center">
-            <Loader2 className="mx-auto h-16 w-16 animate-spin text-rose-600" />
+            <Loader2 className="mx-auto h-16 w-16 animate-spin text-rose-600 dark:text-rose-400" />
             <div className="space-y-2">
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="dark:text-foreground text-lg font-semibold text-gray-900">
                 Verifying your email...
               </h3>
-              <p className="text-gray-600">Please wait a moment.</p>
+              <p className="dark:text-muted-foreground text-gray-600">
+                Please wait a moment.
+              </p>
             </div>
           </div>
         ) : verifyEmail.isSuccess ? (
           <div className="space-y-4 text-center">
-            <CheckCircle2 className="mx-auto h-16 w-16 text-green-600" />
+            <CheckCircle2 className="mx-auto h-16 w-16 text-green-600 dark:text-green-400" />
             <div className="space-y-2">
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="dark:text-foreground text-lg font-semibold text-gray-900">
                 Email Verified!
               </h3>
-              <p className="text-gray-600">
+              <p className="dark:text-muted-foreground text-gray-600">
                 {verifyEmail.data?.message ||
                   "Your email has been verified successfully."}
               </p>
-              <p className="text-sm text-gray-500">
+              <p className="dark:text-muted-foreground text-sm text-gray-500">
                 Redirecting to account settings in {countdown} seconds...
               </p>
             </div>
@@ -135,12 +137,12 @@ function VerifyEmailContent() {
           </div>
         ) : verifyEmail.isError ? (
           <div className="space-y-4 text-center">
-            <XCircle className="mx-auto h-16 w-16 text-red-600" />
+            <XCircle className="mx-auto h-16 w-16 text-red-600 dark:text-red-400" />
             <div className="space-y-2">
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="dark:text-foreground text-lg font-semibold text-gray-900">
                 Verification Failed
               </h3>
-              <p className="text-gray-600">
+              <p className="dark:text-muted-foreground text-gray-600">
                 {verifyEmail.error?.message ||
                   "Unable to verify your email. The link may be expired or invalid."}
               </p>
@@ -160,23 +162,25 @@ function VerifyEmailContent() {
 
 export default function VerifyEmailPage() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-gray-50 p-4">
+    <main className="dark:bg-background flex min-h-screen items-center justify-center bg-gray-50 p-4">
       <Suspense
         fallback={
           <Card className="w-full max-w-md">
             <CardHeader>
-              <CardTitle className="text-center text-2xl text-gray-900">
+              <CardTitle className="dark:text-foreground text-center text-2xl text-gray-900">
                 Email Verification
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <div className="space-y-4 text-center">
-                <Loader2 className="mx-auto h-16 w-16 animate-spin text-rose-600" />
+                <Loader2 className="mx-auto h-16 w-16 animate-spin text-rose-600 dark:text-rose-400" />
                 <div className="space-y-2">
-                  <h3 className="text-lg font-semibold text-gray-900">
+                  <h3 className="dark:text-foreground text-lg font-semibold text-gray-900">
                     Loading...
                   </h3>
-                  <p className="text-gray-600">Please wait a moment.</p>
+                  <p className="dark:text-muted-foreground text-gray-600">
+                    Please wait a moment.
+                  </p>
                 </div>
               </div>
             </CardContent>

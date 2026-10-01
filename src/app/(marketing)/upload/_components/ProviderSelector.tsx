@@ -57,14 +57,14 @@ export function ProviderSelector() {
         {/* <h2 className="mb-2 text-sm font-semibold tracking-wide text-rose-600 uppercase">
           Upload
         </h2> */}
-        <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+        <h1 className="dark:text-foreground text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
           Visualize your{" "}
           {provider
             ? provider.charAt(0).toUpperCase() + provider.slice(1)
             : "dating"}{" "}
           data
         </h1>
-        <p className="mt-4 text-lg text-gray-600">
+        <p className="dark:text-muted-foreground mt-4 text-lg text-gray-600">
           Upload your data anonymously and compare it to demographics from
           around the world!
         </p>

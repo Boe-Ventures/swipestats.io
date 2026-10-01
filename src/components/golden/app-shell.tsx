@@ -52,7 +52,7 @@ function Brand({ className }: { className?: string }) {
     <Link
       href="/app"
       className={cn(
-        "flex flex-none items-center gap-2.5 text-gray-900 transition hover:opacity-90",
+        "dark:text-foreground flex flex-none items-center gap-2.5 text-gray-900 transition hover:opacity-90",
         className,
       )}
     >
@@ -120,7 +120,7 @@ function NavIcon({ icon }: { icon: GoldenNavKey }) {
 
 function Avatar({ initials }: { initials?: string }) {
   return (
-    <span className="grid h-[34px] w-[34px] flex-none place-items-center rounded-full border border-gray-200 bg-gray-100 font-mono text-[12px] font-semibold tracking-[0.02em] text-gray-600 uppercase">
+    <span className="dark:border-border dark:bg-muted dark:text-muted-foreground grid h-[34px] w-[34px] flex-none place-items-center rounded-full border border-gray-200 bg-gray-100 font-mono text-[12px] font-semibold tracking-[0.02em] text-gray-600 uppercase">
       {initials ?? ""}
     </span>
   );
@@ -144,7 +144,7 @@ export function GoldenAppHeader({
   return (
     <header
       className={cn(
-        "sticky top-0 z-50 border-b border-gray-200 bg-white",
+        "dark:border-border dark:bg-card sticky top-0 z-50 border-b border-gray-200 bg-white",
         className,
       )}
     >
@@ -163,8 +163,8 @@ export function GoldenAppHeader({
                 className={cn(
                   "rounded-full px-3.5 py-2 text-[14px] font-medium tracking-[-0.01em] transition",
                   isActive
-                    ? "bg-rose-50 text-rose-600"
-                    : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
+                    ? "bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400"
+                    : "dark:text-muted-foreground dark:hover:bg-muted dark:hover:text-foreground text-gray-600 hover:bg-gray-100 hover:text-gray-900",
                 )}
               >
                 {link.label}
@@ -213,7 +213,7 @@ export function GoldenSidebar({
   return (
     <aside
       className={cn(
-        "flex w-[224px] flex-none flex-col gap-1 border-r border-gray-200 bg-white p-4",
+        "dark:border-border dark:bg-card flex w-[224px] flex-none flex-col gap-1 border-r border-gray-200 bg-white p-4",
         className,
       )}
     >
@@ -234,8 +234,8 @@ export function GoldenSidebar({
               className={cn(
                 "flex items-center gap-3 rounded-xl px-3 py-2.5 text-[14px] font-medium tracking-[-0.01em] transition",
                 isActive
-                  ? "bg-rose-50 text-rose-600"
-                  : "text-gray-600 hover:bg-gray-100 hover:text-gray-900",
+                  ? "bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400"
+                  : "dark:text-muted-foreground dark:hover:bg-muted dark:hover:text-foreground text-gray-600 hover:bg-gray-100 hover:text-gray-900",
               )}
             >
               <NavIcon icon={link.key} />

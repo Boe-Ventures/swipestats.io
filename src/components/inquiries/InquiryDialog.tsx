@@ -40,11 +40,13 @@ function Field({
   optional?: boolean;
 }) {
   return (
-    <label className="grid gap-1.5 text-sm font-medium text-gray-800">
+    <label className="dark:text-foreground grid gap-1.5 text-sm font-medium text-gray-800">
       <span className="flex items-center justify-between gap-3">
         {label}
         {optional && (
-          <span className="text-xs font-normal text-gray-400">Optional</span>
+          <span className="dark:text-muted-foreground text-xs font-normal text-gray-400">
+            Optional
+          </span>
         )}
       </span>
       {children}
@@ -128,12 +130,12 @@ export function InquiryDialog({
       )}
       <DialogContent
         data-inquiry-dialog={kind.toLowerCase()}
-        className="rounded-2xl border-gray-200 bg-white sm:max-w-lg"
+        className="dark:border-border dark:bg-card rounded-2xl border-gray-200 bg-white sm:max-w-lg"
         scrollable
       >
         {submitted ? (
           <div className="grid justify-items-center gap-4 py-8 text-center">
-            <span className="grid size-12 place-items-center rounded-full bg-emerald-50 text-emerald-600">
+            <span className="grid size-12 place-items-center rounded-full bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-400">
               <CheckCircle2 className="size-6" />
             </span>
             <div>
@@ -149,7 +151,7 @@ export function InquiryDialog({
         ) : (
           <form onSubmit={submit}>
             <DialogHeader>
-              <div className="font-mono text-[11px] font-medium tracking-[0.07em] text-rose-600 uppercase">
+              <div className="font-mono text-[11px] font-medium tracking-[0.07em] text-rose-600 uppercase dark:text-rose-400">
                 {isSponsorship
                   ? "Partner with SwipeStats"
                   : "Contact SwipeStats"}
@@ -198,7 +200,7 @@ export function InquiryDialog({
                   <Field label="Approximate campaign budget" optional>
                     <select
                       name="budget"
-                      className="h-9 rounded-md border border-gray-200 bg-white px-3 text-sm outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100"
+                      className="dark:border-border dark:bg-card h-9 rounded-md border border-gray-200 bg-white px-3 text-sm outline-none focus:border-rose-400 focus:ring-2 focus:ring-rose-100 dark:focus:ring-rose-800"
                     >
                       <option value="">Not sure yet</option>
                       <option value="under-1000">Under $1,000</option>
@@ -232,11 +234,11 @@ export function InquiryDialog({
               </div>
             </div>
 
-            <div className="rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-3 text-sm text-gray-600">
-              <Mail className="mr-2 inline size-4 text-gray-400" />
+            <div className="dark:border-border dark:bg-background dark:text-muted-foreground rounded-xl border border-gray-200 bg-gray-50 px-3.5 py-3 text-sm text-gray-600">
+              <Mail className="dark:text-muted-foreground mr-2 inline size-4 text-gray-400" />
               Prefer email? Write directly to{" "}
               <a
-                className="font-medium text-rose-600 underline underline-offset-2 hover:text-rose-700"
+                className="font-medium text-rose-600 underline underline-offset-2 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-400"
                 href={emailHref}
               >
                 {contactEmail}
@@ -245,7 +247,7 @@ export function InquiryDialog({
             </div>
 
             <DialogFooter className="mt-2 px-0 pb-0">
-              <p className="mr-auto self-center text-xs text-gray-500">
+              <p className="dark:text-muted-foreground mr-auto self-center text-xs text-gray-500">
                 We only use these details to respond to your inquiry.
               </p>
               <Button type="submit" disabled={mutation.isPending}>

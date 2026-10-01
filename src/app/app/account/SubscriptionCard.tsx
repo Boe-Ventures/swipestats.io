@@ -66,35 +66,42 @@ export function SubscriptionCard() {
       <div className="space-y-6">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-4">
-            <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-rose-100 bg-rose-50 text-rose-600">
+            <div className="flex size-12 shrink-0 items-center justify-center rounded-2xl border border-rose-100 bg-rose-50 text-rose-600 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-400">
               <Crown className="size-6" aria-hidden="true" />
             </div>
             <div>
-              <h3 className="text-2xl leading-tight font-bold tracking-tight text-gray-900 sm:text-3xl">
+              <h3 className="dark:text-foreground text-2xl leading-tight font-bold tracking-tight text-gray-900 sm:text-3xl">
                 SwipeStats {tier === "ELITE" ? "Elite" : "Plus"}
               </h3>
-              <p className="mt-2 max-w-md text-sm leading-relaxed text-gray-600">
+              <p className="dark:text-muted-foreground mt-2 max-w-md text-sm leading-relaxed text-gray-600">
                 All your {tier === "ELITE" ? "Elite" : "Plus"} features, yours
                 for good. Thank you for supporting SwipeStats.
               </p>
             </div>
           </div>
-          <span className="inline-flex w-fit shrink-0 items-center gap-2 rounded-full border border-rose-200 bg-white px-3 py-1.5 text-xs font-semibold text-rose-700">
+          <span className="dark:bg-card inline-flex w-fit shrink-0 items-center gap-2 rounded-full border border-rose-200 bg-white px-3 py-1.5 text-xs font-semibold text-rose-700 dark:border-rose-800 dark:text-rose-400">
             <InfinityIcon className="size-4" aria-hidden="true" />
             Lifetime access
           </span>
         </div>
-        <dl className="grid gap-4 rounded-2xl border border-gray-200/80 bg-white/80 p-5 sm:grid-cols-2 sm:gap-6">
+        <dl className="dark:border-border/80 dark:bg-card/80 grid gap-4 rounded-2xl border border-gray-200/80 bg-white/80 p-5 sm:grid-cols-2 sm:gap-6">
           <div>
-            <dt className="text-xs font-medium text-gray-500">Plan status</dt>
-            <dd className="mt-2 flex items-center gap-2 text-sm font-semibold text-gray-900">
-              <Check className="size-4 text-emerald-600" aria-hidden="true" />
+            <dt className="dark:text-muted-foreground text-xs font-medium text-gray-500">
+              Plan status
+            </dt>
+            <dd className="dark:text-foreground mt-2 flex items-center gap-2 text-sm font-semibold text-gray-900">
+              <Check
+                className="size-4 text-emerald-600 dark:text-emerald-400"
+                aria-hidden="true"
+              />
               Active for life
             </dd>
           </div>
           <div>
-            <dt className="text-xs font-medium text-gray-500">Billing</dt>
-            <dd className="mt-2 text-sm font-semibold text-gray-900">
+            <dt className="dark:text-muted-foreground text-xs font-medium text-gray-500">
+              Billing
+            </dt>
+            <dd className="dark:text-foreground mt-2 text-sm font-semibold text-gray-900">
               No recurring charges
             </dd>
           </div>
@@ -108,13 +115,18 @@ export function SubscriptionCard() {
     const isCancelled = subscription.cancelled;
     const statusColor =
       {
-        active: "bg-green-100 text-green-800",
-        on_trial: "bg-blue-100 text-blue-800",
-        cancelled: "bg-yellow-100 text-yellow-800",
-        past_due: "bg-red-100 text-red-800",
-        paused: "bg-gray-100 text-gray-800",
-        expired: "bg-red-100 text-red-800",
-      }[subscription.status] || "bg-gray-100 text-gray-800";
+        active:
+          "bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-200",
+        on_trial:
+          "bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-200",
+        cancelled:
+          "bg-yellow-100 text-yellow-800 dark:bg-yellow-950/40 dark:text-yellow-200",
+        past_due:
+          "bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-200",
+        paused: "bg-gray-100 text-gray-800 dark:bg-muted dark:text-foreground",
+        expired: "bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-200",
+      }[subscription.status] ||
+      "bg-gray-100 text-gray-800 dark:bg-muted dark:text-foreground";
 
     return (
       <div className="space-y-4">
@@ -142,7 +154,7 @@ export function SubscriptionCard() {
 
           {/* Renewal/Expiry Info */}
           {isCancelled ? (
-            <div className="flex items-center gap-2 text-sm text-yellow-600">
+            <div className="flex items-center gap-2 text-sm text-yellow-600 dark:text-yellow-400">
               <AlertCircle className="h-4 w-4" />
               <span>
                 Access until{" "}

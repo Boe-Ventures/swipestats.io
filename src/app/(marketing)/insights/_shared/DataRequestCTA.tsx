@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import { withInternalUtm } from "@/lib/cta-links";
 
 export function DataRequestCTA() {
   return (
@@ -36,13 +37,21 @@ export function DataRequestCTA() {
         </p>
         <div className="mt-10 flex items-center justify-center gap-x-6 lg:justify-start">
           <Link
-            href="/#pricing"
+            href={withInternalUtm("/research", {
+              medium: "insights_research_card",
+              campaign: "research_datasets",
+              content: "get_dataset",
+            })}
             className="rounded-md bg-white px-3.5 py-2.5 text-sm font-semibold text-gray-900 shadow-sm hover:bg-gray-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
           >
             Get your dataset
           </Link>
           <Link
-            href="/#pricing"
+            href={withInternalUtm("/research", {
+              medium: "insights_research_card",
+              campaign: "research_datasets",
+              content: "learn_more",
+            })}
             className="text-sm/6 font-semibold text-white hover:text-gray-100"
           >
             Learn more <span aria-hidden="true">→</span>

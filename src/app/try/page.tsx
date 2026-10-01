@@ -61,7 +61,7 @@ function resolveSource(source: string | null): AnonymousSource {
 
 function Splash({ error, onRetry }: { error?: string; onRetry?: () => void }) {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50">
+    <div className="dark:bg-background flex min-h-screen flex-col items-center justify-center bg-gray-50">
       <div className="animate-in fade-in zoom-in fill-mode-both duration-500">
         <NewOldLogo className="h-14 w-14 animate-pulse text-rose-500" />
       </div>

@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { SparklesIcon, LockClosedIcon, BoltIcon } from "@heroicons/react/20/solid";
+import {
+  SparklesIcon,
+  LockClosedIcon,
+  BoltIcon,
+} from "@heroicons/react/20/solid";
 import { Button } from "@/components/ui/button";
 import {
   GoldenAppHeader,
@@ -23,12 +27,12 @@ export const metadata: Metadata = {
 
 export default function GoldenDashboardPage() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="dark:bg-background min-h-screen bg-gray-50">
       <GoldenAppHeader active="dashboard" userInitials="KB" />
 
       <div className="mx-auto max-w-[1216px] px-6 py-10 lg:px-8">
         {/* preview banner */}
-        <div className="mb-8 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-center text-[12.5px] font-medium text-amber-800">
+        <div className="mb-8 rounded-xl border border-amber-200 bg-amber-50 px-4 py-2 text-center text-[12.5px] font-medium text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
           <LockClosedIcon className="mr-1 inline h-3.5 w-3.5" />
           Golden insights — preview composed entirely from the golden primitives
           (noindex). The live dashboard is unchanged.
@@ -68,7 +72,7 @@ export default function GoldenDashboardPage() {
             <CohortBadge tier="top" icon={<SparklesIcon />}>
               Top 10% of men
             </CohortBadge>
-            <p className="text-[13px] leading-[1.6] text-gray-600">
+            <p className="dark:text-muted-foreground text-[13px] leading-[1.6] text-gray-600">
               Better match rate than 90% of men your age on Tinder.
             </p>
             <LockedValue className="mt-1">
@@ -91,14 +95,17 @@ export default function GoldenDashboardPage() {
         {/* charts: the real Recharts components, themed golden (not hand-rolled) */}
         <Panel className="mt-5">
           <PanelHeader title="Activity charts" meta="Recharts" />
-          <p className="text-[13.5px] leading-[1.6] text-gray-600">
-            Charts are the real, data-driven Recharts components, themed with the
-            golden{" "}
-            <code className="rounded border border-gray-200 bg-gray-100 px-1 py-0.5 font-mono text-[12px] text-gray-800">
+          <p className="dark:text-muted-foreground text-[13.5px] leading-[1.6] text-gray-600">
+            Charts are the real, data-driven Recharts components, themed with
+            the golden{" "}
+            <code className="dark:border-border dark:bg-muted dark:text-foreground rounded border border-gray-200 bg-gray-100 px-1 py-0.5 font-mono text-[12px] text-gray-800">
               GOLDEN_CHART_COLORS
             </code>{" "}
             palette. See the live activity chart on the{" "}
-            <Link href="/" className="font-semibold text-rose-600">
+            <Link
+              href="/"
+              className="font-semibold text-rose-600 dark:text-rose-400"
+            >
               home page
             </Link>
             .

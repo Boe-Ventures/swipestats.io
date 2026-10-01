@@ -111,9 +111,7 @@ export function HingeMessagingChart() {
       <Card>
         <CardHeader>
           <CardTitle>Messaging Activity</CardTitle>
-          <CardDescription>
-            Outgoing messages over time
-          </CardDescription>
+          <CardDescription>Outgoing messages over time</CardDescription>
         </CardHeader>
         <CardContent>
           <p className="text-muted-foreground text-sm">
@@ -202,7 +200,7 @@ export function HingeMessagingChart() {
                           <span className="text-muted-foreground text-[0.70rem] uppercase">
                             Sent
                           </span>
-                          <span className="font-bold text-purple-600">
+                          <span className="font-bold text-purple-600 dark:text-purple-400">
                             {data.messagesSent}
                           </span>
                         </div>
