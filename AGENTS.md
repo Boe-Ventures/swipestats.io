@@ -8,8 +8,9 @@ symlink to this file.
 **SwipeStats** — a dating app analytics platform that helps users understand
 their Tinder and Hinge data. T3 stack: Next.js 16 (App Router), tRPC, Drizzle
 on Neon Postgres, Better Auth, Tailwind 4 + Radix, Velite for MDX, React Email
-+ Resend, LemonSqueezy billing, Vercel AI SDK v7 with `@ai-sdk/anthropic`.
-Package manager is **Bun**.
+
+- Resend, LemonSqueezy billing, Vercel AI SDK v7 with `@ai-sdk/anthropic`.
+  Package manager is **Bun**.
 
 `bun check` (migration-history validation + ESLint + tsc) is the pre-PR gate.
 Scripts, env vars, directory layout, and the table list are discoverable from
