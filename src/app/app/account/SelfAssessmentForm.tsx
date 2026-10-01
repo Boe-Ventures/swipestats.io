@@ -60,9 +60,14 @@ export function SelfAssessmentForm() {
               background: `linear-gradient(to right, rgb(147 51 234) 0%, rgb(147 51 234) ${(currentHotness - 1) * 11.11}%, rgb(229 231 235) ${(currentHotness - 1) * 11.11}%, rgb(229 231 235) 100%)`,
             }}
           />
-          <div className="text-muted-foreground flex justify-between text-xs">
+          <div className="text-muted-foreground relative flex justify-between text-xs">
             <span>1</span>
-            <span>5</span>
+            <span
+              className="absolute -translate-x-1/2"
+              style={{ left: `${((5 - 1) / (10 - 1)) * 100}%` }}
+            >
+              5
+            </span>
             <span>10</span>
           </div>
         </Field>
@@ -86,9 +91,14 @@ export function SelfAssessmentForm() {
               background: `linear-gradient(to right, rgb(219 39 119) 0%, rgb(219 39 119) ${(currentHappiness - 1) * 11.11}%, rgb(229 231 235) ${(currentHappiness - 1) * 11.11}%, rgb(229 231 235) 100%)`,
             }}
           />
-          <div className="text-muted-foreground flex justify-between text-xs">
+          <div className="text-muted-foreground relative flex justify-between text-xs">
             <span>1</span>
-            <span>5</span>
+            <span
+              className="absolute -translate-x-1/2"
+              style={{ left: `${((5 - 1) / (10 - 1)) * 100}%` }}
+            >
+              5
+            </span>
             <span>10</span>
           </div>
         </Field>
