@@ -83,13 +83,13 @@ export function ProfileCompareSection() {
       <div className="space-y-5">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
-            <div className="font-mono text-[11px] font-medium tracking-[0.07em] text-gray-500 uppercase">
+            <div className="dark:text-muted-foreground font-mono text-[11px] font-medium tracking-[0.07em] text-gray-500 uppercase">
               Compose
             </div>
-            <h2 className="mt-1 text-[26px] font-bold tracking-[-0.03em] text-gray-900">
+            <h2 className="dark:text-foreground mt-1 text-[26px] font-bold tracking-[-0.03em] text-gray-900">
               Profile comparisons
             </h2>
-            <p className="mt-1 text-[14px] text-gray-600">
+            <p className="dark:text-muted-foreground mt-1 text-[14px] text-gray-600">
               A/B test photos, prompts, bios, and app profiles side by side.
             </p>
           </div>
@@ -100,15 +100,15 @@ export function ProfileCompareSection() {
         </div>
 
         {!comparisons || comparisons.length === 0 ? (
-          <Panel className="border-dashed bg-white p-0">
+          <Panel className="dark:bg-card border-dashed bg-white p-0">
             <div className="flex min-h-[280px] flex-col items-center justify-center px-6 py-12 text-center">
-              <div className="mb-4 grid h-14 w-14 place-items-center rounded-full border border-gray-200 bg-gray-50">
-                <Plus className="h-7 w-7 text-gray-500" />
+              <div className="dark:border-border dark:bg-background mb-4 grid h-14 w-14 place-items-center rounded-full border border-gray-200 bg-gray-50">
+                <Plus className="dark:text-muted-foreground h-7 w-7 text-gray-500" />
               </div>
-              <h3 className="text-[17px] font-bold tracking-[-0.01em] text-gray-900">
+              <h3 className="dark:text-foreground text-[17px] font-bold tracking-[-0.01em] text-gray-900">
                 No comparisons yet
               </h3>
-              <p className="mt-2 mb-6 max-w-[390px] text-[13.5px] leading-6 text-gray-600">
+              <p className="dark:text-muted-foreground mt-2 mb-6 max-w-[390px] text-[13.5px] leading-6 text-gray-600">
                 Create your first comparison to see how your dating app profiles
                 stack up. Compare photos, bios, prompts, and more side by side.
               </p>

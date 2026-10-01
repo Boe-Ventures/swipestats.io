@@ -139,10 +139,12 @@ import { NewsletterCard } from "@/components/mdx/NewsletterCard";
 type Surface = "marketing" | "blog" | "app" | "shared";
 
 const surfaceStyles: Record<Surface, string> = {
-  marketing: "bg-rose-50 text-rose-700 ring-rose-600/20",
-  blog: "bg-amber-50 text-amber-700 ring-amber-600/20",
-  app: "bg-indigo-50 text-indigo-700 ring-indigo-600/20",
-  shared: "bg-slate-100 text-slate-600 ring-slate-300",
+  marketing:
+    "bg-rose-50 text-rose-700 ring-rose-600/20 dark:bg-rose-950/40 dark:text-rose-400",
+  blog: "bg-amber-50 text-amber-700 ring-amber-600/20 dark:bg-amber-950/40 dark:text-amber-400",
+  app: "bg-indigo-50 text-indigo-700 ring-indigo-600/20 dark:bg-indigo-950/40 dark:text-indigo-400",
+  shared:
+    "bg-slate-100 text-slate-600 ring-slate-300 dark:bg-muted dark:text-muted-foreground dark:ring-border",
 };
 
 function Tag({ surface }: { surface: Surface }) {
@@ -162,11 +164,20 @@ type StatusKind = "current" | "golden" | "shadcn" | "candidate" | "not-built";
 
 function Status({ kind }: { kind: StatusKind }) {
   const map = {
-    current: { label: "● live today", cls: "text-blue-600" },
-    golden: { label: "✓ golden", cls: "text-emerald-600" },
-    shadcn: { label: "◆ shadcn", cls: "text-violet-600" },
-    candidate: { label: "📦 extract candidate", cls: "text-amber-600" },
-    "not-built": { label: "✕ not built", cls: "text-gray-400" },
+    current: { label: "● live today", cls: "text-blue-600 dark:text-blue-400" },
+    golden: {
+      label: "✓ golden",
+      cls: "text-emerald-600 dark:text-emerald-400",
+    },
+    shadcn: { label: "◆ shadcn", cls: "text-violet-600 dark:text-violet-400" },
+    candidate: {
+      label: "📦 extract candidate",
+      cls: "text-amber-600 dark:text-amber-400",
+    },
+    "not-built": {
+      label: "✕ not built",
+      cls: "text-gray-400 dark:text-muted-foreground",
+    },
   } as const;
   return (
     <span className={cn("font-mono text-[11px] font-medium", map[kind].cls)}>
@@ -278,10 +289,10 @@ function Specimen({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200">
-      <div className="flex flex-wrap items-center gap-2 border-b border-gray-200 bg-gray-50 px-4 py-2.5">
+    <div className="dark:border-border flex h-full flex-col overflow-hidden rounded-2xl border border-gray-200">
+      <div className="dark:border-border dark:bg-background flex flex-wrap items-center gap-2 border-b border-gray-200 bg-gray-50 px-4 py-2.5">
         <Status kind={status} />
-        <span className="font-mono text-[12px] font-semibold text-gray-900">
+        <span className="dark:text-foreground font-mono text-[12px] font-semibold text-gray-900">
           {label}
         </span>
         <span className="ml-auto">
@@ -291,13 +302,13 @@ function Specimen({
       <div
         className={cn(
           "flex flex-1 flex-wrap items-center gap-4 p-6",
-          dark ? "bg-gray-950" : "bg-white",
+          dark ? "bg-gray-950" : "dark:bg-card bg-white",
         )}
       >
         {children}
       </div>
       {note && (
-        <p className="border-t border-gray-200 bg-gray-50 px-4 py-2.5 text-[12.5px] text-gray-500">
+        <p className="dark:border-border dark:bg-background dark:text-muted-foreground border-t border-gray-200 bg-gray-50 px-4 py-2.5 text-[12.5px] text-gray-500">
           {note}
         </p>
       )}
@@ -317,15 +328,17 @@ function SectionTitle({
   return (
     <div className="mb-5">
       <div className="flex items-baseline gap-3">
-        <span className="font-mono text-[13px] font-semibold text-rose-600">
+        <span className="font-mono text-[13px] font-semibold text-rose-600 dark:text-rose-400">
           {n}
         </span>
-        <h2 className="text-[24px] font-bold tracking-[-0.02em] text-gray-900">
+        <h2 className="dark:text-foreground text-[24px] font-bold tracking-[-0.02em] text-gray-900">
           {title}
         </h2>
       </div>
       {sub && (
-        <p className="mt-2 max-w-[760px] text-[15px] text-gray-600">{sub}</p>
+        <p className="dark:text-muted-foreground mt-2 max-w-[760px] text-[15px] text-gray-600">
+          {sub}
+        </p>
       )}
     </div>
   );
@@ -363,12 +376,12 @@ export default function DesignSystemPage() {
   return (
     <>
       {/* top bar */}
-      <header className="sticky top-0 z-50 border-b border-gray-200 bg-white/80 backdrop-blur">
+      <header className="dark:border-border dark:bg-card/80 sticky top-0 z-50 border-b border-gray-200 bg-white/80 backdrop-blur">
         <div className="mx-auto flex max-w-[1216px] flex-wrap items-center gap-x-4 gap-y-2 px-6 py-4">
-          <span className="font-mono text-[13px] font-bold tracking-[-0.01em] text-gray-900">
+          <span className="dark:text-foreground font-mono text-[13px] font-bold tracking-[-0.01em] text-gray-900">
             SwipeStats · Design System
           </span>
-          <span className="hidden text-[13px] text-gray-400 sm:inline">
+          <span className="dark:text-muted-foreground hidden text-[13px] text-gray-400 sm:inline">
             live today → golden, side by side
           </span>
           <div className="ml-auto flex items-center gap-2">
@@ -384,10 +397,10 @@ export default function DesignSystemPage() {
         {/* intro */}
         <div className="max-w-[760px]">
           <Eyebrow>Design system</Eyebrow>
-          <h1 className="mt-3.5 text-[clamp(34px,5vw,52px)] leading-[1.04] font-bold tracking-[-0.03em] text-balance text-gray-900">
+          <h1 className="dark:text-foreground mt-3.5 text-[clamp(34px,5vw,52px)] leading-[1.04] font-bold tracking-[-0.03em] text-balance text-gray-900">
             Live today, next to golden
           </h1>
-          <p className="mt-5 text-[clamp(17px,2vw,20px)] leading-[1.6] text-gray-600">
+          <p className="dark:text-muted-foreground mt-5 text-[clamp(17px,2vw,20px)] leading-[1.6] text-gray-600">
             The real in-production components rendered next to their
             golden-system equivalents. Use the{" "}
             <strong>Stack / Grid / Scroll</strong> toggle on each section to
@@ -462,7 +475,7 @@ export default function DesignSystemPage() {
                       <h3 className="mt-3 text-[24px] font-bold tracking-[-0.02em] text-white">
                         Get a reminder when to upload
                       </h3>
-                      <p className="mt-2.5 max-w-[440px] text-[14.5px] text-gray-400">
+                      <p className="dark:text-muted-foreground mt-2.5 max-w-[440px] text-[14.5px] text-gray-400">
                         Data requests take a day or two. Leave your email and
                         we&apos;ll nudge you when it&apos;s time to upload.
                       </p>
@@ -475,7 +488,7 @@ export default function DesignSystemPage() {
                       placeholder="you@email.com"
                       formClassName="flex flex-col gap-2.5 sm:flex-row sm:items-center"
                       groupClassName="flex flex-col gap-2 sm:flex-row sm:items-center"
-                      inputClassName="min-w-[220px] rounded-[10px] border border-white/[0.18] bg-white/[0.07] px-4 py-3 text-[14.5px] text-white placeholder:text-gray-500 focus:border-rose-600 focus:outline-none"
+                      inputClassName="min-w-[220px] rounded-[10px] border border-white/[0.18] bg-white/[0.07] px-4 py-3 text-[14.5px] text-white placeholder:text-gray-500 focus:border-rose-600 focus:outline-none dark:placeholder:text-muted-foreground"
                       buttonClassName={marketingButton({
                         variant: "primary",
                         size: "lg",
@@ -581,7 +594,7 @@ export default function DesignSystemPage() {
                 >
                   render &lt;a&gt;
                 </Button>
-                <span className="text-sm text-gray-600">
+                <span className="dark:text-muted-foreground text-sm text-gray-600">
                   Inline <SmartLink href="/privacy">SmartLink</SmartLink> in
                   copy.
                 </span>
@@ -672,10 +685,10 @@ export default function DesignSystemPage() {
                 note="golden.css app-mode: mono kicker + functional title. Not yet a repo component."
               >
                 <div className="w-full">
-                  <span className="font-mono text-[11px] font-medium tracking-[0.07em] text-gray-500 uppercase">
+                  <span className="dark:text-muted-foreground font-mono text-[11px] font-medium tracking-[0.07em] text-gray-500 uppercase">
                     Match rate · Tinder · all time
                   </span>
-                  <p className="mt-1.5 text-[clamp(28px,3.4vw,40px)] leading-[1.04] font-bold tracking-[-0.03em] text-gray-900">
+                  <p className="dark:text-foreground mt-1.5 text-[clamp(28px,3.4vw,40px)] leading-[1.04] font-bold tracking-[-0.03em] text-gray-900">
                     Your insights
                   </p>
                 </div>
@@ -686,18 +699,18 @@ export default function DesignSystemPage() {
                 status="candidate"
                 note="Tile strip (research hero + golden). Candidate: <StatTiles>."
               >
-                <div className="grid w-full grid-cols-2 gap-px overflow-hidden rounded-2xl border border-gray-200 bg-gray-200 sm:grid-cols-4">
+                <div className="dark:border-border dark:bg-accent grid w-full grid-cols-2 gap-px overflow-hidden rounded-2xl border border-gray-200 bg-gray-200 sm:grid-cols-4">
                   {[
                     ["Total swipes", "38,608"],
                     ["Matches", "4,345"],
                     ["Msgs sent", "4,733"],
                     ["Avg response", "1h 9m"],
                   ].map(([k, v]) => (
-                    <div key={k} className="bg-white px-5 py-4">
-                      <div className="font-mono text-[10.5px] tracking-[0.05em] text-gray-500 uppercase">
+                    <div key={k} className="dark:bg-card bg-white px-5 py-4">
+                      <div className="dark:text-muted-foreground font-mono text-[10.5px] tracking-[0.05em] text-gray-500 uppercase">
                         {k}
                       </div>
-                      <div className="mt-1.5 text-[24px] font-bold tracking-[-0.03em] text-gray-900 tabular-nums">
+                      <div className="dark:text-foreground mt-1.5 text-[24px] font-bold tracking-[-0.03em] text-gray-900 tabular-nums">
                         {v}
                       </div>
                     </div>
@@ -731,11 +744,11 @@ export default function DesignSystemPage() {
                 status="not-built"
                 note="golden.css .cohort (top/good/mid). Candidate: <CohortBadge>."
               >
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-[12.5px] font-semibold whitespace-nowrap text-amber-700">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-[12.5px] font-semibold whitespace-nowrap text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-400">
                   <SparklesIcon className="h-3.5 w-3.5" />
                   Top 10% of men
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1 text-[12.5px] font-semibold text-emerald-700">
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-300 bg-emerald-50 px-3 py-1 text-[12.5px] font-semibold text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400">
                   <CheckIcon className="h-3.5 w-3.5" />
                   Above average
                 </span>
@@ -744,14 +757,14 @@ export default function DesignSystemPage() {
           </section>
 
           {/* ============================ FOUNDATION BANNER */}
-          <div className="rounded-2xl border border-gray-200 bg-gray-50 px-6 py-6">
-            <h2 className="text-[20px] font-bold tracking-[-0.02em] text-gray-900">
+          <div className="dark:border-border dark:bg-background rounded-2xl border border-gray-200 bg-gray-50 px-6 py-6">
+            <h2 className="dark:text-foreground text-[20px] font-bold tracking-[-0.02em] text-gray-900">
               Shared foundation{" "}
-              <span className="font-medium text-gray-400">
+              <span className="dark:text-muted-foreground font-medium text-gray-400">
                 · the shadcn library under ~85% of the app
               </span>
             </h2>
-            <p className="mt-1.5 max-w-[760px] text-[14px] text-gray-600">
+            <p className="dark:text-muted-foreground mt-1.5 max-w-[760px] text-[14px] text-gray-600">
               These render with zero data. The golden marketing system sits on
               top of this layer; the app surface uses it directly. Rendered live
               from{" "}
@@ -800,17 +813,17 @@ export default function DesignSystemPage() {
                 note="checkbox · switch · radio-group · toggle-group"
               >
                 <div className="flex w-full flex-col gap-4">
-                  <label className="flex items-center gap-2.5 text-[14px] text-gray-700">
+                  <label className="dark:text-muted-foreground flex items-center gap-2.5 text-[14px] text-gray-700">
                     <Checkbox defaultChecked /> Email me a reminder
                   </label>
-                  <label className="flex items-center gap-2.5 text-[14px] text-gray-700">
+                  <label className="dark:text-muted-foreground flex items-center gap-2.5 text-[14px] text-gray-700">
                     <Switch defaultChecked /> Share anonymously
                   </label>
                   <RadioGroup defaultValue="tinder" className="flex gap-5">
-                    <label className="flex items-center gap-2 text-[14px] text-gray-700">
+                    <label className="dark:text-muted-foreground flex items-center gap-2 text-[14px] text-gray-700">
                       <RadioGroupItem value="tinder" /> Tinder
                     </label>
-                    <label className="flex items-center gap-2 text-[14px] text-gray-700">
+                    <label className="dark:text-muted-foreground flex items-center gap-2 text-[14px] text-gray-700">
                       <RadioGroupItem value="hinge" /> Hinge
                     </label>
                   </RadioGroup>
@@ -954,7 +967,9 @@ export default function DesignSystemPage() {
                   description="This permanently removes your uploaded data."
                   trigger={<Button variant="outline">Open dialog</Button>}
                 >
-                  <p className="text-sm text-gray-600">Dialog body content.</p>
+                  <p className="dark:text-muted-foreground text-sm text-gray-600">
+                    Dialog body content.
+                  </p>
                 </SimpleDialog>
                 <Sheet>
                   <SheetTrigger
@@ -992,7 +1007,9 @@ export default function DesignSystemPage() {
                     render={<Button variant="outline">Popover</Button>}
                   />
                   <PopoverContent>
-                    <p className="text-sm text-gray-600">Popover content.</p>
+                    <p className="dark:text-muted-foreground text-sm text-gray-600">
+                      Popover content.
+                    </p>
                   </PopoverContent>
                 </Popover>
                 <TooltipProvider>
@@ -1051,19 +1068,19 @@ export default function DesignSystemPage() {
                   </TabsList>
                   <TabsContent
                     value="overview"
-                    className="pt-3 text-sm text-gray-600"
+                    className="dark:text-muted-foreground pt-3 text-sm text-gray-600"
                   >
                     Overview panel.
                   </TabsContent>
                   <TabsContent
                     value="usage"
-                    className="pt-3 text-sm text-gray-600"
+                    className="dark:text-muted-foreground pt-3 text-sm text-gray-600"
                   >
                     Daily usage panel.
                   </TabsContent>
                   <TabsContent
                     value="chats"
-                    className="pt-3 text-sm text-gray-600"
+                    className="dark:text-muted-foreground pt-3 text-sm text-gray-600"
                   >
                     Conversations panel.
                   </TabsContent>
@@ -1260,7 +1277,7 @@ export default function DesignSystemPage() {
                       title="Conversation outcomes"
                       meta="386 chats"
                     />
-                    <p className="text-[13px] text-gray-500">
+                    <p className="dark:text-muted-foreground text-[13px] text-gray-500">
                       Panel chrome: title + mono meta, neutral surface, subtle
                       border.
                     </p>
@@ -1273,7 +1290,7 @@ export default function DesignSystemPage() {
                 status="golden"
                 note="src/components/golden/app-shell.tsx — the app dialect's solid chrome (also a <GoldenSidebar>). The marketing surface keeps its translucent blur header."
               >
-                <div className="w-full overflow-hidden rounded-xl border border-gray-200">
+                <div className="dark:border-border w-full overflow-hidden rounded-xl border border-gray-200">
                   <GoldenAppHeader active="dashboard" userInitials="KB" />
                 </div>
               </Specimen>
@@ -1290,7 +1307,7 @@ export default function DesignSystemPage() {
                         className="h-7 w-7 rounded-md ring-1 ring-gray-900/10"
                         style={{ background: value }}
                       />
-                      <span className="font-mono text-[12px] text-gray-700">
+                      <span className="dark:text-muted-foreground font-mono text-[12px] text-gray-700">
                         {name}
                       </span>
                     </div>
@@ -1314,10 +1331,10 @@ export default function DesignSystemPage() {
                       </Button>
                     }
                   />
-                  <div className="flex items-center gap-3 text-[14px] text-gray-600">
+                  <div className="dark:text-muted-foreground flex items-center gap-3 text-[14px] text-gray-600">
                     Premium stat:
                     <LockedValue>
-                      <span className="font-mono font-semibold text-gray-900">
+                      <span className="dark:text-foreground font-mono font-semibold text-gray-900">
                         Top 3%
                       </span>
                     </LockedValue>
@@ -1325,11 +1342,11 @@ export default function DesignSystemPage() {
                 </div>
               </Specimen>
             </LayoutSwitch>
-            <p className="mt-4 text-[13.5px] text-gray-500">
+            <p className="dark:text-muted-foreground mt-4 text-[13.5px] text-gray-500">
               See them composed into a full screen:{" "}
               <Link
                 href="/golden-dashboard"
-                className="font-semibold text-rose-600"
+                className="font-semibold text-rose-600 dark:text-rose-400"
               >
                 /golden-dashboard
               </Link>
@@ -1506,7 +1523,7 @@ export default function DesignSystemPage() {
               title="Coverage & extraction backlog"
               sub="From a full sweep of 160 marketing + 49 app + 53 shadcn files (389 patterns). This table is itself rendered on the shadcn <Table> primitive (dogfooding)."
             />
-            <div className="overflow-hidden rounded-2xl border border-gray-200">
+            <div className="dark:border-border overflow-hidden rounded-2xl border border-gray-200">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -1606,7 +1623,7 @@ export default function DesignSystemPage() {
                     ] as [string, Surface, StatusKind][]
                   ).map(([name, surface, status]) => (
                     <TableRow key={name}>
-                      <TableCell className="font-mono text-[12.5px] text-gray-900">
+                      <TableCell className="dark:text-foreground font-mono text-[12.5px] text-gray-900">
                         {name}
                       </TableCell>
                       <TableCell>
@@ -1623,16 +1640,19 @@ export default function DesignSystemPage() {
           </section>
         </div>
 
-        <footer className="mt-20 border-t border-gray-200 pt-8 text-[13px] text-gray-500">
+        <footer className="dark:border-border dark:text-muted-foreground mt-20 border-t border-gray-200 pt-8 text-[13px] text-gray-500">
           <p>
             Internal reference · noindex ·{" "}
-            <Link href="/research" className="font-semibold text-rose-600">
+            <Link
+              href="/research"
+              className="font-semibold text-rose-600 dark:text-rose-400"
+            >
               /research
             </Link>{" "}
             and{" "}
             <Link
               href="/how-to-request-your-data"
-              className="font-semibold text-rose-600"
+              className="font-semibold text-rose-600 dark:text-rose-400"
             >
               /how-to-request-your-data
             </Link>{" "}

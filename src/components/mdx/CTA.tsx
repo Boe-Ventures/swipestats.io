@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { withInternalUtm } from "@/lib/cta-links";
 import { cn } from "@/components/ui/lib/utils";
 import { marketingButton } from "@/app/(marketing)/_components/marketing-ui";
 
@@ -24,7 +25,14 @@ const variantClasses = {
 export function CTA({ label, href, variant = "primary", className }: CTAProps) {
   return (
     <div className="my-8 text-center">
-      <Link href={href} className={cn(variantClasses[variant], className)}>
+      <Link
+        href={withInternalUtm(href, {
+          medium: "blog_cta",
+          campaign: "blog_conversion",
+          content: label,
+        })}
+        className={cn(variantClasses[variant], className)}
+      >
         {label}
         <span aria-hidden="true">→</span>
       </Link>

@@ -622,7 +622,7 @@ export function AddEventDialog({
                         <Field
                           orientation="horizontal"
                           data-invalid={fieldState.invalid}
-                          className="flex flex-row items-start space-y-0 space-x-3"
+                          className="flex items-center gap-3"
                         >
                           <Checkbox
                             id={field.name}

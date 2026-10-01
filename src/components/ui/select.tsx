@@ -59,6 +59,7 @@ function SelectContent({
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Positioner
+        className="z-50"
         side={side}
         sideOffset={sideOffset}
         align={align}
@@ -80,7 +81,7 @@ function SelectContent({
             className={cn(
               "p-1",
               !alignItemWithTrigger &&
-                "h-[var(--anchor-height)] w-full min-w-[var(--anchor-width)] scroll-my-1",
+                "max-h-[min(20rem,var(--available-height))] w-full min-w-[var(--anchor-width)] scroll-my-1 overflow-y-auto",
             )}
           >
             {children}

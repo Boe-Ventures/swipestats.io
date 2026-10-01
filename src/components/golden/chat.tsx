@@ -71,17 +71,17 @@ export function ChatToolCard({
       className={cn(
         "flex items-center gap-2 rounded-xl border px-3 py-2 text-[12.5px]",
         failed
-          ? "border-red-200 bg-red-50 text-red-700"
+          ? "border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-400"
           : denied
-            ? "border-gray-200 bg-gray-50 text-gray-500"
+            ? "dark:border-border dark:bg-background dark:text-muted-foreground border-gray-200 bg-gray-50 text-gray-500"
             : settled
-              ? "border-gray-200 bg-white text-gray-700"
-              : "border-dashed border-gray-300 bg-gray-50 text-gray-600",
+              ? "dark:border-border dark:bg-card dark:text-muted-foreground border-gray-200 bg-white text-gray-700"
+              : "dark:border-border dark:bg-background dark:text-muted-foreground border-dashed border-gray-300 bg-gray-50 text-gray-600",
         className,
       )}
     >
       {!settled && <Loader2 className="h-3 w-3 shrink-0 animate-spin" />}
-      <span className="font-mono text-[11px] tracking-[0.04em] text-gray-500 uppercase">
+      <span className="dark:text-muted-foreground font-mono text-[11px] tracking-[0.04em] text-gray-500 uppercase">
         {toolName(part)}
       </span>
       <span className="ml-auto">{label}</span>
@@ -107,16 +107,18 @@ export function ChatPendingTurn({
   return (
     <div className="grid grid-cols-[28px_minmax(0,1fr)] gap-x-2 gap-y-1.5">
       <ChatAvatar name={assistantName} />
-      <span className="self-center text-[12px] font-semibold text-gray-900">
+      <span className="dark:text-foreground self-center text-[12px] font-semibold text-gray-900">
         {assistantName}
       </span>
-      <div className="col-span-2 w-fit max-w-full rounded-2xl rounded-tl-md bg-gray-100 px-3.5 py-2">
-        <div className="flex items-center gap-2 text-[13px] text-gray-700">
+      <div className="dark:bg-muted col-span-2 w-fit max-w-full rounded-2xl rounded-tl-md bg-gray-100 px-3.5 py-2">
+        <div className="dark:text-muted-foreground flex items-center gap-2 text-[13px] text-gray-700">
           <Loader2 className="h-3 w-3 animate-spin" />
           {title}
         </div>
         {detail && (
-          <div className="mt-0.5 text-[11.5px] text-gray-500">{detail}</div>
+          <div className="dark:text-muted-foreground mt-0.5 text-[11.5px] text-gray-500">
+            {detail}
+          </div>
         )}
       </div>
     </div>
@@ -134,7 +136,7 @@ export function ChatMidTurnShimmer({
 }) {
   return (
     <div className="pl-[36px]">
-      <span className="inline-flex animate-pulse items-center gap-2 text-[12px] text-gray-500">
+      <span className="dark:text-muted-foreground inline-flex animate-pulse items-center gap-2 text-[12px] text-gray-500">
         <Loader2 className="h-3 w-3 animate-spin" />
         {label}
       </span>
@@ -181,7 +183,7 @@ export function ChatMessage({
   return (
     <div className="grid grid-cols-[28px_minmax(0,1fr)] gap-x-2 gap-y-1.5">
       <ChatAvatar name={assistantName} />
-      <span className="self-center text-[12px] font-semibold text-gray-900">
+      <span className="dark:text-foreground self-center text-[12px] font-semibold text-gray-900">
         {assistantName}
       </span>
       {message.parts.map((part, index) => {
@@ -193,7 +195,7 @@ export function ChatMessage({
               key={index}
               className="col-span-2 max-w-[92%] min-w-0 justify-self-start"
             >
-              <div className="prose prose-sm w-fit max-w-full rounded-2xl rounded-tl-md bg-gray-100 px-3.5 py-2 text-[13px] leading-relaxed text-gray-900">
+              <div className="prose prose-sm dark:bg-muted dark:text-foreground w-fit max-w-full rounded-2xl rounded-tl-md bg-gray-100 px-3.5 py-2 text-[13px] leading-relaxed text-gray-900">
                 <ReactMarkdown>{text}</ReactMarkdown>
               </div>
             </div>

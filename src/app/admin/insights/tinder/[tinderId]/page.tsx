@@ -57,8 +57,10 @@ export default async function AdminProfilePage({
 
       {/* Page Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Profile Inspector</h1>
-        <p className="mt-1 text-sm text-gray-600">
+        <h1 className="dark:text-foreground text-3xl font-bold text-gray-900">
+          Profile Inspector
+        </h1>
+        <p className="dark:text-muted-foreground mt-1 text-sm text-gray-600">
           Detailed view of Tinder profile and user data
         </p>
       </div>

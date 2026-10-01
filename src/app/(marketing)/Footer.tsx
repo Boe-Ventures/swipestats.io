@@ -3,7 +3,7 @@ import Link from "next/link";
 
 const footerNavigation = {
   directory: [
-    { name: "Research", href: "/#pricing" },
+    { name: "Research", href: "/research" },
     { name: "Blog", href: "/blog" },
     { name: "Dating services", href: "/dating-services" },
     { name: "Pricing", href: "/#pricing" },
@@ -65,7 +65,7 @@ export default function Footer() {
             <Link
               key={item.name}
               href={item.href}
-              className="text-gray-600 hover:text-gray-900"
+              className="dark:text-muted-foreground dark:hover:text-foreground text-gray-600 hover:text-gray-900"
             >
               {item.name}
             </Link>
@@ -74,14 +74,14 @@ export default function Footer() {
             <Link
               key={item.name}
               href={item.href}
-              className="text-gray-600 hover:text-gray-900"
+              className="dark:text-muted-foreground dark:hover:text-foreground text-gray-600 hover:text-gray-900"
             >
               {item.name}
             </Link>
           ))}
           <Link
             href="mailto:kris@swipestats.io"
-            className="cursor-pointer text-gray-600 hover:text-gray-900"
+            className="dark:text-muted-foreground dark:hover:text-foreground cursor-pointer text-gray-600 hover:text-gray-900"
           >
             Contact
           </Link>
@@ -91,7 +91,7 @@ export default function Footer() {
             <a
               key={item.name}
               href={item.href}
-              className="text-gray-600 hover:text-gray-800"
+              className="dark:text-muted-foreground dark:hover:text-foreground text-gray-600 hover:text-gray-800"
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -100,18 +100,18 @@ export default function Footer() {
             </a>
           ))}
         </div>
-        <p className="mt-10 text-center text-sm/6 text-gray-600">
+        <p className="dark:text-muted-foreground mt-10 text-center text-sm/6 text-gray-600">
           Made with 🔥 in Norway by{" "}
           <Link
             href="https://instagram.com/kristianeboe"
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:text-gray-900"
+            className="dark:hover:text-foreground hover:text-gray-900"
           >
             @kristianeboe
           </Link>
         </p>
-        <p className="mt-3 text-center text-sm/6 text-gray-600">
+        <p className="dark:text-muted-foreground mt-3 text-center text-sm/6 text-gray-600">
           &copy; 2026 Boe Ventures AS. All rights reserved.
         </p>
       </div>

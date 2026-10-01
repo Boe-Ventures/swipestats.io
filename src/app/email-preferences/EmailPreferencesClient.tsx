@@ -125,7 +125,7 @@ export function EmailPreferencesClient() {
         <CardContent>
           {requestSent ? (
             <div className="flex gap-3 rounded-lg border border-green-500/30 bg-green-500/10 p-4 text-sm">
-              <CheckCircle2 className="mt-0.5 size-4 text-green-600" />
+              <CheckCircle2 className="mt-0.5 size-4 text-green-600 dark:text-green-400" />
               <p>
                 If that email can receive SwipeStats updates, a preferences link
                 is on its way.
@@ -168,7 +168,7 @@ export function EmailPreferencesClient() {
   if (preferencesQuery.isLoading) {
     return (
       <Card>
-        <CardContent className="py-10 text-sm text-muted-foreground">
+        <CardContent className="text-muted-foreground py-10 text-sm">
           Loading preferences...
         </CardContent>
       </Card>
@@ -179,7 +179,7 @@ export function EmailPreferencesClient() {
     return (
       <Card>
         <CardContent className="flex gap-3 py-8 text-sm">
-          <AlertTriangle className="mt-0.5 size-4 text-destructive" />
+          <AlertTriangle className="text-destructive mt-0.5 size-4" />
           <div>
             <p className="font-medium">This link is invalid or expired.</p>
             <p className="text-muted-foreground">
@@ -217,10 +217,8 @@ export function EmailPreferencesClient() {
                   className="mt-0.5"
                 />
                 <span className="space-y-1">
-                  <span className="block text-sm font-medium">
-                    {info.name}
-                  </span>
-                  <span className="block text-sm text-muted-foreground">
+                  <span className="block text-sm font-medium">{info.name}</span>
+                  <span className="text-muted-foreground block text-sm">
                     {info.description}
                   </span>
                 </span>
@@ -240,10 +238,12 @@ export function EmailPreferencesClient() {
         </Button>
 
         {updatePreferencesMutation.isSuccess && !hasChanges && (
-          <p className="text-sm text-green-600">Preferences updated.</p>
+          <p className="text-sm text-green-600 dark:text-green-400">
+            Preferences updated.
+          </p>
         )}
         {updatePreferencesMutation.isError && (
-          <p className="text-sm text-destructive">
+          <p className="text-destructive text-sm">
             {updatePreferencesMutation.error.message}
           </p>
         )}

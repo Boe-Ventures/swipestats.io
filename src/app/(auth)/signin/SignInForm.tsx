@@ -84,7 +84,7 @@ export function SignInForm() {
       <Card>
         <CardHeader>
           <CardTitle className="text-center text-2xl">Welcome back</CardTitle>
-          <p className="text-center text-sm text-gray-600">
+          <p className="dark:text-muted-foreground text-center text-sm text-gray-600">
             Sign in to your account
           </p>
         </CardHeader>
@@ -125,7 +125,7 @@ export function SignInForm() {
                 <button
                   type="button"
                   onClick={() => setIsForgotPasswordOpen(true)}
-                  className="text-sm text-rose-600 hover:text-rose-500 hover:underline"
+                  className="text-sm text-rose-600 hover:text-rose-500 hover:underline dark:text-rose-400"
                 >
                   Forgot password?
                 </button>
@@ -150,10 +150,10 @@ export function SignInForm() {
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200" />
+              <div className="dark:border-border w-full border-t border-gray-200" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="bg-white px-4 text-gray-500">
+              <span className="dark:bg-card dark:text-muted-foreground bg-white px-4 text-gray-500">
                 or continue without account
               </span>
             </div>
@@ -179,11 +179,11 @@ export function SignInForm() {
             )}
           </Button>
 
-          <div className="text-center text-sm text-gray-600">
+          <div className="dark:text-muted-foreground text-center text-sm text-gray-600">
             Don&apos;t have an account?{" "}
             <Link
               href={getAuthPageHref("/signup", searchParams)}
-              className="text-rose-600 hover:text-rose-500 hover:underline"
+              className="text-rose-600 hover:text-rose-500 hover:underline dark:text-rose-400"
             >
               Sign up
             </Link>

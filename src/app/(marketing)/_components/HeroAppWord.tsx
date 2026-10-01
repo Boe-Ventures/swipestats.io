@@ -12,7 +12,7 @@ import Typewriter from "typewriter-effect";
  */
 export function HeroAppWord() {
   return (
-    <span className="relative inline-block text-left align-baseline text-rose-600">
+    <span className="relative inline-block text-left align-baseline text-rose-600 dark:text-rose-400">
       <span className="opacity-0">Bumble</span>
       <span aria-hidden className="absolute top-0 left-0">
         <Typewriter

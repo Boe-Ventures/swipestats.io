@@ -12,7 +12,7 @@ function MarketingH1(props: { className?: string; children: React.ReactNode }) {
   return (
     <h1
       className={cn(
-        "text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl",
+        "dark:text-foreground text-4xl font-bold tracking-tight text-gray-900 sm:text-6xl",
         props.className,
       )}
     >
@@ -58,7 +58,7 @@ function P(props: { children: React.ReactNode }) {
 
 function MarketingP(props: { children: React.ReactNode }) {
   return (
-    <p className="text-lg leading-8 text-gray-600 [&:not(:first-child)]:mt-6">
+    <p className="dark:text-muted-foreground text-lg leading-8 text-gray-600 [&:not(:first-child)]:mt-6">
       {props.children}
     </p>
   );

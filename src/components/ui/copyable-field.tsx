@@ -55,7 +55,8 @@ export function CopyableField({
 
   const copyInputClasses = {
     default: "pr-20",
-    highlighted: "rounded border border-blue-300 bg-white",
+    highlighted:
+      "rounded border border-blue-300 bg-white dark:border-blue-800 dark:bg-card",
   };
 
   return (

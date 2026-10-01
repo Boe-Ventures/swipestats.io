@@ -1,7 +1,7 @@
 /* eslint-disable react/prop-types */
 "use client";
 
-import type { DayButton } from "react-day-picker";
+import type { DayButton, DropdownProps } from "react-day-picker";
 import * as React from "react";
 import {
   ChevronDownIcon,
@@ -12,6 +12,7 @@ import { DayPicker, getDefaultClassNames } from "react-day-picker";
 
 import { Button, buttonVariants } from "./button";
 import { cn } from "./lib/utils";
+import { SimpleSelect } from "./select";
 
 function Calendar({
   className,
@@ -162,6 +163,7 @@ function Calendar({
           );
         },
         DayButton: CalendarDayButton,
+        Dropdown: CalendarDropdown,
         WeekNumber: ({ children, ...props }) => {
           return (
             <td {...props}>
@@ -176,6 +178,34 @@ function Calendar({
       {...(fromYear !== undefined && { fromYear })}
       {...(toYear !== undefined && { toYear })}
       {...props}
+    />
+  );
+}
+
+function CalendarDropdown({
+  options = [],
+  value,
+  onChange,
+  disabled,
+  "aria-label": ariaLabel,
+}: DropdownProps) {
+  return (
+    <SimpleSelect
+      options={options.map((option) => ({
+        ...option,
+        value: String(option.value),
+      }))}
+      value={String(value)}
+      onValueChange={(nextValue) => {
+        onChange?.({
+          target: { value: nextValue },
+          currentTarget: { value: nextValue },
+        } as React.ChangeEvent<HTMLSelectElement>);
+      }}
+      disabled={disabled}
+      aria-label={ariaLabel}
+      size="sm"
+      className="gap-1 px-2"
     />
   );
 }

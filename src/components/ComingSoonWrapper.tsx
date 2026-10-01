@@ -149,7 +149,7 @@ export function ComingSoonWrapper({
             <button
               type="submit"
               disabled={isSubscribing}
-              className="w-full rounded-md bg-white px-6 py-2.5 text-sm font-semibold text-gray-900 shadow-sm hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:cursor-not-allowed disabled:opacity-50"
+              className="dark:bg-card dark:text-foreground dark:hover:bg-muted w-full rounded-md bg-white px-6 py-2.5 text-sm font-semibold text-gray-900 shadow-sm hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:cursor-not-allowed disabled:opacity-50"
             >
               {isSubscribing ? "..." : "Notify me when ready"}
             </button>
@@ -164,7 +164,7 @@ export function ComingSoonWrapper({
                 type="email"
                 autoComplete="email"
                 required={userState === "logged-out"}
-                className="min-w-0 flex-auto rounded-md border-0 bg-white/5 px-3.5 py-2.5 text-white shadow-sm ring-1 ring-white/10 ring-inset placeholder:text-gray-400 focus:ring-2 focus:ring-white focus:ring-inset sm:text-sm sm:leading-6"
+                className="dark:placeholder:text-muted-foreground min-w-0 flex-auto rounded-md border-0 bg-white/5 px-3.5 py-2.5 text-white shadow-sm ring-1 ring-white/10 ring-inset placeholder:text-gray-400 focus:ring-2 focus:ring-white focus:ring-inset sm:text-sm sm:leading-6"
                 placeholder="Enter your email"
                 {...form.register("email", {
                   required: userState === "logged-out",
@@ -174,7 +174,7 @@ export function ComingSoonWrapper({
               <button
                 type="submit"
                 disabled={isSubscribing}
-                className="flex-none rounded-md bg-white px-6 py-2.5 text-sm font-semibold text-gray-900 shadow-sm hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:cursor-not-allowed disabled:opacity-50"
+                className="dark:bg-card dark:text-foreground dark:hover:bg-muted flex-none rounded-md bg-white px-6 py-2.5 text-sm font-semibold text-gray-900 shadow-sm hover:bg-gray-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isSubscribing ? "..." : "Notify me"}
               </button>
@@ -183,7 +183,7 @@ export function ComingSoonWrapper({
 
           {error && <p className="mt-3 text-sm text-rose-300">{error}</p>}
 
-          <p className="mt-4 text-sm leading-6 text-gray-400">
+          <p className="dark:text-muted-foreground mt-4 text-sm leading-6 text-gray-400">
             We care about your data. Read our{" "}
             <Link
               href="/privacy"

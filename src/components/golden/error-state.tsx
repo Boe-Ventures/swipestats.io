@@ -37,20 +37,20 @@ export function ErrorState({
       )}
     >
       {icon && (
-        <div className="mb-6 flex size-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 [&_svg]:size-7">
+        <div className="mb-6 flex size-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400 [&_svg]:size-7">
           {icon}
         </div>
       )}
 
       {eyebrow && (
-        <div className="font-mono text-[12.5px] font-medium uppercase tracking-[0.12em] text-rose-600">
+        <div className="font-mono text-[12.5px] font-medium tracking-[0.12em] text-rose-600 uppercase dark:text-rose-400">
           {eyebrow}
         </div>
       )}
 
       <h1
         className={cn(
-          "text-[clamp(28px,3.4vw,40px)] leading-[1.05] font-bold tracking-[-0.03em] text-balance text-gray-900",
+          "dark:text-foreground text-[clamp(28px,3.4vw,40px)] leading-[1.05] font-bold tracking-[-0.03em] text-balance text-gray-900",
           eyebrow && "mt-3",
         )}
       >
@@ -58,7 +58,7 @@ export function ErrorState({
       </h1>
 
       {message && (
-        <p className="mt-3.5 max-w-[44ch] text-[16px] leading-[1.6] text-gray-600">
+        <p className="dark:text-muted-foreground mt-3.5 max-w-[44ch] text-[16px] leading-[1.6] text-gray-600">
           {message}
         </p>
       )}

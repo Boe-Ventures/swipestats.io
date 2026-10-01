@@ -16,12 +16,7 @@ import {
 } from "lucide-react";
 import { useTRPC } from "@/trpc/react";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -30,9 +25,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 
-type Comparison = NonNullable<
-  ReturnType<typeof useComparison>["data"]
->;
+type Comparison = NonNullable<ReturnType<typeof useComparison>["data"]>;
 type FeedbackItem = Comparison["feedback"][number];
 type LightboxPhoto = { url: string; caption: string | null };
 
@@ -59,14 +52,21 @@ function authorLabel(author: FeedbackItem["author"]) {
 
 function FeedbackList({ items }: { items: FeedbackItem[] }) {
   if (items.length === 0) {
-    return <p className="text-xs text-gray-400">No feedback.</p>;
+    return (
+      <p className="dark:text-muted-foreground text-xs text-gray-400">
+        No feedback.
+      </p>
+    );
   }
   return (
     <ul className="space-y-2">
       {items.map((fb) => (
-        <li key={fb.id} className="rounded-md border bg-gray-50 p-2 text-sm">
+        <li
+          key={fb.id}
+          className="dark:bg-background rounded-md border bg-gray-50 p-2 text-sm"
+        >
           <div className="flex items-center justify-between gap-2">
-            <span className="font-medium text-gray-700">
+            <span className="dark:text-muted-foreground font-medium text-gray-700">
               {authorLabel(fb.author)}
               {fb.actorType === "system" && (
                 <Badge variant="outline" className="ml-2 text-[10px]">
@@ -74,16 +74,20 @@ function FeedbackList({ items }: { items: FeedbackItem[] }) {
                 </Badge>
               )}
             </span>
-            <span className="flex items-center gap-2 text-xs text-gray-400">
+            <span className="dark:text-muted-foreground flex items-center gap-2 text-xs text-gray-400">
               {fb.rating !== null && (
-                <span className="font-medium text-gray-600">
+                <span className="dark:text-muted-foreground font-medium text-gray-600">
                   rating {fb.rating}
                 </span>
               )}
               {formatDateTime(fb.createdAt)}
             </span>
           </div>
-          {fb.body && <p className="mt-1 text-gray-700">{fb.body}</p>}
+          {fb.body && (
+            <p className="dark:text-muted-foreground mt-1 text-gray-700">
+              {fb.body}
+            </p>
+          )}
         </li>
       ))}
     </ul>
@@ -108,7 +112,7 @@ export function ComparisonInspector({ id }: { id: string }) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+        <Loader2 className="dark:text-muted-foreground h-8 w-8 animate-spin text-gray-400" />
       </div>
     );
   }
@@ -123,7 +127,7 @@ export function ComparisonInspector({ id }: { id: string }) {
           </Button>
         </Link>
         <Card className="py-12">
-          <CardContent className="text-center text-gray-500">
+          <CardContent className="dark:text-muted-foreground text-center text-gray-500">
             {error?.message ?? "Comparison not found."}
           </CardContent>
         </Card>
@@ -154,7 +158,7 @@ export function ComparisonInspector({ id }: { id: string }) {
               Back
             </Button>
           </Link>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="dark:text-foreground text-2xl font-bold text-gray-900">
             {data.name ?? data.profileName ?? "Untitled comparison"}
           </h1>
           {data.isPublic ? (
@@ -164,7 +168,10 @@ export function ComparisonInspector({ id }: { id: string }) {
           )}
         </div>
         {data.isPublic && data.shareKey && (
-          <Link href={`/share/profile-compare/${data.shareKey}`} target="_blank">
+          <Link
+            href={`/share/profile-compare/${data.shareKey}`}
+            target="_blank"
+          >
             <Button variant="outline" size="sm" className="gap-1">
               <ExternalLink className="h-4 w-4" />
               View live share
@@ -180,7 +187,7 @@ export function ComparisonInspector({ id }: { id: string }) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-center gap-2 text-sm">
-            <span className="font-medium text-gray-700">
+            <span className="dark:text-muted-foreground font-medium text-gray-700">
               {data.user?.isAnonymous
                 ? "Anonymous"
                 : (data.user?.username ??
@@ -189,7 +196,9 @@ export function ComparisonInspector({ id }: { id: string }) {
                   "Unknown")}
             </span>
             {data.user?.email && !data.user.isAnonymous && (
-              <span className="text-gray-400">{data.user.email}</span>
+              <span className="dark:text-muted-foreground text-gray-400">
+                {data.user.email}
+              </span>
             )}
             {data.user?.swipestatsTier && (
               <Badge variant="outline">{data.user.swipestatsTier}</Badge>
@@ -197,7 +206,7 @@ export function ComparisonInspector({ id }: { id: string }) {
           </div>
 
           {data.defaultBio && (
-            <p className="max-w-2xl text-sm italic text-gray-600">
+            <p className="dark:text-muted-foreground max-w-2xl text-sm text-gray-600 italic">
               &quot;{data.defaultBio}&quot;
             </p>
           )}
@@ -207,17 +216,29 @@ export function ComparisonInspector({ id }: { id: string }) {
               .filter(([, v]) => v !== null && v !== undefined && v !== "")
               .map(([label, value]) => (
                 <div key={label}>
-                  <dt className="text-xs text-gray-400">{label}</dt>
-                  <dd className="text-gray-700">{value}</dd>
+                  <dt className="dark:text-muted-foreground text-xs text-gray-400">
+                    {label}
+                  </dt>
+                  <dd className="dark:text-muted-foreground text-gray-700">
+                    {value}
+                  </dd>
                 </div>
               ))}
             <div>
-              <dt className="text-xs text-gray-400">Created</dt>
-              <dd className="text-gray-700">{formatDateTime(data.createdAt)}</dd>
+              <dt className="dark:text-muted-foreground text-xs text-gray-400">
+                Created
+              </dt>
+              <dd className="dark:text-muted-foreground text-gray-700">
+                {formatDateTime(data.createdAt)}
+              </dd>
             </div>
             <div>
-              <dt className="text-xs text-gray-400">Updated</dt>
-              <dd className="text-gray-700">{formatDateTime(data.updatedAt)}</dd>
+              <dt className="dark:text-muted-foreground text-xs text-gray-400">
+                Updated
+              </dt>
+              <dd className="dark:text-muted-foreground text-gray-700">
+                {formatDateTime(data.updatedAt)}
+              </dd>
             </div>
           </dl>
         </CardContent>
@@ -254,7 +275,7 @@ export function ComparisonInspector({ id }: { id: string }) {
                 )}
               </div>
               {column.bio && (
-                <p className="mt-1 max-w-2xl text-sm italic text-gray-600">
+                <p className="dark:text-muted-foreground mt-1 max-w-2xl text-sm text-gray-600 italic">
                   &quot;{column.bio}&quot;
                 </p>
               )}
@@ -264,14 +285,14 @@ export function ComparisonInspector({ id }: { id: string }) {
               {/* Photos */}
               {photos.length > 0 && (
                 <div>
-                  <p className="mb-2 text-xs font-medium text-gray-400">
+                  <p className="dark:text-muted-foreground mb-2 text-xs font-medium text-gray-400">
                     Photos ({photos.length})
                   </p>
                   <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-6">
                     {photos.map((p, photoIdx) => (
                       <div
                         key={p.id}
-                        className="group relative aspect-square cursor-pointer overflow-hidden rounded-md border bg-gray-100 transition-all hover:ring-2 hover:ring-blue-300"
+                        className="group dark:bg-muted relative aspect-square cursor-pointer overflow-hidden rounded-md border bg-gray-100 transition-all hover:ring-2 hover:ring-blue-300 dark:hover:ring-blue-800"
                         onClick={() =>
                           setLightbox({
                             photos: lightboxPhotos,
@@ -295,15 +316,17 @@ export function ComparisonInspector({ id }: { id: string }) {
               {/* Prompts */}
               {prompts.length > 0 && (
                 <div className="space-y-2">
-                  <p className="text-xs font-medium text-gray-400">
+                  <p className="dark:text-muted-foreground text-xs font-medium text-gray-400">
                     Prompts ({prompts.length})
                   </p>
                   {prompts.map((p) => (
                     <div key={p.id} className="rounded-md border p-3 text-sm">
-                      <p className="font-medium text-gray-700">
+                      <p className="dark:text-muted-foreground font-medium text-gray-700">
                         {p.prompt ?? "—"}
                       </p>
-                      <p className="mt-1 text-gray-600">{p.answer ?? "—"}</p>
+                      <p className="dark:text-muted-foreground mt-1 text-gray-600">
+                        {p.answer ?? "—"}
+                      </p>
                     </div>
                   ))}
                 </div>
@@ -311,10 +334,10 @@ export function ComparisonInspector({ id }: { id: string }) {
 
               {/* Roast */}
               {column.roast && (
-                <div className="rounded-md border border-orange-200 bg-orange-50 p-3">
+                <div className="rounded-md border border-orange-200 bg-orange-50 p-3 dark:border-orange-800 dark:bg-orange-950/40">
                   <div className="flex flex-wrap items-center gap-2">
                     <Flame className="h-4 w-4 text-orange-500" />
-                    <span className="text-sm font-medium text-orange-900">
+                    <span className="text-sm font-medium text-orange-900 dark:text-orange-200">
                       Roast
                     </span>
                     {column.roast.tone && (
@@ -333,17 +356,17 @@ export function ComparisonInspector({ id }: { id: string }) {
                     )}
                   </div>
                   {column.roast.headline && (
-                    <p className="mt-2 text-sm font-semibold text-gray-800">
+                    <p className="dark:text-foreground mt-2 text-sm font-semibold text-gray-800">
                       {column.roast.headline}
                     </p>
                   )}
                   {column.roast.tagline && (
-                    <p className="text-sm text-gray-600">
+                    <p className="dark:text-muted-foreground text-sm text-gray-600">
                       {column.roast.tagline}
                     </p>
                   )}
                   {column.roast.verdict && (
-                    <p className="mt-1 text-sm text-gray-600">
+                    <p className="dark:text-muted-foreground mt-1 text-sm text-gray-600">
                       {column.roast.verdict}
                     </p>
                   )}
@@ -352,7 +375,7 @@ export function ComparisonInspector({ id }: { id: string }) {
 
               {/* Feedback */}
               <div>
-                <p className="mb-2 flex items-center gap-1 text-xs font-medium text-gray-400">
+                <p className="dark:text-muted-foreground mb-2 flex items-center gap-1 text-xs font-medium text-gray-400">
                   <MessageSquare className="h-3 w-3" />
                   Feedback ({columnFeedback.length})
                 </p>
@@ -403,7 +426,7 @@ export function ComparisonInspector({ id }: { id: string }) {
           </DialogHeader>
           {lightbox?.photos[lightbox.index] && (
             <div className="space-y-3">
-              <div className="relative aspect-3/4 w-full overflow-hidden rounded-lg bg-gray-100">
+              <div className="dark:bg-muted relative aspect-3/4 w-full overflow-hidden rounded-lg bg-gray-100">
                 <Image
                   src={lightbox.photos[lightbox.index]!.url}
                   alt="Selected photo"
@@ -413,8 +436,10 @@ export function ComparisonInspector({ id }: { id: string }) {
                 />
               </div>
               {lightbox.photos[lightbox.index]?.caption && (
-                <p className="text-sm text-gray-600">
-                  <span className="font-medium text-gray-500">Caption: </span>
+                <p className="dark:text-muted-foreground text-sm text-gray-600">
+                  <span className="dark:text-muted-foreground font-medium text-gray-500">
+                    Caption:{" "}
+                  </span>
                   {lightbox.photos[lightbox.index]?.caption}
                 </p>
               )}

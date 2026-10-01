@@ -58,18 +58,18 @@ export default async function RayaInsightsPage({
   const likeRate = totalSwipes > 0 ? totals.likes / totalSwipes : 0;
 
   return (
-    <main className="min-h-screen bg-[#f6f6f4]">
+    <main className="dark:bg-background min-h-screen bg-[#f6f6f4]">
       <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
         <header className="flex flex-wrap items-end justify-between gap-5">
           <div>
-            <div className="flex items-center gap-2 font-mono text-xs tracking-wider text-gray-500 uppercase">
-              <span className="inline-block h-2 w-2 rounded-full bg-gray-950" />
+            <div className="dark:text-muted-foreground flex items-center gap-2 font-mono text-xs tracking-wider text-gray-500 uppercase">
+              <span className="inline-block h-2 w-2 rounded-full bg-gray-950 dark:bg-gray-100" />
               Raya data
             </div>
-            <h1 className="mt-2 text-4xl font-bold tracking-tight text-gray-950 sm:text-5xl">
+            <h1 className="dark:text-foreground mt-2 text-4xl font-bold tracking-tight text-gray-950 sm:text-5xl">
               Your Raya activity
             </h1>
-            <p className="mt-3 text-gray-600">
+            <p className="dark:text-muted-foreground mt-3 text-gray-600">
               {format(profile.firstDayOnApp, "MMM d, yyyy")} –{" "}
               {format(profile.lastDayOnApp, "MMM d, yyyy")} ·{" "}
               {profile.daysInProfilePeriod.toLocaleString()} days
@@ -107,19 +107,19 @@ export default async function RayaInsightsPage({
           />
         </section>
 
-        <section className="mt-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-7">
+        <section className="dark:border-border dark:bg-card mt-6 rounded-2xl border border-gray-200 bg-white p-5 shadow-sm sm:p-7">
           <div className="flex flex-wrap items-end justify-between gap-3">
             <div>
-              <h2 className="text-xl font-semibold text-gray-950">
+              <h2 className="dark:text-foreground text-xl font-semibold text-gray-950">
                 Monthly activity
               </h2>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="dark:text-muted-foreground mt-1 text-sm text-gray-500">
                 Likes and passes are sourced from social activity; matched
                 outcomes come from Raya&apos;s match-state export.
               </p>
             </div>
-            <div className="flex gap-4 text-xs text-gray-500">
-              <Legend color="bg-gray-950" label="Likes" />
+            <div className="dark:text-muted-foreground flex gap-4 text-xs text-gray-500">
+              <Legend color="bg-gray-950 dark:bg-gray-100" label="Likes" />
               <Legend color="bg-gray-300" label="Passes" />
               <Legend color="bg-rose-500" label="Matches" />
             </div>
@@ -133,8 +133,10 @@ export default async function RayaInsightsPage({
         </section>
 
         <section className="mt-6 grid gap-4 lg:grid-cols-2">
-          <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-            <h2 className="font-semibold text-gray-950">Profile context</h2>
+          <div className="dark:border-border dark:bg-card rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+            <h2 className="dark:text-foreground font-semibold text-gray-950">
+              Profile context
+            </h2>
             <dl className="mt-4 grid grid-cols-2 gap-4 text-sm">
               <ProfileFact label="Gender" value={profile.genderStr} />
               <ProfileFact
@@ -211,15 +213,19 @@ function MetricCard({
   detail: string;
 }) {
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
-      <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gray-100 text-gray-900 [&_svg]:h-4 [&_svg]:w-4">
+    <div className="dark:border-border dark:bg-card rounded-2xl border border-gray-200 bg-white p-5 shadow-sm">
+      <div className="dark:bg-muted dark:text-foreground flex h-9 w-9 items-center justify-center rounded-lg bg-gray-100 text-gray-900 [&_svg]:h-4 [&_svg]:w-4">
         {icon}
       </div>
-      <p className="mt-5 text-3xl font-semibold tracking-tight text-gray-950">
+      <p className="dark:text-foreground mt-5 text-3xl font-semibold tracking-tight text-gray-950">
         {value.toLocaleString()}
       </p>
-      <p className="mt-1 text-sm font-medium text-gray-800">{label}</p>
-      <p className="mt-1 text-xs text-gray-500">{detail}</p>
+      <p className="dark:text-foreground mt-1 text-sm font-medium text-gray-800">
+        {label}
+      </p>
+      <p className="dark:text-muted-foreground mt-1 text-xs text-gray-500">
+        {detail}
+      </p>
     </div>
   );
 }
@@ -231,14 +237,17 @@ function ActivityRow({ activity }: { activity: MonthlyActivity }) {
 
   return (
     <div className="grid items-center gap-2 sm:grid-cols-[90px_1fr_210px] sm:gap-4">
-      <p className="font-mono text-xs text-gray-600">
+      <p className="dark:text-muted-foreground font-mono text-xs text-gray-600">
         {format(new Date(`${activity.month}-01T00:00:00Z`), "MMM yyyy")}
       </p>
-      <div className="flex h-3 overflow-hidden rounded-full bg-gray-100">
-        <div className="bg-gray-950" style={{ width: `${likeWidth}%` }} />
+      <div className="dark:bg-muted flex h-3 overflow-hidden rounded-full bg-gray-100">
+        <div
+          className="bg-gray-950 dark:bg-gray-100"
+          style={{ width: `${likeWidth}%` }}
+        />
         <div className="bg-gray-300" style={{ width: `${passWidth}%` }} />
       </div>
-      <p className="text-xs text-gray-500 sm:text-right">
+      <p className="dark:text-muted-foreground text-xs text-gray-500 sm:text-right">
         {total.toLocaleString()} swipes · {activity.matches} matches ·{" "}
         {activity.messagesSent} messages
       </p>
@@ -257,8 +266,10 @@ function Legend({ color, label }: { color: string; label: string }) {
 function ProfileFact({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <dt className="text-xs text-gray-500">{label}</dt>
-      <dd className="mt-1 text-gray-900">{value}</dd>
+      <dt className="dark:text-muted-foreground text-xs text-gray-500">
+        {label}
+      </dt>
+      <dd className="dark:text-foreground mt-1 text-gray-900">{value}</dd>
     </div>
   );
 }

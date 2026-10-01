@@ -97,7 +97,7 @@ export function TinderProfilePreview({
   }, [brokenImageUrls, onBrokenImagesDetected]);
 
   return (
-    <div className="relative w-full max-w-xl overflow-hidden rounded-lg bg-white shadow-lg">
+    <div className="dark:bg-card relative w-full max-w-xl overflow-hidden rounded-lg bg-white shadow-lg">
       {/* Header with Photos */}
       <div className="rounded-t-lg bg-linear-to-r from-rose-700 via-rose-500 to-rose-300 p-4">
         {hasPhotos ? (
@@ -128,13 +128,13 @@ export function TinderProfilePreview({
               {genderDisplay.text}, {age}
             </div>
             {city && (
-              <p className="mt-0.5 text-sm text-gray-600">
+              <p className="dark:text-muted-foreground mt-0.5 text-sm text-gray-600">
                 {city}
                 {region && `, ${region}`}
               </p>
             )}
           </div>
-          <div className="text-left text-xs text-gray-500 sm:text-right">
+          <div className="dark:text-muted-foreground text-left text-xs text-gray-500 sm:text-right">
             <div>
               {user.create_date_inferred ? "Observed since" : "Joined"}{" "}
               {format(createDate, "MMM d, yyyy")}
@@ -146,15 +146,21 @@ export function TinderProfilePreview({
         {/* Bio */}
         {user.bio && (
           <div className="mt-4">
-            <h3 className="text-sm font-semibold text-gray-700">Bio</h3>
-            <p className="mt-1 text-sm text-gray-600">{he.decode(user.bio)}</p>
+            <h3 className="dark:text-muted-foreground text-sm font-semibold text-gray-700">
+              Bio
+            </h3>
+            <p className="dark:text-muted-foreground mt-1 text-sm text-gray-600">
+              {he.decode(user.bio)}
+            </p>
           </div>
         )}
 
         {/* Looking for */}
         <div className="mt-4">
-          <h3 className="text-sm font-semibold text-gray-700">Looking for</h3>
-          <p className="mt-1 text-sm text-gray-600">
+          <h3 className="dark:text-muted-foreground text-sm font-semibold text-gray-700">
+            Looking for
+          </h3>
+          <p className="dark:text-muted-foreground mt-1 text-sm text-gray-600">
             {user.interested_in && getInterestedInText(user.interested_in)}
             {user.age_filter_min !== undefined &&
               user.age_filter_max !== undefined &&
@@ -167,10 +173,15 @@ export function TinderProfilePreview({
         {/* Jobs/Work */}
         {consent?.work !== false && user.jobs && user.jobs.length > 0 && (
           <div className="mt-4">
-            <h3 className="text-sm font-semibold text-gray-700">Work</h3>
+            <h3 className="dark:text-muted-foreground text-sm font-semibold text-gray-700">
+              Work
+            </h3>
             <div className="mt-1 space-y-1">
               {user.jobs.map((job, index) => (
-                <div key={index} className="text-sm text-gray-600">
+                <div
+                  key={index}
+                  className="dark:text-muted-foreground text-sm text-gray-600"
+                >
                   {job.title?.name}
                   {job.company?.name && ` @ ${job.company.name}`}
                 </div>
@@ -182,10 +193,15 @@ export function TinderProfilePreview({
         {/* Schools/Education - Always shown (schools are anonymous) */}
         {user.schools && user.schools.length > 0 && (
           <div className="mt-4">
-            <h3 className="text-sm font-semibold text-gray-700">Education</h3>
+            <h3 className="dark:text-muted-foreground text-sm font-semibold text-gray-700">
+              Education
+            </h3>
             <div className="mt-1 space-y-1">
               {user.schools.map((school, index) => (
-                <div key={index} className="text-sm text-gray-600">
+                <div
+                  key={index}
+                  className="dark:text-muted-foreground text-sm text-gray-600"
+                >
                   {school.name}
                 </div>
               ))}
@@ -196,7 +212,9 @@ export function TinderProfilePreview({
         {/* Interests */}
         {user.user_interests && user.user_interests.length > 0 && (
           <div className="mt-4">
-            <h3 className="text-sm font-semibold text-gray-700">Interests</h3>
+            <h3 className="dark:text-muted-foreground text-sm font-semibold text-gray-700">
+              Interests
+            </h3>
             <div className="mt-2 flex flex-wrap gap-2">
               {user.user_interests.slice(0, 6).map((interest, index) => (
                 <Badge key={index} variant="secondary" className="text-xs">
@@ -204,7 +222,7 @@ export function TinderProfilePreview({
                 </Badge>
               ))}
               {user.user_interests.length > 6 && (
-                <span className="text-xs text-gray-500">
+                <span className="dark:text-muted-foreground text-xs text-gray-500">
                   +{user.user_interests.length - 6} more
                 </span>
               )}
@@ -215,7 +233,9 @@ export function TinderProfilePreview({
         {/* Descriptors/Lifestyle */}
         {user.descriptors && user.descriptors.length > 0 && (
           <div className="mt-4">
-            <h3 className="text-sm font-semibold text-gray-700">Lifestyle</h3>
+            <h3 className="dark:text-muted-foreground text-sm font-semibold text-gray-700">
+              Lifestyle
+            </h3>
             <div className="mt-2 flex flex-wrap gap-2">
               {user.descriptors.map((descriptor, index) => (
                 <Badge key={index} variant="secondary" className="text-xs">
@@ -229,12 +249,14 @@ export function TinderProfilePreview({
         {/* Connected Accounts */}
         {(user.instagram || user.spotify) && (
           <div className="mt-4">
-            <h3 className="text-sm font-semibold text-gray-700">Connected</h3>
+            <h3 className="dark:text-muted-foreground text-sm font-semibold text-gray-700">
+              Connected
+            </h3>
             <div className="mt-2 flex gap-2">
               {user.instagram && (
                 <Badge
                   variant="secondary"
-                  className="bg-purple-100 text-purple-700"
+                  className="bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-400"
                 >
                   Instagram
                 </Badge>
@@ -242,7 +264,7 @@ export function TinderProfilePreview({
               {user.spotify && (
                 <Badge
                   variant="secondary"
-                  className="bg-green-100 text-green-700"
+                  className="bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-400"
                 >
                   Spotify
                 </Badge>
@@ -252,9 +274,11 @@ export function TinderProfilePreview({
         )}
 
         {/* Profile ID */}
-        <div className="mt-4 rounded-lg bg-gray-50 p-3">
-          <p className="text-xs text-gray-500">Your anonymous SwipeStats ID:</p>
-          <p className="mt-1 overflow-x-auto font-mono text-xs whitespace-nowrap text-gray-700">
+        <div className="dark:bg-background mt-4 rounded-lg bg-gray-50 p-3">
+          <p className="dark:text-muted-foreground text-xs text-gray-500">
+            Your anonymous SwipeStats ID:
+          </p>
+          <p className="dark:text-muted-foreground mt-1 overflow-x-auto font-mono text-xs whitespace-nowrap text-gray-700">
             {payload.tinderId}
           </p>
         </div>

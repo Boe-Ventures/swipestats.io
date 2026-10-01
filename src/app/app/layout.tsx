@@ -22,7 +22,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
   const isAnonymous = session.user.isAnonymous ?? false;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="dark:bg-background min-h-screen bg-gray-50">
       <AppHeader session={session} />
       {isAnonymous && <AnonymousUpgradeBanner />}
       <main className="mx-auto max-w-7xl px-6 py-12 lg:px-8">{children}</main>

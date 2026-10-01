@@ -21,7 +21,7 @@ export default function ContactBooking() {
   }, []);
 
   return (
-    <div className="overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-gray-900/5">
+    <div className="dark:bg-card overflow-hidden rounded-2xl bg-white shadow-xl ring-1 ring-gray-900/5">
       <Cal
         namespace="swipestats-contact"
         calLink="kristianeboe/30min"

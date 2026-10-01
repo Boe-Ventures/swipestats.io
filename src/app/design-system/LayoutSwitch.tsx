@@ -44,7 +44,7 @@ export function LayoutSwitch({
 
   return (
     <div>
-      <div className="mb-4 inline-flex rounded-lg border border-gray-200 bg-gray-50 p-0.5">
+      <div className="dark:border-border dark:bg-background mb-4 inline-flex rounded-lg border border-gray-200 bg-gray-50 p-0.5">
         {OPTIONS.map((o) => {
           const active = o.id === layout;
           return (
@@ -55,8 +55,8 @@ export function LayoutSwitch({
               className={cn(
                 "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[12.5px] font-semibold transition",
                 active
-                  ? "bg-white text-gray-900 shadow-xs"
-                  : "text-gray-500 hover:text-gray-700",
+                  ? "dark:bg-card dark:text-foreground bg-white text-gray-900 shadow-xs"
+                  : "dark:text-muted-foreground dark:hover:text-muted-foreground text-gray-500 hover:text-gray-700",
               )}
             >
               <o.Icon className="h-3.5 w-3.5" />

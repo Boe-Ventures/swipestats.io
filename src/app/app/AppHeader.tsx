@@ -14,12 +14,12 @@ interface AppHeaderProps {
 
 export function AppHeader({ session }: AppHeaderProps) {
   return (
-    <nav className="border-b bg-white">
+    <nav className="dark:bg-card border-b bg-white">
       <div className="mx-auto flex max-w-7xl items-center justify-between p-6 lg:px-8">
         {/* Left side - Logo and Navigation */}
         <div className="flex items-center space-x-6">
           <Link href="/app/dashboard" className="flex items-center space-x-2">
-            <div className="bg-primary text-primary-foreground flex size-7 items-center justify-center rounded-md sm:size-8">
+            <div className="bg-primary text-primary-foreground flex size-7 items-center justify-center rounded-md sm:size-8 dark:bg-rose-600 dark:text-white">
               <NewOldLogo className="size-5 sm:size-6" />
             </div>
             <span className="text-xl font-bold">SwipeStats</span>

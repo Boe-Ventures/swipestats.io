@@ -31,9 +31,11 @@ export function RecentProfiles() {
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-gray-900">Recent Profiles</h2>
+        <h2 className="dark:text-foreground text-xl font-semibold text-gray-900">
+          Recent Profiles
+        </h2>
         <div className="flex items-center gap-3">
-          <Filter className="h-4 w-4 text-gray-500" />
+          <Filter className="dark:text-muted-foreground h-4 w-4 text-gray-500" />
           <Select
             value={platform ?? "all"}
             onValueChange={(v) => {
@@ -54,7 +56,7 @@ export function RecentProfiles() {
 
       {isLoading && (
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+          <Loader2 className="dark:text-muted-foreground h-8 w-8 animate-spin text-gray-400" />
         </div>
       )}
 
@@ -67,13 +69,13 @@ export function RecentProfiles() {
                 return (
                   <div
                     key={profile.id}
-                    className="flex items-center justify-between p-4 transition-colors hover:bg-gray-50"
+                    className="dark:hover:bg-background flex items-center justify-between p-4 transition-colors hover:bg-gray-50"
                   >
                     <div className="flex-1">
                       <div className="flex items-center gap-3">
                         <div>
                           <div className="flex items-center gap-2">
-                            <p className="font-medium text-gray-900">
+                            <p className="dark:text-foreground font-medium text-gray-900">
                               {profile.gender === "MALE"
                                 ? "Man"
                                 : profile.gender === "FEMALE"
@@ -85,13 +87,13 @@ export function RecentProfiles() {
                               {profile.platform}
                             </Badge>
                           </div>
-                          <p className="text-sm text-gray-500">
+                          <p className="dark:text-muted-foreground text-sm text-gray-500">
                             {profile.city}
                             {profile.country && `, ${profile.country}`}
                           </p>
                         </div>
                       </div>
-                      <div className="mt-2 flex gap-4 text-xs text-gray-600">
+                      <div className="dark:text-muted-foreground mt-2 flex gap-4 text-xs text-gray-600">
                         <span>
                           {profile.matchesTotal?.toLocaleString() ?? 0} matches
                         </span>
@@ -118,7 +120,7 @@ export function RecentProfiles() {
                           <Link
                             href={`/insights/tinder/${profile.id}`}
                             target="_blank"
-                            className="inline-flex items-center gap-1 rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                            className="dark:border-border dark:text-muted-foreground dark:hover:bg-background inline-flex items-center gap-1 rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
                           >
                             <ExternalLink className="h-3 w-3" />
                           </Link>
@@ -138,7 +140,7 @@ export function RecentProfiles() {
                           href={blobUrlString}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1 rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
+                          className="dark:border-border dark:text-muted-foreground dark:hover:bg-background inline-flex items-center gap-1 rounded-md border border-gray-300 px-3 py-1.5 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50"
                           title="View original blob data"
                         >
                           <FileJson className="h-3 w-3" />
@@ -156,7 +158,9 @@ export function RecentProfiles() {
       {!isLoading && (!data?.profiles || data.profiles.length === 0) && (
         <Card>
           <CardContent className="py-12 text-center">
-            <p className="text-gray-500">No profiles found</p>
+            <p className="dark:text-muted-foreground text-gray-500">
+              No profiles found
+            </p>
           </CardContent>
         </Card>
       )}

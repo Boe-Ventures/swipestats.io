@@ -129,19 +129,19 @@ export function ProfileStatsCard({ profile, meta }: ProfileStatsCardProps) {
 
         {/* Admin Fields */}
         <div className="border-t pt-4">
-          <h4 className="mb-3 text-sm font-semibold text-gray-700">
+          <h4 className="dark:text-muted-foreground mb-3 text-sm font-semibold text-gray-700">
             Admin Info
           </h4>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">Tinder ID</span>
-              <code className="rounded bg-gray-100 px-2 py-0.5 text-xs">
+              <code className="dark:bg-muted rounded bg-gray-100 px-2 py-0.5 text-xs">
                 {profile.tinderId.slice(0, 12)}...
               </code>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">User ID</span>
-              <code className="rounded bg-gray-100 px-2 py-0.5 text-xs">
+              <code className="dark:bg-muted rounded bg-gray-100 px-2 py-0.5 text-xs">
                 {profile.userId?.slice(0, 12)}...
               </code>
             </div>

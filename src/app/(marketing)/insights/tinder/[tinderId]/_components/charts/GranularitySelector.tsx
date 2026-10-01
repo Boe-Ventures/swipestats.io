@@ -25,7 +25,9 @@ export function GranularitySelector({
         className="w-[132px] sm:w-[140px]"
         aria-label="Select granularity"
       >
-        <SelectValue placeholder="Select granularity" />
+        <SelectValue placeholder="Select granularity">
+          {value.charAt(0).toUpperCase() + value.slice(1)}
+        </SelectValue>
       </SelectTrigger>
       <SelectContent>
         <SelectItem value="daily">Daily</SelectItem>

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { withInternalUtm } from "@/lib/cta-links";
 import {
   ArrowRightIcon,
   ArrowTopRightOnSquareIcon,
@@ -53,10 +54,10 @@ function HeroSection() {
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
         <div className="max-w-[760px]">
           <Eyebrow>Get started · 3 steps</Eyebrow>
-          <h1 className="mt-5 text-[clamp(40px,6vw,68px)] leading-[1.02] font-bold tracking-[-0.035em] text-balance text-gray-900">
+          <h1 className="dark:text-foreground mt-5 text-[clamp(40px,6vw,68px)] leading-[1.02] font-bold tracking-[-0.035em] text-balance text-gray-900">
             How to request your dating data
           </h1>
-          <p className="mt-5 text-[clamp(17px,2vw,20px)] leading-[1.6] text-gray-600">
+          <p className="dark:text-muted-foreground mt-5 text-[clamp(17px,2vw,20px)] leading-[1.6] text-gray-600">
             It&apos;s easy, but not instant. You log into your app, ask for your
             data export, and wait for an email. Once it lands, upload the file
             to SwipeStats to unlock your personal insights. Here&apos;s exactly
@@ -79,14 +80,18 @@ function HeroSection() {
               Remind me when it arrives
             </TrackedDataRequestLink>
           </div>
-          <p className="mt-[18px] flex flex-wrap items-center gap-2 text-[13px] text-gray-500">
-            <LockClosedIcon className="h-[15px] w-[15px] text-gray-400" />
+          <p className="dark:text-muted-foreground mt-[18px] flex flex-wrap items-center gap-2 text-[13px] text-gray-500">
+            <LockClosedIcon className="dark:text-muted-foreground h-[15px] w-[15px] text-gray-400" />
             Already have your export file?
             <TrackedDataRequestLink
               event="upload"
               source="hero_existing_export"
-              href={UPLOAD_HREF}
-              className="font-semibold text-rose-600 underline underline-offset-2"
+              href={withInternalUtm(UPLOAD_HREF, {
+                medium: "data_request_hero",
+                campaign: "upload_data",
+                content: "upload",
+              })}
+              className="font-semibold text-rose-600 underline underline-offset-2 dark:text-rose-400"
             >
               Skip straight to upload →
             </TrackedDataRequestLink>
@@ -123,7 +128,7 @@ function FlowSection() {
   return (
     <section className="py-14">
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
-        <div className="grid grid-cols-1 overflow-hidden rounded-3xl border border-gray-200 bg-white md:grid-cols-3">
+        <div className="dark:border-border dark:bg-card grid grid-cols-1 overflow-hidden rounded-3xl border border-gray-200 bg-white md:grid-cols-3">
           {steps.map((s, i) => {
             const Badge = s.badge.icon;
             return (
@@ -131,24 +136,25 @@ function FlowSection() {
                 key={s.n}
                 className={cn(
                   "relative px-7 py-[30px]",
-                  i > 0 && "border-gray-200 max-md:border-t md:border-l",
+                  i > 0 &&
+                    "dark:border-border border-gray-200 max-md:border-t md:border-l",
                 )}
               >
-                <div className="grid h-[38px] w-[38px] place-items-center rounded-[11px] border border-rose-600/[0.18] bg-rose-50 font-mono text-[16px] font-semibold text-rose-600">
+                <div className="grid h-[38px] w-[38px] place-items-center rounded-[11px] border border-rose-600/[0.18] bg-rose-50 font-mono text-[16px] font-semibold text-rose-600 dark:bg-rose-950/40 dark:text-rose-400">
                   {s.n}
                 </div>
-                <h3 className="mt-4 text-[17px] font-bold tracking-[-0.02em] text-gray-900">
+                <h3 className="dark:text-foreground mt-4 text-[17px] font-bold tracking-[-0.02em] text-gray-900">
                   {s.title}
                 </h3>
-                <p className="mt-2 text-[14px] leading-[1.6] text-gray-600">
+                <p className="dark:text-muted-foreground mt-2 text-[14px] leading-[1.6] text-gray-600">
                   {s.body}
                 </p>
-                <span className="mt-3.5 inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 font-mono text-[11px] text-gray-500">
+                <span className="dark:border-border dark:bg-background dark:text-muted-foreground mt-3.5 inline-flex items-center gap-1.5 rounded-full border border-gray-200 bg-gray-50 px-2.5 py-1 font-mono text-[11px] text-gray-500">
                   <Badge className="h-3 w-3" />
                   {s.badge.label}
                 </span>
                 {i < steps.length - 1 && (
-                  <div className="absolute top-1/2 -right-[11px] z-[2] hidden h-[22px] w-[22px] -translate-y-1/2 place-items-center rounded-full border border-gray-200 bg-white text-gray-400 md:grid">
+                  <div className="dark:border-border dark:bg-card dark:text-muted-foreground absolute top-1/2 -right-[11px] z-[2] hidden h-[22px] w-[22px] -translate-y-1/2 place-items-center rounded-full border border-gray-200 bg-white text-gray-400 md:grid">
                     <ArrowRightIcon className="h-[13px] w-[13px]" />
                   </div>
                 )}
@@ -186,15 +192,15 @@ function PrivacySection() {
   return (
     <section className="py-14">
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
-        <div className="grid grid-cols-1 items-center gap-5 rounded-3xl border border-rose-600/20 bg-rose-50 px-9 py-[30px] md:grid-cols-[auto_1fr_auto] md:gap-7">
+        <div className="grid grid-cols-1 items-center gap-5 rounded-3xl border border-rose-600/20 bg-rose-50 px-9 py-[30px] md:grid-cols-[auto_1fr_auto] md:gap-7 dark:bg-rose-950/40">
           <div className="grid h-14 w-14 flex-none place-items-center rounded-2xl bg-rose-600 shadow-[0_1px_2px_oklch(0.5_0.2_17/0.3),0_12px_28px_oklch(0.5_0.2_17/0.22)]">
             <ShieldCheckIcon className="h-[30px] w-[30px] text-white" />
           </div>
           <div>
-            <h3 className="text-[19px] font-bold tracking-[-0.02em] text-gray-900">
+            <h3 className="dark:text-foreground text-[19px] font-bold tracking-[-0.02em] text-gray-900">
               Your name never reaches our servers
             </h3>
-            <p className="mt-[7px] max-w-[640px] text-[14.5px] leading-[1.6] text-gray-700">
+            <p className="dark:text-muted-foreground mt-[7px] max-w-[640px] text-[14.5px] leading-[1.6] text-gray-700">
               Direct identifiers (name, email, phone, username) are stripped{" "}
               <strong>in your browser</strong> before anything is uploaded. Your
               profile is linked to a hashed anonymous ID, not your real
@@ -241,7 +247,7 @@ function AfterSection() {
     },
   ];
   return (
-    <section className="border-y border-gray-200 bg-gray-50 py-[88px] max-[720px]:py-[60px]">
+    <section className="dark:border-border dark:bg-background border-y border-gray-200 bg-gray-50 py-[88px] max-[720px]:py-[60px]">
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
         <SectionHead
           center
@@ -252,20 +258,20 @@ function AfterSection() {
           {cards.map((c) => (
             <div
               key={c.title}
-              className="rounded-2xl border border-gray-200 bg-white p-6"
+              className="dark:border-border dark:bg-card rounded-2xl border border-gray-200 bg-white p-6"
             >
-              <div className="grid h-[42px] w-[42px] place-items-center rounded-[11px] border border-rose-600/15 bg-rose-50 text-rose-600">
+              <div className="grid h-[42px] w-[42px] place-items-center rounded-[11px] border border-rose-600/15 bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-400">
                 <c.icon className="h-[21px] w-[21px]" />
               </div>
-              <h3 className="mt-4 text-[17px] font-bold tracking-[-0.02em] text-gray-900">
+              <h3 className="dark:text-foreground mt-4 text-[17px] font-bold tracking-[-0.02em] text-gray-900">
                 {c.title}
               </h3>
-              <p className="mt-2 text-[14px] leading-[1.6] text-gray-600">
+              <p className="dark:text-muted-foreground mt-2 text-[14px] leading-[1.6] text-gray-600">
                 {c.body}
               </p>
               <Link
                 href={c.link.href}
-                className="mt-3 inline-flex items-center gap-1.5 text-[13.5px] font-semibold text-rose-600 hover:text-rose-700"
+                className="mt-3 inline-flex items-center gap-1.5 text-[13.5px] font-semibold text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-400"
               >
                 {c.link.label}
               </Link>
@@ -295,7 +301,7 @@ function ReminderSection() {
             <h3 className="mt-3 text-[24px] font-bold tracking-[-0.02em] text-white">
               Get a reminder when to upload
             </h3>
-            <p className="mt-2.5 max-w-[440px] text-[14.5px] text-gray-400">
+            <p className="dark:text-muted-foreground mt-2.5 max-w-[440px] text-[14.5px] text-gray-400">
               Tinder and Hinge usually take a day or two. Raya and Bumble are
               manual and may take longer. Leave your email and we&apos;ll nudge
               you when it&apos;s time to come back and upload.
@@ -325,7 +331,7 @@ const faqs: { q: string; a: React.ReactNode; open?: boolean }[] = [
     a: (
       <>
         Each app sends a data export: Tinder delivers a{" "}
-        <code className="rounded-[5px] border border-gray-200 bg-gray-100 px-1.5 py-px font-mono text-[12.5px] text-gray-800">
+        <code className="dark:border-border dark:bg-muted dark:text-foreground rounded-[5px] border border-gray-200 bg-gray-100 px-1.5 py-px font-mono text-[12.5px] text-gray-800">
           tinder.json
         </code>{" "}
         file inside a ZIP, and Hinge, Bumble, and Raya send similar structured
@@ -349,7 +355,14 @@ const faqs: { q: string; a: React.ReactNode; open?: boolean }[] = [
         Requesting your data from the apps is free, and uploading it to
         SwipeStats to see your personal insights is free too. Researchers who
         want to license the anonymized, aggregated dataset can do so on our{" "}
-        <Link href="/research" className="font-semibold text-rose-600">
+        <Link
+          href={withInternalUtm("/research", {
+            medium: "data_request_faq",
+            campaign: "research_datasets",
+            content: "research",
+          })}
+          className="font-semibold text-rose-600 dark:text-rose-400"
+        >
           research page
         </Link>
         .
@@ -402,7 +415,11 @@ function FinalCtaSection() {
               <TrackedDataRequestLink
                 event="upload"
                 source="final_cta"
-                href={UPLOAD_HREF}
+                href={withInternalUtm(UPLOAD_HREF, {
+                  medium: "data_request_final",
+                  campaign: "upload_data",
+                  content: "upload",
+                })}
                 className={marketingButton({ variant: "white", size: "lg" })}
               >
                 Upload data

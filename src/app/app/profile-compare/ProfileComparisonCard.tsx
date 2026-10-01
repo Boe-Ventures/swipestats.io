@@ -26,13 +26,14 @@ export function ProfileComparisonCard({
   const thumbnail = comparison.columns[0]?.content[0]?.attachment?.url;
   const columnCount = comparison.columns.length;
   const photoCount = comparison.columns.reduce(
-    (sum, column) => sum + column.content.filter((c) => c.attachment?.url).length,
+    (sum, column) =>
+      sum + column.content.filter((c) => c.attachment?.url).length,
     0,
   );
   const href = `/app/profile-compare/${comparison.id}`;
 
   return (
-    <Card className="relative flex flex-row gap-0 overflow-hidden border-gray-200 bg-white p-0 shadow-sm transition-shadow hover:shadow-lg">
+    <Card className="dark:border-border dark:bg-card relative flex flex-row gap-0 overflow-hidden border-gray-200 bg-white p-0 shadow-sm transition-shadow hover:shadow-lg">
       {/* Thumbnail — left rail */}
       <div className="bg-muted relative w-28 shrink-0 self-stretch overflow-hidden sm:w-44">
         {thumbnail ? (

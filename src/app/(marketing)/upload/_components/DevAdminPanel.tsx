@@ -69,13 +69,13 @@ export function DevAdminPanel(props: DevAdminPanelProps) {
   };
 
   return (
-    <div className="mt-6 rounded-lg border-2 border-red-300 bg-red-50 p-4">
-      <h3 className="mb-2 text-sm font-semibold text-red-900">
+    <div className="mt-6 rounded-lg border-2 border-red-300 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950/40">
+      <h3 className="mb-2 text-sm font-semibold text-red-900 dark:text-red-200">
         Dev Admin Tools
       </h3>
 
       {/* Scenario Information */}
-      <div className="mb-3 text-xs text-red-700">
+      <div className="mb-3 text-xs text-red-700 dark:text-red-400">
         <p className="font-semibold">Scenario: {uploadContext.scenario}</p>
         {userProfileId && (
           <p className="mt-1">Your profile: {userProfileId.slice(0, 12)}...</p>
@@ -87,14 +87,16 @@ export function DevAdminPanel(props: DevAdminPanelProps) {
         )}
         {targetProfileId && <p className="mt-1">Target owner: {targetOwner}</p>}
         {uploadContext.identityMismatch && (
-          <p className="mt-1 font-semibold text-red-800">
+          <p className="mt-1 font-semibold text-red-800 dark:text-red-200">
             ⚠️ Identity Mismatch Detected
           </p>
         )}
         {uploadContext.identityComparison && (
-          <div className="mt-3 rounded border border-red-200 bg-white/70 p-3">
-            <p className="font-semibold text-red-900">Derived age comparison</p>
-            <div className="mt-1 space-y-1 font-mono text-[10px] text-red-800">
+          <div className="dark:bg-card/70 mt-3 rounded border border-red-200 bg-white/70 p-3 dark:border-red-800">
+            <p className="font-semibold text-red-900 dark:text-red-200">
+              Derived age comparison
+            </p>
+            <div className="mt-1 space-y-1 font-mono text-[10px] text-red-800 dark:text-red-200">
               <p>
                 Existing derived birth date:{" "}
                 {uploadContext.identityComparison.oldBirthDate.slice(0, 10)}
@@ -108,7 +110,7 @@ export function DevAdminPanel(props: DevAdminPanelProps) {
                 {uploadContext.identityComparison.ageDifferenceYears} years
               </p>
             </div>
-            <p className="mt-2 text-xs text-red-700">
+            <p className="mt-2 text-xs text-red-700 dark:text-red-400">
               {uploadContext.identityComparison.reason}
             </p>
           </div>

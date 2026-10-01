@@ -4,12 +4,13 @@ import type { ToasterProps } from "sonner";
 import { Toaster as Sonner } from "sonner";
 import { toast } from "sonner";
 
+import { useTheme } from "./theme";
+
 const Toaster = ({ ...props }: ToasterProps) => {
-  // Default to "light" theme to avoid dependency on ThemeProvider
-  // This allows Toaster to work in marketing/auth routes without ThemeProvider
+  const { resolvedTheme } = useTheme();
   return (
     <Sonner
-      theme="light"
+      theme={resolvedTheme}
       className="toaster group"
       style={
         {

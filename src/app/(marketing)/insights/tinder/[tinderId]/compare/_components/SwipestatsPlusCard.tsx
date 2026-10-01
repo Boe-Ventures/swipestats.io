@@ -96,7 +96,7 @@ export function SwipestatsPlusCard({
     return (
       <div
         className={cn(
-          "overflow-hidden rounded-3xl bg-linear-to-br from-pink-50 via-rose-50 to-purple-50 p-8 shadow-lg ring-1 ring-gray-200",
+          "dark:ring-border overflow-hidden rounded-3xl bg-linear-to-br from-pink-50 via-rose-50 to-purple-50 p-8 shadow-lg ring-1 ring-gray-200 dark:from-pink-950/40 dark:via-rose-950/40 dark:to-purple-950/40",
           className,
         )}
       >
@@ -105,7 +105,7 @@ export function SwipestatsPlusCard({
             <Crown className="h-8 w-8 text-white" />
           </div>
           <div>
-            <h3 className="text-3xl font-bold tracking-tight text-gray-900">
+            <h3 className="dark:text-foreground text-3xl font-bold tracking-tight text-gray-900">
               Welcome to SwipeStats+
             </h3>
             <p className="text-muted-foreground mt-2 text-base">
@@ -117,10 +117,10 @@ export function SwipestatsPlusCard({
               {TIER_FEATURES.PLUS.map((feature) => (
                 <div
                   key={feature}
-                  className="flex items-center gap-2 rounded-lg bg-white/60 px-4 py-2 shadow-sm backdrop-blur-sm"
+                  className="dark:bg-card/60 flex items-center gap-2 rounded-lg bg-white/60 px-4 py-2 shadow-sm backdrop-blur-sm"
                 >
-                  <Sparkles className="h-4 w-4 text-pink-600" />
-                  <span className="text-sm font-medium text-gray-900">
+                  <Sparkles className="h-4 w-4 text-pink-600 dark:text-pink-400" />
+                  <span className="dark:text-foreground text-sm font-medium text-gray-900">
                     {feature}
                   </span>
                 </div>
@@ -132,10 +132,10 @@ export function SwipestatsPlusCard({
                   {TIER_FEATURES.PLUS_COMING_SOON.map((feature) => (
                     <div
                       key={feature}
-                      className="flex items-center gap-2 rounded-lg border border-pink-200 bg-white/40 px-4 py-2 shadow-sm backdrop-blur-sm"
+                      className="dark:bg-card/40 flex items-center gap-2 rounded-lg border border-pink-200 bg-white/40 px-4 py-2 shadow-sm backdrop-blur-sm dark:border-pink-800"
                     >
                       <Clock className="h-4 w-4 text-pink-500" />
-                      <span className="text-sm font-medium text-gray-700">
+                      <span className="dark:text-muted-foreground text-sm font-medium text-gray-700">
                         {feature}
                       </span>
                       <Badge variant="secondary" className="text-xs">
@@ -157,7 +157,7 @@ export function SwipestatsPlusCard({
             {tinderId && (
               <Link
                 href={`/insights/tinder/${tinderId}/compare`}
-                className="flex w-full items-center justify-center gap-2 rounded-lg border-2 border-pink-200 bg-white/80 px-6 py-3 text-sm font-semibold text-pink-700 backdrop-blur-sm transition-all duration-200 hover:border-pink-300 hover:bg-pink-50 sm:w-auto"
+                className="dark:bg-card/80 flex w-full items-center justify-center gap-2 rounded-lg border-2 border-pink-200 bg-white/80 px-6 py-3 text-sm font-semibold text-pink-700 backdrop-blur-sm transition-all duration-200 hover:border-pink-300 hover:bg-pink-50 sm:w-auto dark:border-pink-800 dark:text-pink-400 dark:hover:border-pink-800 dark:hover:bg-pink-950/40"
               >
                 Compare Profiles
               </Link>
@@ -172,41 +172,41 @@ export function SwipestatsPlusCard({
   return (
     <div
       className={cn(
-        "overflow-hidden rounded-3xl bg-white shadow-lg ring-1 ring-gray-200 sm:flex",
+        "dark:bg-card dark:ring-border overflow-hidden rounded-3xl bg-white shadow-lg ring-1 ring-gray-200 sm:flex",
         className,
       )}
     >
       {/* Features section */}
       <div className="p-8 sm:flex-auto sm:p-10">
         <div className="flex items-center gap-3">
-          <h3 className="text-3xl font-semibold tracking-tight text-gray-900">
+          <h3 className="dark:text-foreground text-3xl font-semibold tracking-tight text-gray-900">
             SwipeStats+
           </h3>
           <Badge className="bg-linear-to-r from-pink-600 to-rose-600 text-white">
             Launch Offer
           </Badge>
         </div>
-        <p className="mt-4 text-base leading-6 text-gray-600">
+        <p className="dark:text-muted-foreground mt-4 text-base leading-6 text-gray-600">
           Unlock deeper insights into your dating profile with advanced
           percentile rankings, demographic comparisons, and The Swipe Guide.
         </p>
         <div className="mt-6 flex items-center gap-x-4">
-          <h4 className="flex-none text-sm leading-6 font-semibold text-rose-600">
+          <h4 className="flex-none text-sm leading-6 font-semibold text-rose-600 dark:text-rose-400">
             What&apos;s included
           </h4>
-          <div className="h-px flex-auto bg-gray-100" />
+          <div className="dark:bg-muted h-px flex-auto bg-gray-100" />
         </div>
         <ul role="list" className="mt-6 space-y-4">
           <div className="space-y-3">
-            <h4 className="text-sm font-semibold text-gray-900">
+            <h4 className="dark:text-foreground text-sm font-semibold text-gray-900">
               Available Now
             </h4>
-            <div className="grid grid-cols-1 gap-3 text-sm leading-6 text-gray-600 sm:grid-cols-2 sm:gap-4">
+            <div className="dark:text-muted-foreground grid grid-cols-1 gap-3 text-sm leading-6 text-gray-600 sm:grid-cols-2 sm:gap-4">
               {TIER_FEATURES.PLUS.map((feature) => (
                 <li key={feature} className="flex gap-x-3">
                   <Check
                     aria-hidden="true"
-                    className="h-6 w-5 flex-none text-rose-600"
+                    className="h-6 w-5 flex-none text-rose-600 dark:text-rose-400"
                   />
                   {feature}
                 </li>
@@ -217,13 +217,13 @@ export function SwipestatsPlusCard({
           {TIER_FEATURES.PLUS_COMING_SOON &&
             TIER_FEATURES.PLUS_COMING_SOON.length > 0 && (
               <div className="space-y-3">
-                <h4 className="flex items-center gap-2 text-sm font-semibold text-gray-900">
+                <h4 className="dark:text-foreground flex items-center gap-2 text-sm font-semibold text-gray-900">
                   Coming Soon
                   <Badge variant="outline" className="text-xs">
                     Included
                   </Badge>
                 </h4>
-                <div className="grid grid-cols-1 gap-3 text-sm leading-6 text-gray-600 sm:grid-cols-2 sm:gap-4">
+                <div className="dark:text-muted-foreground grid grid-cols-1 gap-3 text-sm leading-6 text-gray-600 sm:grid-cols-2 sm:gap-4">
                   {TIER_FEATURES.PLUS_COMING_SOON.map((feature) => (
                     <li key={feature} className="flex gap-x-3">
                       <Clock
@@ -241,7 +241,7 @@ export function SwipestatsPlusCard({
 
       {/* Pricing section */}
       <div className="-mt-2 p-2 sm:mt-0 sm:flex sm:w-full sm:max-w-md sm:shrink-0">
-        <div className="rounded-2xl bg-gray-50 py-10 text-center ring-1 ring-gray-900/5 ring-inset sm:flex sm:flex-1 sm:flex-col sm:justify-center sm:py-16">
+        <div className="dark:bg-background rounded-2xl bg-gray-50 py-10 text-center ring-1 ring-gray-900/5 ring-inset sm:flex sm:flex-1 sm:flex-col sm:justify-center sm:py-16">
           <div className="mx-auto max-w-xs px-8">
             {/* Error Alert */}
             {error && (
@@ -251,14 +251,14 @@ export function SwipestatsPlusCard({
             )}
 
             {/* Billing period toggle */}
-            <div className="mb-6 inline-flex rounded-lg bg-gray-200 p-1">
+            <div className="dark:bg-accent mb-6 inline-flex rounded-lg bg-gray-200 p-1">
               <button
                 onClick={() => handlePeriodSelected("monthly")}
                 className={cn(
                   "relative cursor-pointer rounded-md px-3 py-1 text-xs font-medium transition-colors",
                   selectedPeriod === "monthly"
-                    ? "bg-white shadow-sm"
-                    : "text-gray-600 hover:text-gray-900",
+                    ? "dark:bg-card bg-white shadow-sm"
+                    : "dark:text-muted-foreground dark:hover:text-foreground text-gray-600 hover:text-gray-900",
                 )}
               >
                 Monthly
@@ -272,34 +272,34 @@ export function SwipestatsPlusCard({
                 className={cn(
                   "cursor-pointer rounded-md px-3 py-1 text-xs font-medium transition-colors",
                   selectedPeriod === "lifetime"
-                    ? "bg-white shadow-sm"
-                    : "text-gray-600 hover:text-gray-900",
+                    ? "dark:bg-card bg-white shadow-sm"
+                    : "dark:text-muted-foreground dark:hover:text-foreground text-gray-600 hover:text-gray-900",
                 )}
               >
                 Lifetime
               </button>
             </div>
 
-            <p className="text-base font-semibold text-gray-600">
+            <p className="dark:text-muted-foreground text-base font-semibold text-gray-600">
               {selectedPeriod === "monthly"
                 ? "🎉 Launch Special - 40% Off!"
                 : "🎉 Launch Special - 50% Off!"}
             </p>
             <p className="mt-6 flex items-baseline justify-center gap-x-2">
-              <span className="text-2xl font-semibold tracking-tight text-gray-400 line-through">
+              <span className="dark:text-muted-foreground text-2xl font-semibold tracking-tight text-gray-400 line-through">
                 ${selectedPeriod === "monthly" ? 15 : pricing.lifetime}
               </span>
-              <span className="text-5xl font-semibold tracking-tight text-gray-900">
+              <span className="dark:text-foreground text-5xl font-semibold tracking-tight text-gray-900">
                 $
                 {selectedPeriod === "lifetime"
                   ? pricing.lifetimeLaunchPrice
                   : pricing.monthly}
               </span>
-              <span className="text-sm leading-6 font-semibold tracking-wide text-gray-600">
+              <span className="dark:text-muted-foreground text-sm leading-6 font-semibold tracking-wide text-gray-600">
                 {selectedPeriod === "monthly" ? "/mo" : "USD"}
               </span>
             </p>
-            <p className="mt-2 text-xs font-semibold text-rose-600">
+            <p className="mt-2 text-xs font-semibold text-rose-600 dark:text-rose-400">
               {selectedPeriod === "monthly"
                 ? "Save $6/mo • Limited time offer"
                 : "Save $50 • Limited time offer"}
@@ -320,7 +320,7 @@ export function SwipestatsPlusCard({
               )}
             </button>
 
-            <p className="mt-6 text-xs leading-5 text-gray-600">
+            <p className="dark:text-muted-foreground mt-6 text-xs leading-5 text-gray-600">
               {selectedPeriod === "monthly"
                 ? "Cancel anytime • Secure payment by LemonSqueezy"
                 : "One-time payment • No recurring charges • All future features included"}

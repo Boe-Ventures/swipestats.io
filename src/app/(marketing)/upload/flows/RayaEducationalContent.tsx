@@ -16,8 +16,8 @@ export function RayaEducationalContent() {
         </Button>
       </div>
 
-      <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">
+      <div className="dark:border-border dark:bg-card rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
+        <h2 className="dark:text-foreground mb-4 text-lg font-semibold text-gray-900">
           How it works
         </h2>
         <ol className="space-y-4">
@@ -40,16 +40,20 @@ export function RayaEducationalContent() {
                 {index + 1}
               </span>
               <div className="flex-1 space-y-0.5">
-                <p className="text-sm font-medium text-gray-900">{title}</p>
-                <p className="text-xs text-gray-500">{description}</p>
+                <p className="dark:text-foreground text-sm font-medium text-gray-900">
+                  {title}
+                </p>
+                <p className="dark:text-muted-foreground text-xs text-gray-500">
+                  {description}
+                </p>
               </div>
             </li>
           ))}
         </ol>
 
-        <div className="mt-4 flex items-start gap-2 rounded-md bg-gray-100 p-3">
-          <ShieldCheckIcon className="h-5 w-5 shrink-0 text-gray-900" />
-          <p className="text-xs text-gray-700">
+        <div className="dark:bg-muted mt-4 flex items-start gap-2 rounded-md bg-gray-100 p-3">
+          <ShieldCheckIcon className="dark:text-foreground h-5 w-5 shrink-0 text-gray-900" />
+          <p className="dark:text-muted-foreground text-xs text-gray-700">
             <strong>Format-aware privacy:</strong> Raya does not include
             conversation IDs or received messages in this export. SwipeStats
             keeps only daily sent-message counts and never uploads message

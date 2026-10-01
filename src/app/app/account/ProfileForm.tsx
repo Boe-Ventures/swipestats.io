@@ -70,7 +70,9 @@ export function ProfileForm() {
       </Button>
 
       {updateProfile.isSuccess && (
-        <p className="text-sm text-green-600">Profile updated successfully!</p>
+        <p className="text-sm text-green-600 dark:text-green-400">
+          Profile updated successfully!
+        </p>
       )}
       {updateProfile.isError && (
         <p className="text-destructive text-sm">

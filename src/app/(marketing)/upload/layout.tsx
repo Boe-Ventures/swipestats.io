@@ -29,7 +29,7 @@ export default function UploadLayout({
     pathname.startsWith("/upload/raya");
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="dark:bg-card min-h-screen bg-white">
       {/* Stepper - container width depends on page type */}
       <div
         className={

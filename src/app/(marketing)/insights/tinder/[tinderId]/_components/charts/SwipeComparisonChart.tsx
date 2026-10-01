@@ -588,13 +588,13 @@ export function SwipeComparisonChart() {
                     key={event.id}
                     x1={event.startPeriodDisplay}
                     x2={event.endPeriodDisplay}
-                    fill="hsl(280, 70%, 50%)"
+                    fill="var(--chart-event)"
                     fillOpacity={0.08}
                     label={{
                       value: event.name,
                       position: "insideTop",
                       fontSize: 11,
-                      fill: "hsl(280, 70%, 35%)",
+                      fill: "var(--chart-event-label)",
                     }}
                   />
                 );
@@ -603,14 +603,14 @@ export function SwipeComparisonChart() {
                   <ReferenceLine
                     key={event.id}
                     x={event.startPeriodDisplay}
-                    stroke="hsl(280, 70%, 50%)"
+                    stroke="var(--chart-event)"
                     strokeWidth={1.5}
                     strokeDasharray="4 4"
                     label={{
                       value: event.name,
                       position: "insideTopLeft",
                       fontSize: 12,
-                      fill: "hsl(280, 70%, 35%)",
+                      fill: "var(--chart-event-label)",
                       fontWeight: 600,
                       offset: 5,
                     }}

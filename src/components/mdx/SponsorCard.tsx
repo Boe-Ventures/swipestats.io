@@ -95,7 +95,7 @@ export function SponsorCard({
                   {ctaContent}
                 </button>
               )}
-              <span className="text-[12.5px] font-medium text-gray-400">
+              <span className="dark:text-muted-foreground text-[12.5px] font-medium text-gray-400">
                 {isPaid
                   ? `Sponsored by ${campaign.sponsorName}`
                   : "Direct partnership"}
@@ -110,13 +110,14 @@ export function SponsorCard({
                 key={`${item.value}-${item.label}`}
                 className={cn(
                   "relative rounded-2xl border border-white/10 bg-white/[0.06] px-4 py-3.5 backdrop-blur-sm",
-                  index === 0 && "border-rose-300/25 bg-rose-400/10",
+                  index === 0 &&
+                    "border-rose-300/25 bg-rose-400/10 dark:border-rose-800/25",
                 )}
               >
                 <div className="text-xl font-bold tracking-[-0.03em] text-white">
                   {item.value}
                 </div>
-                <div className="mt-0.5 text-[12px] font-medium text-gray-400">
+                <div className="dark:text-muted-foreground mt-0.5 text-[12px] font-medium text-gray-400">
                   {item.label}
                 </div>
               </div>

@@ -21,30 +21,30 @@ export function TinderEducationalContent() {
       </div>
 
       {/* How it works */}
-      <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
-        <h2 className="mb-4 text-lg font-semibold text-gray-900">
+      <div className="dark:border-border dark:bg-card rounded-lg border border-gray-200 bg-white p-4 shadow-sm sm:p-6">
+        <h2 className="dark:text-foreground mb-4 text-lg font-semibold text-gray-900">
           How it works
         </h2>
 
         <ol className="space-y-4">
           {/* Step 1 */}
           <li className="flex gap-3 sm:gap-4">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-rose-100 text-sm font-bold text-rose-600 sm:h-8 sm:w-8 sm:text-base">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-rose-100 text-sm font-bold text-rose-600 sm:h-8 sm:w-8 sm:text-base dark:bg-rose-950/40 dark:text-rose-400">
               1
             </span>
             <div className="flex-1 space-y-0.5">
-              <p className="text-sm font-medium text-gray-900">
+              <p className="dark:text-foreground text-sm font-medium text-gray-900">
                 Request your data from{" "}
                 <a
                   href="https://account.gotinder.com/data"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-rose-600 underline decoration-2 hover:no-underline"
+                  className="text-rose-600 underline decoration-2 hover:no-underline dark:text-rose-400"
                 >
                   Tinder&apos;s website
                 </a>
               </p>
-              <p className="text-xs text-gray-500">
+              <p className="dark:text-muted-foreground text-xs text-gray-500">
                 It typically takes 24-48 hours to receive your data file by
                 email
               </p>
@@ -53,14 +53,14 @@ export function TinderEducationalContent() {
 
           {/* Step 2 */}
           <li className="flex gap-3 sm:gap-4">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-rose-100 text-sm font-bold text-rose-600 sm:h-8 sm:w-8 sm:text-base">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-rose-100 text-sm font-bold text-rose-600 sm:h-8 sm:w-8 sm:text-base dark:bg-rose-950/40 dark:text-rose-400">
               2
             </span>
             <div className="flex-1 space-y-0.5">
-              <p className="text-sm font-medium text-gray-900">
+              <p className="dark:text-foreground text-sm font-medium text-gray-900">
                 Upload your file — we strip identifying info first
               </p>
-              <p className="text-xs text-gray-500">
+              <p className="dark:text-muted-foreground text-xs text-gray-500">
                 Your name, email, and phone are removed in your browser before
                 anything is sent to us
               </p>
@@ -69,14 +69,14 @@ export function TinderEducationalContent() {
 
           {/* Step 3 */}
           <li className="flex gap-3 sm:gap-4">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-rose-100 text-sm font-bold text-rose-600 sm:h-8 sm:w-8 sm:text-base">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-rose-100 text-sm font-bold text-rose-600 sm:h-8 sm:w-8 sm:text-base dark:bg-rose-950/40 dark:text-rose-400">
               3
             </span>
             <div className="flex-1 space-y-0.5">
-              <p className="text-sm font-medium text-gray-900">
+              <p className="dark:text-foreground text-sm font-medium text-gray-900">
                 Explore your insights
               </p>
-              <p className="text-xs text-gray-500">
+              <p className="dark:text-muted-foreground text-xs text-gray-500">
                 See your swipe patterns, match rates, and how you stack up
                 against others
               </p>
@@ -85,9 +85,9 @@ export function TinderEducationalContent() {
         </ol>
 
         {/* Privacy callout */}
-        <div className="mt-4 flex items-start gap-2 rounded-md bg-rose-50 p-3">
-          <ShieldCheckIcon className="h-5 w-5 shrink-0 text-rose-600" />
-          <p className="text-xs text-rose-800">
+        <div className="mt-4 flex items-start gap-2 rounded-md bg-rose-50 p-3 dark:bg-rose-950/40">
+          <ShieldCheckIcon className="h-5 w-5 shrink-0 text-rose-600 dark:text-rose-400" />
+          <p className="text-xs text-rose-800 dark:text-rose-200">
             <strong>Privacy first:</strong> Direct identifiers (name, email,
             phone, username) are stripped in your browser before upload. Your
             profile is linked to a hashed anonymous ID — not your real identity.
@@ -106,15 +106,15 @@ export function TinderEducationalContent() {
         </div>
 
         {/* Additional help */}
-        <div className="mt-4 border-t border-gray-200 pt-3">
-          <p className="text-xs text-gray-500">
+        <div className="dark:border-border mt-4 border-t border-gray-200 pt-3">
+          <p className="dark:text-muted-foreground text-xs text-gray-500">
             <strong>Deleted your account?</strong> You can still request your
             data through{" "}
             <a
               href="https://www.help.tinder.com/hc/en-us/articles/115005626726-How-do-I-request-a-copy-of-my-personal-data"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-rose-600 underline hover:no-underline"
+              className="text-rose-600 underline hover:no-underline dark:text-rose-400"
             >
               Tinder&apos;s contact form
             </a>

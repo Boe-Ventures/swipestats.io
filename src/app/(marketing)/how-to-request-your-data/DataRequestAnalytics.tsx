@@ -62,7 +62,7 @@ export function DataRequestReminderSignup() {
         placeholder="you@email.com"
         formClassName="flex flex-col gap-2.5 sm:flex-row sm:items-center"
         groupClassName="flex flex-col gap-2 sm:flex-row sm:items-center"
-        inputClassName="min-w-[220px] rounded-[10px] border border-white/[0.18] bg-white/[0.07] px-4 py-3 text-[14.5px] text-white placeholder:text-gray-500 focus:border-rose-600 focus:outline-none"
+        inputClassName="min-w-[220px] rounded-[10px] border border-white/[0.18] bg-white/[0.07] px-4 py-3 text-[14.5px] text-white placeholder:text-gray-500 focus:border-rose-600 focus:outline-none dark:placeholder:text-muted-foreground"
         buttonClassName={marketingButton({
           variant: "primary",
           size: "lg",

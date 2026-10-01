@@ -108,7 +108,7 @@ export function SignUpForm() {
     <Card>
       <CardHeader>
         <CardTitle className="text-center text-2xl">Create account</CardTitle>
-        <p className="text-center text-sm text-gray-600">
+        <p className="dark:text-muted-foreground text-center text-sm text-gray-600">
           Get started with SwipeStats
         </p>
       </CardHeader>
@@ -141,14 +141,17 @@ export function SignUpForm() {
               placeholder="••••••••"
               disabled={isLoading}
             />
-            <FieldDescription className="text-xs text-gray-500">
+            <FieldDescription className="dark:text-muted-foreground text-xs text-gray-500">
               At least 8 characters
             </FieldDescription>
           </Field>
 
           {/* Name field (optional) */}
           <Field>
-            <FieldLabel htmlFor="name" className="text-gray-600">
+            <FieldLabel
+              htmlFor="name"
+              className="dark:text-muted-foreground text-gray-600"
+            >
               Name <span className="text-xs">(optional)</span>
             </FieldLabel>
             <Input
@@ -170,7 +173,7 @@ export function SignUpForm() {
           />
 
           {/* Terms acceptance */}
-          <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 p-4 transition-all hover:border-gray-300 has-[:checked]:border-rose-600 has-[:checked]:bg-rose-50/50">
+          <label className="dark:border-border dark:hover:border-border flex cursor-pointer items-start gap-3 rounded-lg border border-gray-200 p-4 transition-all hover:border-gray-300 has-[:checked]:border-rose-600 has-[:checked]:bg-rose-50/50 dark:has-[:checked]:bg-rose-950/50">
             <Checkbox
               checked={termsAccepted}
               onCheckedChange={(checked) => setTermsAccepted(checked === true)}
@@ -180,13 +183,13 @@ export function SignUpForm() {
               <p className="text-sm leading-none font-medium">
                 I agree to the Terms and Conditions
               </p>
-              <p className="text-xs leading-relaxed text-gray-600">
+              <p className="dark:text-muted-foreground text-xs leading-relaxed text-gray-600">
                 By creating an account, you agree to our{" "}
                 <Link
                   href="/tos"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-rose-600 hover:underline"
+                  className="text-rose-600 hover:underline dark:text-rose-400"
                   onClick={(e) => e.stopPropagation()}
                 >
                   Terms and Conditions
@@ -196,7 +199,7 @@ export function SignUpForm() {
                   href="/privacy"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-rose-600 hover:underline"
+                  className="text-rose-600 hover:underline dark:text-rose-400"
                   onClick={(e) => e.stopPropagation()}
                 >
                   Privacy Policy
@@ -232,10 +235,10 @@ export function SignUpForm() {
 
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-200" />
+            <div className="dark:border-border w-full border-t border-gray-200" />
           </div>
           <div className="relative flex justify-center text-sm">
-            <span className="bg-white px-4 text-gray-500">
+            <span className="dark:bg-card dark:text-muted-foreground bg-white px-4 text-gray-500">
               or continue without account
             </span>
           </div>
@@ -261,11 +264,11 @@ export function SignUpForm() {
           )}
         </Button>
 
-        <div className="text-center text-sm text-gray-600">
+        <div className="dark:text-muted-foreground text-center text-sm text-gray-600">
           Already have an account?{" "}
           <Link
             href={getAuthPageHref("/signin", searchParams)}
-            className="text-rose-600 hover:text-rose-500 hover:underline"
+            className="text-rose-600 hover:text-rose-500 hover:underline dark:text-rose-400"
           >
             Sign in
           </Link>

@@ -351,7 +351,7 @@ export function ImageUpload({
           className={cn(
             "cursor-pointer border-2 border-dashed transition-colors",
             dragActive && "border-primary bg-primary/5",
-            uploading && "border-blue-500 bg-blue-50",
+            uploading && "border-blue-500 bg-blue-50 dark:bg-blue-950/40",
             disabled && "cursor-not-allowed opacity-50",
           )}
           onClick={() => !disabled && fileInputRef.current?.click()}

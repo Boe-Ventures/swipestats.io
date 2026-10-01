@@ -298,23 +298,25 @@ export function SwipeActivityComboChart() {
               <button
                 key={key}
                 onClick={() => toggleMetric(key)}
+                aria-pressed={isVisible}
                 className={cn(
                   "flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition-all duration-200",
                   isVisible
-                    ? "text-white shadow-md"
+                    ? "dark:text-foreground bg-[var(--metric-color)] text-white shadow-md dark:bg-[color-mix(in_srgb,var(--metric-color)_16%,var(--card))] dark:ring-1 dark:ring-[var(--metric-color)]"
                     : "bg-muted text-muted-foreground hover:bg-muted/80",
                 )}
                 style={
-                  isVisible ? { backgroundColor: config.color } : undefined
+                  { "--metric-color": config.color } as React.CSSProperties
                 }
               >
                 <div
                   className={cn(
                     "h-3 w-3 rounded-full",
-                    isVisible && "border-2 border-white/40",
+                    isVisible &&
+                      "border-2 border-white/40 bg-white dark:border-0 dark:bg-[var(--metric-color)]",
                   )}
                   style={{
-                    backgroundColor: isVisible ? "white" : config.color,
+                    backgroundColor: isVisible ? undefined : config.color,
                   }}
                 />
                 <span>{config.label}</span>
@@ -398,13 +400,13 @@ export function SwipeActivityComboChart() {
                     key={event.id}
                     x1={event.startPeriodDisplay}
                     x2={event.endPeriodDisplay}
-                    fill="hsl(280, 70%, 50%)"
+                    fill="var(--chart-event)"
                     fillOpacity={0.08}
                     label={{
                       value: event.name,
                       position: "insideTop",
                       fontSize: 11,
-                      fill: "hsl(280, 70%, 35%)",
+                      fill: "var(--chart-event-label)",
                     }}
                   />
                 );
@@ -413,14 +415,14 @@ export function SwipeActivityComboChart() {
                   <ReferenceLine
                     key={event.id}
                     x={event.startPeriodDisplay}
-                    stroke="hsl(280, 70%, 50%)"
+                    stroke="var(--chart-event)"
                     strokeWidth={1.5}
                     strokeDasharray="4 4"
                     label={{
                       value: event.name,
                       position: "insideTopLeft",
                       fontSize: 12,
-                      fill: "hsl(280, 70%, 35%)",
+                      fill: "var(--chart-event-label)",
                       fontWeight: 600,
                       offset: 5,
                     }}

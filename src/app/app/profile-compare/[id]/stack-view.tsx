@@ -103,7 +103,7 @@ export function StackView({
     >
       {/* Mock Device Frame */}
       <div
-        className={`relative aspect-[2/3] overflow-hidden rounded-xl ${isTinder ? "bg-black" : "bg-white"}`}
+        className={`relative aspect-[2/3] overflow-hidden rounded-xl ${isTinder ? "bg-black" : "dark:bg-card bg-white"}`}
       >
         {/* Photo Display */}
         {hasPhotos && currentPhoto ? (
@@ -226,11 +226,13 @@ export function StackView({
             </div>
           </div>
         ) : (
-          <div className="flex h-full w-full flex-col items-center justify-center bg-linear-to-b from-gray-100 to-gray-200 p-6 text-center transition-all hover:from-gray-200 hover:to-gray-300">
-            <div className="mb-4 rounded-full bg-white/80 p-4 shadow-sm">
+          <div className="dark:from-muted dark:to-accent dark:hover:from-accent flex h-full w-full flex-col items-center justify-center bg-linear-to-b from-gray-100 to-gray-200 p-6 text-center transition-all hover:from-gray-200 hover:to-gray-300">
+            <div className="dark:bg-card/80 mb-4 rounded-full bg-white/80 p-4 shadow-sm">
               <Plus className="text-muted-foreground h-8 w-8" />
             </div>
-            <p className="mb-2 font-medium text-gray-900">No photos yet</p>
+            <p className="dark:text-foreground mb-2 font-medium text-gray-900">
+              No photos yet
+            </p>
             <p className="text-muted-foreground mb-4 text-sm">
               Click to add photos and preview your {providerConfig.name} profile
             </p>
@@ -238,7 +240,7 @@ export function StackView({
               <Button
                 size="sm"
                 variant="outline"
-                className="bg-white"
+                className="dark:bg-card bg-white"
                 onClick={(e) => {
                   e.stopPropagation();
                   onAddContent?.();

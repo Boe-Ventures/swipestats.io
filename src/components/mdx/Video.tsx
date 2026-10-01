@@ -32,8 +32,8 @@ export function Video({ url, title }: VideoProps) {
 
   if (!videoInfo) {
     return (
-      <div className="my-8 rounded-lg border border-red-200 bg-red-50 p-4">
-        <p className="text-sm text-red-800">
+      <div className="my-8 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950/40">
+        <p className="text-sm text-red-800 dark:text-red-200">
           Invalid video URL. Please provide a valid YouTube or Vimeo URL.
         </p>
       </div>

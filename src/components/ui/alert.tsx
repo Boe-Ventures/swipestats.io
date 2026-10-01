@@ -18,17 +18,17 @@ const alertVariants = cva(
         default: "bg-card text-card-foreground",
         destructive:
           "text-destructive bg-card *:data-[slot=alert-description]:text-destructive/90 [&>svg]:text-current",
-        info: "border-blue-200 bg-blue-50 text-blue-900 *:data-[slot=alert-description]:text-blue-800 [&>svg]:text-blue-600",
+        info: "border-blue-200 bg-blue-50 text-blue-900 *:data-[slot=alert-description]:text-blue-800 [&>svg]:text-blue-600 dark:border-blue-800 dark:bg-blue-950/40 dark:text-blue-200 dark:*:data-[slot=alert-description]:text-blue-200 dark:[&>svg]:text-blue-400",
         primary:
           "border-primary/20 bg-primary/5 text-foreground *:data-[slot=alert-description]:text-foreground/80 [&>svg]:text-primary",
         success:
-          "border-green-200 bg-green-50 text-green-900 *:data-[slot=alert-description]:text-green-800 [&>svg]:text-green-600",
+          "border-green-200 bg-green-50 text-green-900 *:data-[slot=alert-description]:text-green-800 [&>svg]:text-green-600 dark:border-green-800 dark:bg-green-950/40 dark:text-green-200 dark:*:data-[slot=alert-description]:text-green-200 dark:[&>svg]:text-green-400",
         warning:
-          "border-yellow-200 bg-yellow-50 text-yellow-900 *:data-[slot=alert-description]:text-yellow-800 [&>svg]:text-yellow-600",
+          "border-yellow-200 bg-yellow-50 text-yellow-900 *:data-[slot=alert-description]:text-yellow-800 [&>svg]:text-yellow-600 dark:border-yellow-800 dark:bg-yellow-950/40 dark:text-yellow-200 dark:*:data-[slot=alert-description]:text-yellow-200 dark:[&>svg]:text-yellow-400",
         error:
-          "border-red-200 bg-red-50 text-red-900 *:data-[slot=alert-description]:text-red-800 [&>svg]:text-red-600",
+          "border-red-200 bg-red-50 text-red-900 *:data-[slot=alert-description]:text-red-800 [&>svg]:text-red-600 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200 dark:*:data-[slot=alert-description]:text-red-200 dark:[&>svg]:text-red-400",
         neutral:
-          "border-gray-200 bg-white text-gray-900 *:data-[slot=alert-description]:text-gray-700 [&>svg]:text-gray-500",
+          "border-gray-200 bg-white text-gray-900 *:data-[slot=alert-description]:text-gray-700 [&>svg]:text-gray-500 dark:border-border dark:bg-card dark:text-foreground dark:*:data-[slot=alert-description]:text-muted-foreground dark:[&>svg]:text-muted-foreground",
       },
     },
     defaultVariants: {
@@ -156,27 +156,27 @@ const swipestatsAlertColors: Record<
   SwipestatsAlertColor
 > = {
   success: {
-    background: "bg-green-50",
+    background: "bg-green-50 dark:bg-green-950/40",
     border: "border-green-400",
-    text: "text-green-800",
+    text: "text-green-800 dark:text-green-200",
     icon: "text-green-400",
   },
   danger: {
-    background: "bg-red-50",
+    background: "bg-red-50 dark:bg-red-950/40",
     border: "border-red-400",
-    text: "text-red-800",
+    text: "text-red-800 dark:text-red-200",
     icon: "text-red-400",
   },
   warning: {
-    background: "bg-yellow-50",
+    background: "bg-yellow-50 dark:bg-yellow-950/40",
     border: "border-yellow-400",
-    text: "text-yellow-800",
+    text: "text-yellow-800 dark:text-yellow-200",
     icon: "text-yellow-400",
   },
   info: {
-    background: "bg-blue-50",
+    background: "bg-blue-50 dark:bg-blue-950/40",
     border: "border-blue-400",
-    text: "text-blue-800",
+    text: "text-blue-800 dark:text-blue-200",
     icon: "text-blue-400",
   },
 } as const;

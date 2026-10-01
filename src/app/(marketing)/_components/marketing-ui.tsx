@@ -19,8 +19,9 @@ export const marketingButton = cva(
         primary:
           "bg-rose-600 text-white shadow-[0_1px_2px_oklch(0.5_0.2_17/0.3),0_12px_28px_oklch(0.5_0.2_17/0.22)] hover:-translate-y-px hover:bg-rose-700",
         ghost:
-          "border border-gray-300 bg-white text-gray-900 shadow-xs hover:-translate-y-px hover:border-gray-400",
-        white: "bg-white text-gray-900 hover:bg-gray-100",
+          "border border-gray-300 bg-white text-gray-900 shadow-xs hover:-translate-y-px hover:border-gray-400 dark:border-border dark:bg-card dark:text-foreground",
+        white:
+          "bg-white text-gray-900 hover:bg-gray-100 dark:bg-card dark:text-foreground dark:hover:bg-muted",
         // colour + background supplied inline (e.g. per-provider brand colours)
         bare: "text-white hover:-translate-y-px",
       },
@@ -51,7 +52,7 @@ export function Eyebrow({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-2 font-mono text-[12.5px] font-medium uppercase tracking-[0.12em] text-rose-600",
+        "inline-flex items-center gap-2 font-mono text-[12.5px] font-medium tracking-[0.12em] text-rose-600 uppercase dark:text-rose-400",
         center && "justify-center",
         className,
       )}
@@ -80,15 +81,21 @@ export function SectionHead({
   className?: string;
 }) {
   return (
-    <div className={cn("max-w-[680px]", center && "mx-auto text-center", className)}>
+    <div
+      className={cn(
+        "max-w-[680px]",
+        center && "mx-auto text-center",
+        className,
+      )}
+    >
       <Eyebrow center={center} noRule={center}>
         {eyebrow}
       </Eyebrow>
-      <h2 className="mt-3.5 text-[clamp(30px,4vw,46px)] leading-[1.06] font-bold tracking-[-0.03em] text-balance text-gray-900">
+      <h2 className="dark:text-foreground mt-3.5 text-[clamp(30px,4vw,46px)] leading-[1.06] font-bold tracking-[-0.03em] text-balance text-gray-900">
         {title}
       </h2>
       {lead && (
-        <p className="mt-[18px] text-[clamp(17px,2vw,20px)] leading-[1.6] text-gray-600">
+        <p className="dark:text-muted-foreground mt-[18px] text-[clamp(17px,2vw,20px)] leading-[1.6] text-gray-600">
           {lead}
         </p>
       )}
@@ -102,7 +109,7 @@ export function GridBg() {
   return (
     <div
       aria-hidden
-      className="pointer-events-none absolute inset-0 -z-10 opacity-70 [background-image:linear-gradient(to_right,var(--color-gray-200)_1px,transparent_1px),linear-gradient(to_bottom,var(--color-gray-200)_1px,transparent_1px)] [background-size:56px_56px] [mask-image:radial-gradient(120%_90%_at_80%_0%,#000,transparent_70%)]"
+      className="pointer-events-none absolute inset-0 -z-10 [background-image:linear-gradient(to_right,var(--border)_1px,transparent_1px),linear-gradient(to_bottom,var(--border)_1px,transparent_1px)] [mask-image:radial-gradient(120%_90%_at_80%_0%,#000,transparent_70%)] [background-size:56px_56px] opacity-70 dark:opacity-50"
     />
   );
 }

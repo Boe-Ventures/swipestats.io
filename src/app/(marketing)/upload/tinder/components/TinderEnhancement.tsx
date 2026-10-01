@@ -91,9 +91,9 @@ export function TinderEnhancement({
     <div className="space-y-4">
       {/* Gender Confirmation - Required */}
       {needsGender && (
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="dark:border-border dark:bg-card rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
           <div className="mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">
+            <h3 className="dark:text-foreground text-lg font-semibold text-gray-900">
               Confirm Your Gender Information
             </h3>
           </div>
@@ -114,7 +114,7 @@ export function TinderEnhancement({
 
       {/* Data Sharing Consent Section */}
       {!needsGender && (
-        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+        <div className="dark:border-border dark:bg-card rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
           <TinderConsentForm value={consent} onChange={handleConsentChange} />
         </div>
       )}

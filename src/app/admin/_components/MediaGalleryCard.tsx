@@ -63,7 +63,7 @@ export function MediaGalleryCard({ media }: MediaGalleryCardProps) {
                 {validMedia.map((item, index) => (
                   <div
                     key={item.id}
-                    className="group relative aspect-square cursor-pointer overflow-hidden rounded-lg border bg-gray-100 transition-all hover:shadow-lg"
+                    className="group dark:bg-muted relative aspect-square cursor-pointer overflow-hidden rounded-lg border bg-gray-100 transition-all hover:shadow-lg"
                     onClick={() =>
                       setSelectedMedia({
                         item,
@@ -112,7 +112,7 @@ export function MediaGalleryCard({ media }: MediaGalleryCardProps) {
         </>
       )}
 
-      <Card className="border-violet-200 bg-violet-50/30">
+      <Card className="border-violet-200 bg-violet-50/30 dark:border-violet-800 dark:bg-violet-950/30">
         <CardHeader>
           <CardTitle>
             SwipeRank anonymized images ({anonymizedMedia.length})
@@ -124,7 +124,7 @@ export function MediaGalleryCard({ media }: MediaGalleryCardProps) {
               {anonymizedMedia.map(({ item, url }, index) => (
                 <div
                   key={`anonymized-${item.id}`}
-                  className="group relative aspect-square cursor-pointer overflow-hidden rounded-lg border border-violet-200 bg-gray-100 transition-all hover:shadow-lg"
+                  className="group dark:bg-muted relative aspect-square cursor-pointer overflow-hidden rounded-lg border border-violet-200 bg-gray-100 transition-all hover:shadow-lg dark:border-violet-800"
                   onClick={() =>
                     setSelectedMedia({
                       item,
@@ -184,7 +184,7 @@ export function MediaGalleryCard({ media }: MediaGalleryCardProps) {
 
           {selectedMedia && (
             <div className="space-y-4">
-              <div className="relative aspect-square w-full overflow-hidden rounded-lg bg-gray-100">
+              <div className="dark:bg-muted relative aspect-square w-full overflow-hidden rounded-lg bg-gray-100">
                 {selectedMedia.item.type === "photo" ||
                 selectedMedia.item.type === "image" ? (
                   <Image
@@ -255,7 +255,7 @@ export function MediaGalleryCard({ media }: MediaGalleryCardProps) {
                   <span className="text-muted-foreground font-medium">
                     {selectedMedia.anonymized ? "Derivative URL:" : "URL:"}
                   </span>
-                  <code className="mt-1 block rounded bg-gray-100 p-2 text-xs break-all">
+                  <code className="dark:bg-muted mt-1 block rounded bg-gray-100 p-2 text-xs break-all">
                     {selectedMedia.url}
                   </code>
                 </div>
@@ -284,14 +284,14 @@ export function MediaGalleryCard({ media }: MediaGalleryCardProps) {
 
       {/* Invalid Media Section */}
       {invalidMedia.length > 0 && (
-        <Card className="border-yellow-200 bg-yellow-50">
+        <Card className="border-yellow-200 bg-yellow-50 dark:border-yellow-800 dark:bg-yellow-950/40">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-yellow-900">
+            <CardTitle className="flex items-center gap-2 text-yellow-900 dark:text-yellow-200">
               <span>⚠️ Invalid Media URLs ({invalidMedia.length})</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="mb-3 text-sm text-yellow-800">
+            <p className="mb-3 text-sm text-yellow-800 dark:text-yellow-200">
               These media entries have relative file paths instead of absolute
               URLs. They cannot be displayed.
             </p>
@@ -299,7 +299,7 @@ export function MediaGalleryCard({ media }: MediaGalleryCardProps) {
               {invalidMedia.map((item, index) => (
                 <div
                   key={item.id}
-                  className="rounded border border-yellow-300 bg-white p-3 text-sm"
+                  className="dark:bg-card rounded border border-yellow-300 bg-white p-3 text-sm dark:border-yellow-800"
                 >
                   <div className="mb-1 flex items-center gap-2">
                     <Badge variant="outline" className="text-xs">
@@ -314,11 +314,11 @@ export function MediaGalleryCard({ media }: MediaGalleryCardProps) {
                       </Badge>
                     )}
                   </div>
-                  <code className="block text-xs break-all text-gray-700">
+                  <code className="dark:text-muted-foreground block text-xs break-all text-gray-700">
                     {item.url}
                   </code>
                   {item.prompt && (
-                    <p className="mt-2 text-xs text-gray-600">
+                    <p className="dark:text-muted-foreground mt-2 text-xs text-gray-600">
                       Prompt: {item.prompt}
                     </p>
                   )}

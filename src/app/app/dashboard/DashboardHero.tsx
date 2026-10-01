@@ -132,13 +132,13 @@ export function DashboardHero({
     <div className="space-y-7">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <div className="font-mono text-[11px] font-medium tracking-[0.07em] text-gray-500 uppercase">
+          <div className="dark:text-muted-foreground font-mono text-[11px] font-medium tracking-[0.07em] text-gray-500 uppercase">
             Dashboard
           </div>
-          <h1 className="mt-1 text-[clamp(30px,4vw,44px)] leading-[1.03] font-bold tracking-[-0.03em] text-gray-900">
+          <h1 className="dark:text-foreground mt-1 text-[clamp(30px,4vw,44px)] leading-[1.03] font-bold tracking-[-0.03em] text-gray-900">
             Your dating data
           </h1>
-          <p className="mt-2 text-[15px] text-gray-600">
+          <p className="dark:text-muted-foreground mt-2 text-[15px] text-gray-600">
             Uploads, comparisons, photos, and next steps in one place.
           </p>
         </div>
@@ -152,7 +152,6 @@ export function DashboardHero({
         <div className="space-y-5">
           <SectionHeader
             title="Your apps"
-            meta="Tinder + Hinge + Raya"
             sub="View your latest insights or refresh the data behind them."
           />
 
@@ -275,8 +274,8 @@ export function DashboardHero({
             />
           </div>
 
-          <div className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-[13px] text-gray-600 shadow-[0_1px_2px_oklch(0.2_0.02_286/0.04)]">
-            <ShieldCheck className="h-4 w-4 flex-none text-rose-600" />
+          <div className="dark:border-border dark:bg-card dark:text-muted-foreground flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-4 py-3 text-[13px] text-gray-600 shadow-[0_1px_2px_oklch(0.2_0.02_286/0.04)]">
+            <ShieldCheck className="h-4 w-4 flex-none text-rose-600 dark:text-rose-400" />
             <p>
               Direct identifiers are stripped before upload. Your insights stay
               tied to an anonymous SwipeStats profile.
@@ -308,16 +307,16 @@ export function DashboardHero({
               description="Account and privacy settings."
               href="/app/account"
             />
-            <div className="rounded-xl border border-rose-200 bg-rose-50 p-4">
+            <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 dark:border-rose-800 dark:bg-rose-950/40">
               <div className="flex items-start gap-3">
                 <div className="grid h-9 w-9 flex-none place-items-center rounded-lg bg-rose-600 text-white">
                   <upgradeCTA.icon className="h-4 w-4" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="text-[14px] font-bold text-gray-900">
+                  <div className="dark:text-foreground text-[14px] font-bold text-gray-900">
                     {upgradeCTA.title}
                   </div>
-                  <p className="mt-0.5 text-[12.5px] leading-5 text-gray-600">
+                  <p className="dark:text-muted-foreground mt-0.5 text-[12.5px] leading-5 text-gray-600">
                     {upgradeCTA.description}
                   </p>
                 </div>
@@ -364,14 +363,20 @@ function SectionHeader({
   return (
     <div>
       <div className="flex items-baseline justify-between gap-3">
-        <h2 className="text-[20px] font-bold tracking-[-0.02em] text-gray-900">
+        <h2 className="dark:text-foreground text-[20px] font-bold tracking-[-0.02em] text-gray-900">
           {title}
         </h2>
         {meta && (
-          <span className="font-mono text-[11px] text-gray-500">{meta}</span>
+          <span className="dark:text-muted-foreground font-mono text-[11px] text-gray-500">
+            {meta}
+          </span>
         )}
       </div>
-      {sub && <p className="mt-1 text-[13.5px] text-gray-600">{sub}</p>}
+      {sub && (
+        <p className="dark:text-muted-foreground mt-1 text-[13.5px] text-gray-600">
+          {sub}
+        </p>
+      )}
     </div>
   );
 }
@@ -403,7 +408,7 @@ function ProviderPanel({
     <Panel
       className={cn(
         "flex min-h-[220px] flex-col p-5",
-        !hasProfile && "border-dashed bg-gray-50/60",
+        !hasProfile && "dark:bg-background/60 border-dashed bg-gray-50/60",
       )}
     >
       <PanelHeader
@@ -424,16 +429,16 @@ function ProviderPanel({
         <>
           <div
             className={cn(
-              "grid gap-px overflow-hidden rounded-xl border border-gray-200 bg-gray-200",
+              "dark:border-border dark:bg-accent grid gap-px overflow-hidden rounded-xl border border-gray-200 bg-gray-200",
               stats.length === 3 ? "grid-cols-3" : "grid-cols-2",
             )}
           >
             {stats.map((stat) => (
-              <div key={stat.label} className="bg-white px-4 py-3">
-                <div className="font-mono text-[10px] tracking-[0.05em] text-gray-500 uppercase">
+              <div key={stat.label} className="dark:bg-card bg-white px-4 py-3">
+                <div className="dark:text-muted-foreground font-mono text-[10px] tracking-[0.05em] text-gray-500 uppercase">
                   {stat.label}
                 </div>
-                <div className="mt-1 text-[24px] leading-none font-bold tracking-[-0.03em] text-gray-900 tabular-nums">
+                <div className="dark:text-foreground mt-1 text-[24px] leading-none font-bold tracking-[-0.03em] text-gray-900 tabular-nums">
                   {stat.value}
                 </div>
               </div>
@@ -452,10 +457,10 @@ function ProviderPanel({
         </>
       ) : (
         <div className="flex flex-1 flex-col items-center justify-center text-center">
-          <div className="grid h-11 w-11 place-items-center rounded-full border border-gray-200 bg-white text-rose-600">
+          <div className="dark:border-border dark:bg-card grid h-11 w-11 place-items-center rounded-full border border-gray-200 bg-white text-rose-600 dark:text-rose-400">
             <Upload className="h-5 w-5" />
           </div>
-          <p className="mt-3 max-w-[230px] text-[13px] leading-5 text-gray-600">
+          <p className="dark:text-muted-foreground mt-3 max-w-[230px] text-[13px] leading-5 text-gray-600">
             Upload your {config.name} export to unlock insights and comparisons.
           </p>
           <ButtonLink href={uploadHref} size="sm" className="mt-4">
@@ -482,17 +487,19 @@ function ActionRow({
   onClick?: () => void;
 }) {
   const content = (
-    <div className="flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-3 text-left transition hover:border-gray-300 hover:bg-gray-50">
-      <div className="grid h-9 w-9 flex-none place-items-center rounded-lg bg-gray-100 text-gray-700">
+    <div className="dark:border-border dark:bg-card dark:hover:border-border dark:hover:bg-background flex items-center gap-3 rounded-xl border border-gray-200 bg-white p-3 text-left transition hover:border-gray-300 hover:bg-gray-50">
+      <div className="dark:bg-muted dark:text-muted-foreground grid h-9 w-9 flex-none place-items-center rounded-lg bg-gray-100 text-gray-700">
         {icon}
       </div>
       <div className="min-w-0 flex-1">
-        <div className="text-[13.5px] font-semibold text-gray-900">{title}</div>
-        <div className="truncate text-[12.5px] text-gray-600">
+        <div className="dark:text-foreground text-[13.5px] font-semibold text-gray-900">
+          {title}
+        </div>
+        <div className="dark:text-muted-foreground truncate text-[12.5px] text-gray-600">
           {description}
         </div>
       </div>
-      <ArrowRight className="h-3.5 w-3.5 flex-none text-gray-400" />
+      <ArrowRight className="dark:text-muted-foreground h-3.5 w-3.5 flex-none text-gray-400" />
     </div>
   );
 

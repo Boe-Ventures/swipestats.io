@@ -12,18 +12,18 @@ import { Shield, ArrowRight } from "lucide-react";
 
 export function AnonymousUpgradeCard() {
   return (
-    <Card className="flex h-full flex-col border-amber-200 bg-amber-50">
+    <Card className="flex h-full flex-col border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950/40">
       <CardHeader className="pb-3">
         <CardTitle className="flex items-center gap-2 text-lg">
-          <Shield className="h-5 w-5 text-amber-600" />
+          <Shield className="h-5 w-5 text-amber-600 dark:text-amber-400" />
           Upgrade Account
         </CardTitle>
-        <CardDescription className="text-sm text-amber-800">
+        <CardDescription className="text-sm text-amber-800 dark:text-amber-200">
           Create a free account to secure your data and never lose your insights
         </CardDescription>
       </CardHeader>
       <CardContent className="flex-1 space-y-3">
-        <ul className="space-y-2 text-sm text-amber-900">
+        <ul className="space-y-2 text-sm text-amber-900 dark:text-amber-200">
           <li>• Secure your data permanently</li>
           <li>• Access from any device</li>
           <li>• Share with friends</li>

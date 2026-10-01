@@ -70,7 +70,8 @@ const KIND_NOUNS: Record<SwipeRankPeriodKind, string> = {
 const UNKNOWN_GENDER_PRESENTATION = {
   short: "?",
   label: "Not reported",
-  className: "border-slate-200 bg-slate-50 text-slate-600",
+  className:
+    "border-slate-200 bg-slate-50 text-slate-600 dark:border-border dark:bg-background dark:text-muted-foreground",
 } as const;
 
 const GENDER_PRESENTATION: Record<
@@ -80,22 +81,26 @@ const GENDER_PRESENTATION: Record<
   FEMALE: {
     short: "F",
     label: "Woman",
-    className: "border-rose-200 bg-rose-50 text-rose-700",
+    className:
+      "border-rose-200 bg-rose-50 text-rose-700 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-400",
   },
   MALE: {
     short: "M",
     label: "Man",
-    className: "border-sky-200 bg-sky-50 text-sky-700",
+    className:
+      "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-400",
   },
   OTHER: {
     short: "Other",
     label: "Other",
-    className: "border-violet-200 bg-violet-50 text-violet-700",
+    className:
+      "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-800 dark:bg-violet-950/40 dark:text-violet-400",
   },
   MORE: {
     short: "More",
     label: "More",
-    className: "border-violet-200 bg-violet-50 text-violet-700",
+    className:
+      "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-800 dark:bg-violet-950/40 dark:text-violet-400",
   },
   UNKNOWN: UNKNOWN_GENDER_PRESENTATION,
 };
@@ -109,11 +114,14 @@ function OrientationPill({
 }) {
   const label = formatSwipeRankOrientation(gender, interestedIn);
   const className = {
-    Straight: "border-sky-200 bg-sky-50 text-sky-700",
-    Gay: "border-violet-200 bg-violet-50 text-violet-700",
-    Bi: "border-fuchsia-200 bg-fuchsia-50 text-fuchsia-700",
-    Queer: "border-emerald-200 bg-emerald-50 text-emerald-700",
-    "Not specified": "border-slate-200 bg-slate-50 text-slate-600",
+    Straight:
+      "border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-400",
+    Gay: "border-violet-200 bg-violet-50 text-violet-700 dark:border-violet-800 dark:bg-violet-950/40 dark:text-violet-400",
+    Bi: "border-fuchsia-200 bg-fuchsia-50 text-fuchsia-700 dark:border-fuchsia-800 dark:bg-fuchsia-950/40 dark:text-fuchsia-400",
+    Queer:
+      "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400",
+    "Not specified":
+      "border-slate-200 bg-slate-50 text-slate-600 dark:border-border dark:bg-background dark:text-muted-foreground",
   }[label];
 
   return (
@@ -249,8 +257,8 @@ export function SwipeRankLeaderboard() {
   }, [data, page]);
 
   return (
-    <main className="min-h-screen bg-slate-50/70">
-      <section className="border-b bg-white">
+    <main className="dark:bg-background/70 min-h-screen bg-slate-50/70">
+      <section className="dark:bg-card border-b bg-white">
         <div className="mx-auto max-w-[1440px] px-4 py-14 sm:px-6 sm:py-20 lg:px-8">
           <Badge
             variant="secondary"
@@ -282,13 +290,13 @@ export function SwipeRankLeaderboard() {
       </section>
 
       <div className="mx-auto max-w-[1440px] space-y-7 px-4 py-9 sm:px-6 lg:px-8">
-        <Card className="gap-0 overflow-hidden border-slate-200 py-0 shadow-sm">
+        <Card className="dark:border-border gap-0 overflow-hidden border-slate-200 py-0 shadow-sm">
           <CardContent className="p-0">
             {quickJumps.length > 0 && (
-              <div className="border-b bg-gradient-to-r from-rose-50/80 via-white to-violet-50/60 p-4 sm:p-5">
+              <div className="dark:via-card border-b bg-gradient-to-r from-rose-50/80 via-white to-violet-50/60 p-4 sm:p-5 dark:from-rose-950/80 dark:to-violet-950/60">
                 <div className="mb-3 flex items-center gap-2">
                   <Sparkles className="text-primary h-4 w-4" />
-                  <p className="text-sm font-semibold text-slate-950">
+                  <p className="dark:text-foreground text-sm font-semibold text-slate-950">
                     Quick jumps
                   </p>
                   <p className="text-muted-foreground hidden text-xs sm:block">
@@ -307,20 +315,20 @@ export function SwipeRankLeaderboard() {
                         aria-pressed={active}
                         onClick={() => choosePeriod(jump.period)}
                         className={cn(
-                          "group flex min-w-0 items-center gap-3 rounded-xl border bg-white px-3 py-3 text-left shadow-xs transition hover:-translate-y-0.5 hover:border-rose-200 hover:shadow-sm",
+                          "group dark:bg-card flex min-w-0 items-center gap-3 rounded-xl border bg-white px-3 py-3 text-left shadow-xs transition hover:-translate-y-0.5 hover:border-rose-200 hover:shadow-sm dark:hover:border-rose-800",
                           active && "border-primary/40 ring-primary/10 ring-2",
                         )}
                       >
                         <span
                           className={cn(
-                            "flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600",
+                            "dark:bg-muted dark:text-muted-foreground flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-600",
                             active && "bg-primary/10 text-primary",
                           )}
                         >
                           <CalendarDays className="h-4 w-4" />
                         </span>
                         <span className="min-w-0 flex-1">
-                          <span className="block text-sm font-semibold text-slate-950">
+                          <span className="dark:text-foreground block text-sm font-semibold text-slate-950">
                             {jump.label}
                           </span>
                           <span className="text-muted-foreground block truncate text-xs">
@@ -342,7 +350,7 @@ export function SwipeRankLeaderboard() {
                   onValueChange={(value) => chooseKind(value!)}
                 >
                   <SelectTrigger
-                    className="h-11 bg-white sm:w-44"
+                    className="dark:bg-card h-11 bg-white sm:w-44"
                     aria-label="Competition length"
                   >
                     <SelectValue>{KIND_LABELS[kind]}</SelectValue>
@@ -369,7 +377,7 @@ export function SwipeRankLeaderboard() {
                   }}
                 >
                   <SelectTrigger
-                    className="h-11 bg-white sm:w-56"
+                    className="dark:bg-card h-11 bg-white sm:w-56"
                     aria-label="Competition season"
                   >
                     <SelectValue>
@@ -394,7 +402,7 @@ export function SwipeRankLeaderboard() {
               {data && (
                 <div className="text-muted-foreground flex flex-wrap items-center gap-x-2 gap-y-1 font-mono text-xs sm:text-sm">
                   {data.fieldSize !== null && (
-                    <span className="font-semibold text-slate-950">
+                    <span className="dark:text-foreground font-semibold text-slate-950">
                       {data.fieldSize.toLocaleString()} eligible
                     </span>
                   )}
@@ -424,8 +432,8 @@ export function SwipeRankLeaderboard() {
         )}
 
         {leaderboard.isError && (
-          <Card className="border-red-200">
-            <CardContent className="py-8 text-sm text-red-700">
+          <Card className="border-red-200 dark:border-red-800">
+            <CardContent className="py-8 text-sm text-red-700 dark:text-red-400">
               SwipeRank could not be loaded right now. Please try another period
               or refresh the page.
             </CardContent>
@@ -444,12 +452,12 @@ export function SwipeRankLeaderboard() {
         )}
 
         {data && (
-          <Card className="gap-0 overflow-hidden border-slate-300 py-0 shadow-sm">
+          <Card className="dark:border-border gap-0 overflow-hidden border-slate-300 py-0 shadow-sm">
             <CardHeader className="border-b border-slate-800 bg-slate-950 py-5 text-white">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1">
                   <CardTitle>{periodLabel} leaderboard</CardTitle>
-                  <CardDescription className="text-slate-400">
+                  <CardDescription className="dark:text-muted-foreground text-slate-400">
                     Exact rank throughout; rows are grouped by their share of
                     the eligible field.
                   </CardDescription>
@@ -477,7 +485,7 @@ export function SwipeRankLeaderboard() {
                   <div className="overflow-x-auto">
                     <Table className="min-w-[760px] lg:min-w-[1080px]">
                       <TableHeader>
-                        <TableRow className="bg-slate-50/80 hover:bg-slate-50/80">
+                        <TableRow className="dark:bg-background/80 dark:hover:bg-background/80 bg-slate-50/80 hover:bg-slate-50/80">
                           <TableHead className="w-36 px-7 font-mono text-[11px] tracking-[0.12em] uppercase">
                             Rank
                           </TableHead>
@@ -513,17 +521,17 @@ export function SwipeRankLeaderboard() {
                           return (
                             <Fragment key={entry.entryKey}>
                               {showBand && (
-                                <TableRow className="border-y bg-slate-50 hover:bg-slate-50">
+                                <TableRow className="dark:bg-background dark:hover:bg-background border-y bg-slate-50 hover:bg-slate-50">
                                   <TableCell
                                     colSpan={4}
                                     className="px-7 py-2 font-mono text-[11px] tracking-[0.12em] uppercase"
                                   >
-                                    <span className="font-bold text-slate-900">
+                                    <span className="dark:text-foreground font-bold text-slate-900">
                                       {band === 100
                                         ? "Full field"
                                         : `Top ${band}%`}
                                     </span>
-                                    <span className="ml-3 text-slate-400">
+                                    <span className="dark:text-muted-foreground ml-3 text-slate-400">
                                       up to{" "}
                                       {Math.min(
                                         data.fieldSize!,
@@ -539,19 +547,19 @@ export function SwipeRankLeaderboard() {
                                   </TableCell>
                                 </TableRow>
                               )}
-                              <TableRow className="group h-[96px] bg-white hover:bg-rose-50/30">
+                              <TableRow className="group dark:bg-card h-[96px] bg-white hover:bg-rose-50/30 dark:hover:bg-rose-950/30">
                                 <TableCell className="px-7">
                                   <div className="flex items-center">
                                     <span
                                       className={cn(
                                         "flex h-11 min-w-11 items-center justify-center rounded-xl border text-base font-bold tabular-nums",
                                         entry.rank === 1
-                                          ? "border-amber-300 bg-amber-50 text-amber-800"
+                                          ? "border-amber-300 bg-amber-50 text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
                                           : entry.rank === 2
-                                            ? "border-slate-300 bg-white text-slate-700"
+                                            ? "dark:border-border dark:bg-card dark:text-muted-foreground border-slate-300 bg-white text-slate-700"
                                             : entry.rank === 3
-                                              ? "border-orange-200 bg-orange-50 text-orange-800"
-                                              : "border-transparent bg-transparent text-slate-950",
+                                              ? "border-orange-200 bg-orange-50 text-orange-800 dark:border-orange-800 dark:bg-orange-950/40 dark:text-orange-200"
+                                              : "dark:text-foreground border-transparent bg-transparent text-slate-950",
                                       )}
                                     >
                                       {entry.rank <= 3
@@ -586,7 +594,7 @@ export function SwipeRankLeaderboard() {
                                         selected.kind,
                                       )}
                                     </p>
-                                    <p className="mt-1 text-xs text-slate-400">
+                                    <p className="dark:text-muted-foreground mt-1 text-xs text-slate-400">
                                       {entry.activeDays.toLocaleString()} active
                                       days in this season
                                     </p>
@@ -616,7 +624,7 @@ export function SwipeRankLeaderboard() {
                                       {entry.totalSwipes.toLocaleString()} total{" "}
                                       swipes
                                     </p>
-                                    <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100">
+                                    <div className="dark:bg-muted mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100">
                                       <div
                                         className="bg-primary h-full rounded-full"
                                         style={{ width: `${progress}%` }}
@@ -633,7 +641,7 @@ export function SwipeRankLeaderboard() {
                     </Table>
                   </div>
 
-                  <div className="flex flex-col gap-4 border-t bg-slate-50/60 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-7">
+                  <div className="dark:bg-background/60 flex flex-col gap-4 border-t bg-slate-50/60 px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-7">
                     <p className="text-muted-foreground max-w-3xl text-xs leading-5">
                       Profiles can recur across seasons. Profile details and
                       exact activity totals come from the uploaded Tinder
@@ -675,7 +683,7 @@ export function SwipeRankLeaderboard() {
           </Card>
         )}
 
-        <div className="text-muted-foreground flex gap-3 rounded-xl border bg-white p-4 text-sm leading-6">
+        <div className="text-muted-foreground dark:bg-card flex gap-3 rounded-xl border bg-white p-4 text-sm leading-6">
           <Info className="mt-1 h-4 w-4 shrink-0" />
           <p>
             SwipeRank compares observed activity in a self-selected collection

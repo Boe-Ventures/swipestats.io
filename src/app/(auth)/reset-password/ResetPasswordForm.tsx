@@ -69,10 +69,12 @@ export function ResetPasswordForm() {
   if (!token) {
     return (
       <div className="space-y-4 text-center">
-        <XCircle className="mx-auto h-16 w-16 text-red-600" />
+        <XCircle className="mx-auto h-16 w-16 text-red-600 dark:text-red-400" />
         <div className="space-y-2">
-          <h3 className="text-lg font-semibold text-gray-900">Invalid Link</h3>
-          <p className="text-gray-600">
+          <h3 className="dark:text-foreground text-lg font-semibold text-gray-900">
+            Invalid Link
+          </h3>
+          <p className="dark:text-muted-foreground text-gray-600">
             No reset token found. Please check your email for the correct link.
           </p>
         </div>
@@ -89,15 +91,15 @@ export function ResetPasswordForm() {
   if (success) {
     return (
       <div className="space-y-4 text-center">
-        <CheckCircle2 className="mx-auto h-16 w-16 text-green-600" />
+        <CheckCircle2 className="mx-auto h-16 w-16 text-green-600 dark:text-green-400" />
         <div className="space-y-2">
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className="dark:text-foreground text-lg font-semibold text-gray-900">
             Password Reset!
           </h3>
-          <p className="text-gray-600">
+          <p className="dark:text-muted-foreground text-gray-600">
             Your password has been successfully reset.
           </p>
-          <p className="text-sm text-gray-500">
+          <p className="dark:text-muted-foreground text-sm text-gray-500">
             Redirecting to sign in page...
           </p>
         </div>
@@ -126,7 +128,9 @@ export function ResetPasswordForm() {
             minLength={8}
             disabled={isLoading}
           />
-          <p className="text-xs text-gray-500">At least 8 characters</p>
+          <p className="dark:text-muted-foreground text-xs text-gray-500">
+            At least 8 characters
+          </p>
         </Field>
 
         <Field>

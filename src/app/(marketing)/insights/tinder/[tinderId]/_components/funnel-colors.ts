@@ -118,9 +118,9 @@ export const neutralLightModeColors: FunnelColors = {
   textTitle: "oklch(0.141 0.005 285.823)", // --foreground
   textNumber: "oklch(0.141 0.005 285.823)", // --foreground
   textLabel: "oklch(0.552 0.016 285.938)", // --muted-foreground
-  textLabelOpacity: 0.9,
+  textLabelOpacity: 1,
   textDropout: "oklch(0.552 0.016 285.938)", // --muted-foreground
-  textDropoutOpacity: 0.6,
+  textDropoutOpacity: 0.9,
   textFooter: "oklch(0.552 0.016 285.938)", // --muted-foreground
   textFooterOpacity: 0.7,
 };

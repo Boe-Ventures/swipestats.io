@@ -30,16 +30,20 @@ function StatCard({ title, value, icon: Icon, description }: StatCardProps) {
   return (
     <Card>
       <CardContent className="flex items-center gap-4 p-6">
-        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100">
-          <Icon className="h-6 w-6 text-blue-600" />
+        <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-950/40">
+          <Icon className="h-6 w-6 text-blue-600 dark:text-blue-400" />
         </div>
         <div className="flex-1">
-          <p className="text-sm font-medium text-gray-600">{title}</p>
-          <p className="text-2xl font-bold text-gray-900">
+          <p className="dark:text-muted-foreground text-sm font-medium text-gray-600">
+            {title}
+          </p>
+          <p className="dark:text-foreground text-2xl font-bold text-gray-900">
             {typeof value === "number" ? value.toLocaleString() : value}
           </p>
           {description && (
-            <p className="mt-1 text-xs text-gray-500">{description}</p>
+            <p className="dark:text-muted-foreground mt-1 text-xs text-gray-500">
+              {description}
+            </p>
           )}
         </div>
       </CardContent>
@@ -50,15 +54,11 @@ function StatCard({ title, value, icon: Icon, description }: StatCardProps) {
 export function GlobalStats({ stats }: GlobalStatsProps) {
   return (
     <div>
-      <h2 className="mb-4 text-xl font-semibold text-gray-900">
+      <h2 className="dark:text-foreground mb-4 text-xl font-semibold text-gray-900">
         Global Statistics
       </h2>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        <StatCard
-          title="Users"
-          value={stats.totalUsers}
-          icon={Users}
-        />
+        <StatCard title="Users" value={stats.totalUsers} icon={Users} />
         <StatCard
           title="Tinder Profiles"
           value={stats.totalTinderProfiles}
@@ -69,16 +69,8 @@ export function GlobalStats({ stats }: GlobalStatsProps) {
           value={stats.totalHingeProfiles}
           icon={UserCircle}
         />
-        <StatCard
-          title="Media"
-          value={stats.totalMedia}
-          icon={Image}
-        />
-        <StatCard
-          title="Matches"
-          value={stats.totalMatches}
-          icon={Users2}
-        />
+        <StatCard title="Media" value={stats.totalMedia} icon={Image} />
+        <StatCard title="Matches" value={stats.totalMatches} icon={Users2} />
         <StatCard
           title="Messages"
           value={stats.totalMessages}

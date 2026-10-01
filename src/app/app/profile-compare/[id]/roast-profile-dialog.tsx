@@ -826,7 +826,7 @@ function HeroCard({
       <div className="mb-4 flex items-center gap-2">
         <HeroLensAvatar lens={lensMeta} />
         <div className="min-w-0">
-          <p className="text-[11px] font-semibold tracking-widest text-zinc-400 uppercase">
+          <p className="dark:text-muted-foreground text-[11px] font-semibold tracking-widest text-zinc-400 uppercase">
             Rubric by
           </p>
           <p className="truncate text-sm font-semibold">
@@ -840,16 +840,22 @@ function HeroCard({
                 <span className="truncate">
                   {lensMeta.creatorName}
                   {lensMeta.handle ? (
-                    <span className="text-zinc-400"> · {lensMeta.handle}</span>
+                    <span className="dark:text-muted-foreground text-zinc-400">
+                      {" "}
+                      · {lensMeta.handle}
+                    </span>
                   ) : null}
                 </span>
-                <ExternalLink className="h-3 w-3 shrink-0 text-zinc-400" />
+                <ExternalLink className="dark:text-muted-foreground h-3 w-3 shrink-0 text-zinc-400" />
               </a>
             ) : (
               <>
                 {lensMeta.creatorName}
                 {lensMeta.handle ? (
-                  <span className="text-zinc-400"> · {lensMeta.handle}</span>
+                  <span className="dark:text-muted-foreground text-zinc-400">
+                    {" "}
+                    · {lensMeta.handle}
+                  </span>
                 ) : null}
               </>
             )}

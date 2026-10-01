@@ -666,7 +666,7 @@ export function AddContentDialog({
                           "absolute top-2 right-2 z-[3] grid h-6 w-6 place-items-center rounded-full border-[1.5px] backdrop-blur transition",
                           isSelected
                             ? "border-primary bg-primary"
-                            : "border-white/90 bg-white/85",
+                            : "dark:bg-card/85 border-white/90 bg-white/85",
                         )}
                       >
                         <Check

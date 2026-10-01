@@ -15,7 +15,7 @@ import { ActionCard } from "./ActionCard";
 export function QuickActions() {
   return (
     <div>
-      <h2 className="mb-4 text-xl font-semibold text-gray-900">
+      <h2 className="dark:text-foreground mb-4 text-xl font-semibold text-gray-900">
         Quick Actions
       </h2>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -89,7 +89,7 @@ export function QuickActions() {
           disabled
         />
       </div>
-      <p className="mt-4 text-sm text-gray-500">
+      <p className="dark:text-muted-foreground mt-4 text-sm text-gray-500">
         Additional admin features coming soon
       </p>
     </div>

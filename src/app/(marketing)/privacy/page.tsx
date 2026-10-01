@@ -17,10 +17,10 @@ export default function PrivacyPage() {
     <div>
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="relative mx-auto max-w-[37.5rem] pt-20 pb-24 text-center">
-          <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">
+          <h1 className="dark:text-foreground text-4xl font-extrabold tracking-tight text-slate-900 sm:text-5xl">
             Privacy Policy
           </h1>
-          <p className="mt-4 text-base leading-7 text-slate-600">
+          <p className="dark:text-muted-foreground mt-4 text-base leading-7 text-slate-600">
             Last updated July 2026
           </p>
         </div>
@@ -966,7 +966,7 @@ export default function PrivacyPage() {
         </p>
         <p>We aim to respond to all inquiries within 5 business days.</p>
 
-        <p className="mt-8 text-sm text-gray-600">
+        <p className="dark:text-muted-foreground mt-8 text-sm text-gray-600">
           This Privacy Policy was last updated in July 2026.
         </p>
       </div>

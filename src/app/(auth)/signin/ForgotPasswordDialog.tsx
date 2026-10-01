@@ -75,12 +75,12 @@ export function ForgotPasswordDialog({
 
         {success ? (
           <div className="space-y-4 text-center">
-            <CheckCircle2 className="mx-auto h-12 w-12 text-green-600" />
+            <CheckCircle2 className="mx-auto h-12 w-12 text-green-600 dark:text-green-400" />
             <div className="space-y-2">
-              <h3 className="text-lg font-semibold text-gray-900">
+              <h3 className="dark:text-foreground text-lg font-semibold text-gray-900">
                 Check your email
               </h3>
-              <p className="text-sm text-gray-600">
+              <p className="dark:text-muted-foreground text-sm text-gray-600">
                 We&apos;ve sent a password reset link to{" "}
                 <strong>{email}</strong>
               </p>

@@ -175,7 +175,7 @@ export default function OgPreviewPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">OG Image Preview</h1>
-        <p className="text-gray-600">
+        <p className="dark:text-muted-foreground text-gray-600">
           Iterate on the /api/og route. Live-reloads as you type.
         </p>
       </div>
@@ -266,7 +266,7 @@ export default function OgPreviewPage() {
                       onChange={(e) => setScreenshot(e.target.value)}
                       placeholder="/SwipeStats-og.png or URL"
                     />
-                    <p className="text-xs text-gray-500">
+                    <p className="dark:text-muted-foreground text-xs text-gray-500">
                       Public path or full URL. Leave empty for text-only.
                     </p>
                   </div>
@@ -339,7 +339,7 @@ export default function OgPreviewPage() {
                     height={630}
                   />
                 </div>
-                <p className="mt-3 text-xs text-gray-500">
+                <p className="dark:text-muted-foreground mt-3 text-xs text-gray-500">
                   Rendered at native 1200×630. Different platforms crop
                   differently.
                 </p>
@@ -401,7 +401,7 @@ function OgWall() {
                     <p className="truncate text-sm font-medium">
                       {preset.label}
                     </p>
-                    <p className="truncate text-xs text-gray-500">
+                    <p className="dark:text-muted-foreground truncate text-xs text-gray-500">
                       {preset.variant}
                     </p>
                   </div>

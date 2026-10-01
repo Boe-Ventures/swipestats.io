@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { withInternalUtm } from "@/lib/cta-links";
 import { Map, Users } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,14 +32,24 @@ export function DirectoryCtaCard() {
 
         {/* Actions */}
         <div className="mt-auto flex items-center gap-x-4 pt-2">
-          <Link href="/directory">
+          <Link
+            href={withInternalUtm("/directory", {
+              medium: "insights_directory_card",
+              campaign: "directory_exploration",
+              content: "browse_profiles",
+            })}
+          >
             <Button>
               <Users className="mr-2 h-4 w-4" />
               Browse Profiles
             </Button>
           </Link>
           <Link
-            href="/directory?view=map"
+            href={withInternalUtm("/directory?view=map", {
+              medium: "insights_directory_card",
+              campaign: "directory_exploration",
+              content: "view_map",
+            })}
             className="text-sm leading-6 font-semibold hover:underline"
           >
             View Map <span aria-hidden="true">→</span>

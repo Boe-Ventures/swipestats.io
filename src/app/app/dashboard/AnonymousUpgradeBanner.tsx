@@ -14,9 +14,9 @@ export function AnonymousUpgradeBanner() {
   if (dismissed || !session?.user?.isAnonymous) return null;
 
   return (
-    <div className="border-b border-gray-200 bg-white px-6 py-2.5 sm:px-3.5">
+    <div className="dark:border-border dark:bg-card border-b border-gray-200 bg-white px-6 py-2.5 sm:px-3.5">
       <div className="relative mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-4 gap-y-2">
-        <p className="text-center text-[13px] leading-6 text-gray-700">
+        <p className="dark:text-muted-foreground text-center text-[13px] leading-6 text-gray-700">
           <strong className="font-semibold">Create a free account</strong>
           <svg
             viewBox="0 0 2 2"
@@ -39,7 +39,10 @@ export function AnonymousUpgradeBanner() {
           className="absolute right-4 p-2 focus-visible:-outline-offset-4"
         >
           <span className="sr-only">Dismiss</span>
-          <XMarkIcon aria-hidden="true" className="size-4 text-gray-500" />
+          <XMarkIcon
+            aria-hidden="true"
+            className="dark:text-muted-foreground size-4 text-gray-500"
+          />
         </button>
       </div>
 

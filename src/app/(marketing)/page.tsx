@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { withInternalUtm } from "@/lib/cta-links";
 import Image from "next/image";
 import { Figtree } from "next/font/google";
 import {
@@ -63,7 +64,7 @@ export const metadata: Metadata = {
 };
 
 const HOW_TO = "/how-to-request-your-data";
-const UPLOAD = "/upload";
+const UPLOAD = "/upload?provider=tinder";
 const HOMI_LANDING =
   "https://www.homi.so/?utm_source=swipestats&utm_medium=homepage_about&utm_campaign=creator_crosspromo";
 const HOMI_STORY =
@@ -102,29 +103,37 @@ function Hero() {
           </Eyebrow>
           {/* Backup: render <HeroHeadlineRotating /> here for the rotating
               Tinder/Hinge/Bumble typewriter variant (_components/HeroHeadlineRotating). */}
-          <h1 className="mt-5 text-[clamp(40px,6vw,68px)] leading-[1.02] font-bold tracking-[-0.035em] text-balance text-gray-900">
+          <h1 className="dark:text-foreground mt-5 text-[clamp(40px,6vw,68px)] leading-[1.02] font-bold tracking-[-0.035em] text-balance text-gray-900">
             Your dating data, finally visualized.
           </h1>
-          <p className="mx-auto mt-[22px] max-w-[600px] text-[clamp(17px,2vw,20px)] leading-[1.6] text-gray-600">
+          <p className="dark:text-muted-foreground mx-auto mt-[22px] max-w-[600px] text-[clamp(17px,2vw,20px)] leading-[1.6] text-gray-600">
             Every swipe, match, and message, turned into charts and ranked
             against 12,000+ anonymous profiles.
           </p>
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3.5">
             <Link
-              href={UPLOAD}
+              href={withInternalUtm(UPLOAD, {
+                medium: "homepage_hero",
+                campaign: "upload_data",
+                content: "upload",
+              })}
               className={marketingButton({ variant: "primary", size: "lg" })}
             >
               Upload data
               <ArrowUpTrayIcon className="h-4 w-4" />
             </Link>
             <Link
-              href={HOW_TO}
+              href={withInternalUtm(HOW_TO, {
+                medium: "homepage_hero",
+                campaign: "upload_data",
+                content: "request_instructions",
+              })}
               className={marketingButton({ variant: "ghost", size: "lg" })}
             >
               How to request your data →
             </Link>
           </div>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-[13.5px] font-medium text-gray-600">
+          <div className="dark:text-muted-foreground mt-6 flex flex-wrap items-center justify-center gap-x-3 gap-y-2 text-[13.5px] font-medium text-gray-600">
             <span>Free to upload</span>
             <span className="h-1 w-1 rounded-full bg-gray-300" />
             <span>100% anonymous</span>
@@ -137,8 +146,8 @@ function Hero() {
 
         {/* the real, richer insights showcase, framed as the live demo */}
         <div className="mt-12">
-          <div className="mx-auto max-w-[1120px] rounded-3xl border border-gray-200 bg-gray-50 p-4 shadow-[0_8px_24px_oklch(0.2_0.02_286/0.08),0_18px_44px_oklch(0.2_0.02_286/0.1)] sm:p-6 [&_[data-slot=card]]:border-gray-200/70 [&_[data-slot=card]]:shadow-none!">
-            <p className="mb-3 flex items-center justify-center gap-2 text-center text-[12.5px] font-semibold text-gray-600">
+          <div className="dark:border-border dark:bg-background dark:[&_[data-slot=card]]:border-border/70 mx-auto max-w-[1120px] rounded-3xl border border-gray-200 bg-gray-50 p-4 shadow-[0_8px_24px_oklch(0.2_0.02_286/0.08),0_18px_44px_oklch(0.2_0.02_286/0.1)] sm:p-6 [&_[data-slot=card]]:border-gray-200/70 [&_[data-slot=card]]:shadow-none!">
+            <p className="dark:text-muted-foreground mb-3 flex items-center justify-center gap-2 text-center text-[12.5px] font-semibold text-gray-600">
               <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
               <span className="sm:hidden">Real data. Explore the demo.</span>
               <span className="hidden sm:inline">
@@ -152,11 +161,15 @@ function Hero() {
 
         <div className="mt-8 text-center">
           <Link
-            href={UPLOAD}
-            className="inline-flex items-center gap-1.5 text-[15px] font-semibold text-gray-900 hover:text-rose-600"
+            href={withInternalUtm(UPLOAD, {
+              medium: "homepage_demo",
+              campaign: "upload_data",
+              content: "upload",
+            })}
+            className="dark:text-foreground inline-flex items-center gap-1.5 text-[15px] font-semibold text-gray-900 hover:text-rose-600 dark:hover:text-rose-400"
           >
             Get your own SwipeStats
-            <span className="text-rose-600">→</span>
+            <span className="text-rose-600 dark:text-rose-400">→</span>
           </Link>
         </div>
       </div>
@@ -174,16 +187,16 @@ function LogoStrip() {
     "Open source",
   ];
   return (
-    <section className="mt-10 border-y border-gray-200 bg-gray-50 py-14">
+    <section className="dark:border-border dark:bg-background mt-10 border-y border-gray-200 bg-gray-50 py-14">
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
-        <p className="mb-7 text-center font-mono text-[12px] tracking-[0.08em] text-gray-500 uppercase">
+        <p className="dark:text-muted-foreground mb-7 text-center font-mono text-[12px] tracking-[0.08em] text-gray-500 uppercase">
           Featured in research, journalism &amp; 965k+ views of content
         </p>
         <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-3">
           {items.map((label) => (
             <span
               key={label}
-              className="text-[14.5px] font-semibold text-gray-500"
+              className="dark:text-muted-foreground text-[14.5px] font-semibold text-gray-500"
             >
               {label}
             </span>
@@ -234,13 +247,13 @@ function HowItWorks() {
               key={s.title}
               className="flex flex-col items-center text-center"
             >
-              <div className="grid h-[46px] w-[46px] place-items-center rounded-xl border border-rose-600/15 bg-rose-50 font-mono text-[17px] font-semibold text-rose-600">
+              <div className="grid h-[46px] w-[46px] place-items-center rounded-xl border border-rose-600/15 bg-rose-50 font-mono text-[17px] font-semibold text-rose-600 dark:bg-rose-950/40 dark:text-rose-400">
                 {i + 1}
               </div>
-              <h3 className="mt-[18px] text-[17px] font-bold tracking-[-0.02em] text-gray-900">
+              <h3 className="dark:text-foreground mt-[18px] text-[17px] font-bold tracking-[-0.02em] text-gray-900">
                 {s.title}
               </h3>
-              <p className="mt-2 text-[14px] leading-[1.6] text-gray-600">
+              <p className="dark:text-muted-foreground mt-2 text-[14px] leading-[1.6] text-gray-600">
                 {s.body}
               </p>
             </div>
@@ -314,7 +327,7 @@ function Faq() {
 
 function Press() {
   return (
-    <section className="border-b border-gray-200 bg-gray-50 py-[88px] max-[720px]:py-[60px]">
+    <section className="dark:border-border dark:bg-background border-b border-gray-200 bg-gray-50 py-[88px] max-[720px]:py-[60px]">
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
         <SectionHead
           center
@@ -329,9 +342,9 @@ function Press() {
               href={post.href}
               target="_blank"
               rel="noopener noreferrer"
-              className="group flex flex-col overflow-hidden rounded-3xl border border-gray-200 bg-white transition hover:-translate-y-0.5 hover:shadow-[0_2px_6px_oklch(0.2_0.02_286/0.05),0_12px_28px_oklch(0.2_0.02_286/0.08)]"
+              className="group dark:border-border dark:bg-card flex flex-col overflow-hidden rounded-3xl border border-gray-200 bg-white transition hover:-translate-y-0.5 hover:shadow-[0_2px_6px_oklch(0.2_0.02_286/0.05),0_12px_28px_oklch(0.2_0.02_286/0.08)]"
             >
-              <div className="relative h-44 overflow-hidden border-b border-gray-200 bg-gray-100">
+              <div className="dark:border-border dark:bg-muted relative h-44 overflow-hidden border-b border-gray-200 bg-gray-100">
                 <Image
                   src={post.imageUrl}
                   alt={post.title}
@@ -341,14 +354,14 @@ function Press() {
                 />
               </div>
               <div className="flex flex-1 flex-col p-6">
-                <span className="font-mono text-[11px] tracking-[0.05em] text-rose-600 uppercase">
+                <span className="font-mono text-[11px] tracking-[0.05em] text-rose-600 uppercase dark:text-rose-400">
                   {post.category.title}
                 </span>
-                <h3 className="mt-2.5 text-[16.5px] leading-[1.3] font-bold tracking-[-0.01em] text-gray-900">
+                <h3 className="dark:text-foreground mt-2.5 text-[16.5px] leading-[1.3] font-bold tracking-[-0.01em] text-gray-900">
                   {post.title}
                 </h3>
-                <div className="mt-auto flex items-center gap-2 pt-5 text-[12.5px] text-gray-500">
-                  <span className="font-medium text-gray-700">
+                <div className="dark:text-muted-foreground mt-auto flex items-center gap-2 pt-5 text-[12.5px] text-gray-500">
+                  <span className="dark:text-muted-foreground font-medium text-gray-700">
                     {post.author.name}
                   </span>
                   <span className="h-[3px] w-[3px] rounded-full bg-gray-300" />
@@ -406,17 +419,21 @@ function Research() {
         <div className="grid grid-cols-1 items-center gap-8 md:grid-cols-[1fr_auto]">
           <div>
             <Eyebrow>For researchers &amp; creators</Eyebrow>
-            <h2 className="mt-3.5 text-[clamp(30px,4vw,46px)] leading-[1.06] font-bold tracking-[-0.03em] text-balance text-gray-900">
+            <h2 className="dark:text-foreground mt-3.5 text-[clamp(30px,4vw,46px)] leading-[1.06] font-bold tracking-[-0.03em] text-balance text-gray-900">
               12,000+ anonymized profiles, ready to analyze
             </h2>
-            <p className="mt-4 max-w-[560px] text-[clamp(17px,2vw,20px)] leading-[1.6] text-gray-600">
+            <p className="dark:text-muted-foreground mt-4 max-w-[560px] text-[clamp(17px,2vw,20px)] leading-[1.6] text-gray-600">
               The same data, aggregated and anonymized into a licensable dataset
               for research, journalism, and content. Used by University of
               Chicago, APA, and creators with 965k+ views.
             </p>
           </div>
           <Link
-            href="/research"
+            href={withInternalUtm("/research", {
+              medium: "homepage_research",
+              campaign: "research_datasets",
+              content: "explore",
+            })}
             className={cn(
               marketingButton({ variant: "primary", size: "lg" }),
               "whitespace-nowrap",
@@ -432,46 +449,50 @@ function Research() {
             <div
               key={tier.name}
               className={cn(
-                "flex flex-col rounded-3xl border bg-white p-7",
+                "dark:bg-card flex flex-col rounded-3xl border bg-white p-7",
                 tier.popular
                   ? "border-2 border-rose-600 shadow-[0_2px_6px_oklch(0.2_0.02_286/0.05),0_12px_28px_oklch(0.2_0.02_286/0.08)]"
-                  : "border-gray-200",
+                  : "dark:border-border border-gray-200",
               )}
             >
               <div className="flex items-center justify-between gap-2.5">
                 <span
                   className={cn(
                     "text-[17px] font-bold",
-                    tier.popular && "text-rose-600",
+                    tier.popular && "text-rose-600 dark:text-rose-400",
                   )}
                 >
                   {tier.name}
                 </span>
                 {tier.popular && (
-                  <span className="inline-flex items-center rounded-full border border-rose-600/20 bg-rose-50 px-3 py-1 text-[13px] font-semibold text-rose-700">
+                  <span className="inline-flex items-center rounded-full border border-rose-600/20 bg-rose-50 px-3 py-1 text-[13px] font-semibold text-rose-700 dark:bg-rose-950/40 dark:text-rose-400">
                     Most popular
                   </span>
                 )}
               </div>
-              <p className="mt-2 min-h-[38px] text-[13.5px] text-gray-500">
+              <p className="dark:text-muted-foreground mt-2 min-h-[38px] text-[13.5px] text-gray-500">
                 {tier.desc}
               </p>
-              <div className="mt-[18px] text-[38px] font-bold tracking-[-0.03em] text-gray-900 tabular-nums">
+              <div className="dark:text-foreground mt-[18px] text-[38px] font-bold tracking-[-0.03em] text-gray-900 tabular-nums">
                 {tier.price}
               </div>
               <ul className="mt-5 flex flex-1 flex-col gap-[11px]">
                 {tier.features.map((f) => (
                   <li
                     key={f}
-                    className="flex gap-2.5 text-[14px] text-gray-700"
+                    className="dark:text-muted-foreground flex gap-2.5 text-[14px] text-gray-700"
                   >
-                    <CheckIcon className="mt-px h-[18px] w-[18px] flex-none text-rose-600" />
+                    <CheckIcon className="mt-px h-[18px] w-[18px] flex-none text-rose-600 dark:text-rose-400" />
                     {f}
                   </li>
                 ))}
               </ul>
               <Link
-                href="/research#pricing"
+                href={withInternalUtm("/research#pricing", {
+                  medium: "homepage_research",
+                  campaign: "research_datasets",
+                  content: "pricing",
+                })}
                 className={cn(
                   "mt-6 w-full",
                   marketingButton({
@@ -484,12 +505,12 @@ function Research() {
             </div>
           ))}
         </div>
-        <div className="mt-8 flex flex-col items-center justify-between gap-4 rounded-2xl border border-gray-200 bg-white px-7 py-5 text-center sm:flex-row sm:text-left">
+        <div className="dark:border-border dark:bg-card mt-8 flex flex-col items-center justify-between gap-4 rounded-2xl border border-gray-200 bg-white px-7 py-5 text-center sm:flex-row sm:text-left">
           <div>
-            <div className="text-[15px] font-bold text-gray-900">
+            <div className="dark:text-foreground text-[15px] font-bold text-gray-900">
               Curious about the data model?
             </div>
-            <div className="mt-1 text-[13.5px] text-gray-600">
+            <div className="dark:text-muted-foreground mt-1 text-[13.5px] text-gray-600">
               Download one demo profile for free, or explore the open-source
               code.
             </div>
@@ -506,7 +527,7 @@ function Research() {
               href="https://github.com/Boe-Ventures/swipestats.io"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[14px] font-semibold text-rose-600 hover:text-rose-700"
+              className="text-[14px] font-semibold text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-400"
             >
               Explore the code →
             </a>
@@ -544,14 +565,22 @@ function FinalCta() {
           actions={
             <>
               <Link
-                href={UPLOAD}
+                href={withInternalUtm(UPLOAD, {
+                  medium: "homepage_final",
+                  campaign: "upload_data",
+                  content: "upload",
+                })}
                 className={marketingButton({ variant: "primary", size: "lg" })}
               >
                 Upload data
                 <ArrowDownTrayIcon className="h-4 w-4" />
               </Link>
               <Link
-                href={HOW_TO}
+                href={withInternalUtm(HOW_TO, {
+                  medium: "homepage_final",
+                  campaign: "upload_data",
+                  content: "request_instructions",
+                })}
                 className={marketingButton({ variant: "white", size: "lg" })}
               >
                 How to request your data
@@ -634,7 +663,7 @@ function DataRequestBand() {
             <h2 className="mx-auto mt-3.5 max-w-[620px] text-[clamp(30px,4vw,46px)] leading-[1.06] font-bold tracking-[-0.03em] text-balance text-white">
               How to request your data
             </h2>
-            <p className="mx-auto mt-4 max-w-[560px] text-[clamp(17px,2vw,20px)] leading-[1.6] text-gray-400">
+            <p className="dark:text-muted-foreground mx-auto mt-4 max-w-[560px] text-[clamp(17px,2vw,20px)] leading-[1.6] text-gray-400">
               Requesting your data is easy, but not automatic. You log into your
               app, fill out a quick form, and wait up to 24 hours. Here&apos;s
               where to start for each app.
@@ -655,7 +684,7 @@ function DataRequestBand() {
           {dataRequestProviders.map((p) => (
             <div
               key={p.name}
-              className="flex flex-col rounded-2xl border border-gray-200 bg-white shadow-[0_10px_30px_oklch(0.2_0.02_286/0.1),0_30px_60px_oklch(0.2_0.02_286/0.12)]"
+              className="dark:border-border dark:bg-card flex flex-col rounded-2xl border border-gray-200 bg-white shadow-[0_10px_30px_oklch(0.2_0.02_286/0.1),0_30px_60px_oklch(0.2_0.02_286/0.12)]"
             >
               <div className="relative flex-1 px-7 pt-14 pb-7">
                 <span
@@ -676,19 +705,19 @@ function DataRequestBand() {
                     <p.Mark className="h-7 w-7" />
                   )}
                 </span>
-                <h3 className="text-[19px] font-bold tracking-[-0.02em] text-gray-900">
+                <h3 className="dark:text-foreground text-[19px] font-bold tracking-[-0.02em] text-gray-900">
                   {p.name}
                 </h3>
-                <p className="mt-3 text-[14px] leading-[1.6] text-gray-600">
+                <p className="dark:text-muted-foreground mt-3 text-[14px] leading-[1.6] text-gray-600">
                   {p.desc}
                 </p>
               </div>
-              <div className="rounded-b-2xl border-t border-gray-200 bg-gray-50 px-7 py-4">
+              <div className="dark:border-border dark:bg-background rounded-b-2xl border-t border-gray-200 bg-gray-50 px-7 py-4">
                 <a
                   href={p.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[14px] font-semibold text-rose-600 hover:text-rose-700"
+                  className="text-[14px] font-semibold text-rose-600 hover:text-rose-700 dark:text-rose-400 dark:hover:text-rose-400"
                 >
                   Start here →
                 </a>
@@ -763,9 +792,9 @@ function TestimonialsMasonry() {
           {masonryTestimonials.map((t) => (
             <figure
               key={t.loc}
-              className="rounded-2xl border border-gray-200 bg-white p-6 shadow-xs"
+              className="dark:border-border dark:bg-card rounded-2xl border border-gray-200 bg-white p-6 shadow-xs"
             >
-              <blockquote className="text-[14.5px] leading-[1.7] text-gray-700">
+              <blockquote className="dark:text-muted-foreground text-[14.5px] leading-[1.7] text-gray-700">
                 &ldquo;{t.body}&rdquo;
               </blockquote>
               <figcaption className="mt-5 flex items-center gap-3">
@@ -774,13 +803,13 @@ function TestimonialsMasonry() {
                   alt={t.name}
                   width={36}
                   height={36}
-                  className="h-9 w-9 flex-none rounded-full bg-gray-100 object-cover ring-1 ring-gray-200"
+                  className="dark:bg-muted dark:ring-border h-9 w-9 flex-none rounded-full bg-gray-100 object-cover ring-1 ring-gray-200"
                 />
                 <span>
-                  <span className="block text-[13.5px] font-semibold text-gray-900">
+                  <span className="dark:text-foreground block text-[13.5px] font-semibold text-gray-900">
                     {t.name}
                   </span>
-                  <span className="block text-[12.5px] text-gray-500">
+                  <span className="dark:text-muted-foreground block text-[12.5px] text-gray-500">
                     {t.loc}
                   </span>
                 </span>
@@ -797,7 +826,7 @@ function TestimonialsMasonry() {
 
 function AboutImage() {
   return (
-    <section className="border-y border-gray-200 bg-gray-50 py-[88px] max-[720px]:py-[60px]">
+    <section className="dark:border-border dark:bg-background border-y border-gray-200 bg-gray-50 py-[88px] max-[720px]:py-[60px]">
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
         <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-2 lg:gap-14">
           {/* founder image + quote card */}
@@ -819,7 +848,7 @@ function AboutImage() {
               </blockquote>
               <figcaption className="mt-5">
                 <div className="font-bold text-white">Kristian Elset Bø</div>
-                <div className="mt-0.5 text-[14px] text-gray-400">
+                <div className="dark:text-muted-foreground mt-0.5 text-[14px] text-gray-400">
                   Founder of SwipeStats.io
                 </div>
               </figcaption>
@@ -829,15 +858,15 @@ function AboutImage() {
           {/* about copy */}
           <div>
             <Eyebrow>About SwipeStats</Eyebrow>
-            <h2 className="mt-3.5 text-[clamp(30px,4vw,46px)] leading-[1.06] font-bold tracking-[-0.03em] text-balance text-gray-900">
+            <h2 className="dark:text-foreground mt-3.5 text-[clamp(30px,4vw,46px)] leading-[1.06] font-bold tracking-[-0.03em] text-balance text-gray-900">
               Empowering insight through data
             </h2>
-            <p className="mt-5 text-[clamp(17px,2vw,20px)] leading-[1.6] text-gray-600">
+            <p className="dark:text-muted-foreground mt-5 text-[clamp(17px,2vw,20px)] leading-[1.6] text-gray-600">
               We believe in the power of data to reveal insights and inspire
               improvement. SwipeStats lets you visualize and understand your own
               dating trends, and compare them with demographics worldwide.
             </p>
-            <p className="mt-4 text-[16px] leading-[1.7] text-gray-600">
+            <p className="dark:text-muted-foreground mt-4 text-[16px] leading-[1.7] text-gray-600">
               It&apos;s fully open source, built on transparency and community.
               Anyone can inspect the code, contribute, and help shape the future
               of data-driven dating insights.
@@ -847,13 +876,13 @@ function AboutImage() {
         <div
           className={cn(
             homiFigtree.className,
-            "relative mt-10 overflow-hidden rounded-[28px] border border-[#B8D9FF] bg-[#F7FBFF] p-5 shadow-[0_16px_42px_oklch(0.45_0.13_255/0.16)] sm:p-6 lg:p-7",
+            "dark:bg-card relative mt-10 overflow-hidden rounded-[28px] border border-[#B8D9FF] bg-[#F7FBFF] p-5 shadow-[0_16px_42px_oklch(0.45_0.13_255/0.16)] sm:p-6 lg:p-7 dark:border-blue-900",
           )}
         >
-          <div className="absolute inset-0 bg-[linear-gradient(120deg,#EAF4FF_0%,#FFFFFF_42%,#F3F9FF_100%)]" />
+          <div className="absolute inset-0 bg-[linear-gradient(120deg,#EAF4FF_0%,#FFFFFF_42%,#F3F9FF_100%)] dark:bg-none" />
           <div className="relative grid gap-7 lg:grid-cols-[minmax(0,1fr)_430px] lg:items-center">
             <div className="max-w-[640px]">
-              <div className="inline-flex items-center gap-3 rounded-full border border-[#CFE3FF] bg-white px-3 py-2 shadow-sm">
+              <div className="dark:bg-card inline-flex items-center gap-3 rounded-full border border-[#CFE3FF] bg-white px-3 py-2 shadow-sm dark:border-blue-900">
                 <Image
                   src="/images/cross-promo/homi-logo.svg"
                   alt=""
@@ -861,27 +890,27 @@ function AboutImage() {
                   height={28}
                   className="h-7 w-7"
                 />
-                <span className="text-[13px] font-semibold text-[#2C7FFF]">
+                <span className="text-[13px] font-semibold text-[#2C7FFF] dark:text-blue-400">
                   From Boe Ventures
                 </span>
               </div>
-              <h3 className="mt-5 max-w-[620px] text-[clamp(30px,4vw,44px)] leading-[1.05] font-semibold text-balance text-[#102A43]">
+              <h3 className="dark:text-foreground mt-5 max-w-[620px] text-[clamp(30px,4vw,44px)] leading-[1.05] font-semibold text-balance text-[#102A43]">
                 House hunting, but with a memory.
               </h3>
-              <p className="mt-4 max-w-[600px] text-[16px] leading-[1.75] text-[#365B7D]">
+              <p className="dark:text-muted-foreground mt-4 max-w-[600px] text-[16px] leading-[1.75] text-[#365B7D]">
                 If SwipeStats helps you make sense of dating data, Homi brings
                 the same clarity to finding a place to live. Save listings,
                 compare tradeoffs, and keep everyone&apos;s notes in one calm
                 workspace.
               </p>
-              <div className="mt-5 flex flex-wrap gap-2 text-[12px] font-semibold text-[#184B7A]">
-                <span className="rounded-full bg-white px-3 py-1.5 ring-1 ring-[#CFE3FF]">
+              <div className="mt-5 flex flex-wrap gap-2 text-[12px] font-semibold text-[#184B7A] dark:text-blue-200">
+                <span className="dark:bg-card rounded-full bg-white px-3 py-1.5 ring-1 ring-[#CFE3FF] dark:ring-blue-900">
                   Saved Listings
                 </span>
-                <span className="rounded-full bg-white px-3 py-1.5 ring-1 ring-[#CFE3FF]">
+                <span className="dark:bg-card rounded-full bg-white px-3 py-1.5 ring-1 ring-[#CFE3FF] dark:ring-blue-900">
                   Family Notes
                 </span>
-                <span className="rounded-full bg-white px-3 py-1.5 ring-1 ring-[#CFE3FF]">
+                <span className="dark:bg-card rounded-full bg-white px-3 py-1.5 ring-1 ring-[#CFE3FF] dark:ring-blue-900">
                   Agent Context
                 </span>
               </div>
@@ -898,14 +927,14 @@ function AboutImage() {
                   href={HOMI_STORY}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center justify-center rounded-[10px] border border-[#B8D9FF] bg-white px-[18px] py-[11px] text-[15px] font-semibold whitespace-nowrap text-[#184B7A] shadow-sm transition hover:-translate-y-px hover:border-[#7AB7FF]"
+                  className="dark:bg-card inline-flex items-center justify-center rounded-[10px] border border-[#B8D9FF] bg-white px-[18px] py-[11px] text-[15px] font-semibold whitespace-nowrap text-[#184B7A] shadow-sm transition hover:-translate-y-px hover:border-[#7AB7FF] dark:border-blue-900 dark:text-blue-200"
                 >
                   Why Homi exists →
                 </a>
               </div>
             </div>
 
-            <div className="relative overflow-hidden rounded-[22px] border border-[#CFE3FF] bg-white p-2 shadow-[0_14px_34px_rgb(16_42_67/0.12)]">
+            <div className="dark:bg-card relative overflow-hidden rounded-[22px] border border-[#CFE3FF] bg-white p-2 shadow-[0_14px_34px_rgb(16_42_67/0.12)] dark:border-blue-900">
               <Image
                 src="/images/cross-promo/homi-collections.webp"
                 alt="Homi collections workspace preview"
@@ -913,7 +942,7 @@ function AboutImage() {
                 height={1000}
                 className="aspect-[16/10] w-full rounded-[16px] object-cover object-left-top"
               />
-              <div className="absolute right-5 bottom-5 rounded-full border border-[#CFE3FF] bg-white/95 px-3 py-1.5 text-[12px] font-semibold text-[#2C7FFF] shadow-sm backdrop-blur">
+              <div className="dark:bg-card/95 absolute right-5 bottom-5 rounded-full border border-[#CFE3FF] bg-white/95 px-3 py-1.5 text-[12px] font-semibold text-[#2C7FFF] shadow-sm backdrop-blur dark:border-blue-900 dark:text-blue-400">
                 Built for buying, renting, and deciding together
               </div>
             </div>

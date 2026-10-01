@@ -11,5 +11,9 @@ export default function DesignSystemLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <div className="min-h-screen bg-white text-gray-900">{children}</div>;
+  return (
+    <div className="dark:bg-card dark:text-foreground min-h-screen bg-white text-gray-900">
+      {children}
+    </div>
+  );
 }

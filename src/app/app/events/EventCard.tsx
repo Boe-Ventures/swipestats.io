@@ -134,7 +134,7 @@ export function EventCard({ event, onEdit, onDelete }: EventCardProps) {
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => onDelete(event.id)}
-                    className="text-red-600"
+                    className="text-red-600 dark:text-red-400"
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
                     Delete

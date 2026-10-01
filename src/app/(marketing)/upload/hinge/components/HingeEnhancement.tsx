@@ -46,7 +46,7 @@ export function HingeEnhancement({
   return (
     <div className="space-y-4">
       {/* Data Sharing Consent Section */}
-      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+      <div className="dark:border-border dark:bg-card rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
         <HingeConsentForm value={consent} onChange={handleConsentChange} />
       </div>
     </div>

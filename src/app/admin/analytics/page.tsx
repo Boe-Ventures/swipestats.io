@@ -63,9 +63,11 @@ function readSnapshot(): DebugSnapshot {
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex items-start justify-between gap-4 py-1.5 text-sm">
-      <span className="text-gray-500">{label}</span>
-      <span className="text-right font-mono text-xs break-all text-gray-900">
-        {value ?? <span className="text-gray-400">—</span>}
+      <span className="dark:text-muted-foreground text-gray-500">{label}</span>
+      <span className="dark:text-foreground text-right font-mono text-xs break-all text-gray-900">
+        {value ?? (
+          <span className="dark:text-muted-foreground text-gray-400">—</span>
+        )}
       </span>
     </div>
   );
@@ -83,8 +85,8 @@ function Section({
   return (
     <Card>
       <CardContent className="space-y-3 p-6">
-        <h2 className="flex items-center gap-2 text-lg font-semibold text-gray-900">
-          <Icon className="h-4 w-4 text-blue-600" />
+        <h2 className="dark:text-foreground flex items-center gap-2 text-lg font-semibold text-gray-900">
+          <Icon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           {title}
         </h2>
         {children}
@@ -127,7 +129,9 @@ export default function AdminAnalyticsPage() {
   const fireServerEvent = useMutation(
     trpc.admin.fireTestEvent.mutationOptions({
       onSuccess: (data) => {
-        setServerResult(`✅ fired (userId: ${data.userId}, at ${data.firedAt})`);
+        setServerResult(
+          `✅ fired (userId: ${data.userId}, at ${data.firedAt})`,
+        );
       },
       onError: (error) => setServerResult(`❌ ${error.message}`),
     }),
@@ -192,17 +196,23 @@ export default function AdminAnalyticsPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">
+          <h1 className="dark:text-foreground text-3xl font-bold text-gray-900">
             Analytics Debug Harness
           </h1>
-          <p className="mt-2 text-gray-600">
+          <p className="dark:text-muted-foreground mt-2 text-gray-600">
             Fire test events, manage granular consent, and inspect identity
             across PostHog, Vercel, and Amplitude. See the{" "}
-            <a href="/admin/tracking-plan" className="text-blue-600 underline">
+            <a
+              href="/admin/tracking-plan"
+              className="text-blue-600 underline dark:text-blue-400"
+            >
               tracking plan
             </a>{" "}
             for the catalog, or the{" "}
-            <a href="/cookies" className="text-blue-600 underline">
+            <a
+              href="/cookies"
+              className="text-blue-600 underline dark:text-blue-400"
+            >
               cookies page
             </a>{" "}
             for the user-facing UI.
@@ -217,9 +227,11 @@ export default function AdminAnalyticsPage() {
         {/* Live state */}
         <Section title="Current state" icon={Activity}>
           {!mounted || !snapshot ? (
-            <p className="text-sm text-gray-400">Reading client state…</p>
+            <p className="dark:text-muted-foreground text-sm text-gray-400">
+              Reading client state…
+            </p>
           ) : (
-            <div className="divide-y divide-gray-100">
+            <div className="dark:divide-border divide-y divide-gray-100">
               <Row
                 label="decision"
                 value={
@@ -282,13 +294,13 @@ export default function AdminAnalyticsPage() {
 
         {/* Test events */}
         <Section title="Test events" icon={Send}>
-          <p className="text-sm text-gray-600">
-            Fires <code className="text-xs">admin_test_event_fired</code>. Client
-            goes through the consent-gated provider array (needs{" "}
+          <p className="dark:text-muted-foreground text-sm text-gray-600">
+            Fires <code className="text-xs">admin_test_event_fired</code>.
+            Client goes through the consent-gated provider array (needs{" "}
             <code className="text-xs">analytics</code> consent); server goes
-            through the fan-out service. Both reach Amplitude now — client via the
-            browser SDK, server via the Node adapter (server is operational, so it
-            fires regardless of consent).
+            through the fan-out service. Both reach Amplitude now — client via
+            the browser SDK, server via the Node adapter (server is operational,
+            so it fires regardless of consent).
           </p>
           <div className="flex flex-wrap gap-2">
             <Button onClick={fireClientEvent} disabled={!hasConsent}>
@@ -303,9 +315,9 @@ export default function AdminAnalyticsPage() {
             </Button>
           </div>
           {!hasConsent && (
-            <p className="text-xs text-amber-600">
-              Client event is queued (not sent) until{" "}
-              <code>analytics</code> consent is granted below.
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              Client event is queued (not sent) until <code>analytics</code>{" "}
+              consent is granted below.
             </p>
           )}
           {lastClientNonce && (
@@ -316,32 +328,36 @@ export default function AdminAnalyticsPage() {
 
         {/* Granular consent */}
         <Section title="Consent (granular)" icon={ShieldCheck}>
-          <p className="text-sm text-gray-600">
+          <p className="dark:text-muted-foreground text-sm text-gray-600">
             Per-category — written to localStorage via the consent core and
             applied to the provider array live (no reload). Essential is always
             on.
           </p>
-          <div className="divide-y divide-gray-100">
+          <div className="dark:divide-border divide-y divide-gray-100">
             {CONSENT_CATEGORY_META.map((cat) => (
               <div
                 key={cat.key}
                 className="flex items-start justify-between gap-3 py-2.5"
               >
                 <div>
-                  <div className="text-sm font-medium text-gray-900">
+                  <div className="dark:text-foreground text-sm font-medium text-gray-900">
                     {cat.label}
                     {cat.locked && (
-                      <span className="ml-1 text-xs font-normal text-gray-400">
+                      <span className="dark:text-muted-foreground ml-1 text-xs font-normal text-gray-400">
                         (always on)
                       </span>
                     )}
                   </div>
-                  <div className="text-xs text-gray-500">{cat.description}</div>
+                  <div className="dark:text-muted-foreground text-xs text-gray-500">
+                    {cat.description}
+                  </div>
                 </div>
                 <Switch
                   checked={cat.key === "essential" ? true : current[cat.key]}
                   disabled={cat.locked}
-                  onCheckedChange={(checked) => toggleCategory(cat.key, checked)}
+                  onCheckedChange={(checked) =>
+                    toggleCategory(cat.key, checked)
+                  }
                 />
               </div>
             ))}
@@ -375,7 +391,7 @@ export default function AdminAnalyticsPage() {
 
         {/* Auth quick actions */}
         <Section title="Auth quick actions" icon={UserPlus}>
-          <p className="text-sm text-gray-600">
+          <p className="dark:text-muted-foreground text-sm text-gray-600">
             Current: <span className="font-medium">{authState}</span>. Actions
             adapt to the session.
           </p>
@@ -405,11 +421,11 @@ export default function AdminAnalyticsPage() {
 
         {/* DB-backed consent */}
         <Section title="DB-backed consent" icon={Database}>
-          <p className="text-sm text-gray-600">
+          <p className="dark:text-muted-foreground text-sm text-gray-600">
             Durable, cross-device consent on{" "}
-            <code className="text-xs">user.analyticsConsent</code> (preferences +
-            version + timestamp). Server-side event gating reads this. Requires a
-            real logged-in user.
+            <code className="text-xs">user.analyticsConsent</code> (preferences
+            + version + timestamp). Server-side event gating reads this.
+            Requires a real logged-in user.
           </p>
           <div className="flex flex-wrap gap-2">
             <Button
@@ -428,13 +444,13 @@ export default function AdminAnalyticsPage() {
             </Button>
           </div>
           {!canUseDbConsent && (
-            <p className="text-xs text-amber-600">
+            <p className="text-xs text-amber-600 dark:text-amber-400">
               Sign in with a real account to read/write DB consent. Anonymous
               sessions stay local-only.
             </p>
           )}
           {dbConsentQuery.isFetched && (
-            <div className="divide-y divide-gray-100 pt-1">
+            <div className="dark:divide-border divide-y divide-gray-100 pt-1">
               {dbConsentQuery.data ? (
                 <>
                   {CONSENT_CATEGORY_META.map((cat) => (
@@ -459,7 +475,9 @@ export default function AdminAnalyticsPage() {
             </div>
           )}
           {writeDbConsent.isError && (
-            <p className="text-xs text-red-600">{writeDbConsent.error.message}</p>
+            <p className="text-xs text-red-600 dark:text-red-400">
+              {writeDbConsent.error.message}
+            </p>
           )}
         </Section>
       </div>

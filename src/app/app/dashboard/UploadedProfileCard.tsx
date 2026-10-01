@@ -44,8 +44,8 @@ export function UploadedProfileCard({
   const appName = type === "tinder" ? "Tinder" : "Hinge";
   const badgeColor =
     type === "tinder"
-      ? "bg-pink-100 text-pink-700"
-      : "bg-purple-100 text-purple-700";
+      ? "bg-pink-100 text-pink-700 dark:bg-pink-950/40 dark:text-pink-400"
+      : "bg-purple-100 text-purple-700 dark:bg-purple-950/40 dark:text-purple-400";
   const insightsUrl = `/insights/${type}/${profileId}`;
 
   const location =
@@ -83,17 +83,17 @@ export function UploadedProfileCard({
         {/* Stats grid */}
         {stats && (
           <div className="grid grid-cols-3 gap-3">
-            <div className="rounded-lg border bg-gray-50 p-3 text-center">
+            <div className="dark:bg-background rounded-lg border bg-gray-50 p-3 text-center">
               <Heart className="text-muted-foreground mx-auto mb-1 h-4 w-4" />
-              <p className="text-lg font-semibold text-gray-900">
+              <p className="dark:text-foreground text-lg font-semibold text-gray-900">
                 {stats.matchesTotal?.toLocaleString() ?? "—"}
               </p>
               <p className="text-muted-foreground text-xs">Matches</p>
             </div>
 
-            <div className="rounded-lg border bg-gray-50 p-3 text-center">
+            <div className="dark:bg-background rounded-lg border bg-gray-50 p-3 text-center">
               <Zap className="text-muted-foreground mx-auto mb-1 h-4 w-4" />
-              <p className="text-lg font-semibold text-gray-900">
+              <p className="dark:text-foreground text-lg font-semibold text-gray-900">
                 {stats.swipeLikesTotal != null && stats.swipePassesTotal != null
                   ? (
                       stats.swipeLikesTotal + stats.swipePassesTotal
@@ -103,9 +103,9 @@ export function UploadedProfileCard({
               <p className="text-muted-foreground text-xs">Swipes</p>
             </div>
 
-            <div className="rounded-lg border bg-gray-50 p-3 text-center">
+            <div className="dark:bg-background rounded-lg border bg-gray-50 p-3 text-center">
               <MessageCircle className="text-muted-foreground mx-auto mb-1 h-4 w-4" />
-              <p className="text-lg font-semibold text-gray-900">
+              <p className="dark:text-foreground text-lg font-semibold text-gray-900">
                 {stats.messagesSentTotal?.toLocaleString() ?? "—"}
               </p>
               <p className="text-muted-foreground text-xs">Messages</p>
@@ -114,7 +114,7 @@ export function UploadedProfileCard({
         )}
 
         {!stats && (
-          <div className="text-muted-foreground rounded-lg border bg-gray-50 p-4 text-center text-sm">
+          <div className="text-muted-foreground dark:bg-background rounded-lg border bg-gray-50 p-4 text-center text-sm">
             No statistics available
           </div>
         )}

@@ -135,11 +135,11 @@ const chartConfig = {
     color: "hsl(245, 58%, 51%)",
   },
   messagesSent: {
-    label: "Usage Messages Sent",
+    label: "Messages Sent",
     color: "hsl(142, 71%, 45%)",
   },
   messagesReceived: {
-    label: "Usage Messages Received",
+    label: "Messages Received",
     color: "hsl(217, 91%, 60%)",
   },
 } satisfies ChartConfig;
@@ -456,7 +456,7 @@ export function MasterActivityChart() {
               </CardTitle>
               <CardDescription>
                 {granularity.charAt(0).toUpperCase() + granularity.slice(1)}{" "}
-                aggregates from Tinder&apos;s daily Usage ledger
+                totals from your Tinder activity
               </CardDescription>
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
@@ -504,7 +504,18 @@ export function MasterActivityChart() {
                             aria-invalid={fieldState.invalid}
                             className="w-[132px] sm:w-[140px]"
                           >
-                            <SelectValue placeholder="Select range" />
+                            <SelectValue placeholder="Select range">
+                              {
+                                {
+                                  "7d": "Last 7 days",
+                                  "30d": "Last 30 days",
+                                  "90d": "Last 90 days",
+                                  "1y": "Last year",
+                                  all: "All time",
+                                  custom: "Custom range",
+                                }[field.value]
+                              }
+                            </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="7d">Last 7 days</SelectItem>
@@ -603,23 +614,25 @@ export function MasterActivityChart() {
                 <button
                   key={key}
                   onClick={() => toggleMetric(key)}
+                  aria-pressed={isVisible}
                   className={cn(
                     "flex shrink-0 items-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition-all duration-200 sm:px-4",
                     isVisible
-                      ? "text-white shadow-md"
+                      ? "dark:text-foreground bg-[var(--metric-color)] text-white shadow-md dark:bg-[color-mix(in_srgb,var(--metric-color)_16%,var(--card))] dark:ring-1 dark:ring-[var(--metric-color)]"
                       : "bg-muted text-muted-foreground hover:bg-muted/80",
                   )}
                   style={
-                    isVisible ? { backgroundColor: config.color } : undefined
+                    { "--metric-color": config.color } as React.CSSProperties
                   }
                 >
                   <div
                     className={cn(
                       "h-3 w-3 rounded-full",
-                      isVisible && "border-2 border-white/40",
+                      isVisible &&
+                        "border-2 border-white/40 bg-white dark:border-0 dark:bg-[var(--metric-color)]",
                     )}
                     style={{
-                      backgroundColor: isVisible ? "white" : config.color,
+                      backgroundColor: isVisible ? undefined : config.color,
                     }}
                   />
                   <span>{config.label}</span>
@@ -838,7 +851,7 @@ export function MasterActivityChart() {
                         key={event.id}
                         x1={event.startPeriodKey}
                         x2={event.endPeriodKey}
-                        fill="hsl(280, 70%, 50%)"
+                        fill="var(--chart-event)"
                         fillOpacity={0.08}
                         label={
                           isCompact
@@ -847,7 +860,7 @@ export function MasterActivityChart() {
                                 value: event.name,
                                 position: "insideTop",
                                 fontSize: 11,
-                                fill: "hsl(280, 70%, 35%)",
+                                fill: "var(--chart-event-label)",
                               }
                         }
                       />
@@ -857,7 +870,7 @@ export function MasterActivityChart() {
                       <ReferenceLine
                         key={event.id}
                         x={event.startPeriodKey}
-                        stroke="hsl(280, 70%, 50%)"
+                        stroke="var(--chart-event)"
                         strokeWidth={1.5}
                         strokeDasharray="4 4"
                         label={
@@ -867,7 +880,7 @@ export function MasterActivityChart() {
                                 value: event.name,
                                 position: "insideTopLeft",
                                 fontSize: 12,
-                                fill: "hsl(280, 70%, 35%)",
+                                fill: "var(--chart-event-label)",
                                 fontWeight: 600,
                                 offset: 5,
                               }

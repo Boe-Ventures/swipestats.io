@@ -51,8 +51,10 @@ export default async function AdminHomePage() {
     <div className="space-y-8">
       {/* Welcome Section */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-        <p className="mt-2 text-gray-600">
+        <h1 className="dark:text-foreground text-3xl font-bold text-gray-900">
+          Admin Dashboard
+        </h1>
+        <p className="dark:text-muted-foreground mt-2 text-gray-600">
           Inspect profiles, manage users, and monitor system health
         </p>
       </div>

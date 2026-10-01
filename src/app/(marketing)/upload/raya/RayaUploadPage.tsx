@@ -183,10 +183,10 @@ export function RayaUploadPage() {
     return (
       <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
+          <h1 className="dark:text-foreground text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl">
             Upload Your Raya Data
           </h1>
-          <p className="mt-3 text-gray-600">
+          <p className="dark:text-muted-foreground mt-3 text-gray-600">
             Upload your Raya data to get personalized insights
           </p>
         </div>
@@ -196,22 +196,22 @@ export function RayaUploadPage() {
           className={cn(
             "cursor-pointer rounded-2xl border-2 border-dashed px-6 py-14 text-center transition",
             isDragActive
-              ? "border-gray-900 bg-gray-100"
-              : "border-gray-300 bg-white hover:border-gray-500",
+              ? "dark:bg-muted border-gray-900 bg-gray-100"
+              : "dark:border-border dark:bg-card border-gray-300 bg-white hover:border-gray-500",
             isBusy && "cursor-not-allowed opacity-60",
           )}
         >
           <input {...getInputProps()} />
-          <CloudArrowUpIcon className="mx-auto h-14 w-14 text-gray-400" />
-          <p className="mt-4 font-medium text-gray-900">
+          <CloudArrowUpIcon className="dark:text-muted-foreground mx-auto h-14 w-14 text-gray-400" />
+          <p className="dark:text-foreground mt-4 font-medium text-gray-900">
             {isReading
               ? "Reading and anonymizing your archive..."
               : "Choose your Raya ZIP archive"}
           </p>
-          <p className="mt-1 text-sm text-gray-500">
+          <p className="dark:text-muted-foreground mt-1 text-sm text-gray-500">
             Required: {REQUIRED_FILES.join(", ")}
           </p>
-          <p className="mt-2 text-xs text-gray-400">
+          <p className="dark:text-muted-foreground mt-2 text-xs text-gray-400">
             Identifying fields are removed in your browser before upload.
           </p>
         </div>
@@ -226,22 +226,22 @@ export function RayaUploadPage() {
       leftColumn={
         <>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+            <h1 className="dark:text-foreground text-3xl font-bold tracking-tight text-gray-900">
               Upload Your Raya Data
             </h1>
-            <p className="mt-2 text-sm leading-6 text-gray-600">
+            <p className="dark:text-muted-foreground mt-2 text-sm leading-6 text-gray-600">
               Upload your Raya data to get personalized insights
             </p>
           </div>
 
-          <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+          <div className="dark:border-border dark:bg-card rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
             <div className="flex items-start gap-3">
-              <CheckCircleIcon className="mt-0.5 h-6 w-6 shrink-0 text-emerald-600" />
+              <CheckCircleIcon className="mt-0.5 h-6 w-6 shrink-0 text-emerald-600 dark:text-emerald-400" />
               <div>
-                <h2 className="font-semibold text-gray-900">
+                <h2 className="dark:text-foreground font-semibold text-gray-900">
                   Confirm Your Raya Data
                 </h2>
-                <p className="mt-0.5 text-sm text-gray-500">
+                <p className="dark:text-muted-foreground mt-0.5 text-sm text-gray-500">
                   {summary.firstActivityAt} to {summary.lastActivityAt}
                 </p>
               </div>
@@ -254,18 +254,23 @@ export function RayaUploadPage() {
                 ["Matches", summary.matches],
                 ["Messages sent", summary.messagesSent],
               ].map(([label, value]) => (
-                <div key={label} className="rounded-xl bg-gray-50 p-4">
-                  <p className="text-2xl font-semibold text-gray-900">
+                <div
+                  key={label}
+                  className="dark:bg-background rounded-xl bg-gray-50 p-4"
+                >
+                  <p className="dark:text-foreground text-2xl font-semibold text-gray-900">
                     {Number(value).toLocaleString()}
                   </p>
-                  <p className="text-xs text-gray-500">{label}</p>
+                  <p className="dark:text-muted-foreground text-xs text-gray-500">
+                    {label}
+                  </p>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="space-y-3 rounded-xl border border-gray-200 bg-white p-5 text-sm text-gray-700 shadow-sm">
-            <h2 className="font-semibold text-gray-900">
+          <div className="dark:border-border dark:bg-card dark:text-muted-foreground space-y-3 rounded-xl border border-gray-200 bg-white p-5 text-sm text-gray-700 shadow-sm">
+            <h2 className="dark:text-foreground font-semibold text-gray-900">
               Choose what to include
             </h2>
             <ConsentCheckbox
@@ -283,7 +288,7 @@ export function RayaUploadPage() {
               onChange={setTermsAccepted}
               label="I agree to the terms and privacy policy"
             />
-            <p className="border-t border-gray-100 pt-3 text-xs leading-5 text-gray-500">
+            <p className="dark:border-border dark:text-muted-foreground border-t border-gray-100 pt-3 text-xs leading-5 text-gray-500">
               Raya does not export received messages or conversation threads, so
               those insights are unavailable rather than estimated.
             </p>
@@ -314,7 +319,7 @@ export function RayaUploadPage() {
 
 function ErrorAlert({ message }: { message: string }) {
   return (
-    <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+    <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200">
       {message}
     </div>
   );
@@ -335,7 +340,7 @@ function ConsentCheckbox({
         type="checkbox"
         checked={checked}
         onChange={(event) => onChange(event.target.checked)}
-        className="mt-0.5 h-4 w-4 rounded border-gray-300 text-gray-950"
+        className="dark:border-border dark:text-foreground mt-0.5 h-4 w-4 rounded border-gray-300 text-gray-950"
       />
       <span>{label}</span>
     </label>

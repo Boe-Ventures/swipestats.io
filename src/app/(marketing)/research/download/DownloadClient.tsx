@@ -111,13 +111,25 @@ export function DownloadClient() {
 
   const getStatusBadge = (status: string) => {
     const badges = {
-      PENDING: { color: "bg-yellow-100 text-yellow-800", text: "Pending" },
+      PENDING: {
+        color:
+          "bg-yellow-100 text-yellow-800 dark:bg-yellow-950/40 dark:text-yellow-200",
+        text: "Pending",
+      },
       GENERATING: {
-        color: "bg-blue-100 text-blue-800",
+        color:
+          "bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-200",
         text: "Generating...",
       },
-      READY: { color: "bg-green-100 text-green-800", text: "Ready" },
-      FAILED: { color: "bg-red-100 text-red-800", text: "Failed" },
+      READY: {
+        color:
+          "bg-green-100 text-green-800 dark:bg-green-950/40 dark:text-green-200",
+        text: "Ready",
+      },
+      FAILED: {
+        color: "bg-red-100 text-red-800 dark:bg-red-950/40 dark:text-red-200",
+        text: "Failed",
+      },
     };
     const badge = badges[status as keyof typeof badges] || badges.PENDING;
     return (
@@ -133,30 +145,30 @@ export function DownloadClient() {
   };
 
   return (
-    <div className="bg-white py-24 sm:py-32">
+    <div className="dark:bg-card bg-white py-24 sm:py-32">
       <div className="mx-auto max-w-3xl px-6 lg:px-8">
         <div className="mx-auto max-w-2xl text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
+          <h1 className="dark:text-foreground text-4xl font-bold tracking-tight text-gray-900 sm:text-5xl">
             Download Your Dataset
           </h1>
-          <p className="mt-6 text-lg leading-8 text-gray-600">
+          <p className="dark:text-muted-foreground mt-6 text-lg leading-8 text-gray-600">
             Enter your license key from the LemonSqueezy email to access and
             download your purchased dataset.
           </p>
         </div>
 
-        <aside className="mt-8 rounded-lg border border-gray-200 p-5">
-          <h2 className="text-base font-semibold text-gray-900">
+        <aside className="dark:border-border mt-8 rounded-lg border border-gray-200 p-5">
+          <h2 className="dark:text-foreground text-base font-semibold text-gray-900">
             Academic database access
           </h2>
-          <p className="mt-2 text-sm leading-6 text-gray-600">
+          <p className="dark:text-muted-foreground mt-2 text-sm leading-6 text-gray-600">
             If we prepared a database snapshot for your study, use the
             connection details sent to you by email. Your research package has
             its own agreed dataset and delivery date. For access help or a
             refreshed snapshot,{" "}
             <a
               href="mailto:kris@swipestats.io?subject=Academic%20database%20access"
-              className="font-medium text-rose-600 hover:text-rose-500"
+              className="font-medium text-rose-600 hover:text-rose-500 dark:text-rose-400"
             >
               email kris@swipestats.io
             </a>
@@ -167,12 +179,12 @@ export function DownloadClient() {
         <div className="mt-16">
           {!licenseKey ? (
             // License key input form
-            <div className="rounded-lg bg-gray-50 p-8">
+            <div className="dark:bg-background rounded-lg bg-gray-50 p-8">
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <label
                     htmlFor="license-key"
-                    className="block text-sm leading-6 font-medium text-gray-900"
+                    className="dark:text-foreground block text-sm leading-6 font-medium text-gray-900"
                   >
                     License Key
                   </label>
@@ -183,11 +195,11 @@ export function DownloadClient() {
                       id="license-key"
                       value={inputValue}
                       onChange={(e) => setInputValue(e.target.value)}
-                      className="block w-full rounded-md border-0 px-3 py-2 text-gray-900 shadow-sm ring-1 ring-gray-300 ring-inset placeholder:text-gray-400 focus:ring-2 focus:ring-rose-600 focus:ring-inset sm:text-sm sm:leading-6"
+                      className="dark:text-foreground dark:ring-border dark:placeholder:text-muted-foreground block w-full rounded-md border-0 px-3 py-2 text-gray-900 shadow-sm ring-1 ring-gray-300 ring-inset placeholder:text-gray-400 focus:ring-2 focus:ring-rose-600 focus:ring-inset sm:text-sm sm:leading-6"
                       placeholder="Enter your license key"
                     />
                   </div>
-                  <p className="mt-2 text-sm text-gray-500">
+                  <p className="dark:text-muted-foreground mt-2 text-sm text-gray-500">
                     Your license key was sent to your email from LemonSqueezy
                     after purchase.
                   </p>
@@ -208,23 +220,23 @@ export function DownloadClient() {
             </div>
           ) : isLoading ? (
             // Loading state
-            <div className="rounded-lg bg-gray-50 p-8 text-center">
-              <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-rose-600" />
-              <p className="mt-4 text-sm text-gray-600">
+            <div className="dark:bg-background rounded-lg bg-gray-50 p-8 text-center">
+              <div className="dark:border-border inline-block h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-rose-600" />
+              <p className="dark:text-muted-foreground mt-4 text-sm text-gray-600">
                 Validating license key...
               </p>
             </div>
           ) : error && (!exportData || !validationUnavailable) ? (
             // Error state
-            <div className="rounded-lg bg-red-50 p-8">
+            <div className="rounded-lg bg-red-50 p-8 dark:bg-red-950/40">
               <div className="flex">
                 <div className="ml-3 flex-1">
-                  <h3 className="text-sm font-medium text-red-800">
+                  <h3 className="text-sm font-medium text-red-800 dark:text-red-200">
                     {validationUnavailable
                       ? "Unable to validate right now"
                       : "Invalid License Key"}
                   </h3>
-                  <div className="mt-2 text-sm text-red-700">
+                  <div className="mt-2 text-sm text-red-700 dark:text-red-400">
                     <p>
                       {validationUnavailable
                         ? "We could not reach the validation service. Please try again shortly."
@@ -236,7 +248,7 @@ export function DownloadClient() {
                       onClick={() =>
                         validationUnavailable ? void refetch() : changeKey()
                       }
-                      className="cursor-pointer text-sm font-medium text-red-800 hover:text-red-700"
+                      className="cursor-pointer text-sm font-medium text-red-800 hover:text-red-700 dark:text-red-200 dark:hover:text-red-400"
                     >
                       {validationUnavailable
                         ? "Try again"
@@ -250,7 +262,10 @@ export function DownloadClient() {
             // Export details and download
             <div className="space-y-6">
               {error && (
-                <p role="alert" className="text-sm text-red-700">
+                <p
+                  role="alert"
+                  className="text-sm text-red-700 dark:text-red-400"
+                >
                   Status refresh failed.{" "}
                   <button
                     type="button"
@@ -261,7 +276,7 @@ export function DownloadClient() {
                   </button>
                 </p>
               )}
-              <div className="overflow-hidden rounded-lg bg-white shadow">
+              <div className="dark:bg-card overflow-hidden rounded-lg bg-white shadow">
                 <div className="px-4 py-5 sm:p-6">
                   <div className="sm:flex sm:items-center sm:justify-between">
                     <div className="sm:flex sm:space-x-5">
@@ -269,13 +284,13 @@ export function DownloadClient() {
                         <CheckCircleIcon className="mx-auto h-12 w-12 text-green-500" />
                       </div>
                       <div className="mt-4 text-center sm:mt-0 sm:pt-1 sm:text-left">
-                        <p className="text-sm font-medium text-gray-600">
+                        <p className="dark:text-muted-foreground text-sm font-medium text-gray-600">
                           Dataset Tier
                         </p>
-                        <p className="text-xl font-bold text-gray-900 sm:text-2xl">
+                        <p className="dark:text-foreground text-xl font-bold text-gray-900 sm:text-2xl">
                           {exportData.export.tier}
                         </p>
-                        <p className="text-sm text-gray-500">
+                        <p className="dark:text-muted-foreground text-sm text-gray-500">
                           {exportData.export.profileCount.toLocaleString()}{" "}
                           profiles
                         </p>
@@ -286,23 +301,23 @@ export function DownloadClient() {
                     </div>
                   </div>
 
-                  <div className="mt-6 border-t border-gray-200 pt-6">
+                  <div className="dark:border-border mt-6 border-t border-gray-200 pt-6">
                     <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
                       <div>
-                        <dt className="text-sm font-medium text-gray-500">
+                        <dt className="dark:text-muted-foreground text-sm font-medium text-gray-500">
                           File Size
                         </dt>
-                        <dd className="mt-1 text-sm text-gray-900">
+                        <dd className="dark:text-foreground mt-1 text-sm text-gray-900">
                           {exportData.export.blobSize
                             ? `${(exportData.export.blobSize / 1024 / 1024).toFixed(2)} MB`
                             : "Calculating..."}
                         </dd>
                       </div>
                       <div>
-                        <dt className="text-sm font-medium text-gray-500">
+                        <dt className="dark:text-muted-foreground text-sm font-medium text-gray-500">
                           Generated At
                         </dt>
-                        <dd className="mt-1 text-sm text-gray-900">
+                        <dd className="dark:text-foreground mt-1 text-sm text-gray-900">
                           {exportData.export.generatedAt
                             ? new Date(
                                 exportData.export.generatedAt,
@@ -311,18 +326,18 @@ export function DownloadClient() {
                         </dd>
                       </div>
                       <div>
-                        <dt className="text-sm font-medium text-gray-500">
+                        <dt className="dark:text-muted-foreground text-sm font-medium text-gray-500">
                           Price
                         </dt>
-                        <dd className="mt-1 text-sm text-gray-900">
+                        <dd className="dark:text-foreground mt-1 text-sm text-gray-900">
                           ${(exportData.export.price / 100).toFixed(2)}
                         </dd>
                       </div>
                       <div>
-                        <dt className="text-sm font-medium text-gray-500">
+                        <dt className="dark:text-muted-foreground text-sm font-medium text-gray-500">
                           Downloads Remaining
                         </dt>
-                        <dd className="mt-1 text-sm text-gray-900">
+                        <dd className="dark:text-foreground mt-1 text-sm text-gray-900">
                           {exportData.export.downloadsRemaining} of{" "}
                           {exportData.export.maxDownloads}
                         </dd>
@@ -356,7 +371,10 @@ export function DownloadClient() {
                   </button>
 
                   {isDownloading && (
-                    <p className="text-sm text-gray-600" role="status">
+                    <p
+                      className="dark:text-muted-foreground text-sm text-gray-600"
+                      role="status"
+                    >
                       Waiting for the download response.{" "}
                       <button
                         type="button"
@@ -368,7 +386,10 @@ export function DownloadClient() {
                     </p>
                   )}
                   {downloadState.phase === "initiated" && (
-                    <p className="text-sm text-gray-600" role="status">
+                    <p
+                      className="dark:text-muted-foreground text-sm text-gray-600"
+                      role="status"
+                    >
                       Download requested. Check your browser&apos;s downloads
                       for progress.
                     </p>
@@ -376,8 +397,8 @@ export function DownloadClient() {
 
                   {/* Error message */}
                   {downloadError && (
-                    <div className="rounded-lg bg-red-50 p-4">
-                      <p className="text-sm font-medium text-red-800">
+                    <div className="rounded-lg bg-red-50 p-4 dark:bg-red-950/40">
+                      <p className="text-sm font-medium text-red-800 dark:text-red-200">
                         {downloadError}
                       </p>
                     </div>
@@ -385,11 +406,11 @@ export function DownloadClient() {
 
                   {/* Download limit info */}
                   {exportData.export.downloadsRemaining === 0 && (
-                    <div className="rounded-lg bg-yellow-50 p-4">
-                      <p className="text-sm font-medium text-yellow-800">
+                    <div className="rounded-lg bg-yellow-50 p-4 dark:bg-yellow-950/40">
+                      <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
                         Download limit reached for this license key
                       </p>
-                      <p className="mt-1 text-sm text-yellow-700">
+                      <p className="mt-1 text-sm text-yellow-700 dark:text-yellow-400">
                         You have used all {exportData.export.maxDownloads}{" "}
                         allowed downloads. Please contact support if you need
                         additional downloads.
@@ -399,23 +420,23 @@ export function DownloadClient() {
                 </>
               ) : exportData.export.status === "GENERATING" ||
                 exportData.export.status === "PENDING" ? (
-                <div className="rounded-lg bg-blue-50 p-4 text-center">
-                  <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-blue-300 border-t-blue-600" />
-                  <p className="mt-4 text-sm font-medium text-blue-800">
+                <div className="rounded-lg bg-blue-50 p-4 text-center dark:bg-blue-950/40">
+                  <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-blue-300 border-t-blue-600 dark:border-blue-800" />
+                  <p className="mt-4 text-sm font-medium text-blue-800 dark:text-blue-200">
                     Generating your dataset...
                   </p>
-                  <p className="mt-1 text-sm text-blue-600">
+                  <p className="mt-1 text-sm text-blue-600 dark:text-blue-400">
                     This may take a few minutes. The page will update
                     automatically when ready.
                   </p>
                 </div>
               ) : exportData.export.status === "FAILED" ? (
                 <div className="space-y-4">
-                  <div className="rounded-lg bg-red-50 p-4 text-center">
-                    <p className="text-sm font-medium text-red-800">
+                  <div className="rounded-lg bg-red-50 p-4 text-center dark:bg-red-950/40">
+                    <p className="text-sm font-medium text-red-800 dark:text-red-200">
                       Dataset generation failed
                     </p>
-                    <p className="mt-1 text-sm text-red-600">
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">
                       This can happen due to temporary server issues. You can
                       try again or contact support at kris@swipestats.io.
                     </p>
@@ -435,8 +456,8 @@ export function DownloadClient() {
                       : "Retry Generation"}
                   </button>
                   {activeRetry && retryGenerationMutation.isError && (
-                    <div className="rounded-lg bg-red-50 p-4">
-                      <p className="text-sm font-medium text-red-800">
+                    <div className="rounded-lg bg-red-50 p-4 dark:bg-red-950/40">
+                      <p className="text-sm font-medium text-red-800 dark:text-red-200">
                         {retryGenerationMutation.error instanceof Error
                           ? retryGenerationMutation.error.message
                           : "Failed to retry. Please try again."}
@@ -449,7 +470,7 @@ export function DownloadClient() {
               <div className="text-center">
                 <button
                   onClick={changeKey}
-                  className="cursor-pointer text-sm font-medium text-gray-600 hover:text-gray-900"
+                  className="dark:text-muted-foreground dark:hover:text-foreground cursor-pointer text-sm font-medium text-gray-600 hover:text-gray-900"
                 >
                   Use a different license key →
                 </button>
@@ -457,13 +478,13 @@ export function DownloadClient() {
             </div>
           ) : (
             // License valid but not in DB yet
-            <div className="rounded-lg bg-yellow-50 p-8">
+            <div className="rounded-lg bg-yellow-50 p-8 dark:bg-yellow-950/40">
               <div className="flex">
                 <div className="ml-3 flex-1">
-                  <h3 className="text-sm font-medium text-yellow-800">
+                  <h3 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
                     Processing Your Order
                   </h3>
-                  <div className="mt-2 text-sm text-yellow-700">
+                  <div className="mt-2 text-sm text-yellow-700 dark:text-yellow-400">
                     <p>
                       Your license key is valid, but your dataset is still being
                       set up. This usually takes less than a minute. Please
@@ -473,7 +494,7 @@ export function DownloadClient() {
                   <div className="mt-4">
                     <button
                       onClick={() => void refetch()}
-                      className="cursor-pointer text-sm font-medium text-yellow-800 hover:text-yellow-700"
+                      className="cursor-pointer text-sm font-medium text-yellow-800 hover:text-yellow-700 dark:text-yellow-200 dark:hover:text-yellow-400"
                     >
                       Refresh now →
                     </button>
@@ -485,14 +506,16 @@ export function DownloadClient() {
         </div>
 
         {/* Help section */}
-        <div className="mt-16 border-t border-gray-200 pt-8">
-          <h2 className="text-lg font-semibold text-gray-900">Need Help?</h2>
-          <p className="mt-2 text-sm text-gray-600">
+        <div className="dark:border-border mt-16 border-t border-gray-200 pt-8">
+          <h2 className="dark:text-foreground text-lg font-semibold text-gray-900">
+            Need Help?
+          </h2>
+          <p className="dark:text-muted-foreground mt-2 text-sm text-gray-600">
             If you&apos;re having trouble accessing your dataset, please contact
             us at{" "}
             <a
               href="mailto:kris@swipestats.io"
-              className="font-medium text-rose-600 hover:text-rose-500"
+              className="font-medium text-rose-600 hover:text-rose-500 dark:text-rose-400"
             >
               kris@swipestats.io
             </a>{" "}

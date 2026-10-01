@@ -107,7 +107,7 @@ const tiers: Tier[] = [
 function Badge({ badge }: { badge: NonNullable<Tier["badge"]> }) {
   if (badge.variant === "pill") {
     return (
-      <span className="inline-flex items-center gap-2 rounded-full border border-rose-600/20 bg-rose-50 px-3 py-1.5 text-[13px] leading-none font-semibold text-rose-700">
+      <span className="inline-flex items-center gap-2 rounded-full border border-rose-600/20 bg-rose-50 px-3 py-1.5 text-[13px] leading-none font-semibold text-rose-700 dark:bg-rose-950/40 dark:text-rose-400">
         {badge.label}
       </span>
     );
@@ -117,8 +117,8 @@ function Badge({ badge }: { badge: NonNullable<Tier["badge"]> }) {
       className={cn(
         "rounded-md border px-2 py-1 font-mono text-[11px] font-medium tracking-[0.04em] whitespace-nowrap uppercase",
         badge.variant === "rose"
-          ? "border-rose-600/20 bg-rose-50 text-rose-700"
-          : "border-gray-200 bg-gray-100 text-gray-600",
+          ? "border-rose-600/20 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400"
+          : "dark:border-border dark:bg-muted dark:text-muted-foreground border-gray-200 bg-gray-100 text-gray-600",
       )}
     >
       {badge.label}
@@ -145,17 +145,17 @@ function TierCard({
         "flex flex-col rounded-3xl border p-7",
         tier.popular
           ? "border-2 border-rose-600 shadow-[0_2px_6px_oklch(0.2_0.02_286/0.05),0_12px_28px_oklch(0.2_0.02_286/0.08)]"
-          : "border-gray-200",
+          : "dark:border-border border-gray-200",
         tier.dark
           ? "border-gray-950 bg-gray-950 text-white"
-          : "bg-white text-gray-900",
+          : "dark:bg-card dark:text-foreground bg-white text-gray-900",
       )}
     >
       <div className="flex items-center justify-between gap-2.5">
         <span
           className={cn(
             "text-[17px] font-bold",
-            tier.popular && "text-rose-600",
+            tier.popular && "text-rose-600 dark:text-rose-400",
           )}
         >
           {tier.name}
@@ -166,7 +166,9 @@ function TierCard({
       <p
         className={cn(
           "mt-2 min-h-[38px] text-[13.5px]",
-          tier.dark ? "text-gray-400" : "text-gray-500",
+          tier.dark
+            ? "dark:text-muted-foreground text-gray-400"
+            : "dark:text-muted-foreground text-gray-500",
         )}
       >
         {tier.description}
@@ -191,10 +193,12 @@ function TierCard({
             key={feature}
             className={cn(
               "flex gap-2.5 text-[14px]",
-              tier.dark ? "text-gray-300" : "text-gray-700",
+              tier.dark
+                ? "text-gray-300"
+                : "dark:text-muted-foreground text-gray-700",
             )}
           >
-            <CheckIcon className="mt-px h-[18px] w-[18px] flex-none text-rose-600" />
+            <CheckIcon className="mt-px h-[18px] w-[18px] flex-none text-rose-600 dark:text-rose-400" />
             {feature}
           </li>
         ))}
@@ -289,20 +293,22 @@ export function ResearchPricingSection() {
           lead="Buy a fixed-size download, or work with us on a larger academic dataset."
         />
 
-        <div className="mt-8 grid gap-6 rounded-2xl bg-gray-50 p-6 sm:grid-cols-2">
+        <div className="dark:bg-background mt-8 grid gap-6 rounded-2xl bg-gray-50 p-6 sm:grid-cols-2">
           <div>
-            <h3 className="font-semibold text-gray-900">Purchased datasets</h3>
-            <p className="mt-2 text-sm leading-6 text-gray-600">
+            <h3 className="dark:text-foreground font-semibold text-gray-900">
+              Purchased datasets
+            </h3>
+            <p className="dark:text-muted-foreground mt-2 text-sm leading-6 text-gray-600">
               Choose Starter, Standard, Fresh, or Premium. After checkout, use
               your emailed license key to download the JSONL file once it is
               ready. Each package contains a fixed number of profiles.
             </p>
           </div>
           <div>
-            <h3 className="font-semibold text-gray-900">
+            <h3 className="dark:text-foreground font-semibold text-gray-900">
               Academic research packages
             </h3>
-            <p className="mt-2 text-sm leading-6 text-gray-600">
+            <p className="dark:text-muted-foreground mt-2 text-sm leading-6 text-gray-600">
               For larger studies, we agree on the profile count, fields, and
               delivery date with you. We can prepare a dated database snapshot
               with read-only access. Message-level data and later refreshes are
@@ -333,7 +339,7 @@ export function ResearchPricingSection() {
                     onChange={(event) =>
                       setStandardQuantity(Number(event.target.value))
                     }
-                    className="w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base"
+                    className="dark:border-border dark:bg-card w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base"
                   >
                     {Array.from({ length: 12 }, (_, index) => index + 1).map(
                       (quantity) => (
@@ -353,7 +359,7 @@ export function ResearchPricingSection() {
                       ),
                     )}
                   </select>
-                  <p className="text-sm text-gray-500">
+                  <p className="dark:text-muted-foreground text-sm text-gray-500">
                     Up to 12,000 Tinder profiles in one download, subject to
                     availability. Drawn from across our upload history at $0.05
                     per profile.

@@ -55,15 +55,19 @@ export function CookiePreferences() {
 
   return (
     <Card>
-      <CardContent className="divide-y divide-gray-100 p-0">
+      <CardContent className="dark:divide-border divide-y divide-gray-100 p-0">
         {CONSENT_CATEGORY_META.map((cat) => (
           <div
             key={cat.key}
             className="flex items-start justify-between gap-4 p-5"
           >
             <div>
-              <div className="font-medium text-gray-900">{cat.label}</div>
-              <p className="mt-1 text-sm text-gray-600">{cat.description}</p>
+              <div className="dark:text-foreground font-medium text-gray-900">
+                {cat.label}
+              </div>
+              <p className="dark:text-muted-foreground mt-1 text-sm text-gray-600">
+                {cat.description}
+              </p>
             </div>
             <Switch
               checked={cat.locked ? true : draft[cat.key]}

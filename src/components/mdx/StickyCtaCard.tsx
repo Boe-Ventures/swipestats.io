@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { withInternalUtm } from "@/lib/cta-links";
 import { Check } from "lucide-react";
 import { marketingButton } from "@/app/(marketing)/_components/marketing-ui";
 
@@ -32,17 +33,19 @@ export function StickyCtaCard({
   ],
 }: StickyCtaCardProps) {
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+    <div className="dark:border-border dark:bg-card rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
       {/* Title */}
-      <h3 className="text-lg font-bold tracking-[-0.02em] text-gray-900">
+      <h3 className="dark:text-foreground text-lg font-bold tracking-[-0.02em] text-gray-900">
         {title}
       </h3>
 
       {/* Description */}
-      <p className="mt-3 text-sm leading-relaxed text-gray-600">{description}</p>
+      <p className="dark:text-muted-foreground mt-3 text-sm leading-relaxed text-gray-600">
+        {description}
+      </p>
 
       {/* Trust badge */}
-      <div className="mt-4 flex items-center gap-2 text-xs font-medium text-rose-600">
+      <div className="mt-4 flex items-center gap-2 text-xs font-medium text-rose-600 dark:text-rose-400">
         <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
           <path
             fillRule="evenodd"
@@ -56,14 +59,22 @@ export function StickyCtaCard({
       {/* CTA Buttons */}
       <div className="mt-6 space-y-2">
         <Link
-          href={primaryButtonHref}
+          href={withInternalUtm(primaryButtonHref, {
+            medium: "blog_sidebar",
+            campaign: "blog_conversion",
+            content: "primary",
+          })}
           className={`w-full ${marketingButton({ variant: "primary", size: "lg" })}`}
         >
           {primaryButtonText}
         </Link>
 
         <Link
-          href={secondaryButtonHref}
+          href={withInternalUtm(secondaryButtonHref, {
+            medium: "blog_sidebar",
+            campaign: "blog_conversion",
+            content: "secondary",
+          })}
           className={`w-full ${marketingButton({ variant: "ghost", size: "lg" })}`}
         >
           {secondaryButtonText}
@@ -71,14 +82,14 @@ export function StickyCtaCard({
       </div>
 
       {/* Features list */}
-      <div className="mt-6 space-y-2 border-t border-gray-200 pt-4">
+      <div className="dark:border-border mt-6 space-y-2 border-t border-gray-200 pt-4">
         {features.map((feature, index) => (
           <div
             key={index}
-            className="flex items-start gap-2 text-xs text-gray-600"
+            className="dark:text-muted-foreground flex items-start gap-2 text-xs text-gray-600"
           >
             <Check
-              className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-rose-600"
+              className="mt-0.5 h-3.5 w-3.5 flex-shrink-0 text-rose-600 dark:text-rose-400"
               strokeWidth={2.5}
             />
             <span>{feature.label}</span>
