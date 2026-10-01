@@ -61,7 +61,8 @@ export function LocationForm() {
 
   const detectMutation = useMutation(
     trpc.user.detectLocation.mutationOptions({
-      onSuccess: () => {
+      onSuccess: (result) => {
+        if (!result.detected) return;
         // Invalidate user query to trigger refetch and update form
         void queryClient.invalidateQueries(trpc.user.me.queryOptions());
       },
@@ -113,6 +114,11 @@ export function LocationForm() {
         </CardAction>
       </CardHeader>
       <CardContent>
+        {detectMutation.data && !detectMutation.data.detected && (
+          <p role="status" className="text-muted-foreground mb-4 text-sm">
+            {detectMutation.data.message}
+          </p>
+        )}
         {detectMutation.isError && (
           <p role="alert" className="text-destructive mb-4 text-sm">
             {detectMutation.error.message}

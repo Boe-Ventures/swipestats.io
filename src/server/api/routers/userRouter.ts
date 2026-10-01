@@ -38,11 +38,11 @@ export const userRouter = {
 
     const country = geo?.country;
     if (!country) {
-      throw new TRPCError({
-        code: "PRECONDITION_FAILED",
+      return {
+        detected: false as const,
         message:
           "Location detection is unavailable here. Enter your location manually; your saved location has not changed.",
-      });
+      };
     }
 
     const city = geo?.city || undefined;
@@ -50,7 +50,7 @@ export const userRouter = {
     const timeZone = headersList.get("x-vercel-ip-timezone") || undefined;
     const continent = getContinentFromCountry(country) || undefined;
 
-    const updatedUser = await updateUserLocation({
+    await updateUserLocation({
       userId: ctx.session.user.id,
       city,
       country,
@@ -59,7 +59,7 @@ export const userRouter = {
       continent,
     });
 
-    return updatedUser;
+    return { detected: true as const };
   }),
 
   // Update profile (name, displayUsername)
