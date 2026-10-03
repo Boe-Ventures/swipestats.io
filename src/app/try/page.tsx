@@ -23,7 +23,7 @@ import { Suspense, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import { NewOldLogo } from "@/components/ui/NewOldLogo";
+import { SwipeStatsMark } from "@/components/ui/SwipeStatsMark";
 import { authClient } from "@/server/better-auth/client";
 import { useTRPC } from "@/trpc/react";
 import { getDefaultComparisonName } from "@/app/app/profile-compare/_lib/default-name";
@@ -63,7 +63,7 @@ function Splash({ error, onRetry }: { error?: string; onRetry?: () => void }) {
   return (
     <div className="dark:bg-background flex min-h-screen flex-col items-center justify-center bg-gray-50">
       <div className="animate-in fade-in zoom-in fill-mode-both duration-500">
-        <NewOldLogo className="h-14 w-14 animate-pulse text-rose-500" />
+        <SwipeStatsMark className="h-14 w-14 animate-pulse text-rose-500" />
       </div>
       <p className="text-muted-foreground animate-in fade-in fill-mode-both mt-4 text-sm delay-500 duration-500">
         {error ? "Something went wrong" : "Welcome to SwipeStats"}
