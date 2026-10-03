@@ -12,11 +12,6 @@
 
 :root {
   color-scheme: light;
-  --brand-rose: #e64368;
-  --brand-ink: #202126;
-  --brand-paper: #faf8f5;
-  --brand-lilac: #dad5ec;
-  --brand-sage: #aabbaa;
   --chart-event: hsl(280 70% 50%);
   --chart-event-label: hsl(280 70% 35%);
   --radius: 0.65rem;
@@ -27,8 +22,8 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.141 0.005 285.823);
   /* SwipeStats brand colors - rose theme */
-  --primary: #c82e54; /* Darker action rose keeps white labels readable. */
-  --primary-foreground: #ffffff;
+  --primary: oklch(0.586 0.253 17.585); /* rose-600 */
+  --primary-foreground: oklch(0.97 0.014 254.604);
   --secondary: oklch(0.97 0.01 280);
   --secondary-foreground: oklch(0.2 0.015 285.885);
   --muted: oklch(0.967 0.001 286.375);
@@ -105,11 +100,6 @@
 }
 
 @theme inline {
-  --color-brand-rose: var(--brand-rose);
-  --color-brand-ink: var(--brand-ink);
-  --color-brand-paper: var(--brand-paper);
-  --color-brand-lilac: var(--brand-lilac);
-  --color-brand-sage: var(--brand-sage);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-card: var(--card);
