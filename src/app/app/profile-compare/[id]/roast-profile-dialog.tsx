@@ -35,7 +35,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { SwipeStatsMark } from "@/components/ui/SwipeStatsMark";
+import { NewOldLogo } from "@/components/ui/NewOldLogo";
 import {
   Empty,
   EmptyContent,
@@ -481,7 +481,7 @@ function LensAvatar({ lens }: { lens: ProfileRoastLens }) {
   if (lens.scope === "") {
     return (
       <span className="bg-primary text-primary-foreground flex h-11 w-11 shrink-0 items-center justify-center rounded-xl shadow-sm">
-        <SwipeStatsMark className="h-7 w-7" />
+        <NewOldLogo className="h-7 w-7" />
       </span>
     );
   }
@@ -921,7 +921,7 @@ function HeroLensAvatar({ lens }: { lens: ProfileRoastLens }) {
   if (lens.scope === "") {
     return (
       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/10 text-white">
-        <SwipeStatsMark className="h-5 w-5" />
+        <NewOldLogo className="h-5 w-5" />
       </span>
     );
   }
