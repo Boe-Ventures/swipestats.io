@@ -28,7 +28,8 @@ export const metadata: Metadata = {
   description:
     "Upload your Tinder or Hinge data anonymously and get insights into your dating patterns. Compare with others worldwide.",
   icons: [
-    { rel: "icon", url: "/icon.png" },
+    { rel: "icon", url: "/images/brand/heart-tile.svg", type: "image/svg+xml" },
+    { rel: "icon", url: "/icon.png", type: "image/png" },
     { rel: "apple-touch-icon", url: "/icon.png" },
   ],
   openGraph: {

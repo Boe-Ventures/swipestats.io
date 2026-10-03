@@ -1,10 +1,7 @@
 import Link from "next/link";
-// import { BarChart3 } from "lucide-react";
 
 import { cn } from "@/components/ui";
-// import { OldSwipestatsLogo } from "@/components/ui/OldSwipestatsLogo";
-import { NewOldLogo } from "@/components/ui/NewOldLogo";
-// import { TinderInsights } from "@/components/ui/TinderInsights";
+import { SwipeStatsMark } from "@/components/ui/SwipeStatsMark";
 
 import HeaderClient from "./HeaderClient";
 
@@ -73,23 +70,9 @@ export default function Header({
         {/* Logo Section */}
         <div className="flex lg:flex-1">
           <Link href="/" className="flex items-center space-x-2">
-            {/* Original logo with BarChart icon */}
-            {/* <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
-              <BarChart3 className="size-4" />
-            </div> */}
-
-            {/* Standalone SVG flame logo (full color) */}
-            {/* <OldSwipestatsLogo className="h-8 w-auto" /> */}
-
-            {/* White flame in red container */}
-            <div className="bg-primary text-primary-foreground flex size-7 items-center justify-center rounded-md sm:size-8 dark:bg-rose-600 dark:text-white">
-              <NewOldLogo className="size-5 sm:size-6" />
+            <div className="bg-brand-rose flex size-7 items-center justify-center rounded-md text-white sm:size-8">
+              <SwipeStatsMark className="size-5 sm:size-6" />
             </div>
-
-            {/* Tinder Insights logo in red container */}
-            {/* <div className="bg-primary text-primary-foreground flex size-8 items-center justify-center rounded-md">
-              <TinderInsights className="size-6" />
-            </div> */}
             <span className="text-xl font-bold">SwipeStats</span>
           </Link>
         </div>
