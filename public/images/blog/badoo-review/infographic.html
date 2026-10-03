@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;600;700;800&display=swap">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; font-family: "Inter Tight", -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; color: #ffffff; -webkit-font-smoothing: antialiased; }
+  .row { display:grid; grid-template-columns:300px 1fr 90px; align-items:center; gap:22px; }
+  .name { font-size:22px; font-weight:800; color:#ffffff; }
+  .note { font-size:15px; color:#c4a0b0; margin-top:4px; }
+  .track { height:26px; background:#2a1220; border-radius:14px; overflow:hidden; }
+  .bar { height:100%; background:linear-gradient(90deg,#E11D48,#ff4694); border-radius:14px; }
+  .score { font-size:34px; font-weight:800; color:#ff4694; text-align:right; }
+  .price { background:#2a1220; border:1px solid rgba(255,128,181,0.18); border-radius:16px; padding:16px 18px; display:flex; flex-direction:column; gap:4px; }
+  .plbl { font-size:14px; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#ff80b5; }
+  .pnum { font-size:32px; font-weight:800; color:#ffffff; line-height:1.1; }
+  .pnote { font-size:14px; color:#c4a0b0; }
+</style>
+</head>
+<body>
+<div id="infographic" style="width:1200px; height:900px; background:radial-gradient(60% 50% at 12% 6%, rgba(255,70,148,0.20) 0%, rgba(0,0,0,0) 62%), #120810; display:flex; flex-direction:column; padding:48px 60px 0;">
+
+  <div style="display:flex; flex-direction:column; gap:10px;">
+    <div style="font-size:13px; font-weight:800; letter-spacing:0.10em; text-transform:uppercase; color:#ff80b5;">Badoo review</div>
+    <div style="font-size:44px; font-weight:800; color:#ffffff; line-height:1.12; letter-spacing:-0.01em;">How SwipeStats rates Badoo: 3.5 out of 5</div>
+    <div style="font-size:18px; color:#c4a0b0; line-height:1.4;">A vast dating pool with some significant drawbacks. Like panning for gold.</div>
+  </div>
+
+  <div style="flex:1; display:flex; flex-direction:column; justify-content:center; gap:26px; padding:20px 0 0;">
+    <div class="row"><div><div class="name">User base</div><div class="note">500 million+ registered users</div></div><div class="track"><div class="bar" style="width:90%"></div></div><div class="score">4.5</div></div>
+    <div class="row"><div><div class="name">Match rate</div><div class="note">Decent if you put in effort</div></div><div class="track"><div class="bar" style="width:70%"></div></div><div class="score">3.5</div></div>
+    <div class="row"><div><div class="name">Pricing</div><div class="note">Functional free version</div></div><div class="track"><div class="bar" style="width:70%"></div></div><div class="score">3.5</div></div>
+    <div class="row"><div><div class="name">Attractiveness</div><div class="note">Varies widely</div></div><div class="track"><div class="bar" style="width:60%"></div></div><div class="score">3</div></div>
+  </div>
+
+  <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-top:20px;">
+    <div class="price"><div class="plbl">1 week</div><div class="pnum">$8.99</div><div class="pnote">Premium</div></div>
+    <div class="price"><div class="plbl">1 month</div><div class="pnum">$25.99</div><div class="pnote">Premium</div></div>
+    <div class="price"><div class="plbl">3 months</div><div class="pnum">$63.99</div><div class="pnote">$21.33 per month</div></div>
+    <div class="price"><div class="plbl">6 months</div><div class="pnum">$95.99</div><div class="pnote">$16 per month</div></div>
+  </div>
+
+  <div style="display:flex; align-items:center; justify-content:space-between; border-top:1px solid #2a1220; padding:18px 0 24px; margin-top:22px;">
+    <img src="/home/pawvej/Developer/paw-server/kit/brands/swipestats/logo.png" alt="SwipeStats" style="height:28px; width:auto;">
+    <div style="font-size:15px; font-weight:600; color:#c4a0b0;">swipestats.io/blog/badoo-review</div>
+  </div>
+
+</div>
+</body>
+</html>
