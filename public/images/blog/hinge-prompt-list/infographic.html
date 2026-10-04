@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;600;700;800&display=swap">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; font-family: "Inter Tight", -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; color: #ffffff; -webkit-font-smoothing: antialiased; }
+  .lbl { font-size:14px; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#ff80b5; }
+  .card { background:#2a1220; border:1px solid rgba(255,128,181,0.18); border-radius:16px; padding:22px 22px; display:flex; flex-direction:column; gap:8px; }
+  .cnum { font-size:52px; font-weight:800; color:#ff4694; line-height:1.0; letter-spacing:-0.01em; }
+  .cnote { font-size:17px; color:#ffffff; line-height:1.35; }
+  .slot { background:#1a1020; border:1px solid rgba(255,128,181,0.18); border-radius:14px; padding:18px 18px; display:flex; flex-direction:column; gap:6px; }
+  .sname { font-size:22px; font-weight:800; color:#ffffff; }
+  .snote { font-size:16px; color:#c4a0b0; }
+  .slot.hot { background:linear-gradient(135deg,#E11D48,#ff4694); border:none; }
+  .slot.hot .snote { color:#ffffff; }
+</style>
+</head>
+<body>
+<div id="infographic" style="width:1200px; height:900px; background:radial-gradient(60% 50% at 12% 6%, rgba(255,70,148,0.20) 0%, rgba(0,0,0,0) 62%), #120810; display:flex; flex-direction:column; padding:48px 60px 0;">
+
+  <div style="display:flex; flex-direction:column; gap:10px;">
+    <div style="font-size:13px; font-weight:800; letter-spacing:0.10em; text-transform:uppercase; color:#ff80b5;">Hinge prompt list</div>
+    <div style="font-size:44px; font-weight:800; color:#ffffff; line-height:1.12; letter-spacing:-0.01em;">Why your Hinge prompts matter more than your face</div>
+    <div style="font-size:18px; color:#c4a0b0; line-height:1.4;">105+ prompts across 10 categories. Here is what they do for you, and what you get to work with.</div>
+  </div>
+
+  <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-top:34px;">
+    <div class="card"><div class="cnum">47%</div><div class="cnote">more likely to lead to a date: prompt likes vs photo likes</div></div>
+    <div class="card"><div class="cnum">2x</div><div class="cnote">more likely to lead to a date: a comment vs a plain like</div></div>
+    <div class="card"><div class="cnum">50%</div><div class="cnote">more engagement from video prompts</div></div>
+    <div class="card"><div class="cnum">41%</div><div class="cnote">more likely to become a date when chats start from voice notes</div></div>
+  </div>
+
+  <div style="flex:1; display:flex; flex-direction:column; justify-content:center; gap:16px;">
+    <div class="lbl">Your 6 prompt slots</div>
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:14px;">
+      <div class="slot hot"><div class="sname">Written prompt 1</div><div class="snote">150 characters</div></div>
+      <div class="slot hot"><div class="sname">Written prompt 2</div><div class="snote">150 characters</div></div>
+      <div class="slot hot"><div class="sname">Written prompt 3</div><div class="snote">150 characters</div></div>
+      <div class="slot"><div class="sname">Voice prompt</div><div class="snote">30 seconds</div></div>
+      <div class="slot"><div class="sname">Video prompt</div><div class="snote">30 seconds</div></div>
+      <div class="slot"><div class="sname">Prompt poll</div><div class="snote">Let matches vote</div></div>
+    </div>
+  </div>
+
+  <div style="display:flex; align-items:center; justify-content:space-between; border-top:1px solid #2a1220; padding:18px 0 24px; margin-top:10px;">
+    <img src="/home/pawvej/Developer/paw-server/kit/brands/swipestats/logo.png" alt="SwipeStats" style="height:28px; width:auto;">
+    <div style="font-size:15px; font-weight:600; color:#c4a0b0;">swipestats.io/blog/hinge-prompt-list</div>
+  </div>
+
+</div>
+</body>
+</html>
