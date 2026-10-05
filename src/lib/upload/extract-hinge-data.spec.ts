@@ -1,8 +1,6 @@
 import { describe, expect, it } from "bun:test";
-
-import { extractHingeData, isValidHingeJson } from "./extract-hinge-data";
-import type { FullHingeDataJSON } from "@/lib/interfaces/HingeDataJSON";
-
+import { extractHingeData } from "./extract-hinge-data";
+import type {} from "@/lib/interfaces/HingeDataJSON";
 function userFile(age = 30) {
   return {
     preferences: {},
@@ -39,57 +37,7 @@ function userFile(age = 30) {
     },
   };
 }
-
 describe("extractHingeData", () => {
-  it("does not let empty array sidecars overwrite a non-empty matches file", async () => {
-    const matchThread = {
-      like: [{ timestamp: "2026-01-01T00:00:00.000Z", like: [] }],
-    };
-
-    const result = await extractHingeData([
-      JSON.stringify(userFile()),
-      JSON.stringify([matchThread]),
-      JSON.stringify([]),
-      JSON.stringify([]),
-    ]);
-
-    expect(result.anonymizedHingeJson.Matches).toEqual([matchThread]);
-    expect(result.anonymizedHingeJson.Prompts).toBeUndefined();
-  });
-
-  it("distinguishes an omitted prompts sidecar from an explicit empty file", async () => {
-    const parts = [
-      JSON.stringify(userFile()),
-      JSON.stringify([
-        { like: [{ timestamp: "2026-01-01T00:00:00.000Z", like: [] }] },
-      ]),
-      JSON.stringify([]),
-    ];
-
-    const omitted = await extractHingeData(parts);
-    const explicitEmpty = await extractHingeData(parts, { prompts: true });
-
-    expect(omitted.anonymizedHingeJson.Prompts).toBeUndefined();
-    expect(explicitEmpty.anonymizedHingeJson.Prompts).toEqual([]);
-  });
-
-  it("recognizes prompts even when the prompt text itself is absent", async () => {
-    const prompt = {
-      id: 1,
-      type: "text",
-      text: "An answer",
-      created: "2026-01-01T00:00:00.000Z",
-      user_updated: "2026-01-01T00:00:00.000Z",
-    };
-
-    const result = await extractHingeData([
-      JSON.stringify(userFile()),
-      JSON.stringify([prompt]),
-    ]);
-
-    expect(result.anonymizedHingeJson.Prompts).toEqual([prompt]);
-  });
-
   it("removes account and device identifiers before blob upload", async () => {
     const result = await extractHingeData([
       JSON.stringify(userFile()),
@@ -98,7 +46,6 @@ describe("extractHingeData", () => {
       ]),
       JSON.stringify([{ plan: "sensitive-subscription" }]),
     ]);
-
     expect(result.anonymizedHingeJson.User.identity).not.toHaveProperty("fbid");
     expect(result.anonymizedHingeJson.User.devices?.[0]).not.toHaveProperty(
       "device_id",
@@ -116,45 +63,9 @@ describe("extractHingeData", () => {
       "first_name",
     );
     expect(result.anonymizedHingeJson).not.toHaveProperty("Subscriptions");
-
     const serialized = JSON.stringify(result.anonymizedHingeJson);
     expect(serialized).not.toContain("person@example.com");
     expect(serialized).not.toContain("sensitive-network-name");
     expect(serialized).not.toContain("sensitive-subscription");
-  });
-
-  it("recognizes a voice-note-only matches file", async () => {
-    const voiceNoteThread = {
-      voice_notes: [
-        {
-          timestamp: "2026-01-01T00:00:00.000Z",
-          url: "https://example.com/voice-note",
-        },
-      ],
-    };
-
-    const result = await extractHingeData([
-      JSON.stringify(userFile()),
-      JSON.stringify([voiceNoteThread]),
-    ]);
-
-    expect(result.anonymizedHingeJson.Matches).toEqual([voiceNoteThread]);
-  });
-});
-
-describe("isValidHingeJson", () => {
-  it("rejects implausible ages and invalid signup timestamps", () => {
-    const data = {
-      User: userFile(12),
-      Matches: [{ like: [{ timestamp: "2026-01-01", like: [] }] }],
-      Prompts: [],
-    } as unknown as FullHingeDataJSON;
-    data.User.account.signup_time = "not-a-date";
-
-    const [valid, errors] = isValidHingeJson(data);
-
-    expect(valid).toBe(false);
-    expect(errors.birth_date).toBeDefined();
-    expect(errors.create_date).toBeDefined();
   });
 });

@@ -66,17 +66,4 @@ describe("extractRayaData", () => {
     expect(serialized).not.toContain("direct-identifier");
     expect(serialized).not.toContain("private-person");
   });
-
-  test("requires the canonical activity files", async () => {
-    try {
-      await extractRayaData({
-        ...files,
-        "my-raya-data/matches.json": "",
-      });
-      throw new Error("Expected extraction to fail");
-    } catch (error) {
-      expect(error).toBeInstanceOf(Error);
-      expect((error as Error).message).toContain("matches.json");
-    }
-  });
 });

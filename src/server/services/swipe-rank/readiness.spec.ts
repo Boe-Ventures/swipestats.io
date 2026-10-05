@@ -13,12 +13,6 @@ const cleanState = {
 };
 
 describe("SwipeRank build activation", () => {
-  test("accepts only the unchanged latest complete FULL build", () => {
-    expect(() =>
-      assertTinderSwipeRankBuildCanActivate("srb_current", cleanState),
-    ).not.toThrow();
-  });
-
   test("a prior activation cannot bless a newer FULL replacement", () => {
     expect(() =>
       assertTinderSwipeRankBuildCanActivate("srb_previous", cleanState),

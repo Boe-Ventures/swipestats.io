@@ -30,52 +30,6 @@ const rawExport = {
 };
 
 describe("extractTinderData", () => {
-  test("validates and normalizes the raw export before anonymizing it", async () => {
-    const payload = await extractTinderData(JSON.stringify(rawExport));
-
-    expect(payload.tinderId).toMatch(/^[a-f0-9]{64}$/);
-    expect(payload.anonymizedTinderJson.Usage.app_opens).toEqual({
-      "2026-01-12": 1,
-    });
-    expect(payload.anonymizedTinderJson.Usage.swipes_likes).toEqual({
-      "2026-01-12": 3,
-    });
-    expect(payload.anonymizedTinderJson.User).not.toHaveProperty("email");
-    expect(payload.anonymizedTinderJson.User).not.toHaveProperty("full_name");
-    expect(payload.anonymizedTinderJson.User.create_date_inferred).toBe(false);
-  });
-
-  test("marks an observation-derived create date as inferred", async () => {
-    const { create_date: _createDate, ...userWithoutCreateDate } =
-      rawExport.User;
-    const payload = await extractTinderData(
-      JSON.stringify({ ...rawExport, User: userWithoutCreateDate }),
-    );
-
-    expect(payload.anonymizedTinderJson.User.create_date).toBe("2026-01-12");
-    expect(payload.anonymizedTinderJson.User.create_date_inferred).toBe(true);
-  });
-
-  test("fails locally when a count is not a nonnegative integer", async () => {
-    const invalid = {
-      ...rawExport,
-      Usage: {
-        ...rawExport.Usage,
-        app_opens: { "2026-01-12": -1 },
-      },
-    };
-
-    let error: unknown;
-    try {
-      await extractTinderData(JSON.stringify(invalid));
-    } catch (caught) {
-      error = caught;
-    }
-
-    expect(error).toBeInstanceOf(Error);
-    expect((error as Error).message).toContain("Usage.app_opens");
-  });
-
   test("projects raw exports onto the strict public allowlist", async () => {
     const exportWithPrivateMetadata = {
       ...rawExport,

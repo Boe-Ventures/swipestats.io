@@ -12,7 +12,8 @@ on Neon Postgres, Better Auth, Tailwind 4 + Radix, Velite for MDX, React Email
 - Resend, LemonSqueezy billing, Vercel AI SDK v7 with `@ai-sdk/anthropic`.
   Package manager is **Bun**.
 
-`bun check` (migration-history validation + ESLint + tsc) is the pre-PR gate.
+`bun check` (copy and migration-history validation, Velite, ESLint, tsc,
+and the retained Bun tests) is the pre-PR gate.
 Scripts, env vars, directory layout, and the table list are discoverable from
 `package.json`, `.env.example`, `src/env.ts`, and the file tree. This file
 covers what they don't tell you.
@@ -78,8 +79,8 @@ comparisons. System cohorts key on gender + data provider (e.g.
 
 ## Gotchas
 
-**`adminProcedure` requires an admin email in production but is unauthenticated
-in dev.** Don't mistake local access for real authorization.
+**Admin access requires a verified configured admin identity in every
+environment.** Anonymous or unverified sessions are not admin credentials.
 
 **Better Auth runs an anonymous plugin**, so guest sessions exist - a session
 being present does not mean the user is registered.
@@ -114,10 +115,22 @@ For commit and PR conventions, use the **`git-conventions`** skill.
 
 ## Testing
 
-Dedicated suites are still forming, so `bun check`, `bun typecheck`, and
-`bun preview` are the baseline. New specs go beside the feature as
-`.spec.ts(x)`, stub tRPC calls, and reuse fixtures from `test-data/`. Document
-manual QA in the PR until automation lands.
+Keep roughly the most valuable 10% of tests. This is a selection principle,
+not a hard quota or coverage target. Default to no new test for routine UI,
+copy, formatting, or reversible helper changes.
+
+Before adding a test, name the consequential failure it catches and explain
+why the existing suite and static checks do not catch it. Protect privacy,
+consent, paid entitlement, ownership, import data loss, and publication
+safety. Prefer replacing a weaker test over growing the suite. Do not remove
+essential protection solely to hit 10%. Avoid assertions that merely repeat
+implementation details or search source text.
+
+Run `bun check` before a PR. Specs live beside the feature as `.spec.ts(x)`.
+The Bun preload supplies local test credentials; mock external calls rather
+than using shared databases or live providers. Document manual QA when user
+flows change. Read [testing principles](docs/testing-principles.md) for
+selection criteria and the audit baseline.
 
 ## Deeper docs
 

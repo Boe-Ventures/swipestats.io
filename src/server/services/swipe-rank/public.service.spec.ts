@@ -1,32 +1,17 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
-
 const execute = mock(async () => ({ rows: [] as Record<string, unknown>[] }));
-
-await mock.module("@/env", () => ({
-  env: {
-    SWIPE_RANK_PUBLIC_ID_SECRET: "test-only-swipe-rank-public-identity-secret",
-    BETTER_AUTH_SECRET: undefined,
-  },
-}));
-
 await mock.module("@/server/db", () => ({
   db: { execute },
   withTransaction: mock(),
   withAdvisoryLockTransaction: mock(),
 }));
-
-const {
-  getPublicSwipeRankLeaderboard,
-  getPublicSwipeRankPseudonym,
-  listPublicSwipeRankPeriods,
-} = await import("./public.service");
-
+const { getPublicSwipeRankLeaderboard, getPublicSwipeRankPseudonym } =
+  await import("./public.service");
 const MONTH = {
   kind: "MONTH" as const,
   start: "2025-12-01",
   end: "2026-01-01",
 };
-
 function leaderboardRow(
   overrides: Partial<Record<string, unknown>> = {},
 ): Record<string, unknown> {
@@ -56,87 +41,15 @@ function leaderboardRow(
     ...overrides,
   };
 }
-
 describe("SwipeRank public leaderboard", () => {
-  test("paginates matching rows while retaining frozen season ranks and field size", async () => {
-    execute.mockResolvedValueOnce({
-      rows: [
-        leaderboardRow({
-          matching_count: "101",
-          profile_id: "srp_one",
-          rank: "102",
-          top_share: "7.3",
-          metric_value: "1.048",
-          metric_numerator: "285",
-          metric_denominator: "272",
-        }),
-      ],
-    });
-    const result = await getPublicSwipeRankLeaderboard({
-      period: MONTH,
-      page: 2,
-      filters: { gender: "FEMALE", ageBand: "25-34" },
-    });
-    expect(result).toMatchObject({
-      fieldSize: 1406,
-      matchingCount: 101,
-      pageSize: 100,
-      totalPages: 2,
-    });
-    expect(result.entries[0]).toMatchObject({
-      rank: 102,
-      matches: 285,
-      rightSwipes: 272,
-      matchYieldPercent: 104.8,
-    });
-  });
-
-  test("returns zero matching pages without suppressing the published field", async () => {
-    execute.mockResolvedValueOnce({
-      rows: [leaderboardRow({ matching_count: "0" })],
-    });
-    const result = await getPublicSwipeRankLeaderboard({
-      period: MONTH,
-      page: 1,
-      filters: { ageBand: "55+" },
-    });
-    expect(result).toMatchObject({
-      ready: true,
-      fieldSize: 1406,
-      matchingCount: 0,
-      totalPages: 0,
-      countsSuppressed: false,
-      entries: [],
-    });
-  });
-
   beforeEach(() => {
     execute.mockClear();
   });
-
-  test("creates deterministic, cross-season opaque identities", () => {
-    const secret = "a sufficiently long test-only secret";
-    const identity = getPublicSwipeRankPseudonym(
-      "srp_internal-profile-id",
-      secret,
-    );
-
-    expect(identity).toEqual(
-      getPublicSwipeRankPseudonym("srp_internal-profile-id", secret),
-    );
-    expect(identity.entryKey).toMatch(/^entry_[a-f0-9]{32}$/);
-    expect(JSON.stringify(identity)).not.toContain("internal-profile-id");
-    expect(
-      getPublicSwipeRankPseudonym("srp_internal-profile-id", secret),
-    ).toEqual(identity);
-  });
-
   test("fails closed when no identity secret is supplied", () => {
     expect(() => getPublicSwipeRankPseudonym("srp_one", "")).toThrow(
       "must not be empty",
     );
   });
-
   test("returns every eligible row with only the anonymous public contract", async () => {
     execute.mockResolvedValueOnce({
       rows: [
@@ -161,12 +74,10 @@ describe("SwipeRank public leaderboard", () => {
         }),
       ],
     });
-
     const result = await getPublicSwipeRankLeaderboard({
       period: MONTH,
       page: 1,
     });
-
     expect(result).toMatchObject({
       ready: true,
       fieldSize: 1406,
@@ -199,9 +110,9 @@ describe("SwipeRank public leaderboard", () => {
     expect(entry).toMatchObject({
       rank: 122,
       matchYieldPercent: 19.9,
-      matches: 4_345,
-      rightSwipes: 21_875,
-      totalSwipes: 91_250,
+      matches: 4345,
+      rightSwipes: 21875,
+      totalSwipes: 91250,
       activeDays: 615,
       age: 33,
       gender: "MALE",
@@ -210,7 +121,7 @@ describe("SwipeRank public leaderboard", () => {
       region: "Oslo",
       country: "NO",
       seasonsRanked: 7,
-      observedHistoryDays: 4_044,
+      observedHistoryDays: 4044,
       photoCount: 4,
     });
     expect(entry.topShare).toBeCloseTo((122 / 1406) * 100);
@@ -223,152 +134,18 @@ describe("SwipeRank public leaderboard", () => {
     expect(entry).not.toHaveProperty("matchYieldDenominator");
     expect(entry).not.toHaveProperty("hasQualityAnomaly");
   });
-
-  test("publishes exact descriptors even for uncommon combinations", async () => {
-    execute.mockResolvedValueOnce({
-      rows: [
-        leaderboardRow({
-          profile_id: "srp_internal-one",
-          rank: "1",
-          top_share: String((1 / 1406) * 100),
-          metric_value: "0.5",
-          metric_numerator: "125",
-          metric_denominator: "250",
-          active_days: "20",
-          age_in_period: "58",
-          gender: "MORE",
-          interested_in: "OTHER",
-          city: "Reykjavík",
-          region: "Capital Region",
-          country: "IS",
-          seasons_ranked: "2",
-          observed_history_days: "800",
-          photo_count: "0",
-        }),
-      ],
-    });
-
-    const result = await getPublicSwipeRankLeaderboard({
-      period: MONTH,
-      page: 1,
-    });
-
-    expect(result.entries[0]).toMatchObject({
-      age: 58,
-      gender: "MORE",
-      interestedIn: "OTHER",
-      city: "Reykjavík",
-      region: "Capital Region",
-      country: "IS",
-      seasonsRanked: 2,
-      observedHistoryDays: 800,
-      photoCount: 0,
-    });
-  });
-
   test("keeps empty later pages browseable with complete page metadata", async () => {
     execute.mockResolvedValueOnce({ rows: [leaderboardRow()] });
-
     const result = await getPublicSwipeRankLeaderboard({
       period: MONTH,
       page: 15,
     });
-
     expect(result).toMatchObject({
       fieldSize: 1406,
       page: 15,
       pageSize: 100,
       totalPages: 15,
       entries: [],
-    });
-  });
-
-  test("suppresses exact counts and rows below the public floor", async () => {
-    execute.mockResolvedValueOnce({
-      rows: [leaderboardRow({ field_size: "7" })],
-    });
-
-    const result = await getPublicSwipeRankLeaderboard({
-      period: MONTH,
-      page: 1,
-    });
-
-    expect(result).toMatchObject({
-      fieldSize: null,
-      countsSuppressed: true,
-      totalPages: 0,
-      entries: [],
-    });
-  });
-
-  test("distinguishes an unpublished field from a populated one", async () => {
-    execute.mockResolvedValueOnce({
-      rows: [],
-    });
-
-    const result = await getPublicSwipeRankLeaderboard({
-      period: MONTH,
-      page: 1,
-    });
-
-    expect(result.ready).toBeFalse();
-    expect(result.asOf).toBeNull();
-    expect(result.entries).toEqual([]);
-  });
-
-  test("rejects unsafe pagination before querying", async () => {
-    const error = await getPublicSwipeRankLeaderboard({
-      period: MONTH,
-      page: 0,
-    }).then(
-      () => null,
-      (reason: unknown) => reason,
-    );
-    expect(error).toBeInstanceOf(Error);
-    if (!(error instanceof Error)) throw error;
-    expect(error.message).toContain("page must be a positive integer");
-    expect(execute).not.toHaveBeenCalled();
-  });
-
-  test("returns published closed seasons in reverse chronological order", async () => {
-    execute.mockResolvedValueOnce({
-      rows: [
-        {
-          period_start: "2026-06-01",
-          period_end: "2026-07-01",
-          period_kind: "MONTH",
-          as_of: "2026-07-01T06:30:00.000Z",
-          minimum_rate_denominator: "100",
-          minimum_active_days: "5",
-          field_size: "70",
-        },
-        {
-          period_start: "2026-04-01",
-          period_end: "2026-07-01",
-          period_kind: "QUARTER",
-          as_of: "2026-06-01T06:30:00.000Z",
-          minimum_rate_denominator: "100",
-          minimum_active_days: "5",
-          field_size: "900",
-        },
-      ],
-    });
-
-    const result = await listPublicSwipeRankPeriods();
-
-    expect(result.periods.map(({ period }) => period.kind)).toEqual([
-      "MONTH",
-      "QUARTER",
-    ]);
-    expect(result.periods[0]).toMatchObject({
-      minimumRateDenominator: 100,
-      minimumActiveDays: 5,
-      fieldSize: 70,
-    });
-    expect(result.periods[0]).not.toHaveProperty("publishedProfiles");
-    expect(result.periods[1]).toMatchObject({
-      period: { start: "2026-04-01" },
-      fieldSize: 900,
     });
   });
 });

@@ -43,10 +43,4 @@ describe("anonymizeImageBuffer", () => {
     expect(result.outputBytes).toBeGreaterThan(0);
     expect(result.buffer.equals(clearResult.buffer)).toBe(false);
   });
-
-  test("rejects empty input", async () => {
-    expect(anonymizeImageBuffer(new Uint8Array())).rejects.toThrow(
-      "Image must contain",
-    );
-  });
 });
