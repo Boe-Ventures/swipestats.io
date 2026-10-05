@@ -1,23 +1,6 @@
 import { expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
 import { serializeResearchProfile } from "./dataset-contract";
 import { isResearchLicenseValid, isExportExpired } from "./access-policy";
-
-test("free sample retains every shipped field and stable join ID", () => {
-  const lines = readFileSync(
-    "public/downloads/swipestats-demo-dataset.jsonl",
-    "utf8",
-  )
-    .trim()
-    .split("\n");
-  for (const line of lines) {
-    const row = JSON.parse(line) as Parameters<
-      typeof serializeResearchProfile
-    >[0] & { type: "profile" };
-    if (row.type === "profile")
-      expect(serializeResearchProfile(row)).toEqual(row);
-  }
-});
 test("research columns flow through while established internal fields stay excluded", () => {
   const profile = {
     tinderId: "stable-id",

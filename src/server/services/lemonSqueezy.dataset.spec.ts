@@ -60,26 +60,6 @@ describe("dataset purchase quantities", () => {
     expect(result.amount).toBe(60000);
   });
 
-  test("rejects invalid quantities before contacting the provider", async () => {
-    mockFetch(async () => {
-      throw new Error("Unexpected network request");
-    });
-    for (const quantity of [0, -1, 1.5, 13, NaN]) {
-      expect(
-        createDatasetCheckout(
-          "STANDARD",
-          undefined,
-          "research_pricing",
-          quantity,
-        ),
-      ).rejects.toThrow();
-    }
-    expect(
-      createDatasetCheckout("FRESH", undefined, "research_pricing", 2),
-    ).rejects.toThrow();
-    expect(fetchSpy).not.toHaveBeenCalled();
-  });
-
   test("fulfillment reads quantity from the purchased item, independent of discounts and checkout metadata", async () => {
     mockFetch(async (url) => {
       if (

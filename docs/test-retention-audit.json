@@ -1,0 +1,983 @@
+{
+  "baselineCommit": "874890dbe3ade1f4053ec7eb160c19752b682782",
+  "baseline": {
+    "files": 100,
+    "cases": 404,
+    "lines": 9791
+  },
+  "selectionRule": "Keep consequential privacy, entitlement, ownership, data-loss and publication boundaries. Roughly 10% is a selection heuristic, not a quota.",
+  "retainedCases": 47,
+  "files": [
+    {
+      "file": "src/app/(marketing)/insights/tinder/[tinderId]/_components/SwipeRankCard.spec.ts",
+      "keep": [],
+      "remove": [
+        "does not restore the retired publication opt-in flow",
+        "requests only published seasons without live refresh polling"
+      ]
+    },
+    {
+      "file": "src/app/(marketing)/insights/tinder/[tinderId]/_components/funnel-path-utils.spec.ts",
+      "keep": [],
+      "remove": [
+        "keeps inconsistent export counts inside the drawable funnel",
+        "returns zero when the reference population has no observations",
+        "pads a multi-digit count even when the flow is narrow",
+        "expands the complete swipe sentence for large totals"
+      ]
+    },
+    {
+      "file": "src/app/(marketing)/insights/tinder/[tinderId]/_components/tinder-message-ui-metrics.spec.ts",
+      "keep": [],
+      "remove": [
+        "keeps an absent message-derived average unavailable",
+        "formats the average computed from retained message rows",
+        "uses conversation records as the coverage denominator",
+        "does not invent a zero-percent rate when no records are present",
+        "preserves a valid zero-second outgoing-message gap"
+      ]
+    },
+    {
+      "file": "src/app/(marketing)/leaderboard/period-options.spec.ts",
+      "keep": [],
+      "remove": [
+        "generated placeholders begin with the preceding closed month",
+        "does not advertise a month when nothing is published",
+        "selects published quarter and year inventories independently",
+        "published inventory is ordered newest first"
+      ]
+    },
+    {
+      "file": "src/components/auth/ClientAuthForm.spec.tsx",
+      "keep": [
+        "server-rendered credential forms use POST and disable controls until hydration"
+      ],
+      "remove": []
+    },
+    {
+      "file": "src/components/ui/base-ui-contract.test.tsx",
+      "keep": [],
+      "remove": [
+        "Button render composes a link without nesting a button",
+        "Checkbox keeps Base UI's hidden native input contract",
+        "Accordion accepts the always-array value model",
+        "Tabs render the expected tab and panel relationships",
+        "Dropdown menu labels render inside the group they own"
+      ]
+    },
+    {
+      "file": "src/components/ui/form-new.test.tsx",
+      "keep": [],
+      "remove": [
+        "derives stable IDs and composes described-by values",
+        "preserves caller IDs and ARIA while adding shared relationships",
+        "renders a native control with its label, description, and error",
+        "renders a compound checkbox group with a legend and shared help",
+        "wires country and region labels to their combobox triggers"
+      ]
+    },
+    {
+      "file": "src/components/ui/theme.spec.tsx",
+      "keep": [],
+      "remove": [
+        "restores an explicit choice regardless of the system preference",
+        "resolves system mode and retains its marker",
+        "falls back to light for absent, invalid, or blocked storage"
+      ]
+    },
+    {
+      "file": "src/lib/agent-content.spec.ts",
+      "keep": [],
+      "remove": [
+        "has a useful document outline and substantial raw content",
+        "points agents to recovery and policy resources"
+      ]
+    },
+    {
+      "file": "src/lib/agent-metadata.spec.ts",
+      "keep": [],
+      "remove": [
+        "publishes canonical brand and legal identity",
+        "includes agent-readable contact and postal address schemas"
+      ]
+    },
+    {
+      "file": "src/lib/ai/copy-style.spec.ts",
+      "keep": [],
+      "remove": [
+        "cleans nested copy without mutating stored results or content references"
+      ]
+    },
+    {
+      "file": "src/lib/analytics/analytics.properties.spec.ts",
+      "keep": ["does not admit raw blob URLs into operational events"],
+      "remove": []
+    },
+    {
+      "file": "src/lib/blob-client-upload-policy.spec.ts",
+      "keep": [
+        "rejects client attempts to widen types or size",
+        "binds data paths to the declared profile and canonical shape",
+        "binds gallery uploads to the authenticated user's namespace"
+      ],
+      "remove": [
+        "gives data exports a server-owned JSON-only 200 MiB policy",
+        "accepts the equivalent Hinge and Raya export path contracts",
+        "requires a known resource context",
+        "rejects resource types without an ownership policy",
+        "turns local filenames into one bounded safe segment",
+        "uses sanitized filenames in every client media path"
+      ]
+    },
+    {
+      "file": "src/lib/catalog.spec.ts",
+      "keep": [],
+      "remove": [
+        "derives canonical place IDs from the configuration keys",
+        "an Oslo search includes country and overlapping regions",
+        "a country search includes launch cities, states, and its region",
+        "a state search includes its cities and broader ancestors",
+        "breadcrumbs follow the typed primary-parent chain",
+        "separates place-bound services from digital products",
+        "uses distinct location behavior for services, apps, and tools",
+        "shares hierarchical location matching across catalog consumers",
+        "includes a listing in its secondary JSONB categories"
+      ]
+    },
+    {
+      "file": "src/lib/chat-turn-state.test.ts",
+      "keep": [],
+      "remove": [
+        "stays hidden when the chat is idle",
+        "shows once the request is in flight",
+        "stays visible when the stream opens an empty assistant shell",
+        "yields to streaming prose",
+        "yields to a tool card running under its own label",
+        "does not nag while a tool waits on the user's approval",
+        "shows between steps once a tool card has settled",
+        "stays hidden before the reply has drawn anything",
+        "is mutually exclusive with the pending turn",
+        "treats an empty streaming shell as having nothing to draw",
+        "treats whitespace-only prose as having nothing to draw",
+        "counts a tool card in any state"
+      ]
+    },
+    {
+      "file": "src/lib/content-negotiation.spec.ts",
+      "keep": [],
+      "remove": [
+        "defaults browser and wildcard requests to HTML",
+        "honors client order and quality values",
+        "lets a specific rejection override a wildcard",
+        "returns no representation for an unsupported media type",
+        "adds Accept to an existing Vary header once",
+        "serves Markdown directly with a cache-safe Vary header"
+      ]
+    },
+    {
+      "file": "src/lib/conversation-replay.spec.ts",
+      "keep": [],
+      "remove": [
+        "finds explainable highlights from outgoing message activity",
+        "compares question and length patterns without labeling success",
+        "returns no comparison unless both groups have text openers"
+      ]
+    },
+    {
+      "file": "src/lib/cta-links.spec.ts",
+      "keep": [],
+      "remove": [
+        "preserves destination parameters and anchors",
+        "preserves existing attribution",
+        "leaves external links and local anchors unchanged"
+      ]
+    },
+    {
+      "file": "src/lib/hinge/account-period.spec.ts",
+      "keep": [],
+      "remove": [
+        "keeps the newest account signup separate from earliest merged history",
+        "uses legacy createDate when the earliest-history field is absent",
+        "rejects a backward account merge",
+        "recognizes an exact signup instant across historical ID versions",
+        "rejects invalid signup dates"
+      ]
+    },
+    {
+      "file": "src/lib/hinge/age.spec.ts",
+      "keep": [],
+      "remove": [
+        "anchors export age to last seen rather than account signup",
+        "uses UTC for a timezone-less Hinge last-seen wall clock",
+        "falls back to processing time when last seen is invalid",
+        "rejects ages outside Hinge's plausible adult range"
+      ]
+    },
+    {
+      "file": "src/lib/hinge/timestamp.spec.ts",
+      "keep": [],
+      "remove": [
+        "treats timezone-less provider wall time as UTC",
+        "accepts explicit provider offsets without changing the instant",
+        "retains microseconds when ordering instants in the same millisecond",
+        "rejects invalid calendar values"
+      ]
+    },
+    {
+      "file": "src/lib/profile.utils.spec.ts",
+      "keep": [],
+      "remove": [
+        "turns a year older on the birthday regardless of birth clock time",
+        "keeps calendar keys and canonicalizes ISO timestamp keys",
+        "rejects impossible and ambiguous date keys",
+        "rejects negative and fractional counts",
+        "derives the range from the union of every metric"
+      ]
+    },
+    {
+      "file": "src/lib/research/api-boundary.spec.ts",
+      "keep": [],
+      "remove": []
+    },
+    {
+      "file": "src/lib/research/dataset-contract.spec.ts",
+      "keep": [
+        "research columns flow through while established internal fields stay excluded",
+        "every purchased product requires valid same-store live entitlement"
+      ],
+      "remove": ["free sample retains every shipped field and stable join ID"]
+    },
+    {
+      "file": "src/lib/research/native-download.spec.ts",
+      "keep": [],
+      "remove": [
+        "native downloads reuse one target, serialize slow initiation, recover errors, and dispose"
+      ]
+    },
+    {
+      "file": "src/lib/research/public-sample.spec.ts",
+      "keep": [],
+      "remove": ["public JSONL and ZIP preserve the research sample"]
+    },
+    {
+      "file": "src/lib/research/receipt-access.spec.ts",
+      "keep": [],
+      "remove": [
+        "new and legacy receipts prefill access while removing credentials from the URL",
+        "a captured receipt is consumed once"
+      ]
+    },
+    {
+      "file": "src/lib/sponsorship.spec.ts",
+      "keep": [],
+      "remove": [
+        "the research datasets campaign runs with no end date",
+        "respects a configured start and end window"
+      ]
+    },
+    {
+      "file": "src/lib/swipe-rank/country.spec.ts",
+      "keep": [],
+      "remove": [
+        "equates ISO-2, ISO-3, English name, and native name forms",
+        "supports common unambiguous aliases",
+        "does not collapse different or unknown labels",
+        "returns database comparison forms without mutating a source value",
+        "displays full country names and preserves unknown labels"
+      ]
+    },
+    {
+      "file": "src/lib/swipe-rank/format.spec.ts",
+      "keep": [],
+      "remove": [
+        "defaults to the most frequently published season",
+        "preserves match yield above 100 percent",
+        "formats month, quarter, and year seasons"
+      ]
+    },
+    {
+      "file": "src/lib/swipe-rank/orientation.spec.ts",
+      "keep": [],
+      "remove": [
+        "labels binary same- and different-gender preferences",
+        "labels Tinder's multi-gender preference as bi",
+        "keeps non-binary and missing combinations honest"
+      ]
+    },
+    {
+      "file": "src/lib/tinder-message-semantics.spec.ts",
+      "keep": [],
+      "remove": ["does not interpret the match reference as direction"]
+    },
+    {
+      "file": "src/lib/upload/extract-hinge-data.spec.ts",
+      "keep": ["removes account and device identifiers before blob upload"],
+      "remove": [
+        "does not let empty array sidecars overwrite a non-empty matches file",
+        "distinguishes an omitted prompts sidecar from an explicit empty file",
+        "recognizes prompts even when the prompt text itself is absent",
+        "recognizes a voice-note-only matches file",
+        "rejects implausible ages and invalid signup timestamps"
+      ]
+    },
+    {
+      "file": "src/lib/upload/extract-raya-data.spec.ts",
+      "keep": ["aggregates Raya activity and strips direct identifiers"],
+      "remove": ["requires the canonical activity files"]
+    },
+    {
+      "file": "src/lib/upload/extract-tinder-data.spec.ts",
+      "keep": ["projects raw exports onto the strict public allowlist"],
+      "remove": [
+        "validates and normalizes the raw export before anonymizing it",
+        "marks an observation-derived create date as inferred",
+        "fails locally when a count is not a nonnegative integer"
+      ]
+    },
+    {
+      "file": "src/lib/upload/hinge-guided-upload.spec.ts",
+      "keep": [],
+      "remove": [
+        "recognizes exact export basenames inside nested ZIP paths",
+        "flags duplicate same-kind files inside one selection",
+        "does not mark malformed or structurally wrong files as loaded",
+        "requires user.json and matches.json but not prompts.json",
+        "preserves explicit prompts.json presence for empty prompt exports"
+      ]
+    },
+    {
+      "file": "src/lib/upload/hinge-profile-id.spec.ts",
+      "keep": ["rejects a request ID that does not belong to the blob"],
+      "remove": [
+        "preserves the established v2 spelling contract",
+        "rejects invalid signup timestamps before hashing"
+      ]
+    },
+    {
+      "file": "src/lib/upload/hinge-runtime-schema.spec.ts",
+      "keep": [
+        "rejects unknown fields at every server boundary level",
+        "deeply strips raw identifiers while retaining allowlisted activity"
+      ],
+      "remove": [
+        "accepts the anonymized upload contract",
+        "accepts Hinge's historical timezone-less microsecond grammar",
+        "rejects malformed identity fields before persistence",
+        "requires meaningful recognized activity and validates it deeply",
+        "rejects impossible and clearly future provider timestamps",
+        "enforces account and prompt chronology",
+        "enforces chronology within one persisted millisecond",
+        "rejects prompt rows without a persistable provider type",
+        "rejects duplicate provider prompt ids",
+        "rejects values that cannot be represented faithfully in integer columns",
+        "validates JSON-encoded arrays before transforms cast their entries",
+        "quarantines multiple match events in one provider thread"
+      ]
+    },
+    {
+      "file": "src/lib/upload/hinge-transient-upload.spec.ts",
+      "keep": [
+        "binds the retry key to the Hinge profile ID and filtered blob body"
+      ],
+      "remove": ["reuses only the exact consent-filtered serialized payload"]
+    },
+    {
+      "file": "src/lib/upload/provider-boundary-validation.spec.ts",
+      "keep": [],
+      "remove": [
+        "accepts the provider timestamp formats retained by the pipeline",
+        "keeps timezone-less parsing deterministic and opt-in",
+        "rejects normalized calendar dates and invalid clock components",
+        "quarantines clearly future timestamps but allows provider clock skew",
+        "accepts only JSON arrays whose entries are strings"
+      ]
+    },
+    {
+      "file": "src/lib/upload/tinder-profile-id.spec.ts",
+      "keep": ["accepts only an export that derives the requested profile ID"],
+      "remove": [
+        "uses one deterministic derivation for fields and exports",
+        "preserves the historical raw timestamp spelling contract"
+      ]
+    },
+    {
+      "file": "src/lib/upload/tinder-zip.spec.ts",
+      "keep": [],
+      "remove": [
+        "selects an exact nested data.json basename",
+        "rejects missing or ambiguous exports"
+      ]
+    },
+    {
+      "file": "src/lib/upload/transient-upload.spec.ts",
+      "keep": [],
+      "remove": [
+        "retains the exact lease for server, network, and response-loss retries",
+        "discards leases that cannot become valid on retry"
+      ]
+    },
+    {
+      "file": "src/lib/utils/aggregateHingeData.spec.ts",
+      "keep": [],
+      "remove": [
+        "uses real ISO week-years at the new-year boundary",
+        "formats ISO week keys from their actual Monday",
+        "counts distinct messaged threads rather than all matches",
+        "keeps empty calendar buckets so the timeline does not compress gaps",
+        "fills inactive selected-window boundaries",
+        "anchors presets to the provider UTC calendar day",
+        "rebuckets previous events by elapsed day on the target calendar",
+        "filters match creation and message facts independently",
+        "rebuckets canonical match and message facts by elapsed day"
+      ]
+    },
+    {
+      "file": "src/lib/utils/aggregateUsage.spec.ts",
+      "keep": [],
+      "remove": [
+        "uses dateStampRaw for every granularity when dateStamp shifted a day",
+        "keeps a shifted quarter-boundary row in its source quarter",
+        "uses the ISO week-year across a calendar-year boundary",
+        "uses the same ISO bucket for chart annotations",
+        "combines multiple stored rows that resolve to one source day",
+        "fills daily gaps without local-time DST drift",
+        "rebuckets elapsed days onto the target calendar before aggregating",
+        "fills inactive leading and trailing buckets in a selected range",
+        "returns exactly seven days including the selected end date",
+        "creates an equal previous range with no shared boundary day",
+        "filters by source calendar key instead of shifted dateStamp"
+      ]
+    },
+    {
+      "file": "src/lib/utils/filterHingePayload.spec.ts",
+      "keep": [],
+      "remove": [
+        "removes optional photos/work without a latent core-data opt-out"
+      ]
+    },
+    {
+      "file": "src/lib/utils/gender.spec.ts",
+      "keep": [],
+      "remove": ["does not confuse woman/female with their male substrings"]
+    },
+    {
+      "file": "src/lib/utils/hingeLifecycleStats.spec.ts",
+      "keep": [],
+      "remove": [
+        "does not drop unclassified matches when classification is partial",
+        "keeps explicit inbound and unknown legacy matches separate",
+        "does not use post-match likes as outbound origin evidence"
+      ]
+    },
+    {
+      "file": "src/lib/utils/matchRateComparison.spec.ts",
+      "keep": [],
+      "remove": [
+        "weights periods by right swipes and retains zero-match activity",
+        "returns a genuine zero and distinguishes a missing denominator",
+        "uses exactly the trailing seven source calendar days",
+        "clips raw rows before monthly aggregation"
+      ]
+    },
+    {
+      "file": "src/scripts/data-layer/audit-hinge-like-link-collisions.spec.ts",
+      "keep": [],
+      "remove": [
+        "is read-only and preserves exact timestamp/comment multiplicity"
+      ]
+    },
+    {
+      "file": "src/scripts/data-layer/audit-profile-meta.spec.ts",
+      "keep": [],
+      "remove": [
+        "weights every adjacent message gap instead of weighting conversations equally",
+        "preserves explicit UNKNOWN and rejects post-match outbound evidence",
+        "counts only outgoing Hinge messages and audits the provider invariant",
+        "includes earliest account signup and all activity in Hinge bounds"
+      ]
+    },
+    {
+      "file": "src/scripts/data-layer/cleanup-transient-uploads.spec.ts",
+      "keep": [],
+      "remove": [
+        "cleans committed uploads immediately",
+        "cleans expired abandoned uploads but preserves active leases",
+        "retries a failed ABANDONED cleanup but not a completed one"
+      ]
+    },
+    {
+      "file": "src/scripts/data-layer/repair-conversation-metrics.spec.ts",
+      "keep": [],
+      "remove": [
+        "rebuilds matches, conversation meta, and Hinge provider metrics",
+        "audits every repaired match, metadata, and Hinge-rate field",
+        "rejects any nonzero transactional postcondition"
+      ]
+    },
+    {
+      "file": "src/scripts/data-layer/repair-hinge-media-duplicates.spec.ts",
+      "keep": [
+        "aborts before deletion when nonblank duplicate evidence conflicts"
+      ],
+      "remove": [
+        "fieldwise merges complementary evidence before duplicate deletion",
+        "has a pre-delete postcondition for every merged evidence field"
+      ]
+    },
+    {
+      "file": "src/scripts/data-layer/repair-profile-meta.spec.ts",
+      "keep": [],
+      "remove": [
+        "cannot open or mutate the database and points to canonical repairs"
+      ]
+    },
+    {
+      "file": "src/scripts/data-layer/repair-tinder-calendar-dates.spec.ts",
+      "keep": ["rolls back when a selected profile still lacks metadata"],
+      "remove": ["canonicalizes usage dates and repairs profile aggregates"]
+    },
+    {
+      "file": "src/server/admin-access.spec.ts",
+      "keep": [
+        "never grants unauthenticated admin access",
+        "authorizes a verified configured admin",
+        "rejects a configured admin address until it is verified",
+        "rejects an authenticated non-admin"
+      ],
+      "remove": []
+    },
+    {
+      "file": "src/server/db/schema.hinge-profile.spec.ts",
+      "keep": [],
+      "remove": [
+        "keeps earliest merged signup at or before the current account signup"
+      ]
+    },
+    {
+      "file": "src/server/db/schema.profile-meta.spec.ts",
+      "keep": [],
+      "remove": [
+        "bounds active days and the universally bounded like rate",
+        "keeps conversation counts internally consistent"
+      ]
+    },
+    {
+      "file": "src/server/db/schema.swipe-rank.spec.ts",
+      "keep": [],
+      "remove": [
+        "persists terminal outcomes on source media",
+        "requires complete moderation metadata for an active exclusion",
+        "stores one versioned review per stable profile"
+      ]
+    },
+    {
+      "file": "src/server/db/schema.tinder-profile.spec.ts",
+      "keep": [],
+      "remove": ["limits inferred signup provenance to the reviewed vocabulary"]
+    },
+    {
+      "file": "src/server/db/schema.transient-upload.spec.ts",
+      "keep": [],
+      "remove": [
+        "preserves the cleanup ledger when its owning account is deleted",
+        "requires durable evidence for uploaded, processing, and committed states",
+        "keeps failed abandoned cleanup retryable"
+      ]
+    },
+    {
+      "file": "src/server/services/blob.service.spec.ts",
+      "keep": [],
+      "remove": [
+        "accepts only HTTPS Vercel Blob hosts",
+        "accepts a complete deletion result",
+        "turns partial success into a retryable error without exposing URLs"
+      ]
+    },
+    {
+      "file": "src/server/services/datasetExport.service.spec.ts",
+      "keep": [],
+      "remove": [
+        "batched exports keep each profile's rows together and apply the research contract"
+      ]
+    },
+    {
+      "file": "src/server/services/hinge/hinge-additive.service.spec.ts",
+      "keep": [
+        "keeps retained message order and cadence on a narrower reupload",
+        "does not collapse duplicate message occurrences into a Set",
+        "preserves optional evidence across a narrower later export"
+      ],
+      "remove": [
+        "appends a new account after retained match display positions",
+        "occurrence-aware relinks pending likes when the thread later matches",
+        "does not downgrade origin or lifecycle state on a narrower reupload",
+        "preserves multiplicity when matches and interactions share timestamps",
+        "does not collapse distinct raw microsecond interaction events",
+        "does not collapse distinct raw microsecond message events",
+        "does not collapse distinct raw microsecond match events",
+        "matches the message multiset when a later export shifts source order",
+        "derives an existing match from retained and incoming messages together",
+        "keeps first non-null evidence and reports later conflicts"
+      ]
+    },
+    {
+      "file": "src/server/services/hinge/hinge-conversation-metrics.spec.ts",
+      "keep": [],
+      "remove": [
+        "uses the repair-compatible chronological ordering and units",
+        "keeps empty match metrics nullable and excludes them from aggregates",
+        "uses a message-weighted mean instead of averaging conversation medians",
+        "counts inclusive UTC calendar dates instead of elapsed 24-hour chunks"
+      ]
+    },
+    {
+      "file": "src/server/services/hinge/hinge-media.service.spec.ts",
+      "keep": [],
+      "remove": [
+        "preserves social-media provenance and one row per provider URL"
+      ]
+    },
+    {
+      "file": "src/server/services/hinge/hinge-messages.service.spec.ts",
+      "keep": [],
+      "remove": [
+        "preserves repeated likes and derives message metrics chronologically",
+        "stores an empty chat with a matching voice-note sidecar as a voice note",
+        "stores a standalone voice-note sidecar exactly once",
+        "quarantines chats without a match instead of silently dropping them",
+        "does not treat a post-match like as the cause of the match",
+        "uses raw microseconds for match-cause and message chronology",
+        "classifies a pre-match block as a reject, not an unmatch"
+      ]
+    },
+    {
+      "file": "src/server/services/hinge/hinge-meta.service.spec.ts",
+      "keep": [],
+      "remove": [
+        "uses linked outbound matches and active like days for Hinge rates",
+        "does not report a 100% like rate when no like events exist",
+        "includes signup and counts the UTC calendar boundary inclusively",
+        "retains the earliest signup across absorbed accounts",
+        "includes provider last-seen and we-met evidence in the observed period"
+      ]
+    },
+    {
+      "file": "src/server/services/hinge/hinge-ownership.spec.ts",
+      "keep": ["binds both the provider profile and current user"],
+      "remove": []
+    },
+    {
+      "file": "src/server/services/hinge/hinge-profile-snapshot.spec.ts",
+      "keep": [],
+      "remove": [
+        "accepts equal/newer snapshots and quarantines demographic regression"
+      ]
+    },
+    {
+      "file": "src/server/services/hinge/hinge-prompts.service.spec.ts",
+      "keep": [],
+      "remove": [
+        "retains an answer when the provider omits the question text",
+        "normalizes timezone-less prompt timestamps as UTC"
+      ]
+    },
+    {
+      "file": "src/server/services/hinge/hinge-transform.service.spec.ts",
+      "keep": [],
+      "remove": [
+        "prefers the exported country to the browser-derived fallback",
+        "uses the browser country only when the export has none",
+        "interprets timezone-less account timestamps as UTC",
+        "falls back to the provider gender when gender_identity is empty",
+        "uses broad provider gender for an unmapped custom identity"
+      ]
+    },
+    {
+      "file": "src/server/services/hinge/hinge-upload-lock.spec.ts",
+      "keep": [],
+      "remove": [
+        "cooperates with the provider-wide repair lock",
+        "serializes an ownership transfer against provider uploads",
+        "normalizes, deduplicates, and orders profile locks",
+        "rejects an empty profile id",
+        "gives admin mutations the provider lock before the profile lock"
+      ]
+    },
+    {
+      "file": "src/server/services/image-anonymization.service.spec.ts",
+      "keep": ["normalizes, strips metadata, and blurs detected regions"],
+      "remove": ["rejects empty input"]
+    },
+    {
+      "file": "src/server/services/image-anonymization.spec.ts",
+      "keep": [],
+      "remove": [
+        "skips tiling for small images",
+        "covers a large image with overlapping edge-aligned tiles"
+      ]
+    },
+    {
+      "file": "src/server/services/lemonSqueezy.dataset.spec.ts",
+      "keep": [
+        "sends twelve Standard packs to the provider for a $600 checkout",
+        "fulfillment reads quantity from the purchased item, independent of discounts and checkout metadata",
+        "does not silently downgrade a purchase if the item lookup fails"
+      ],
+      "remove": ["rejects invalid quantities before contacting the provider"]
+    },
+    {
+      "file": "src/server/services/profile/additive.service.spec.ts",
+      "keep": [
+        "is idempotent and never deletes rows absent from a later export",
+        "preserves the multiplicity of identical message occurrences",
+        "removes existing media when photo consent is withdrawn"
+      ],
+      "remove": [
+        "qualifies every stored column in the conflict predicate",
+        "does not replace a provider signup with inferred usage",
+        "allows stronger provider evidence and broader inferred history",
+        "preserves legacy unknown provenance against weaker inference",
+        "ignores provider match-reference reindexing when deduplicating",
+        "adds newly exported messages to an existing provider match",
+        "resequences stored rows when an older message appears later",
+        "inserts every row for a genuinely new provider match",
+        "appends new match records after the highest retained order",
+        "preserves existing categories omitted from an additive export",
+        "rejects a combined-swipe overflow created across export vintages",
+        "preserves omitted metrics from a touched legacy date key",
+        "replaces a present metric on a touched legacy date key",
+        "fails before mutation when stored raw keys collide canonically",
+        "deduplicates retained URLs and inserts only new consented media"
+      ]
+    },
+    {
+      "file": "src/server/services/profile/claim-ownership.spec.ts",
+      "keep": [
+        "deletes the old account only when it is known to own no other data"
+      ],
+      "remove": []
+    },
+    {
+      "file": "src/server/services/profile/messages.service.spec.ts",
+      "keep": [],
+      "remove": [
+        "sorts source rows without mutating them and derives nonnegative gaps",
+        "uses the true median for an even number of message gaps",
+        "rejects invalid timestamps before constructing database rows"
+      ]
+    },
+    {
+      "file": "src/server/services/profile/meta.service.spec.ts",
+      "keep": [],
+      "remove": [
+        "uses the complete observed usage range for all-time metadata",
+        "uses raw provider dates instead of historically shifted timestamps",
+        "derives conversation aggregates from actual rows and valid metrics",
+        "rejects a reversed explicit period"
+      ]
+    },
+    {
+      "file": "src/server/services/profile/replacement-contract.spec.ts",
+      "keep": [],
+      "remove": [
+        "routes repeat exports to canonical replacement",
+        "rebuilds derived facts instead of upserting usage rows"
+      ]
+    },
+    {
+      "file": "src/server/services/profile/validation.service.spec.ts",
+      "keep": [
+        "rejects invalid usage counts and calendar keys",
+        "enforces photo and work consent on the server contract"
+      ],
+      "remove": [
+        "accepts missing discovery age preferences as unknown",
+        "still rejects missing core profile fields",
+        "accepts allowlisted Tinder metadata variants",
+        "accepts city objects without a region",
+        "rejects fields outside the public blob allowlist",
+        "derives the profile range from every observed usage map",
+        "normalizes legacy timestamp-shaped usage keys before persistence",
+        "rejects a derived combined-swipe count that exceeds its integer column",
+        "rejects two raw usage keys that represent the same day",
+        "rejects invalid user and message timestamps",
+        "rejects clearly future usage buckets",
+        "enforces integer discovery preferences and their ordering",
+        "enforces conservative profile chronology",
+        "accepts a nonnegative integer Tinder match reference",
+        "rejects empty and duplicate provider match IDs",
+        "compares cross-account identity by exact birth calendar date",
+        "matches equivalent account-create timestamp spellings by instant"
+      ]
+    },
+    {
+      "file": "src/server/services/swipe-rank/ai-review.spec.ts",
+      "keep": ["redacts contactable message details before model review"],
+      "remove": [
+        "calibrates over-100 yield and explains reversible review holds",
+        "uses Sonnet 5 and holds every non-clear verdict",
+        "reuses one profile review until its evidence changes",
+        "caps the stored AI hold reason to the moderation field limit",
+        "computes authoritative cohort comparisons",
+        "accepts the bounded verdict contract",
+        "keeps one timing family out of the administrator queue",
+        "retains reviews supported by independent material families",
+        "retains a medium-confidence image-subject inconsistency",
+        "finds an extreme right-swipe burst against prior pace"
+      ]
+    },
+    {
+      "file": "src/server/services/swipe-rank/benchmark.service.spec.ts",
+      "keep": [
+        "suppresses distributions and placements below the private sample floor",
+        "suppresses a metric whose contributing sample is below the floor"
+      ],
+      "remove": [
+        "matches dynamic age and location dimensions without case sensitivity",
+        "matches equivalent country code and country name forms",
+        "places an eligible target against a filtered cohort it is not in",
+        "keeps source-backed yields above 100% and period-correct target values",
+        "keeps an excluded target out of every comparison placement",
+        "does not expose a suppressed placement field size",
+        "does not assign a placement when the target misses eligibility"
+      ]
+    },
+    {
+      "file": "src/server/services/swipe-rank/eligibility.spec.ts",
+      "keep": [],
+      "remove": [
+        "uses first-class thresholds for every supported period",
+        "requires both the denominator and active-day minimum"
+      ]
+    },
+    {
+      "file": "src/server/services/swipe-rank/exclusion.service.spec.ts",
+      "keep": [],
+      "remove": [
+        "normalizes the shared admin and CLI write contract",
+        "requires a review reason when excluding",
+        "restores without retaining active exclusion metadata"
+      ]
+    },
+    {
+      "file": "src/server/services/swipe-rank/image-anonymization.spec.ts",
+      "keep": ["holds the complete set when the overall audit is uncertain"],
+      "remove": [
+        "processes new pending images on a profile with an existing hold",
+        "reviews large profiles in small attention-preserving chunks",
+        "turns chunk-level uncertainty into image-level holds",
+        "approves every safe image when the audit identifies unsafe peers",
+        "approves a complete passing audit"
+      ]
+    },
+    {
+      "file": "src/server/services/swipe-rank/lifecycle.service.spec.ts",
+      "keep": [],
+      "remove": [
+        "takes an exclusive transaction lock scoped to one Tinder profile"
+      ]
+    },
+    {
+      "file": "src/server/services/swipe-rank/periods.spec.ts",
+      "keep": [],
+      "remove": [
+        "aligns month, quarter, and year periods",
+        "parses closed season labels for internal tools",
+        "always closes the immediately preceding UTC month",
+        "adds quarter and year only at their calendar boundaries",
+        "rejects open and all-time periods"
+      ]
+    },
+    {
+      "file": "src/server/services/swipe-rank/public-cache.spec.ts",
+      "keep": [],
+      "remove": [
+        "separates Neon database branches",
+        "does not vary with database credentials",
+        "separates deployments connected to the same branch"
+      ]
+    },
+    {
+      "file": "src/server/services/swipe-rank/public.service.spec.ts",
+      "keep": [
+        "fails closed when no identity secret is supplied",
+        "returns every eligible row with only the anonymous public contract",
+        "keeps empty later pages browseable with complete page metadata"
+      ],
+      "remove": [
+        "paginates matching rows while retaining frozen season ranks and field size",
+        "returns zero matching pages without suppressing the published field",
+        "creates deterministic, cross-season opaque identities",
+        "publishes exact descriptors even for uncommon combinations",
+        "suppresses exact counts and rows below the public floor",
+        "distinguishes an unpublished field from a populated one",
+        "rejects unsafe pagination before querying",
+        "returns published closed seasons in reverse chronological order"
+      ]
+    },
+    {
+      "file": "src/server/services/swipe-rank/publication.service.spec.ts",
+      "keep": [],
+      "remove": [
+        "publishes month, quarter, and year together on January 1",
+        "publishes only the month outside a quarter boundary",
+        "retries only missing snapshots and skips a fully published boundary"
+      ]
+    },
+    {
+      "file": "src/server/services/swipe-rank/readiness.spec.ts",
+      "keep": [
+        "a prior activation cannot bless a newer FULL replacement",
+        "rejects scoped fact replacement after validation",
+        "rejects PROFILE and incomplete builds"
+      ],
+      "remove": ["accepts only the unchanged latest complete FULL build"]
+    },
+    {
+      "file": "src/server/services/swipe-rank/recompute-sql.spec.ts",
+      "keep": [],
+      "remove": ["casts the closed month boundary before adding it to JSON"]
+    },
+    {
+      "file": "src/server/services/swipe-rank/snapshot.service.spec.ts",
+      "keep": [
+        "accepts the exact validated full monthly build",
+        "rejects scoped, mixed, and replaced lineage"
+      ],
+      "remove": [
+        "global cohort identity is explicit and deterministic",
+        "moderation changes the edition identity without changing facts",
+        "different cohort specs cannot share an edition identity"
+      ]
+    },
+    {
+      "file": "src/server/services/swipe-rank/upload-independence.spec.ts",
+      "keep": [],
+      "remove": ["upload code cannot compute, schedule, or journal SwipeRank"]
+    },
+    {
+      "file": "src/server/services/swipe-rank/validate.service.spec.ts",
+      "keep": [],
+      "remove": [
+        "accepts a populated closed-season fact layer",
+        "rejects unsupported periods and open facts",
+        "rejects an empty or source-divergent fact layer"
+      ]
+    },
+    {
+      "file": "src/server/services/transient-upload.service.spec.ts",
+      "keep": [],
+      "remove": [
+        "accepts only Vercel's randomized JSON filename in the lease directory",
+        "derives a cleanup prefix unique to one lease",
+        "keeps a committed Tinder Blob when it has an original-file archive pointer"
+      ]
+    },
+    {
+      "file": "src/server/services/upload-error.service.spec.ts",
+      "keep": [],
+      "remove": ["reports the nested PostgreSQL cause instead of the ORM query"]
+    }
+  ],
+  "caseTitleNote": "The lists show statically declared test titles. The baseline also executes five dynamically generated cases in api-boundary.spec.ts; that file is removed in full."
+}
