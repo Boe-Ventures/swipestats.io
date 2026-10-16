@@ -873,7 +873,7 @@ export async function trackSlackEvent<T extends ServerAnalyticsEventName>(
           gender: profile?.gender ?? undefined,
           hometowns:
             sanitizeSlackText(profile?.hometowns?.join(", ")) || undefined,
-          matches: props.matchCount,
+          matches: props.matchCount ?? "N/A",
           messages: props.messageCount,
           photos: props.photoCount,
           prompts: props.promptCount,
@@ -914,7 +914,7 @@ export async function trackSlackEvent<T extends ServerAnalyticsEventName>(
         fields: {
           hingeId: props.hingeId,
           userName: sanitizeSlackText(user?.name) || "Unknown",
-          matches: props.matchCount,
+          matches: props.matchCount ?? "N/A",
           messages: props.messageCount,
           photos: props.photoCount,
           prompts: props.promptCount,

@@ -1,3 +1,4 @@
+import type { HingeCsvActivity } from "@/lib/hinge/csv-activity";
 /**
  * HINGE GDPR DATA MODEL
  *
@@ -393,6 +394,7 @@ export interface AnonymizedHingeDataJSON extends Omit<
   "User" | "Subscriptions"
 > {
   User: AnonymizedHingeUser;
+  CsvActivity?: HingeCsvActivity;
 }
 
 export interface FullHingeDataJSON extends HingeDataJSONBase {

@@ -1,3 +1,4 @@
+import { summarizeHingeCsvActivity } from "@/lib/hinge/csv-activity";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { differenceInYears } from "date-fns";
@@ -131,6 +132,7 @@ export const hingeProfileRouter = {
           gender: true,
           ageAtUpload: true,
           selfieVerified: true,
+          csvActivity: true,
           country: true,
         },
         with: {
@@ -167,7 +169,11 @@ export const hingeProfileRouter = {
         });
       }
 
-      return profile;
+      const { csvActivity, ...publicProfile } = profile;
+      return {
+        ...publicProfile,
+        csvSummary: csvActivity ? summarizeHingeCsvActivity(csvActivity) : null,
+      };
     }),
 
   // Get upload context - helps frontend show appropriate UI
@@ -311,7 +317,7 @@ export const hingeProfileRouter = {
           sessionId: ctx.session.session.id,
         });
         if (preparedUpload.committedProfile) {
-          return preparedUpload.committedProfile;
+          return { hingeId: preparedUpload.committedProfile.hingeId };
         }
 
         // Resolve create-vs-update on the server. The client can have stale
@@ -388,7 +394,7 @@ export const hingeProfileRouter = {
           );
         }
 
-        return result.profile;
+        return { hingeId: result.profile.hingeId };
       } catch (error) {
         if (error instanceof Error) {
           await captureException(error, ctx.session.user.id);
@@ -433,7 +439,7 @@ export const hingeProfileRouter = {
           sessionId: ctx.session.session.id,
         });
         if (preparedUpload.committedProfile) {
-          return preparedUpload.committedProfile;
+          return { hingeId: preparedUpload.committedProfile.hingeId };
         }
 
         // Check if profile exists
@@ -477,7 +483,7 @@ export const hingeProfileRouter = {
           });
         }
 
-        return result.profile;
+        return { hingeId: result.profile.hingeId };
       } catch (error) {
         if (error instanceof Error) {
           await captureException(error, ctx.session.user.id);
@@ -523,7 +529,7 @@ export const hingeProfileRouter = {
           sessionId: ctx.session.session.id,
         });
         if (preparedUpload.committedProfile) {
-          return preparedUpload.committedProfile;
+          return { hingeId: preparedUpload.committedProfile.hingeId };
         }
 
         // Fetch JSON from blob storage
@@ -605,7 +611,7 @@ export const hingeProfileRouter = {
             });
           }
 
-          return result.profile;
+          return { hingeId: result.profile.hingeId };
         }
 
         if (newSignupTime < existingUserProfile.createDate) {
@@ -652,7 +658,7 @@ export const hingeProfileRouter = {
           consentWork: input.consentWork ?? true,
         });
 
-        return result.profile;
+        return { hingeId: result.profile.hingeId };
       } catch (error) {
         if (error instanceof Error) {
           await captureException(error, ctx.session.user.id);
@@ -695,7 +701,7 @@ export const hingeProfileRouter = {
         sessionId: ctx.session.session.id,
       });
       if (preparedUpload.committedProfile) {
-        return preparedUpload.committedProfile;
+        return { hingeId: preparedUpload.committedProfile.hingeId };
       }
 
       // Check if profile already exists
@@ -735,7 +741,7 @@ export const hingeProfileRouter = {
           consentWork: true,
         });
 
-        return result.profile;
+        return { hingeId: result.profile.hingeId };
       } catch (error) {
         if (error instanceof Error) {
           await captureException(error, ctx.session.user.id);
@@ -778,7 +784,7 @@ export const hingeProfileRouter = {
         sessionId: ctx.session.session.id,
       });
       if (preparedUpload.committedProfile) {
-        return preparedUpload.committedProfile;
+        return { hingeId: preparedUpload.committedProfile.hingeId };
       }
 
       // Check if profile exists
@@ -830,7 +836,7 @@ export const hingeProfileRouter = {
           });
         }
 
-        return result.profile;
+        return { hingeId: result.profile.hingeId };
       } catch (error) {
         if (error instanceof Error) {
           await captureException(error, ctx.session.user.id);

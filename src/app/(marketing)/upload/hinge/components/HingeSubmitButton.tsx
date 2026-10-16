@@ -123,7 +123,9 @@ export function HingeSubmitButton({
       photoCount: consent.sharePhotos ? photoCount : 0, // 0 if no consent
       hasPhotos: hasPhotosData,
       hasPhotosConsent: consent.sharePhotos,
-      matchCount: payload.anonymizedHingeJson.Matches.length,
+      matchCount: payload.anonymizedHingeJson.CsvActivity
+        ? null
+        : payload.anonymizedHingeJson.Matches.length,
       scenario: uploadContext?.scenario || "unknown",
     });
 

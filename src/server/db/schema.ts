@@ -1,3 +1,4 @@
+import type { HingeCsvActivity } from "@/lib/hinge/csv-activity";
 import { relations, sql } from "drizzle-orm";
 import {
   check,
@@ -604,6 +605,7 @@ export const hingeProfileTable = pgTable(
   "hinge_profile",
   (t) => ({
     hingeId: t.text().primaryKey(),
+    csvActivity: t.jsonb().$type<HingeCsvActivity>(),
     createdAt: t
       .timestamp()
       .$defaultFn(() => new Date())

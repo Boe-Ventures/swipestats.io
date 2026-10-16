@@ -97,6 +97,7 @@ export function transformHingeJsonToProfile(
 
   return {
     hingeId: options.hingeId,
+    ...(json.CsvActivity ? { csvActivity: json.CsvActivity } : {}),
     userId: options.userId,
     birthDate,
     ageAtUpload,
