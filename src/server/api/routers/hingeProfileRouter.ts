@@ -1,3 +1,4 @@
+import { getHingeComparisonProfile } from "@/server/services/hinge/hinge-comparison.service";
 import { summarizeHingeCsvActivity } from "@/lib/hinge/csv-activity";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
@@ -102,6 +103,23 @@ async function handleExistingHingeProfileUpload(params: {
 }
 
 export const hingeProfileRouter = {
+  getComparison: publicProcedure
+    .input(
+      z.object({
+        hingeIds: z
+          .array(z.string().regex(/^[a-f0-9]{64}$/))
+          .min(1)
+          .max(4),
+      }),
+    )
+    .query(async ({ input }) => {
+      const ids = [...new Set(input.hingeIds)];
+      const results = await Promise.all(ids.map(getHingeComparisonProfile));
+      return {
+        profiles: results.filter((profile) => profile !== null),
+        missingIds: ids.filter((_, index) => results[index] === null),
+      };
+    }),
   // Get profile by hingeId (basic profile only)
   get: publicProcedure
     .input(

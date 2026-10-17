@@ -1,5 +1,7 @@
 "use client";
 
+import { ButtonLink } from "@/components/ui/button";
+
 import { HingeCsvInsights } from "./HingeCsvInsights";
 import { ShareButton } from "@/components/ShareButton";
 import { useHingeInsights } from "../HingeInsightsProvider";
@@ -14,7 +16,7 @@ import { DirectoryCtaCard } from "../../../_shared/DirectoryCtaCard";
 import NewsletterCTA from "../../../../NewsletterCTA";
 
 export function MainHingeInsightsContent() {
-  const { usageLoading, profile, events } = useHingeInsights();
+  const { usageLoading, profile, events, hingeId } = useHingeInsights();
 
   if (usageLoading) {
     return <HingeInsightsSkeleton />;
@@ -36,6 +38,13 @@ export function MainHingeInsightsContent() {
 
           {/* Action Buttons */}
           <div className="flex gap-2">
+            <ButtonLink
+              variant="outline"
+              size="sm"
+              href={`/insights/hinge/${hingeId}/compare`}
+            >
+              Compare
+            </ButtonLink>
             <ShareButton
               title="My Hinge Stats"
               text="Check out my Hinge analytics!"
