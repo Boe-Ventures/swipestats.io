@@ -316,7 +316,7 @@ export type ServerEventPropertiesDefinition = {
   // ─────────────────────────────────────────────────
   hinge_profile_created: {
     hingeId: string;
-    matchCount: number;
+    matchCount: number | null;
     messageCount: number;
     photoCount: number;
     promptCount: number;
@@ -332,7 +332,7 @@ export type ServerEventPropertiesDefinition = {
     hingeId: string;
     incomingHingeId?: string;
     historicalIdVersion?: boolean;
-    matchCount: number;
+    matchCount: number | null;
     messageCount: number;
     photoCount: number;
     promptCount: number;
@@ -347,7 +347,7 @@ export type ServerEventPropertiesDefinition = {
   hinge_profile_merged: {
     hingeId: string;
     oldHingeId: string;
-    matchCount: number;
+    matchCount: number | null;
     messageCount: number;
     photoCount: number;
     promptCount: number;
@@ -768,7 +768,7 @@ export type ClientEventPropertiesDefinition = {
     hasPhotosConsent: boolean; // User consent state
     hasWork?: boolean; // Tinder only - actual data presence
     hasWorkConsent?: boolean; // Tinder only - user consent state
-    matchCount: number;
+    matchCount: number | null;
     scenario?: string; // Upload scenario context
   };
 

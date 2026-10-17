@@ -3,412 +3,230 @@
 import { useRef, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import JSZip from "jszip";
-import { CloudArrowUpIcon } from "@heroicons/react/24/outline";
-import { CheckCircleIcon, XCircleIcon } from "@heroicons/react/20/solid";
-import { cn } from "@/components/ui";
-import { InfoAlert, PrimaryAlert } from "@/components/ui/alert";
+import { CloudArrowUpIcon, CheckCircleIcon } from "@heroicons/react/24/outline";
 import type { SwipestatsHingeProfilePayload } from "@/lib/interfaces/HingeDataJSON";
 import { extractHingeData } from "@/lib/upload/extract-hinge-data";
 import {
+  extractHingeCsvData,
+  getHingeCsvTable,
+  type HingeCsvFiles,
+} from "@/lib/upload/hinge-csv";
+import { HINGE_CSV_ACTIVITY_TABLES } from "@/lib/hinge/csv-activity";
+import {
   buildHingeExtractionInput,
-  claimHingeExportFileCandidate,
-  EMPTY_HINGE_CHECKLIST_STATE,
-  hasRequiredHingeExportFiles,
-  HINGE_OPTIONAL_EXPORT_FILES,
-  HINGE_REQUIRED_EXPORT_FILES,
-  hingeExtractionErrorMessage,
+  getHingeExportFileKey,
   validateHingeExportFile,
-  type HingeChecklistState,
   type HingeExportFileContents,
-  type HingeExportFileKey,
 } from "@/lib/upload/hinge-guided-upload";
 
 interface HingeGuidedUploadProps {
   onComplete: (payload: SwipestatsHingeProfilePayload) => void;
   onUploadStart?: () => void;
 }
-
-class HingeUploadInputError extends Error {}
+const MAX_FILE_BYTES = 32 * 1024 * 1024;
 
 export function HingeGuidedUpload({
   onComplete,
   onUploadStart,
 }: HingeGuidedUploadProps) {
   const [isProcessing, setIsProcessing] = useState(false);
+  const processing = useRef(false);
   const [error, setError] = useState<string | null>(null);
-  const [fileState, setFileState] = useState<HingeChecklistState>({
-    ...EMPTY_HINGE_CHECKLIST_STATE,
-  });
-  const [fileContents, setFileContents] = useState<HingeExportFileContents>({});
-  const [extractedPayload, setExtractedPayload] =
-    useState<SwipestatsHingeProfilePayload | null>(null);
-  const isProcessingRef = useRef(false);
+  const [csvFiles, setCsvFiles] = useState<HingeCsvFiles>({});
+  const [jsonFiles, setJsonFiles] = useState<HingeExportFileContents>({});
+  const [payload, setPayload] = useState<SwipestatsHingeProfilePayload | null>(
+    null,
+  );
+  const isCsv = Object.keys(csvFiles).length > 0;
+  const loaded = isCsv
+    ? Object.keys(csvFiles).map((key) => `${key}.csv`)
+    : Object.keys(jsonFiles).map((key) => `${key}.json`);
 
   const processFiles = async (files: File[]) => {
-    if (isProcessingRef.current) return;
-    isProcessingRef.current = true;
+    if (processing.current) return;
+    processing.current = true;
     setIsProcessing(true);
+    setPayload(null);
     setError(null);
-    onUploadStart?.(); // Notify parent that upload has started
-
+    onUploadStart?.();
     try {
-      const nextContents: HingeExportFileContents = { ...fileContents };
-      const nextFileState: HingeChecklistState = { ...fileState };
-      const validationErrors: Partial<Record<HingeExportFileKey, string>> = {};
-      const claimedKeys = new Set<HingeExportFileKey>();
-      let recognizedFileCount = 0;
-
-      const claimFile = (fileName: string): HingeExportFileKey | undefined => {
-        const candidate = claimHingeExportFileCandidate(fileName, claimedKeys);
-        if (!candidate) return undefined;
-        recognizedFileCount += 1;
-        if (!candidate.duplicate) return candidate.key;
-
-        delete nextContents[candidate.key];
-        nextFileState[candidate.key] = "error";
-        validationErrors[candidate.key] =
-          `More than one ${candidate.key}.json was found in the same selection. Upload one Hinge export at a time.`;
-        return undefined;
-      };
-
-      const stageFile = (key: HingeExportFileKey, content: string) => {
-        const result = validateHingeExportFile(key, content);
-        if (!result.ok) {
-          delete nextContents[key];
-          nextFileState[key] = "error";
-          validationErrors[key] = result.message;
+      const nextCsv = { ...csvFiles };
+      const nextJson = { ...jsonFiles };
+      const claimed = new Set<string>();
+      const stage = async (path: string, read: () => Promise<string>) => {
+        if (
+          path
+            .split(/[\\/]/)
+            .some((part) => part === "__MACOSX" || part.startsWith("._"))
+        )
           return;
+        const csvKey = getHingeCsvTable(path);
+        const jsonKey = getHingeExportFileKey(path);
+        if (!csvKey && !jsonKey) return;
+        const name = csvKey ? `${csvKey}.csv` : `${jsonKey}.json`;
+        if (claimed.has(name))
+          throw new Error(
+            "More than one copy of an export table was found. Choose one Hinge export at a time.",
+          );
+        claimed.add(name);
+        const content = await read();
+        if (content.length > MAX_FILE_BYTES)
+          throw new Error(
+            "A Hinge data file is too large to process. Choose the original export files.",
+          );
+        if (csvKey) nextCsv[csvKey] = content;
+        else if (jsonKey) {
+          const validation = validateHingeExportFile(jsonKey, content);
+          if (!validation.ok) throw new Error(validation.message);
+          nextJson[jsonKey] = content;
         }
-
-        nextContents[key] = content;
-        nextFileState[key] = "loaded";
-        delete validationErrors[key];
       };
-
-      const markFileReadError = (key: HingeExportFileKey, fileName: string) => {
-        delete nextContents[key];
-        nextFileState[key] = "error";
-        validationErrors[key] =
-          `${fileName.split(/[\\/]/).pop()?.toLowerCase() ?? "This file"} could not be read. Replace it with the original file from your Hinge download.`;
-      };
-
       for (const file of files) {
-        const isZip =
-          file.type === "application/zip" ||
-          file.type === "application/x-zip-compressed" ||
-          file.name.toLowerCase().endsWith(".zip");
-
-        if (isZip) {
-          let zipContent: JSZip;
-          try {
-            zipContent = await JSZip.loadAsync(file);
-          } catch {
-            throw new HingeUploadInputError(
-              "We couldn't open that ZIP archive. Download a fresh copy from Hinge and try again.",
-            );
-          }
-
-          for (const [fileName, zipEntry] of Object.entries(zipContent.files)) {
-            if (zipEntry.dir) continue;
-            const key = claimFile(fileName);
-            if (!key) continue;
-            try {
-              stageFile(key, await zipEntry.async("text"));
-            } catch {
-              markFileReadError(key, fileName);
-            }
-          }
+        if (file.name.toLowerCase().endsWith(".zip")) {
+          const zip = await JSZip.loadAsync(file);
+          for (const [path, entry] of Object.entries(zip.files))
+            if (!entry.dir) await stage(path, () => entry.async("text"));
         } else {
-          const key = claimFile(file.name);
-          if (!key) continue;
-          try {
-            stageFile(key, await file.text());
-          } catch {
-            markFileReadError(key, file.name);
-          }
+          if (file.size > MAX_FILE_BYTES)
+            throw new Error("A Hinge data file is too large to process.");
+          await stage(file.name, () => file.text());
         }
       }
-
-      if (recognizedFileCount === 0) {
-        throw new HingeUploadInputError(
-          "No recognized Hinge export files were found. Add user.json and matches.json, or upload the original ZIP archive.",
+      if (!claimed.size)
+        throw new Error(
+          "No supported Hinge data files were found. Choose the original ZIP or the CSV files inside it.",
         );
-      }
-
-      setFileContents(nextContents);
-      setFileState(nextFileState);
-
-      const currentValidationErrors = Object.values(validationErrors);
-      if (currentValidationErrors.length > 0) {
-        setExtractedPayload(null);
-        setError(
-          currentValidationErrors[0] ??
-            "A Hinge export file could not be read.",
+      if (Object.keys(nextCsv).length && Object.keys(nextJson).length)
+        throw new Error(
+          "CSV and JSON exports cannot be combined. Clear these files and choose one export.",
         );
-        return;
+      setCsvFiles(nextCsv);
+      setJsonFiles(nextJson);
+      if (Object.keys(nextCsv).length) {
+        if (
+          nextCsv.user &&
+          HINGE_CSV_ACTIVITY_TABLES.some(
+            (table) => nextCsv[table] !== undefined,
+          )
+        )
+          setPayload(await extractHingeCsvData(nextCsv));
+      } else if (nextJson.user && nextJson.matches) {
+        const { jsonStrings, filePresence } =
+          buildHingeExtractionInput(nextJson);
+        setPayload(await extractHingeData(jsonStrings, filePresence));
       }
-
-      if (Object.values(nextFileState).includes("error")) {
-        setExtractedPayload(null);
-        setError("Replace the export files marked in red before continuing.");
-        return;
-      }
-
-      if (!hasRequiredHingeExportFiles(nextFileState)) {
-        return;
-      }
-
-      const { jsonStrings, filePresence } =
-        buildHingeExtractionInput(nextContents);
-
-      try {
-        const payload = await extractHingeData(jsonStrings, filePresence);
-        setExtractedPayload(payload);
-      } catch {
-        setExtractedPayload(null);
-        setError(hingeExtractionErrorMessage());
-      }
-    } catch (err) {
+    } catch {
+      // Never reflect parse errors, filenames, or cell values from personal exports.
       setError(
-        err instanceof HingeUploadInputError
-          ? err.message
-          : "We couldn't read those files. Download a fresh copy from Hinge and try again.",
+        "We couldn't validate these files as one Hinge export. Use the original ZIP, or clear the selection and add user.csv with its activity CSV files. Older exports need user.json and matches.json.",
       );
     } finally {
-      isProcessingRef.current = false;
+      processing.current = false;
       setIsProcessing(false);
     }
   };
-
-  const onDrop = (acceptedFiles: File[]) => {
-    if (acceptedFiles.length > 0) {
-      void processFiles(acceptedFiles);
-    }
-  };
-
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
+    onDrop: (files) => {
+      void processFiles(files);
+    },
+    onDropRejected: () =>
+      setError(
+        "Choose the original ZIP archive or CSV/JSON data files from your Hinge download.",
+      ),
     accept: {
-      "application/json": [".json"],
       "application/zip": [".zip"],
+      "application/json": [".json"],
+      "text/csv": [".csv"],
     },
     disabled: isProcessing,
     multiple: true,
   });
-
-  const allRequiredFilesLoaded = hasRequiredHingeExportFiles(fileState);
-  const isReady =
-    allRequiredFilesLoaded &&
-    !Object.values(fileState).includes("error") &&
-    !error;
-
   return (
-    <div className="mx-auto w-full max-w-4xl space-y-6">
+    <div className="space-y-4">
       <div
         {...getRootProps()}
-        className={cn(
-          "group relative cursor-pointer overflow-hidden rounded-xl border-2 border-dashed px-6 py-16 transition-all duration-200 sm:px-8 sm:py-20",
-          isDragActive
-            ? "scale-[1.02] border-purple-500 bg-linear-to-br from-purple-50 to-indigo-50 shadow-lg dark:from-purple-950/40 dark:to-indigo-950/40"
-            : isReady
-              ? "border-green-500 bg-linear-to-br from-green-50 to-emerald-50 dark:from-green-950/40 dark:to-emerald-950/40"
-              : "dark:border-border dark:from-background dark:to-card border-gray-300 bg-linear-to-br from-gray-50 to-white hover:border-purple-400 hover:shadow-md",
-          isProcessing && "cursor-not-allowed opacity-60",
-        )}
+        className={`bg-card cursor-pointer rounded-xl border-2 border-dashed px-6 py-14 text-center ${isDragActive ? "border-primary" : "border-border"}`}
       >
         <input {...getInputProps()} />
-
-        {/* Decorative background gradient on hover */}
-        {!isReady && (
-          <div className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            <div className="absolute -top-12 -right-12 h-48 w-48 rounded-full bg-purple-100/30 blur-3xl dark:bg-purple-950/30" />
-            <div className="absolute -bottom-12 -left-12 h-48 w-48 rounded-full bg-indigo-100/30 blur-3xl dark:bg-indigo-950/30" />
-          </div>
+        <CloudArrowUpIcon className="text-muted-foreground mx-auto mb-4 h-14 w-14" />
+        <p className="text-lg font-semibold">
+          {isProcessing
+            ? "Reading your Hinge data..."
+            : "Choose your Hinge ZIP archive"}
+        </p>
+        <p className="text-muted-foreground mt-2 text-sm">
+          Or drop the CSV files from your unzipped download. Older JSON exports
+          are also supported.
+        </p>
+      </div>
+      <div className="bg-card rounded-lg border p-4 text-sm">
+        <p className="font-semibold">
+          {isCsv ? "CSV export" : "Files to include"}
+        </p>
+        <p className="text-muted-foreground mt-1">
+          Include user.csv and your activity tables: chat_message, match_likes,
+          match_roses, match_skips, and match_blocks. Prompts and user_media are
+          optional.
+        </p>
+        {loaded.length > 0 && (
+          <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+            {loaded.map((name) => (
+              <li key={name} className="flex items-center gap-2">
+                <CheckCircleIcon className="h-4 w-4 text-green-600" />
+                {name}
+              </li>
+            ))}
+          </ul>
         )}
-
-        <div className="relative flex flex-col items-center justify-center space-y-4 text-center sm:space-y-5">
-          {/* Icon */}
-          <div
-            className={cn(
-              "rounded-2xl p-4 transition-all duration-200",
-              isDragActive
-                ? "bg-purple-100 shadow-md dark:bg-purple-950/40"
-                : isReady
-                  ? "bg-green-100 dark:bg-green-950/40"
-                  : "dark:bg-muted bg-gray-100 group-hover:bg-purple-50 dark:group-hover:bg-purple-950/40",
-            )}
-          >
-            <CloudArrowUpIcon
-              className={cn(
-                "h-16 w-16 transition-colors duration-200 sm:h-20 sm:w-20",
-                isDragActive
-                  ? "text-purple-600 dark:text-purple-400"
-                  : isReady
-                    ? "text-green-600 dark:text-green-400"
-                    : "dark:text-muted-foreground text-gray-400 group-hover:text-purple-500",
-              )}
-            />
-          </div>
-
-          {/* Text content */}
-          <div className="space-y-2 sm:space-y-3">
-            <p className="dark:text-muted-foreground text-base font-medium text-gray-700 sm:text-lg">
-              Select your{" "}
-              <span className="font-semibold text-purple-600 dark:text-purple-400">
-                .json files
-              </span>{" "}
-              or{" "}
-              <span className="font-semibold text-purple-600 dark:text-purple-400">
-                .zip archive
-              </span>
-            </p>
-
-            {!isProcessing && (
-              <>
-                <p className="dark:text-muted-foreground text-sm text-gray-500 sm:hidden">
-                  Tap to browse files
-                </p>
-                <p className="dark:text-muted-foreground hidden text-sm text-gray-500 sm:block">
-                  or drag and drop your files here
-                </p>
-              </>
-            )}
-          </div>
-
-          {/* Drag active state */}
-          {isDragActive && (
-            <div className="animate-bounce">
-              <p className="text-base font-semibold text-purple-600 dark:text-purple-400">
-                Drop to upload
-              </p>
-            </div>
-          )}
-
-          {/* Processing state */}
-          {isProcessing && (
-            <div className="flex items-center gap-2.5">
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-purple-600 border-t-transparent" />
-              <p className="dark:text-muted-foreground text-sm font-medium text-gray-700">
-                Processing your data...
-              </p>
-            </div>
-          )}
-        </div>
+        <button
+          type="button"
+          className="mt-3 underline underline-offset-4"
+          disabled={isProcessing}
+          onClick={() => {
+            setCsvFiles({});
+            setJsonFiles({});
+            setPayload(null);
+            setError(null);
+          }}
+        >
+          Clear files and start again
+        </button>
       </div>
-
-      {/* File checklist */}
-      <div className="dark:border-border dark:bg-card rounded-lg border border-gray-200 bg-white p-4">
-        <h3 className="dark:text-muted-foreground mb-3 text-sm font-semibold text-gray-700">
-          Required Files
-        </h3>
-        <div className="space-y-2">
-          {HINGE_REQUIRED_EXPORT_FILES.map(({ key, fileName }) => {
-            const status = fileState[key];
-            return (
-              <div key={key} className="flex items-center gap-2 text-sm">
-                {status === "loaded" ? (
-                  <CheckCircleIcon className="h-5 w-5 text-green-500" />
-                ) : status === "error" ? (
-                  <XCircleIcon className="h-5 w-5 text-red-500" />
-                ) : (
-                  <div className="dark:border-border h-5 w-5 rounded-full border-2 border-gray-300" />
-                )}
-                <span
-                  className={cn(
-                    status === "loaded"
-                      ? "text-green-700 dark:text-green-400"
-                      : status === "error"
-                        ? "text-red-700 dark:text-red-400"
-                        : "dark:text-muted-foreground text-gray-600",
-                  )}
-                >
-                  {fileName}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-
-        <h4 className="dark:text-muted-foreground mt-4 mb-2 text-sm font-semibold text-gray-700">
-          Optional Files
-        </h4>
-        <div className="space-y-2">
-          {HINGE_OPTIONAL_EXPORT_FILES.map(({ key, fileName }) => {
-            const status = fileState[key];
-            return (
-              <div key={key} className="flex items-center gap-2 text-sm">
-                {status === "loaded" ? (
-                  <CheckCircleIcon className="h-5 w-5 text-green-500" />
-                ) : status === "error" ? (
-                  <XCircleIcon className="h-5 w-5 text-red-500" />
-                ) : (
-                  <div className="dark:border-border h-5 w-5 rounded-full border-2 border-gray-300" />
-                )}
-                <span
-                  className={cn(
-                    status === "loaded"
-                      ? "text-green-700 dark:text-green-400"
-                      : status === "error"
-                        ? "text-red-700 dark:text-red-400"
-                        : "dark:text-muted-foreground text-gray-500",
-                  )}
-                >
-                  {fileName}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
       {error && (
-        <div className="rounded-md bg-red-50 p-4 dark:bg-red-950/40">
-          <p className="text-sm font-medium text-red-800 dark:text-red-200">
-            Error
+        <p
+          role="alert"
+          className="rounded-lg bg-red-50 p-4 text-sm text-red-800 dark:bg-red-950/40 dark:text-red-200"
+        >
+          {error}
+        </p>
+      )}
+      {payload && !error && (
+        <div className="rounded-lg border border-green-600 p-4">
+          <p className="font-semibold">Your data is ready</p>
+          {!!payload.anonymizedHingeJson.CsvActivity?.subscriptions?.length && (
+            <p className="mt-2 text-sm">
+              {payload.anonymizedHingeJson.CsvActivity.subscriptions.length}{" "}
+              subscription periods will be added to your timeline.
+            </p>
+          )}
+          <p className="text-muted-foreground mt-1 text-sm">
+            Add any optional files before continuing. Review your profile and
+            sharing choices next.
           </p>
-          <p className="mt-1 text-sm text-red-700 dark:text-red-400">{error}</p>
+          <button
+            type="button"
+            className="mt-4 rounded-md bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800"
+            onClick={() => onComplete(payload)}
+          >
+            Continue with these files
+          </button>
         </div>
       )}
-
-      {extractedPayload && (
-        <div className="rounded-lg border border-green-200 bg-green-50 p-4 dark:border-green-800 dark:bg-green-950/40">
-          <div className="flex items-start gap-3">
-            <CheckCircleIcon className="h-6 w-6 flex-shrink-0 text-green-600 dark:text-green-400" />
-            <div className="flex-1">
-              <h3 className="text-base font-semibold text-green-900 dark:text-green-200">
-                Required data is ready
-              </h3>
-              <p className="mt-1 text-sm text-green-700 dark:text-green-400">
-                Add prompts.json or media.json now if you want them included,
-                then continue.
-              </p>
-              <button
-                type="button"
-                onClick={() => onComplete(extractedPayload)}
-                className="mt-4 rounded-md bg-green-700 px-4 py-2 text-sm font-semibold text-white hover:bg-green-800"
-              >
-                Continue with these files
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <PrimaryAlert>
-        <p>
-          Your files are NOT uploaded to a server. They&apos;re processed
-          locally in your browser to extract only the anonymous statistical
-          data.
-        </p>
-      </PrimaryAlert>
-
-      <InfoAlert>
-        <p>
-          Hinge provides your data in multiple JSON files. You can upload them
-          individually or as a ZIP archive. The required files are: user.json,
-          and matches.json. prompts.json and media.json are optional.
-        </p>
-      </InfoAlert>
+      <p className="text-muted-foreground text-sm">
+        Files are read locally in your browser. Direct identifiers, raw
+        conversation IDs, IP logs, and selfie verification files are excluded
+        before upload. CSV message text is reduced to character counts.
+      </p>
     </div>
   );
 }

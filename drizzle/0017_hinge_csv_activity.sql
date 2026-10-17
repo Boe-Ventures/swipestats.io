@@ -1,0 +1,1 @@
+ALTER TABLE "hinge_profile" ADD COLUMN "csv_activity" jsonb;

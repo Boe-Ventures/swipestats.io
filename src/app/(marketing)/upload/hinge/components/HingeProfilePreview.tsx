@@ -1,3 +1,5 @@
+import { summarizeHingeCsvActivity } from "@/lib/hinge/csv-activity";
+import { HingeCsvInsights } from "../../../insights/hinge/[hingeId]/_components/HingeCsvInsights";
 import { useState, useEffect } from "react";
 import type { SwipestatsHingeProfilePayload } from "@/lib/interfaces/HingeDataJSON";
 import type { HingeConsentState } from "@/lib/interfaces/HingeConsent";
@@ -100,6 +102,16 @@ export function HingeProfilePreview({
       </div>
 
       <div className="px-6 py-4">
+        {payload.anonymizedHingeJson.CsvActivity && (
+          <div className="mb-5">
+            <HingeCsvInsights
+              summary={summarizeHingeCsvActivity(
+                payload.anonymizedHingeJson.CsvActivity,
+              )}
+              preview
+            />
+          </div>
+        )}
         <div className="flex items-start justify-between">
           <div>
             <div className="text-xl font-bold">

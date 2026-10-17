@@ -1,5 +1,6 @@
 "use client";
 
+import { HingeCsvInsights } from "./HingeCsvInsights";
 import { ShareButton } from "@/components/ShareButton";
 import { useHingeInsights } from "../HingeInsightsProvider";
 import { ProfileOverview } from "./ProfileOverview";
@@ -13,7 +14,7 @@ import { DirectoryCtaCard } from "../../../_shared/DirectoryCtaCard";
 import NewsletterCTA from "../../../../NewsletterCTA";
 
 export function MainHingeInsightsContent() {
-  const { usageLoading } = useHingeInsights();
+  const { usageLoading, profile, events } = useHingeInsights();
 
   if (usageLoading) {
     return <HingeInsightsSkeleton />;
@@ -42,19 +43,40 @@ export function MainHingeInsightsContent() {
           </div>
         </div>
 
-        {/* Activity Chart - Full Width */}
-        <MasterHingeActivityChart />
-
-        <HingeDatingFunnel />
-
-        {/* Profile Overview and Conversation Stats */}
-        <div className="grid gap-8 lg:grid-cols-2">
-          <ProfileOverview />
-          <ConversationStats />
-        </div>
-
-        {/* Messages Meta Card */}
-        <HingeMessagesMetaCard />
+        {profile?.csvSummary && (
+          <HingeCsvInsights summary={profile.csvSummary} events={events} />
+        )}
+        {profile?.csvSummary ? (
+          profile.matches.length > 0 && (
+            <details className="bg-card rounded-xl border p-5">
+              <summary className="cursor-pointer font-semibold">
+                Earlier JSON export insights
+              </summary>
+              <p className="text-muted-foreground my-4 text-sm">
+                These charts use your retained older JSON history. They exclude
+                CSV activity because Hinge does not provide identifiers that let
+                us reconcile the two formats reliably.
+              </p>
+              <div className="space-y-6">
+                <MasterHingeActivityChart />
+                <HingeDatingFunnel />
+                <ProfileOverview />
+                <ConversationStats />
+                <HingeMessagesMetaCard />
+              </div>
+            </details>
+          )
+        ) : (
+          <>
+            <MasterHingeActivityChart />
+            <HingeDatingFunnel />
+            <div className="grid gap-8 lg:grid-cols-2">
+              <ProfileOverview />
+              <ConversationStats />
+            </div>
+            <HingeMessagesMetaCard />
+          </>
+        )}
 
         {/* Data Request CTA */}
         <DataRequestCTA />

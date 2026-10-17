@@ -1,3 +1,5 @@
+import { syncHingeSubscriptionEvents } from "./hinge-subscription-events";
+import { hingeCsvUploadMetrics } from "@/lib/hinge/csv-activity";
 import { eq } from "drizzle-orm";
 import type {
   AnonymizedHingeDataJSON,
@@ -53,7 +55,7 @@ export type HingeProfileResult = {
   isNoOp?: boolean;
   metrics: {
     processingTimeMs: number;
-    matchCount: number;
+    matchCount: number | null;
     messageCount: number;
     photoCount: number;
     promptCount: number;
@@ -330,6 +332,11 @@ export async function createHingeProfile(data: {
     });
     console.log(`   ✓ Metadata inserted (${Date.now() - metaInsertStart}ms)`);
 
+    await syncHingeSubscriptionEvents(
+      tx,
+      data.userId,
+      anonymizedHingeJson.CsvActivity?.subscriptions,
+    );
     await markTransientUploadCommittedInTx(
       tx,
       data.transientUpload,
@@ -366,6 +373,7 @@ export async function createHingeProfile(data: {
       interactionCount: interactionsInput.length,
       hasPhotos: mediaInput.length > 0,
       jsonSizeMB: parseFloat(jsonSizeMB),
+      ...hingeCsvUploadMetrics(anonymizedHingeJson.CsvActivity),
     },
   };
 }
@@ -647,6 +655,7 @@ export async function updateHingeProfile(data: {
       interactionCount: interactionsInput.length,
       hasPhotos: mediaInput.length > 0,
       jsonSizeMB: parseFloat(jsonSizeMB),
+      ...hingeCsvUploadMetrics(anonymizedHingeJson.CsvActivity),
     },
   };
 }

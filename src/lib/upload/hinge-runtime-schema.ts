@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { hingeCsvActivitySchema } from "@/lib/hinge/csv-activity";
 
 import type { AnonymizedHingeDataJSON } from "@/lib/interfaces/HingeDataJSON";
 import { isPlausibleHingeAge } from "@/lib/hinge/age";
@@ -285,6 +286,7 @@ function createAnonymizedHingeBlobSchema(mode: ObjectMode) {
       profile,
     }),
     Matches: z.array(conversation),
+    CsvActivity: hingeCsvActivitySchema.optional(),
     Prompts: prompts.optional(),
     Media: z.array(media).optional(),
   });

@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { upload } from "@vercel/blob/client";
 import { SubmitButton } from "../../_components/SubmitButton";
 import { useTRPC } from "@/trpc/react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { SwipestatsHingeProfilePayload } from "@/lib/interfaces/HingeDataJSON";
 import { authClient } from "@/server/better-auth/client";
 import type { HingeConsentState } from "@/lib/interfaces/HingeConsent";
@@ -68,10 +68,19 @@ export function HingeSubmitButton({
   );
 
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
 
   // Mutation options shared across all endpoints
   const mutationOptions = {
-    onSuccess: (data: { hingeId: string }) => {
+    onSuccess: async (data: { hingeId: string }) => {
+      await Promise.all([
+        queryClient.invalidateQueries(trpc.event.list.queryOptions(undefined)),
+        queryClient.invalidateQueries(
+          trpc.hingeProfile.getWithStats.queryOptions({
+            hingeId: data.hingeId,
+          }),
+        ),
+      ]);
       router.push(`/insights/hinge/${data.hingeId}`);
     },
     onError: (error: { message?: string; data?: { code?: string } | null }) => {
@@ -123,7 +132,9 @@ export function HingeSubmitButton({
       photoCount: consent.sharePhotos ? photoCount : 0, // 0 if no consent
       hasPhotos: hasPhotosData,
       hasPhotosConsent: consent.sharePhotos,
-      matchCount: payload.anonymizedHingeJson.Matches.length,
+      matchCount: payload.anonymizedHingeJson.CsvActivity
+        ? null
+        : payload.anonymizedHingeJson.Matches.length,
       scenario: uploadContext?.scenario || "unknown",
     });
 

@@ -1,4 +1,9 @@
+import { syncHingeSubscriptionEvents } from "./hinge-subscription-events";
 import { eq } from "drizzle-orm";
+import {
+  mergeHingeCsvActivity,
+  hingeCsvUploadMetrics,
+} from "@/lib/hinge/csv-activity";
 
 import type { AnonymizedHingeDataJSON } from "@/lib/interfaces/HingeDataJSON";
 import { withTransaction, type TransactionClient } from "@/server/db";
@@ -233,6 +238,7 @@ export async function additiveUpdateHingeProfile(data: {
     const existingProfileState = await tx.query.hingeProfileTable.findFirst({
       where: hingeProfileOwnedBy(data.hingeId, data.userId),
       columns: {
+        csvActivity: true,
         createDate: true,
         firstAccountCreateDate: true,
         lastSeenAt: true,
@@ -255,6 +261,19 @@ export async function additiveUpdateHingeProfile(data: {
       existingProfileState.lastSeenAt,
       profileData.lastSeenAt!,
     );
+    const csvActivity = mergeHingeCsvActivity(
+      existingProfileState.csvActivity,
+      anonymizedHingeJson.CsvActivity,
+    );
+    const subscriptionsChanged =
+      JSON.stringify(csvActivity?.subscriptions ?? []) !==
+      JSON.stringify(existingProfileState.csvActivity?.subscriptions ?? []);
+    const csvChanged =
+      subscriptionsChanged ||
+      (csvActivity?.events.length ?? 0) !==
+        (existingProfileState.csvActivity?.events.length ?? 0) ||
+      (csvActivity?.tables.length ?? 0) !==
+        (existingProfileState.csvActivity?.tables.length ?? 0);
     const profilePrivacyChanged =
       data.consentWork === false &&
       ((existingProfileState.workplaces?.length ?? 0) > 0 ||
@@ -279,6 +298,7 @@ export async function additiveUpdateHingeProfile(data: {
                 jobTitleDisplayed: false,
               }
             : {}),
+        csvActivity,
         firstAccountCreateDate,
         updatedAt: new Date(),
       })
@@ -507,6 +527,7 @@ export async function additiveUpdateHingeProfile(data: {
       interactionsToInsert.length === 0 &&
       removedPhotoCount === 0 &&
       newMediaInput.length === 0 &&
+      !csvChanged &&
       !profilePrivacyChanged
     ) {
       console.log(
@@ -514,6 +535,14 @@ export async function additiveUpdateHingeProfile(data: {
       );
     }
 
+    await syncHingeSubscriptionEvents(
+      tx,
+      data.userId,
+      anonymizedHingeJson.CsvActivity?.subscriptions
+        ? csvActivity?.subscriptions
+        : undefined,
+      existingProfileState.csvActivity?.subscriptions,
+    );
     await markTransientUploadCommittedInTx(
       tx,
       data.transientUpload,
@@ -522,6 +551,10 @@ export async function additiveUpdateHingeProfile(data: {
 
     return {
       profile: updatedProfile,
+      csvMetrics: hingeCsvUploadMetrics(
+        anonymizedHingeJson.CsvActivity,
+        existingProfileState.csvActivity,
+      ),
       matchCount: matchesToInsert.length,
       messageCount: messagesToInsert.length,
       interactionCount: interactionsToInsert.length,
@@ -535,6 +568,7 @@ export async function additiveUpdateHingeProfile(data: {
         interactionsToInsert.length === 0 &&
         removedPhotoCount === 0 &&
         newMediaInput.length === 0 &&
+        !csvChanged &&
         !profilePrivacyChanged,
     };
   });
@@ -558,6 +592,7 @@ export async function additiveUpdateHingeProfile(data: {
       interactionCount: result.interactionCount,
       hasPhotos: result.hasPhotos,
       jsonSizeMB: parseFloat(jsonSizeMB),
+      ...result.csvMetrics,
     },
   };
 }
@@ -681,6 +716,10 @@ export async function absorbHingeProfileIntoNew(data: {
       .insert(hingeProfileTable)
       .values({
         ...newProfileData,
+        csvActivity: mergeHingeCsvActivity(
+          oldProfile.csvActivity,
+          anonymizedHingeJson.CsvActivity,
+        ),
         // Keep the new/current account signup for the next order check while
         // separately retaining the earliest signup across absorbed history.
         ...accountPeriod,
@@ -743,6 +782,12 @@ export async function absorbHingeProfileIntoNew(data: {
 
     console.log(
       `   ✓ Transferred all data to new profile (${Date.now() - transferStart}ms)`,
+    );
+
+    await syncHingeSubscriptionEvents(
+      tx,
+      data.userId,
+      anonymizedHingeJson.CsvActivity?.subscriptions,
     );
 
     // 6. Delete old profile (cascade will handle profileMeta, prompts)
@@ -888,6 +933,7 @@ export async function absorbHingeProfileIntoNew(data: {
       interactionCount: result.interactionCount,
       hasPhotos: result.hasPhotos,
       jsonSizeMB: parseFloat(jsonSizeMB),
+      ...hingeCsvUploadMetrics(anonymizedHingeJson.CsvActivity),
     },
   };
 }

@@ -11,6 +11,7 @@ export default defineConfig(
   {
     ignores: [
       ".next/**",
+      ".worktrees/**",
       "node_modules/**",
       ".velite/**",
       ".context/**",

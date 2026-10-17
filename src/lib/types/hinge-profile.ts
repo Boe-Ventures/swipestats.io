@@ -1,3 +1,4 @@
+import type { HingeCsvSummary } from "@/lib/hinge/csv-activity";
 import type {
   HingeProfile,
   Match,
@@ -27,6 +28,7 @@ export type HingeProfileWithStats = Pick<
   HingeProfile,
   "hingeId" | "gender" | "ageAtUpload" | "selfieVerified" | "country"
 > & {
+  csvSummary: HingeCsvSummary | null;
   matches: HingeInsightsMatch[];
   interactions: HingeInsightsInteraction[];
   profileMeta: ProfileMeta[];
