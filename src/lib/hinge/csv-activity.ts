@@ -13,6 +13,7 @@ export const HINGE_CSV_TABLES = [
   "profile_prompt_answers",
   "profile_prompt_polls",
   "user_media",
+  "store_subscription_purchases",
 ] as const;
 export type HingeCsvTable = (typeof HINGE_CSV_TABLES)[number];
 export const HINGE_CSV_ACTIVITY_TABLES = [
@@ -35,9 +36,32 @@ export const HINGE_CSV_KINDS = [
 ] as const;
 export type HingeCsvKind = (typeof HINGE_CSV_KINDS)[number];
 const digest = z.string().regex(/^[a-f0-9]{64}$/);
+export const hingeSubscriptionPeriodSchema = z
+  .object({
+    id: digest,
+    startAt: z.string().refine((value) => isProviderTimestamp(value)),
+    endAt: z
+      .string()
+      .refine((value) => isProviderTimestamp(value, { allowFuture: true })),
+    observedAt: z.string().refine((value) => isProviderTimestamp(value)),
+  })
+  .strict()
+  .refine(
+    (value) =>
+      new Date(value.endAt).getTime() > new Date(value.startAt).getTime(),
+    "Subscription end must follow start",
+  );
+export type HingeSubscriptionPeriod = z.infer<
+  typeof hingeSubscriptionPeriodSchema
+>;
+
 export const hingeCsvActivitySchema = z
   .object({
     version: z.literal(1),
+    subscriptions: z
+      .array(hingeSubscriptionPeriodSchema)
+      .max(10_000)
+      .optional(),
     tables: z.array(z.enum(HINGE_CSV_TABLES)).max(HINGE_CSV_TABLES.length),
     events: z
       .array(
@@ -94,11 +118,44 @@ export function mergeHingeCsvActivity(
   return {
     version: 1,
     tables: [...new Set([...retained.tables, ...incoming.tables])],
+    ...(retained.subscriptions || incoming.subscriptions
+      ? {
+          subscriptions: mergeHingeSubscriptions(
+            retained.subscriptions,
+            incoming.subscriptions,
+          ),
+        }
+      : {}),
     events: [...events.values()].sort(
       (a, b) =>
         a.timestamp.localeCompare(b.timestamp) || a.id.localeCompare(b.id),
     ),
   };
+}
+
+/** Later transactions can correct a previously exported subscription end. */
+export function mergeHingeSubscriptions(
+  retained: HingeSubscriptionPeriod[] = [],
+  incoming: HingeSubscriptionPeriod[] = [],
+) {
+  const periods = new Map(retained.map((period) => [period.id, period]));
+  for (const period of incoming) {
+    const previous = periods.get(period.id);
+    if (
+      !previous ||
+      new Date(period.observedAt).getTime() >
+        new Date(previous.observedAt).getTime()
+    )
+      periods.set(period.id, period);
+    else if (
+      period.observedAt === previous.observedAt &&
+      period.endAt !== previous.endAt
+    )
+      throw new Error("Conflicting subscription observations.");
+  }
+  return [...periods.values()].sort(
+    (a, b) => a.startAt.localeCompare(b.startAt) || a.id.localeCompare(b.id),
+  );
 }
 
 /** Public projection: no content, event IDs, or hashed conversation IDs. */

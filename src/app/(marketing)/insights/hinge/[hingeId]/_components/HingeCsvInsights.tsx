@@ -9,12 +9,19 @@ import {
   Tooltip,
   XAxis,
   YAxis,
+  ReferenceArea,
+  ReferenceLine,
 } from "recharts";
 import type {
   HingeCsvSummary,
   HingeCsvKind,
   HingeCsvTable,
 } from "@/lib/hinge/csv-activity";
+
+import {
+  buildHingeCsvTimeline,
+  type HingeChartEvent,
+} from "@/lib/hinge/csv-chart";
 
 const series = [
   { key: "LIKE", label: "Likes", color: "#8b5cf6" },
@@ -48,9 +55,11 @@ const tableByKind: Record<HingeCsvKind, HingeCsvTable> = {
 export function HingeCsvInsights({
   summary,
   preview = false,
+  events = [],
 }: {
   summary: HingeCsvSummary;
   preview?: boolean;
+  events?: HingeChartEvent[];
 }) {
   const [start, setStart] = useState("");
   const [end, setEnd] = useState("");
@@ -61,16 +70,11 @@ export function HingeCsvInsights({
       ),
     [summary, start, end],
   );
-  const monthly = useMemo(() => {
-    const months = new Map<string, Record<string, string | number>>();
-    for (const day of daily) {
-      const month = day.date.slice(0, 7);
-      const row = months.get(month) ?? { month };
-      for (const { key } of series) row[key] = Number(row[key] ?? 0) + day[key];
-      months.set(month, row);
-    }
-    return [...months.values()];
-  }, [daily]);
+  const timeline = useMemo(
+    () => buildHingeCsvTimeline(summary.daily, events, start, end),
+    [summary.daily, events, start, end],
+  );
+  const monthly = timeline.monthly;
   const visibleSeries = series.filter(({ key }) =>
     key.includes("RECEIVED")
       ? summary.counts[key] > 0
@@ -179,14 +183,55 @@ export function HingeCsvInsights({
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={monthly}>
                     <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                    <XAxis dataKey="month" />
+                    <XAxis
+                      dataKey="timestamp"
+                      type="number"
+                      scale="time"
+                      domain={timeline.domain}
+                      ticks={monthly.map((month) => month.timestamp)}
+                      tickFormatter={(value) =>
+                        new Date(Number(value)).toISOString().slice(0, 7)
+                      }
+                    />
                     <YAxis allowDecimals={false} />
                     <Tooltip
+                      labelFormatter={(value) =>
+                        new Date(Number(value)).toISOString().slice(0, 7)
+                      }
                       contentStyle={{
                         backgroundColor: "var(--background)",
                         borderColor: "var(--border)",
                       }}
                     />
+                    {timeline.overlays.map((event) =>
+                      event.end !== null ? (
+                        <ReferenceArea
+                          key={event.id}
+                          x1={event.start}
+                          x2={event.end}
+                          fill="var(--chart-event)"
+                          fillOpacity={0.1}
+                          label={{
+                            value: event.name,
+                            position: "insideTop",
+                            fontSize: 11,
+                            fill: "var(--chart-event-label)",
+                          }}
+                        />
+                      ) : (
+                        <ReferenceLine
+                          key={event.id}
+                          x={event.start}
+                          stroke="var(--chart-event)"
+                          strokeDasharray="4 4"
+                          label={{
+                            value: event.name,
+                            position: "insideTopLeft",
+                            fontSize: 11,
+                          }}
+                        />
+                      ),
+                    )}
                     {visibleSeries.map(({ key, label, color }) => (
                       <Bar key={key} dataKey={key} name={label} fill={color} />
                     ))}
@@ -197,6 +242,27 @@ export function HingeCsvInsights({
               <p className="text-muted-foreground text-sm">
                 No recorded activity in this date range.
               </p>
+            )}
+            {events.length > 0 && (
+              <details className="text-muted-foreground mt-4 text-sm">
+                <summary className="cursor-pointer">
+                  Events on your timeline
+                </summary>
+                <ul className="mt-2 space-y-1">
+                  {events.map((event) => (
+                    <li key={event.id}>
+                      {event.name}: {event.startDate.toISOString().slice(0, 10)}
+                      {event.endDate
+                        ? ` to ${event.endDate.toISOString().slice(0, 10)}`
+                        : ""}
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-2">
+                  Subscription periods are imported automatically when included
+                  in your download. Manage them in your events.
+                </p>
+              </details>
             )}
             <div className="mt-3 flex flex-wrap gap-4 text-xs">
               {visibleSeries.map(({ label, color }) => (

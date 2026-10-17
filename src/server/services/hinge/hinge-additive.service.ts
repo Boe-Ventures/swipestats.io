@@ -1,3 +1,4 @@
+import { syncHingeSubscriptionEvents } from "./hinge-subscription-events";
 import { eq } from "drizzle-orm";
 import {
   mergeHingeCsvActivity,
@@ -264,7 +265,11 @@ export async function additiveUpdateHingeProfile(data: {
       existingProfileState.csvActivity,
       anonymizedHingeJson.CsvActivity,
     );
+    const subscriptionsChanged =
+      JSON.stringify(csvActivity?.subscriptions ?? []) !==
+      JSON.stringify(existingProfileState.csvActivity?.subscriptions ?? []);
     const csvChanged =
+      subscriptionsChanged ||
       (csvActivity?.events.length ?? 0) !==
         (existingProfileState.csvActivity?.events.length ?? 0) ||
       (csvActivity?.tables.length ?? 0) !==
@@ -530,6 +535,14 @@ export async function additiveUpdateHingeProfile(data: {
       );
     }
 
+    await syncHingeSubscriptionEvents(
+      tx,
+      data.userId,
+      anonymizedHingeJson.CsvActivity?.subscriptions
+        ? csvActivity?.subscriptions
+        : undefined,
+      existingProfileState.csvActivity?.subscriptions,
+    );
     await markTransientUploadCommittedInTx(
       tx,
       data.transientUpload,
@@ -769,6 +782,12 @@ export async function absorbHingeProfileIntoNew(data: {
 
     console.log(
       `   ✓ Transferred all data to new profile (${Date.now() - transferStart}ms)`,
+    );
+
+    await syncHingeSubscriptionEvents(
+      tx,
+      data.userId,
+      anonymizedHingeJson.CsvActivity?.subscriptions,
     );
 
     // 6. Delete old profile (cascade will handle profileMeta, prompts)

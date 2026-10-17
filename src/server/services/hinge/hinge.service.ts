@@ -1,3 +1,4 @@
+import { syncHingeSubscriptionEvents } from "./hinge-subscription-events";
 import { hingeCsvUploadMetrics } from "@/lib/hinge/csv-activity";
 import { eq } from "drizzle-orm";
 import type {
@@ -331,6 +332,11 @@ export async function createHingeProfile(data: {
     });
     console.log(`   ✓ Metadata inserted (${Date.now() - metaInsertStart}ms)`);
 
+    await syncHingeSubscriptionEvents(
+      tx,
+      data.userId,
+      anonymizedHingeJson.CsvActivity?.subscriptions,
+    );
     await markTransientUploadCommittedInTx(
       tx,
       data.transientUpload,

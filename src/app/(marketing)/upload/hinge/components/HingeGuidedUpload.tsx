@@ -203,6 +203,12 @@ export function HingeGuidedUpload({
       {payload && !error && (
         <div className="rounded-lg border border-green-600 p-4">
           <p className="font-semibold">Your data is ready</p>
+          {!!payload.anonymizedHingeJson.CsvActivity?.subscriptions?.length && (
+            <p className="mt-2 text-sm">
+              {payload.anonymizedHingeJson.CsvActivity.subscriptions.length}{" "}
+              subscription periods will be added to your timeline.
+            </p>
+          )}
           <p className="text-muted-foreground mt-1 text-sm">
             Add any optional files before continuing. Review your profile and
             sharing choices next.

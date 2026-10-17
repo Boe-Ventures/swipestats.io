@@ -93,10 +93,40 @@ Public insights return daily totals and aggregate conversation statistics.
 They omit event identities, conversation hashes, content, and source URLs.
 Date filtering applies to activity counts and charts; all-history conversation
 and message-length summaries are explicitly labeled. IP/port request logs,
-selfie image bytes, consent logs, support/harm reports, purchase records,
+selfie image bytes, consent logs, support/harm reports, consumable purchase records,
 conversation starters, friends' takes, and backstory files are not imported.
 Purchase prices and currencies require separate entitlement/refund semantics
 before any spending total can be claimed.
+
+## Automatic subscription events
+
+`store_subscription_purchases.csv` is optional. Its transaction rows can repeat
+subscription dates or revise the end date for the same start. Keep the newest
+provider observation per account/start, rather than creating an event for each
+transaction. Scheduled end dates may be in the future. Conflicting end dates at
+an identical observation timestamp are rejected rather than chosen by row order.
+
+Use the existing `event` table and `SUBSCRIPTION` type, named "Hinge subscription".
+The file does not identify Plus versus X. A deterministic account-scoped source prefix in the event ID
+makes imports idempotent per owner, including after anonymous account conversion.
+A random suffix avoids collisions between owners importing the same source. Newer exports can correct dates while the event still
+matches its previously imported baseline. Manual date edits and customized names
+are preserved. Narrower/older exports never delete retained events or shorten
+newer source evidence. Events remain user-owned across account-history merges.
+Deleting an imported event removes it normally; uploading its source history
+again can recreate it.
+
+Retain only normalized start/end/observation dates and an opaque source hash in
+`csv_activity.subscriptions`. Hinge transport blobs are temporary and are cleaned
+after commit, so the original export is not an archive we can regenerate from.
+The normalized periods let us rebuild events without storing the original file
+or billing details. No additional subscription table or event columns are needed.
+
+The CSV chart uses a numeric UTC time axis so subscription bands can start/end
+inside monthly buckets and remain visible when clipped by a selected date range.
+Adjacent/overlapping imported renewals share a continuous visual band, while the
+underlying life events keep individual period dates. Only signed-in owners fetch
+their private events; public profile summaries do not include subscription dates.
 
 ## Validation rationale
 

@@ -6,6 +6,8 @@ import type {
 import {
   HINGE_CSV_TABLES,
   HINGE_CSV_ACTIVITY_TABLES,
+  mergeHingeSubscriptions,
+  hingeSubscriptionPeriodSchema,
 } from "@/lib/hinge/csv-activity";
 import type { SwipestatsHingeProfilePayload } from "@/lib/interfaces/HingeDataJSON";
 import { createSHA256Hash } from "@/lib/utils/hash";
@@ -103,6 +105,11 @@ const requiredColumns: Partial<Record<HingeCsvTable, string[]>> = {
   match_blocks: ["timestamp", "comment"],
   profile_prompt_answers: ["active", "timestamp", "prompt", "answer"],
   profile_prompt_polls: ["active", "timestamp", "prompt", "options"],
+  store_subscription_purchases: [
+    "timestamp",
+    "start_timestamp",
+    "end_timestamp",
+  ],
   user_media: ["active", "timestamp", "photo_url", "video_url"],
 };
 export function readHingeCsvTable(table: HingeCsvTable, content: string) {
@@ -265,6 +272,36 @@ export async function extractHingeCsvData(
         activity.events.push({ ...event, id: `${fingerprint}:${occurrence}` });
       }
     }
+  }
+  if (tables.has("store_subscription_purchases")) {
+    const periods = await Promise.all(
+      tables.get("store_subscription_purchases")!.map(async (row) => {
+        const startAt = timestamp(
+          row.start_timestamp,
+          "store_subscription_purchases",
+        );
+        const endAt = row.end_timestamp;
+        const observedAt = timestamp(
+          row.timestamp,
+          "store_subscription_purchases",
+        );
+        if (compareHingeTimestamps(startAt, signup!) < 0)
+          throw new Error("Subscription predates this account.");
+        return hingeSubscriptionPeriodSchema.parse({
+          id: await hash(
+            `${hingeId}:subscription:${parseHingeTimestampToDate(startAt).toISOString()}`,
+          ),
+          startAt: parseHingeTimestampToDate(startAt).toISOString(),
+          endAt: endAt && parseHingeTimestampToDate(endAt).toISOString(),
+          observedAt: parseHingeTimestampToDate(observedAt).toISOString(),
+        });
+      }),
+    );
+    // Sort before union so row ordering never chooses which correction wins.
+    activity.subscriptions = mergeHingeSubscriptions(
+      [],
+      periods.sort((a, b) => a.observedAt.localeCompare(b.observedAt)),
+    );
   }
   // Profile edits and active prompt/media timestamps are observations too;
   // neither is described to users as a complete last-login history.

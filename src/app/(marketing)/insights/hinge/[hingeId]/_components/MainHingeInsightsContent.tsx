@@ -14,7 +14,7 @@ import { DirectoryCtaCard } from "../../../_shared/DirectoryCtaCard";
 import NewsletterCTA from "../../../../NewsletterCTA";
 
 export function MainHingeInsightsContent() {
-  const { usageLoading, profile } = useHingeInsights();
+  const { usageLoading, profile, events } = useHingeInsights();
 
   if (usageLoading) {
     return <HingeInsightsSkeleton />;
@@ -44,7 +44,7 @@ export function MainHingeInsightsContent() {
         </div>
 
         {profile?.csvSummary && (
-          <HingeCsvInsights summary={profile.csvSummary} />
+          <HingeCsvInsights summary={profile.csvSummary} events={events} />
         )}
         {profile?.csvSummary ? (
           profile.matches.length > 0 && (

@@ -160,3 +160,62 @@ describe("Hinge CSV import integrity", () => {
     );
   });
 });
+
+// Duplicate transactions and corrected end dates must not multiply timeline
+// periods or let a narrower/older upload erase newer subscription evidence.
+describe("Hinge subscription timeline imports", () => {
+  it("deduplicates transactions, retains newer corrections, and excludes billing details", async () => {
+    const source = files();
+    const columns = [
+      "timestamp",
+      "start_timestamp",
+      "end_timestamp",
+      "currency",
+      "price_shown",
+      "cancel_reason",
+    ];
+    source.store_subscription_purchases = csv(columns, [
+      [
+        "2025-01-02T00:00:00Z",
+        signup,
+        "2025-02-01T00:00:00Z",
+        "NOK",
+        "149.00",
+        "sensitive reason",
+      ],
+      [
+        "2025-01-03T00:00:00Z",
+        signup,
+        "2025-03-01T00:00:00Z",
+        "NOK",
+        "149.00",
+        "",
+      ],
+      ["2025-01-03T00:00:00Z", signup, "2025-03-01T00:00:00Z", "NOK", "", ""],
+    ]);
+    const current = (await extractHingeCsvData(source)).anonymizedHingeJson
+      .CsvActivity!;
+    expect(current.subscriptions).toHaveLength(1);
+    expect(current.subscriptions![0]!.endAt).toBe("2025-03-01T00:00:00.000Z");
+    for (const secret of ["149.00", "NOK", "sensitive reason", "price_shown"])
+      expect(JSON.stringify(current)).not.toContain(secret);
+    source.store_subscription_purchases = csv(columns, [
+      [
+        "2025-01-02T00:00:00Z",
+        signup,
+        "2025-02-01T00:00:00Z",
+        "NOK",
+        "149.00",
+        "",
+      ],
+    ]);
+    const older = (await extractHingeCsvData(source)).anonymizedHingeJson
+      .CsvActivity!;
+    expect(mergeHingeCsvActivity(current, older)!.subscriptions).toEqual(
+      current.subscriptions,
+    );
+    expect(mergeHingeCsvActivity(current, current)!.subscriptions).toHaveLength(
+      1,
+    );
+  });
+});
