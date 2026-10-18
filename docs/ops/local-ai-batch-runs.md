@@ -4,14 +4,15 @@ This guide covers the local operator scripts used for SwipeRank review and
 image anonymization. It keeps local Codex account usage, Anthropic API usage,
 database access, and persisted output separate.
 
-## The three execution paths
+## The five execution paths
 
-| Path                   | Command                                 | Model and billing                                                              | Database effect                                 |
-| ---------------------- | --------------------------------------- | ------------------------------------------------------------------------------ | ----------------------------------------------- |
-| Local image transform  | `bun run privacy:anonymize-image`       | TensorFlow CPU face detection plus Sharp; no model API                         | None                                            |
-| Local SwipeRank review | `bun run swipe-rank:review-codex`       | Local `codex exec`; charged against the account authenticated in the Codex CLI | Read-only                                       |
-| SwipeRank image batch  | `bun run privacy:anonymize-swiperank`   | Local CPU transform followed by Anthropic Sonnet 5 privacy review              | Writes approved Blob URLs and media metadata    |
-| Codex image audit      | `bun run privacy:audit-swiperank-codex` | Local Codex Sol vision review of approved derivatives                          | Optionally holds and deletes unsafe derivatives |
+| Path                        | Command                                 | Model and billing                                                              | Database effect                                     |
+| --------------------------- | --------------------------------------- | ------------------------------------------------------------------------------ | --------------------------------------------------- |
+| Local image transform       | `bun run privacy:anonymize-image`       | TensorFlow CPU face detection plus Sharp; no model API                         | None                                                |
+| Local dataset anonymization | `bun run privacy:anonymize-local`       | Local `codex exec`; Luna for messages and optional Sol image review            | Read-only when a database-backed source is selected |
+| Local SwipeRank review      | `bun run swipe-rank:review-codex`       | Local `codex exec`; charged against the account authenticated in the Codex CLI | Read-only                                           |
+| SwipeRank image batch       | `bun run privacy:anonymize-swiperank`   | Local CPU transform followed by Anthropic Sonnet 5 privacy review              | Writes approved Blob URLs and media metadata        |
+| Codex image audit           | `bun run privacy:audit-swiperank-codex` | Local Codex Sol vision review of approved derivatives                          | Optionally holds and deletes unsafe derivatives     |
 
 The local Codex runner does not require `OPENAI_API_KEY`. It launches the
 installed Codex CLI, which uses the account already authenticated on the
@@ -292,22 +293,88 @@ Sonnet to review the prepared JPEGs before saving them. It is intended for
 preserved artifacts whose source mapping is already known. Generic folders of
 images should go through `privacy:anonymize-image` instead.
 
-## Current gap in the February experiment
+## Prepare a full local dataset anonymization run
 
-The prior full message-and-image anonymization run produced durable private
-artifacts, while its orchestration driver is absent from the repository. The
-current committed local Codex script performs moderation over facts, message
-samples, and available images. It does not emit a fully anonymized message
-dataset.
+`privacy:anonymize-local` promotes the February message-and-image experiment
+into a bounded operator tool. It selects profiles deterministically, splits
+messages into capped chunks, records content-free manifests and digests, and
+writes every artifact with private permissions. Its default mode prepares the
+scope without invoking Codex.
 
-Before running large message-anonymization batches, promote that experimental
-driver into a reviewed repo script with:
+Prepare ten profiles from an existing JSONL export entirely offline:
 
-- deterministic profile selection and resumable offsets;
-- private output permissions and stable subject hashes;
-- an explicit message-size cap and chunk manifest;
-- local Codex event logs for usage accounting;
-- a validation-only mode before any database or Blob persistence.
+```sh
+bun run privacy:anonymize-local -- \
+  --input /absolute/path/research-demo.jsonl \
+  --output-dir /private/tmp/swipestats-anonymization-prepare \
+  --limit 10
+```
+
+The offline preparation path reads no database credentials. Each subject gets
+a manifest containing message counts, chunk sizes, and SHA-256 digests. Raw
+message text stays in memory and is written only after a model run produces a
+validated anonymized result.
+
+Run the same bounded source through the locally authenticated Codex CLI:
+
+```sh
+bun run privacy:anonymize-local -- \
+  --input /absolute/path/research-demo.jsonl \
+  --output-dir /private/tmp/swipestats-anonymization-luna \
+  --offset 0 \
+  --limit 10 \
+  --message-model gpt-5.6-luna \
+  --message-reasoning high \
+  --confirm-model-processing \
+  --run
+```
+
+`--confirm-model-processing` records the operator decision to send private
+content through the authenticated Codex account. One ephemeral, read-only
+Codex process handles each capped message chunk. The runner accepts only typed
+replacement tokens, verifies the subject and message digest, rejects ordinary
+rewrites, and flags common identifier patterns that remain afterward.
+
+Select recent profiles from a Neon branch with an explicit database-read gate:
+
+```sh
+bun run privacy:anonymize-local -- \
+  --latest-production \
+  --neon-branch production \
+  --confirm-database-read \
+  --output-dir /private/tmp/swipestats-anonymization-production-prepare \
+  --limit 10
+```
+
+The database transaction is `READ ONLY`. Add `--include-images` to read stored
+media URLs and create private derivatives with the canonical TensorFlow/Sharp
+image anonymizer. A model run then uses Sol for a second image privacy review.
+Original image bytes remain in memory and are never retained by this runner.
+
+The output directory contains:
+
+- `run.json` with source, model, limits, offset, and execution mode;
+- constrained JSON schemas for the Codex responses;
+- one private subject directory with a content-free `manifest.json`;
+- `messages.anonymized.jsonl` after a successful model run;
+- optional anonymized JPEGs, detector results, and a Sol verdict;
+- Codex event logs and stderr for usage and failure diagnosis;
+- `results.jsonl` for resumable passed and held subjects;
+- `summary.json` with terminal counts and warnings.
+
+Use the same output directory with `--resume` after a stopped run. Keep the
+source, seed, offset, limits, and models unchanged so the prepared subject and
+chunk digests remain comparable.
+
+The tool has no database or Blob write path. Production persistence stays in
+the separate SwipeRank image commands described below.
+
+### Gate before a larger message batch
+
+Run ten profiles first. Inspect every deterministic warning, compare a sample
+of anonymized messages against the source, and aggregate Codex usage from the
+event files. A larger run starts only after the sample preserves ordinary
+conversation text and removes every direct identifier found during review.
 
 ## Operator checklist
 
