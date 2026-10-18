@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;600;700;800&display=swap">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; font-family: "Inter Tight", -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; color: #ffffff; -webkit-font-smoothing: antialiased; }
+  .row { display:grid; grid-template-columns:220px 1fr 130px; align-items:center; gap:22px; }
+  .name { font-size:24px; font-weight:800; color:#ffffff; }
+  .note { font-size:15px; color:#c4a0b0; margin-top:4px; }
+  .track { height:26px; background:#2a1220; border-radius:14px; overflow:hidden; }
+  .bar { height:100%; background:linear-gradient(90deg,#E11D48,#ff4694); border-radius:14px; }
+  .score { font-size:32px; font-weight:800; color:#ff4694; text-align:right; }
+  .card { background:#2a1220; border:1px solid rgba(255,128,181,0.18); border-radius:16px; padding:20px 22px; display:flex; flex-direction:column; gap:6px; }
+  .clbl { font-size:14px; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#ff80b5; }
+  .cnum { font-size:44px; font-weight:800; color:#ffffff; line-height:1.05; }
+  .cnote { font-size:15px; color:#c4a0b0; line-height:1.35; }
+</style>
+</head>
+<body>
+<div id="infographic" style="width:1200px; height:900px; background:radial-gradient(60% 50% at 12% 6%, rgba(255,70,148,0.20) 0%, rgba(0,0,0,0) 62%), #120810; display:flex; flex-direction:column; padding:48px 60px 0;">
+
+  <div style="display:flex; flex-direction:column; gap:10px;">
+    <div style="font-size:13px; font-weight:800; letter-spacing:0.10em; text-transform:uppercase; color:#ff80b5;">Best dating apps for men</div>
+    <div style="font-size:44px; font-weight:800; color:#ffffff; line-height:1.12; letter-spacing:-0.01em;">How men actually perform on dating apps</div>
+    <div style="font-size:18px; color:#c4a0b0; line-height:1.4;">Share of male users per app, plus Tinder match rates from 7,000+ SwipeStats profiles.</div>
+  </div>
+
+  <div style="flex:1; display:flex; flex-direction:column; justify-content:center; gap:26px; padding:20px 0 0;">
+    <div style="font-size:14px; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:#ff80b5;">Male share of users</div>
+    <div class="row"><div><div class="name">Tinder</div><div class="note">3-4 guys per woman</div></div><div class="track"><div class="bar" style="width:77%"></div></div><div class="score">76-78%</div></div>
+    <div class="row"><div><div class="name">Bumble</div><div class="note">Women message first</div></div><div class="track"><div class="bar" style="width:61%"></div></div><div class="score">61%</div></div>
+    <div class="row"><div><div class="name">Hinge</div><div class="note">Most balanced of the big three</div></div><div class="track"><div class="bar" style="width:60%"></div></div><div class="score">60%</div></div>
+  </div>
+
+  <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-top:28px;">
+    <div class="card"><div class="clbl">Median male match rate</div><div class="cnum">2.04%</div><div class="cnote">1-2 matches per 100 right swipes on Tinder</div></div>
+    <div class="card"><div class="clbl">Median female match rate</div><div class="cnum">41.27%</div><div class="cnote">About 20 times the male rate</div></div>
+    <div class="card"><div class="clbl">Top 10% of men</div><div class="cnum">67%</div><div class="cnote">of all matches go to them</div></div>
+  </div>
+
+  <div style="display:flex; align-items:center; justify-content:space-between; border-top:1px solid #2a1220; padding:18px 0 24px; margin-top:22px;">
+    <img src="/home/pawvej/Developer/paw-server/kit/brands/swipestats/logo.png" alt="SwipeStats" style="height:28px; width:auto;">
+    <div style="font-size:15px; font-weight:600; color:#c4a0b0;">swipestats.io/blog/best-dating-apps-for-men</div>
+  </div>
+
+</div>
+</body>
+</html>

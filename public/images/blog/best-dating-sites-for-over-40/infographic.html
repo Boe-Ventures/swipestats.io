@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;600;700;800&display=swap">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; font-family: "Inter Tight", -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; color: #ffffff; -webkit-font-smoothing: antialiased; }
+  .card { background:#2a1220; border:1px solid rgba(255,128,181,0.18); border-radius:18px; padding:22px 26px; display:flex; flex-direction:column; gap:12px; }
+  .ttl { font-size:20px; font-weight:800; color:#ffffff; line-height:1.25; }
+  .row { display:flex; align-items:center; gap:14px; }
+  .lab { width:190px; font-size:15px; color:#c4a0b0; line-height:1.25; }
+  .track { flex:1; height:30px; background:rgba(255,255,255,0.05); border-radius:8px; overflow:hidden; }
+  .bar { height:100%; border-radius:8px; }
+  .hi { background:linear-gradient(90deg,#E11D48,#ff4694); }
+  .lo { background:#6b4256; }
+  .val { width:78px; text-align:right; font-size:24px; font-weight:800; color:#ff4694; }
+  .val.m { color:#c4a0b0; }
+  .note { font-size:14px; color:#c4a0b0; line-height:1.4; }
+</style>
+</head>
+<body>
+<div id="infographic" style="width:1200px; height:900px; background:radial-gradient(60% 50% at 12% 6%, rgba(255,70,148,0.20) 0%, rgba(0,0,0,0) 62%), #120810; display:flex; flex-direction:column; padding:48px 60px 0;">
+
+  <div style="display:flex; flex-direction:column; gap:10px;">
+    <div style="font-size:13px; font-weight:800; letter-spacing:0.10em; text-transform:uppercase; color:#ff80b5;">Best dating sites for over 40</div>
+    <div style="font-size:44px; font-weight:800; color:#ffffff; line-height:1.12; letter-spacing:-0.01em;">Dating after 40: the data is on your side</div>
+    <div style="font-size:18px; color:#c4a0b0; line-height:1.4;">Success rates, who pays, where older daters are, and what premium costs.</div>
+  </div>
+
+  <div style="flex:1; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:18px; padding:28px 0 0;">
+
+    <div class="card">
+      <div class="ttl">Online dating works for older daters</div>
+      <div class="row"><div class="lab">Ages 43-58: led to a relationship</div><div class="track"><div class="bar hi" style="width:72%"></div></div><div class="val">72%</div></div>
+      <div class="row"><div class="lab">Ages 55+: neutral to positive experience</div><div class="track"><div class="bar hi" style="width:74%"></div></div><div class="val">74%</div></div>
+      <div class="note">43-58 is the highest success rate of any age group.</div>
+    </div>
+
+    <div class="card">
+      <div class="ttl">Who pays for dating apps</div>
+      <div class="row"><div class="lab">Users 30+</div><div class="track"><div class="bar hi" style="width:41%"></div></div><div class="val">41%</div></div>
+      <div class="row"><div class="lab">Users under 30</div><div class="track"><div class="bar lo" style="width:22%"></div></div><div class="val m">22%</div></div>
+      <div class="note">Paying filters out the people who are just browsing.</div>
+    </div>
+
+    <div class="card">
+      <div class="ttl">Dating app users aged 50-64 on...</div>
+      <div class="row"><div class="lab">Match</div><div class="track"><div class="bar hi" style="width:45%"></div></div><div class="val">45%</div></div>
+      <div class="row"><div class="lab">Facebook Dating</div><div class="track"><div class="bar lo" style="width:28%"></div></div><div class="val m">28%</div></div>
+      <div class="note">Facebook Dating is completely free, with no premium tier.</div>
+    </div>
+
+    <div class="card">
+      <div class="ttl">Premium cost per month (top of range)</div>
+      <div class="row"><div class="lab">eHarmony, Elite Singles</div><div class="track"><div class="bar lo" style="width:100%"></div></div><div class="val m">$65</div></div>
+      <div class="row"><div class="lab">OkCupid</div><div class="track"><div class="bar lo" style="width:53.8%"></div></div><div class="val m">$35</div></div>
+      <div class="row"><div class="lab">Hinge, Bumble</div><div class="track"><div class="bar hi" style="width:46.2%"></div></div><div class="val">$30</div></div>
+      <div class="row"><div class="lab">Match</div><div class="track"><div class="bar hi" style="width:41.5%"></div></div><div class="val">$27</div></div>
+    </div>
+
+  </div>
+
+  <div style="background:linear-gradient(120deg,#E11D48,#ff4694); border-radius:20px; padding:22px 28px; margin-top:22px; display:flex; align-items:center; gap:26px;">
+    <div style="display:inline-flex; background:rgba(18,8,16,0.32); color:#ffffff; font-size:13px; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; padding:8px 16px; border-radius:24px; white-space:nowrap;">Top picks</div>
+    <div style="font-size:20px; color:#ffffff; line-height:1.35;"><b>Hinge</b> is #1 for over 40, <b>Match</b> is the runner-up. Only <b>2% of adults over 50</b> are on dating apps, so the field is wide open.</div>
+  </div>
+
+  <div style="display:flex; align-items:center; justify-content:space-between; border-top:1px solid #2a1220; padding:18px 0 24px; margin-top:18px;">
+    <img src="/home/pawvej/Developer/paw-server/kit/brands/swipestats/logo.png" alt="SwipeStats" style="height:28px; width:auto;">
+    <div style="font-size:15px; font-weight:600; color:#c4a0b0;">swipestats.io/blog/best-dating-sites-for-over-40</div>
+  </div>
+
+</div>
+</body>
+</html>
