@@ -1,3 +1,7 @@
+import {
+  uploadLocation,
+  captureUploadLocation,
+} from "@/server/services/user/location.service";
 import { getHingeComparisonProfile } from "@/server/services/hinge/hinge-comparison.service";
 import { summarizeHingeCsvActivity } from "@/lib/hinge/csv-activity";
 import { TRPCError } from "@trpc/server";
@@ -326,6 +330,8 @@ export const hingeProfileRouter = {
         });
       }
 
+      const detectedLocation = uploadLocation(ctx.headers, input);
+
       try {
         const preparedUpload = await prepareHingeTransientUpload({
           uploadId: input.uploadId,
@@ -335,6 +341,11 @@ export const hingeProfileRouter = {
           sessionId: ctx.session.session.id,
         });
         if (preparedUpload.committedProfile) {
+          await captureUploadLocation(
+            ctx.session.user.id,
+            detectedLocation,
+            preparedUpload.committedProfile,
+          );
           return { hingeId: preparedUpload.committedProfile.hingeId };
         }
 
@@ -365,8 +376,8 @@ export const hingeProfileRouter = {
               hingeId: input.hingeId,
               blobUrl: input.blobUrl,
               currentUserId: ctx.session.user.id,
-              timezone: input.timezone,
-              country: input.country,
+              timezone: detectedLocation.timeZone ?? undefined,
+              country: detectedLocation.country ?? undefined,
               consentPhotos: input.consentPhotos ?? true,
               consentWork: input.consentWork ?? true,
               transientUpload: preparedUpload.binding,
@@ -375,8 +386,8 @@ export const hingeProfileRouter = {
               hingeId: input.hingeId,
               blobUrl: input.blobUrl,
               userId: ctx.session.user.id,
-              timezone: input.timezone,
-              country: input.country,
+              timezone: detectedLocation.timeZone ?? undefined,
+              country: detectedLocation.country ?? undefined,
               consentPhotos: input.consentPhotos ?? true,
               consentWork: input.consentWork ?? true,
               transientUpload: preparedUpload.binding,
@@ -412,6 +423,11 @@ export const hingeProfileRouter = {
           );
         }
 
+        await captureUploadLocation(
+          ctx.session.user.id,
+          detectedLocation,
+          result.profile,
+        );
         return { hingeId: result.profile.hingeId };
       } catch (error) {
         if (error instanceof Error) {
@@ -448,6 +464,8 @@ export const hingeProfileRouter = {
         });
       }
 
+      const detectedLocation = uploadLocation(ctx.headers, input);
+
       try {
         const preparedUpload = await prepareHingeTransientUpload({
           uploadId: input.uploadId,
@@ -457,6 +475,11 @@ export const hingeProfileRouter = {
           sessionId: ctx.session.session.id,
         });
         if (preparedUpload.committedProfile) {
+          await captureUploadLocation(
+            ctx.session.user.id,
+            detectedLocation,
+            preparedUpload.committedProfile,
+          );
           return { hingeId: preparedUpload.committedProfile.hingeId };
         }
 
@@ -476,8 +499,8 @@ export const hingeProfileRouter = {
           hingeId: input.hingeId,
           blobUrl: input.blobUrl,
           currentUserId: ctx.session.user.id,
-          timezone: input.timezone,
-          country: input.country,
+          timezone: detectedLocation.timeZone ?? undefined,
+          country: detectedLocation.country ?? undefined,
           consentPhotos: input.consentPhotos ?? true,
           consentWork: input.consentWork ?? true,
           transientUpload: preparedUpload.binding,
@@ -501,6 +524,11 @@ export const hingeProfileRouter = {
           });
         }
 
+        await captureUploadLocation(
+          ctx.session.user.id,
+          detectedLocation,
+          result.profile,
+        );
         return { hingeId: result.profile.hingeId };
       } catch (error) {
         if (error instanceof Error) {
@@ -538,6 +566,8 @@ export const hingeProfileRouter = {
         });
       }
 
+      const detectedLocation = uploadLocation(ctx.headers, input);
+
       try {
         const preparedUpload = await prepareHingeTransientUpload({
           uploadId: input.uploadId,
@@ -547,6 +577,11 @@ export const hingeProfileRouter = {
           sessionId: ctx.session.session.id,
         });
         if (preparedUpload.committedProfile) {
+          await captureUploadLocation(
+            ctx.session.user.id,
+            detectedLocation,
+            preparedUpload.committedProfile,
+          );
           return { hingeId: preparedUpload.committedProfile.hingeId };
         }
 
@@ -603,8 +638,8 @@ export const hingeProfileRouter = {
             hingeId: existingUserProfile.hingeId,
             blobUrl: input.blobUrl,
             userId: ctx.session.user.id,
-            timezone: input.timezone,
-            country: input.country,
+            timezone: detectedLocation.timeZone ?? undefined,
+            country: detectedLocation.country ?? undefined,
             consentPhotos: input.consentPhotos ?? true,
             consentWork: input.consentWork ?? true,
             verifiedJson: anonymizedHingeJson,
@@ -629,6 +664,11 @@ export const hingeProfileRouter = {
             });
           }
 
+          await captureUploadLocation(
+            ctx.session.user.id,
+            detectedLocation,
+            result.profile,
+          );
           return { hingeId: result.profile.hingeId };
         }
 
@@ -653,8 +693,8 @@ export const hingeProfileRouter = {
           newHingeId: input.hingeId,
           blobUrl: input.blobUrl,
           userId: ctx.session.user.id,
-          timezone: input.timezone,
-          country: input.country,
+          timezone: detectedLocation.timeZone ?? undefined,
+          country: detectedLocation.country ?? undefined,
           consentPhotos: input.consentPhotos ?? true,
           consentWork: input.consentWork ?? true,
           verifiedJson: anonymizedHingeJson,
@@ -676,6 +716,11 @@ export const hingeProfileRouter = {
           consentWork: input.consentWork ?? true,
         });
 
+        await captureUploadLocation(
+          ctx.session.user.id,
+          detectedLocation,
+          result.profile,
+        );
         return { hingeId: result.profile.hingeId };
       } catch (error) {
         if (error instanceof Error) {
@@ -711,6 +756,8 @@ export const hingeProfileRouter = {
         });
       }
 
+      const detectedLocation = uploadLocation(ctx.headers, input);
+
       const preparedUpload = await prepareHingeTransientUpload({
         uploadId: input.uploadId,
         blobUrl: input.blobUrl,
@@ -719,6 +766,11 @@ export const hingeProfileRouter = {
         sessionId: ctx.session.session.id,
       });
       if (preparedUpload.committedProfile) {
+        await captureUploadLocation(
+          ctx.session.user.id,
+          detectedLocation,
+          preparedUpload.committedProfile,
+        );
         return { hingeId: preparedUpload.committedProfile.hingeId };
       }
 
@@ -739,8 +791,8 @@ export const hingeProfileRouter = {
           hingeId: input.hingeId,
           blobUrl: input.blobUrl,
           userId: ctx.session.user.id,
-          timezone: input.timezone,
-          country: input.country,
+          timezone: detectedLocation.timeZone ?? undefined,
+          country: detectedLocation.country ?? undefined,
           transientUpload: preparedUpload.binding,
         });
 
@@ -759,6 +811,11 @@ export const hingeProfileRouter = {
           consentWork: true,
         });
 
+        await captureUploadLocation(
+          ctx.session.user.id,
+          detectedLocation,
+          result.profile,
+        );
         return { hingeId: result.profile.hingeId };
       } catch (error) {
         if (error instanceof Error) {
@@ -794,6 +851,8 @@ export const hingeProfileRouter = {
         });
       }
 
+      const detectedLocation = uploadLocation(ctx.headers, input);
+
       const preparedUpload = await prepareHingeTransientUpload({
         uploadId: input.uploadId,
         blobUrl: input.blobUrl,
@@ -802,6 +861,11 @@ export const hingeProfileRouter = {
         sessionId: ctx.session.session.id,
       });
       if (preparedUpload.committedProfile) {
+        await captureUploadLocation(
+          ctx.session.user.id,
+          detectedLocation,
+          preparedUpload.committedProfile,
+        );
         return { hingeId: preparedUpload.committedProfile.hingeId };
       }
 
@@ -831,8 +895,8 @@ export const hingeProfileRouter = {
           hingeId: input.hingeId,
           blobUrl: input.blobUrl,
           userId: ctx.session.user.id,
-          timezone: input.timezone,
-          country: input.country,
+          timezone: detectedLocation.timeZone ?? undefined,
+          country: detectedLocation.country ?? undefined,
           transientUpload: preparedUpload.binding,
         });
 
@@ -854,6 +918,11 @@ export const hingeProfileRouter = {
           });
         }
 
+        await captureUploadLocation(
+          ctx.session.user.id,
+          detectedLocation,
+          result.profile,
+        );
         return { hingeId: result.profile.hingeId };
       } catch (error) {
         if (error instanceof Error) {

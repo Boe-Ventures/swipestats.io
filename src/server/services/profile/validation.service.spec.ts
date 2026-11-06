@@ -1,6 +1,7 @@
 /// <reference types="bun-types" />
 import { describe, expect, test } from "bun:test";
 import { parseAnonymizedTinderData } from "./validation.service";
+import { transformTinderJsonToProfile } from "./transform.service";
 const minimalExport = {
   Messages: [],
   Usage: {
@@ -23,6 +24,27 @@ const minimalExport = {
   },
 };
 describe("parseAnonymizedTinderData", () => {
+  test("does not attach a request country to an unrelated provider city", () => {
+    const profile = parseAnonymizedTinderData({
+      ...minimalExport,
+      User: { ...minimalExport.User, city: { name: "Oslo", region: "Oslo" } },
+    });
+    expect(
+      transformTinderJsonToProfile(profile, {
+        tinderId: "t",
+        userId: "u",
+        country: "US",
+      }).country,
+    ).toBe("NO");
+    profile.User.city = "Oslo";
+    expect(
+      transformTinderJsonToProfile(profile, {
+        tinderId: "t",
+        userId: "u",
+        country: "US",
+      }).country,
+    ).toBeNull();
+  });
   test("rejects invalid usage counts and calendar keys", () => {
     for (const appOpens of [
       { "2026-01-12": -1 },
