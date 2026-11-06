@@ -5,9 +5,9 @@ export const runtime = "edge";
 
 type OgVariant = "split" | "centered" | "hero";
 
-const PANEL_BG = "#0f0f0f";
-const PANEL_FG = "#ffffff";
-const MUTED_FG = "rgba(255, 255, 255, 0.6)";
+const PANEL_BG = "linear-gradient(180deg, #ffffff 0%, #fff1f2 100%)";
+const PANEL_FG = "#0f172a";
+const MUTED_FG = "#64748b";
 const BRAND_PINK = "#f43f5e"; // rose-500
 const BRAND_GRADIENT =
   "linear-gradient(135deg, #f43f5e 0%, #ec4899 50%, #a855f7 100%)";
@@ -17,7 +17,6 @@ export async function GET(request: NextRequest) {
     const { searchParams, origin } = new URL(request.url);
 
     const title = searchParams.get("title") ?? "SwipeStats";
-    const subtitle = searchParams.get("subtitle") ?? "";
     const path = searchParams.get("path") ?? "/";
     const screenshot = searchParams.get("screenshot") ?? "";
     const rawVariant = searchParams.get("variant") ?? "centered";
@@ -61,7 +60,7 @@ export async function GET(request: NextRequest) {
 
     const domainLabel = `swipestats.io${path === "/" ? "" : path}`;
 
-    // --- Centered variant: dark, brand-forward ---
+    // Centered variant: light, brand-forward.
     const centeredJsx = (
       <div
         style={{
@@ -132,32 +131,11 @@ export async function GET(request: NextRequest) {
               marginTop: 24,
               display: "flex",
               textAlign: "center",
-              backgroundImage: BRAND_GRADIENT,
-              backgroundClip: "text",
-              color: "transparent",
+              color: PANEL_FG,
             }}
           >
             {title}
           </div>
-
-          {subtitle ? (
-            <div
-              style={{
-                fontSize: 26,
-                lineHeight: 1.4,
-                color: MUTED_FG,
-                fontWeight: 500,
-                marginTop: 14,
-                maxWidth: 640,
-                textAlign: "center",
-                display: "flex",
-              }}
-            >
-              {subtitle}
-            </div>
-          ) : (
-            <div style={{ display: "none" }} />
-          )}
 
           <div
             style={{
@@ -241,37 +219,18 @@ export async function GET(request: NextRequest) {
 
           <div
             style={{
-              fontSize: title.length > 44 ? 38 : 42,
+              fontSize: title.length > 60 ? 50 : 60,
               fontWeight: 700,
               lineHeight: 1.1,
               letterSpacing: "-0.03em",
-              marginTop: 16,
-              maxWidth: 620,
+              marginTop: 24,
+              maxWidth: 800,
               display: "flex",
               textAlign: "center",
             }}
           >
             {title}
           </div>
-
-          {subtitle ? (
-            <div
-              style={{
-                fontSize: 18,
-                lineHeight: 1.4,
-                color: MUTED_FG,
-                fontWeight: 500,
-                marginTop: 8,
-                maxWidth: 600,
-                textAlign: "center",
-                display: "flex",
-              }}
-            >
-              {subtitle}
-            </div>
-          ) : (
-            <div style={{ display: "none" }} />
-          )}
         </div>
 
         {/* Bottom section: screenshot */}
@@ -281,7 +240,7 @@ export async function GET(request: NextRequest) {
             display: "flex",
             alignItems: "flex-start",
             justifyContent: "center",
-            paddingTop: 20,
+            paddingTop: 28,
             paddingLeft: 60,
             paddingRight: 60,
             overflow: "hidden",
@@ -300,8 +259,8 @@ export async function GET(request: NextRequest) {
                 objectPosition: "left top",
                 borderTopLeftRadius: 14,
                 borderTopRightRadius: 14,
-                border: "1px solid rgba(255,255,255,0.1)",
-                boxShadow: "0 8px 40px rgba(0,0,0,0.4)",
+                border: "1px solid #e2e8f0",
+                boxShadow: "0 10px 40px rgba(15,23,42,0.10)",
               }}
             />
           ) : (
@@ -314,7 +273,7 @@ export async function GET(request: NextRequest) {
                 justifyContent: "center",
                 borderTopLeftRadius: 14,
                 borderTopRightRadius: 14,
-                border: "1px solid rgba(255,255,255,0.06)",
+                border: "1px solid #e2e8f0",
                 background: "rgba(244, 63, 94, 0.03)",
                 color: BRAND_PINK,
                 fontSize: 160,
@@ -381,21 +340,6 @@ export async function GET(request: NextRequest) {
             >
               {title}
             </div>
-            {subtitle ? (
-              <div
-                style={{
-                  fontSize: 20,
-                  lineHeight: 1.35,
-                  color: MUTED_FG,
-                  fontWeight: 500,
-                  display: "flex",
-                }}
-              >
-                {subtitle}
-              </div>
-            ) : (
-              <div style={{ display: "none" }} />
-            )}
           </div>
 
           <div
