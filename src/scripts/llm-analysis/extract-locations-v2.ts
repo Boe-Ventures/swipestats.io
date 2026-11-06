@@ -417,7 +417,12 @@ export async function applyLocationProposal(
     const table =
       profile.provider === "TINDER" ? "tinder_profile" : "hinge_profile";
     const id = profile.provider === "TINDER" ? "tinder_id" : "hinge_id";
-    return `EXISTS (SELECT 1 FROM ${table} WHERE user_id = $1 AND ${id} = ${bind(profile.id)})`;
+    const descriptorGuard =
+      profile.provider === "TINDER"
+        ? `AND city IS NOT DISTINCT FROM ${bind(profile.city)} AND region IS NOT DISTINCT FROM ${bind(profile.region)}`
+        : `AND hometowns IS NOT DISTINCT FROM ${bind(profile.hometowns)}::text[]`;
+    return `EXISTS (SELECT 1 FROM ${table} WHERE user_id = $1 AND ${id} = ${bind(profile.id)}
+      AND country IS NOT DISTINCT FROM ${bind(profile.country)} ${descriptorGuard})`;
   });
   if (!ownership.length) return false;
   const results = await query.transaction([
