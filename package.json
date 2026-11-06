@@ -39,6 +39,7 @@
     "lint": "eslint . --cache",
     "lint:fix": "eslint . --fix --cache",
     "ls:overview": "bun run src/scripts/lemonsqueezy/overview.ts",
+    "locations:extract": "bun run src/scripts/llm-analysis/extract-locations-v2.ts",
     "privacy:anonymize-image": "bun run src/scripts/llm-analysis/anonymize-image-online.ts",
     "privacy:anonymize-swiperank": "bun run src/scripts/llm-analysis/anonymize-swipe-rank-images.ts",
     "privacy:audit-swiperank-codex": "bun run src/scripts/llm-analysis/audit-swipe-rank-images-with-codex.ts",

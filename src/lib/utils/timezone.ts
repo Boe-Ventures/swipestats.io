@@ -435,5 +435,23 @@ const timezoneToCountry: Record<string, string> = {
  * Get country code from timezone
  */
 export function getCountryFromTimezone(timezone: string): string | undefined {
-  return timezoneToCountry[timezone];
+  if (timezoneToCountry[timezone]) return timezoneToCountry[timezone];
+  try {
+    const canonical = new Intl.DateTimeFormat("en", {
+      timeZone: timezone,
+    }).resolvedOptions().timeZone;
+    // Intl implementations differ on which alias is canonical.
+    const aliases: Record<string, string> = {
+      "Asia/Calcutta": "Asia/Kolkata",
+      "Asia/Katmandu": "Asia/Kathmandu",
+      "Asia/Rangoon": "Asia/Yangon",
+      "America/Nuuk": "America/Godthab",
+    };
+    return (
+      timezoneToCountry[canonical] ??
+      timezoneToCountry[aliases[canonical] ?? ""]
+    );
+  } catch {
+    return undefined;
+  }
 }

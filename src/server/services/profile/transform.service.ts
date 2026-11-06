@@ -11,6 +11,8 @@ import type {
   TinderUsageInsert,
 } from "@/server/db/schema";
 import { mapTinderGender } from "@/lib/utils/gender";
+import { canonicalCountryCode } from "@/lib/swipe-rank/country";
+import { countryFromRegion } from "@/lib/location";
 
 /**
  * Transforms AnonymizedTinderDataJSON into database profile format
@@ -78,7 +80,12 @@ export function transformTinderJsonToProfile(
     city,
     // Provider-authored profile geography is closer to the dating context;
     // request IP geography is only a fallback and may reflect travel or a VPN.
-    country: country ?? options.country ?? null,
+    country:
+      canonicalCountryCode(country ?? "") ??
+      countryFromRegion(region) ??
+      // An upload-country fallback must not attach a travel country to an
+      // unrelated provider city. The request helper can reconcile matching places.
+      (!city && !region ? canonicalCountryCode(options.country ?? "") : null),
     region,
     userInterests: user.user_interests ?? null,
     interests: null,

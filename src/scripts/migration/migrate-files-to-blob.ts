@@ -520,7 +520,7 @@ export async function migrateFilesToBlob(options: {
       printSuccess("Next steps:");
       console.log("  1. Review any failed records above");
       console.log(
-        "  2. Run migrate-extract-locations.ts to verify location signals",
+        "  2. Run bun locations:extract --help for location extraction",
       );
       console.log("");
     }

@@ -1,7 +1,5 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { geolocation } from "@vercel/functions";
-import { headers } from "next/headers";
 
 import { eq } from "drizzle-orm";
 import {
@@ -9,7 +7,6 @@ import {
   mediaTable,
   tinderUsageTable,
 } from "@/server/db/schema";
-import { getContinentFromCountry } from "@/lib/utils/continent";
 import { publicProcedure } from "../trpc";
 import type { TRPCRouterRecord } from "@trpc/server";
 import {
@@ -23,7 +20,10 @@ import { trackServerEvent } from "@/server/services/analytics.service";
 import { captureException } from "@/server/clients/posthog.client";
 import { getTinderObservedUsageRange } from "@/lib/profile.utils";
 import { summarizeUploadError } from "@/server/services/upload-error.service";
-import { updateUserLocation } from "@/server/services/user/location.service";
+import {
+  uploadLocation,
+  captureUploadLocation,
+} from "@/server/services/user/location.service";
 import {
   loadVerifiedAnonymizedTinderData,
   tinderBirthDatesMatch,
@@ -320,6 +320,8 @@ export const profileRouter = {
         });
       }
 
+      const detectedLocation = uploadLocation(ctx.headers, input);
+
       try {
         const preparedUpload = await prepareTinderTransientUpload({
           uploadId: input.uploadId,
@@ -329,6 +331,11 @@ export const profileRouter = {
           sessionId: ctx.session.session.id,
         });
         if (preparedUpload.committedProfile) {
+          await captureUploadLocation(
+            ctx.session.user.id,
+            detectedLocation,
+            preparedUpload.committedProfile,
+          );
           return preparedUpload.committedProfile;
         }
 
@@ -343,38 +350,14 @@ export const profileRouter = {
           });
         }
 
-        // Extract Vercel geolocation (undefined on localhost)
-        const headersList = await headers();
-        const request = new Request("http://localhost", {
-          headers: headersList,
-        });
-        const geo = geolocation(request);
-
-        // Update user location with Vercel geo data if available
-        if (geo?.city || geo?.country) {
-          const city = geo.city || null;
-          const country = geo.country || null;
-          const region = geo.countryRegion || null;
-          const continent = getContinentFromCountry(country);
-
-          await updateUserLocation({
-            userId: ctx.session.user.id,
-            city,
-            country,
-            region,
-            continent,
-            timeZone: input.timezone || undefined,
-          });
-        }
-
         // Create brand new profile
         console.log(`📝 Creating new profile: ${input.tinderId}`);
         const result = await createTinderProfile({
           tinderId: input.tinderId,
           blobUrl: input.blobUrl,
           userId: ctx.session.user.id,
-          timezone: input.timezone,
-          country: input.country,
+          timezone: detectedLocation.timeZone ?? undefined,
+          country: detectedLocation.country ?? undefined,
           consentPhotos: input.consentPhotos,
           consentWork: input.consentWork,
           transientUpload: preparedUpload.binding,
@@ -393,6 +376,11 @@ export const profileRouter = {
           consentWork: input.consentWork ?? true,
         });
 
+        await captureUploadLocation(
+          ctx.session.user.id,
+          detectedLocation,
+          result.profile,
+        );
         return result.profile;
       } catch (error) {
         if (error instanceof Error) {
@@ -429,6 +417,8 @@ export const profileRouter = {
         });
       }
 
+      const detectedLocation = uploadLocation(ctx.headers, input);
+
       try {
         const preparedUpload = await prepareTinderTransientUpload({
           uploadId: input.uploadId,
@@ -438,6 +428,11 @@ export const profileRouter = {
           sessionId: ctx.session.session.id,
         });
         if (preparedUpload.committedProfile) {
+          await captureUploadLocation(
+            ctx.session.user.id,
+            detectedLocation,
+            preparedUpload.committedProfile,
+          );
           return preparedUpload.committedProfile;
         }
 
@@ -451,38 +446,14 @@ export const profileRouter = {
           });
         }
 
-        // Extract Vercel geolocation (undefined on localhost)
-        const headersList = await headers();
-        const request = new Request("http://localhost", {
-          headers: headersList,
-        });
-        const geo = geolocation(request);
-
-        // Update user location with Vercel geo data if available
-        if (geo?.city || geo?.country) {
-          const city = geo.city || null;
-          const country = geo.country || null;
-          const region = geo.countryRegion || null;
-          const continent = getContinentFromCountry(country);
-
-          await updateUserLocation({
-            userId: ctx.session.user.id,
-            city,
-            country,
-            region,
-            continent,
-            timeZone: input.timezone || undefined,
-          });
-        }
-
         // Handle ownership scenarios
         const result = await handleExistingProfileUpload({
           existing: existingProfile,
           tinderId: input.tinderId,
           blobUrl: input.blobUrl,
           currentUserId: ctx.session.user.id,
-          timezone: input.timezone,
-          country: input.country,
+          timezone: detectedLocation.timeZone ?? undefined,
+          country: detectedLocation.country ?? undefined,
           consentPhotos: input.consentPhotos,
           consentWork: input.consentWork,
           transientUpload: preparedUpload.binding,
@@ -501,6 +472,11 @@ export const profileRouter = {
           consentWork: input.consentWork ?? true,
         });
 
+        await captureUploadLocation(
+          ctx.session.user.id,
+          detectedLocation,
+          result.profile,
+        );
         return result.profile;
       } catch (error) {
         if (error instanceof Error) {
@@ -538,6 +514,8 @@ export const profileRouter = {
         });
       }
 
+      const detectedLocation = uploadLocation(ctx.headers, input);
+
       try {
         const preparedUpload = await prepareTinderTransientUpload({
           uploadId: input.uploadId,
@@ -547,6 +525,11 @@ export const profileRouter = {
           sessionId: ctx.session.session.id,
         });
         if (preparedUpload.committedProfile) {
+          await captureUploadLocation(
+            ctx.session.user.id,
+            detectedLocation,
+            preparedUpload.committedProfile,
+          );
           return preparedUpload.committedProfile;
         }
 
@@ -624,8 +607,8 @@ export const profileRouter = {
             verifiedTinderId: input.tinderId,
             blobUrl: input.blobUrl,
             userId: ctx.session.user.id,
-            timezone: input.timezone,
-            country: input.country,
+            timezone: detectedLocation.timeZone ?? undefined,
+            country: detectedLocation.country ?? undefined,
             consentPhotos: input.consentPhotos,
             consentWork: input.consentWork,
             verifiedTinderJson: anonymizedTinderJson,
@@ -644,6 +627,11 @@ export const profileRouter = {
             consentPhotos: input.consentPhotos ?? true,
             consentWork: input.consentWork ?? true,
           });
+          await captureUploadLocation(
+            ctx.session.user.id,
+            detectedLocation,
+            result.profile,
+          );
           return result.profile;
         }
 
@@ -684,8 +672,8 @@ export const profileRouter = {
           newTinderId: input.tinderId,
           blobUrl: input.blobUrl,
           userId: ctx.session.user.id,
-          timezone: input.timezone,
-          country: input.country,
+          timezone: detectedLocation.timeZone ?? undefined,
+          country: detectedLocation.country ?? undefined,
           consentPhotos: input.consentPhotos,
           consentWork: input.consentWork,
           verifiedTinderJson: anonymizedTinderJson,
@@ -705,6 +693,11 @@ export const profileRouter = {
           consentWork: input.consentWork ?? true,
         });
 
+        await captureUploadLocation(
+          ctx.session.user.id,
+          detectedLocation,
+          result.profile,
+        );
         return result.profile;
       } catch (error) {
         if (error instanceof Error) {
@@ -740,6 +733,8 @@ export const profileRouter = {
       }
 
       // Check if profile already exists
+      const detectedLocation = uploadLocation(ctx.headers, input);
+
       const preparedUpload = await prepareTinderTransientUpload({
         uploadId: input.uploadId,
         blobUrl: input.blobUrl,
@@ -748,6 +743,11 @@ export const profileRouter = {
         sessionId: ctx.session.session.id,
       });
       if (preparedUpload.committedProfile) {
+        await captureUploadLocation(
+          ctx.session.user.id,
+          detectedLocation,
+          preparedUpload.committedProfile,
+        );
         return preparedUpload.committedProfile;
       }
 
@@ -763,13 +763,19 @@ export const profileRouter = {
         });
       }
 
-      return createTinderProfile({
+      const result = await createTinderProfile({
         tinderId: input.tinderId,
         blobUrl: input.blobUrl,
         userId: ctx.session.user.id,
-        timezone: input.timezone,
-        country: input.country,
+        timezone: detectedLocation.timeZone ?? undefined,
+        country: detectedLocation.country ?? undefined,
         transientUpload: preparedUpload.binding,
       });
+      await captureUploadLocation(
+        ctx.session.user.id,
+        detectedLocation,
+        result.profile,
+      );
+      return result;
     }),
 } satisfies TRPCRouterRecord;

@@ -3,6 +3,7 @@ import type { HingeProfileInsert } from "@/server/db/schema";
 import { mapHingeGender } from "@/lib/utils/gender";
 import { deriveApproximateHingeBirthDate } from "@/lib/hinge/age";
 import { parseHingeTimestampToDate } from "@/lib/hinge/timestamp";
+import { canonicalCountryCode } from "@/lib/swipe-rank/country";
 
 /**
  * Safely parse JSON-encoded string arrays from Hinge export
@@ -166,6 +167,8 @@ export function transformHingeJsonToProfile(
     appVersions: appVersions.length > 0 ? appVersions : [],
     // The export is provider-authored profile data; the request country is only
     // a browser-derived fallback and must not overwrite it.
-    country: exportedCountry || options.country || null,
+    country:
+      canonicalCountryCode(exportedCountry ?? "") ??
+      canonicalCountryCode(options.country ?? ""),
   };
 }
