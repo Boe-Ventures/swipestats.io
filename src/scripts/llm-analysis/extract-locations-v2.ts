@@ -14,14 +14,12 @@ import { fetchBlobJson } from "@/server/services/blob.service";
 import { locationRegistrySyncCte } from "@/server/services/user/location-registry";
 import { swipeRankBuildLockName } from "@/server/services/swipe-rank/constants";
 import {
-  combineLocationProposal,
-  deterministicLocation,
   extractLocationHints,
+  generateLocationProposal,
   locationBasis,
   locationJsonSchema,
   locationOutputSchema,
   locationPrompt,
-  needsLocationInference,
   redactLocationMessage,
   subjectKey,
   type LocationProfile,
@@ -80,7 +78,7 @@ Options:
   --timeout-seconds N  Per-user Codex timeout (default 180)
   --output-dir DIR   New run directory (default temp/location-extraction/<timestamp>)
   --resume DIR       Resume the same candidate list and reuse saved proposals
-  --no-ai            Use only existing profile geography and deterministic country hints
+  --no-ai            Opt into rules-only reconciliation instead of AI-first post-fill
   --apply            Apply saved proposals from --resume; never runs inference
 
 DATABASE_URL selects the database. No implicit production connection is fetched.
@@ -527,37 +525,38 @@ export async function main(args = process.argv.slice(2)) {
           totals.unchanged++;
           continue;
         }
-        const deterministic = deterministicLocation(subject);
-        let inferred: unknown;
-        if (
-          manifest.ai &&
-          needsLocationInference({ ...subject.location, ...deterministic })
-        ) {
-          const evidence = await gatherEvidence(query, subject);
-          // Message-only candidates are valid. Empty evidence should abstain without a model call.
-          if (
-            evidence.messages.length ||
-            evidence.exports.some((file) => file.hints.length) ||
-            subject.profiles.some(
-              (p) => p.city || p.region || p.country || p.hometowns?.length,
-            )
-          ) {
-            inferred = await inferLocationWithCodex(
-              { ...evidence, saved: { ...subject.location, ...deterministic } },
-              join(options.outputDir, "codex", key),
-              manifest.model,
-              options.timeoutMs,
-            );
-          }
-          if (evidence.unavailableExports)
-            console.log(
-              `${key}: ${evidence.unavailableExports} exports unavailable; other evidence retained`,
-            );
-        }
-        const proposal = combineLocationProposal(
+        const proposal = await generateLocationProposal(
           subject,
-          deterministic,
-          inferred,
+          manifest.ai
+            ? async () => {
+                const evidence = await gatherEvidence(query, subject);
+                let inferred: unknown;
+                // Message-only candidates are valid. Empty evidence should abstain without a model call.
+                if (
+                  evidence.messages.length ||
+                  evidence.exports.some((file) => file.hints.length) ||
+                  Object.values(evidence.saved).some((value) =>
+                    Boolean(locationText(value)),
+                  ) ||
+                  subject.profiles.some(
+                    (p) =>
+                      p.city || p.region || p.country || p.hometowns?.length,
+                  )
+                ) {
+                  inferred = await inferLocationWithCodex(
+                    evidence,
+                    join(options.outputDir, "codex", key),
+                    manifest.model,
+                    options.timeoutMs,
+                  );
+                }
+                if (evidence.unavailableExports)
+                  console.log(
+                    `${key}: ${evidence.unavailableExports} exports unavailable; other evidence retained`,
+                  );
+                return inferred;
+              }
+            : undefined,
         );
         result = { userId, basis: locationBasis(subject), proposal };
         await saveJson(resultPath, result);

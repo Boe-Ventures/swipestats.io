@@ -35,12 +35,19 @@ bun locations:extract --limit 25
 
 This writes only private local run files. It prioritizes users missing country
 and selects only users with Tinder/Hinge profiles. A user with both providers
-is processed once. Existing structured profile geography and unambiguous
-region/timezone hints are reconciled first; AI handles remaining gaps using
-bounded structured export hints and recent message samples from both providers.
-Hometowns, language, travel plans, and a timezone's representative city are not
-treated as current residence. Insufficient or contradictory evidence can leave
-fields empty. Not every country has an applicable subdivision.
+is processed once. Post-fill is AI-first: Codex weighs saved profile fields,
+bounded export location hints, and recent message samples from both providers
+together. Rules do not prefill inferred answers or override the model with a
+timezone/region guess. Code validates the structured output, normalizes country
+codes, derives continent, and preserves existing user fields when applying.
+
+The goal is useful geography for dating/export analysis, not verification of
+present-day residence. Signup country or consistent hometown/phone-country clues
+are reasonable country-level fallbacks when stronger evidence is absent.
+Recent explicit residence statements take precedence over older origin clues.
+Language alone and planned travel do not establish location. City and region
+can remain empty even when country is inferred. Not every country has an
+applicable subdivision. The upload path remains entirely rules-based.
 
 Useful selections:
 
@@ -51,6 +58,7 @@ bun locations:extract --user-id USER_ID
 bun locations:extract --limit 100000 --output-dir temp/location-extraction/all-users
 ```
 
+`--no-ai` explicitly opts into the older rules-only reconciliation mode.
 The default model is `gpt-6.1-sol`; override it with `--model`. New runs default
 to 25 candidates, processed sequentially. `--timeout-seconds` bounds each model
 call (default 180). This command uses your Codex allowance. For a large run,
@@ -70,7 +78,9 @@ bun locations:extract --resume temp/location-extraction/RUN
 
 Resume reuses completed proposals, retries failed users, and refuses a different
 database. It cannot be combined with a different model or candidate selection;
-start a new directory for those changes. Review `summary.json` and the proposed
+start a new directory for those changes. Older completed proposals also remain
+cached; use a new run to regenerate them with the AI-first policy.
+Review `summary.json` and the proposed
 patches, then apply the saved run:
 
 ```sh
