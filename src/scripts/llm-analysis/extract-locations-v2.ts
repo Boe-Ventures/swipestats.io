@@ -389,7 +389,12 @@ export async function applyLocationProposal(
   subject: LocationSubject,
   proposal: LocationValues,
 ) {
-  const patch = missingLocationPatch(subject.location, proposal);
+  // Saved proposals contain only missing fields, so retain the saved country
+  // anchor when revalidating a city/region patch at apply time.
+  const patch = missingLocationPatch(subject.location, {
+    ...subject.location,
+    ...proposal,
+  });
   const changed = fields.filter((field) => locationText(patch[field]));
   if (!changed.length) return false;
   const columns = {
@@ -513,7 +518,10 @@ export async function main(args = process.argv.slice(2)) {
         if (result.basis !== locationBasis(subject)) {
           if (
             Object.values(
-              missingLocationPatch(subject.location, result.proposal),
+              missingLocationPatch(subject.location, {
+                ...subject.location,
+                ...result.proposal,
+              }),
             ).some(Boolean)
           )
             totals.stale++;

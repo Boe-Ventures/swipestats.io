@@ -11,12 +11,55 @@ import {
   locationOutputSchema,
   type LocationSubject,
 } from "./location-extraction";
-import { parseLocationOptions } from "./extract-locations-v2";
+import {
+  applyLocationProposal,
+  parseLocationOptions,
+} from "./extract-locations-v2";
 import { uploadLocation } from "@/server/services/user/location.service";
 
 // Consequential failures: cross-place data corruption and accidentally applying a
 // fresh inference run. Types/lint cannot detect these behavioral mistakes.
 describe("location backfill safeguards", () => {
+  // A saved missing-field patch omits an existing country. Static checks and
+  // generation-only tests miss apply silently dropping city/region in that case.
+  it("applies saved city/region patches using the existing country anchor", async () => {
+    const statements: { sql: string; params: unknown[] }[] = [];
+    const query = Object.assign(
+      (sql: unknown, params: unknown[] = []) => {
+        if (typeof sql === "string") statements.push({ sql, params });
+        return {};
+      },
+      { transaction: async () => [[], [{ id: "u" }]] },
+    ) as unknown as Parameters<typeof applyLocationProposal>[0];
+    const subject: LocationSubject = {
+      userId: "u",
+      location: { country: "US", continent: "North America" },
+      profiles: [{ provider: "TINDER", id: "t", uploadedAt: "2020-01-01" }],
+    };
+    const proposal = await generateLocationProposal(subject, async () => ({
+      country: "US",
+      city: "Boston",
+      region: "Massachusetts",
+    }));
+    expect(proposal).toEqual({ city: "Boston", region: "Massachusetts" });
+    expect(await applyLocationProposal(query, subject, proposal)).toBe(true);
+    expect(statements).toHaveLength(1);
+    expect(statements[0]!.sql).toContain(
+      "SET city = $2, region = $3, updated_at",
+    );
+    expect(statements[0]!.params.slice(0, 3)).toEqual([
+      "u",
+      "Boston",
+      "Massachusetts",
+    ]);
+    expect(
+      await applyLocationProposal(query, subject, {
+        country: "NO",
+        city: "Oslo",
+      }),
+    ).toBe(false);
+    expect(statements).toHaveLength(1);
+  });
   it("lets AI weigh conflicting clues without rule-based prefills or fallback guesses", async () => {
     const subject: LocationSubject = {
       userId: "u",
