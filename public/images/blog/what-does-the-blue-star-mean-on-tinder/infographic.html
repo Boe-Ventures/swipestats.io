@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;600;700;800&display=swap">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  body { margin: 0; font-family: "Inter Tight", -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; color: #ffffff; -webkit-font-smoothing: antialiased; }
+  .card { background:#2a1220; border:1px solid rgba(255,128,181,0.18); border-radius:18px; padding:24px 26px; display:flex; flex-direction:column; gap:14px; }
+  .ttl { font-size:20px; font-weight:800; color:#ffffff; line-height:1.25; }
+  .row { display:flex; align-items:center; gap:14px; }
+  .lab { width:150px; font-size:15px; color:#c4a0b0; line-height:1.25; }
+  .track { flex:1; height:30px; background:rgba(255,255,255,0.05); border-radius:8px; overflow:hidden; }
+  .bar { height:100%; border-radius:8px; }
+  .hi { background:linear-gradient(90deg,#E11D48,#ff4694); }
+  .lo { background:#6b4256; }
+  .val { width:78px; text-align:right; font-size:24px; font-weight:800; color:#ff4694; }
+  .val.m { color:#c4a0b0; }
+  .note { font-size:14px; color:#c4a0b0; line-height:1.4; }
+</style>
+</head>
+<body>
+<div id="infographic" style="width:1200px; height:900px; background:radial-gradient(60% 50% at 12% 6%, rgba(255,70,148,0.20) 0%, rgba(0,0,0,0) 62%), #120810; display:flex; flex-direction:column; padding:48px 60px 0;">
+
+  <div style="display:flex; flex-direction:column; gap:10px;">
+    <div style="font-size:13px; font-weight:800; letter-spacing:0.10em; text-transform:uppercase; color:#ff80b5;">What does the blue star mean on Tinder?</div>
+    <div style="font-size:44px; font-weight:800; color:#ffffff; line-height:1.12; letter-spacing:-0.01em;">The blue star is a Super Like. Does it actually work?</div>
+    <div style="font-size:18px; color:#c4a0b0; line-height:1.4;">Match rates when used selectively vs. sprayed everywhere.</div>
+  </div>
+
+  <div style="flex:1; display:grid; grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; gap:18px; padding:28px 0 0;">
+
+    <div class="card">
+      <div class="ttl">Heavy users match less</div>
+      <div class="row"><div class="lab">Average guy</div><div class="track"><div class="bar lo" style="width:42%"></div></div><div class="val m">5.26%</div></div>
+      <div class="row"><div class="lab">Top 1% Super Like senders</div><div class="track"><div class="bar hi" style="width:15.5%"></div></div><div class="val">1.94%</div></div>
+      <div class="note">SwipeStats data, 7,000+ profiles. The top 1% averaged 3,248 Super Likes each.</div>
+    </div>
+
+    <div class="card">
+      <div class="ttl">Who sends them (average per user)</div>
+      <div class="row"><div class="lab">Men</div><div class="track"><div class="bar hi" style="width:100%"></div></div><div class="val">93.7</div></div>
+      <div class="row"><div class="lab">Women</div><div class="track"><div class="bar lo" style="width:5.1%"></div></div><div class="val m">4.8</div></div>
+      <div class="note">Median: 1 for men, 0 for women.</div>
+    </div>
+
+    <div class="card">
+      <div class="ttl">100 Super Likes vs. 100 regular likes</div>
+      <div class="row"><div class="lab">Super Like</div><div class="track"><div class="bar hi" style="width:63%"></div></div><div class="val">17%</div></div>
+      <div class="row"><div class="lab">Regular like</div><div class="track"><div class="bar lo" style="width:40.7%"></div></div><div class="val m">11%</div></div>
+      <div class="note">Independent experiment. Those 100 Super Likes cost roughly $150.</div>
+    </div>
+
+    <div class="card">
+      <div class="ttl">Hinge Roses, for comparison</div>
+      <div class="row"><div class="lab">Rose</div><div class="track"><div class="bar hi" style="width:100%"></div></div><div class="val">27%</div></div>
+      <div class="row"><div class="lab">Regular like</div><div class="track"><div class="bar lo" style="width:59.3%"></div></div><div class="val m">16%</div></div>
+      <div class="note">Match rate for Hinge's version of the Super Like.</div>
+    </div>
+
+  </div>
+
+  <div style="background:linear-gradient(120deg,#E11D48,#ff4694); border-radius:20px; padding:22px 28px; margin-top:22px; display:flex; align-items:center; gap:26px;">
+    <div style="display:inline-flex; background:rgba(18,8,16,0.32); color:#ffffff; font-size:13px; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; padding:8px 16px; border-radius:24px; white-space:nowrap;">Verdict</div>
+    <div style="font-size:20px; color:#ffffff; line-height:1.35;">Works when used <b>selectively</b> by <b>strong profiles</b>. Hurts you when sprayed indiscriminately.</div>
+  </div>
+
+  <div style="display:flex; align-items:center; justify-content:space-between; border-top:1px solid #2a1220; padding:18px 0 24px; margin-top:18px;">
+    <img src="/home/pawvej/Developer/paw-server/kit/brands/swipestats/logo.png" alt="SwipeStats" style="height:28px; width:auto;">
+    <div style="font-size:15px; font-weight:600; color:#c4a0b0;">swipestats.io/blog/what-does-the-blue-star-mean-on-tinder</div>
+  </div>
+
+</div>
+</body>
+</html>
