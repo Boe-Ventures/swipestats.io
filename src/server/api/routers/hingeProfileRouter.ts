@@ -24,6 +24,8 @@ import { captureException } from "@/server/clients/posthog.client";
 import { fetchVerifiedHingeBlob } from "@/server/services/hinge/hinge-blob.service";
 import { summarizeUploadError } from "@/server/services/upload-error.service";
 import { isSameHingeAccountSignup } from "@/lib/hinge/account-period";
+import { parseHingeTimestampToDate } from "@/lib/hinge/timestamp";
+import { resolveHingeUploadTarget } from "@/server/services/hinge/hinge-upload-target";
 import {
   cleanupCommittedTransientUpload,
   registerTransientUploadForProcessing,
@@ -62,51 +64,7 @@ async function prepareHingeTransientUpload(params: {
   return { binding, committedProfile: null };
 }
 
-/**
- * Helper function to handle existing profile upload scenarios
- * (user owns profile, anonymous transfer, or forbidden)
- */
-async function handleExistingHingeProfileUpload(params: {
-  existing: NonNullable<Awaited<ReturnType<typeof getHingeProfileWithUser>>>;
-  hingeId: string;
-  blobUrl: string;
-  transientUpload: TransientUploadBinding;
-  currentUserId: string;
-  timezone?: string;
-  country?: string;
-  consentPhotos?: boolean;
-  consentWork?: boolean;
-}) {
-  const { existing, currentUserId, ...uploadParams } = params;
-
-  // Case B: User owns this profile - use additive update
-  if (existing.userId === currentUserId) {
-    console.log(
-      `🔄 Additive update for existing profile hingeId: ${params.hingeId}`,
-    );
-    const verifiedJson = await fetchVerifiedHingeBlob(
-      params.blobUrl,
-      params.hingeId,
-      { consume: false },
-    );
-    return additiveUpdateHingeProfile({
-      ...uploadParams,
-      userId: currentUserId,
-      verifiedJson,
-    });
-  }
-
-  // Hinge exports no provider account ID. A signup timestamp is not strong
-  // enough proof to transfer an anonymous profile across sessions, so only the
-  // session that already owns this row may update it.
-  throw new TRPCError({
-    code: "FORBIDDEN",
-    message:
-      "This profile belongs to another user. Please sign in with a different account or use a different email address.",
-  });
-}
-
-export const hingeProfileRouter = {
+const hingeProfileProcedures = {
   getComparison: publicProcedure
     .input(
       z.object({
@@ -204,32 +162,17 @@ export const hingeProfileRouter = {
       z.object({
         hingeId: z.string().optional(), // The hingeId from dropped file (if available)
         birthDate: z.string().optional(), // Derived birth_date for identity validation
+        signupTime: z.string().optional(),
       }),
     )
     .query(async ({ ctx, input }) => {
-      // Always check if target profile exists (even without session)
-      const targetProfile = input.hingeId
-        ? await ctx.db.query.hingeProfileTable.findFirst({
-            where: eq(hingeProfileTable.hingeId, input.hingeId),
-            columns: { hingeId: true },
-            with: {
-              user: {
-                columns: { isAnonymous: true },
-              },
-            },
-          })
-        : null;
-
-      // If no session, determine scenario based on target profile
+      // A timestamp-derived export ID is not a global ownership identifier.
+      // Do not look up or expose another session's profile here.
       if (!ctx.session?.user?.id) {
-        const scenario: "new_user" | "needs_signin" = targetProfile
-          ? "needs_signin"
-          : "new_user";
-
         return {
           userProfile: null,
-          targetProfile,
-          scenario,
+          targetProfile: null,
+          scenario: "new_user" as const,
           identityMismatch: false,
         };
       }
@@ -245,30 +188,20 @@ export const hingeProfileRouter = {
         },
       });
 
-      // Determine scenario for logged-in users
-      let scenario:
-        | "new_profile"
-        | "same_hingeId"
-        | "different_hingeId"
-        | "owned_by_other";
-
-      if (!userProfile && !targetProfile) {
-        scenario = "new_profile"; // First upload, hingeId doesn't exist
-      } else if (!userProfile && targetProfile) {
-        scenario = "owned_by_other"; // Profile exists but not ours
-      } else if (userProfile && input.hingeId === userProfile.hingeId) {
-        scenario = "same_hingeId"; // Additive update
-      } else if (userProfile && targetProfile) {
-        scenario = "owned_by_other"; // Target ID already exists under another profile
-      } else if (
+      const sameAccount =
         userProfile &&
-        input.hingeId &&
-        input.hingeId !== userProfile.hingeId
-      ) {
-        scenario = "different_hingeId"; // Cross-account merge
-      } else {
-        scenario = "new_profile";
-      }
+        (input.signupTime
+          ? isSameHingeAccountSignup(
+              userProfile.createDate,
+              parseHingeTimestampToDate(input.signupTime),
+            )
+          : input.hingeId === userProfile.hingeId);
+      const scenario =
+        !userProfile || !input.hingeId
+          ? ("new_profile" as const)
+          : sameAccount
+            ? ("same_hingeId" as const)
+            : ("different_hingeId" as const);
 
       // Hinge only exports age, not exact birth date. Keep the comparison as
       // debug context, but do not block merges on this approximation.
@@ -300,15 +233,15 @@ export const hingeProfileRouter = {
 
       return {
         userProfile,
-        targetProfile,
+        targetProfile:
+          sameAccount && userProfile ? { hingeId: userProfile.hingeId } : null,
         scenario,
         identityMismatch,
         identityComparison,
       };
     }),
 
-  // Streamlined endpoint for creating new profiles (99% use case)
-  // Fast path with minimal checks - only validates hingeId doesn't exist
+  // Import into the current owner's namespace, or update their same account.
   createProfile: publicProcedure
     .input(
       z.object({
@@ -349,52 +282,45 @@ export const hingeProfileRouter = {
           return { hingeId: preparedUpload.committedProfile.hingeId };
         }
 
-        // Resolve create-vs-update on the server. The client can have stale
-        // upload context after a successful upload or a retry.
-        const existingByHingeId = await getHingeProfileWithUser(input.hingeId);
-        const existingForUser = existingByHingeId
-          ? null
-          : await ctx.db.query.hingeProfileTable.findFirst({
-              where: eq(hingeProfileTable.userId, ctx.session.user.id),
-              columns: { hingeId: true },
-            });
-        if (existingForUser) {
-          // Do not let a stale/direct create request fall through to the
-          // one-profile-per-user constraint. The merge endpoint verifies the
-          // signup instant and decides between a historical-ID additive update
-          // and a real forward account merge.
+        // Verify the transport ID against the export before choosing a stored
+        // profile ID. Only the authenticated user's profile is a candidate.
+        const verifiedJson = await fetchVerifiedHingeBlob(
+          input.blobUrl,
+          input.hingeId,
+        );
+        const existingForUser = await ctx.db.query.hingeProfileTable.findFirst({
+          where: eq(hingeProfileTable.userId, ctx.session.user.id),
+        });
+        const target = await resolveHingeUploadTarget({
+          userId: ctx.session.user.id,
+          signupTime: verifiedJson.User.account.signup_time,
+          existingProfile: existingForUser,
+        });
+        if (existingForUser && !target.isSameAccount) {
           throw new TRPCError({
             code: "CONFLICT",
             message:
               "You already have a Hinge profile. Refresh the upload step so this export can be merged safely.",
           });
         }
-        const isExistingProfile = Boolean(existingByHingeId);
-        const result = existingByHingeId
-          ? await handleExistingHingeProfileUpload({
-              existing: existingByHingeId,
-              hingeId: input.hingeId,
-              blobUrl: input.blobUrl,
-              currentUserId: ctx.session.user.id,
-              timezone: detectedLocation.timeZone ?? undefined,
-              country: detectedLocation.country ?? undefined,
-              consentPhotos: input.consentPhotos ?? true,
-              consentWork: input.consentWork ?? true,
-              transientUpload: preparedUpload.binding,
-            })
-          : await createHingeProfile({
-              hingeId: input.hingeId,
-              blobUrl: input.blobUrl,
-              userId: ctx.session.user.id,
-              timezone: detectedLocation.timeZone ?? undefined,
-              country: detectedLocation.country ?? undefined,
-              consentPhotos: input.consentPhotos ?? true,
-              consentWork: input.consentWork ?? true,
-              transientUpload: preparedUpload.binding,
-            });
+        const isExistingProfile = target.isSameAccount;
+        const uploadParams = {
+          hingeId: target.hingeId,
+          blobUrl: input.blobUrl,
+          userId: ctx.session.user.id,
+          timezone: detectedLocation.timeZone ?? undefined,
+          country: detectedLocation.country ?? undefined,
+          consentPhotos: input.consentPhotos ?? true,
+          consentWork: input.consentWork ?? true,
+          transientUpload: preparedUpload.binding,
+          verifiedJson,
+        };
+        const result = isExistingProfile
+          ? await additiveUpdateHingeProfile(uploadParams)
+          : await createHingeProfile(uploadParams);
 
         const metrics = {
-          hingeId: input.hingeId,
+          hingeId: result.profile.hingeId,
           matchCount: result.metrics.matchCount,
           messageCount: result.metrics.messageCount,
           photoCount: result.metrics.photoCount,
@@ -483,34 +409,48 @@ export const hingeProfileRouter = {
           return { hingeId: preparedUpload.committedProfile.hingeId };
         }
 
-        // Check if profile exists
-        const existingProfile = await getHingeProfileWithUser(input.hingeId);
-
+        const verifiedJson = await fetchVerifiedHingeBlob(
+          input.blobUrl,
+          input.hingeId,
+        );
+        const existingProfile = await ctx.db.query.hingeProfileTable.findFirst({
+          where: eq(hingeProfileTable.userId, ctx.session.user.id),
+        });
         if (!existingProfile) {
           throw new TRPCError({
             code: "NOT_FOUND",
             message: "Profile not found. Use createProfile instead.",
           });
         }
-
-        // Handle ownership scenarios
-        const result = await handleExistingHingeProfileUpload({
-          existing: existingProfile,
-          hingeId: input.hingeId,
+        const target = await resolveHingeUploadTarget({
+          userId: ctx.session.user.id,
+          signupTime: verifiedJson.User.account.signup_time,
+          existingProfile,
+        });
+        if (!target.isSameAccount) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message:
+              "This export is from a different Hinge account. Refresh the upload step to merge it safely.",
+          });
+        }
+        const result = await additiveUpdateHingeProfile({
+          hingeId: target.hingeId,
           blobUrl: input.blobUrl,
-          currentUserId: ctx.session.user.id,
+          userId: ctx.session.user.id,
           timezone: detectedLocation.timeZone ?? undefined,
           country: detectedLocation.country ?? undefined,
           consentPhotos: input.consentPhotos ?? true,
           consentWork: input.consentWork ?? true,
           transientUpload: preparedUpload.binding,
+          verifiedJson,
         });
 
         // Skip the event when the same export was re-uploaded (nothing new
         // merged in) - otherwise it reads as a noisy "0 new" update.
         if (!result.isNoOp) {
           trackServerEvent(ctx.session.user.id, "hinge_profile_updated", {
-            hingeId: input.hingeId,
+            hingeId: result.profile.hingeId,
             matchCount: result.metrics.matchCount,
             messageCount: result.metrics.messageCount,
             photoCount: result.metrics.photoCount,
@@ -606,34 +546,17 @@ export const hingeProfileRouter = {
           });
         }
 
-        if (existingUserProfile.hingeId === input.hingeId) {
-          throw new TRPCError({
-            code: "CONFLICT",
-            message:
-              "Cannot merge profile with itself. Use updateProfile instead.",
-          });
-        }
-
-        // Safety check: Prevent backward merges (uploading older account after newer one)
-        // For Hinge, we use createDate (signup time) instead of daily usage
-        const newSignupTime = new Date(
+        const newSignupTime = parseHingeTimestampToDate(
           anonymizedHingeJson.User.account.signup_time,
         );
+        const target = await resolveHingeUploadTarget({
+          userId: ctx.session.user.id,
+          signupTime: anonymizedHingeJson.User.account.signup_time,
+          existingProfile: existingUserProfile,
+        });
 
-        if (
-          isSameHingeAccountSignup(
-            existingUserProfile.createDate,
-            newSignupTime,
-          )
-        ) {
-          // REVIEW(provider assumption): Exact signup equality is our best
-          // same-account proof because Hinge exports have no durable account
-          // ID. Keep the historical public SwipeStats ID stable and perform a
-          // deduplicating additive update instead of duplicating every thread
-          // through the cross-account merge path.
-          console.log(
-            `Additive update across Hinge ID versions: ${input.hingeId} → ${existingUserProfile.hingeId}`,
-          );
+        // Preserve historical and guest-created public IDs after account linking.
+        if (target.isSameAccount) {
           const result = await additiveUpdateHingeProfile({
             hingeId: existingUserProfile.hingeId,
             blobUrl: input.blobUrl,
@@ -686,11 +609,11 @@ export const hingeProfileRouter = {
         }
 
         console.log(
-          `🔄 Cross-account merge: ${existingUserProfile.hingeId} → ${input.hingeId}`,
+          `🔄 Cross-account merge: ${existingUserProfile.hingeId} → ${target.hingeId}`,
         );
         const result = await absorbHingeProfileIntoNew({
           oldHingeId: existingUserProfile.hingeId,
-          newHingeId: input.hingeId,
+          newHingeId: target.hingeId,
           blobUrl: input.blobUrl,
           userId: ctx.session.user.id,
           timezone: detectedLocation.timeZone ?? undefined,
@@ -702,7 +625,7 @@ export const hingeProfileRouter = {
         });
 
         trackServerEvent(ctx.session.user.id, "hinge_profile_merged", {
-          hingeId: input.hingeId,
+          hingeId: result.profile.hingeId,
           oldHingeId: existingUserProfile.hingeId,
           matchCount: result.metrics.matchCount,
           messageCount: result.metrics.messageCount,
@@ -734,206 +657,11 @@ export const hingeProfileRouter = {
         throw error;
       }
     }),
+} satisfies TRPCRouterRecord;
 
-  // Legacy create endpoint - redirects to createProfile
-  // Kept for backwards compatibility
-  create: publicProcedure
-    .input(
-      z.object({
-        hingeId: z.string().min(1),
-        uploadId: z.string().uuid(),
-        blobUrl: z.string().url(),
-        timezone: z.string().optional(),
-        country: z.string().optional(),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      // Require authenticated session (anonymous or real user)
-      if (!ctx.session?.user?.id) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "Session required. Please sign in to upload your profile.",
-        });
-      }
-
-      const detectedLocation = uploadLocation(ctx.headers, input);
-
-      const preparedUpload = await prepareHingeTransientUpload({
-        uploadId: input.uploadId,
-        blobUrl: input.blobUrl,
-        hingeId: input.hingeId,
-        userId: ctx.session.user.id,
-        sessionId: ctx.session.session.id,
-      });
-      if (preparedUpload.committedProfile) {
-        await captureUploadLocation(
-          ctx.session.user.id,
-          detectedLocation,
-          preparedUpload.committedProfile,
-        );
-        return { hingeId: preparedUpload.committedProfile.hingeId };
-      }
-
-      // Check if profile already exists
-      const existing = await ctx.db.query.hingeProfileTable.findFirst({
-        where: eq(hingeProfileTable.hingeId, input.hingeId),
-      });
-
-      if (existing) {
-        throw new TRPCError({
-          code: "CONFLICT",
-          message: "Profile already exists. Use update instead.",
-        });
-      }
-
-      try {
-        const result = await createHingeProfile({
-          hingeId: input.hingeId,
-          blobUrl: input.blobUrl,
-          userId: ctx.session.user.id,
-          timezone: detectedLocation.timeZone ?? undefined,
-          country: detectedLocation.country ?? undefined,
-          transientUpload: preparedUpload.binding,
-        });
-
-        // Track success with rich metrics
-        trackServerEvent(ctx.session.user.id, "hinge_profile_created", {
-          hingeId: input.hingeId,
-          matchCount: result.metrics.matchCount,
-          messageCount: result.metrics.messageCount,
-          photoCount: result.metrics.photoCount,
-          promptCount: result.metrics.promptCount,
-          interactionCount: result.metrics.interactionCount,
-          hasPhotos: result.metrics.hasPhotos,
-          processingTimeMs: result.metrics.processingTimeMs,
-          jsonSizeMB: result.metrics.jsonSizeMB,
-          consentPhotos: true,
-          consentWork: true,
-        });
-
-        await captureUploadLocation(
-          ctx.session.user.id,
-          detectedLocation,
-          result.profile,
-        );
-        return { hingeId: result.profile.hingeId };
-      } catch (error) {
-        if (error instanceof Error) {
-          await captureException(error, ctx.session.user.id);
-        }
-        const uploadError = summarizeUploadError(error);
-        trackServerEvent(ctx.session.user.id, "hinge_profile_upload_failed", {
-          hingeId: input.hingeId,
-          ...uploadError,
-        });
-        throw error;
-      }
-    }),
-
-  // Legacy update endpoint - uses full replacement (deprecated)
-  // Kept for backwards compatibility, but prefer updateProfile
-  update: publicProcedure
-    .input(
-      z.object({
-        hingeId: z.string().min(1),
-        uploadId: z.string().uuid(),
-        blobUrl: z.string().url(),
-        timezone: z.string().optional(),
-        country: z.string().optional(),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      // Require authenticated session
-      if (!ctx.session?.user?.id) {
-        throw new TRPCError({
-          code: "UNAUTHORIZED",
-          message: "Session required. Please sign in to update your profile.",
-        });
-      }
-
-      const detectedLocation = uploadLocation(ctx.headers, input);
-
-      const preparedUpload = await prepareHingeTransientUpload({
-        uploadId: input.uploadId,
-        blobUrl: input.blobUrl,
-        hingeId: input.hingeId,
-        userId: ctx.session.user.id,
-        sessionId: ctx.session.session.id,
-      });
-      if (preparedUpload.committedProfile) {
-        await captureUploadLocation(
-          ctx.session.user.id,
-          detectedLocation,
-          preparedUpload.committedProfile,
-        );
-        return { hingeId: preparedUpload.committedProfile.hingeId };
-      }
-
-      // Check if profile exists
-      const existing = await ctx.db.query.hingeProfileTable.findFirst({
-        where: eq(hingeProfileTable.hingeId, input.hingeId),
-      });
-
-      if (!existing) {
-        throw new TRPCError({
-          code: "NOT_FOUND",
-          message: "Profile not found. Use create instead.",
-        });
-      }
-
-      // Verify ownership
-      if (existing.userId !== ctx.session.user.id) {
-        throw new TRPCError({
-          code: "FORBIDDEN",
-          message: "You do not have permission to update this profile.",
-        });
-      }
-
-      try {
-        // Use additive update instead of full replacement
-        const result = await additiveUpdateHingeProfile({
-          hingeId: input.hingeId,
-          blobUrl: input.blobUrl,
-          userId: ctx.session.user.id,
-          timezone: detectedLocation.timeZone ?? undefined,
-          country: detectedLocation.country ?? undefined,
-          transientUpload: preparedUpload.binding,
-        });
-
-        // Track success with rich metrics - skip when the same export was
-        // re-uploaded (nothing new merged in) to avoid a noisy "0 new" update.
-        if (!result.isNoOp) {
-          trackServerEvent(ctx.session.user.id, "hinge_profile_updated", {
-            hingeId: input.hingeId,
-            matchCount: result.metrics.matchCount,
-            messageCount: result.metrics.messageCount,
-            photoCount: result.metrics.photoCount,
-            promptCount: result.metrics.promptCount,
-            interactionCount: result.metrics.interactionCount,
-            hasPhotos: result.metrics.hasPhotos,
-            processingTimeMs: result.metrics.processingTimeMs,
-            jsonSizeMB: result.metrics.jsonSizeMB,
-            consentPhotos: true,
-            consentWork: true,
-          });
-        }
-
-        await captureUploadLocation(
-          ctx.session.user.id,
-          detectedLocation,
-          result.profile,
-        );
-        return { hingeId: result.profile.hingeId };
-      } catch (error) {
-        if (error instanceof Error) {
-          await captureException(error, ctx.session.user.id);
-        }
-        const uploadError = summarizeUploadError(error);
-        trackServerEvent(ctx.session.user.id, "hinge_profile_upload_failed", {
-          hingeId: input.hingeId,
-          ...uploadError,
-        });
-        throw error;
-      }
-    }),
+// Keep old clients on the same ownership and identity rules as the current flow.
+export const hingeProfileRouter = {
+  ...hingeProfileProcedures,
+  create: hingeProfileProcedures.createProfile,
+  update: hingeProfileProcedures.updateProfile,
 } satisfies TRPCRouterRecord;

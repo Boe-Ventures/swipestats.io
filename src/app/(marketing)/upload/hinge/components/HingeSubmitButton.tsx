@@ -27,13 +27,7 @@ interface HingeSubmitButtonProps {
   disabled?: boolean;
   consent: HingeConsentState;
   uploadContext?: {
-    scenario:
-      | "new_profile"
-      | "new_user"
-      | "same_hingeId"
-      | "different_hingeId"
-      | "needs_signin"
-      | "owned_by_other";
+    scenario: "new_profile" | "new_user" | "same_hingeId" | "different_hingeId";
     identityMismatch?: boolean;
   } | null;
 }
@@ -117,7 +111,7 @@ export function HingeSubmitButton({
     // itself against a same-frame double-fire before the disabled state applies.
     if (!canSubmit || isLoading) return;
     // Never create a session or public transport blob for a state that cannot
-    // reach a processing endpoint (for example owned_by_other/needs_signin).
+    // reach a processing endpoint (for example while context is loading).
     if (!isActionableScenario) return;
 
     // Track submit click

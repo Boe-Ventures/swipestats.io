@@ -10,6 +10,7 @@ import {
   getHingeProfile,
 } from "@/server/services/hinge/hinge.service";
 import { additiveUpdateHingeProfile } from "@/server/services/hinge/hinge-additive.service";
+import { fetchVerifiedHingeProfileBlob } from "@/server/services/hinge/hinge-blob.service";
 import { isAdminRequestAuthorized } from "@/lib/admin-request-auth";
 
 /**
@@ -95,6 +96,11 @@ export async function POST(request: Request) {
 
     // Hinge
     const existing = await getHingeProfile(profileId);
+    const verifiedJson = await fetchVerifiedHingeProfileBlob(blobUrl, {
+      hingeId: profileId,
+      userId,
+      existingProfile: existing,
+    });
 
     // This preflight only chooses create vs additive reconciliation. Both
     // mutation services acquire the canonical provider/profile advisory locks
@@ -104,6 +110,7 @@ export async function POST(request: Request) {
         `🔄 [Admin] Additive update for existing Hinge profile: ${profileId}`,
       );
       const result = await additiveUpdateHingeProfile({
+        verifiedJson,
         hingeId: profileId,
         blobUrl,
         userId,
@@ -121,6 +128,7 @@ export async function POST(request: Request) {
 
     console.log(`📝 [Admin] Creating new Hinge profile: ${profileId}`);
     const result = await createHingeProfile({
+      verifiedJson,
       hingeId: profileId,
       blobUrl,
       userId,
