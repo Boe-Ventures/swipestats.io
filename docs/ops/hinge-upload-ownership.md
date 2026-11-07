@@ -32,20 +32,33 @@ The browser's v2 ID remains a transport integrity check: the server verifies it
 against the uploaded JSON before choosing a destination. It is no longer a
 global lookup key for selecting an upload's owner.
 
-For repeat uploads, the server loads only the current user's profile. If its
-signup instant matches, the server updates it additively under its existing ID.
-This preserves old public links and guest-created v3 IDs after a legitimate
-account transfer. Different signup times retain the existing forward-merge
-rules, with new destinations also scoped to the current user. Existing
-transactional ownership predicates and upload leases remain in force.
+For repeat uploads, the server loads only the current user's profile. A
+registered owner retains additive updates and chronological account merges.
+A returning guest must choose between creating an account to retain history,
+or explicitly replacing the imported data in the profile their session owns.
+Replacement accepts older or newer exports and does not merge earlier activity.
+It retains the guest login, purchases, and user-authored data. Missing optional
+photos/prompts or previous CSV activity are cleared on replacement, and current
+photo/work consent is enforced again on the server.
+
+All current and legacy mutation names enforce the guest choice. The confirmation
+names the currently owned profile; it cannot select somebody else's profile.
+The replacement transaction checks ownership and anonymous status again, locks
+the upload lease, replaces the imported rows, and commits its result ID before
+cleanup. A retry of an already committed upload does not replace twice. A stale
+client receives a refreshable choice instead of silently merging or replacing.
+Account conversion can complete in the upload screen without discarding the
+selected export. Existing public IDs are preserved during ordinary updates and
+conversion; historical re-keying is a separate operator action below.
 
 The old `create` and `update` RPC names delegate to the current procedures, so
 legacy clients cannot follow a different ownership policy. Admin reprocessing
 accepts both historical IDs and scoped IDs, but verifies the stored signup and
 owner before processing an existing row.
 
-No schema migration or historical ID rewrite is required. Existing orphaned
-profiles are not claimed. Public profile IDs remain 64 hexadecimal characters.
+Public profile IDs remain 64 hexadecimal characters. No automatic schema or
+data migration runs during deployment. A reviewed historical re-key command is
+included to retire old timestamp-only public IDs.
 
 ## Recovery limits
 
@@ -70,19 +83,78 @@ operations. It fails against the original router at the blocked `needs_signin`
 scenario and passes with the fix. It covers separate owners sharing a timestamp,
 legacy and scoped profile updates, transferred guests, committed upload retries,
 legacy RPC aliases, forward/backward merges, mismatched exports, and maintenance
-validation. Existing service tests retain consent and transaction ownership
-coverage. The harness does not claim to test live database concurrency.
+validation. It also checks that every returning-guest mutation requires a choice,
+that a confirmed older export uses replacement, and that registered accounts
+cannot invoke the guest replacement mode.
 
-Manual browser QA to perform on the preview with synthetic exports:
+`bun test:hinge:postgres` creates a disposable local PostgreSQL cluster, applies
+all repository migrations, and exercises the real profile services, ownership
+checks, lease SQL, and historical re-key operation. Only Blob storage calls are
+mocked. It verifies replacement rather than addition, photo/work consent, CSV
+clearing, rollback after an account changes, preserved guest login/manual data,
+all direct profile references, polymorphic references, re-key idempotency, and
+rollback after an injected postcondition failure. PostgreSQL binaries must be
+on PATH. The runner shuts down and removes only its own temporary cluster.
+
+## Historical ID migration
+
+`bun data-layer:rekey-hinge-profiles --plan /private/path/hinge-rekey.json`
+is read-only for the database. It writes a private, exclusive-create JSON plan
+(mode 0600) containing old/new IDs, ownership, and signup time. Supply
+`HINGE_REKEY_DATABASE_URL` explicitly as the intended direct database connection;
+the command does not fall back to the application's DATABASE_URL. The plan is
+bound to that endpoint and database, and its contents must stay out of git.
+
+For owned profiles the target is the same v3 owner/signup ID as a new upload.
+Ownerless historical rows receive random 256-bit IDs recorded in the plan.
+Their ownership remains null. Already matching v3 rows are omitted. Reuse the
+same reviewed plan on retries, particularly for ownerless rows.
+
+To apply the reviewed plan:
+
+```sh
+bun data-layer:rekey-hinge-profiles --plan /private/path/hinge-rekey.json --apply --retire-old-links
+```
+
+This deliberately retires old insights URLs and comparison URLs containing old
+IDs. No public aliases or redirects keep the predictable keys working. The
+explicit retirement flag makes that deployment choice visible. The PR prepares
+this operation; it does not run it against shared dev or production.
+
+Rehearse on an isolated branch of production before production use. Create a
+fresh plan for each database endpoint, inspect the counts, retain the plan as an
+operator audit artifact, and take a recoverable backup/branch first. Deploy the
+new upload routing before re-keying. Use a maintenance window: the transaction
+holds the Hinge provider lock and write locks on referenced tables, with lock
+and statement timeouts. Ordinary reads remain available.
+
+The transaction snapshots each complete profile, frees its unique owner slot,
+copies it under the new ID, moves every catalog-discovered direct foreign key,
+and checks row contents and reference counts before removing the empty old row.
+It also moves the SwipeRank provider registry, transient-upload result IDs, and
+Hinge attachment resource IDs. Missing, changed-owner, changed-signup, duplicate,
+wrong-target, and conflicting plans abort. A postcondition failure rolls back
+all changes. Reapplying the same plan is a no-op for already migrated rows.
+
+Transport IDs, historical upload paths, and original export evidence are not
+public profile IDs and remain unchanged. Dataset-export profile lists are
+Tinder-only. AI input snapshots contain no live Hinge ID; their subject foreign
+key moves. External bookmarks, exported documents and analytics history are not
+rewritten. The migration does not regenerate analytics or delete customer data.
+
+## Browser QA checklist
 
 1. Upload as a guest, then open a separate browser session and upload the same
    files. Both sessions should reach separate insights URLs.
-2. Upload the same files again in either session. Its insights URL should stay
-   unchanged and activity should be deduplicated.
-3. Sign up from a guest browser, then upload again. Its original insights URL
-   should remain unchanged.
-4. Verify the recovery guidance is visible on a fresh upload and that sign-in
-   opens the existing sign-in flow.
+2. Return in the first guest browser. Uploading again must show the choice and
+   remain disabled until replacement is checked or account creation completes.
+3. Confirm replacement with a narrower export. Only its imported activity should
+   remain. The guest session should still work. Try an older signup too.
+4. Instead choose account creation. The selected file should remain available,
+   the guest choice should disappear, and submission should retain/merge history.
+5. A registered account should continue to add data without a guest prompt.
+6. Replace the selected export after checking replacement; the checkbox should
+   reset, including when the new export has the same signup timestamp.
 
-Browser QA and a production account-specific diagnosis are not part of the
-mocked regression results.
+Browser QA and a production account-specific diagnosis remain separate from the
+automated results. No production or shared-dev data has been re-keyed by this PR.

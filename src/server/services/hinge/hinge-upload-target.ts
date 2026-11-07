@@ -1,3 +1,4 @@
+import { TRPCError } from "@trpc/server";
 import { isSameHingeAccountSignup } from "@/lib/hinge/account-period";
 import { parseHingeTimestampToDate } from "@/lib/hinge/timestamp";
 import { createSHA256Hash } from "@/lib/utils/hash";
@@ -33,4 +34,32 @@ export async function resolveHingeUploadTarget(params: {
     ),
     isSameAccount: false,
   };
+}
+
+/** A returning guest chooses replacement, or converts before retaining history. */
+export function requiresHingeGuestReplacement(params: {
+  isAnonymous: boolean;
+  existingProfileId?: string;
+  confirmedProfileId?: string;
+}): boolean {
+  const { isAnonymous, existingProfileId, confirmedProfileId } = params;
+  if (
+    confirmedProfileId &&
+    (!isAnonymous || confirmedProfileId !== existingProfileId)
+  ) {
+    throw new TRPCError({
+      code: "CONFLICT",
+      message:
+        "Your profile changed. Refresh the upload step before replacing guest data.",
+    });
+  }
+  if (!isAnonymous || !existingProfileId) return false;
+  if (confirmedProfileId !== existingProfileId) {
+    throw new TRPCError({
+      code: "PRECONDITION_FAILED",
+      message:
+        "Create an account to keep your history, or choose Replace guest data to continue.",
+    });
+  }
+  return true;
 }

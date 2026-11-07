@@ -41,7 +41,10 @@ const fakeDb = {
 const t = initTRPC
   .context<{
     db: typeof fakeDb;
-    session: { user: { id: string }; session: { id: string } } | null;
+    session: {
+      user: { id: string; isAnonymous: boolean };
+      session: { id: string };
+    } | null;
     headers: Headers;
   }>()
   .create();
@@ -113,6 +116,12 @@ function save(operation: string, input: Upload) {
 }
 await mock.module("@/server/services/hinge/hinge.service", () => ({
   createHingeProfile: async (input: Upload) => save("create", input),
+  updateHingeProfile: async (
+    input: Upload & { requireAnonymousOwner?: boolean },
+  ) => {
+    assert.equal(input.requireAnonymousOwner, true);
+    return save("replace", input);
+  },
   getHingeProfileWithUser: async (id: string) => profiles.get(id),
 }));
 await mock.module("@/server/services/hinge/hinge-additive.service", () => ({
@@ -129,12 +138,15 @@ await mock.module("@/server/services/hinge/hinge-additive.service", () => ({
 const { hingeProfileRouter } =
   await import("@/server/api/routers/hingeProfileRouter");
 const router = t.router(hingeProfileRouter);
-const caller = (userId: string | null) =>
+const caller = (userId: string | null, isAnonymous = false) =>
   router.createCaller({
     db: fakeDb,
     headers: new Headers(),
     session: userId
-      ? { user: { id: userId }, session: { id: `session-${userId}` } }
+      ? {
+          user: { id: userId, isAnonymous },
+          session: { id: `session-${userId}` },
+        }
       : null,
   });
 const signupTime = "2020-01-01T00:00:00.000Z";
@@ -320,5 +332,53 @@ await assert.rejects(
     maintenanceTarget,
   ),
   /does not match/,
+);
+// Every guest mutation, including legacy aliases and a stale create/merge
+// request, must require the explicit choice and replace rather than merge.
+assert.equal(
+  (await caller("old-guest", true).getUploadContext(contextInput))
+    .requiresGuestChoice,
+  true,
+);
+for (const endpoint of [
+  "createProfile",
+  "updateProfile",
+  "mergeAccounts",
+  "create",
+  "update",
+] as const) {
+  const before = writes.length;
+  await assert.rejects(
+    caller("old-guest", true)[endpoint](await upload("old-guest")),
+    /choose Replace guest data/,
+  );
+  await assert.rejects(
+    caller("old-guest", true)[endpoint]({
+      ...(await upload("old-guest")),
+      guestReplacementProfileId: first.hingeId,
+    }),
+    /profile changed/,
+  );
+  assert.equal(writes.length, before);
+  const replacement = {
+    ...(await upload("old-guest", "2018-01-01T00:00:00.000Z")),
+    guestReplacementProfileId: legacyId,
+  };
+  assert.equal(
+    (await caller("old-guest", true)[endpoint](replacement)).hingeId,
+    legacyId,
+  );
+  assert.equal(writes.at(-1)?.operation, "replace");
+  const after = writes.length;
+  blobs.delete(replacement.blobUrl);
+  await caller("old-guest", true)[endpoint](replacement);
+  assert.equal(writes.length, after);
+}
+await assert.rejects(
+  caller("converted").updateProfile({
+    ...(await upload("converted")),
+    guestReplacementProfileId: second.hingeId,
+  }),
+  /profile changed/,
 );
 console.log("Hinge upload router ownership regressions passed");

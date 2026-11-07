@@ -13,6 +13,7 @@ import { publicProcedure } from "../trpc";
 import type { TRPCRouterRecord } from "@trpc/server";
 import {
   createHingeProfile,
+  updateHingeProfile,
   getHingeProfileWithUser,
 } from "@/server/services/hinge/hinge.service";
 import {
@@ -25,7 +26,10 @@ import { fetchVerifiedHingeBlob } from "@/server/services/hinge/hinge-blob.servi
 import { summarizeUploadError } from "@/server/services/upload-error.service";
 import { isSameHingeAccountSignup } from "@/lib/hinge/account-period";
 import { parseHingeTimestampToDate } from "@/lib/hinge/timestamp";
-import { resolveHingeUploadTarget } from "@/server/services/hinge/hinge-upload-target";
+import {
+  resolveHingeUploadTarget,
+  requiresHingeGuestReplacement,
+} from "@/server/services/hinge/hinge-upload-target";
 import {
   cleanupCommittedTransientUpload,
   registerTransientUploadForProcessing,
@@ -174,6 +178,7 @@ const hingeProfileProcedures = {
           targetProfile: null,
           scenario: "new_user" as const,
           identityMismatch: false,
+          requiresGuestChoice: false,
         };
       }
 
@@ -238,6 +243,8 @@ const hingeProfileProcedures = {
         scenario,
         identityMismatch,
         identityComparison,
+        requiresGuestChoice:
+          !!userProfile && ctx.session.user.isAnonymous === true,
       };
     }),
 
@@ -252,6 +259,7 @@ const hingeProfileProcedures = {
         country: z.string().optional(),
         consentPhotos: z.boolean().optional(),
         consentWork: z.boolean().optional(),
+        guestReplacementProfileId: z.string().min(1).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -291,21 +299,26 @@ const hingeProfileProcedures = {
         const existingForUser = await ctx.db.query.hingeProfileTable.findFirst({
           where: eq(hingeProfileTable.userId, ctx.session.user.id),
         });
+        const replaceGuest = requiresHingeGuestReplacement({
+          isAnonymous: ctx.session.user.isAnonymous === true,
+          existingProfileId: existingForUser?.hingeId,
+          confirmedProfileId: input.guestReplacementProfileId,
+        });
         const target = await resolveHingeUploadTarget({
           userId: ctx.session.user.id,
           signupTime: verifiedJson.User.account.signup_time,
           existingProfile: existingForUser,
         });
-        if (existingForUser && !target.isSameAccount) {
+        if (existingForUser && !replaceGuest && !target.isSameAccount) {
           throw new TRPCError({
             code: "CONFLICT",
             message:
               "You already have a Hinge profile. Refresh the upload step so this export can be merged safely.",
           });
         }
-        const isExistingProfile = target.isSameAccount;
+        const isExistingProfile = !!existingForUser;
         const uploadParams = {
-          hingeId: target.hingeId,
+          hingeId: replaceGuest ? existingForUser!.hingeId : target.hingeId,
           blobUrl: input.blobUrl,
           userId: ctx.session.user.id,
           timezone: detectedLocation.timeZone ?? undefined,
@@ -315,9 +328,14 @@ const hingeProfileProcedures = {
           transientUpload: preparedUpload.binding,
           verifiedJson,
         };
-        const result = isExistingProfile
-          ? await additiveUpdateHingeProfile(uploadParams)
-          : await createHingeProfile(uploadParams);
+        const result = replaceGuest
+          ? await updateHingeProfile({
+              ...uploadParams,
+              requireAnonymousOwner: true,
+            })
+          : isExistingProfile
+            ? await additiveUpdateHingeProfile(uploadParams)
+            : await createHingeProfile(uploadParams);
 
         const metrics = {
           hingeId: result.profile.hingeId,
@@ -379,6 +397,7 @@ const hingeProfileProcedures = {
         country: z.string().optional(),
         consentPhotos: z.boolean().optional(),
         consentWork: z.boolean().optional(),
+        guestReplacementProfileId: z.string().min(1).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -422,20 +441,25 @@ const hingeProfileProcedures = {
             message: "Profile not found. Use createProfile instead.",
           });
         }
+        const replaceGuest = requiresHingeGuestReplacement({
+          isAnonymous: ctx.session.user.isAnonymous === true,
+          existingProfileId: existingProfile.hingeId,
+          confirmedProfileId: input.guestReplacementProfileId,
+        });
         const target = await resolveHingeUploadTarget({
           userId: ctx.session.user.id,
           signupTime: verifiedJson.User.account.signup_time,
           existingProfile,
         });
-        if (!target.isSameAccount) {
+        if (!replaceGuest && !target.isSameAccount) {
           throw new TRPCError({
             code: "CONFLICT",
             message:
               "This export is from a different Hinge account. Refresh the upload step to merge it safely.",
           });
         }
-        const result = await additiveUpdateHingeProfile({
-          hingeId: target.hingeId,
+        const uploadParams = {
+          hingeId: existingProfile.hingeId,
           blobUrl: input.blobUrl,
           userId: ctx.session.user.id,
           timezone: detectedLocation.timeZone ?? undefined,
@@ -444,7 +468,13 @@ const hingeProfileProcedures = {
           consentWork: input.consentWork ?? true,
           transientUpload: preparedUpload.binding,
           verifiedJson,
-        });
+        };
+        const result = replaceGuest
+          ? await updateHingeProfile({
+              ...uploadParams,
+              requireAnonymousOwner: true,
+            })
+          : await additiveUpdateHingeProfile(uploadParams);
 
         // Skip the event when the same export was re-uploaded (nothing new
         // merged in) - otherwise it reads as a noisy "0 new" update.
@@ -495,6 +525,7 @@ const hingeProfileProcedures = {
         country: z.string().optional(),
         consentPhotos: z.boolean().optional(),
         consentWork: z.boolean().optional(),
+        guestReplacementProfileId: z.string().min(1).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -546,6 +577,11 @@ const hingeProfileProcedures = {
           });
         }
 
+        const replaceGuest = requiresHingeGuestReplacement({
+          isAnonymous: ctx.session.user.isAnonymous === true,
+          existingProfileId: existingUserProfile.hingeId,
+          confirmedProfileId: input.guestReplacementProfileId,
+        });
         const newSignupTime = parseHingeTimestampToDate(
           anonymizedHingeJson.User.account.signup_time,
         );
@@ -556,8 +592,8 @@ const hingeProfileProcedures = {
         });
 
         // Preserve historical and guest-created public IDs after account linking.
-        if (target.isSameAccount) {
-          const result = await additiveUpdateHingeProfile({
+        if (replaceGuest || target.isSameAccount) {
+          const uploadParams = {
             hingeId: existingUserProfile.hingeId,
             blobUrl: input.blobUrl,
             userId: ctx.session.user.id,
@@ -567,7 +603,13 @@ const hingeProfileProcedures = {
             consentWork: input.consentWork ?? true,
             verifiedJson: anonymizedHingeJson,
             transientUpload: preparedUpload.binding,
-          });
+          };
+          const result = replaceGuest
+            ? await updateHingeProfile({
+                ...uploadParams,
+                requireAnonymousOwner: true,
+              })
+            : await additiveUpdateHingeProfile(uploadParams);
 
           if (!result.isNoOp) {
             trackServerEvent(ctx.session.user.id, "hinge_profile_updated", {

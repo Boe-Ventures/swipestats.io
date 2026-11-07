@@ -90,6 +90,7 @@ export function HingeUploadPage({ isUpdate, isDebug }: HingeUploadPageProps) {
   const isBackwardMerge = useMemo(() => {
     if (
       !payload ||
+      uploadContext?.requiresGuestChoice ||
       uploadContext?.scenario !== "different_hingeId" ||
       !uploadContext?.userProfile?.createDate
     ) {
@@ -203,35 +204,37 @@ export function HingeUploadPage({ isUpdate, isDebug }: HingeUploadPageProps) {
           </div>
 
           {/* User-facing notification - scenario-based */}
-          {uploadContext?.scenario === "same_hingeId" && (
-            <div className="mt-6 rounded-lg border-2 border-green-300 bg-green-50 p-4 dark:border-green-800 dark:bg-green-950/40">
-              <h3 className="mb-1 text-sm font-semibold text-green-900 dark:text-green-200">
-                Adding to Existing Profile
-              </h3>
-              <p className="text-xs text-green-700 dark:text-green-400">
-                Your data will be merged with your existing profile. New matches
-                and interactions will be added. Nothing will be lost.
-              </p>
-              {uploadContext.userProfile && (
-                <p className="mt-1 text-xs text-green-600 dark:text-green-400">
-                  Existing profile created:{" "}
-                  {new Date(
-                    uploadContext.userProfile.createDate,
-                  ).toLocaleDateString()}
+          {uploadContext?.scenario === "same_hingeId" &&
+            !uploadContext.requiresGuestChoice && (
+              <div className="mt-6 rounded-lg border-2 border-green-300 bg-green-50 p-4 dark:border-green-800 dark:bg-green-950/40">
+                <h3 className="mb-1 text-sm font-semibold text-green-900 dark:text-green-200">
+                  Adding to Existing Profile
+                </h3>
+                <p className="text-xs text-green-700 dark:text-green-400">
+                  Your data will be merged with your existing profile. New
+                  matches and interactions will be added. Nothing will be lost.
                 </p>
-              )}
-              {uploadContext.userProfile && (
-                <a
-                  href={`/insights/hinge/${uploadContext.userProfile.hingeId}`}
-                  className="mt-2 inline-block text-xs font-semibold text-green-800 underline underline-offset-4 hover:no-underline dark:text-green-200"
-                >
-                  Already uploaded? View your insights instead →
-                </a>
-              )}
-            </div>
-          )}
+                {uploadContext.userProfile && (
+                  <p className="mt-1 text-xs text-green-600 dark:text-green-400">
+                    Existing profile created:{" "}
+                    {new Date(
+                      uploadContext.userProfile.createDate,
+                    ).toLocaleDateString()}
+                  </p>
+                )}
+                {uploadContext.userProfile && (
+                  <a
+                    href={`/insights/hinge/${uploadContext.userProfile.hingeId}`}
+                    className="mt-2 inline-block text-xs font-semibold text-green-800 underline underline-offset-4 hover:no-underline dark:text-green-200"
+                  >
+                    Already uploaded? View your insights instead →
+                  </a>
+                )}
+              </div>
+            )}
 
           {uploadContext?.scenario === "different_hingeId" &&
+            !uploadContext.requiresGuestChoice &&
             !isBackwardMerge &&
             !uploadContext?.identityMismatch && (
               <div className="mt-6 rounded-lg border-2 border-amber-300 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/40">
@@ -252,6 +255,7 @@ export function HingeUploadPage({ isUpdate, isDebug }: HingeUploadPageProps) {
             )}
 
           {uploadContext?.scenario === "different_hingeId" &&
+            !uploadContext.requiresGuestChoice &&
             isBackwardMerge && (
               <div className="mt-6 rounded-lg border-2 border-red-300 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950/40">
                 <h3 className="mb-1 text-sm font-semibold text-red-900 dark:text-red-200">
@@ -283,6 +287,7 @@ export function HingeUploadPage({ isUpdate, isDebug }: HingeUploadPageProps) {
             )}
 
           {uploadContext?.scenario === "different_hingeId" &&
+            !uploadContext.requiresGuestChoice &&
             uploadContext?.identityMismatch && (
               <div className="mt-6 rounded-lg border-2 border-red-300 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950/40">
                 <h3 className="mb-1 text-sm font-semibold text-red-900 dark:text-red-200">

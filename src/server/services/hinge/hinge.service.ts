@@ -1,6 +1,6 @@
 import { syncHingeSubscriptionEvents } from "./hinge-subscription-events";
 import { hingeCsvUploadMetrics } from "@/lib/hinge/csv-activity";
-import { eq } from "drizzle-orm";
+import { eq, inArray, or } from "drizzle-orm";
 import type {
   AnonymizedHingeDataJSON,
   PromptEntry,
@@ -8,6 +8,7 @@ import type {
 import { withTransaction, db } from "@/server/db";
 import {
   hingeProfileTable,
+  userTable,
   matchTable,
   mediaTable,
   messageTable,
@@ -390,6 +391,10 @@ export async function updateHingeProfile(data: {
   country?: string;
   consumeBlob?: boolean;
   verifiedJson?: AnonymizedHingeDataJSON;
+  consentPhotos?: boolean;
+  consentWork?: boolean;
+  requireAnonymousOwner?: boolean;
+  transientUpload?: TransientUploadBinding;
 }): Promise<HingeProfileResult> {
   const startTime = Date.now();
 
@@ -399,11 +404,15 @@ export async function updateHingeProfile(data: {
   // Fetch JSON from blob storage
   const fetchStart = Date.now();
   console.log(`\n📥 Fetching Hinge data from blob storage...`);
-  const anonymizedHingeJson =
+  const verifiedHingeJson =
     data.verifiedJson ??
     (await fetchVerifiedHingeBlob(data.blobUrl, data.hingeId, {
       consume: data.consumeBlob ?? false,
     }));
+  const anonymizedHingeJson = filterHingeJsonByConsent(verifiedHingeJson, {
+    sharePhotos: data.consentPhotos ?? true,
+    shareWorkInfo: data.consentWork ?? true,
+  });
   console.log(`✅ Blob fetched in ${Date.now() - fetchStart}ms`);
 
   // Log JSON size
@@ -454,6 +463,7 @@ export async function updateHingeProfile(data: {
   const txStart = Date.now();
   console.log(`\n💾 [5/5] Starting database transaction...`);
   const profile = await withTransaction(async (tx) => {
+    await lockTransientUploadForMutationInTx(tx, data.transientUpload);
     await lockHingeProviderMutationsInTx(tx);
     await lockHingeProfileUploadsInTx(tx, [data.hingeId]);
     const ownedProfile = await tx.query.hingeProfileTable.findFirst({
@@ -465,12 +475,39 @@ export async function updateHingeProfile(data: {
         `Failed to replace Hinge profile ${data.hingeId}: ownership changed before processing.`,
       );
     }
+    if (data.requireAnonymousOwner) {
+      const owner = await tx.query.userTable.findFirst({
+        where: eq(userTable.id, data.userId),
+        columns: { isAnonymous: true },
+      });
+      if (owner?.isAnonymous !== true) {
+        throw new Error(
+          "Guest account changed before replacement. Refresh and try again.",
+        );
+      }
+    }
     // Delete old related data
     console.log(
       `   ✓ Deleting old matches, messages, prompts, interactions, photos, and metadata...`,
     );
     const deleteStart = Date.now();
 
+    // message.match_id is not cascading. Include historical rows whose direct
+    // profile pointer is absent but whose match belongs to this profile.
+    await tx
+      .delete(messageTable)
+      .where(
+        or(
+          eq(messageTable.hingeProfileId, data.hingeId),
+          inArray(
+            messageTable.matchId,
+            tx
+              .select({ id: matchTable.id })
+              .from(matchTable)
+              .where(eq(matchTable.hingeProfileId, data.hingeId)),
+          ),
+        ),
+      );
     await tx
       .delete(matchTable)
       .where(eq(matchTable.hingeProfileId, data.hingeId));
@@ -495,6 +532,7 @@ export async function updateHingeProfile(data: {
       .update(hingeProfileTable)
       .set({
         ...profileData,
+        csvActivity: anonymizedHingeJson.CsvActivity ?? null,
         updatedAt: new Date(),
       })
       .where(hingeProfileOwnedBy(data.hingeId, data.userId))
@@ -626,8 +664,19 @@ export async function updateHingeProfile(data: {
     });
     console.log(`   ✓ Metadata inserted (${Date.now() - metaInsertStart}ms)`);
 
+    await syncHingeSubscriptionEvents(
+      tx,
+      data.userId,
+      anonymizedHingeJson.CsvActivity?.subscriptions,
+    );
+    await markTransientUploadCommittedInTx(
+      tx,
+      data.transientUpload,
+      data.hingeId,
+    );
     return profile;
   });
+  await cleanupCommittedTransientUpload(data.transientUpload?.id);
 
   console.log(`\n✅ Transaction completed in ${Date.now() - txStart}ms`);
 
