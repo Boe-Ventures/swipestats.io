@@ -65,8 +65,8 @@ workflows/
 
 generated-videos/
 
-# LLM analysis output (research datasets with PII)
-src/scripts/llm-analysis/output/*.jsonl
+# LLM analysis output (research datasets and private run artifacts with PII)
+src/scripts/llm-analysis/output/
 src/scripts/llm-analysis/summaries/
 
 docs/plans/
