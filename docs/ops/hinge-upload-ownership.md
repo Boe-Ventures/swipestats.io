@@ -119,6 +119,13 @@ rows. This PR deliberately does not drain or reorder that historical backlog:
 remaining transport objects need a preservation/recovery decision first. The
 per-upload archive guard protects all newly accepted Hinge sources immediately.
 
+Rollback must retain this matching-provider archive guard in both per-upload
+and scheduled cleanup. Older code protects Tinder only and can delete retained
+Hinge objects whose leases remain `COMMITTED`. If rolling back to that code,
+suspend transient cleanup before the rollback and keep it suspended until the
+archive guard is restored. Do not run an old cleanup CLI against these rows.
+The additive nullable schema column can remain in place during a code rollback.
+
 These changes retain future inputs; they do not recover already-deleted exports
 or verify historical object availability. Admin replay still operates on one
 selected owned source. Rebuilding an additive/cross-account history requires an
