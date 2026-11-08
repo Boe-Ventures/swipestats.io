@@ -41,7 +41,7 @@ try {
     "-l",
     join(directory, "server.log"),
     "-o",
-    `-h 127.0.0.1 -p ${port} -k ${directory}`,
+    `-h 127.0.0.1 -p ${port} -k ''`,
     "-w",
     "start",
   ]);

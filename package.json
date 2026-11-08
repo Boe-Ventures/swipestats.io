@@ -54,6 +54,7 @@
     "swipe-rank:review-codex": "bun run src/scripts/swipe-rank/review-local-codex.ts",
     "swipe-rank:validate": "bun run src/scripts/swipe-rank/validate-period-facts.ts",
     "test": "bun test",
+    "test:tinder:postgres": "bun scripts/test-tinder-ownership-postgres.ts",
     "test:hinge:postgres": "bun scripts/test-hinge-ownership-postgres.ts",
     "typecheck": "velite build && tsc --noEmit",
     "velite:build": "velite build",

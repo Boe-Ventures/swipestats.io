@@ -12,9 +12,9 @@ import type { TRPCRouterRecord } from "@trpc/server";
 import {
   createTinderProfile,
   getTinderProfile,
-  getTinderProfileWithUser,
   replaceTinderProfileRevision,
 } from "@/server/services/profile/profile.service";
+import { resolveTinderUploadTarget } from "@/server/services/profile/tinder-upload-target";
 import { absorbProfileIntoNew } from "@/server/services/profile/additive.service";
 import { trackServerEvent } from "@/server/services/analytics.service";
 import { captureException } from "@/server/clients/posthog.client";
@@ -65,53 +65,6 @@ async function prepareTinderTransientUpload(params: {
     return { binding, committedProfile: profile };
   }
   return { binding };
-}
-
-/**
- * Helper function to handle existing profile upload scenarios
- * (user owns profile or the request is forbidden)
- */
-async function handleExistingProfileUpload(params: {
-  existing: NonNullable<Awaited<ReturnType<typeof getTinderProfileWithUser>>>;
-  tinderId: string;
-  blobUrl: string;
-  transientUpload: TransientUploadBinding;
-  currentUserId: string;
-  timezone?: string;
-  country?: string;
-  consentPhotos?: boolean;
-  consentWork?: boolean;
-}) {
-  const { existing, currentUserId, ...uploadParams } = params;
-
-  // Case B: User owns this profile - replace the derived projection.
-  if (existing.userId === currentUserId) {
-    console.log(`🔄 Replacing existing profile tinderId: ${params.tinderId}`);
-    return replaceTinderProfileRevision({
-      ...uploadParams,
-      userId: currentUserId,
-    });
-  }
-
-  // Cross-session anonymous claims are deliberately unsupported. The Tinder ID
-  // is derived from birth/create dates that are identity-consistency fields,
-  // not a possession secret. Legitimate guest conversion is transferred by
-  // Better Auth's onLinkAccount hook while the original anonymous session is
-  // still present; any other account must go through support-assisted recovery.
-  if (existing.user?.isAnonymous && existing.userId) {
-    throw new TRPCError({
-      code: "FORBIDDEN",
-      message:
-        "This anonymous profile belongs to a different session. Convert the original guest session or contact support to recover it.",
-    });
-  }
-
-  // Case D: Owned by claimed user - block
-  throw new TRPCError({
-    code: "FORBIDDEN",
-    message:
-      "This profile belongs to another user. Please sign in with a different account or use a different email address.",
-  });
 }
 
 export const profileRouter = {
@@ -202,46 +155,26 @@ export const profileRouter = {
       });
     }),
 
-  // Get upload context - helps frontend show appropriate UI
+  // Context is advisory. Mutations verify the export before resolving ownership.
   getUploadContext: publicProcedure
     .input(
       z.object({
-        tinderId: z.string().optional(), // The tinderId from dropped file (if available)
-        birthDate: z.string().optional(), // birth_date from User object for identity validation
+        tinderId: z.string().optional(),
+        birthDate: z.string().optional(),
+        createDate: z.string().optional(),
       }),
     )
     .query(async ({ ctx, input }) => {
-      // Always check if target profile exists (even without session)
-      const targetProfile = input.tinderId
-        ? await ctx.db.query.tinderProfileTable.findFirst({
-            where: eq(tinderProfileTable.tinderId, input.tinderId),
-            columns: { tinderId: true, userId: true },
-          })
-        : null;
-
-      // If no session, determine scenario based on target profile
+      // Export fingerprints are not possession secrets. Never look up another
+      // session's profile or block an independent import using those fields.
       if (!ctx.session?.user?.id) {
-        let scenario: "new_user" | "needs_signin";
-
-        if (!targetProfile) {
-          scenario = "new_user"; // Profile doesn't exist
-        } else {
-          // Both claimed and anonymous profiles require their existing session.
-          // A newly-created session cannot prove ownership from export fields.
-          scenario = "needs_signin";
-        }
-
         return {
           userProfile: null,
-          targetProfile: targetProfile
-            ? { tinderId: targetProfile.tinderId }
-            : null,
-          scenario,
+          targetProfile: null,
+          scenario: "new_user" as const,
           identityMismatch: false,
         };
       }
-
-      // Get user's existing profile (1:1 so at most one)
       const userProfile = await ctx.db.query.tinderProfileTable.findFirst({
         where: eq(tinderProfileTable.userId, ctx.session.user.id),
         columns: {
@@ -249,56 +182,37 @@ export const profileRouter = {
           createdAt: true,
           firstDayOnApp: true,
           lastDayOnApp: true,
-          birthDate: true, // Need this for identity mismatch detection
+          birthDate: true,
+          createDate: true,
         },
       });
-
-      // Determine scenario for logged-in users
-      let scenario:
-        | "new_profile"
-        | "same_tinderId"
-        | "different_tinderId"
-        | "owned_by_other";
-
-      if (!userProfile && !targetProfile) {
-        scenario = "new_profile"; // First upload, tinderId doesn't exist
-      } else if (!userProfile && targetProfile) {
-        scenario = targetProfile.userId ? "owned_by_other" : "new_profile"; // Profile exists but not ours
-      } else if (userProfile && input.tinderId === userProfile.tinderId) {
-        scenario = "same_tinderId"; // Additive update
-      } else if (
-        userProfile &&
-        input.tinderId &&
-        input.tinderId !== userProfile.tinderId
-      ) {
-        // Cross-account merge creates the incoming profile ID. An already
-        // existing target cannot be absorbed safely or claimed implicitly.
-        scenario = targetProfile ? "owned_by_other" : "different_tinderId";
-      } else {
-        scenario = "new_profile";
-      }
-
-      // Identity mismatch detection for cross-account merges
-      let identityMismatch = false;
-      if (scenario === "different_tinderId" && userProfile && input.birthDate) {
-        identityMismatch = !tinderBirthDatesMatch(
-          userProfile.birthDate,
-          input.birthDate,
-        );
-      }
-
+      const sameAccount =
+        !!userProfile &&
+        (input.birthDate && input.createDate
+          ? tinderBirthDatesMatch(userProfile.birthDate, input.birthDate) &&
+            tinderCreateDatesMatch(userProfile.createDate, input.createDate)
+          : input.tinderId === userProfile.tinderId);
+      const scenario =
+        !userProfile || !input.tinderId
+          ? ("new_profile" as const)
+          : sameAccount
+            ? ("same_tinderId" as const)
+            : ("different_tinderId" as const);
       return {
         userProfile,
-        targetProfile: targetProfile
-          ? { tinderId: targetProfile.tinderId }
-          : null,
+        targetProfile:
+          sameAccount && userProfile
+            ? { tinderId: userProfile.tinderId }
+            : null,
         scenario,
-        identityMismatch,
+        identityMismatch:
+          !!userProfile &&
+          !!input.birthDate &&
+          !tinderBirthDatesMatch(userProfile.birthDate, input.birthDate),
       };
     }),
 
-  // Streamlined endpoint for creating new profiles (99% use case)
-  // Fast path with minimal checks - only validates tinderId doesn't exist
+  // Create an independent profile for the authenticated owner.
   createProfile: publicProcedure
     .input(
       z.object({
@@ -339,21 +253,33 @@ export const profileRouter = {
           return preparedUpload.committedProfile;
         }
 
-        // Quick check: does this tinderId already exist?
-        const existingByTinderId = await getTinderProfile(input.tinderId);
-
-        if (existingByTinderId) {
+        const existing = await ctx.db.query.tinderProfileTable.findFirst({
+          where: eq(tinderProfileTable.userId, ctx.session.user.id),
+        });
+        if (existing) {
           throw new TRPCError({
             code: "CONFLICT",
             message:
-              "This profile already exists. Use updateProfile or mergeAccounts instead.",
+              "Your Tinder profile changed. Refresh the upload step before continuing.",
           });
         }
-
-        // Create brand new profile
-        console.log(`📝 Creating new profile: ${input.tinderId}`);
+        const verifiedTinderJson = await loadVerifiedAnonymizedTinderData(
+          input.blobUrl,
+          input.tinderId,
+          {
+            photos: input.consentPhotos ?? true,
+            work: input.consentWork ?? true,
+          },
+        );
+        const target = await resolveTinderUploadTarget({
+          userId: ctx.session.user.id,
+          birthDate: verifiedTinderJson.User.birth_date,
+          createDate: verifiedTinderJson.User.create_date,
+        });
         const result = await createTinderProfile({
-          tinderId: input.tinderId,
+          tinderId: target.tinderId,
+          verifiedTinderId: input.tinderId,
+          verifiedTinderJson,
           blobUrl: input.blobUrl,
           userId: ctx.session.user.id,
           timezone: detectedLocation.timeZone ?? undefined,
@@ -364,7 +290,7 @@ export const profileRouter = {
         });
 
         trackServerEvent(ctx.session.user.id, "tinder_profile_created", {
-          tinderId: input.tinderId,
+          tinderId: result.profile.tinderId,
           matchCount: result.metrics.matchCount,
           messageCount: result.metrics.messageCount,
           photoCount: result.metrics.photoCount,
@@ -395,7 +321,7 @@ export const profileRouter = {
       }
     }),
 
-  // Additive update endpoint for a profile already owned by this session.
+  // Replace the current projection from a verified repeat export.
   updateProfile: publicProcedure
     .input(
       z.object({
@@ -437,7 +363,11 @@ export const profileRouter = {
         }
 
         // Check if profile exists
-        const existingProfile = await getTinderProfileWithUser(input.tinderId);
+        const existingProfile = await ctx.db.query.tinderProfileTable.findFirst(
+          {
+            where: eq(tinderProfileTable.userId, ctx.session.user.id),
+          },
+        );
 
         if (!existingProfile) {
           throw new TRPCError({
@@ -446,12 +376,33 @@ export const profileRouter = {
           });
         }
 
-        // Handle ownership scenarios
-        const result = await handleExistingProfileUpload({
-          existing: existingProfile,
-          tinderId: input.tinderId,
+        const verifiedTinderJson = await loadVerifiedAnonymizedTinderData(
+          input.blobUrl,
+          input.tinderId,
+          {
+            photos: input.consentPhotos ?? true,
+            work: input.consentWork ?? true,
+          },
+        );
+        const target = await resolveTinderUploadTarget({
+          userId: ctx.session.user.id,
+          birthDate: verifiedTinderJson.User.birth_date,
+          createDate: verifiedTinderJson.User.create_date,
+          existingProfile,
+        });
+        if (!target.isSameAccount) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message:
+              "This export is from a different Tinder account. Refresh the upload step to review the merge.",
+          });
+        }
+        const result = await replaceTinderProfileRevision({
+          tinderId: target.tinderId,
+          verifiedTinderId: input.tinderId,
+          verifiedTinderJson,
           blobUrl: input.blobUrl,
-          currentUserId: ctx.session.user.id,
+          userId: ctx.session.user.id,
           timezone: detectedLocation.timeZone ?? undefined,
           country: detectedLocation.country ?? undefined,
           consentPhotos: input.consentPhotos,
@@ -460,7 +411,7 @@ export const profileRouter = {
         });
 
         trackServerEvent(ctx.session.user.id, "tinder_profile_updated", {
-          tinderId: input.tinderId,
+          tinderId: result.profile.tinderId,
           matchCount: result.metrics.matchCount,
           messageCount: result.metrics.messageCount,
           photoCount: result.metrics.photoCount,
@@ -547,26 +498,6 @@ export const profileRouter = {
           });
         }
 
-        if (existingUserProfile.tinderId === input.tinderId) {
-          throw new TRPCError({
-            code: "CONFLICT",
-            message:
-              "Cannot merge profile with itself. Use updateProfile instead.",
-          });
-        }
-
-        // Reject before fetching/consuming the temporary export. The merge
-        // path creates this target ID and never implicitly claims an existing
-        // profile, whether or not that row currently has an owner.
-        const existingTargetProfile = await getTinderProfile(input.tinderId);
-        if (existingTargetProfile) {
-          throw new TRPCError({
-            code: "CONFLICT",
-            message:
-              "The Tinder profile in this export already exists and cannot be used as a merge target.",
-          });
-        }
-
         // Validate the blob schema and bind it to the claimed Tinder ID before
         // making merge decisions from provider-supplied chronology.
         const anonymizedTinderJson = await loadVerifiedAnonymizedTinderData(
@@ -578,6 +509,13 @@ export const profileRouter = {
           },
           { consume: false },
         );
+
+        const target = await resolveTinderUploadTarget({
+          userId: ctx.session.user.id,
+          birthDate: anonymizedTinderJson.User.birth_date,
+          createDate: anonymizedTinderJson.User.create_date,
+          existingProfile: existingUserProfile,
+        });
 
         if (
           !tinderBirthDatesMatch(
@@ -592,12 +530,7 @@ export const profileRouter = {
           });
         }
 
-        if (
-          tinderCreateDatesMatch(
-            existingUserProfile.createDate,
-            anonymizedTinderJson.User.create_date,
-          )
-        ) {
+        if (target.isSameAccount) {
           // REVIEW(provider assumption): Exact birth calendar date plus exact
           // account-create instant identifies the same owned Tinder account
           // across historical raw timestamp spellings. Preserve the existing
@@ -660,7 +593,7 @@ export const profileRouter = {
             message:
               "This appears to be an older Tinder account than your current profile. " +
               "Cross-account merges must go from older → newer accounts. " +
-              "If you need to merge data from an older account, please delete your current profile first and re-upload in chronological order (oldest first).",
+              "Contact support to review the older export without deleting your current profile or saved history.",
           });
         }
 
@@ -669,7 +602,8 @@ export const profileRouter = {
         );
         const result = await absorbProfileIntoNew({
           oldTinderId: existingUserProfile.tinderId,
-          newTinderId: input.tinderId,
+          newTinderId: target.tinderId,
+          verifiedTinderId: input.tinderId,
           blobUrl: input.blobUrl,
           userId: ctx.session.user.id,
           timezone: detectedLocation.timeZone ?? undefined,
@@ -681,7 +615,7 @@ export const profileRouter = {
         });
 
         trackServerEvent(ctx.session.user.id, "tinder_profile_updated", {
-          tinderId: input.tinderId,
+          tinderId: result.profile.tinderId,
           matchCount: result.metrics.matchCount,
           messageCount: result.metrics.messageCount,
           photoCount: result.metrics.photoCount,
@@ -753,7 +687,7 @@ export const profileRouter = {
 
       // Check if profile already exists
       const existing = await ctx.db.query.tinderProfileTable.findFirst({
-        where: eq(tinderProfileTable.tinderId, input.tinderId),
+        where: eq(tinderProfileTable.userId, ctx.session.user.id),
       });
 
       if (existing) {
@@ -763,8 +697,19 @@ export const profileRouter = {
         });
       }
 
+      const verifiedTinderJson = await loadVerifiedAnonymizedTinderData(
+        input.blobUrl,
+        input.tinderId,
+      );
+      const target = await resolveTinderUploadTarget({
+        userId: ctx.session.user.id,
+        birthDate: verifiedTinderJson.User.birth_date,
+        createDate: verifiedTinderJson.User.create_date,
+      });
       const result = await createTinderProfile({
-        tinderId: input.tinderId,
+        tinderId: target.tinderId,
+        verifiedTinderId: input.tinderId,
+        verifiedTinderJson,
         blobUrl: input.blobUrl,
         userId: ctx.session.user.id,
         timezone: detectedLocation.timeZone ?? undefined,
