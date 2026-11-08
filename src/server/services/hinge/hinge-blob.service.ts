@@ -15,8 +15,8 @@ export async function fetchVerifiedHingeBlob(
   const rawBlob = await fetchBlobJson<unknown>(blobUrl);
   const hingeJson = parseAnonymizedHingeBlob(rawBlob);
   await assertHingeProfileIdMatchesExport(expectedHingeId, hingeJson);
-  // The owner-bound transient-upload ledger performs best-effort deletion only
-  // after the provider transaction records COMMITTED.
+  // The provider transaction promotes accepted Hinge sources to retained
+  // archives. The transient-upload ledger cleans only unretained transport.
   return hingeJson;
 }
 

@@ -56,9 +56,75 @@ legacy clients cannot follow a different ownership policy. Admin reprocessing
 accepts both historical IDs and scoped IDs, but verifies the stored signup and
 owner before processing an existing row.
 
-Public profile IDs remain 64 hexadecimal characters. No automatic schema or
-data migration runs during deployment. A reviewed historical re-key command is
-included to retire old timestamp-only public IDs.
+Public profile IDs remain 64 hexadecimal characters. A nullable `archive_consent`
+column is added by the normal generated schema migration. Historical re-keying
+remains an explicit operator command, not a deployment-time data migration.
+
+## Retained Hinge source snapshots
+
+Every accepted create, additive update, cross-account merge and guest replacement
+now keeps one combined Hinge JSON object in Blob. The source is the existing
+strictly validated, anonymized upload payload, with photo/work consent applied.
+It includes the supported account, match/message, prompt, media and normalized
+CSV evidence supplied in that upload. It is not an untouched original ZIP and
+does not preserve unknown sidecars or fields removed by the browser extractor.
+
+The existing owner/session-bound upload object is promoted to an archive by
+writing its URL to `original_anonymized_file` in the same transaction as the
+profile mutation. Its random per-upload UUID namespace is the revision key;
+reuploads never write a shared per-profile latest-object key. Ownership lives
+in database rows, not the timestamp-derived path. Guest conversion transfers
+those rows without renaming the objects. Committed retries do not add an extra
+archive row, and maintenance replay reuses the existing row.
+
+Guest replacement deletes the old derived rows, not earlier source snapshots.
+A narrower replacement therefore does not erase the older retained activity.
+The new source reference must be recorded before replacement can commit. An
+uncommitted upload remains bound to its lease for retry or normal expiry cleanup.
+No second, untracked object is created. Cleanup preserves a committed upload
+referenced by a matching-provider archive row. Its ledger remains `COMMITTED`,
+not incorrectly marked deleted. Account/profile deletion still enumerates and
+removes retained source URLs before removing their database pointers.
+
+Privacy redaction is the exception to snapshot immutability. Server processing
+checks optional-data consent again, and overwrites only a HEAD-verified exact
+object pathname if the browser did not already remove denied fields. Withdrawal
+also removes those categories from earlier owned Hinge sources, retaining their
+activity. Monotonic redaction flags prevent alternating withdrawals from
+restoring previously removed categories. If storage cannot complete a redaction,
+the import fails with the old database state and source pointers intact so it
+can be retried. Successful Blob redactions are not undone by a later database
+rollback; optional data may be removed conservatively on a failed import.
+Historical redaction is serial and holds the mutation locks. Owners with many
+large sources may hit a request or transaction timeout; that import must not be
+reported as accepted. Retry only after investigating the storage failure or
+latency, retaining the source pointers and existing derived activity.
+
+`archive_consent` stores the current replay permissions, withdrawal history and
+latest accepted source ID. Acceptance order is not inferred from timestamps.
+Maintenance reads this policy after acquiring the mutation locks and re-reads
+its owned source, so a pre-lock parsed payload cannot restore withdrawn photos
+or work data. A new upload can explicitly grant consent again. Older revisions
+remain subject to prior withdrawal; the latest accepted source can reflect the
+new grant. Legacy rows with no recorded policy do not restore optional fields
+on maintenance replay until a new consented upload records that policy.
+
+The existing Blob store is public. This change does not provision private
+storage or broaden the accepted payload. New Hinge upload tokens use a short
+cache lifetime, but previously cached public bytes cannot be promised immediate
+revocation. Private archives require the separate reviewed storage rollout.
+
+The existing cleanup queue selection can be starved by older retained Tinder
+rows. This PR deliberately does not drain or reorder that historical backlog:
+remaining transport objects need a preservation/recovery decision first. The
+per-upload archive guard protects all newly accepted Hinge sources immediately.
+
+These changes retain future inputs; they do not recover already-deleted exports
+or verify historical object availability. Admin replay still operates on one
+selected owned source. Rebuilding an additive/cross-account history requires an
+ordered multi-source replay with replacement boundaries, not blindly replacing
+a combined profile with its newest upload. Keep database backups for manual
+annotations, purchases, merge/replacement history and other non-export state.
 
 ## Recovery limits
 
@@ -89,8 +155,11 @@ cannot invoke the guest replacement mode.
 
 `bun test:hinge:postgres` creates a disposable local PostgreSQL cluster, applies
 all repository migrations, and exercises the real profile services, ownership
-checks, lease SQL, and historical re-key operation. Only Blob storage calls are
-mocked. It verifies replacement rather than addition, photo/work consent, CSV
+checks, lease SQL, and historical re-key operation. Only Blob storage transport is
+mocked. The fixture exercises real JSON retrieval, verification and profile
+services against an in-memory object store. It verifies retained source replay,
+archive protection, consent redaction and storage/transaction failure safety,
+as well as replacement rather than addition, photo/work consent, CSV
 clearing, rollback after an account changes, preserved guest login/manual data,
 all direct profile references, polymorphic references, re-key idempotency, and
 rollback after an injected postcondition failure. PostgreSQL binaries must be
