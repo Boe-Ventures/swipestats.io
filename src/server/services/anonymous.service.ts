@@ -1,7 +1,10 @@
 import { eq } from "drizzle-orm";
-import { db, withTransaction } from "@/server/db";
+import { withTransaction } from "@/server/db";
 import {
+  aiOutputTable,
   attachmentTable,
+  catalogEntryMemberTable,
+  cohortDefinitionTable,
   customDataTable,
   eventTable,
   hingeProfileTable,
@@ -14,16 +17,18 @@ import {
   swipeRankProfileTable,
   tinderProfileTable,
   userTable,
+  type User,
 } from "@/server/db/schema";
 import { invalidatePublicSwipeRankCache } from "./swipe-rank/public-cache";
 import { lockHingeProviderOwnershipTransferInTx } from "./hinge/hinge-upload-lock";
+import { lockTinderProviderOwnershipTransferInTx } from "./profile/upload-lock";
 
 export interface TransferResult {
   hadProfile: boolean;
 }
 
 /**
- * Transfer all resources from an anonymous user to a newly created real user.
+ * Transfer application resources from a guest to a registered account.
  * This is called when an anonymous user converts their account by signing up or signing in.
  *
  * The transfer includes:
@@ -38,8 +43,9 @@ export interface TransferResult {
  * - Attachments (uploadedBy)
  * - Profile comparisons (userId)
  * - Profile comparison feedback (authorId)
- * - SwipeRank live ownership
- * - User preferences and data (dating app activity, location, self-assessment, history, subscription/tier)
+ * - SwipeRank live ownership, AI artifacts and custom cohort definitions
+ * - Application preferences/history without replacing destination account identity
+ * - Destination billing is preserved; any source billing requires reconciliation
  * - Deletion of the old anonymous user only after every transfer succeeds
  */
 export async function transferAnonymousUserData(
@@ -50,37 +56,154 @@ export async function transferAnonymousUserData(
     `[Anonymous] Transferring data from ${fromUserId} to ${toUserId}`,
   );
 
-  // Fetch all anonymous user fields before transaction
-  const anonymousUserData = await db.query.userTable.findFirst({
-    where: eq(userTable.id, fromUserId),
-  });
-
-  if (!anonymousUserData) {
-    throw new Error(`Anonymous user ${fromUserId} not found`);
+  if (fromUserId === toUserId) {
+    throw new Error("Guest conversion requires two different accounts.");
   }
-
-  // Exclude fields that Better Auth manages or are system fields
-  const {
-    id: _id,
-    email: _email,
-    name: _name,
-    emailVerified: _emailVerified,
-    username: _username,
-    displayUsername: _displayUsername,
-    isAnonymous: _isAnonymous,
-    createdAt: _createdAt,
-    updatedAt: _updatedAt,
-    ...fieldsToTransfer
-  } = anonymousUserData;
 
   let hadProfile = false;
 
   await withTransaction(async (tx) => {
-    // Serialize with Hinge uploads before reading/updating ownership. A shared
+    // Serialize with provider uploads before reading/updating ownership. A shared
     // upload lock is insufficient here: a cross-account merge replaces its
     // source row and an already-running bulk UPDATE could otherwise miss the
     // replacement immediately before this transaction deletes fromUserId.
     await lockHingeProviderOwnershipTransferInTx(tx);
+    await lockTinderProviderOwnershipTransferInTx(tx);
+
+    // Read both accounts under row locks only after provider locks. This keeps
+    // billing snapshots current and avoids racing uploads that hold user FKs.
+    const users = new Map<string, User>();
+    for (const id of [fromUserId, toUserId].sort()) {
+      const [user] = await tx
+        .select()
+        .from(userTable)
+        .where(eq(userTable.id, id))
+        .for("update");
+      if (user) users.set(id, user);
+    }
+    const source = users.get(fromUserId);
+    const destination = users.get(toUserId);
+    if (source?.isAnonymous !== true) {
+      throw new Error(
+        "Guest conversion requires an existing anonymous source.",
+      );
+    }
+    if (destination?.isAnonymous !== false) {
+      throw new Error(
+        "Guest conversion requires an existing registered destination.",
+      );
+    }
+    // Billing webhooks (including lifetime refunds) reference the checkout's
+    // original user ID. No local transfer can safely reconcile that identity.
+    if (
+      source.swipestatsTier !== "FREE" ||
+      source.isLifetime ||
+      source.subscriptionProviderId ||
+      source.subscriptionCurrentPeriodEnd
+    ) {
+      throw new Error(
+        "This guest account has billing history. Contact support to reconcile purchases and subscriptions before conversion; neither account has been changed.",
+      );
+    }
+
+    // Do not silently choose which owned profile/history to retain. The unique
+    // constraints also reject a concurrent collision and roll back everything.
+    for (const table of [
+      tinderProfileTable,
+      hingeProfileTable,
+      rayaProfileTable,
+    ]) {
+      const [sourceProfile] = await tx
+        .select({ userId: table.userId })
+        .from(table)
+        .where(eq(table.userId, fromUserId))
+        .limit(1);
+      const [destinationProfile] = await tx
+        .select({ userId: table.userId })
+        .from(table)
+        .where(eq(table.userId, toUserId))
+        .limit(1);
+      if (sourceProfile && destinationProfile) {
+        throw new Error(
+          "Both accounts already have a profile for the same dating app. Contact support to preserve both histories.",
+        );
+      }
+    }
+    // Catalog membership is an access grant, not an ordinary preference. Do
+    // not discard it through cascade or implicitly transfer privileged access.
+    const [membership] = await tx
+      .select({ userId: catalogEntryMemberTable.userId })
+      .from(catalogEntryMemberTable)
+      .where(eq(catalogEntryMemberTable.userId, fromUserId))
+      .limit(1);
+    if (membership) {
+      throw new Error(
+        "This guest account has catalog access that requires support-assisted conversion.",
+      );
+    }
+
+    // Explicit application-field allowlist: identity, security, consent and
+    // destination billing fields must never be overwritten by guest defaults.
+    const mergeHistory = (current: unknown, incoming: unknown): unknown[] => {
+      if (!Array.isArray(current) || !Array.isArray(incoming)) {
+        throw new Error(
+          "Account history needs review before guest conversion.",
+        );
+      }
+      const unique = new Map<string, unknown>();
+      for (const value of [
+        ...(current as unknown[]),
+        ...(incoming as unknown[]),
+      ]) {
+        unique.set(JSON.stringify(value), value);
+      }
+      return [...unique.values()];
+    };
+    const fieldsToTransfer = {
+      activeOnTinder: destination.activeOnTinder || source.activeOnTinder,
+      activeOnHinge: destination.activeOnHinge || source.activeOnHinge,
+      activeOnBumble: destination.activeOnBumble || source.activeOnBumble,
+      activeOnHappn: destination.activeOnHappn || source.activeOnHappn,
+      activeOnOther: destination.activeOnOther || source.activeOnOther,
+      otherDatingApps: [
+        ...new Set([
+          ...(destination.otherDatingApps ?? []),
+          ...(source.otherDatingApps ?? []),
+        ]),
+      ],
+      languages: [...new Set([...destination.languages, ...source.languages])],
+      currentHotness: destination.currentHotness ?? source.currentHotness,
+      currentHappiness: destination.currentHappiness ?? source.currentHappiness,
+      timeZone: destination.timeZone ?? source.timeZone,
+      city: destination.city ?? source.city,
+      country: destination.country ?? source.country,
+      region: destination.region ?? source.region,
+      continent: destination.continent ?? source.continent,
+      firstStartedWithDatingApps:
+        destination.firstStartedWithDatingApps ??
+        source.firstStartedWithDatingApps,
+      happinessHistory: mergeHistory(
+        destination.happinessHistory,
+        source.happinessHistory,
+      ),
+      hotnessHistory: mergeHistory(
+        destination.hotnessHistory,
+        source.hotnessHistory,
+      ),
+      locationHistory: mergeHistory(
+        destination.locationHistory,
+        source.locationHistory,
+      ),
+      pastDatingApps: mergeHistory(
+        destination.pastDatingApps,
+        source.pastDatingApps,
+      ),
+      relationshipHistory: mergeHistory(
+        destination.relationshipHistory,
+        source.relationshipHistory,
+      ),
+    };
+
     // Transfer Tinder profiles
     const tinderProfilesUpdated = await tx
       .update(tinderProfileTable)
@@ -193,13 +316,24 @@ export async function transferAnonymousUserData(
       `[Anonymous] Transferred ${feedbackUpdated.rowCount ?? 0} profile comparison feedback records`,
     );
 
+    // Preserve generated/purchased artifacts and user-defined cohorts before
+    // deleting the source account, whose foreign keys otherwise cascade.
+    await tx
+      .update(aiOutputTable)
+      .set({ userId: toUserId })
+      .where(eq(aiOutputTable.userId, fromUserId));
+    await tx
+      .update(cohortDefinitionTable)
+      .set({ createdByUserId: toUserId })
+      .where(eq(cohortDefinitionTable.createdByUserId, fromUserId));
+
     // Transfer user preferences and data
     await tx
       .update(userTable)
       .set(fieldsToTransfer)
       .where(eq(userTable.id, toUserId));
     console.log(
-      `[Anonymous] Transferred user data (${Object.keys(fieldsToTransfer).length} fields): ${fieldsToTransfer.swipestatsTier}`,
+      `[Anonymous] Transferred application preferences (${Object.keys(fieldsToTransfer).length} fields); destination billing preserved`,
     );
 
     // Better Auth's native anonymous deletion is disabled. Delete here so the

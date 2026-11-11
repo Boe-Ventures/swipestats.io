@@ -1,6 +1,6 @@
 import { syncHingeSubscriptionEvents } from "./hinge-subscription-events";
 import { hingeCsvUploadMetrics } from "@/lib/hinge/csv-activity";
-import { eq } from "drizzle-orm";
+import { eq, inArray, or } from "drizzle-orm";
 import type {
   AnonymizedHingeDataJSON,
   PromptEntry,
@@ -8,18 +8,19 @@ import type {
 import { withTransaction, db } from "@/server/db";
 import {
   hingeProfileTable,
+  userTable,
   matchTable,
   mediaTable,
   messageTable,
   hingePromptTable,
   hingeInteractionTable,
-  originalAnonymizedFileTable,
   profileMetaTable,
   type HingeProfile,
   type HingePromptInsert,
 } from "@/server/db/schema";
 import { createId } from "@/server/db/utils";
 import { fetchVerifiedHingeBlob } from "./hinge-blob.service";
+import { archiveHingeUploadInTx } from "./hinge-archive.service";
 import { transformHingeJsonToProfile } from "./hinge-transform.service";
 import { createHingeMessagesAndMatches } from "./hinge-messages.service";
 import { createHingeProfileMeta } from "./hinge-meta.service";
@@ -121,7 +122,7 @@ export async function createHingeProfile(data: {
     (await fetchVerifiedHingeBlob(data.blobUrl, data.hingeId, {
       consume: data.consumeBlob ?? false,
     }));
-  const anonymizedHingeJson = filterHingeJsonByConsent(verifiedHingeJson, {
+  let anonymizedHingeJson = filterHingeJsonByConsent(verifiedHingeJson, {
     sharePhotos: data.consentPhotos ?? true,
     shareWorkInfo: data.consentWork ?? true,
   });
@@ -135,7 +136,7 @@ export async function createHingeProfile(data: {
   // 2. Transform JSON data to database format
   const transformStart = Date.now();
   console.log(`\n🔄 [2/6] Transforming profile data...`);
-  const profileData = transformHingeJsonToProfile(anonymizedHingeJson, {
+  let profileData = transformHingeJsonToProfile(anonymizedHingeJson, {
     hingeId: data.hingeId,
     userId: data.userId,
     timezone: data.timezone,
@@ -153,15 +154,15 @@ export async function createHingeProfile(data: {
     anonymizedHingeJson.Matches,
     data.hingeId,
   );
-  const interactionsInput = result.interactionsInput;
-  const matchesInput = result.matchesInput;
-  const messagesInput = result.messagesInput;
+  let interactionsInput = result.interactionsInput;
+  let matchesInput = result.matchesInput;
+  let messagesInput = result.messagesInput;
   console.log(`✅ Processed in ${Date.now() - messagesStart}ms`);
 
   // 4. Transform prompts
   const promptsStart = Date.now();
   console.log(`\n📝 [4/6] Processing prompts...`);
-  const promptsInput = transformHingePromptsForDb(
+  let promptsInput = transformHingePromptsForDb(
     anonymizedHingeJson.Prompts ?? [],
     data.hingeId,
   );
@@ -184,20 +185,33 @@ export async function createHingeProfile(data: {
     // job can take provider exclusivity without deadlocking a profile writer.
     await lockHingeProviderMutationsInTx(tx);
     await lockHingeProfileUploadsInTx(tx, [data.hingeId]);
-    // Insert original file reference (blob URL only - no raw JSON)
-    const fileStart = Date.now();
-    const fileId = createId("oaf");
-    await tx.insert(originalAnonymizedFileTable).values({
-      id: fileId,
-      dataProvider: "HINGE",
-      swipestatsVersion: "SWIPESTATS_4",
-      file: null, // No longer storing raw JSON
-      blobUrl: null, // Verified upload blobs are transient and consumed.
-      userId: data.userId,
+    const archive = await archiveHingeUploadInTx(tx, {
+      ...data,
+      verifiedJson: verifiedHingeJson,
     });
-    console.log(
-      `   ✓ Original file reference stored (${Date.now() - fileStart}ms, ID: ${fileId})`,
-    );
+    anonymizedHingeJson = archive.json;
+    if (!data.transientUpload) {
+      // Maintenance re-reads the retained source under the mutation locks. All
+      // derived rows must use those bytes, not an earlier parsed request value.
+      ({ interactionsInput, matchesInput, messagesInput } =
+        createHingeMessagesAndMatches(
+          anonymizedHingeJson.Matches,
+          data.hingeId,
+        ));
+      promptsInput = transformHingePromptsForDb(
+        anonymizedHingeJson.Prompts ?? [],
+        data.hingeId,
+      );
+    }
+    profileData = {
+      ...transformHingeJsonToProfile(anonymizedHingeJson, {
+        hingeId: data.hingeId,
+        userId: data.userId,
+        timezone: data.timezone,
+        country: data.country,
+      }),
+      archiveConsent: archive.policy,
+    };
 
     // Insert profile
     const profileStart = Date.now();
@@ -390,6 +404,10 @@ export async function updateHingeProfile(data: {
   country?: string;
   consumeBlob?: boolean;
   verifiedJson?: AnonymizedHingeDataJSON;
+  consentPhotos?: boolean;
+  consentWork?: boolean;
+  requireAnonymousOwner?: boolean;
+  transientUpload?: TransientUploadBinding;
 }): Promise<HingeProfileResult> {
   const startTime = Date.now();
 
@@ -399,11 +417,15 @@ export async function updateHingeProfile(data: {
   // Fetch JSON from blob storage
   const fetchStart = Date.now();
   console.log(`\n📥 Fetching Hinge data from blob storage...`);
-  const anonymizedHingeJson =
+  const verifiedHingeJson =
     data.verifiedJson ??
     (await fetchVerifiedHingeBlob(data.blobUrl, data.hingeId, {
       consume: data.consumeBlob ?? false,
     }));
+  let anonymizedHingeJson = filterHingeJsonByConsent(verifiedHingeJson, {
+    sharePhotos: data.consentPhotos ?? true,
+    shareWorkInfo: data.consentWork ?? true,
+  });
   console.log(`✅ Blob fetched in ${Date.now() - fetchStart}ms`);
 
   // Log JSON size
@@ -413,7 +435,7 @@ export async function updateHingeProfile(data: {
   // 1. Transform JSON data to database format
   const transformStart = Date.now();
   console.log(`\n🔄 [1/5] Transforming profile data...`);
-  const profileData = transformHingeJsonToProfile(anonymizedHingeJson, {
+  let profileData = transformHingeJsonToProfile(anonymizedHingeJson, {
     hingeId: data.hingeId,
     userId: data.userId,
     timezone: data.timezone,
@@ -428,15 +450,15 @@ export async function updateHingeProfile(data: {
     anonymizedHingeJson.Matches,
     data.hingeId,
   );
-  const interactionsInput = result.interactionsInput;
-  const matchesInput = result.matchesInput;
-  const messagesInput = result.messagesInput;
+  let interactionsInput = result.interactionsInput;
+  let matchesInput = result.matchesInput;
+  let messagesInput = result.messagesInput;
   console.log(`✅ Processed in ${Date.now() - messagesStart}ms`);
 
   // 3. Transform prompts
   const promptsStart = Date.now();
   console.log(`\n📝 [3/5] Processing prompts...`);
-  const promptsInput = transformHingePromptsForDb(
+  let promptsInput = transformHingePromptsForDb(
     anonymizedHingeJson.Prompts ?? [],
     data.hingeId,
   );
@@ -454,6 +476,7 @@ export async function updateHingeProfile(data: {
   const txStart = Date.now();
   console.log(`\n💾 [5/5] Starting database transaction...`);
   const profile = await withTransaction(async (tx) => {
+    await lockTransientUploadForMutationInTx(tx, data.transientUpload);
     await lockHingeProviderMutationsInTx(tx);
     await lockHingeProfileUploadsInTx(tx, [data.hingeId]);
     const ownedProfile = await tx.query.hingeProfileTable.findFirst({
@@ -465,12 +488,66 @@ export async function updateHingeProfile(data: {
         `Failed to replace Hinge profile ${data.hingeId}: ownership changed before processing.`,
       );
     }
+    if (data.requireAnonymousOwner) {
+      const owner = await tx.query.userTable.findFirst({
+        where: eq(userTable.id, data.userId),
+        columns: { isAnonymous: true },
+      });
+      if (owner?.isAnonymous !== true) {
+        throw new Error(
+          "Guest account changed before replacement. Refresh and try again.",
+        );
+      }
+    }
+    const archive = await archiveHingeUploadInTx(tx, {
+      ...data,
+      verifiedJson: verifiedHingeJson,
+    });
+    anonymizedHingeJson = archive.json;
+    if (!data.transientUpload) {
+      // Maintenance re-reads the retained source under the mutation locks. All
+      // derived rows must use those bytes, not an earlier parsed request value.
+      ({ interactionsInput, matchesInput, messagesInput } =
+        createHingeMessagesAndMatches(
+          anonymizedHingeJson.Matches,
+          data.hingeId,
+        ));
+      promptsInput = transformHingePromptsForDb(
+        anonymizedHingeJson.Prompts ?? [],
+        data.hingeId,
+      );
+    }
+    profileData = {
+      ...transformHingeJsonToProfile(anonymizedHingeJson, {
+        hingeId: data.hingeId,
+        userId: data.userId,
+        timezone: data.timezone,
+        country: data.country,
+      }),
+      archiveConsent: archive.policy,
+    };
     // Delete old related data
     console.log(
       `   ✓ Deleting old matches, messages, prompts, interactions, photos, and metadata...`,
     );
     const deleteStart = Date.now();
 
+    // message.match_id is not cascading. Include historical rows whose direct
+    // profile pointer is absent but whose match belongs to this profile.
+    await tx
+      .delete(messageTable)
+      .where(
+        or(
+          eq(messageTable.hingeProfileId, data.hingeId),
+          inArray(
+            messageTable.matchId,
+            tx
+              .select({ id: matchTable.id })
+              .from(matchTable)
+              .where(eq(matchTable.hingeProfileId, data.hingeId)),
+          ),
+        ),
+      );
     await tx
       .delete(matchTable)
       .where(eq(matchTable.hingeProfileId, data.hingeId));
@@ -495,6 +572,7 @@ export async function updateHingeProfile(data: {
       .update(hingeProfileTable)
       .set({
         ...profileData,
+        csvActivity: anonymizedHingeJson.CsvActivity ?? null,
         updatedAt: new Date(),
       })
       .where(hingeProfileOwnedBy(data.hingeId, data.userId))
@@ -626,8 +704,19 @@ export async function updateHingeProfile(data: {
     });
     console.log(`   ✓ Metadata inserted (${Date.now() - metaInsertStart}ms)`);
 
+    await syncHingeSubscriptionEvents(
+      tx,
+      data.userId,
+      anonymizedHingeJson.CsvActivity?.subscriptions,
+    );
+    await markTransientUploadCommittedInTx(
+      tx,
+      data.transientUpload,
+      data.hingeId,
+    );
     return profile;
   });
+  await cleanupCommittedTransientUpload(data.transientUpload?.id);
 
   console.log(`\n✅ Transaction completed in ${Date.now() - txStart}ms`);
 

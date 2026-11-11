@@ -7,7 +7,6 @@ import type {
 import { assertTinderProfileIdMatchesExport } from "@/lib/upload/tinder-profile-id";
 import { withTransaction, db, type TransactionClient } from "@/server/db";
 import {
-  aiOutputTable,
   jobTable,
   matchTable,
   mediaTable,
@@ -29,9 +28,14 @@ import { transformTinderJsonToProfile } from "./transform.service";
 import {
   assertTinderDataMatchesConsent,
   loadVerifiedAnonymizedTinderData,
+  tinderBirthDatesMatch,
+  tinderCreateDatesMatch,
 } from "./validation.service";
 import { createUsageRecords } from "./usage.service";
-import { lockTinderProfileUploadInTx } from "./upload-lock";
+import {
+  lockTinderProfileUploadInTx,
+  lockTinderProviderMutationsInTx,
+} from "./upload-lock";
 import {
   purgeTinderSwipeRankProfilesInTx,
   transferTinderSwipeRankOwnershipInTx,
@@ -42,6 +46,8 @@ import {
   markTransientUploadCommittedInTx,
   type TransientUploadBinding,
 } from "../transient-upload.service";
+
+import { resolveTinderUploadTarget } from "./tinder-upload-target";
 
 interface RemainingAnonymousUserDataRow extends Record<string, unknown> {
   has_remaining_data: boolean;
@@ -156,6 +162,7 @@ export async function transferProfileOwnership(
   console.log(`   To user: ${newUserId}`);
 
   await withTransaction(async (tx) => {
+    await lockTinderProviderMutationsInTx(tx);
     await lockTinderProfileUploadInTx(tx, tinderId);
     // Verify old user is anonymous (safety check)
     const oldUser = await tx.query.userTable.findFirst({
@@ -289,6 +296,8 @@ export async function createTinderProfile(data: {
   consentPhotos?: boolean;
   consentWork?: boolean;
   consumeBlob?: boolean;
+  verifiedTinderId?: string;
+  verifiedTinderJson?: AnonymizedTinderDataJSON;
   transientUpload?: TransientUploadBinding;
 }): Promise<TinderProfileResult> {
   const startTime = Date.now();
@@ -301,15 +310,37 @@ export async function createTinderProfile(data: {
   // 1. Fetch JSON from blob storage
   const fetchStart = Date.now();
   console.log(`\n📥 [1/6] Fetching Tinder data from blob storage...`);
-  const anonymizedTinderJson = await loadVerifiedAnonymizedTinderData(
-    data.blobUrl,
-    data.tinderId,
-    {
-      photos: data.consentPhotos ?? true,
-      work: data.consentWork ?? true,
-    },
-    { consume: data.consumeBlob ?? false },
+  const anonymizedTinderJson =
+    data.verifiedTinderJson ??
+    (await loadVerifiedAnonymizedTinderData(
+      data.blobUrl,
+      data.verifiedTinderId ?? data.tinderId,
+      {
+        photos: data.consentPhotos ?? true,
+        work: data.consentWork ?? true,
+      },
+      { consume: data.consumeBlob ?? false },
+    ));
+  await assertTinderProfileIdMatchesExport(
+    data.verifiedTinderId ?? data.tinderId,
+    anonymizedTinderJson,
   );
+  assertTinderDataMatchesConsent(anonymizedTinderJson, {
+    photos: data.consentPhotos ?? true,
+    work: data.consentWork ?? true,
+  });
+  const target = await resolveTinderUploadTarget({
+    userId: data.userId,
+    birthDate: anonymizedTinderJson.User.birth_date,
+    createDate: anonymizedTinderJson.User.create_date,
+  });
+  if (data.verifiedTinderId && data.tinderId !== target.tinderId) {
+    throw new Error(
+      "Tinder create target does not match the authenticated owner and export.",
+    );
+  }
+  // Legacy internal callers supply the export ID; new rows are always scoped.
+  data = { ...data, tinderId: target.tinderId };
   console.log(`✅ Blob fetched in ${Date.now() - fetchStart}ms`);
 
   // Log JSON size
@@ -374,6 +405,7 @@ export async function createTinderProfile(data: {
   const txStart = Date.now();
   console.log(`\n💾 [6/6] Starting database transaction...`);
   const profile = await withTransaction(async (tx) => {
+    await lockTinderProviderMutationsInTx(tx);
     await lockTransientUploadForMutationInTx(tx, data.transientUpload);
     await lockTinderProfileUploadInTx(tx, data.tinderId);
     // Insert original file reference (blob URL only - no raw JSON)
@@ -588,7 +620,7 @@ export async function replaceTinderProfileRevision(data: {
     data.verifiedTinderJson ??
     (await loadVerifiedAnonymizedTinderData(
       data.blobUrl,
-      data.tinderId,
+      data.verifiedTinderId ?? data.tinderId,
       {
         photos: data.consentPhotos ?? true,
         work: data.consentWork ?? true,
@@ -629,6 +661,7 @@ export async function replaceTinderProfileRevision(data: {
   );
 
   const result = await withTransaction(async (tx) => {
+    await lockTinderProviderMutationsInTx(tx);
     await lockTransientUploadForMutationInTx(tx, data.transientUpload);
     await lockTinderProfileUploadInTx(tx, data.tinderId);
 
@@ -642,6 +675,19 @@ export async function replaceTinderProfileRevision(data: {
       throw new Error(
         `Failed to replace profile ${data.tinderId}: ownership changed before processing.`,
       );
+    }
+
+    if (
+      !tinderBirthDatesMatch(
+        existing.birthDate,
+        anonymizedTinderJson.User.birth_date,
+      ) ||
+      !tinderCreateDatesMatch(
+        existing.createDate,
+        anonymizedTinderJson.User.create_date,
+      )
+    ) {
+      throw new Error("Cannot replace a different Tinder account's revision.");
     }
 
     await tx
@@ -665,9 +711,8 @@ export async function replaceTinderProfileRevision(data: {
     await tx
       .delete(schoolTable)
       .where(eq(schoolTable.tinderProfileId, data.tinderId));
-    await tx
-      .delete(aiOutputTable)
-      .where(eq(aiOutputTable.tinderProfileId, data.tinderId));
+    // Generated artifacts and purchase records are retained history. A new
+    // export updates insights, not the user's previously generated artifacts.
 
     const [profile] = await tx
       .update(tinderProfileTable)
@@ -750,6 +795,7 @@ export async function resetTinderProfile(tinderId: string): Promise<void> {
   console.log(`\n🗑️  Resetting profile: ${tinderId}`);
 
   await withTransaction(async (tx) => {
+    await lockTinderProviderMutationsInTx(tx);
     await lockTinderProfileUploadInTx(tx, tinderId);
     // Delete in order: messages → matches → usage → media → profileMeta → profile
     // messages first because they have onDelete: "restrict" on matchId

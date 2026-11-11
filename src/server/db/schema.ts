@@ -606,6 +606,15 @@ export const hingeProfileTable = pgTable(
   (t) => ({
     hingeId: t.text().primaryKey(),
     csvActivity: t.jsonb().$type<HingeCsvActivity>(),
+    // Persist replay consent so an older parsed export cannot restore withdrawn
+    // optional data. Legacy rows fail closed until the next consented upload.
+    archiveConsent: t.jsonb().$type<{
+      sharePhotos: boolean;
+      shareWorkInfo: boolean;
+      redactPhotos: boolean;
+      redactWorkInfo: boolean;
+      latestSourceId: string | null;
+    }>(),
     createdAt: t
       .timestamp()
       .$defaultFn(() => new Date())

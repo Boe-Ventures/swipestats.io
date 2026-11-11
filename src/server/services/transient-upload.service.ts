@@ -348,18 +348,17 @@ export async function cleanupTransientUploadsBatch(
 
   for (const candidate of candidates) {
     const isCommitted = candidate.status === "COMMITTED";
-    const archivedTinderExport =
+    const archivedExport =
       isCommitted &&
-      candidate.dataProvider === "TINDER" &&
       candidate.blobUrl &&
       (await db.query.originalAnonymizedFileTable.findFirst({
         where: and(
-          eq(originalAnonymizedFileTable.dataProvider, "TINDER"),
+          eq(originalAnonymizedFileTable.dataProvider, candidate.dataProvider),
           eq(originalAnonymizedFileTable.blobUrl, candidate.blobUrl),
         ),
         columns: { id: true },
       }));
-    if (archivedTinderExport) {
+    if (archivedExport) {
       continue;
     }
     let claimed: TransientUpload | undefined;
@@ -455,8 +454,8 @@ export async function cleanupTransientUploadsBatch(
 }
 
 /**
- * Delete only after the provider transaction committed. Cleanup failure is
- * recorded, never allowed to turn a successful profile commit into a failed
+ * Retain archived sources; delete other transport only after the provider
+ * transaction commits. Cleanup failure never turns a successful commit into a failed
  * response, and is retried by the data-layer cleanup command.
  */
 export async function cleanupCommittedTransientUpload(
@@ -470,6 +469,17 @@ export async function cleanupCommittedTransientUpload(
     if (!lease) return false;
     if (lease.status === "CLEANED") return true;
     if (lease.status !== "COMMITTED" || !lease.blobUrl) return false;
+
+    // Accepted source history is retained, not cleaned. Keep COMMITTED as
+    // truthful ledger evidence and allow committed retries to resolve normally.
+    const archive = await db.query.originalAnonymizedFileTable.findFirst({
+      where: and(
+        eq(originalAnonymizedFileTable.dataProvider, lease.dataProvider),
+        eq(originalAnonymizedFileTable.blobUrl, lease.blobUrl),
+      ),
+      columns: { id: true },
+    });
+    if (archive) return true;
 
     await cleanupTransientUploadsBatch({ limit: 1, uploadId });
     const refreshed = await db.query.transientUploadTable.findFirst({

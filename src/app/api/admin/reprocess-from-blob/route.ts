@@ -1,4 +1,8 @@
 import { NextResponse } from "next/server";
+import { deriveTinderProfileIdFromExport } from "@/lib/upload/tinder-profile-id";
+import { fetchBlobJson } from "@/server/services/blob.service";
+import { parseAnonymizedTinderData } from "@/server/services/profile/validation.service";
+import { resolveTinderUploadTarget } from "@/server/services/profile/tinder-upload-target";
 
 import {
   createTinderProfile,
@@ -10,6 +14,7 @@ import {
   getHingeProfile,
 } from "@/server/services/hinge/hinge.service";
 import { additiveUpdateHingeProfile } from "@/server/services/hinge/hinge-additive.service";
+import { fetchVerifiedHingeProfileBlob } from "@/server/services/hinge/hinge-blob.service";
 import { isAdminRequestAuthorized } from "@/lib/admin-request-auth";
 
 /**
@@ -55,6 +60,34 @@ export async function POST(request: Request) {
   try {
     if (provider === "tinder") {
       const existing = await getTinderProfile(profileId);
+      if (existing && existing.userId !== userId) {
+        throw new Error(
+          "The requested Tinder profile is not owned by this user.",
+        );
+      }
+      const verifiedTinderJson = parseAnonymizedTinderData(
+        await fetchBlobJson<unknown>(blobUrl),
+      );
+      const verifiedTinderId =
+        await deriveTinderProfileIdFromExport(verifiedTinderJson);
+      const target = await resolveTinderUploadTarget({
+        userId,
+        birthDate: verifiedTinderJson.User.birth_date,
+        createDate: verifiedTinderJson.User.create_date,
+        existingProfile: existing,
+      });
+      if (existing && !target.isSameAccount) {
+        throw new Error("This export does not match the owned Tinder account.");
+      }
+      if (
+        !existing &&
+        profileId !== verifiedTinderId &&
+        profileId !== target.tinderId
+      ) {
+        throw new Error(
+          "The requested Tinder ID does not match the export and owner.",
+        );
+      }
 
       if (existing) {
         console.log(
@@ -62,6 +95,8 @@ export async function POST(request: Request) {
         );
         const result = await replaceTinderProfileRevision({
           tinderId: profileId,
+          verifiedTinderId,
+          verifiedTinderJson,
           blobUrl,
           userId,
           timezone,
@@ -71,14 +106,16 @@ export async function POST(request: Request) {
           success: true,
           action: "updated",
           provider,
-          profileId,
+          profileId: result.profile.tinderId,
           metrics: result.metrics,
         });
       }
 
       console.log(`📝 [Admin] Creating new Tinder profile: ${profileId}`);
       const result = await createTinderProfile({
-        tinderId: profileId,
+        tinderId: target.tinderId,
+        verifiedTinderId,
+        verifiedTinderJson,
         blobUrl,
         userId,
         timezone,
@@ -88,13 +125,18 @@ export async function POST(request: Request) {
         success: true,
         action: "created",
         provider,
-        profileId,
+        profileId: result.profile.tinderId,
         metrics: result.metrics,
       });
     }
 
     // Hinge
     const existing = await getHingeProfile(profileId);
+    const verifiedJson = await fetchVerifiedHingeProfileBlob(blobUrl, {
+      hingeId: profileId,
+      userId,
+      existingProfile: existing,
+    });
 
     // This preflight only chooses create vs additive reconciliation. Both
     // mutation services acquire the canonical provider/profile advisory locks
@@ -104,6 +146,7 @@ export async function POST(request: Request) {
         `🔄 [Admin] Additive update for existing Hinge profile: ${profileId}`,
       );
       const result = await additiveUpdateHingeProfile({
+        verifiedJson,
         hingeId: profileId,
         blobUrl,
         userId,
@@ -121,6 +164,7 @@ export async function POST(request: Request) {
 
     console.log(`📝 [Admin] Creating new Hinge profile: ${profileId}`);
     const result = await createHingeProfile({
+      verifiedJson,
       hingeId: profileId,
       blobUrl,
       userId,
