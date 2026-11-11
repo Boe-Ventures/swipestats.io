@@ -9,7 +9,8 @@ const createCheckoutMock = mock(
     data: {
       data: { attributes: { url: "https://example.com/test-checkout" } },
     },
-    error: null,
+    error: null as Error | null,
+    statusCode: 201,
   }),
 );
 const getOrderItemMock = mock(async () => ({
@@ -26,8 +27,10 @@ const { createDatasetCheckout, getOrderDetails } =
   await import("./lemonSqueezy.service");
 
 let fetchSpy: ReturnType<typeof spyOn<typeof globalThis, "fetch">> | undefined;
+let errorSpy: ReturnType<typeof spyOn<typeof console, "error">> | undefined;
 afterEach(() => {
   fetchSpy?.mockRestore();
+  errorSpy?.mockRestore();
   createCheckoutMock.mockClear();
   getOrderItemMock.mockClear();
 });
@@ -43,7 +46,55 @@ function mockFetch(
   fetchSpy = spyOn(globalThis, "fetch").mockImplementation(replacement);
 }
 
-describe("dataset purchase quantities", () => {
+describe("dataset checkout and fulfillment", () => {
+  test("uses a plain receipt link for every tier and keeps redirect license keys out of query strings", async () => {
+    for (const tier of ["STARTER", "STANDARD", "FRESH", "PREMIUM"] as const) {
+      const result = await createDatasetCheckout(tier);
+      const options = createCheckoutMock.mock.lastCall?.[2]?.productOptions;
+      expect(options?.receiptLinkUrl).toEndWith("/research/download");
+      expect(options?.receiptLinkUrl).not.toContain("[license_key]");
+      expect(options?.redirectUrl).toEndWith(
+        "/research/download#licenseKey=[license_key]",
+      );
+      expect(options?.redirectUrl).not.toContain("?licenseKey=");
+      expect(result.checkoutUrl).toBe("https://example.com/test-checkout");
+    }
+  });
+
+  test("logs actionable provider failures without exposing email or license credentials", async () => {
+    const receiptField = "/data/attributes/product_options/receipt_link_url";
+    const privateValue = "fixture@example.com license-secret";
+    const providerError = new Error(privateValue, {
+      cause: [
+        { detail: privateValue, source: { pointer: receiptField } },
+        { source: { pointer: `/unexpected/${privateValue}` } },
+        null,
+      ],
+    });
+    createCheckoutMock.mockImplementationOnce(async () => ({
+      data: null as never,
+      error: providerError,
+      statusCode: 422,
+    }));
+    errorSpy = spyOn(console, "error").mockImplementation(() => undefined);
+
+    const failure: unknown = await createDatasetCheckout(
+      "STARTER",
+      "fixture@example.com",
+    ).catch((error: unknown) => error);
+    expect(failure).toEqual(
+      new Error("Unable to create dataset checkout. Please try again shortly."),
+    );
+    expect(errorSpy).toHaveBeenCalledWith("Dataset checkout creation failed", {
+      checkoutAttemptId: expect.stringMatching(/^chk_/) as string,
+      tier: "STARTER",
+      variantId: createCheckoutMock.mock.lastCall?.[1],
+      statusCode: 422,
+      validationFields: [receiptField],
+    });
+    expect(JSON.stringify(errorSpy.mock.calls)).not.toContain(privateValue);
+  });
+
   test("sends twelve Standard packs to the provider for a $600 checkout", async () => {
     const result = await createDatasetCheckout(
       "STANDARD",
