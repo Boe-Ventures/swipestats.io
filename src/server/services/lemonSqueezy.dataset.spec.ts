@@ -89,11 +89,57 @@ describe("dataset checkout and fulfillment", () => {
       checkoutAttemptId: expect.stringMatching(/^chk_/) as string,
       tier: "STARTER",
       variantId: createCheckoutMock.mock.lastCall?.[1],
+      reason: "provider_error",
       statusCode: 422,
       validationFields: [receiptField],
     });
     expect(JSON.stringify(errorSpy.mock.calls)).not.toContain(privateValue);
   });
+
+  test.each(["request_exception", "missing_checkout_url"] as const)(
+    "reports %s without leaking customer data or provider credentials",
+    async (reason) => {
+      const privateValue = "fixture@example.com license-secret";
+      createCheckoutMock.mockImplementationOnce(async () => {
+        if (reason === "request_exception") {
+          throw new Error(privateValue, { cause: { apiKey: privateValue } });
+        }
+        return {
+          data: {
+            data: {
+              attributes: { url: "", customerEmail: privateValue },
+            },
+          },
+          error: null,
+          statusCode: 201,
+        };
+      });
+      errorSpy = spyOn(console, "error").mockImplementation(() => undefined);
+
+      const failure: unknown = await createDatasetCheckout(
+        "STARTER",
+        "fixture@example.com",
+      ).catch((error: unknown) => error);
+      expect(failure).toEqual(
+        new Error(
+          "Unable to create dataset checkout. Please try again shortly.",
+        ),
+      );
+      expect(errorSpy).toHaveBeenCalledTimes(1);
+      expect(errorSpy).toHaveBeenCalledWith(
+        "Dataset checkout creation failed",
+        {
+          checkoutAttemptId: expect.stringMatching(/^chk_/) as string,
+          tier: "STARTER",
+          variantId: createCheckoutMock.mock.lastCall?.[1],
+          reason,
+          statusCode: reason === "request_exception" ? null : 201,
+          validationFields: [],
+        },
+      );
+      expect(JSON.stringify(errorSpy.mock.calls)).not.toContain(privateValue);
+    },
+  );
 
   test("sends twelve Standard packs to the provider for a $600 checkout", async () => {
     const result = await createDatasetCheckout(
