@@ -409,10 +409,28 @@ export async function createDatasetCheckout(
     );
   }
 
-  const { data, error, statusCode } = await createCheckout(
-    LEMON_SQUEEZY_CONFIG.storeId,
-    variantId,
-    {
+  const checkoutFailure = (
+    reason: "provider_error" | "request_exception" | "missing_checkout_url",
+    statusCode: number | null = null,
+    validationFields: string[] = [],
+  ) => {
+    // Never include provider messages, thrown errors, or checkout payloads.
+    console.error("Dataset checkout creation failed", {
+      checkoutAttemptId,
+      tier,
+      variantId,
+      reason,
+      statusCode,
+      validationFields,
+    });
+    return new Error(
+      "Unable to create dataset checkout. Please try again shortly.",
+    );
+  };
+
+  let checkout: Awaited<ReturnType<typeof createCheckout>>;
+  try {
+    checkout = await createCheckout(LEMON_SQUEEZY_CONFIG.storeId, variantId, {
       expiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
       checkoutData: {
         email,
@@ -439,9 +457,12 @@ export async function createDatasetCheckout(
         receiptLinkUrl: `${env.NEXT_PUBLIC_BASE_URL}/research/download`,
         enabledVariants: [Number(variantId)],
       },
-    },
-  );
+    });
+  } catch {
+    throw checkoutFailure("request_exception");
+  }
 
+  const { data, error, statusCode } = checkout;
   if (error) {
     // Only log known field names, never provider details or checkout payloads.
     const validationFields = Array.isArray(error.cause)
@@ -469,20 +490,11 @@ export async function createDatasetCheckout(
             : [];
         })
       : [];
-    console.error("Dataset checkout creation failed", {
-      checkoutAttemptId,
-      tier,
-      variantId,
-      statusCode,
-      validationFields,
-    });
-    throw new Error(
-      "Unable to create dataset checkout. Please try again shortly.",
-    );
+    throw checkoutFailure("provider_error", statusCode, validationFields);
   }
 
   if (!data?.data?.attributes?.url) {
-    throw new Error("Checkout URL not returned from LemonSqueezy");
+    throw checkoutFailure("missing_checkout_url", statusCode);
   }
 
   return {
