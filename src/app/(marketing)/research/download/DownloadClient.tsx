@@ -5,6 +5,7 @@ import { consumeResearchReceipt } from "@/lib/research/receipt-access";
 import {
   ArrowDownTrayIcon,
   CheckCircleIcon,
+  InformationCircleIcon,
 } from "@heroicons/react/24/outline";
 import { useTRPC, useTRPCClient, type RouterOutputs } from "@/trpc/react";
 import type { TRPCClientError } from "@trpc/client";
@@ -15,6 +16,7 @@ import {
 } from "@/lib/research/native-download";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/components/ui/lib/utils";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
 
 export function DownloadClient() {
   const [licenseKey, setLicenseKey] = useState("");
@@ -152,7 +154,7 @@ export function DownloadClient() {
             Download Your Dataset
           </h1>
           <p className="dark:text-muted-foreground mt-6 text-lg leading-8 text-gray-600">
-            Enter your license key from the LemonSqueezy email to access and
+            Enter your license key from the Lemon Squeezy email to access and
             download your purchased dataset.
           </p>
         </div>
@@ -180,6 +182,29 @@ export function DownloadClient() {
           {!licenseKey ? (
             // License key input form
             <div className="dark:bg-background rounded-lg bg-gray-50 p-8">
+              <Alert
+                variant="info"
+                role="note"
+                id="license-key-help"
+                className="mb-6"
+              >
+                <InformationCircleIcon aria-hidden="true" />
+                <AlertTitle>Find your license key</AlertTitle>
+                <AlertDescription>
+                  <p>
+                    Open your receipt from{" "}
+                    <strong>Swipestats (via Lemon Squeezy)</strong>. Copy the
+                    code labeled <strong>License key:</strong> below the order
+                    total, just above <strong>Download your dataset</strong>,
+                    and paste it here.
+                  </p>
+                  <p>
+                    Can&apos;t find it? Search your inbox for{" "}
+                    <strong>Your Research Dataset</strong> and check your spam
+                    folder.
+                  </p>
+                </AlertDescription>
+              </Alert>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
                   <label
@@ -193,16 +218,13 @@ export function DownloadClient() {
                       type="text"
                       name="license-key"
                       id="license-key"
+                      aria-describedby="license-key-help"
                       value={inputValue}
                       onChange={(e) => setInputValue(e.target.value)}
                       className="dark:text-foreground dark:ring-border dark:placeholder:text-muted-foreground block w-full rounded-md border-0 px-3 py-2 text-gray-900 shadow-sm ring-1 ring-gray-300 ring-inset placeholder:text-gray-400 focus:ring-2 focus:ring-rose-600 focus:ring-inset sm:text-sm sm:leading-6"
                       placeholder="Enter your license key"
                     />
                   </div>
-                  <p className="dark:text-muted-foreground mt-2 text-sm text-gray-500">
-                    Your license key was sent to your email from LemonSqueezy
-                    after purchase.
-                  </p>
                 </div>
                 <button
                   type="submit"

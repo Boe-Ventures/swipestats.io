@@ -63,14 +63,37 @@ describe("dataset checkout and fulfillment", () => {
 
   test("logs actionable provider failures without exposing email or license credentials", async () => {
     const receiptField = "/data/attributes/product_options/receipt_link_url";
-    const privateValue = "fixture@example.com license-secret";
-    const providerError = new Error(privateValue, {
-      cause: [
-        { detail: privateValue, source: { pointer: receiptField } },
-        { source: { pointer: `/unexpected/${privateValue}` } },
-        null,
-      ],
-    });
+    const otherField = "/data/attributes/product_options/receipt_button_text";
+    const email = "fixture@example.com";
+    const license = "AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE";
+    const apiKey = process.env.LEMON_SQUEEZY_API_KEY!;
+    const providerError = Object.assign(
+      new Error(`Invalid checkout for ${email}`, {
+        cause: [
+          {
+            status: "422",
+            title: "Validation Error",
+            detail: `The receipt link URL is invalid: https://example.com/download#licenseKey=${license}`,
+            source: { pointer: receiptField },
+          },
+          {
+            detail: "The receipt button text must be a string.",
+            source: { pointer: otherField },
+            meta: { constraint: "string", licenseKey: license },
+          },
+          new Error(
+            `License ${license} rejected for ${encodeURIComponent(email)}`,
+          ),
+        ],
+      }),
+      {
+        code: "CHECKOUT_INVALID",
+        toJSON: () => email,
+        authorization: `Bearer ${apiKey}`,
+        request: { customerEmail: email, body: "private request data" },
+        diagnostic: `Credential ${apiKey} rejected`,
+      },
+    );
     createCheckoutMock.mockImplementationOnce(async () => ({
       data: null as never,
       error: providerError,
@@ -85,21 +108,62 @@ describe("dataset checkout and fulfillment", () => {
     expect(failure).toEqual(
       new Error("Unable to create dataset checkout. Please try again shortly."),
     );
-    expect(errorSpy).toHaveBeenCalledWith("Dataset checkout creation failed", {
+    expect(errorSpy).toHaveBeenCalledTimes(1);
+    expect(errorSpy.mock.calls[0]?.[0]).toBe(
+      "Dataset checkout creation failed",
+    );
+    const details: unknown = JSON.parse(errorSpy.mock.calls[0]?.[1] as string);
+    expect(details).toEqual({
       checkoutAttemptId: expect.stringMatching(/^chk_/) as string,
       tier: "STARTER",
       variantId: createCheckoutMock.mock.lastCall?.[1],
       reason: "provider_error",
       statusCode: 422,
-      validationFields: [receiptField],
+      error: expect.objectContaining({
+        name: "Error",
+        message: "Invalid checkout for [REDACTED]",
+        stack: expect.stringContaining(
+          "Error: Invalid checkout for [REDACTED]",
+        ) as string,
+        code: "CHECKOUT_INVALID",
+        authorization: "[REDACTED]",
+        request: "[REDACTED]",
+        diagnostic: "Credential [REDACTED] rejected",
+        cause: [
+          {
+            status: "422",
+            title: "Validation Error",
+            detail: "The receipt link URL is invalid: [REDACTED URL]",
+            source: { pointer: receiptField },
+          },
+          {
+            detail: "The receipt button text must be a string.",
+            source: { pointer: otherField },
+            meta: { constraint: "string", licenseKey: "[REDACTED]" },
+          },
+          expect.objectContaining({
+            message: "License [REDACTED] rejected for [REDACTED]",
+          }),
+        ],
+      }) as unknown,
     });
-    expect(JSON.stringify(errorSpy.mock.calls)).not.toContain(privateValue);
+    const logged = JSON.stringify(errorSpy.mock.calls);
+    for (const privateValue of [
+      email,
+      encodeURIComponent(email),
+      license,
+      apiKey,
+      "private request data",
+    ]) {
+      expect(logged).not.toContain(privateValue);
+    }
   });
 
   test.each(["request_exception", "missing_checkout_url"] as const)(
     "reports %s without leaking customer data or provider credentials",
     async (reason) => {
-      const privateValue = "fixture@example.com license-secret";
+      const privateValue =
+        "fixture@example.com AAAAAAAA-BBBB-CCCC-DDDD-EEEEEEEEEEEE";
       createCheckoutMock.mockImplementationOnce(async () => {
         if (reason === "request_exception") {
           throw new Error(privateValue, { cause: { apiKey: privateValue } });
@@ -126,17 +190,26 @@ describe("dataset checkout and fulfillment", () => {
         ),
       );
       expect(errorSpy).toHaveBeenCalledTimes(1);
-      expect(errorSpy).toHaveBeenCalledWith(
+      expect(errorSpy.mock.calls[0]?.[0]).toBe(
         "Dataset checkout creation failed",
-        {
-          checkoutAttemptId: expect.stringMatching(/^chk_/) as string,
-          tier: "STARTER",
-          variantId: createCheckoutMock.mock.lastCall?.[1],
-          reason,
-          statusCode: reason === "request_exception" ? null : 201,
-          validationFields: [],
-        },
       );
+      const details: unknown = JSON.parse(
+        errorSpy.mock.calls[0]?.[1] as string,
+      );
+      expect(details).toEqual({
+        checkoutAttemptId: expect.stringMatching(/^chk_/) as string,
+        tier: "STARTER",
+        variantId: createCheckoutMock.mock.lastCall?.[1],
+        reason,
+        statusCode: reason === "request_exception" ? null : 201,
+        error:
+          reason === "request_exception"
+            ? (expect.objectContaining({
+                message: "[REDACTED] [REDACTED]",
+                cause: { apiKey: "[REDACTED]" },
+              }) as unknown)
+            : undefined,
+      });
       expect(JSON.stringify(errorSpy.mock.calls)).not.toContain(privateValue);
     },
   );
