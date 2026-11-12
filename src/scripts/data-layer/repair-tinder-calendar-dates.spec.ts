@@ -6,7 +6,7 @@ process.env.DATABASE_URL = "postgresql://test:test@localhost:5432/test";
 const { applyTinderCalendarDateRepair } =
   await import("./repair-tinder-calendar-dates");
 describe("Tinder calendar-date repair", () => {
-  test("rolls back when a selected profile still lacks metadata", async () => {
+  test("aborts when the metadata postcondition fails", async () => {
     let queryCount = 0;
     const tx = {
       execute: async () => {

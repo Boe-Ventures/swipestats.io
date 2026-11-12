@@ -12,6 +12,7 @@ import { isResearchLicenseValid } from "@/lib/research/access-policy";
 import { env, envSelect } from "@/env";
 import type { BillingProvider, BillingSurface } from "@/lib/validators";
 import { createId } from "@/server/db/utils";
+import { sanitizeCheckoutError } from "./checkout-error-log";
 
 // Initialize SDK on module load
 lemonSqueezySetup({ apiKey: env.LEMON_SQUEEZY_API_KEY });
@@ -412,17 +413,20 @@ export async function createDatasetCheckout(
   const checkoutFailure = (
     reason: "provider_error" | "request_exception" | "missing_checkout_url",
     statusCode: number | null = null,
-    validationFields: string[] = [],
+    error?: unknown,
   ) => {
-    // Never include provider messages, thrown errors, or checkout payloads.
-    console.error("Dataset checkout creation failed", {
-      checkoutAttemptId,
-      tier,
-      variantId,
-      reason,
-      statusCode,
-      validationFields,
-    });
+    // Serialize the record so Node does not collapse nested causes to [Object].
+    console.error(
+      "Dataset checkout creation failed",
+      JSON.stringify({
+        checkoutAttemptId,
+        tier,
+        variantId,
+        reason,
+        statusCode,
+        error: sanitizeCheckoutError(error, [email, env.LEMON_SQUEEZY_API_KEY]),
+      }),
+    );
     return new Error(
       "Unable to create dataset checkout. Please try again shortly.",
     );
@@ -458,39 +462,13 @@ export async function createDatasetCheckout(
         enabledVariants: [Number(variantId)],
       },
     });
-  } catch {
-    throw checkoutFailure("request_exception");
+  } catch (error) {
+    throw checkoutFailure("request_exception", null, error);
   }
 
   const { data, error, statusCode } = checkout;
   if (error) {
-    // Only log known field names, never provider details or checkout payloads.
-    const validationFields = Array.isArray(error.cause)
-      ? error.cause.flatMap((issue: unknown) => {
-          if (
-            !issue ||
-            typeof issue !== "object" ||
-            !("source" in issue) ||
-            !issue.source ||
-            typeof issue.source !== "object" ||
-            !("pointer" in issue.source)
-          )
-            return [];
-          const pointer = issue.source.pointer;
-          return typeof pointer === "string" &&
-            [
-              "/data/attributes/product_options/receipt_link_url",
-              "/data/attributes/product_options/redirect_url",
-              "/data/attributes/checkout_data/email",
-              "/data/attributes/checkout_data/variant_quantities",
-              "/data/relationships/store",
-              "/data/relationships/variant",
-            ].includes(pointer)
-            ? [pointer]
-            : [];
-        })
-      : [];
-    throw checkoutFailure("provider_error", statusCode, validationFields);
+    throw checkoutFailure("provider_error", statusCode, error);
   }
 
   if (!data?.data?.attributes?.url) {

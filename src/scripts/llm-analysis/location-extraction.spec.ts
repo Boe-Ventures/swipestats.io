@@ -60,7 +60,7 @@ describe("location backfill safeguards", () => {
     ).toBe(false);
     expect(statements).toHaveLength(1);
   });
-  it("lets AI weigh conflicting clues without rule-based prefills or fallback guesses", async () => {
+  it("preserves supplied model results and abstention instead of overriding them with old hints", async () => {
     const subject: LocationSubject = {
       userId: "u",
       location: { timeZone: "America/New_York" },
