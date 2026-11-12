@@ -47,7 +47,9 @@ Run `bun test src/lib/research` and the repository gate `bun check`. Tests cover
 
 ### Checkout integration checks
 
-The dataset service suite protects the receipt/redirect distinction for every tier and checks that provider failures produce useful diagnostics without logging customer email, license keys, API credentials or checkout payloads. The download form explains the receipt layout: the **License key:** block sits below the order total and above **Download your dataset**. These mocked tests do not prove that the provider still accepts the request.
+Checkout acceptance is verified with Lemon Squeezy, not a mocked successful response. Local tests cover log redaction and our fulfillment quantity/failure decisions only. They cannot establish that the provider accepts a URL, variant or checkout request.
+
+The download form explains the receipt layout: the **License key:** block sits below the order total and above **Download your dataset**.
 
 After checkout integration changes, run an authorized unpaid smoke check from `/research` for Starter and Standard. Confirm each request returns a checkout URL and the hosted checkout shows the intended product, quantity and price. Do not enter customer email or payment information, complete a purchase, or share the temporary checkout URLs. Created checkout links expire after 30 minutes. Verify paid fulfillment separately with an authorized test-mode purchase when that flow changes.
 

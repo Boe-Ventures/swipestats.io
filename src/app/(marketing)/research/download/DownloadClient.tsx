@@ -192,11 +192,10 @@ export function DownloadClient() {
                 <AlertTitle>Find your license key</AlertTitle>
                 <AlertDescription>
                   <p>
-                    Open your receipt from{" "}
-                    <strong>Swipestats (via Lemon Squeezy)</strong>. Copy the
-                    code labeled <strong>License key:</strong> below the order
-                    total, just above <strong>Download your dataset</strong>,
-                    and paste it here.
+                    In your <strong>Swipestats (via Lemon Squeezy)</strong>{" "}
+                    receipt, copy the <strong>License key</strong> below the
+                    order total and above <strong>Download your dataset</strong>
+                    . Paste it here.
                   </p>
                   <p>
                     Can&apos;t find it? Search your inbox for{" "}

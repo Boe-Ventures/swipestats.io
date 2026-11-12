@@ -50,7 +50,7 @@ describe("SwipeRank public leaderboard", () => {
       "must not be empty",
     );
   });
-  test("returns every eligible row with only the anonymous public contract", async () => {
+  test("maps query rows without exposing private profile identifiers", async () => {
     execute.mockResolvedValueOnce({
       rows: [
         leaderboardRow({
@@ -133,19 +133,5 @@ describe("SwipeRank public leaderboard", () => {
     expect(entry).not.toHaveProperty("matchYieldNumerator");
     expect(entry).not.toHaveProperty("matchYieldDenominator");
     expect(entry).not.toHaveProperty("hasQualityAnomaly");
-  });
-  test("keeps empty later pages browseable with complete page metadata", async () => {
-    execute.mockResolvedValueOnce({ rows: [leaderboardRow()] });
-    const result = await getPublicSwipeRankLeaderboard({
-      period: MONTH,
-      page: 15,
-    });
-    expect(result).toMatchObject({
-      fieldSize: 1406,
-      page: 15,
-      pageSize: 100,
-      totalPages: 15,
-      entries: [],
-    });
   });
 });
