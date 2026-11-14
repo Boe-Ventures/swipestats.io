@@ -1,0 +1,386 @@
+"use client";
+
+import { useState, type ReactNode } from "react";
+import { CheckIcon } from "@heroicons/react/20/solid";
+import { cn } from "@/components/ui/lib/utils";
+import { useDomain } from "@/domain/react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useAnalytics } from "@/contexts/AnalyticsProvider";
+import { SectionHead, marketingButton } from "../_components/marketing-ui";
+
+type Tier = {
+  name: string;
+  id: string;
+  apiTier: "STARTER" | "STANDARD" | "FRESH" | "PREMIUM" | null;
+  price: string;
+  quantity?: number;
+  description: string;
+  features: string[];
+  badge?: { label: string; variant: "rose" | "gray" | "pill" };
+  popular?: boolean;
+  dark?: boolean;
+  cta: string;
+  twoCol?: boolean;
+};
+
+const tiers: Tier[] = [
+  {
+    name: "Starter Pack",
+    id: "starter",
+    apiTier: "STARTER",
+    price: "$15",
+    description: "Test your hypothesis with real data.",
+    features: [
+      "10 profiles",
+      "Email support",
+      "Personal use",
+      "Great for small projects",
+    ],
+    cta: "Buy dataset",
+  },
+  {
+    name: "Standard",
+    id: "standard",
+    apiTier: "STANDARD",
+    price: "$50",
+    description: "The go-to for creators and researchers.",
+    badge: { label: "Best value", variant: "rose" },
+    features: [
+      "1,000 profiles",
+      "Commercial use",
+      "Publication rights",
+      "$0.05 / profile",
+    ],
+    cta: "Buy dataset",
+  },
+  {
+    name: "Fresh",
+    id: "fresh",
+    apiTier: "FRESH",
+    price: "$150",
+    description: "The most recent data available.",
+    badge: { label: "Most popular", variant: "pill" },
+    popular: true,
+    features: [
+      "1,000 newest profiles",
+      "Priority support",
+      "Commercial + publication",
+      "Latest dating trends",
+    ],
+    cta: "Buy dataset",
+  },
+  {
+    name: "Premium",
+    id: "premium",
+    apiTier: "PREMIUM",
+    price: "$300",
+    description: "Serious research with statistical significance.",
+    badge: { label: "3,000 profiles", variant: "gray" },
+    twoCol: true,
+    features: [
+      "3,000 newest profiles",
+      "Priority support",
+      "Deep market analysis",
+      "Commercial + publication",
+    ],
+    cta: "Buy dataset",
+  },
+  {
+    name: "Academic Research",
+    id: "academic",
+    apiTier: null,
+    price: "From $1,500",
+    description: "A dataset scoped to your study, prepared with our team.",
+    badge: { label: "Institutions", variant: "gray" },
+    dark: true,
+    twoCol: true,
+    features: [
+      "5,000+ profiles",
+      "Dated read-only database snapshot",
+      "Message data by agreement",
+      "Help working with the data",
+    ],
+    cta: "Discuss your study",
+  },
+];
+
+function Badge({ badge }: { badge: NonNullable<Tier["badge"]> }) {
+  if (badge.variant === "pill") {
+    return (
+      <span className="inline-flex items-center gap-2 rounded-full border border-rose-600/20 bg-rose-50 px-3 py-1.5 text-[13px] leading-none font-semibold text-rose-700 dark:bg-rose-950/40 dark:text-rose-400">
+        {badge.label}
+      </span>
+    );
+  }
+  return (
+    <span
+      className={cn(
+        "rounded-md border px-2 py-1 font-mono text-[11px] font-medium tracking-[0.04em] whitespace-nowrap uppercase",
+        badge.variant === "rose"
+          ? "border-rose-600/20 bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400"
+          : "dark:border-border dark:bg-muted dark:text-muted-foreground border-gray-200 bg-gray-100 text-gray-600",
+      )}
+    >
+      {badge.label}
+    </span>
+  );
+}
+
+function TierCard({
+  tier,
+  loadingTier,
+  onCheckout,
+  children,
+}: {
+  tier: Tier;
+  loadingTier: string | null;
+  onCheckout: (tier: Tier) => void;
+  children?: ReactNode;
+}) {
+  const isLoading = loadingTier === tier.id;
+
+  return (
+    <div
+      className={cn(
+        "flex flex-col rounded-3xl border p-7",
+        tier.popular
+          ? "border-2 border-rose-600 shadow-[0_2px_6px_oklch(0.2_0.02_286/0.05),0_12px_28px_oklch(0.2_0.02_286/0.08)]"
+          : "dark:border-border border-gray-200",
+        tier.dark
+          ? "border-gray-950 bg-gray-950 text-white"
+          : "dark:bg-card dark:text-foreground bg-white text-gray-900",
+      )}
+    >
+      <div className="flex items-center justify-between gap-2.5">
+        <span
+          className={cn(
+            "text-[17px] font-bold",
+            tier.popular && "text-rose-600 dark:text-rose-400",
+          )}
+        >
+          {tier.name}
+        </span>
+        {tier.badge ? <Badge badge={tier.badge} /> : null}
+      </div>
+
+      <p
+        className={cn(
+          "mt-2 min-h-[38px] text-[13.5px]",
+          tier.dark
+            ? "dark:text-muted-foreground text-gray-400"
+            : "dark:text-muted-foreground text-gray-500",
+        )}
+      >
+        {tier.description}
+      </p>
+
+      {children}
+
+      <div className="mt-[18px] text-[38px] font-bold tracking-[-0.03em] tabular-nums">
+        {tier.price}
+      </div>
+
+      <ul
+        className={cn(
+          "mt-5 flex-1",
+          tier.twoCol
+            ? "grid grid-cols-2 gap-[11px]"
+            : "flex flex-col gap-[11px]",
+        )}
+      >
+        {tier.features.map((feature) => (
+          <li
+            key={feature}
+            className={cn(
+              "flex gap-2.5 text-[14px]",
+              tier.dark
+                ? "text-gray-300"
+                : "dark:text-muted-foreground text-gray-700",
+            )}
+          >
+            <CheckIcon className="mt-px h-[18px] w-[18px] flex-none text-rose-600 dark:text-rose-400" />
+            {feature}
+          </li>
+        ))}
+      </ul>
+
+      <button
+        onClick={() => onCheckout(tier)}
+        disabled={isLoading}
+        className={cn(
+          "mt-6 w-full",
+          marketingButton({
+            variant: tier.popular ? "primary" : tier.dark ? "white" : "ghost",
+          }),
+          isLoading && "cursor-wait opacity-50",
+        )}
+      >
+        {isLoading ? "Loading…" : tier.cta}
+      </button>
+    </div>
+  );
+}
+
+export function ResearchPricingSection() {
+  const [standardQuantity, setStandardQuantity] = useState(1);
+  const [loadingTier, setLoadingTier] = useState<string | null>(null);
+  const domain = useDomain();
+  const { trackEvent } = useAnalytics();
+  const availability = useQuery(domain.research.availability.queryOptions());
+
+  const createCheckout = useMutation(
+    domain.research.createCheckout.mutationOptions({
+      onSuccess: (data) => {
+        window.location.href = data.checkoutUrl;
+      },
+      onError: (error) => {
+        console.error("Failed to create checkout:", error);
+        alert("Failed to create checkout. Please try again.");
+        setLoadingTier(null);
+      },
+    }),
+  );
+
+  const handleCheckout = (tier: Tier) => {
+    if (tier.id === "academic") {
+      trackEvent("dataset_academic_inquiry_clicked", {
+        source: "research_pricing",
+        price: tier.price,
+      });
+      window.location.href =
+        "mailto:kris@swipestats.io?subject=Academic%20License%20Inquiry";
+      return;
+    }
+
+    if (!tier.apiTier) return;
+
+    setLoadingTier(tier.id);
+    const price = Number(tier.price.replace(/[^0-9.]/g, ""));
+    trackEvent("dataset_checkout_clicked", {
+      tier: tier.apiTier,
+      price,
+      source: "research_pricing",
+    });
+    createCheckout.mutate({
+      tier: tier.apiTier,
+      quantity: tier.quantity ?? 1,
+      surface: "research_pricing",
+    });
+  };
+
+  const topTiers = tiers.slice(0, 3).map((tier) =>
+    tier.id === "standard"
+      ? {
+          ...tier,
+          quantity: standardQuantity,
+          price: `$${50 * standardQuantity}`,
+          features: [
+            `${(1000 * standardQuantity).toLocaleString("en-US")} profiles`,
+            ...tier.features.slice(1),
+          ],
+        }
+      : tier,
+  );
+  const bottomTiers = tiers.slice(3);
+
+  return (
+    <section id="pricing" className="py-[88px] max-[720px]:py-[60px]">
+      <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
+        <SectionHead
+          center
+          eyebrow="Pricing"
+          title="Choose your dataset"
+          lead="Buy a fixed-size download, or work with us on a larger academic dataset."
+        />
+
+        <div className="dark:bg-background mt-8 grid gap-6 rounded-2xl bg-gray-50 p-6 sm:grid-cols-2">
+          <div>
+            <h3 className="dark:text-foreground font-semibold text-gray-900">
+              Purchased datasets
+            </h3>
+            <p className="dark:text-muted-foreground mt-2 text-sm leading-6 text-gray-600">
+              Choose Starter, Standard, Fresh, or Premium. After checkout, use
+              your emailed license key to download the JSONL file once it is
+              ready. Each package contains a fixed number of profiles.
+            </p>
+          </div>
+          <div>
+            <h3 className="dark:text-foreground font-semibold text-gray-900">
+              Academic research packages
+            </h3>
+            <p className="dark:text-muted-foreground mt-2 text-sm leading-6 text-gray-600">
+              For larger studies, we agree on the profile count, fields, and
+              delivery date with you. We can prepare a dated database snapshot
+              with read-only access. Message-level data and later refreshes are
+              agreed as part of your package.
+            </p>
+          </div>
+        </div>
+
+        <div className="mt-12 grid grid-cols-1 gap-5 max-[900px]:mx-auto max-[900px]:max-w-[420px] lg:grid-cols-3">
+          {topTiers.map((tier) => (
+            <TierCard
+              key={tier.id}
+              tier={tier}
+              loadingTier={loadingTier}
+              onCheckout={handleCheckout}
+            >
+              {tier.id === "standard" && (
+                <div className="mt-4 flex flex-col gap-2">
+                  <label
+                    htmlFor="standard-quantity"
+                    className="text-sm font-semibold"
+                  >
+                    Standard dataset size
+                  </label>
+                  <select
+                    id="standard-quantity"
+                    value={standardQuantity}
+                    onChange={(event) =>
+                      setStandardQuantity(Number(event.target.value))
+                    }
+                    className="dark:border-border dark:bg-card w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-base"
+                  >
+                    {Array.from({ length: 12 }, (_, index) => index + 1).map(
+                      (quantity) => (
+                        <option
+                          key={quantity}
+                          value={quantity}
+                          disabled={
+                            quantity > (availability.data?.maxQuantity ?? 1)
+                          }
+                        >
+                          {(quantity * 1000).toLocaleString("en-US")} profiles ·
+                          ${quantity * 50}
+                          {quantity > (availability.data?.maxQuantity ?? 1)
+                            ? " (currently unavailable)"
+                            : ""}
+                        </option>
+                      ),
+                    )}
+                  </select>
+                  <p className="dark:text-muted-foreground text-sm text-gray-500">
+                    Up to 12,000 Tinder profiles in one download, subject to
+                    availability. Drawn from across our upload history at $0.05
+                    per profile.
+                  </p>
+                </div>
+              )}
+            </TierCard>
+          ))}
+        </div>
+
+        <div className="mt-5 grid grid-cols-1 gap-5 max-[900px]:mx-auto max-[900px]:max-w-[420px] lg:grid-cols-2">
+          {bottomTiers.map((tier) => (
+            <TierCard
+              key={tier.id}
+              tier={tier}
+              loadingTier={loadingTier}
+              onCheckout={handleCheckout}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}

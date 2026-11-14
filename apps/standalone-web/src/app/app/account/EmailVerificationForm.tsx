@@ -1,0 +1,241 @@
+"use client";
+
+import { useState } from "react";
+import { AlertTriangle, CheckCircle2, Mail, ShieldCheck } from "lucide-react";
+
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Field, FieldLabel } from "@/components/ui/form-new";
+import { useDomain } from "@/domain/react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { authClient } from "@/server/better-auth/client";
+import { ConversionModal } from "@/app/app/dashboard/ConversionModal";
+
+export function EmailVerificationForm() {
+  const domain = useDomain();
+  const queryClient = useQueryClient();
+  const { data: user } = useQuery(domain.user.me.queryOptions());
+
+  const [newEmail, setNewEmail] = useState("");
+  const [showUpdateForm, setShowUpdateForm] = useState(false);
+  const [conversionModalOpen, setConversionModalOpen] = useState(false);
+
+  // Check if user is truly anonymous (not just email format)
+  const isAnonymous = user?.isAnonymous ?? false;
+  const isAnonymousEmail = user?.email?.includes("@anonymous.swipestats.io");
+  const isVerified = user?.emailVerified;
+
+  const updateEmail = useMutation({
+    mutationFn: async ({ email }: { email: string }) => {
+      const { error } = await authClient.changeEmail({
+        newEmail: email,
+        callbackURL: "/app/account",
+      });
+      if (error) throw new Error(error.message);
+      return { success: true };
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries(domain.user.me.queryOptions());
+      setNewEmail("");
+      setShowUpdateForm(false);
+    },
+  });
+
+  const sendVerificationEmail = useMutation({
+    mutationFn: async () => {
+      if (!user?.email) {
+        throw new Error("No email address found");
+      }
+      const { error } = await authClient.sendVerificationEmail({
+        email: user.email,
+        callbackURL: "/app/account",
+      });
+      if (error) throw new Error(error.message);
+      return { message: "Verification email sent! Check your inbox." };
+    },
+  });
+
+  const handleUpdateEmail = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newEmail) {
+      updateEmail.mutate({ email: newEmail });
+    }
+  };
+
+  const handleSendVerification = () => {
+    sendVerificationEmail.mutate();
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Current Email Status */}
+      <div className="space-y-2">
+        <FieldLabel>Current Email</FieldLabel>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+          <code className="bg-muted rounded px-2 py-1 text-sm break-all">
+            {user?.email}
+          </code>
+          {/* Only show verification badge for non-anonymous emails */}
+          {!isAnonymousEmail && (
+            <>
+              {isVerified ? (
+                <div className="flex shrink-0 items-center gap-1 text-xs text-green-600 dark:text-green-400">
+                  <CheckCircle2 className="h-4 w-4" />
+                  Verified
+                </div>
+              ) : (
+                <div className="flex shrink-0 items-center gap-1 text-xs text-yellow-600 dark:text-yellow-400">
+                  <ShieldCheck className="h-4 w-4" />
+                  Not Verified
+                </div>
+              )}
+            </>
+          )}
+        </div>
+        {isAnonymousEmail && (
+          <p className="text-muted-foreground text-xs">
+            Temporary email for reference. Add a real email to enable password
+            reset.
+          </p>
+        )}
+      </div>
+
+      {/* Anonymous Account - Show in Email Verification section only if truly anonymous */}
+      {isAnonymous && (
+        <Alert variant="warning">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            <strong>Anonymous Account</strong>
+            <p className="mt-1 text-sm">
+              You&apos;re using a temporary account. Create a real account with
+              a username to secure your data permanently.
+            </p>
+            <Button
+              onClick={() => setConversionModalOpen(true)}
+              variant="default"
+              size="sm"
+              className="mt-3"
+            >
+              Create Account
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Verification Status & Actions */}
+      {!isVerified && !isAnonymous && (
+        <div className="space-y-3">
+          <Alert variant="info">
+            <Mail className="h-4 w-4" />
+            <AlertDescription>
+              Your email is not verified yet. Verify it to enable password
+              reset.
+            </AlertDescription>
+          </Alert>
+
+          <Button
+            onClick={handleSendVerification}
+            disabled={sendVerificationEmail.isPending}
+            variant="outline"
+            className="w-full"
+          >
+            {sendVerificationEmail.isPending
+              ? "Sending..."
+              : "Send Verification Email"}
+          </Button>
+
+          {sendVerificationEmail.isSuccess && (
+            <p className="text-sm text-green-600 dark:text-green-400">
+              {sendVerificationEmail.data?.message || "Check your inbox!"}
+            </p>
+          )}
+
+          {sendVerificationEmail.isError && (
+            <p className="text-destructive text-sm">
+              Error: {sendVerificationEmail.error.message}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Update Email Form */}
+      <div className="space-y-3 border-t pt-2">
+        {!showUpdateForm ? (
+          <Button
+            onClick={() => {
+              if (isAnonymous) {
+                setConversionModalOpen(true);
+              } else {
+                setShowUpdateForm(true);
+              }
+            }}
+            variant="outline"
+            className="w-full"
+          >
+            {isAnonymous
+              ? "Create Account First"
+              : isAnonymousEmail
+                ? "Add Real Email"
+                : "Update Email"}
+          </Button>
+        ) : (
+          <form onSubmit={handleUpdateEmail} className="space-y-3">
+            <Field>
+              <FieldLabel htmlFor="new-email">
+                {isAnonymousEmail ? "New Email Address" : "Update Email"}
+              </FieldLabel>
+              <Input
+                id="new-email"
+                type="email"
+                value={newEmail}
+                onChange={(e) => setNewEmail(e.target.value)}
+                placeholder="you@example.com"
+                required
+              />
+              <p className="text-muted-foreground text-xs">
+                You&apos;ll need to verify the new email address.
+              </p>
+            </Field>
+
+            <div className="flex gap-2">
+              <Button
+                type="submit"
+                disabled={updateEmail.isPending}
+                className="flex-1"
+              >
+                {updateEmail.isPending ? "Updating..." : "Update Email"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowUpdateForm(false);
+                  setNewEmail("");
+                }}
+              >
+                Cancel
+              </Button>
+            </div>
+
+            {updateEmail.isSuccess && (
+              <p className="text-sm text-green-600 dark:text-green-400">
+                Email updated successfully!
+              </p>
+            )}
+            {updateEmail.isError && (
+              <p className="text-destructive text-sm">
+                Error: {updateEmail.error.message}
+              </p>
+            )}
+          </form>
+        )}
+      </div>
+
+      <ConversionModal
+        open={conversionModalOpen}
+        onOpenChange={setConversionModalOpen}
+      />
+    </div>
+  );
+}

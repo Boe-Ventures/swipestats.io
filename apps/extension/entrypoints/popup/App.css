@@ -1,0 +1,25 @@
+body {
+  margin: 0;
+  min-width: 340px;
+  font-family: system-ui, sans-serif;
+}
+main {
+  padding: 24px;
+}
+h1 {
+  font-size: 20px;
+}
+label,
+input,
+button {
+  display: block;
+  margin-top: 12px;
+}
+input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 8px;
+}
+button {
+  padding: 8px 12px;
+}

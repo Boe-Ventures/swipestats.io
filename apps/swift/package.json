@@ -1,0 +1,9 @@
+{
+  "name": "@draupnir/swift",
+  "private": true,
+  "scripts": {
+    "native:build": "swift build",
+    "native:test": "swift test",
+    "native:dev": "swift run DraupnirMac"
+  }
+}

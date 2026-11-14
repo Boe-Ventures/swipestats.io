@@ -1,0 +1,123 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Field, FieldLabel } from "@/components/ui/form-new";
+import { useDomain } from "@/domain/react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+
+export function SelfAssessmentForm() {
+  const domain = useDomain();
+  const queryClient = useQueryClient();
+  const { data: user } = useQuery(domain.user.me.queryOptions());
+
+  const [currentHotness, setCurrentHotness] = useState(5);
+  const [currentHappiness, setCurrentHappiness] = useState(5);
+
+  const updateSelfAssessment = useMutation(
+    domain.user.updateSelfAssessment.mutationOptions({
+      onSuccess: () => {
+        void queryClient.invalidateQueries(domain.user.me.queryOptions());
+      },
+    }),
+  );
+
+  // Update local state when user data loads
+  useEffect(() => {
+    if (user) {
+      if (user.currentHotness) setCurrentHotness(user.currentHotness);
+      if (user.currentHappiness) setCurrentHappiness(user.currentHappiness);
+    }
+  }, [user]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    updateSelfAssessment.mutate({
+      currentHotness,
+      currentHappiness,
+    });
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="space-y-4">
+        <Field className="space-y-3">
+          <div className="flex items-center justify-between">
+            <FieldLabel htmlFor="hotness">Current Hotness</FieldLabel>
+            <span className="text-lg font-semibold text-purple-600 dark:text-purple-400">
+              {currentHotness}/10
+            </span>
+          </div>
+          <input
+            id="hotness"
+            type="range"
+            min="1"
+            max="10"
+            value={currentHotness}
+            onChange={(e) => setCurrentHotness(Number(e.target.value))}
+            className="bg-muted h-2 w-full cursor-pointer appearance-none rounded-lg accent-purple-600"
+            style={{
+              background: `linear-gradient(to right, rgb(147 51 234) 0%, rgb(147 51 234) ${(currentHotness - 1) * 11.11}%, rgb(229 231 235) ${(currentHotness - 1) * 11.11}%, rgb(229 231 235) 100%)`,
+            }}
+          />
+          <div className="text-muted-foreground relative flex justify-between text-xs">
+            <span>1</span>
+            <span
+              className="absolute -translate-x-1/2"
+              style={{ left: `${((5 - 1) / (10 - 1)) * 100}%` }}
+            >
+              5
+            </span>
+            <span>10</span>
+          </div>
+        </Field>
+
+        <Field className="space-y-3">
+          <div className="flex items-center justify-between">
+            <FieldLabel htmlFor="happiness">Current Happiness</FieldLabel>
+            <span className="text-lg font-semibold text-pink-600 dark:text-pink-400">
+              {currentHappiness}/10
+            </span>
+          </div>
+          <input
+            id="happiness"
+            type="range"
+            min="1"
+            max="10"
+            value={currentHappiness}
+            onChange={(e) => setCurrentHappiness(Number(e.target.value))}
+            className="bg-muted h-2 w-full cursor-pointer appearance-none rounded-lg accent-pink-600"
+            style={{
+              background: `linear-gradient(to right, rgb(219 39 119) 0%, rgb(219 39 119) ${(currentHappiness - 1) * 11.11}%, rgb(229 231 235) ${(currentHappiness - 1) * 11.11}%, rgb(229 231 235) 100%)`,
+            }}
+          />
+          <div className="text-muted-foreground relative flex justify-between text-xs">
+            <span>1</span>
+            <span
+              className="absolute -translate-x-1/2"
+              style={{ left: `${((5 - 1) / (10 - 1)) * 100}%` }}
+            >
+              5
+            </span>
+            <span>10</span>
+          </div>
+        </Field>
+      </div>
+
+      <Button type="submit" disabled={updateSelfAssessment.isPending}>
+        {updateSelfAssessment.isPending ? "Saving..." : "Save Changes"}
+      </Button>
+
+      {updateSelfAssessment.isSuccess && (
+        <p className="text-sm text-green-600 dark:text-green-400">
+          Self assessment updated successfully!
+        </p>
+      )}
+      {updateSelfAssessment.isError && (
+        <p className="text-destructive text-sm">
+          Error: {updateSelfAssessment.error.message}
+        </p>
+      )}
+    </form>
+  );
+}

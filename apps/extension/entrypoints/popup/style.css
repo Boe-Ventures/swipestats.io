@@ -1,0 +1,13 @@
+:root {
+  font-family: system-ui, sans-serif;
+  line-height: 1.5;
+  color: #222;
+  background: #faf9f6;
+}
+button {
+  cursor: pointer;
+}
+:focus-visible {
+  outline: 2px solid #a66b00;
+  outline-offset: 3px;
+}

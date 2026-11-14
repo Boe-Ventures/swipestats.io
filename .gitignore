@@ -97,3 +97,13 @@ ds-bundle/
 
 # Server logs (local only)
 /logs
+
+.env*
+!.env.example
+.migration/
+.turbo/
+artifacts/local/
+
+# Workspace dependencies and generated output
+node_modules/
+.next/

@@ -1,0 +1,28 @@
+{
+  "$schema": "https://turborepo.com/schema.json",
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "cache": false
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {
+      "cache": false,
+      "dependsOn": ["velite:build"]
+    },
+    "typecheck": {
+      "dependsOn": ["^typecheck", "velite:build"],
+      "cache": false
+    },
+    "test": {
+      "cache": false,
+      "dependsOn": ["velite:build"]
+    },
+    "velite:build": {
+      "cache": false
+    }
+  }
+}
