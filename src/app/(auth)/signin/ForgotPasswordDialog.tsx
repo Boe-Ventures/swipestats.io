@@ -81,8 +81,8 @@ export function ForgotPasswordDialog({
                 Check your email
               </h3>
               <p className="dark:text-muted-foreground text-sm text-gray-600">
-                We&apos;ve sent a password reset link to{" "}
-                <strong>{email}</strong>
+                If an account exists for this address, you&apos;ll receive a
+                password reset link at <strong>{email}</strong>
               </p>
             </div>
             <Button onClick={handleClose} className="w-full">
