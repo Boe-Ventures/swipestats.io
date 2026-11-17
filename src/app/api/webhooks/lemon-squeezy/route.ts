@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 import { waitUntil } from "@vercel/functions";
 
@@ -540,15 +540,27 @@ export async function POST(request: Request) {
         );
         const expiredTier = variantInfo?.tier ?? "PLUS";
 
-        // Subscription expired - downgrade to FREE
-        await db
+        // A recurring subscription can expire after the account gains lifetime access.
+        const [downgraded] = await db
           .update(userTable)
           .set({
             swipestatsTier: "FREE",
             subscriptionCurrentPeriodEnd: null,
-            isLifetime: false,
           })
-          .where(eq(userTable.id, userId));
+          .where(and(eq(userTable.id, userId), eq(userTable.isLifetime, false)))
+          .returning({ id: userTable.id });
+
+        if (!downgraded) {
+          action = "skipped";
+          const reason = "no_recurring_entitlement_to_expire";
+          details = { reason };
+          logWebhookEvent(eventName, userId, {
+            action,
+            reason,
+            testMode,
+          });
+          break;
+        }
 
         logWebhookEvent(eventName, userId, {
           action: "expired",

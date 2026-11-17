@@ -276,18 +276,45 @@ export const profileRouter = {
           birthDate: verifiedTinderJson.User.birth_date,
           createDate: verifiedTinderJson.User.create_date,
         });
-        const result = await createTinderProfile({
-          tinderId: target.tinderId,
-          verifiedTinderId: input.tinderId,
-          verifiedTinderJson,
-          blobUrl: input.blobUrl,
-          userId: ctx.session.user.id,
-          timezone: detectedLocation.timeZone ?? undefined,
-          country: detectedLocation.country ?? undefined,
-          consentPhotos: input.consentPhotos,
-          consentWork: input.consentWork,
-          transientUpload: preparedUpload.binding,
-        });
+        // Legacy IDs identify a candidate guest. A complete validated export
+        // is required, and registered ownership is never transferred here.
+        const candidate =
+          ctx.session.user.isAnonymous === false
+            ? await ctx.db.query.tinderProfileTable.findFirst({
+                where: eq(tinderProfileTable.tinderId, input.tinderId),
+                with: { user: true },
+              })
+            : null;
+        const reclaimFromGuestId =
+          candidate?.user?.isAnonymous === true
+            ? (candidate.userId ?? undefined)
+            : undefined;
+        const result = reclaimFromGuestId
+          ? await replaceTinderProfileRevision({
+              tinderId: input.tinderId,
+              reclaimFromGuestId,
+              verifiedTinderId: input.tinderId,
+              verifiedTinderJson,
+              blobUrl: input.blobUrl,
+              userId: ctx.session.user.id,
+              timezone: detectedLocation.timeZone ?? undefined,
+              country: detectedLocation.country ?? undefined,
+              consentPhotos: input.consentPhotos,
+              consentWork: input.consentWork,
+              transientUpload: preparedUpload.binding,
+            })
+          : await createTinderProfile({
+              tinderId: target.tinderId,
+              verifiedTinderId: input.tinderId,
+              verifiedTinderJson,
+              blobUrl: input.blobUrl,
+              userId: ctx.session.user.id,
+              timezone: detectedLocation.timeZone ?? undefined,
+              country: detectedLocation.country ?? undefined,
+              consentPhotos: input.consentPhotos,
+              consentWork: input.consentWork,
+              transientUpload: preparedUpload.binding,
+            });
 
         trackServerEvent(ctx.session.user.id, "tinder_profile_created", {
           tinderId: result.profile.tinderId,

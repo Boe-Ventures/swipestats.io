@@ -409,10 +409,28 @@ export async function createDatasetCheckout(
     );
   }
 
-  const { data, error } = await createCheckout(
-    LEMON_SQUEEZY_CONFIG.storeId,
-    variantId,
-    {
+  const checkoutFailure = (
+    reason: "provider_error" | "request_exception" | "missing_checkout_url",
+    statusCode: number | null = null,
+    validationFields: string[] = [],
+  ) => {
+    // Never include provider messages, thrown errors, or checkout payloads.
+    console.error("Dataset checkout creation failed", {
+      checkoutAttemptId,
+      tier,
+      variantId,
+      reason,
+      statusCode,
+      validationFields,
+    });
+    return new Error(
+      "Unable to create dataset checkout. Please try again shortly.",
+    );
+  };
+
+  let checkout: Awaited<ReturnType<typeof createCheckout>>;
+  try {
+    checkout = await createCheckout(LEMON_SQUEEZY_CONFIG.storeId, variantId, {
       expiresAt: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
       checkoutData: {
         email,
@@ -434,20 +452,49 @@ export async function createDatasetCheckout(
           : {}),
         redirectUrl: `${env.NEXT_PUBLIC_BASE_URL}/research/download#licenseKey=[license_key]`,
         receiptButtonText: "Download your dataset",
-        receiptLinkUrl: `${env.NEXT_PUBLIC_BASE_URL}/research/download#licenseKey=[license_key]`,
+        // Receipt links reject the license-key fragment accepted by redirects.
+        // Customers can paste the license key from their receipt on this page.
+        receiptLinkUrl: `${env.NEXT_PUBLIC_BASE_URL}/research/download`,
         enabledVariants: [Number(variantId)],
       },
-    },
-  );
+    });
+  } catch {
+    throw checkoutFailure("request_exception");
+  }
 
+  const { data, error, statusCode } = checkout;
   if (error) {
-    throw new Error(
-      `Failed to create checkout: ${error.message}. Check that variant ID ${variantId} exists in your LemonSqueezy store.`,
-    );
+    // Only log known field names, never provider details or checkout payloads.
+    const validationFields = Array.isArray(error.cause)
+      ? error.cause.flatMap((issue: unknown) => {
+          if (
+            !issue ||
+            typeof issue !== "object" ||
+            !("source" in issue) ||
+            !issue.source ||
+            typeof issue.source !== "object" ||
+            !("pointer" in issue.source)
+          )
+            return [];
+          const pointer = issue.source.pointer;
+          return typeof pointer === "string" &&
+            [
+              "/data/attributes/product_options/receipt_link_url",
+              "/data/attributes/product_options/redirect_url",
+              "/data/attributes/checkout_data/email",
+              "/data/attributes/checkout_data/variant_quantities",
+              "/data/relationships/store",
+              "/data/relationships/variant",
+            ].includes(pointer)
+            ? [pointer]
+            : [];
+        })
+      : [];
+    throw checkoutFailure("provider_error", statusCode, validationFields);
   }
 
   if (!data?.data?.attributes?.url) {
-    throw new Error("Checkout URL not returned from LemonSqueezy");
+    throw checkoutFailure("missing_checkout_url", statusCode);
   }
 
   return {

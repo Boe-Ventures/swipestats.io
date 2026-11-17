@@ -1,12 +1,15 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 
 import type {
   AnonymizedTinderDataJSON,
   TinderPhotoData,
 } from "@/lib/interfaces/TinderDataJSON";
 import { assertTinderProfileIdMatchesExport } from "@/lib/upload/tinder-profile-id";
-import { withTransaction, db, type TransactionClient } from "@/server/db";
+import { withTransaction, db } from "@/server/db";
 import {
+  accountTable,
+  purchaseTable,
+  aiOutputTable,
   jobTable,
   matchTable,
   mediaTable,
@@ -21,7 +24,6 @@ import {
   type MediaInsert,
 } from "@/server/db/schema";
 import { createId } from "@/server/db/utils";
-import { canDeleteClaimedAnonymousUser } from "./claim-ownership";
 import { computeProfileMeta } from "./meta.service";
 import { createMessagesAndMatches } from "./messages.service";
 import { transformTinderJsonToProfile } from "./transform.service";
@@ -48,45 +50,6 @@ import {
 } from "../transient-upload.service";
 
 import { resolveTinderUploadTarget } from "./tinder-upload-target";
-
-interface RemainingAnonymousUserDataRow extends Record<string, unknown> {
-  has_remaining_data: boolean;
-}
-
-/**
- * Account/session rows are intentionally absent: those are authentication
- * internals that should cascade when an otherwise-empty anonymous user is
- * removed. Every product/provider ownership edge is checked so claiming one
- * Tinder profile cannot cascade unrelated anonymous-session data.
- */
-async function hasRemainingAnonymousUserData(
-  tx: TransactionClient,
-  userId: string,
-): Promise<boolean | undefined> {
-  const result = await tx.execute<RemainingAnonymousUserDataRow>(sql`
-    SELECT
-      EXISTS (SELECT 1 FROM tinder_profile WHERE user_id = ${userId})
-      OR EXISTS (SELECT 1 FROM hinge_profile WHERE user_id = ${userId})
-      OR EXISTS (SELECT 1 FROM raya_profile WHERE user_id = ${userId})
-      OR EXISTS (SELECT 1 FROM swipe_rank_profile WHERE user_id = ${userId})
-      OR EXISTS (SELECT 1 FROM event WHERE user_id = ${userId})
-      OR EXISTS (SELECT 1 FROM custom_data WHERE user_id = ${userId})
-      OR EXISTS (
-        SELECT 1 FROM original_anonymized_file WHERE user_id = ${userId}
-      )
-      OR EXISTS (SELECT 1 FROM purchase WHERE user_id = ${userId})
-      OR EXISTS (SELECT 1 FROM post WHERE created_by_id = ${userId})
-      OR EXISTS (SELECT 1 FROM attachment WHERE uploaded_by = ${userId})
-      OR EXISTS (SELECT 1 FROM profile_comparison WHERE user_id = ${userId})
-      OR EXISTS (
-        SELECT 1 FROM profile_comparison_feedback WHERE author_id = ${userId}
-      )
-      OR EXISTS (SELECT 1 FROM ai_output WHERE user_id = ${userId})
-      AS has_remaining_data
-  `);
-
-  return result.rows[0]?.has_remaining_data;
-}
 
 /**
  * Result type returned from Tinder profile creation/update operations
@@ -225,18 +188,7 @@ export async function transferProfileOwnership(
       console.log(`   ✓ Transferred ${originalFiles.length} original file(s)`);
     }
 
-    // Clean up only a genuinely empty anonymous account. Checking every
-    // product ownership edge prevents this user deletion from cascading a
-    // Hinge/Raya upload, comparison, purchase, artifact, or other saved data.
-    const hasRemainingData = await hasRemainingAnonymousUserData(tx, oldUserId);
-    if (canDeleteClaimedAnonymousUser(hasRemainingData)) {
-      await tx.delete(userTable).where(eq(userTable.id, oldUserId));
-      console.log(`   ✓ Deleted orphaned anonymous user ${oldUserId}`);
-    } else {
-      console.log(
-        `   ℹ Kept anonymous user ${oldUserId}; it still owns other data`,
-      );
-    }
+    // Keep the guest account: other providers, billing and history remain its own.
   });
 
   console.log(`✅ Profile ownership transfer complete`);
@@ -605,6 +557,7 @@ export async function createTinderProfile(data: {
  */
 export async function replaceTinderProfileRevision(data: {
   tinderId: string;
+  reclaimFromGuestId?: string;
   blobUrl: string;
   userId: string;
   timezone?: string;
@@ -664,6 +617,71 @@ export async function replaceTinderProfileRevision(data: {
     await lockTinderProviderMutationsInTx(tx);
     await lockTransientUploadForMutationInTx(tx, data.transientUpload);
     await lockTinderProfileUploadInTx(tx, data.tinderId);
+
+    if (data.reclaimFromGuestId) {
+      // The owner permits export-based recovery for guests, never registered
+      // accounts. Verify again inside the same transaction as the import.
+      const [source] = await tx
+        .select()
+        .from(userTable)
+        .where(eq(userTable.id, data.reclaimFromGuestId))
+        .for("update");
+      const destination = await tx.query.userTable.findFirst({
+        where: eq(userTable.id, data.userId),
+      });
+      const linkedAccount = await tx.query.accountTable.findFirst({
+        where: eq(accountTable.userId, data.reclaimFromGuestId),
+      });
+      const purchase = await tx.query.purchaseTable.findFirst({
+        where: eq(purchaseTable.userId, data.reclaimFromGuestId),
+      });
+      const artifact = await tx.query.aiOutputTable.findFirst({
+        where: eq(aiOutputTable.tinderProfileId, data.tinderId),
+      });
+      if (
+        source?.isAnonymous !== true ||
+        source.emailVerified ||
+        linkedAccount ||
+        destination?.isAnonymous !== false ||
+        source.swipestatsTier !== "FREE" ||
+        source.isLifetime ||
+        source.subscriptionProviderId ||
+        source.subscriptionCurrentPeriodEnd ||
+        purchase ||
+        artifact
+      ) {
+        throw new Error(
+          "This profile needs support-assisted recovery; neither account has been changed.",
+        );
+      }
+      const [claimed] = await tx
+        .update(tinderProfileTable)
+        .set({ userId: data.userId })
+        .where(
+          and(
+            eq(tinderProfileTable.tinderId, data.tinderId),
+            eq(tinderProfileTable.userId, data.reclaimFromGuestId),
+          ),
+        )
+        .returning();
+      if (!claimed)
+        throw new Error("Guest profile ownership changed. Please retry.");
+      await tx
+        .update(originalAnonymizedFileTable)
+        .set({ userId: data.userId })
+        .where(
+          and(
+            eq(originalAnonymizedFileTable.userId, data.reclaimFromGuestId),
+            eq(originalAnonymizedFileTable.dataProvider, "TINDER"),
+          ),
+        );
+      await transferTinderSwipeRankOwnershipInTx(tx, {
+        providerProfileId: data.tinderId,
+        fromUserId: data.reclaimFromGuestId,
+        toUserId: data.userId,
+      });
+      // Never delete the guest or move unrelated providers, preferences or billing.
+    }
 
     const existing = await tx.query.tinderProfileTable.findFirst({
       where: and(

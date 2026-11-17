@@ -2,32 +2,30 @@
 
 ## Problem and behavior
 
-The browser's Tinder export fingerprint hashes birth date and provider account
-creation date. Those dates are content-consistency fields, not proof that a
-SwipeStats user owns an existing profile. Looking up this fingerprint globally
-blocked a signed-in user's fresh import when a previous guest session had
-uploaded the same export. It also conflated unrelated exports with the same
-identity dates.
+The browser's legacy Tinder fingerprint hashes birth date and account creation
+instant. It is not Tinder's native account ID or cryptographic proof of ownership.
+Per the product owner's recovery policy, a registered user submitting a complete,
+validated export with the same fingerprint can reclaim a free guest profile.
+The JSON is unsigned, so a deliberately fabricated export is a residual risk.
 
-New Tinder profiles use a server-derived ID scoped to the authenticated
-SwipeStats user, the normalized UTC birth calendar date, and provider creation
-instant. The legacy fingerprint still binds the uploaded JSON and temporary
-upload lease. It is never used to claim another session's profile.
+Recovery checks the source again within the import transaction. Registered users,
+verified email identities and guests with linked credential/OAuth accounts cannot
+be reclaimed. Paid guests, subscription metadata, purchases and profile-linked AI
+artifacts require support-assisted recovery. A signed-in user's paid tier is never
+changed. An anonymous destination cannot reclaim a lost session.
 
-The upload context and all upload mutations resolve only the current owner's
-profile. Existing owned profiles keep their ID when both identity dates match,
-including equivalent timestamp spellings and profiles transferred by genuine
-guest sign-in. Returned links and committed retries use the actual stored ID.
-The deprecated create mutation follows the same scoping policy. Admin replay
-checks target ownership and verifies content identity separately from the stored
-ID.
+Claiming, refreshing derived analytics and moving the guest's Tinder archive
+references commit together. Failures roll back ownership as well as import writes.
+The legacy profile ID and previous accepted source files remain. The old guest
+account is never deleted; unrelated providers, preferences and billing stay there.
+A repeated committed submission returns the same owned profile.
 
-A user who lost the old guest session can import their export into their signed-in
-account without deleting or transferring anything from the inaccessible session.
-This is an independent import, **not lost-session recovery**. Old guest archives,
-profiles, purchases and artifacts remain with that guest. The new import does not
-reconstruct missing exports or recover an old purchase. No customer-specific
-account inspection or production repair is part of this change.
+Profiles belonging to another registered user are never transferred. The user may
+still import their own export independently under a server-derived owner-scoped ID.
+New profiles without a recoverable legacy ID use this same scoped identity. This
+recovery path intentionally targets legacy IDs, not new owner-scoped guest IDs.
+The upload context is advisory and exposes only the current owner's profile;
+recovery occurs only after the authenticated upload mutation validates the export.
 
 Repeat exports retain the current profile ID and previous accepted source files.
 As before, the current analytical projection is rebuilt from the submitted
@@ -74,7 +72,9 @@ identity validation. Keep this compatibility code when reverting other changes.
 
 The existing public Blob storage and existing Tinder source-consent behavior are
 unchanged. This does not establish historical archive completeness or add private
-storage. Do not run the Hinge historical rekey as part of this Tinder fix.
+storage. Retained source JSON is the existing consent-filtered upload payload,
+not an untouched Tinder export or Hinge ZIP; this PR does not fulfill a promise
+to retain every raw source field. Do not run the Hinge historical rekey as part of this Tinder fix.
 
 ## Verification
 

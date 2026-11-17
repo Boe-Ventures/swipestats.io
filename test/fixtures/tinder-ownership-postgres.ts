@@ -248,7 +248,7 @@ try {
       swipestatsTier: "PLUS",
       subscriptionProviderId: "synthetic-subscription",
     },
-    { id: "legacy-owner", isAnonymous: true },
+    { id: "legacy-owner", isAnonymous: false },
   ]);
   const oldUpload = await upload("old-guest");
   const oldId = target("old-guest");
@@ -568,6 +568,86 @@ try {
     );
   }
   await assertCommitted(nextUpload, nextId);
+  // Lost-session recovery: full export reclaims only a free, unregistered
+  // guest, retaining the old account and all accepted source archives.
+  const recoveryData = structuredClone(data);
+  recoveryData.User.create_date = "2021-01-01T00:00:00.000Z";
+  await db.insert(schema.userTable).values([
+    { id: "recover-guest", isAnonymous: true },
+    { id: "recover-owner", isAnonymous: false, swipestatsTier: "PLUS" },
+  ]);
+  const recoveryUpload = await upload("recover-owner", recoveryData);
+  const recoveryId = recoveryUpload.verifiedTinderId;
+  await sql`INSERT INTO tinder_profile SELECT (jsonb_populate_record(NULL::tinder_profile, to_jsonb(p) || jsonb_build_object('tinder_id', ${recoveryId}::text, 'user_id', 'recover-guest', 'create_date', '2021-01-01T00:00:00Z'))).* FROM tinder_profile p WHERE tinder_id = ${old.profile.tinderId}`;
+  await db.insert(schema.originalAnonymizedFileTable).values({
+    id: "recovery-old-source",
+    userId: "recover-guest",
+    dataProvider: "TINDER",
+    swipestatsVersion: "SWIPESTATS_4",
+    blobUrl: oldUpload.blobUrl,
+  });
+  const recoveryRequest = {
+    tinderId: recoveryId,
+    uploadId: recoveryUpload.transientUpload.id,
+    blobUrl: recoveryUpload.blobUrl,
+  };
+  // Billing and linked OAuth/credential identity cannot be claimed by export.
+  await db
+    .update(schema.userTable)
+    .set({ isLifetime: true })
+    .where(eq(schema.userTable.id, "recover-guest"));
+  await assert.rejects(
+    caller("recover-owner").createProfile(recoveryRequest),
+    /support-assisted/,
+  );
+  assert.equal((await profile(recoveryId))!.userId, "recover-guest");
+  await db
+    .update(schema.userTable)
+    .set({ isLifetime: false })
+    .where(eq(schema.userTable.id, "recover-guest"));
+  await db.insert(schema.accountTable).values({
+    id: "recovery-oauth",
+    accountId: "fixture",
+    providerId: "google",
+    userId: "recover-guest",
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  });
+  await assert.rejects(
+    caller("recover-owner").createProfile(recoveryRequest),
+    /support-assisted/,
+  );
+  assert.equal((await profile(recoveryId))!.userId, "recover-guest");
+  await db
+    .delete(schema.accountTable)
+    .where(eq(schema.accountTable.id, "recovery-oauth"));
+  const recovered =
+    await caller("recover-owner").createProfile(recoveryRequest);
+  assert.equal(recovered.tinderId, recoveryId);
+  assert.equal(recovered.userId, "recover-owner");
+  assert.ok(
+    await db.query.userTable.findFirst({
+      where: eq(schema.userTable.id, "recover-guest"),
+    }),
+  );
+  assert.equal(
+    (await db.query.originalAnonymizedFileTable.findFirst({
+      where: eq(schema.originalAnonymizedFileTable.id, "recovery-old-source"),
+    }))!.userId,
+    "recover-owner",
+  );
+  assert.equal(
+    (await db.query.userTable.findFirst({
+      where: eq(schema.userTable.id, "recover-owner"),
+    }))!.swipestatsTier,
+    "PLUS",
+  );
+  await assertCommitted(recoveryUpload, recoveryId);
+  assert.equal(
+    (await caller("recover-owner").createProfile(recoveryRequest)).tinderId,
+    recoveryId,
+  );
+
   // Exercise actual router entry points and the former global-fingerprint block.
   await db.insert(schema.userTable).values([
     { id: "router-owner", isAnonymous: false },
