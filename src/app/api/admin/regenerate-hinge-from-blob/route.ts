@@ -4,6 +4,7 @@ import {
   getHingeProfile,
   updateHingeProfile,
 } from "@/server/services/hinge/hinge.service";
+import { fetchVerifiedHingeProfileBlob } from "@/server/services/hinge/hinge-blob.service";
 import { isAdminRequestAuthorized } from "@/lib/admin-request-auth";
 
 /**
@@ -42,6 +43,11 @@ export async function POST(request: Request) {
   try {
     // Step 1: Check if profile exists
     const existing = await getHingeProfile(hingeId);
+    const verifiedJson = await fetchVerifiedHingeProfileBlob(blobUrl, {
+      hingeId: hingeId,
+      userId,
+      existingProfile: existing,
+    });
 
     // This read only selects the maintenance operation. Both services acquire
     // the provider lock and profile advisory lock, then validate the database
@@ -49,6 +55,7 @@ export async function POST(request: Request) {
     // fails safely instead of leaving a delete/create gap.
     const result = existing
       ? await updateHingeProfile({
+          verifiedJson,
           hingeId,
           blobUrl,
           userId,
@@ -56,6 +63,7 @@ export async function POST(request: Request) {
           country,
         })
       : await createHingeProfile({
+          verifiedJson,
           hingeId,
           blobUrl,
           userId,

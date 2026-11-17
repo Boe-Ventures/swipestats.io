@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { upload } from "@vercel/blob/client";
 import { SubmitButton } from "../../_components/SubmitButton";
 import { useTRPC } from "@/trpc/react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import type { SwipestatsProfilePayload } from "@/lib/interfaces/TinderDataJSON";
 import { authClient } from "@/server/better-auth/client";
 import { isGenderDataUnknown } from "@/lib/utils/gender";
@@ -26,9 +26,7 @@ interface TinderSubmitButtonProps {
       | "new_profile"
       | "new_user"
       | "same_tinderId"
-      | "different_tinderId"
-      | "needs_signin"
-      | "owned_by_other";
+      | "different_tinderId";
     identityMismatch?: boolean;
   } | null;
 }
@@ -57,6 +55,7 @@ export function TinderSubmitButton({
   const { data: session } = authClient.useSession();
 
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
 
   // Mutation options shared across all endpoints
   const mutationOptions = {
@@ -65,6 +64,10 @@ export function TinderSubmitButton({
     },
     onError: (error: { message?: string; data?: { code?: string } | null }) => {
       console.error("Error uploading profile:", error);
+      // Another tab or an account conversion may have changed our upload target.
+      void queryClient.invalidateQueries({
+        queryKey: trpc.profile.getUploadContext.queryKey(),
+      });
       // The owner-bound lease makes a pre-commit processing retry safe.
       if (!shouldReuseTransientUpload(error)) setUploadedBlob(null);
       setUploadState("idle");
@@ -98,7 +101,7 @@ export function TinderSubmitButton({
     // itself against a same-frame double-fire before the disabled state applies.
     if (!canSubmit || isLoading) return;
     // Never create a session or public transport blob for a state that cannot
-    // reach a processing endpoint (for example owned_by_other/needs_signin).
+    // reach a processing endpoint, including unresolved context.
     if (!isActionableScenario) return;
 
     // Track submit click

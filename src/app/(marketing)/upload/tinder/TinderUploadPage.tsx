@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import Link from "next/link";
+import { useState, useMemo, useEffect } from "react";
+import { authClient } from "@/server/better-auth/client";
 import { useTRPC } from "@/trpc/react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { UploadLayout } from "../_components/UploadLayout";
@@ -45,17 +45,31 @@ export function TinderUploadPage({ isUpdate, isDebug }: TinderUploadPageProps) {
   // Fetch profile data after drag-and-drop to check if updating vs creating
   const trpc = useTRPC();
   const queryClient = useQueryClient();
+  const { data: session } = authClient.useSession();
   const tinderId = payload?.tinderId;
   const birthDate = payload?.anonymizedTinderJson.User.birth_date;
+  const createDate = payload?.anonymizedTinderJson.User.create_date;
   const showDevTools = !env.NEXT_PUBLIC_IS_PRODUCTION;
 
   // Fetch upload context to determine scenario (new/additive/merge)
-  const { data: uploadContext } = useQuery({
-    ...trpc.profile.getUploadContext.queryOptions({ tinderId, birthDate }),
+  const {
+    data: uploadContext,
+    isFetching: isContextLoading,
+    refetch: refetchContext,
+  } = useQuery({
+    ...trpc.profile.getUploadContext.queryOptions({
+      tinderId,
+      birthDate,
+      createDate,
+    }),
     enabled: !!tinderId,
     retry: false,
     staleTime: 60000, // Cache for 1 minute to avoid repeated calls
   });
+
+  useEffect(() => {
+    if (tinderId) void refetchContext();
+  }, [session?.user.id, tinderId, refetchContext]);
 
   const deleteProfileMutation = useMutation(
     trpc.admin.deleteProfile.mutationOptions({
@@ -65,7 +79,11 @@ export function TinderUploadPage({ isUpdate, isDebug }: TinderUploadPageProps) {
           trpc.profile.get.queryOptions({ tinderId: tinderId ?? "" }),
         );
         void queryClient.invalidateQueries(
-          trpc.profile.getUploadContext.queryOptions({ tinderId, birthDate }),
+          trpc.profile.getUploadContext.queryOptions({
+            tinderId,
+            birthDate,
+            createDate,
+          }),
         );
         alert("Profile deleted successfully!");
         setPayload(null); // Reset to upload state
@@ -195,6 +213,7 @@ export function TinderUploadPage({ isUpdate, isDebug }: TinderUploadPageProps) {
             <TinderSubmitButton
               payload={getFilteredPayload()}
               disabled={
+                isContextLoading ||
                 !!error ||
                 isBackwardMerge ||
                 (uploadContext?.identityMismatch ?? false)
@@ -206,15 +225,24 @@ export function TinderUploadPage({ isUpdate, isDebug }: TinderUploadPageProps) {
             />
           </div>
 
+          {(uploadContext?.scenario === "new_user" ||
+            uploadContext?.scenario === "new_profile") && (
+            <p className="text-muted-foreground mt-4 text-xs">
+              This creates a profile in your current SwipeStats account or guest
+              session. It does not recover history or purchases from a different
+              session. Sign in to your existing account first if you have one.
+            </p>
+          )}
+
           {/* User-facing notification - scenario-based */}
           {uploadContext?.scenario === "same_tinderId" && (
             <div className="mt-6 rounded-lg border-2 border-green-300 bg-green-50 p-4 dark:border-green-800 dark:bg-green-950/40">
               <h3 className="mb-1 text-sm font-semibold text-green-900 dark:text-green-200">
-                📊 Adding to Existing Profile
+                📊 Updating Existing Profile
               </h3>
               <p className="text-xs text-green-700 dark:text-green-400">
-                Your data will be merged with your existing profile. New days
-                and matches will be added. Nothing will be lost.
+                Your insights will be rebuilt from this export. Earlier accepted
+                exports stay saved, and your profile link stays the same.
               </p>
               {uploadContext.userProfile && (
                 <p className="mt-1 text-xs text-green-600 dark:text-green-400">
@@ -249,12 +277,6 @@ export function TinderUploadPage({ isUpdate, isDebug }: TinderUploadPageProps) {
                   You have an existing profile with a different Tinder ID. This
                   upload will merge your old account data into your new account.
                 </p>
-                {uploadContext.userProfile && (
-                  <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
-                    Old: {uploadContext.userProfile.tinderId.slice(0, 8)}... →
-                    New: {tinderId?.slice(0, 8)}...
-                  </p>
-                )}
               </div>
             )}
 
@@ -270,8 +292,8 @@ export function TinderUploadPage({ isUpdate, isDebug }: TinderUploadPageProps) {
                   data issues.
                 </p>
                 <p className="mt-2 text-xs text-red-600 dark:text-red-400">
-                  <strong>To fix:</strong> Delete your current profile first,
-                  then upload this older file, then upload your newer account.
+                  Contact support to review the older export without deleting
+                  your current profile or its saved history.
                 </p>
                 {uploadContext.userProfile && (
                   <p className="mt-2 text-xs text-red-500">
@@ -296,58 +318,15 @@ export function TinderUploadPage({ isUpdate, isDebug }: TinderUploadPageProps) {
                   ⚠️ Identity Mismatch Detected
                 </h3>
                 <p className="text-xs text-red-700 dark:text-red-400">
-                  These profiles appear to be from different people (birthdate
-                  mismatch). This usually happens when testing with different
-                  users&apos; data.
+                  This export has a different birth date from your saved Tinder
+                  profile, so it cannot be merged automatically.
                 </p>
                 <p className="mt-2 text-xs text-red-600 dark:text-red-400">
-                  <strong>To fix:</strong> Delete your current profile first
-                  before uploading test data.
+                  Check that you selected your own export and signed in to the
+                  intended SwipeStats account, or contact support.
                 </p>
               </div>
             )}
-
-          {uploadContext?.scenario === "owned_by_other" && (
-            <div className="mt-6 rounded-lg border-2 border-red-300 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950/40">
-              <h3 className="mb-1 text-sm font-semibold text-red-900 dark:text-red-200">
-                ⚠️ Profile Already Exists
-              </h3>
-              <p className="text-xs text-red-700 dark:text-red-400">
-                This Tinder ID is already associated with another account.
-              </p>
-            </div>
-          )}
-
-          {/* 
-          This is the default use case so we don't need to show anything
-          {uploadContext?.scenario === "new_profile" && !existingProfile && (
-            <div className="mt-6 rounded-lg border-2 border-blue-300 bg-blue-50 p-4">
-              <h3 className="mb-1 text-sm font-semibold text-blue-900">
-                ✨ Creating New Profile
-              </h3>
-              <p className="text-xs text-blue-700">
-                This will be your first Tinder profile on SwipeStats.
-              </p>
-            </div>
-          )} */}
-
-          {uploadContext?.scenario === "needs_signin" && (
-            <div className="mt-6 rounded-lg border-2 border-yellow-300 bg-yellow-50 p-4 dark:border-yellow-800 dark:bg-yellow-950/40">
-              <h3 className="mb-1 text-sm font-semibold text-yellow-900 dark:text-yellow-200">
-                🔐 Sign In Required
-              </h3>
-              <p className="text-xs text-yellow-700 dark:text-yellow-400">
-                This profile is linked to an existing account. Please sign in to
-                update it, or contact support if you believe this is an error.
-              </p>
-              <Link
-                href="/signin"
-                className="mt-3 inline-block rounded bg-yellow-600 px-4 py-2 text-xs font-medium text-white hover:bg-yellow-700"
-              >
-                Sign In
-              </Link>
-            </div>
-          )}
 
           {/* Dev Admin Card - visible on localhost and preview deployments, hidden on production */}
           {showDevTools &&

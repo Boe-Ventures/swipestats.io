@@ -37,6 +37,7 @@ export function HingeUploadPage({ isUpdate, isDebug }: HingeUploadPageProps) {
   const trpc = useTRPC();
   const queryClient = useQueryClient();
   const hingeId = payload?.hingeId;
+  const signupTime = payload?.anonymizedHingeJson.User.account.signup_time;
   const showDevTools = !env.NEXT_PUBLIC_IS_PRODUCTION;
 
   // Keep the server's approximation for low-confidence diagnostic context only.
@@ -51,7 +52,11 @@ export function HingeUploadPage({ isUpdate, isDebug }: HingeUploadPageProps) {
 
   // Fetch upload context to determine scenario (new/additive/merge)
   const { data: uploadContext } = useQuery({
-    ...trpc.hingeProfile.getUploadContext.queryOptions({ hingeId, birthDate }),
+    ...trpc.hingeProfile.getUploadContext.queryOptions({
+      hingeId,
+      birthDate,
+      signupTime,
+    }),
     enabled: !!hingeId,
     retry: false,
     staleTime: 60000, // Cache for 1 minute to avoid repeated calls
@@ -68,6 +73,7 @@ export function HingeUploadPage({ isUpdate, isDebug }: HingeUploadPageProps) {
           trpc.hingeProfile.getUploadContext.queryOptions({
             hingeId,
             birthDate,
+            signupTime,
           }),
         );
         alert("Profile deleted successfully!");
@@ -84,6 +90,7 @@ export function HingeUploadPage({ isUpdate, isDebug }: HingeUploadPageProps) {
   const isBackwardMerge = useMemo(() => {
     if (
       !payload ||
+      uploadContext?.requiresGuestChoice ||
       uploadContext?.scenario !== "different_hingeId" ||
       !uploadContext?.userProfile?.createDate
     ) {
@@ -197,35 +204,37 @@ export function HingeUploadPage({ isUpdate, isDebug }: HingeUploadPageProps) {
           </div>
 
           {/* User-facing notification - scenario-based */}
-          {uploadContext?.scenario === "same_hingeId" && (
-            <div className="mt-6 rounded-lg border-2 border-green-300 bg-green-50 p-4 dark:border-green-800 dark:bg-green-950/40">
-              <h3 className="mb-1 text-sm font-semibold text-green-900 dark:text-green-200">
-                Adding to Existing Profile
-              </h3>
-              <p className="text-xs text-green-700 dark:text-green-400">
-                Your data will be merged with your existing profile. New matches
-                and interactions will be added. Nothing will be lost.
-              </p>
-              {uploadContext.userProfile && (
-                <p className="mt-1 text-xs text-green-600 dark:text-green-400">
-                  Existing profile created:{" "}
-                  {new Date(
-                    uploadContext.userProfile.createDate,
-                  ).toLocaleDateString()}
+          {uploadContext?.scenario === "same_hingeId" &&
+            !uploadContext.requiresGuestChoice && (
+              <div className="mt-6 rounded-lg border-2 border-green-300 bg-green-50 p-4 dark:border-green-800 dark:bg-green-950/40">
+                <h3 className="mb-1 text-sm font-semibold text-green-900 dark:text-green-200">
+                  Adding to Existing Profile
+                </h3>
+                <p className="text-xs text-green-700 dark:text-green-400">
+                  Your data will be merged with your existing profile. New
+                  matches and interactions will be added. Nothing will be lost.
                 </p>
-              )}
-              {uploadContext.userProfile && (
-                <a
-                  href={`/insights/hinge/${uploadContext.userProfile.hingeId}`}
-                  className="mt-2 inline-block text-xs font-semibold text-green-800 underline underline-offset-4 hover:no-underline dark:text-green-200"
-                >
-                  Already uploaded? View your insights instead →
-                </a>
-              )}
-            </div>
-          )}
+                {uploadContext.userProfile && (
+                  <p className="mt-1 text-xs text-green-600 dark:text-green-400">
+                    Existing profile created:{" "}
+                    {new Date(
+                      uploadContext.userProfile.createDate,
+                    ).toLocaleDateString()}
+                  </p>
+                )}
+                {uploadContext.userProfile && (
+                  <a
+                    href={`/insights/hinge/${uploadContext.userProfile.hingeId}`}
+                    className="mt-2 inline-block text-xs font-semibold text-green-800 underline underline-offset-4 hover:no-underline dark:text-green-200"
+                  >
+                    Already uploaded? View your insights instead →
+                  </a>
+                )}
+              </div>
+            )}
 
           {uploadContext?.scenario === "different_hingeId" &&
+            !uploadContext.requiresGuestChoice &&
             !isBackwardMerge &&
             !uploadContext?.identityMismatch && (
               <div className="mt-6 rounded-lg border-2 border-amber-300 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/40">
@@ -246,6 +255,7 @@ export function HingeUploadPage({ isUpdate, isDebug }: HingeUploadPageProps) {
             )}
 
           {uploadContext?.scenario === "different_hingeId" &&
+            !uploadContext.requiresGuestChoice &&
             isBackwardMerge && (
               <div className="mt-6 rounded-lg border-2 border-red-300 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950/40">
                 <h3 className="mb-1 text-sm font-semibold text-red-900 dark:text-red-200">
@@ -277,6 +287,7 @@ export function HingeUploadPage({ isUpdate, isDebug }: HingeUploadPageProps) {
             )}
 
           {uploadContext?.scenario === "different_hingeId" &&
+            !uploadContext.requiresGuestChoice &&
             uploadContext?.identityMismatch && (
               <div className="mt-6 rounded-lg border-2 border-red-300 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950/40">
                 <h3 className="mb-1 text-sm font-semibold text-red-900 dark:text-red-200">
@@ -294,31 +305,26 @@ export function HingeUploadPage({ isUpdate, isDebug }: HingeUploadPageProps) {
               </div>
             )}
 
-          {uploadContext?.scenario === "owned_by_other" && (
-            <div className="mt-6 rounded-lg border-2 border-red-300 bg-red-50 p-4 dark:border-red-800 dark:bg-red-950/40">
-              <h3 className="mb-1 text-sm font-semibold text-red-900 dark:text-red-200">
-                Profile Already Exists
-              </h3>
-              <p className="text-xs text-red-700 dark:text-red-400">
-                This Hinge ID is already associated with another account.
+          {(uploadContext?.scenario === "new_user" ||
+            uploadContext?.scenario === "new_profile") && (
+            <div className="mt-6 rounded-lg border border-blue-200 bg-blue-50 p-4 dark:border-blue-800 dark:bg-blue-950/40">
+              <h3 className="mb-1 text-sm font-semibold">Uploaded before?</h3>
+              <p className="text-xs">
+                Sign in to the SwipeStats account you used before to keep your
+                existing insights and purchases together. If you uploaded as a
+                guest, open the original browser and sign in there first.
               </p>
-            </div>
-          )}
-
-          {uploadContext?.scenario === "needs_signin" && (
-            <div className="mt-6 rounded-lg border-2 border-yellow-300 bg-yellow-50 p-4 dark:border-yellow-800 dark:bg-yellow-950/40">
-              <h3 className="mb-1 text-sm font-semibold text-yellow-900 dark:text-yellow-200">
-                Sign In Required
-              </h3>
-              <p className="text-xs text-yellow-700 dark:text-yellow-400">
-                This profile is linked to an existing account. Please sign in to
-                update it, or contact support if you believe this is an error.
+              <p className="mt-2 text-xs">
+                You can also continue here to import a separate copy from these
+                files. This will not recover earlier uploads or purchases from
+                another session. Contact support if you need help recovering
+                them.
               </p>
               <Link
                 href="/signin"
-                className="mt-3 inline-block rounded bg-yellow-600 px-4 py-2 text-xs font-medium text-white hover:bg-yellow-700"
+                className="mt-3 inline-block text-xs font-medium underline"
               >
-                Sign In
+                Sign in
               </Link>
             </div>
           )}

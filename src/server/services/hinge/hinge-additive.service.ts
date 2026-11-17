@@ -15,7 +15,6 @@ import {
   messageTable,
   mediaTable,
   profileMetaTable,
-  originalAnonymizedFileTable,
   customDataTable,
 } from "@/server/db/schema";
 import { createId } from "@/server/db/utils";
@@ -24,6 +23,7 @@ import {
   getForwardHingeAccountMergePeriod,
 } from "@/lib/hinge/account-period";
 import { fetchVerifiedHingeBlob } from "./hinge-blob.service";
+import { archiveHingeUploadInTx } from "./hinge-archive.service";
 import { transformHingeJsonToProfile } from "./hinge-transform.service";
 import { createHingeMessagesAndMatches } from "./hinge-messages.service";
 import { createHingeProfileMeta } from "./hinge-meta.service";
@@ -214,7 +214,7 @@ export async function additiveUpdateHingeProfile(data: {
     (await fetchVerifiedHingeBlob(data.blobUrl, data.hingeId, {
       consume: data.consumeBlob ?? false,
     }));
-  const anonymizedHingeJson = filterHingeJsonByConsent(verifiedHingeJson, {
+  let anonymizedHingeJson = filterHingeJsonByConsent(verifiedHingeJson, {
     sharePhotos: data.consentPhotos ?? true,
     shareWorkInfo: data.consentWork ?? true,
   });
@@ -229,12 +229,6 @@ export async function additiveUpdateHingeProfile(data: {
     await lockHingeProfileUploadsInTx(tx, [data.hingeId]);
     // 1. Update profile metadata
     const transformStart = Date.now();
-    const profileData = transformHingeJsonToProfile(anonymizedHingeJson, {
-      hingeId: data.hingeId,
-      userId: data.userId,
-      timezone: data.timezone,
-      country: data.country,
-    });
     const existingProfileState = await tx.query.hingeProfileTable.findFirst({
       where: hingeProfileOwnedBy(data.hingeId, data.userId),
       columns: {
@@ -253,6 +247,18 @@ export async function additiveUpdateHingeProfile(data: {
         `Failed to update Hinge profile ${data.hingeId}: ownership changed before processing.`,
       );
     }
+    const archive = await archiveHingeUploadInTx(tx, {
+      ...data,
+      verifiedJson: verifiedHingeJson,
+    });
+    anonymizedHingeJson = archive.json;
+    const profileData = transformHingeJsonToProfile(anonymizedHingeJson, {
+      hingeId: data.hingeId,
+      userId: data.userId,
+      timezone: data.timezone,
+      country: data.country,
+    });
+
     const firstAccountCreateDate = getEarliestHingeAccountSignup(
       existingProfileState,
       profileData.createDate,
@@ -275,7 +281,7 @@ export async function additiveUpdateHingeProfile(data: {
       (csvActivity?.tables.length ?? 0) !==
         (existingProfileState.csvActivity?.tables.length ?? 0);
     const profilePrivacyChanged =
-      data.consentWork === false &&
+      !archive.policy.shareWorkInfo &&
       ((existingProfileState.workplaces?.length ?? 0) > 0 ||
         existingProfileState.workplacesDisplayed ||
         existingProfileState.jobTitle.length > 0 ||
@@ -288,9 +294,10 @@ export async function additiveUpdateHingeProfile(data: {
     const [updatedProfile] = await tx
       .update(hingeProfileTable)
       .set({
+        archiveConsent: archive.policy,
         ...(applyCurrentSnapshot
           ? profileData
-          : data.consentWork === false
+          : !archive.policy.shareWorkInfo
             ? {
                 workplaces: [],
                 workplacesDisplayed: false,
@@ -476,7 +483,7 @@ export async function additiveUpdateHingeProfile(data: {
     let existingPhotoCount = 0;
     let newMediaInput: ReturnType<typeof transformHingeMediaToDb> = [];
 
-    if (data.consentPhotos === false) {
+    if (!archive.policy.sharePhotos) {
       const removedMedia = await tx
         .delete(mediaTable)
         .where(eq(mediaTable.hingeProfileId, data.hingeId))
@@ -509,16 +516,6 @@ export async function additiveUpdateHingeProfile(data: {
     const metaStart = Date.now();
     await recomputeHingeProfileMetaInTx(tx, data.hingeId);
     console.log(`   ✓ Profile meta recomputed (${Date.now() - metaStart}ms)`);
-
-    // 7. Store original file reference (blob URL only)
-    await tx.insert(originalAnonymizedFileTable).values({
-      id: createId("oaf"),
-      dataProvider: "HINGE",
-      swipestatsVersion: "SWIPESTATS_4",
-      file: null, // No longer storing raw JSON
-      blobUrl: null, // Verified upload blobs are transient and consumed.
-      userId: data.userId,
-    });
 
     // Check if this was an idempotent update (no new data)
     if (
@@ -642,7 +639,7 @@ export async function absorbHingeProfileIntoNew(data: {
     (await fetchVerifiedHingeBlob(data.blobUrl, data.newHingeId, {
       consume: data.consumeBlob ?? false,
     }));
-  const anonymizedHingeJson = filterHingeJsonByConsent(verifiedHingeJson, {
+  let anonymizedHingeJson = filterHingeJsonByConsent(verifiedHingeJson, {
     sharePhotos: data.consentPhotos ?? true,
     shareWorkInfo: data.consentWork ?? true,
   });
@@ -677,6 +674,12 @@ export async function absorbHingeProfileIntoNew(data: {
       );
     }
     console.log(`   ✓ Fetched old profile (${Date.now() - fetchOldStart}ms)`);
+
+    const archive = await archiveHingeUploadInTx(tx, {
+      ...data,
+      verifiedJson: verifiedHingeJson,
+    });
+    anonymizedHingeJson = archive.json;
 
     // 2. Temporarily clear userId on old profile to free unique constraint
     const unlinkStart = Date.now();
@@ -716,6 +719,7 @@ export async function absorbHingeProfileIntoNew(data: {
       .insert(hingeProfileTable)
       .values({
         ...newProfileData,
+        archiveConsent: archive.policy,
         csvActivity: mergeHingeCsvActivity(
           oldProfile.csvActivity,
           anonymizedHingeJson.CsvActivity,
@@ -750,7 +754,7 @@ export async function absorbHingeProfileIntoNew(data: {
 
     let transferredPhotoCount = 0;
     let transferredPromptCount = 0;
-    if (data.consentPhotos === false) {
+    if (!archive.policy.sharePhotos) {
       await tx
         .delete(mediaTable)
         .where(eq(mediaTable.hingeProfileId, data.oldHingeId));
@@ -885,16 +889,6 @@ export async function absorbHingeProfileIntoNew(data: {
     const metaStart = Date.now();
     await recomputeHingeProfileMetaInTx(tx, data.newHingeId);
     console.log(`   ✓ Profile meta computed (${Date.now() - metaStart}ms)`);
-
-    // 12. Store original file reference (blob URL only)
-    await tx.insert(originalAnonymizedFileTable).values({
-      id: createId("oaf"),
-      dataProvider: "HINGE",
-      swipestatsVersion: "SWIPESTATS_4",
-      file: null, // No longer storing raw JSON
-      blobUrl: null, // Verified upload blobs are transient and consumed.
-      userId: data.userId,
-    });
 
     await markTransientUploadCommittedInTx(
       tx,

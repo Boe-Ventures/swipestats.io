@@ -6,6 +6,11 @@ import { normalizeTinderUsageDateKey } from "@/lib/profile.utils";
 import { assertTinderProfileIdMatchesExport } from "@/lib/upload/tinder-profile-id";
 import { withTransaction, type TransactionClient } from "@/server/db";
 import {
+  aiOutputTable,
+  jobTable,
+  purchaseTable,
+  schoolTable,
+  tinderExportRevisionTable,
   matchTable,
   mediaTable,
   messageTable,
@@ -33,6 +38,7 @@ import {
   assertTinderDataMatchesConsent,
   loadVerifiedAnonymizedTinderData,
   tinderBirthDatesMatch,
+  tinderCreateDatesMatch,
 } from "./validation.service";
 import {
   createUsageRecords,
@@ -45,12 +51,17 @@ import {
 } from "./profile.service";
 import { purgeTinderSwipeRankProfilesInTx } from "../swipe-rank/lifecycle.service";
 import { invalidatePublicSwipeRankCache } from "../swipe-rank/public-cache";
-import { lockTinderProfileUploadInTx } from "./upload-lock";
+import {
+  lockTinderProfileUploadInTx,
+  lockTinderProviderMutationsInTx,
+} from "./upload-lock";
 import {
   lockTransientUploadForMutationInTx,
   markTransientUploadCommittedInTx,
   type TransientUploadBinding,
 } from "../transient-upload.service";
+
+import { resolveTinderUploadTarget } from "./tinder-upload-target";
 
 const POSTGRES_INTEGER_MAX = 2_147_483_647;
 
@@ -459,6 +470,7 @@ export async function absorbProfileIntoNew(data: {
   consentWork?: boolean;
   consumeBlob?: boolean;
   verifiedTinderJson?: AnonymizedTinderDataJSON;
+  verifiedTinderId?: string;
   transientUpload?: TransientUploadBinding;
 }): Promise<TinderProfileResult> {
   const startTime = Date.now();
@@ -467,7 +479,7 @@ export async function absorbProfileIntoNew(data: {
     data.verifiedTinderJson ??
     (await loadVerifiedAnonymizedTinderData(
       data.blobUrl,
-      data.newTinderId,
+      data.verifiedTinderId ?? data.newTinderId,
       {
         photos: data.consentPhotos ?? true,
         work: data.consentWork ?? true,
@@ -476,7 +488,7 @@ export async function absorbProfileIntoNew(data: {
     ));
   if (data.verifiedTinderJson) {
     await assertTinderProfileIdMatchesExport(
-      data.newTinderId,
+      data.verifiedTinderId ?? data.newTinderId,
       data.verifiedTinderJson,
     );
     assertTinderDataMatchesConsent(data.verifiedTinderJson, {
@@ -484,6 +496,18 @@ export async function absorbProfileIntoNew(data: {
       work: data.consentWork ?? true,
     });
   }
+
+  const target = await resolveTinderUploadTarget({
+    userId: data.userId,
+    birthDate: anonymizedTinderJson.User.birth_date,
+    createDate: anonymizedTinderJson.User.create_date,
+  });
+  if (data.verifiedTinderId && data.newTinderId !== target.tinderId) {
+    throw new Error(
+      "Tinder merge target does not match the authenticated owner and export.",
+    );
+  }
+  data = { ...data, newTinderId: target.tinderId };
 
   console.log(
     `\n🔄 Cross-account merge: ${data.oldTinderId} → ${data.newTinderId}`,
@@ -499,6 +523,7 @@ export async function absorbProfileIntoNew(data: {
   console.log(`   JSON size: ${jsonSizeMB} MB`);
 
   const profile = await withTransaction(async (tx) => {
+    await lockTinderProviderMutationsInTx(tx);
     await lockTransientUploadForMutationInTx(tx, data.transientUpload);
     // Cross-account merges touch two profile identities. Sort the lock keys so
     // concurrent merges cannot deadlock while moving rows between accounts.
@@ -507,7 +532,6 @@ export async function absorbProfileIntoNew(data: {
     )) {
       await lockTinderProfileUploadInTx(tx, tinderId);
     }
-    await syncObservedUsageRangeInTx(tx, data.oldTinderId);
     // 1. Get old profile to compute combined date range
     const fetchOldStart = Date.now();
     const oldProfile = await tx.query.tinderProfileTable.findFirst({
@@ -522,6 +546,29 @@ export async function absorbProfileIntoNew(data: {
         "Cross-account merge rejected: the source profile is no longer owned by this user.",
       );
     }
+    if (anonymizedTinderJson.User.create_date_inferred === true) {
+      throw new Error(
+        "Cross-account merge requires a provider account creation date.",
+      );
+    }
+    if (
+      tinderBirthDatesMatch(
+        oldProfile.birthDate,
+        anonymizedTinderJson.User.birth_date,
+      ) &&
+      tinderCreateDatesMatch(
+        oldProfile.createDate,
+        anonymizedTinderJson.User.create_date,
+      )
+    ) {
+      throw new Error("Use a same-account update for this Tinder export.");
+    }
+    await syncObservedUsageRangeInTx(tx, data.oldTinderId);
+    const refreshedSource = await tx.query.tinderProfileTable.findFirst({
+      where: eq(tinderProfileTable.tinderId, data.oldTinderId),
+      columns: { firstDayOnApp: true, lastDayOnApp: true },
+    });
+    if (refreshedSource) Object.assign(oldProfile, refreshedSource);
     const existingTargetProfile = await tx.query.tinderProfileTable.findFirst({
       where: eq(tinderProfileTable.tinderId, data.newTinderId),
       columns: { tinderId: true },
@@ -682,6 +729,26 @@ export async function absorbProfileIntoNew(data: {
     console.log(
       `   ✓ Transferred all data to new profile (${Date.now() - transferStart}ms)`,
     );
+
+    // These are retained user history, entitlements and source archives, not
+    // disposable analytics. Move only the profile reference, never ownership.
+    for (const table of [
+      purchaseTable,
+      tinderExportRevisionTable,
+      aiOutputTable,
+      schoolTable,
+    ]) {
+      await tx
+        .update(table)
+        .set({ tinderProfileId: data.newTinderId })
+        .where(eq(table.tinderProfileId, data.oldTinderId));
+    }
+    if (data.consentWork ?? true) {
+      await tx
+        .update(jobTable)
+        .set({ tinderProfileId: data.newTinderId })
+        .where(eq(jobTable.tinderProfileId, data.oldTinderId));
+    }
 
     // 6. Delete old profile and its provider-specific analytical subject in
     // the same transaction. Live facts and per-person frozen edition entries
@@ -856,7 +923,7 @@ export async function additiveUpdateProfile(data: {
     data.verifiedTinderJson ??
     (await loadVerifiedAnonymizedTinderData(
       data.blobUrl,
-      data.tinderId,
+      data.verifiedTinderId ?? data.tinderId,
       {
         photos: data.consentPhotos ?? true,
         work: data.consentWork ?? true,
@@ -885,6 +952,7 @@ export async function additiveUpdateProfile(data: {
   ).toFixed(2);
 
   const profile = await withTransaction(async (tx) => {
+    await lockTinderProviderMutationsInTx(tx);
     await lockTransientUploadForMutationInTx(tx, data.transientUpload);
     await lockTinderProfileUploadInTx(tx, data.tinderId);
     const existingIdentity = await tx.query.tinderProfileTable.findFirst({
@@ -893,6 +961,7 @@ export async function additiveUpdateProfile(data: {
         eq(tinderProfileTable.userId, data.userId),
       ),
       columns: {
+        birthDate: true,
         createDate: true,
         createDateSource: true,
       },
@@ -900,6 +969,21 @@ export async function additiveUpdateProfile(data: {
     if (!existingIdentity) {
       throw new Error(
         `Failed to update profile ${data.tinderId}: ownership changed before processing.`,
+      );
+    }
+
+    if (
+      !tinderBirthDatesMatch(
+        existingIdentity.birthDate,
+        anonymizedTinderJson.User.birth_date,
+      ) ||
+      !tinderCreateDatesMatch(
+        existingIdentity.createDate,
+        anonymizedTinderJson.User.create_date,
+      )
+    ) {
+      throw new Error(
+        "Cannot add a different Tinder account's export to this profile.",
       );
     }
 

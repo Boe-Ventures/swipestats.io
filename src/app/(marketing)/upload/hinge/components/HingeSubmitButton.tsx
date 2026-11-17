@@ -19,6 +19,8 @@ import {
   canReuseHingeTransientUpload,
   prepareHingeTransientUpload,
 } from "@/lib/upload/hinge-transient-upload";
+import { ConversionModal } from "@/app/app/dashboard/ConversionModal";
+import { Button } from "@/components/ui/button";
 import { transientDataBlobPath } from "@/lib/blob-paths";
 
 interface HingeSubmitButtonProps {
@@ -27,14 +29,10 @@ interface HingeSubmitButtonProps {
   disabled?: boolean;
   consent: HingeConsentState;
   uploadContext?: {
-    scenario:
-      | "new_profile"
-      | "new_user"
-      | "same_hingeId"
-      | "different_hingeId"
-      | "needs_signin"
-      | "owned_by_other";
+    scenario: "new_profile" | "new_user" | "same_hingeId" | "different_hingeId";
     identityMismatch?: boolean;
+    requiresGuestChoice?: boolean;
+    userProfile?: { hingeId: string } | null;
   } | null;
 }
 
@@ -46,6 +44,19 @@ export function HingeSubmitButton({
   uploadContext,
 }: HingeSubmitButtonProps) {
   const { trackEvent } = useAnalytics();
+  const [conversionOpen, setConversionOpen] = useState(false);
+  const [replacementChoice, setReplacementChoice] = useState<{
+    profileId: string;
+    payload: SwipestatsHingeProfilePayload;
+  } | null>(null);
+  const guestProfileId = uploadContext?.requiresGuestChoice
+    ? uploadContext.userProfile?.hingeId
+    : undefined;
+  // A new extraction resets the choice even when its signup timestamp matches.
+  const replacementConfirmed =
+    !!guestProfileId &&
+    replacementChoice?.profileId === guestProfileId &&
+    replacementChoice.payload === payload;
   const router = useRouter();
   const [isCreatingSession, setIsCreatingSession] = useState(false);
   const [uploadState, setUploadState] = useState<
@@ -85,6 +96,15 @@ export function HingeSubmitButton({
     },
     onError: (error: { message?: string; data?: { code?: string } | null }) => {
       if (!shouldReuseTransientUpload(error)) setUploadedBlob(null);
+      if (
+        ["PRECONDITION_FAILED", "CONFLICT", "NOT_FOUND"].includes(
+          error.data?.code ?? "",
+        )
+      ) {
+        void queryClient.invalidateQueries({
+          queryKey: trpc.hingeProfile.getUploadContext.queryKey(),
+        });
+      }
       setUploadState("idle");
       setIsCreatingSession(false);
       console.error("Error uploading profile:", error);
@@ -117,7 +137,7 @@ export function HingeSubmitButton({
     // itself against a same-frame double-fire before the disabled state applies.
     if (!canSubmit || isLoading) return;
     // Never create a session or public transport blob for a state that cannot
-    // reach a processing endpoint (for example owned_by_other/needs_signin).
+    // reach a processing endpoint (for example while context is loading).
     if (!isActionableScenario) return;
 
     // Track submit click
@@ -211,6 +231,9 @@ export function HingeSubmitButton({
         country: browserCountry,
         consentPhotos: consent.sharePhotos,
         consentWork: consent.shareWorkInfo,
+        guestReplacementProfileId: replacementConfirmed
+          ? guestProfileId
+          : undefined,
       };
 
       // Route to appropriate endpoint based on scenario
@@ -244,7 +267,11 @@ export function HingeSubmitButton({
   };
 
   const termsAccepted = consent.terms;
-  const canSubmit = !disabled && termsAccepted && isActionableScenario;
+  const canSubmit =
+    !disabled &&
+    termsAccepted &&
+    isActionableScenario &&
+    (!guestProfileId || replacementConfirmed);
   const isLoading =
     isCreatingSession ||
     uploadState !== "idle" ||
@@ -253,7 +280,9 @@ export function HingeSubmitButton({
     mergeMutation.isPending;
 
   // Determine loading text
-  let loadingText = "Upload & View Insights";
+  let loadingText = guestProfileId
+    ? "Replace guest data & view insights"
+    : "Upload & View Insights";
   if (uploadState === "uploading") {
     loadingText = "Uploading...";
   } else if (uploadState === "processing") {
@@ -261,12 +290,63 @@ export function HingeSubmitButton({
   }
 
   return (
-    <SubmitButton
-      onClick={handleSubmit}
-      disabled={!canSubmit || isLoading}
-      isLoading={isLoading}
-    >
-      {loadingText}
-    </SubmitButton>
+    <div className="space-y-4">
+      {guestProfileId && (
+        <div className="rounded-lg border p-4">
+          <h3 className="font-semibold">Keep your history or replace it</h3>
+          <p className="text-muted-foreground mt-2 text-sm">
+            Create a free account to keep your previous uploads and add this
+            data. Or replace your guest profile with just the files you selected
+            here.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            className="mt-3"
+            onClick={() => setConversionOpen(true)}
+            disabled={isLoading}
+          >
+            Create account / sign in
+          </Button>
+          <label className="mt-4 flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={replacementConfirmed}
+              disabled={isLoading}
+              onChange={(event) =>
+                setReplacementChoice(
+                  event.target.checked && guestProfileId
+                    ? { profileId: guestProfileId, payload }
+                    : null,
+                )
+              }
+            />
+            <span>
+              Replace my guest data. Previous imported matches, messages, photos
+              and prompts will be replaced by these files.
+            </span>
+          </label>
+        </div>
+      )}
+      <SubmitButton
+        onClick={handleSubmit}
+        disabled={!canSubmit || isLoading}
+        isLoading={isLoading}
+      >
+        {loadingText}
+      </SubmitButton>
+      <ConversionModal
+        open={conversionOpen}
+        onOpenChange={setConversionOpen}
+        onConverted={async () => {
+          setReplacementChoice(null);
+          setUploadedBlob(null);
+          await queryClient.invalidateQueries({
+            queryKey: trpc.hingeProfile.getUploadContext.queryKey(),
+          });
+        }}
+      />
+    </div>
   );
 }

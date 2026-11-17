@@ -25,7 +25,9 @@ function normalizeHingeSignupTime(signupTime: string): string {
 
 /**
  * Hinge does not export a native account ID. SwipeStats therefore derives its
- * stable account key from the export's signup timestamp.
+ * legacy export key from the signup timestamp. This binds the upload to its
+ * contents; it is not globally unique or evidence of profile ownership. New
+ * stored profile IDs are scoped to the authenticated SwipeStats owner.
  */
 export async function deriveHingeProfileId(
   signupTime: string,
