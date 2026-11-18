@@ -7,6 +7,7 @@ import {
 
 import type { AnonymizedHingeDataJSON } from "@/lib/interfaces/HingeDataJSON";
 import { withTransaction, type TransactionClient } from "@/server/db";
+import { queueTextRedactionInTx } from "../text-redaction-queue";
 import {
   hingeProfileTable,
   hingeInteractionTable,
@@ -227,6 +228,7 @@ export async function additiveUpdateHingeProfile(data: {
     await lockTransientUploadForMutationInTx(tx, data.transientUpload);
     await lockHingeProviderMutationsInTx(tx);
     await lockHingeProfileUploadsInTx(tx, [data.hingeId]);
+    await queueTextRedactionInTx(tx, "HINGE", [data.hingeId]);
     // 1. Update profile metadata
     const transformStart = Date.now();
     const existingProfileState = await tx.query.hingeProfileTable.findFirst({
@@ -653,6 +655,10 @@ export async function absorbHingeProfileIntoNew(data: {
     await lockTransientUploadForMutationInTx(tx, data.transientUpload);
     await lockHingeProviderMutationsInTx(tx);
     await lockHingeProfileUploadsInTx(tx, [data.oldHingeId, data.newHingeId]);
+    await queueTextRedactionInTx(tx, "HINGE", [
+      data.oldHingeId,
+      data.newHingeId,
+    ]);
     // 1. Get old profile for reference
     const fetchOldStart = Date.now();
     const oldProfile = await tx.query.hingeProfileTable.findFirst({

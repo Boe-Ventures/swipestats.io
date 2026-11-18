@@ -55,6 +55,7 @@ import {
   lockTinderProfileUploadInTx,
   lockTinderProviderMutationsInTx,
 } from "./upload-lock";
+import { queueTextRedactionInTx } from "../text-redaction-queue";
 import {
   lockTransientUploadForMutationInTx,
   markTransientUploadCommittedInTx,
@@ -532,6 +533,10 @@ export async function absorbProfileIntoNew(data: {
     )) {
       await lockTinderProfileUploadInTx(tx, tinderId);
     }
+    await queueTextRedactionInTx(tx, "TINDER", [
+      data.oldTinderId,
+      data.newTinderId,
+    ]);
     // 1. Get old profile to compute combined date range
     const fetchOldStart = Date.now();
     const oldProfile = await tx.query.tinderProfileTable.findFirst({
@@ -955,6 +960,7 @@ export async function additiveUpdateProfile(data: {
     await lockTinderProviderMutationsInTx(tx);
     await lockTransientUploadForMutationInTx(tx, data.transientUpload);
     await lockTinderProfileUploadInTx(tx, data.tinderId);
+    await queueTextRedactionInTx(tx, "TINDER", [data.tinderId]);
     const existingIdentity = await tx.query.tinderProfileTable.findFirst({
       where: and(
         eq(tinderProfileTable.tinderId, data.tinderId),

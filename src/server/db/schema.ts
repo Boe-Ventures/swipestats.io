@@ -810,6 +810,13 @@ export const matchTable = pgTable(
   "match",
   (t) => ({
     id: t.text().primaryKey(),
+    textRedaction: t.jsonb().$type<{
+      pipeline: string;
+      inputDigest: string;
+      outputDigest: string;
+      score: number;
+      completedAt: string;
+    }>(),
     order: t.integer().notNull(),
     totalMessageCount: t.integer().notNull(),
     textCount: t.integer().notNull(),

@@ -60,7 +60,9 @@
     "velite:build": "velite build",
     "velite:dev": "velite --watch",
     "email:dev": "email dev",
-    "amplitude:sync-taxonomy": "bun src/scripts/sync-amplitude-taxonomy.ts"
+    "amplitude:sync-taxonomy": "bun src/scripts/sync-amplitude-taxonomy.ts",
+    "privacy:benchmark-text-codex": "bun run src/scripts/llm-analysis/benchmark-text-codex.ts",
+    "privacy:research-text": "bun run src/scripts/llm-analysis/process-research-text.ts"
   },
   "portless": {
     "name": "swipestats",
@@ -145,6 +147,7 @@
     "zod": "^4.1.12"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.16",
     "@eslint/eslintrc": "^3.3.1",
     "@next/eslint-plugin-next": "^16.1.2",
     "@react-email/preview-server": "5.1.1",

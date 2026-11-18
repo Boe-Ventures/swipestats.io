@@ -1,0 +1,1 @@
+ALTER TABLE "match" ADD COLUMN "text_redaction" jsonb;
