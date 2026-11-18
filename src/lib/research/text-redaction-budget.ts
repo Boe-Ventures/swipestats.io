@@ -80,44 +80,107 @@ export class JevBudget {
   }
 }
 
+class JevHttpError extends Error {
+  constructor(readonly status: number) {
+    super(`Jev HTTP ${status}; reserved charge retained`);
+  }
+}
+
+function isTransient(error: unknown): boolean {
+  if (error instanceof JevHttpError)
+    return [408, 429, 500, 502, 503, 504].includes(error.status);
+  if (!(error instanceof Error)) return false;
+  const code = (error as NodeJS.ErrnoException).code;
+  return (
+    error.name === "TimeoutError" ||
+    [
+      "ECONNRESET",
+      "ECONNREFUSED",
+      "EPIPE",
+      "ETIMEDOUT",
+      "EAI_AGAIN",
+      "UND_ERR_SOCKET",
+      "UND_ERR_CONNECT_TIMEOUT",
+    ].includes(code ?? "") ||
+    (error.cause !== undefined && isTransient(error.cause))
+  );
+}
+
+const screenResponse = z.object({
+  model: z.literal(TEXT_PIPELINE.jev),
+  answers: z.object({
+    contains_identifiers: z.object({ noul: z.number().min(0).max(1) }),
+  }),
+  usage: z.object({ input_tokens: z.number().int().nonnegative() }),
+});
+
 export async function screenWithBudget(
   conversation: Conversation,
   budget: JevBudget,
   apiKey: string,
+  dependencies: {
+    fetch?: (...args: Parameters<typeof fetch>) => ReturnType<typeof fetch>;
+    sleep?: (milliseconds: number) => Promise<void>;
+  } = {},
 ) {
-  const id = await budget.reserve();
-  const response = await fetch("https://api.typesafe.ai/v1/systemone", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      model: TEXT_PIPELINE.jev,
-      state: modelInput([conversation]),
-      questions: {
-        contains_identifiers: {
-          type: "noul",
-          instructions: JEV_SCREENING_POLICY,
+  const request = dependencies.fetch ?? fetch;
+  const sleep =
+    dependencies.sleep ??
+    ((ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms)));
+  for (let attempt = 0; attempt < 5; attempt++) {
+    // Each retry may have reached the provider. Retain failed reservations and
+    // reserve separately before another request, including after a restart.
+    const id = await budget.reserve();
+    let value: z.infer<typeof screenResponse>;
+    try {
+      const response = await request("https://api.typesafe.ai/v1/systemone", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
         },
-      },
-    }),
-    signal: AbortSignal.timeout(60000),
-  });
-  if (!response.ok)
-    throw new Error(`Jev HTTP ${response.status}; reserved charge retained`);
-  const value = z
-    .object({
-      model: z.literal(TEXT_PIPELINE.jev),
-      answers: z.object({
-        contains_identifiers: z.object({ noul: z.number().min(0).max(1) }),
-      }),
-      usage: z.object({ input_tokens: z.number().int().nonnegative() }),
-    })
-    .parse(await response.json());
-  await budget.settle(id, value.usage.input_tokens);
-  return {
-    inputDigest: digest(conversation),
-    score: value.answers.contains_identifiers.noul,
-  };
+        body: JSON.stringify({
+          model: TEXT_PIPELINE.jev,
+          state: modelInput([conversation]),
+          questions: {
+            contains_identifiers: {
+              type: "noul",
+              instructions: JEV_SCREENING_POLICY,
+            },
+          },
+        }),
+        signal: AbortSignal.timeout(60000),
+      });
+      if (!response.ok) {
+        await response.body?.cancel().catch(() => undefined);
+        throw new JevHttpError(response.status);
+      }
+      value = screenResponse.parse(await response.json());
+    } catch (error) {
+      if (!isTransient(error) || attempt === 4) throw error;
+      const delayMs = 2000 * 2 ** attempt;
+      console.warn(
+        JSON.stringify({
+          event: "jev_retry",
+          attempt: attempt + 1,
+          nextAttempt: attempt + 2,
+          delayMs,
+          reason:
+            error instanceof JevHttpError
+              ? `HTTP ${error.status}`
+              : "connection-or-timeout",
+          reservedChargeRetained: true,
+        }),
+      );
+      await sleep(delayMs);
+      continue;
+    }
+    // Ledger/validation failures must stop the worker, not trigger another call.
+    await budget.settle(id, value.usage.input_tokens);
+    return {
+      inputDigest: digest(conversation),
+      score: value.answers.contains_identifiers.noul,
+    };
+  }
+  throw new Error("Jev retry limit reached");
 }

@@ -85,3 +85,7 @@ bun --env-file=.env.research-text.local run privacy:research-text run \
 ```
 
 Only one worker may use the directory. Stop or finish an active foreground run before launching this command. A small live resume with a total limit of 20 correctly observed 20 current conversations and made zero new model calls or database writes.
+
+## Transient Jev failures
+
+A Warp run reached at least 563 completed conversations before a Jev `ECONNRESET`. Screening now makes at most five attempts for connection resets/timeouts and HTTP 408, 429, 500, 502, 503 or 504, waiting 2, 4, 8 and 16 seconds between attempts. Authorization failures, invalid responses and ledger errors still stop immediately. Each retry reserves its own worst-case cost; ambiguous failed reservations remain in the same cumulative $30 ledger. This changes transport recovery only, so existing receipts and model checkpoints remain reusable. After a stopped run, rerun the same fixed-total command in Warp.
