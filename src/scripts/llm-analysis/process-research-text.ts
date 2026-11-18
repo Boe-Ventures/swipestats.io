@@ -41,6 +41,7 @@ const { values, positionals } = parseArgs({
     pending: { type: "boolean", default: false },
     write: { type: "boolean", default: false },
     "max-conversations": { type: "string", default: "1000" },
+    "max-total-conversations": { type: "string" },
     "jev-cap": { type: "string", default: "30" },
   },
 });
@@ -51,7 +52,7 @@ if (
   Boolean(values.cohort) === values.pending
 )
   throw new Error(
-    "Usage: process-research-text.ts plan|run|export --cohort mapping.json|--pending --output private-directory [--write] [--max-conversations 1000] [--jev-cap 30]",
+    "Usage: process-research-text.ts plan|run|export --cohort mapping.json|--pending --output private-directory [--write] [--max-conversations 1000] [--max-total-conversations 62110] [--jev-cap 30]",
   );
 if (command === "run" && !values.write)
   throw new Error("Database persistence requires --write");
@@ -67,6 +68,11 @@ const maxConversations = z.coerce
   .int()
   .positive()
   .parse(values["max-conversations"]);
+const maxTotalConversations = values["max-total-conversations"]
+  ? z.coerce.number().int().positive().parse(values["max-total-conversations"])
+  : Infinity;
+if (Number.isFinite(maxTotalConversations) && !values.cohort)
+  throw new Error("A total conversation checkpoint requires a fixed cohort");
 const output = path.resolve(values.output);
 await mkdir(output, { recursive: true, mode: 0o700 });
 const lockFile = path.join(output, "worker.lock");
@@ -246,8 +252,11 @@ try {
       processedProfiles: 0,
     };
     let attempted = 0;
+    const reachedLimit = () =>
+      attempted >= maxConversations ||
+      attempted + summary.alreadyCurrent >= maxTotalConversations;
     for (const member of members) {
-      if (attempted >= maxConversations) break;
+      if (reachedLimit()) break;
       const screenFile = path.join(
         output,
         `screen-${digest([member.provider, member.sourceId])}.jsonl`,
@@ -294,11 +303,11 @@ try {
           await save(batch[i]!.source, result.redacted[i]!, batch[i]!.score);
         batch = [];
       };
-      while (attempted < maxConversations) {
+      while (!reachedLimit()) {
         const page = await store.page(member, after);
         if (!page.length) break;
         for (const row of page) {
-          if (attempted >= maxConversations) break;
+          if (reachedLimit()) break;
           if (isCurrent(row.source, row.sanitized, row.receipt)) {
             summary.alreadyCurrent++;
             continue;
@@ -343,13 +352,27 @@ try {
         }
         await flush();
         after = page.at(-1)!.source.id;
-        console.log(
-          JSON.stringify({
-            ...summary,
-            jevChargedOrReservedUsd: budget.spent,
-            cap: budget.cap,
-          }),
+        const progress = {
+          ...summary,
+          attempted,
+          visited: attempted + summary.alreadyCurrent,
+          totalLimit: Number.isFinite(maxTotalConversations)
+            ? maxTotalConversations
+            : null,
+          updatedAt: new Date().toISOString(),
+          jevChargedOrReservedUsd: budget.spent,
+          cap: budget.cap,
+        };
+        await writeFile(
+          path.join(output, "progress.partial.json"),
+          JSON.stringify(progress),
+          { mode: 0o600 },
         );
+        await rename(
+          path.join(output, "progress.partial.json"),
+          path.join(output, "progress.json"),
+        );
+        console.log(JSON.stringify(progress));
       }
       await flush();
       summary.processedProfiles++;

@@ -2,7 +2,7 @@
 
 ## Current state
 
-Rollout authorized November 18, including production persistence. The user requested a review after roughly 10% before continuing. Main has been integrated at `ccc8880`; the regenerated migration passed on an isolated production-derived branch. Production processing has not started yet.
+Rollout authorized November 18, including production persistence. The user requested a review after roughly 10% before continuing. Main has been integrated at `ccc8880`; the regenerated migration passed on an isolated production-derived branch. PR #96 was merged and deployed at `a7e9731`. The initial 20-conversation check passed. The first session-bound bulk process then exited without an error log; a database reconciliation found 90 completed conversations, with $0.003363906 charged/reserved in the Jev ledger. Resume using the cumulative stage boundary below. An attempted detached process received a managed-network HTTP 403 (domain not in allowlist), so unattended execution from this managed environment remains blocked.
 
 The November 18 read-only production preflight used the original private 3,871-profile mapping, preserving Ali's existing research pseudonyms. Actual database rows: 621,096 conversations, 513,188 nonempty conversations and 4,129,631 messages. All 4,129,631 messages currently have null `content_sanitized`. Stored counters used in the earlier estimate were slightly higher. Current estimated Jev screening cost is $23.781987, extrapolated from the 1,000-conversation sample, not a quote. The user reported adding $40, implying about $45 available including renewed monthly credit; this is not an independently verified balance.
 
@@ -49,7 +49,7 @@ bun --env-file=.env.research-text.local run privacy:research-text run \
   --write --max-conversations 20 --jev-cap 30
 ```
 
-5. Inspect the saved receipts and sanitized text privately. Process the first 10% checkpoint with `--max-conversations 62090` after the initial 20, for 62,110 newly processed conversations in total. Assess measured Jev cost, actual throughput, errors, receipt integrity, changed-text samples and negative screens. Continue with `--max-conversations 1000000` only after that assessment passes; the user already authorized continuation on good results. That limit covers the current 621,096 matches, including empty matches which need no model call. The worker stops on provider/quota failures or the cumulative cap. Rerun after normal quota availability returns. Completed database records and cached model work are reused. Never delete the spend ledger to make room in the cap.
+5. Inspect the saved receipts and sanitized text privately. Process the first 10% checkpoint with `--max-conversations 1000000 --max-total-conversations 62110`. The total limit counts already-current conversations as well as new attempts, so restarting does not add another 10%. The cohort is traversed in its fixed order; oversized cases occupy a position and remain exceptions for review. Assess measured Jev cost, actual throughput, errors, receipt integrity, changed-text samples and negative screens. Remove `--max-total-conversations` and continue with `--max-conversations 1000000` only after that assessment passes; the user already authorized continuation on good results. That limit covers the current 621,096 matches, including empty matches which need no model call. The worker stops on provider/quota failures or the cumulative cap. Rerun after normal quota availability returns. Completed database records and cached model work are reused. Never delete the spend ledger to make room in the cap.
 6. Resolve any entries in `exceptions.jsonl`; over-limit conversations are deliberately not published. Run export after processing:
 
 ```sh
@@ -71,3 +71,17 @@ Full `bun check` passed: copy validation, migration history, content generation,
 The new tests protect export exclusion of raw/pending/stale content, cohort alias uniqueness, crash-safe budget accounting, source changes during inference, original retention, ownership checks and rollback after a message update but before receipt persistence. Database tests execute the store's actual SQL and generated migration against ephemeral in-process PostgreSQL via a development-only PGlite dependency. They do not establish multi-session locking behavior or Neon transport performance; the initial 20-conversation production run still needs verification. Existing 256-conversation Terra benchmark evidence remains in the November 17 report.
 
 Minor policy calibration still open: possible over-redaction of a street associated with unnamed friends. No prompt changes were made during this preparation, preserving the tested redactor behavior.
+
+## Background execution and checkpoints
+
+For unattended execution, run the command below in a normal local terminal. A session-bound tool command did not survive the first handoff, and detaching inside the managed environment received a network HTTP 403. Do not assume a background launch is working merely because it returned a PID. The existing `worker.lock` prevents duplicate workers. `progress.json` is atomically refreshed after every completed page and includes visited count, total limit, timestamp and cumulative Jev cost. It is an observation checkpoint; database receipts remain authoritative after an abrupt exit. Keep the same output directory on every resume. The worker stops on errors and the checkpoint; it does not automatically bypass review or redeem quota credits.
+
+```sh
+cd /Users/boconsulting/Documents/ChatGPT/Life/swipestats-text-redaction
+bun --env-file=.env.research-text.local run privacy:research-text run \
+  --cohort temp/text-redaction/ali-cohort.json \
+  --output temp/text-redaction/ali-launch \
+  --write --max-conversations 1000000 --max-total-conversations 62110 --jev-cap 30
+```
+
+Only one worker may use the directory. Stop or finish an active foreground run before launching this command. A small live resume with a total limit of 20 correctly observed 20 current conversations and made zero new model calls or database writes.
