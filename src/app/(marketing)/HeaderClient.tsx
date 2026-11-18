@@ -14,9 +14,7 @@ import {
 
 import { ButtonLink } from "@/components/ui/button";
 import { InquiryDialog } from "@/components/inquiries/InquiryDialog";
-// import { OldSwipestatsLogo } from "@/components/ui/OldSwipestatsLogo";
-import { NewOldLogo } from "@/components/ui/NewOldLogo";
-// import { TinderInsights } from "@/components/ui/TinderInsights";
+import { SwipeStatsMark } from "@/components/ui/SwipeStatsMark";
 
 import { authClient } from "@/server/better-auth/client";
 
@@ -245,23 +243,7 @@ export default function HeaderClient({ navigation }: HeaderClientProps) {
                 className="flex items-center space-x-2"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                {/* Original logo with BarChart icon */}
-                {/* <div className="bg-primary text-primary-foreground flex size-6 items-center justify-center rounded-md">
-                  <BarChart3 className="size-4" />
-                </div> */}
-
-                {/* Standalone SVG flame logo (full color) */}
-                {/* <OldSwipestatsLogo className="h-8 w-auto" /> */}
-
-                {/* White flame in red container */}
-                <div className="bg-primary text-primary-foreground flex size-7 items-center justify-center rounded-md">
-                  <NewOldLogo className="size-5" />
-                </div>
-
-                {/* Tinder Insights logo in red container */}
-                {/* <div className="bg-primary text-primary-foreground flex size-7 items-center justify-center rounded-md">
-                  <TinderInsights className="size-5" />
-                </div> */}
+                <SwipeStatsMark tile className="size-7 shrink-0" />
                 <span className="text-xl font-bold">SwipeStats</span>
               </Link>
               <button

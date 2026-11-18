@@ -6,7 +6,7 @@ import { CircleDot, ExternalLink } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/components/ui/lib/utils";
-import { NewOldLogo } from "@/components/ui/NewOldLogo";
+import { SwipeStatsMark } from "@/components/ui/SwipeStatsMark";
 import {
   DEFAULT_PROFILE_ROAST_LENS,
   PROFILE_ROAST_LENSES,
@@ -84,7 +84,7 @@ export function RoastView({
             )}
           >
             {lens.scope === "" ? (
-              <NewOldLogo className="h-5 w-5" />
+              <SwipeStatsMark className="h-5 w-5" />
             ) : lens.imageSrc ? (
               <Image
                 src={lens.imageSrc}

@@ -3,7 +3,7 @@
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
-import { NewOldLogo } from "@/components/ui/NewOldLogo";
+import { SwipeStatsMark } from "@/components/ui/SwipeStatsMark";
 
 import { UserDropdown } from "./UserDropdown";
 import type { Session } from "@/server/better-auth/config";
@@ -19,9 +19,7 @@ export function AppHeader({ session }: AppHeaderProps) {
         {/* Left side - Logo and Navigation */}
         <div className="flex items-center space-x-6">
           <Link href="/app/dashboard" className="flex items-center space-x-2">
-            <div className="bg-primary text-primary-foreground flex size-7 items-center justify-center rounded-md sm:size-8 dark:bg-rose-600 dark:text-white">
-              <NewOldLogo className="size-5 sm:size-6" />
-            </div>
+            <SwipeStatsMark tile className="size-7 shrink-0 sm:size-8" />
             <span className="text-xl font-bold">SwipeStats</span>
           </Link>
           <div className="hidden items-center space-x-1 md:flex">
