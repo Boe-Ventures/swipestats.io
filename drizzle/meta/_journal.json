@@ -134,6 +134,13 @@
       "when": 1794097540199,
       "tag": "0018_watery_silver_sable",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1794996465691,
+      "tag": "0019_message_text_redaction_receipts",
+      "breakpoints": true
     }
   ]
 }

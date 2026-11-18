@@ -15,6 +15,7 @@ export default defineConfig(
       "node_modules/**",
       ".velite/**",
       ".context/**",
+      "temp/**",
       "ds-bundle/**",
       ".design-sync/**",
       "src/components/ui/.ds-*.ts",
