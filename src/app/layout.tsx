@@ -75,10 +75,9 @@ export default function RootLayout({
       suppressHydrationWarning
       className={cn(inter.variable, geistMono.variable)}
     >
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: themeDetectorScript }} />
-      </head>
       <body className="bg-background text-foreground min-h-screen font-sans antialiased">
+        {/* Apply the saved theme before the browser parses the page content. */}
+        <script dangerouslySetInnerHTML={{ __html: themeDetectorScript }} />
         <TRPCReactProvider>
           <ThemeProvider>
             <AnalyticsProvider>
