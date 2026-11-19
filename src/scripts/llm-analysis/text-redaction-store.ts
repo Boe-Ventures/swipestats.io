@@ -1,9 +1,4 @@
-import {
-  neon,
-  neonConfig,
-  Pool,
-  type PoolClient,
-} from "@neondatabase/serverless";
+import { neon, neonConfig, Pool } from "@neondatabase/serverless";
 import ws from "ws";
 import { z } from "zod";
 import {
@@ -79,16 +74,6 @@ export function createTextStore(connectionString: string) {
   });
   const ownerColumn = (member: TextCohortMember) =>
     member.provider === "TINDER" ? "tinder_profile_id" : "hinge_profile_id";
-  const lock = async (client: PoolClient, member: TextCohortMember) => {
-    const prefix =
-      member.provider === "TINDER"
-        ? "tinder-profile-upload"
-        : "hinge-profile-upload";
-    await client.query(
-      "SELECT pg_advisory_xact_lock(hashtextextended($1, 0))",
-      [`${prefix}:${member.sourceId}`],
-    );
-  };
   const selection = `m.id, m.text_redaction AS receipt, coalesce(jsonb_agg(jsonb_build_object(
     'id', msg.id, 'content', msg.content, 'sanitized', msg.content_sanitized,
     'order', msg."order", 'sentDate', msg.sent_date_raw, 'messageType', msg.message_type
@@ -178,56 +163,52 @@ export function createTextStore(connectionString: string) {
       );
       return rows.map(parseRow);
     },
-    async save(
+    async saveBatch(
       member: TextCohortMember,
-      source: Conversation,
-      sanitized: Conversation,
-      receipt: TextRedactionReceipt,
+      entries: { sanitized: Conversation; receipt: TextRedactionReceipt }[],
     ) {
+      if (!entries.length) return;
+      for (const { sanitized, receipt } of entries)
+        if (digest(sanitized) !== receipt.outputDigest)
+          throw new Error("Sanitized output does not match receipt");
+      const messages = entries.flatMap(({ sanitized }) =>
+        sanitized.messages.map((message) => ({
+          id: message.id,
+          match_id: sanitized.id,
+          content: message.content,
+        })),
+      );
+      const receipts = entries.map(({ sanitized, receipt }) => ({
+        id: sanitized.id,
+        receipt,
+      }));
       const client = await pool.connect();
       try {
         await client.query("BEGIN");
-        await lock(client, member);
-        await client.query(
-          `SELECT id FROM match WHERE id=$1 AND ${ownerColumn(member)}=$2 FOR UPDATE`,
-          [source.id, member.sourceId],
-        );
-        await client.query(
-          "SELECT id FROM message WHERE match_id=$1 FOR UPDATE",
-          [source.id],
-        );
-        // Same ingestion lock + a fresh read prevents saving over a repeat upload.
-        const current = await client.query(
-          `SELECT ${selection} FROM match m LEFT JOIN message msg ON msg.match_id=m.id
-          WHERE m.id=$1 AND m.${ownerColumn(member)}=$2 GROUP BY m.id, m.text_redaction`,
-          [source.id, member.sourceId],
-        );
-        if (
-          current.rows.length !== 1 ||
-          digest(parseRow(current.rows[0]).source) !== receipt.inputDigest ||
-          digest(source) !== receipt.inputDigest ||
-          digest(sanitized) !== receipt.outputDigest
-        )
-          throw new Error(
-            "Source changed during redaction; retry this conversation",
-          );
-        const update = await client.query(
+        // This is an offline materialization. The exporter checks source and
+        // output digests before releasing text; no source reread is needed here.
+        // Keep text and receipts atomic so a failed page can simply be retried.
+        const updatedMessages = await client.query(
           `UPDATE message m SET content_sanitized=x.content
-          FROM jsonb_to_recordset($1::jsonb) AS x(id text, content text)
-          WHERE m.id=x.id AND m.match_id=$2`,
-          [
-            JSON.stringify(
-              sanitized.messages.map(({ id, content }) => ({ id, content })),
-            ),
-            source.id,
-          ],
+          FROM jsonb_to_recordset($1::jsonb) AS x(id text, match_id text, content text), match owner
+          WHERE m.id=x.id AND m.match_id=x.match_id AND owner.id=m.match_id
+            AND owner.${ownerColumn(member)}=$2`,
+          [JSON.stringify(messages), member.sourceId],
         );
-        if (update.rowCount !== source.messages.length)
-          throw new Error("Message count changed while saving");
-        await client.query(
-          "UPDATE match SET text_redaction=$1::jsonb WHERE id=$2",
-          [JSON.stringify(receipt), source.id],
+        if (updatedMessages.rowCount !== messages.length)
+          throw new Error(
+            "Message count or ownership changed while saving page",
+          );
+        const updatedMatches = await client.query(
+          `UPDATE match SET text_redaction=x.receipt
+          FROM jsonb_to_recordset($1::jsonb) AS x(id text, receipt jsonb)
+          WHERE match.id=x.id AND match.${ownerColumn(member)}=$2`,
+          [JSON.stringify(receipts), member.sourceId],
         );
+        if (updatedMatches.rowCount !== entries.length)
+          throw new Error(
+            "Conversation count or ownership changed while saving page",
+          );
         await client.query("COMMIT");
       } catch (error) {
         await client.query("ROLLBACK");

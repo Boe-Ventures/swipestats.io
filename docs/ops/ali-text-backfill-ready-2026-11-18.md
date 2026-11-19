@@ -13,8 +13,8 @@ The prepared run has a hard $30 Jev ledger cap. Terra uses the authenticated Cod
 - `privacy:research-text` supports `plan`, `run` and `export` against an explicit `TEXT_REDACTION_DATABASE_URL`. It never silently uses the application's default development connection.
 - The generated migration `0019_message_text_redaction_receipts.sql` adds nullable `match.text_redaction`. Each successful receipt binds the pipeline configuration, full conversation input, sanitized output, screening score and completion time.
 - Messages retain `content` and `content_raw`; only `content_sanitized` is written. Negative screens explicitly save unchanged text as processed.
-- Database saves acquire the profile ingestion lock and row locks, reread source data, and atomically save all sanitized messages and the receipt. Changed source, wrong ownership, missing messages and incomplete writes cannot be marked complete.
-- New matches start pending. Tinder and Hinge additive/repeat-upload paths invalidate receipts in the same transaction as source changes. A local `--pending` worker handles both through the same processor. Processing is asynchronous; the web upload request does not invoke the subscription CLI.
+- Database saves bulk-write sanitized messages and receipts for a page in one transaction, with ownership and affected-row checks. They do not explicitly lock profiles or reread source text. Source freshness is checked at export; rerun the fixed cohort if export detects changed data.
+- New matches start pending. Tinder and Hinge additive/repeat-upload paths invalidate receipts in the same transaction as source changes. A local `--pending` worker handles both through the same processor. Processing is an on-demand offline job; the web upload request does not invoke the subscription CLI.
 - Screening is one whole conversation per Jev call at cutoff 0.2. Flagged conversations are batched through GPT-6.1 Terra medium, up to 32 conversations and a 40,000-character target; the hard per-conversation bound is 60,000 characters. No message is silently truncated.
 - Jev results, Codex results, input fingerprints and spend reservations survive restarts. The ledger reserves the documented full 32k input window before each Jev request, then replaces the reservation with measured cost on success. Ambiguous failures retain their conservative charge. The cap is cumulative for this output directory, including subsequent invocations. Keep using that directory when resuming.
 - Export streams a gzip JSONL supplement using only validated, current sanitized content. It includes the original profile aliases and deterministically pseudonymized conversation/message IDs. Raw content, source IDs, processing receipts and API scores are excluded. The entire export fails on pending, stale or incomplete work; it never falls back to raw text. A final file is only published locally after completion.
@@ -89,3 +89,54 @@ Only one worker may use the directory. Stop or finish an active foreground run b
 ## Transient Jev failures
 
 A Warp run reached at least 563 completed conversations before a Jev `ECONNRESET`. Screening now makes at most five attempts for connection resets/timeouts and HTTP 408, 429, 500, 502, 503 or 504, waiting 2, 4, 8 and 16 seconds between attempts. Authorization failures, invalid responses and ledger errors still stop immediately. Each retry reserves its own worst-case cost; ambiguous failed reservations remain in the same cumulative $30 ledger. This changes transport recovery only, so existing receipts and model checkpoints remain reusable. After a stopped run, rerun the same fixed-total command in Warp.
+
+
+## Codex conversation ID recovery (November 19)
+
+The resumed Warp worker reached 851 conversations at its last complete page,
+then Codex returned ten results for a ten-conversation batch with one foreign
+ID replacing one expected ID. Read-only reconstruction matched the failed
+batch fingerprint exactly. Validation rejected the result before saving that
+batch; previously saved receipts and cached Jev screens remain reusable.
+
+The adapter now constrains the response schema to the supplied conversation
+IDs and exact result count. Completed responses that fail JSON, identity or
+quote validation get at most three attempts total. Every attempt uses the
+same validation; no raw-text fallback is introduced. Provider/quota failures,
+unexpected tool activity and filesystem errors remain terminal. Private
+attempt directories preserve each response and log; successful checkpoints
+include token usage from rejected completed responses as well. Existing
+valid checkpoints and pipeline receipts remain reusable.
+
+Resume with the same Warp command above. Keep the same output directory,
+62,110-conversation checkpoint and $30 cumulative Jev cap. No duplicate worker
+was launched while preparing this fix. Mocked regression coverage exercises
+foreign IDs, invalid quotes, successful recovery, exhausted validation retries
+and terminal quota errors. A live replay from the managed session could not
+initialize the Codex app-server (Operation not permitted); Warp replay remains
+to be verified.
+
+
+## Offline page writes (November 19)
+
+This processor is an offline research-export preparation tool, not a live
+upload dependency. The database schema stays unchanged. A page stages screened
+and redacted results in memory, then bulk-updates sanitized messages and
+completion receipts in one transaction. There are four database statements per
+written page (begin, two updates, commit), instead of eight per conversation.
+The ordinary page read is unchanged. Explicit profile/row locks and the source
+reread were removed; PostgreSQL still takes its normal update locks.
+
+If a page fails, it is rolled back and can be retried using the existing model
+checkpoints. Raw text remains untouched. Source/output digests still gate every
+research export. If an upload changes a conversation while this offline job is
+running, export rejects the stale result; rerun the fixed cohort to refresh it.
+The --pending selector is a convenience for invalidated/new profiles, not a
+substitute for the fixed-cohort freshness pass before export.
+
+Regression coverage uses real SQL in isolated PGlite for mixed multi-conversation
+pages (including empty conversations), full-page rollback, ownership, both
+providers, and export rejection after source additions or edits. Production
+throughput has not been benchmarked for this change. An already-running Warp
+process keeps its loaded code until restarted; no worker was stopped or started
+while preparing this optimization.

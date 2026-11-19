@@ -281,18 +281,16 @@ try {
       }
       let after = "";
       let batch: { source: Conversation; score: number }[] = [];
-      const save = async (
+      let writes: Parameters<typeof store.saveBatch>[1] = [];
+      const stage = (
         source: Conversation,
         sanitized: Conversation,
         score: number,
       ) => {
-        await store.save(
-          member,
-          source,
+        writes.push({
           sanitized,
-          makeReceipt(source, sanitized, score),
-        );
-        summary.completed++;
+          receipt: makeReceipt(source, sanitized, score),
+        });
       };
       const flush = async () => {
         if (!batch.length) return;
@@ -300,7 +298,7 @@ try {
           batch.map((item) => item.source),
         );
         for (let i = 0; i < batch.length; i++)
-          await save(batch[i]!.source, result.redacted[i]!, batch[i]!.score);
+          stage(batch[i]!.source, result.redacted[i]!, batch[i]!.score);
         batch = [];
       };
       while (!reachedLimit()) {
@@ -337,8 +335,7 @@ try {
             screens.set(result.inputDigest, score);
             summary.screened++;
           } else summary.cachedScreens++;
-          if (score < TEXT_PIPELINE.threshold)
-            await save(source, source, score);
+          if (score < TEXT_PIPELINE.threshold) stage(source, source, score);
           else {
             if (
               batch.length >= 32 ||
@@ -351,6 +348,9 @@ try {
           }
         }
         await flush();
+        await store.saveBatch(member, writes);
+        summary.completed += writes.length;
+        writes = [];
         after = page.at(-1)!.source.id;
         const progress = {
           ...summary,
@@ -374,7 +374,6 @@ try {
         );
         console.log(JSON.stringify(progress));
       }
-      await flush();
       summary.processedProfiles++;
     }
     await writeFile(
