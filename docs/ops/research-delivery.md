@@ -47,10 +47,12 @@ Run `bun test src/lib/research` and the repository gate `bun check`. Tests cover
 
 ### Checkout integration checks
 
-The dataset service suite protects the receipt/redirect distinction for every tier and checks that provider failures produce useful diagnostics without logging customer email, license keys, raw provider errors or checkout payloads. These mocked tests do not prove that the provider still accepts the request.
+Checkout acceptance is verified with Lemon Squeezy, not a mocked successful response. Local tests cover log redaction and our fulfillment quantity/failure decisions only. They cannot establish that the provider accepts a URL, variant or checkout request.
+
+The download form explains the receipt layout: the **License key:** block sits below the order total and above **Download your dataset**.
 
 After checkout integration changes, run an authorized unpaid smoke check from `/research` for Starter and Standard. Confirm each request returns a checkout URL and the hosted checkout shows the intended product, quantity and price. Do not enter customer email or payment information, complete a purchase, or share the temporary checkout URLs. Created checkout links expire after 30 minutes. Verify paid fulfillment separately with an authorized test-mode purchase when that flow changes.
 
-Provider failures emit `Dataset checkout creation failed` with the attempt ID, tier, variant, HTTP status and allowlisted invalid field names. Inspect that application log event when diagnosing failures. The tRPC streaming transport can return HTTP 200 even when a procedure fails, so HTTP status monitoring alone is insufficient. This logging is not an alert subscription or an automated provider smoke check.
+Provider failures emit `Dataset checkout creation failed` with the attempt ID, tier, variant, HTTP status and a redacted error tree, including messages, stacks, every provider validation error and nested causes. Customer emails, license keys, configured API credentials, URLs and sensitive payload fields are removed before logging. Inspect that application log event when diagnosing failures. The tRPC streaming transport can return HTTP 200 even when a procedure fails, so HTTP status monitoring alone is insufficient. This logging is not an alert subscription or an automated provider smoke check.
 
 The rejected receipt-link form was introduced in [PR #67](https://github.com/Boe-Ventures/swipestats.io/pull/67), which moved both URLs from query strings to fragments to protect license credentials. Local tests covered license handling but not the provider's different URL validation rules. This identifies the code change, not the date the production outage began or whether provider validation changed later.

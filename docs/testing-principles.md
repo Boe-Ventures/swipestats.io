@@ -25,6 +25,13 @@ rejection boundaries. Mock database/provider calls; do not use live customer
 data or shared database credentials. Tests should fail for the stated defect,
 not just because implementation structure changed.
 
+Do not use an unconditional mocked success as evidence that an external
+integration works. Provider URL validation, credentials, pricing and request
+acceptance require a real authorized integration check. HTTP fixtures may
+isolate tests of our own privacy, entitlement or failure-handling decisions;
+name that limited scope explicitly. Prefer testing pure local functions
+directly instead of mocking an SDK to reach them.
+
 ## What usually does not earn a test
 
 Routine copy, layout, formatting, wrapper plumbing, exhaustive helper
