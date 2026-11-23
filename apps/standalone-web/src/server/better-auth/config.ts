@@ -73,6 +73,17 @@ export const auth = betterAuth({
   secret: env.BETTER_AUTH_SECRET,
   emailAndPassword: {
     enabled: true,
+    sendResetPassword: async ({ user, url }) => {
+      if (user.email.endsWith("@anonymous.swipestats.io")) return;
+
+      const { error } = await resend.emails.send({
+        from: "SwipeStats <noreply@mail.swipestats.io>",
+        to: user.email,
+        subject: "Reset your SwipeStats password",
+        text: `Reset your password using this link: ${url}\n\nIf you did not request this, you can ignore this email.`,
+      });
+      if (error) throw new Error("Failed to send password reset email");
+    },
     // Don't require email verification - allows anonymous conversions to work
     // and lets users with unverified emails still sign in
     requireEmailVerification: false,

@@ -32,7 +32,7 @@ export function shouldCleanupTransientUpload(input: {
 
 export function shouldReuseTransientUpload(error: {
   message?: string;
-  data?: { code?: string } | null;
+  code?: string;
 }): boolean {
   if (error.message?.includes(RETRYABLE_UPLOAD_CLEANUP_PREFIX)) return true;
   const message = error.message?.toLowerCase() ?? "";
@@ -50,6 +50,6 @@ export function shouldReuseTransientUpload(error: {
   // server/network failures and response loss; discard it only when retrying
   // the same payload cannot become valid.
   return !["BAD_REQUEST", "UNAUTHORIZED", "FORBIDDEN"].includes(
-    error.data?.code ?? "",
+    error.code ?? "",
   );
 }

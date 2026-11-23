@@ -25,24 +25,43 @@ timestamps. A subsequent `0021_love_stories` migration adds the five private
 Love Stories tables described below. The historical migration
 description below describes the November 14 run, not the current chain.
 
-`bun check` passed, including migration-history validation, lint/typechecking,
-and all 68 tests (281 assertions). The existing HTTP/OAuth verification passed against the
-new database, including two authenticated browser pages, owner and admin
-boundaries, paid AI denial, three MCP tools, disconnect revocation, and 145
-OpenAPI operations. The initial dev browser run reported a hydration mismatch
-around streamed metadata; an unchanged rerun passed. Treat this as a remaining
-UI validation concern before production rollout, not a proven fix.
+Current SwipeStats `main` at `9b2fd0e29985126fec82d3b2e4becb2b9e9aec59`
+is now merged into this experiment. The newer Tinder/Hinge ownership and import
+safeguards, guest conversion protections, password reset, research text redaction,
+and branding are included. Changed routers, upload screens and regression fixtures
+use oRPC. Love Stories persistence and the existing OAuth/MCP connection remain
+intact. Upload retries read oRPC's top-level error code, and upload-context
+invalidation uses the oRPC query key. All 91 changed upstream paths were accounted
+for in the standalone app. No additional database migration was needed for this merge.
 
-Only the schema/migration history was reconciled with current production here;
-the newer application changes still need integration. There is still no PR or
-Vercel deployment for this experiment. The product direction is now to finish
-the SwipeStats migration first, then build Love Stories as a feature with an
-independent entry point. Keep its API inside the standalone web app. See the
+Validation after the merge:
+
+- `bun check`: copy policy, migration history, lint (10 warnings, no errors),
+  TypeScript, and 93 passing tests across 40 files (369 assertions).
+- Disposable local PostgreSQL regressions: Tinder and Hinge ownership, import
+  preservation, consent, archive retention, conversion and rollback.
+- Isolated-database HTTP/OAuth checks: two authenticated browser pages, ownership,
+  admin and paid AI boundaries, PKCE/consent, three MCP tools, account isolation,
+  disconnect revocation, and 161 OpenAPI operations.
+- Love Stories checks: private CRUD, replay/stale-edit handling, ordering, links,
+  export, account transfer/deletion, browser save/reload and mobile layout.
+- Public browser checks: five pages, both presentation modes, name-only empty state,
+  fictional draft/reload behavior, mobile overflow and zero uncaught browser errors.
+- Independent export to `/tmp/swipestats-standalone-main-nov23`: frozen-lockfile
+  install and production build passed outside the monorepo. Validation inherited
+  this checkout's isolated environment; no environment file was copied into the export.
+
+The earlier streamed-metadata hydration mismatch did not recur in these browser
+checks. These are bounded checks, not exhaustive production UI/provider validation.
+There is still no PR or Vercel deployment for this experiment. The product direction
+is to finish the SwipeStats migration first, then build Love Stories as a feature
+with an independent entry point. Keep its API inside the standalone web app. See the
 [data-model discussion draft](love-stories-data-model.md).
 
 ## Provenance and scope
 
-SwipeStats source: `2b0ee362bf7e25b5a9e6d6a8b0d07a9fd1285837`.
+Original SwipeStats source: `2b0ee362bf7e25b5a9e6d6a8b0d07a9fd1285837`.
+Integrated main: `9b2fd0e29985126fec82d3b2e4becb2b9e9aec59` (November 23, 2026).
 Draupnir source: `ca517037bc496dda57bca47b986566156cf9364a`.
 Reference conversation: `01a1da2b-3b32-70a2-a16b-67833075a9fb` (Towers migration), read across its paginated transcript.
 Local branch: `codex/draupnir-experiment`. Original SwipeStats, Love Stories, Draupnir and Towers working directories are untouched.
@@ -59,7 +78,7 @@ Next.js remains at the source lockfile's 16.1.6. Most direct dependencies are pi
 
 An exported app has its own Bun lockfile, Next config and source. It needs no workspace package imports. Native shells are optional workspace baggage; shipping only the Next.js package is viable.
 
-## Database isolation
+## Original database isolation (November 14, superseded)
 
 Neon project: `little-breeze-40351572` (SwipeStats4).
 Experiment branch: `br-rapid-silence-agpwzenl`, named `codex/swipestats-draupnir-experiment`, created from production for schema/data parity. It expires **2026-11-21 23:59 UTC**. The branch contains copied production data and remains private.
@@ -84,7 +103,7 @@ records and anonymous transfer preserves them. The guarded
 `apps/standalone-web/scripts/verify-love-stories.ts` exercises ownership, cross-owner
 links, updates, ordering, source preservation, export, transfer and deletion,
 plus browser save/reload and mobile layout, using disposable fictional accounts.
-`bun check` passes with 68 tests and 281 assertions.
+`bun check` now passes with 93 tests and 369 assertions after integration with main.
 
 The temporary save-testing screen is `/experiments/love-stories/workspace`.
 The intended product is display-first, with updates through MCP or in-app chat.

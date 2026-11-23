@@ -57,7 +57,12 @@
     "velite:build": "velite build",
     "velite:dev": "velite --watch",
     "email:dev": "email dev",
-    "amplitude:sync-taxonomy": "bun src/scripts/sync-amplitude-taxonomy.ts"
+    "amplitude:sync-taxonomy": "bun src/scripts/sync-amplitude-taxonomy.ts",
+    "data-layer:rekey-hinge-profiles": "bun run src/scripts/data-layer/rekey-hinge-profiles.ts",
+    "test:tinder:postgres": "bun scripts/test-tinder-ownership-postgres.ts",
+    "test:hinge:postgres": "bun scripts/test-hinge-ownership-postgres.ts",
+    "privacy:benchmark-text-codex": "bun run src/scripts/llm-analysis/benchmark-text-codex.ts",
+    "privacy:research-text": "bun run src/scripts/llm-analysis/process-research-text.ts"
   },
   "portless": {
     "name": "swipestats",
@@ -179,7 +184,8 @@
     "velite": "0.3.1",
     "@modelcontextprotocol/client": "2.0.0",
     "@playwright/test": "1.61.1",
-    "@next/env": "16.1.6"
+    "@next/env": "16.1.6",
+    "@electric-sql/pglite": "0.5.16"
   },
   "ct3aMetadata": {
     "initVersion": "7.40.0"

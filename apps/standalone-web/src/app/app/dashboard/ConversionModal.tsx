@@ -26,6 +26,7 @@ import { CollapsibleEmailField } from "@/components/auth/CollapsibleEmailField";
 interface ConversionModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onConverted?: () => void | Promise<void>;
   initialEmail?: string; // Pre-fill email if provided (e.g., from newsletter signup)
 }
 
@@ -39,6 +40,7 @@ export function ConversionModal({
   open,
   onOpenChange,
   initialEmail,
+  onConverted,
 }: ConversionModalProps) {
   const router = useRouter();
   const { data: _session } = authClient.useSession();
@@ -104,7 +106,8 @@ export function ConversionModal({
 
         // Better Auth automatically triggers onLinkAccount for anonymous users
         // Data transfer happens in the backend hook
-        router.push("/app/dashboard");
+        if (onConverted) await onConverted();
+        else router.push("/app/dashboard");
         router.refresh();
         onOpenChange(false);
       }
@@ -137,7 +140,8 @@ export function ConversionModal({
       if (data) {
         // Better Auth automatically triggers onLinkAccount for anonymous users
         // Data transfer happens in the backend hook
-        router.push("/app/dashboard");
+        if (onConverted) await onConverted();
+        else router.push("/app/dashboard");
         router.refresh();
         onOpenChange(false);
       }

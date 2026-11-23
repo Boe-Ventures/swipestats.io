@@ -10,12 +10,23 @@ import {
   tinderUsageTable,
   customDataTable,
   profileMetaTable,
+  tinderExportRevisionTable,
+  aiOutputTable,
+  purchaseTable,
+  jobTable,
+  schoolTable,
 } from "@/server/db/schema";
 import { createId } from "@/server/db/utils";
 import { computeProfileMeta } from "@/server/services/profile/meta.service";
 import { purgeTinderSwipeRankProfilesInTx } from "@/server/services/swipe-rank/lifecycle.service";
 import { invalidatePublicSwipeRankCache } from "@/server/services/swipe-rank/public-cache";
 import { isAdminRequestAuthorized } from "@/lib/admin-request-auth";
+import {
+  lockTinderProviderMutationsInTx,
+  lockTinderProfileUploadInTx,
+} from "@/server/services/profile/upload-lock";
+
+class ProfileMergeReviewRequiredError extends Error {}
 
 /**
  * Admin endpoint to merge two Tinder profiles
@@ -59,6 +70,12 @@ export async function POST(request: Request) {
     );
 
     const result = await withTransaction(async (tx) => {
+      // Match upload lock ordering so guest conversion cannot miss the target
+      // row while this transaction removes the source profile.
+      await lockTinderProviderMutationsInTx(tx);
+      for (const tinderId of [oldTinderId, newTinderId].sort()) {
+        await lockTinderProfileUploadInTx(tx, tinderId);
+      }
       // 1. Fetch both profiles
       const [oldProfile, newProfile] = await Promise.all([
         tx.query.tinderProfileTable.findFirst({
@@ -75,6 +92,27 @@ export async function POST(request: Request) {
 
       if (!newProfile) {
         throw new Error(`New profile not found: ${newTinderId}`);
+      }
+
+      // This legacy maintenance endpoint can cross owners. Do not discard
+      // paid artifacts or private export history, or silently reassign them.
+      for (const table of [
+        tinderExportRevisionTable,
+        aiOutputTable,
+        purchaseTable,
+        jobTable,
+        schoolTable,
+      ]) {
+        const [preservedRecord] = await tx
+          .select({ tinderProfileId: table.tinderProfileId })
+          .from(table)
+          .where(eq(table.tinderProfileId, oldTinderId))
+          .limit(1);
+        if (preservedRecord) {
+          throw new ProfileMergeReviewRequiredError(
+            "This profile has export history, AI artifacts, purchases, jobs, or schools. Support review is required to preserve that history before merging; no profiles have been changed.",
+          );
+        }
       }
 
       console.log(`   ✓ Found both profiles`);
@@ -240,10 +278,13 @@ export async function POST(request: Request) {
     console.error("Error in merge-profiles endpoint:", error);
     return NextResponse.json(
       {
-        error: "Internal server error",
+        error:
+          error instanceof ProfileMergeReviewRequiredError
+            ? "Profile merge requires support review"
+            : "Internal server error",
         details: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 500 },
+      { status: error instanceof ProfileMergeReviewRequiredError ? 409 : 500 },
     );
   }
 }

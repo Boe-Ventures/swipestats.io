@@ -55,6 +55,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
           maximumSizeInBytes: policy.maximumSizeInBytes,
           validUntil: policy.validUntil,
           addRandomSuffix: policy.addRandomSuffix,
+          // Hinge sources are retained and may later require privacy redaction.
+          cacheControlMaxAge:
+            policy.resourceType === "hinge_data" ? 60 : undefined,
           tokenPayload: policy.tokenPayload,
         };
       },
