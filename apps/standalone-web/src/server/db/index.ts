@@ -25,6 +25,7 @@ const augmentedSchema = {
   session: schema.sessionTable,
   account: schema.accountTable,
   verification: schema.verificationTable,
+  apikey: schema.apiKeyTable,
   jwks: schema.jwksTable,
   oauthClient: schema.oauthClientTable,
   oauthAccessToken: schema.oauthAccessTokenTable,

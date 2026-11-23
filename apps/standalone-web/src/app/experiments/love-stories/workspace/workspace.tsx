@@ -1,6 +1,13 @@
 "use client";
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
+import { Fields, type Field } from "./fields";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { domain, domainClient, type RouterOutputs } from "@/domain/react";
 import { authClient } from "@/server/better-auth/client";
@@ -14,19 +21,8 @@ const api = domainClient.loveStories;
 const button =
   "rounded-lg border border-stone-300 px-3 py-2 text-sm hover:bg-stone-100 disabled:opacity-40";
 const primary = `${button} bg-stone-800 text-white hover:bg-stone-700`;
-const inputStyle =
-  "mt-1 w-full rounded-lg border border-stone-300 bg-white p-2 text-stone-900";
 type Encounter = RouterOutputs["loveStories"]["encounter"]["list"][number];
 type Entry = RouterOutputs["loveStories"]["entry"]["get"];
-type Field = {
-  name: string;
-  label: string;
-  type?: "number" | "textarea" | "list" | "url" | "date" | "time";
-  options?: string[];
-  required?: boolean;
-  min?: number;
-  max?: number;
-};
 const personFormFields: Field[] = [
   { name: "displayName", label: "Name", required: true },
   { name: "tagline", label: "A few words about them" },
@@ -173,72 +169,6 @@ const encounterFormFields: Field[] = [
 ];
 function title(value: string) {
   return value.replaceAll("_", " ");
-}
-function Fields({
-  fields,
-  initial,
-}: {
-  fields: Field[];
-  initial: Record<string, unknown>;
-}) {
-  return (
-    <div className="grid gap-4 sm:grid-cols-2">
-      {fields.map((field) => {
-        const raw = initial[field.name];
-        const value = Array.isArray(raw)
-          ? raw.join(", ")
-          : typeof raw === "string" ||
-              typeof raw === "number" ||
-              typeof raw === "boolean"
-            ? String(raw)
-            : "";
-        return (
-          <label
-            key={field.name}
-            className={`block text-sm ${field.type === "textarea" ? "sm:col-span-2" : ""}`}
-          >
-            {field.label}
-            {field.options ? (
-              <select
-                name={field.name}
-                aria-label={field.label}
-                defaultValue={value}
-                className={inputStyle}
-              >
-                <option value="">Not specified</option>
-                {field.options.map((option) => (
-                  <option key={option} value={option}>
-                    {title(option)}
-                  </option>
-                ))}
-              </select>
-            ) : field.type === "textarea" ? (
-              <textarea
-                name={field.name}
-                aria-label={field.label}
-                defaultValue={value}
-                required={field.required}
-                rows={4}
-                className={inputStyle}
-              />
-            ) : (
-              <input
-                name={field.name}
-                aria-label={field.label}
-                defaultValue={value}
-                required={field.required}
-                type={field.type === "list" ? "text" : (field.type ?? "text")}
-                min={field.min}
-                max={field.max}
-                step={field.type === "number" ? 1 : undefined}
-                className={inputStyle}
-              />
-            )}
-          </label>
-        );
-      })}
-    </div>
-  );
 }
 function readFields(form: HTMLFormElement, fields: Field[]) {
   const data = new FormData(form);
@@ -439,10 +369,14 @@ function EntryCard({
       </div>
       <p className="mt-3 text-sm leading-7 whitespace-pre-wrap">{value.body}</p>
       {value.body !== value.originalBody ? (
-        <details className="mt-3 text-sm">
-          <summary>Original wording</summary>
-          <p className="mt-2 whitespace-pre-wrap">{value.originalBody}</p>
-        </details>
+        <Accordion className="mt-3">
+          <AccordionItem value="original">
+            <AccordionTrigger>Original wording</AccordionTrigger>
+            <AccordionContent>
+              <p className="whitespace-pre-wrap">{value.originalBody}</p>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       ) : null}
     </article>
   );
@@ -784,33 +718,43 @@ function PersonStory({
           </button>
         ) : null}
       </div>
-      <details className="border-t border-stone-200 pt-4 text-sm">
-        <summary>Remove this person</summary>
-        <p className="my-3">
-          Deletes their encounters and links. Entries remain in your account.
-        </p>
-        <button
-          className={button}
-          disabled={action.isPending}
-          onClick={() => {
-            if (
-              window.confirm(
-                "Delete this person and their encounters? Entries will remain.",
-              )
-            )
-              action.mutate(async () => {
-                await api.person.delete({ id: p.id, version: p.version });
-                onDeleted();
-              });
-          }}
-        >
-          Delete person
-        </button>
-      </details>
+      <Accordion className="border-t border-stone-200">
+        <AccordionItem value="remove">
+          <AccordionTrigger>Remove this person</AccordionTrigger>
+          <AccordionContent>
+            <p className="my-3">
+              Deletes their encounters and links. Entries remain in your
+              account.
+            </p>
+            <button
+              className={button}
+              disabled={action.isPending}
+              onClick={() => {
+                if (
+                  window.confirm(
+                    "Delete this person and their encounters? Entries will remain.",
+                  )
+                )
+                  action.mutate(async () => {
+                    await api.person.delete({ id: p.id, version: p.version });
+                    onDeleted();
+                  });
+              }}
+            >
+              Delete person
+            </button>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
     </section>
   );
 }
-export function LoveStoriesWorkspace() {
+export function LoveStoriesWorkspace({
+  embedded = false,
+}: {
+  embedded?: boolean;
+}) {
+  const Container = embedded ? "section" : "main";
   const session = authClient.useSession();
   const [selected, setSelected] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
@@ -822,12 +766,20 @@ export function LoveStoriesWorkspace() {
     }),
   );
   return (
-    <main className="min-h-screen bg-[#f7f4ee] px-5 py-10 text-stone-800">
+    <Container
+      className={
+        embedded
+          ? "rounded-2xl bg-[#f7f4ee] px-5 py-10 text-stone-800"
+          : "min-h-screen bg-[#f7f4ee] px-5 py-10 text-stone-800"
+      }
+    >
       <div className="mx-auto max-w-6xl">
         <header className="mb-10 border-b border-stone-300 pb-7">
-          <Link href="/app/dashboard" className="text-sm text-stone-500">
-            SwipeStats
-          </Link>
+          {!embedded && (
+            <Link href="/app/dashboard" className="text-sm text-stone-500">
+              SwipeStats
+            </Link>
+          )}
           <h1 className="mt-4 font-serif text-5xl">Love Stories</h1>
           <p className="mt-4 max-w-xl leading-7 text-stone-600">
             People, moments, and what they meant. Your private workspace, with
@@ -925,6 +877,6 @@ export function LoveStoriesWorkspace() {
           </div>
         )}
       </div>
-    </main>
+    </Container>
   );
 }

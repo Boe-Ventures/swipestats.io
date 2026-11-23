@@ -1,4 +1,6 @@
 import { oauthProvider } from "@better-auth/oauth-provider";
+import { apiKey } from "@better-auth/api-key";
+import { SWIPESTATS_API_KEY_PREFIX } from "@/lib/api-keys";
 import { jwt } from "better-auth/plugins";
 import {
   SWIPESTATS_AUTH_ISSUER,
@@ -63,6 +65,7 @@ export const auth = betterAuth({
       session: schema.sessionTable,
       account: schema.accountTable,
       verification: schema.verificationTable,
+      apikey: schema.apiKeyTable,
       jwks: schema.jwksTable,
       oauthClient: schema.oauthClientTable,
       oauthAccessToken: schema.oauthAccessTokenTable,
@@ -71,6 +74,14 @@ export const auth = betterAuth({
     },
   }),
   secret: env.BETTER_AUTH_SECRET,
+  // Issue scoped personal keys through the session-only oRPC domain.
+  disabledPaths: [
+    "/api-key/create",
+    "/api-key/update",
+    "/api-key/delete",
+    "/api-key/get",
+    "/api-key/list",
+  ],
   emailAndPassword: {
     enabled: true,
     sendResetPassword: async ({ user, url }) => {
@@ -340,6 +351,13 @@ export const auth = betterAuth({
     "https://www.swipestats.io",
   ],
   plugins: [
+    apiKey({
+      defaultPrefix: SWIPESTATS_API_KEY_PREFIX,
+      requireName: true,
+      enableSessionForAPIKeys: false,
+      keyExpiration: { defaultExpiresIn: 90 * 24 * 60 * 60 },
+      rateLimit: { enabled: true, timeWindow: 60_000, maxRequests: 120 },
+    }),
     username({
       usernameValidator: (username) => {
         // Prevent @ symbols to avoid confusion with email sign-in

@@ -111,7 +111,7 @@ for a cookie header instead of a browser redirect.
   classes) - run `bun format:write` before committing.
 
 For browser/server query patterns, use `src/domain/`. MCP calls the same
-canonical domains and must enforce the current OAuth account grant.
+canonical domains and must enforce the current OAuth account grant or scoped API-key grant.
 For commit and PR conventions, use the **`git-conventions`** skill.
 
 ## Testing

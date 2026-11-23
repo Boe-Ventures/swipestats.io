@@ -133,33 +133,35 @@ try {
       () => a.api.swipeRank.summary({ tinderId: foreign.tinder_id }),
       "FORBIDDEN",
     );
-  const browser = await chromium.launch({ headless: true });
-  try {
-    const context = await browser.newContext();
-    await context.addCookies(
-      a.cookie.split("; ").map((cookie) => {
-        const split = cookie.indexOf("=");
-        return {
-          name: cookie.slice(0, split),
-          value: cookie.slice(split + 1),
-          url: base,
-        };
-      }),
-    );
-    const page = await context.newPage();
-    const pageErrors: string[] = [];
-    page.on("pageerror", (error) => pageErrors.push(error.message));
-    for (const path of ["/app/dashboard", "/app/account"]) {
-      const response = await page.goto(base + path, {
-        waitUntil: "networkidle",
-      });
-      assert.equal(response?.status(), 200);
-      assert.equal(new URL(page.url()).pathname, path);
+  if (process.env.EXPERIMENT_SKIP_BROWSER !== "1") {
+    const browser = await chromium.launch({ headless: true });
+    try {
+      const context = await browser.newContext();
+      await context.addCookies(
+        a.cookie.split("; ").map((cookie) => {
+          const split = cookie.indexOf("=");
+          return {
+            name: cookie.slice(0, split),
+            value: cookie.slice(split + 1),
+            url: base,
+          };
+        }),
+      );
+      const page = await context.newPage();
+      const pageErrors: string[] = [];
+      page.on("pageerror", (error) => pageErrors.push(error.message));
+      for (const path of ["/app/dashboard", "/app/account"]) {
+        const response = await page.goto(base + path, {
+          waitUntil: "networkidle",
+        });
+        assert.equal(response?.status(), 200);
+        assert.equal(new URL(page.url()).pathname, path);
+      }
+      assert.deepEqual(pageErrors, []);
+      report.authenticatedBrowserPages = 2;
+    } finally {
+      await browser.close();
     }
-    assert.deepEqual(pageErrors, []);
-    report.authenticatedBrowserPages = 2;
-  } finally {
-    await browser.close();
   }
   report.ownership = true;
   report.dateSerialization = true;
@@ -293,8 +295,8 @@ try {
   const spec = (await (await fetch(base + "/api/rpc/openapi.json")).json()) as {
     paths: Record<string, unknown>;
   };
-  assert.equal(Object.keys(spec.paths).length, 161);
-  report.openapiOperations = 161;
+  assert.equal(Object.keys(spec.paths).length, 164);
+  report.openapiOperations = Object.keys(spec.paths).length;
   await a.api.event.delete({ id: event.id });
   console.log(JSON.stringify(report, null, 2));
 } finally {

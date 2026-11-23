@@ -287,8 +287,10 @@ try {
     await page
       .getByRole("button", { name: "Add encounter", exact: true })
       .click();
-    await page.getByLabel("Kind", { exact: true }).selectOption("message");
-    await page.getByLabel("Medium", { exact: true }).selectOption("messaging");
+    await page.getByRole("combobox", { name: "Kind", exact: true }).click();
+    await page.getByRole("option", { name: "Message", exact: true }).click();
+    await page.getByRole("combobox", { name: "Medium", exact: true }).click();
+    await page.getByRole("option", { name: "Messaging", exact: true }).click();
     await page
       .getByLabel("Platform (Instagram, WhatsApp, etc.)", { exact: true })
       .fill("instagram");

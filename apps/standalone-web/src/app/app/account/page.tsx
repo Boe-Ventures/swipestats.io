@@ -1,4 +1,5 @@
 import { ConnectionsCard } from "./ConnectionsCard";
+import { ApiKeysCard } from "./ApiKeysCard";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 
@@ -40,6 +41,7 @@ export default async function AccountPage() {
           </p>
         </div>
 
+        <ApiKeysCard />
         <ConnectionsCard />
         {/* Profile & Analytics Section */}
         <div className="space-y-4">

@@ -1,4 +1,5 @@
 import { loveStoriesRouter } from "./loveStories/router";
+import { apiKeysRouter } from "./apiKeys/router";
 import { connectionsRouter } from "./connections/router";
 import { postRouter } from "./post/router";
 import { userRouter } from "./user/router";
@@ -31,6 +32,7 @@ import type { RouterClient } from "@orpc/server";
  * All routers added in /api/routers should be manually added here.
  */
 export const domainRouter = {
+  apiKeys: apiKeysRouter,
   loveStories: loveStoriesRouter,
   connections: connectionsRouter,
   post: postRouter,

@@ -105,19 +105,72 @@ links, updates, ordering, source preservation, export, transfer and deletion,
 plus browser save/reload and mobile layout, using disposable fictional accounts.
 `bun check` now passes with 93 tests and 369 assertions after integration with main.
 
-The temporary save-testing screen is `/experiments/love-stories/workspace`.
+The working screen is `/app/love-stories`, available beside Dashboard and Photos
+and in the account menu. It uses the authenticated app layout and keeps the private
+content analytics masking. The standalone testing route at
+`/experiments/love-stories/workspace` remains available. Browser QA on November 23
+confirmed that the new header link opens the signed-in workspace, keeps the app
+navigation visible, and appears in the account menu, with no browser console errors.
+The testing forms use shared Select, Calendar/Popover, Input, Textarea and
+InputGroup controls. Person fields are grouped into six always-visible sections;
+encounters into contact, timing, place and reflection. Headings and dividers organize
+fields without collapsible panels. Accordions remain outside forms for original
+wording and removal actions. The browser verification script uses the shared select
+controls and directly accesses all form fields.
+
 The intended product is display-first, with updates through MCP or in-app chat.
 [Paper mockups](https://app.paper.design/file/01M832D61ZDPMKY8QMSXHCMDSZ/p-1-0)
-show the people overview and person story. Chat and Love Stories MCP tool/grant
-wiring remain to be implemented; the existing three read-only tools are unchanged.
+show the people overview and person story. Chat remains to be implemented.
+Love Stories MCP is now available through explicitly scoped API keys.
 See [the current model and implementation boundaries](love-stories-data-model.md).
 
 Open `/experiments/love-stories` to compare integrated and standalone presentations using fictional fixtures. The preview intentionally has no persistence. See [product evaluation](love-stories-product-evaluation.md) for the recommendation, evidence limits and pilot design.
 
+## Personal API keys (2026-11-23)
+
+SwipeStats now follows the Cockpit and Bifrost API-key pattern using
+`@better-auth/api-key` 1.6.23. Account Settings offers named personal keys with
+30, 90 or 365 day expiry (90 by default), one-time copying and revocation.
+Only hashes are stored. The `apikey` table comes from generated migration
+`0022_swipestats_api_keys`, applied only to the isolated experiment database.
+The standalone and workspace lockfiles include the dependency.
+
+MCP accepts `Authorization: Bearer swipestats_...` or `x-api-key` at `/api/mcp`.
+Keys have the fixed `swipestats:read` permission and 120 requests per minute.
+Each request checks the live owner and grant. Keys cannot establish browser
+sessions or issue other keys. Session-only oRPC operations manage keys, with
+owner-filtered lists and revocation; public plugin management endpoints are
+blocked. OAuth remains supported. OpenAPI now contains 164 operations.
+
+The base grant enables the existing three read-only MCP tools. At creation, a
+key may additionally request Love Stories read access (six tools) or read/write
+access (all sixteen tools). Existing keys and OAuth grants gain no new access.
+The tool catalog is filtered by scope, with a live grant check before execution. No real
+user key has been issued, no external connector configured, and no deployment
+performed by this change.
+
+The HTTP-only `scripts/verify-api-keys.ts` uses disposable fictional accounts
+and checks hashed storage, safe listing, owner isolation, both headers,
+no browser-session escalation, permission enforcement, expiry, disabled keys,
+banned/guest owners, rate limits, revocation and account-deletion cascade.
+Existing OAuth/ownership checks can run without their browser section using
+`EXPERIMENT_SKIP_BROWSER=1`; browser review uses computer navigation separately.
+
+Validation passed: the API-key HTTP checks, existing OAuth PKCE/consent and
+disconnect checks, `bun check` (93 tests, 369 assertions), and an independent
+frozen-lockfile install. Browser review confirmed the signed-in key controls and
+expiry selector. Real-account key issuance was left to the user.
+
+The expanded HTTP check also passes all sixteen Love Stories tools, read/write
+scope isolation, foreign record and link rejection, capture replay handling,
+stale-version rejection, ISO date transport, undated story ordering, original
+wording preservation, export and deletion. Browser QA confirmed the access
+selector and explicit read/write description without issuing a personal key.
+
 ## Before any production rollout
 
 Review the migration and route/auth compatibility; validate actual upload flows, paid checkout/webhooks, email, AI and blob operations in provider test environments; verify OAuth in the intended ChatGPT client; pin a production-ready dependency policy; configure the real issuer/redirect URLs and secrets; review rate limits and client-registration policy. Existing cron definitions are retained for parity and must be reviewed before deployment. Native clients remain starter shells. Love Stories persistence exists, while its
-connector/chat experience and production UI remain unfinished.
+external connector setup, in-app chat and production UI remain unfinished.
 
 This experiment does not establish exhaustive UI parity. The existing test suite, type checking, build and selected HTTP/browser flows provide bounded evidence. Source content has existing metadata-length warnings; lint has existing non-blocking warnings. Live provider calls were deliberately unavailable in local configuration.
 

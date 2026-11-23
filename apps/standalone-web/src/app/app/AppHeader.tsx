@@ -33,6 +33,11 @@ export function AppHeader({ session }: AppHeaderProps) {
                 Photos
               </Button>
             </Link>
+            <Link href="/app/love-stories">
+              <Button variant="ghost" size="sm">
+                Love Stories
+              </Button>
+            </Link>
           </div>
         </div>
 

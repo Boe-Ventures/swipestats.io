@@ -338,8 +338,10 @@ intermediate revisions are not retained. Person deletion removes encounters and
 links but keeps Entries; account deletion removes all owned records. Anonymous
 account transfer preserves records and links transactionally. Composite encounter
 ownership is also enforced by a database foreign key; entry-link ownership is
-validated inside serialized owner transactions. No narrative analytics events
-or new MCP access are enabled.
+validated inside serialized owner transactions. Narrative analytics remain disabled.
+Sixteen MCP tools now call these same operations using explicitly granted
+Love Stories read or read/write API-key permissions. Existing keys and OAuth
+grants do not gain access.
 
 The temporary `/experiments/love-stories/workspace` screen exercises saves and
 reloads. It is a form-based test surface, not the intended product interface.
@@ -353,8 +355,7 @@ contains a people overview and person story with a contextual chat rail. It uses
 fictional examples only. Chat responses, search, filters, patterns and connector
 controls in Paper are design illustrations, not implemented integrations.
 
-Remaining: Love Stories-specific connector grants/tools, in-app chat and capture
-orchestration, field-level extraction provenance and manual-edit precedence,
+Remaining: external connector setup, in-app chat and capture orchestration, field-level extraction provenance and manual-edit precedence,
 media, `firstEncounterId` synchronization, automatic age prefilling, and the
 shared user-stay feature. Both age values can already be entered and queried.
 Relative-date context is stored without an automatic resolution engine. The

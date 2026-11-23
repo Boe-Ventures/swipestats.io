@@ -3442,3 +3442,41 @@ export const loveEntryEncounterTable = pgTable(
     index("love_entry_encounter_target_idx").on(t.encounterId),
   ],
 );
+
+// Better Auth owns credential generation, hashing, verification and lifecycle.
+// This configuration supports personal keys only, so referenceId is a user FK.
+export const apiKeyTable = pgTable(
+  "apikey",
+  (t) => ({
+    id: t.text().primaryKey(),
+    configId: t.text().notNull().default("default"),
+    name: t.text(),
+    start: t.text(),
+    referenceId: t
+      .text()
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    prefix: t.text(),
+    key: t.text().notNull(),
+    refillInterval: t.integer(),
+    refillAmount: t.integer(),
+    lastRefillAt: t.timestamp({ withTimezone: true }),
+    enabled: t.boolean().default(true),
+    rateLimitEnabled: t.boolean().default(true),
+    rateLimitTimeWindow: t.integer().default(60000),
+    rateLimitMax: t.integer().default(120),
+    requestCount: t.integer().default(0),
+    remaining: t.integer(),
+    lastRequest: t.timestamp({ withTimezone: true }),
+    expiresAt: t.timestamp({ withTimezone: true }),
+    createdAt: t.timestamp({ withTimezone: true }).notNull(),
+    updatedAt: t.timestamp({ withTimezone: true }).notNull(),
+    permissions: t.text(),
+    metadata: t.text(),
+  }),
+  (t) => [
+    index("apikey_config_id_idx").on(t.configId),
+    index("apikey_reference_id_idx").on(t.referenceId),
+    uniqueIndex("apikey_key_idx").on(t.key),
+  ],
+);
