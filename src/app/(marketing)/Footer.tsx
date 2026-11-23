@@ -3,6 +3,7 @@ import Link from "next/link";
 
 const footerNavigation = {
   directory: [
+    { name: "Profile Compare", href: "/profile-compare" },
     { name: "Research", href: "/research" },
     { name: "Blog", href: "/blog" },
     { name: "Dating services", href: "/dating-services" },
