@@ -1,5 +1,22 @@
 # Love Stories: feature or product?
 
+## Direction confirmed November 23, 2026
+
+Finish the SwipeStats Draupnir/oRPC migration first. Then build Love Stories as
+a feature inside SwipeStats that is usable independently, like Profile Compare,
+without requiring a dating-data upload. Keep the API inside
+`apps/standalone-web`; extracting shared packages or launching a separate app is
+not a current priority. The original evaluation below remains background, not
+an instruction to pursue a standalone product now. See the
+[data-model discussion draft](love-stories-data-model.md).
+
+The latest Person direction is a mutable overall reflection on a relationship,
+with structured analytics fields on Person, including origin, nationality,
+representative integer age, first contact, intent, compatibility, and chemistry.
+Encounter reflections can preserve important changes in perception. The current
+model supersedes earlier proposals for dated Person snapshots and mandatory
+override-history records.
+
 ## Recommendation
 
 Pilot **Love Stories by SwipeStats** as a distinct private journal inside the existing account. Give it its own entry point and visual identity. Do not require a Tinder/Hinge upload. Keep its domain and tables separable so a later standalone launch is a product decision, not another backend rewrite.

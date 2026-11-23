@@ -1,5 +1,45 @@
 # SwipeStats on Draupnir experiment
 
+## Current local environment (November 23, 2026)
+
+The expired November 14 database branch has been replaced with
+`codex/swipestats-draupnir-20261123` (`br-divine-mud-aglke0yk`) in the same
+SwipeStats4 project. It is a fresh isolated branch of production, with copied
+production data, a 0.25-1 CU compute, and 300-second idle suspension. It expires
+**December 23, 2026 at 07:00 Asia/Bangkok (00:00 UTC)**.
+
+Only this checkout's ignored `apps/standalone-web/.env.local` database URLs were
+updated. The Git branch remains `codex/draupnir-experiment`. The local app starts
+with `bun dev` at `http://localhost:3200`; the fictional journal preview remains
+at `/experiments/love-stories` and still has no persistence.
+
+The fresh parent had two production migrations absent from the old experiment.
+Production migrations `0018_watery_silver_sable` and
+`0019_message_text_redaction_receipts`, their snapshots, and their journal
+entries were copied unchanged from `origin/main` at `9b2fd0e`. Their two nullable
+JSON columns were added to the local schema. The former experiment-only OAuth
+migration was regenerated as `0020_draupnir_oauth`; its SQL is byte-for-byte
+identical to the former `0018_loose_morbius`. It was applied only to the new
+experimental branch after verifying all 20 inherited migration hashes and
+timestamps. A subsequent `0021_love_stories` migration adds the five private
+Love Stories tables described below. The historical migration
+description below describes the November 14 run, not the current chain.
+
+`bun check` passed, including migration-history validation, lint/typechecking,
+and all 68 tests (281 assertions). The existing HTTP/OAuth verification passed against the
+new database, including two authenticated browser pages, owner and admin
+boundaries, paid AI denial, three MCP tools, disconnect revocation, and 145
+OpenAPI operations. The initial dev browser run reported a hydration mismatch
+around streamed metadata; an unchanged rerun passed. Treat this as a remaining
+UI validation concern before production rollout, not a proven fix.
+
+Only the schema/migration history was reconciled with current production here;
+the newer application changes still need integration. There is still no PR or
+Vercel deployment for this experiment. The product direction is now to finish
+the SwipeStats migration first, then build Love Stories as a feature with an
+independent entry point. Keep its API inside the standalone web app. See the
+[data-model discussion draft](love-stories-data-model.md).
+
 ## Provenance and scope
 
 SwipeStats source: `2b0ee362bf7e25b5a9e6d6a8b0d07a9fd1285837`.
@@ -11,7 +51,7 @@ The original SwipeStats history is retained. Its complete application is moved i
 
 ## Architecture
 
-All 23 original tRPC routers and 143 procedures now use canonical oRPC domains under `src/server/domains`. Browser and server callers use `src/domain`; HTTP RPC is `/api/domain`. `/api/rpc/openapi.json` describes 145 operations, including two new connection-management operations. Business services, profile ownership and paid entitlement checks remain server-side.
+All 23 original tRPC routers and 143 procedures now use canonical oRPC domains under `src/server/domains`. Browser and server callers use `src/domain`; HTTP RPC is `/api/domain`. `/api/rpc/openapi.json` originally described 145 operations, including two new connection-management operations. Love Stories adds 16 operations, bringing the total to 161. Business services, profile ownership and paid entitlement checks remain server-side.
 
 The same canonical operations power three read-only MCP tools at `/api/mcp`: `listMyProfiles`, `getSubscriptionStatus`, and `getMySwipeRankSummary`. OAuth uses Better Auth with PKCE, consent, resource audience, registered account checks, current grant checks and disabled-client checks. Account settings can disconnect a client and reject its existing bearer tokens immediately. No import, billing mutation, admin or raw-message tool is exposed.
 
@@ -36,11 +76,29 @@ Commands: root `bun check`, `bun run build`; web `bun scripts/verify-experiment.
 
 ## Love Stories
 
+November 23 implementation: migration `0021_love_stories` adds Person, Encounter,
+Entry and two Entry link tables, only in the isolated branch. Sixteen canonical
+oRPC operations implement private CRUD, ordering and export. Create request keys
+prevent duplicate captures; versions reject stale edits. Account deletion cascades
+records and anonymous transfer preserves them. The guarded
+`apps/standalone-web/scripts/verify-love-stories.ts` exercises ownership, cross-owner
+links, updates, ordering, source preservation, export, transfer and deletion,
+plus browser save/reload and mobile layout, using disposable fictional accounts.
+`bun check` passes with 68 tests and 281 assertions.
+
+The temporary save-testing screen is `/experiments/love-stories/workspace`.
+The intended product is display-first, with updates through MCP or in-app chat.
+[Paper mockups](https://app.paper.design/file/01M832D61ZDPMKY8QMSXHCMDSZ/p-1-0)
+show the people overview and person story. Chat and Love Stories MCP tool/grant
+wiring remain to be implemented; the existing three read-only tools are unchanged.
+See [the current model and implementation boundaries](love-stories-data-model.md).
+
 Open `/experiments/love-stories` to compare integrated and standalone presentations using fictional fixtures. The preview intentionally has no persistence. See [product evaluation](love-stories-product-evaluation.md) for the recommendation, evidence limits and pilot design.
 
 ## Before any production rollout
 
-Review the migration and route/auth compatibility; validate actual upload flows, paid checkout/webhooks, email, AI and blob operations in provider test environments; verify OAuth in the intended ChatGPT client; pin a production-ready dependency policy; configure the real issuer/redirect URLs and secrets; review rate limits and client-registration policy. Existing cron definitions are retained for parity and must be reviewed before deployment. Neither a native client nor a complete Love Stories backend has been ported or built.
+Review the migration and route/auth compatibility; validate actual upload flows, paid checkout/webhooks, email, AI and blob operations in provider test environments; verify OAuth in the intended ChatGPT client; pin a production-ready dependency policy; configure the real issuer/redirect URLs and secrets; review rate limits and client-registration policy. Existing cron definitions are retained for parity and must be reviewed before deployment. Native clients remain starter shells. Love Stories persistence exists, while its
+connector/chat experience and production UI remain unfinished.
 
 This experiment does not establish exhaustive UI parity. The existing test suite, type checking, build and selected HTTP/browser flows provide bounded evidence. Source content has existing metadata-length warnings; lint has existing non-blocking warnings. Live provider calls were deliberately unavailable in local configuration.
 

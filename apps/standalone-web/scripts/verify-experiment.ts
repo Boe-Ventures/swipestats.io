@@ -24,9 +24,15 @@ type McpBody = {
 };
 const base = process.env.EXPERIMENT_BASE_URL ?? "http://localhost:3200";
 assert.equal(process.env.EXPERIMENT_MODE, "1");
-assert.ok(
-  process.env.DATABASE_URL?.includes("ep-twilight-waterfall-agv8azxs"),
+assert.equal(
+  new URL(process.env.DATABASE_URL!).hostname,
+  "ep-super-hill-ag6qwuno-pooler.c-2.eu-central-1.aws.neon.tech",
   "Refusing a non-experiment database",
+);
+assert.equal(
+  new URL(process.env.DATABASE_URL_UNPOOLED!).hostname,
+  "ep-super-hill-ag6qwuno.c-2.eu-central-1.aws.neon.tech",
+  "Refusing a non-experiment direct database",
 );
 assert.ok(["localhost", "127.0.0.1"].includes(new URL(base).hostname));
 const sql = postgres(
@@ -287,8 +293,8 @@ try {
   const spec = (await (await fetch(base + "/api/rpc/openapi.json")).json()) as {
     paths: Record<string, unknown>;
   };
-  assert.equal(Object.keys(spec.paths).length, 145);
-  report.openapiOperations = 145;
+  assert.equal(Object.keys(spec.paths).length, 161);
+  report.openapiOperations = 161;
   await a.api.event.delete({ id: event.id });
   console.log(JSON.stringify(report, null, 2));
 } finally {

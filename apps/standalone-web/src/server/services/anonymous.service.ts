@@ -1,3 +1,4 @@
+import { transferLoveStoriesInTx } from "./love-stories/service";
 import { eq } from "drizzle-orm";
 import { db, withTransaction } from "@/server/db";
 import {
@@ -81,6 +82,8 @@ export async function transferAnonymousUserData(
     // source row and an already-running bulk UPDATE could otherwise miss the
     // replacement immediately before this transaction deletes fromUserId.
     await lockHingeProviderOwnershipTransferInTx(tx);
+    await transferLoveStoriesInTx(tx, fromUserId, toUserId);
+
     // Transfer Tinder profiles
     const tinderProfilesUpdated = await tx
       .update(tinderProfileTable)

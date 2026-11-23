@@ -1,3 +1,8 @@
+import type {
+  PersonFields as LovePersonFields,
+  EncounterFields as LoveEncounterFields,
+  EntryFields as LoveEntryFields,
+} from "@/lib/love-stories/model";
 import type { HingeCsvActivity } from "@/lib/hinge/csv-activity";
 import { relations, sql } from "drizzle-orm";
 import {
@@ -606,6 +611,13 @@ export const hingeProfileTable = pgTable(
   (t) => ({
     hingeId: t.text().primaryKey(),
     csvActivity: t.jsonb().$type<HingeCsvActivity>(),
+    archiveConsent: t.jsonb().$type<{
+      sharePhotos: boolean;
+      shareWorkInfo: boolean;
+      redactPhotos: boolean;
+      redactWorkInfo: boolean;
+      latestSourceId: string | null;
+    }>(),
     createdAt: t
       .timestamp()
       .$defaultFn(() => new Date())
@@ -801,6 +813,13 @@ export const matchTable = pgTable(
   "match",
   (t) => ({
     id: t.text().primaryKey(),
+    textRedaction: t.jsonb().$type<{
+      pipeline: string;
+      inputDigest: string;
+      outputDigest: string;
+      score: number;
+      completedAt: string;
+    }>(),
     order: t.integer().notNull(),
     totalMessageCount: t.integer().notNull(),
     textCount: t.integer().notNull(),
@@ -3196,3 +3215,228 @@ export const catalogSubmissionRelations = relations(
 );
 
 export * from "./oauth-provider-schema";
+
+// ---- LOVE STORIES: PRIVATE OWNER RECORDS --------------------------
+
+export const lovePersonTable = pgTable(
+  "love_person",
+  (t) => ({
+    id: t.text().primaryKey(),
+    userId: t
+      .text()
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    version: t.integer().notNull().default(1),
+    requestId: t.text().notNull(),
+    requestHash: t.text().notNull(),
+    createdAt: t.timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: t.timestamp({ withTimezone: true }).notNull().defaultNow(),
+    displayName: t.text().notNull(),
+    tagline: t.text(),
+    summary: t.text(),
+    originCountryCode: t.text(),
+    originSubdivisionCode: t.text(),
+    originCity: t.text(),
+    originPlaceId: t.text(),
+    originLabel: t.text(),
+    currentResidenceCountryCode: t.text(),
+    currentResidenceSubdivisionCode: t.text(),
+    currentResidenceCity: t.text(),
+    currentResidencePlaceId: t.text(),
+    currentResidenceLabel: t.text(),
+    ageEstimate: t.text(),
+    myAgeEstimate: t.text(),
+    occupation: t.text(),
+    industry: t.text(),
+    appearance: t.text(),
+    firstContactMethod: t.text(),
+    firstContactPlatform: t.text(),
+    lookingFor: t.text(),
+    contactContext: t.text(),
+    workArrangement: t.text().$type<LovePersonFields["workArrangement"]>(),
+    remoteRegion: t.text().$type<LovePersonFields["remoteRegion"]>(),
+    firstContactInitiator: t
+      .text()
+      .$type<LovePersonFields["firstContactInitiator"]>(),
+    aliases: t.text().array(),
+    labels: t.text().array(),
+    nationalityCodes: t.text().array(),
+    sideOccupations: t.text().array(),
+    interests: t.text().array(),
+    ageAtFirstMeeting: t.integer(),
+    myAgeAtFirstMeeting: t.integer(),
+    firstMetYear: t.integer(),
+    heightCm: t.integer(),
+    compatibility: t.integer(),
+    chemistry: t.integer(),
+    overall: t.integer(),
+    looks: t.integer(),
+    personality: t.integer(),
+    humor: t.integer(),
+    ageIsEstimated: t.boolean(),
+    myAgeIsEstimated: t.boolean(),
+    residenceHistory: t.jsonb().$type<LovePersonFields["residenceHistory"]>(),
+    firstContactPlace: t.jsonb().$type<LovePersonFields["firstContactPlace"]>(),
+    firstContactTimeContext: t
+      .jsonb()
+      .$type<LovePersonFields["firstContactTimeContext"]>(),
+    firstContactAt: t.timestamp({ withTimezone: true }),
+  }),
+  (t) => [
+    unique("love_person_owner_request").on(t.userId, t.requestId),
+    index("love_person_owner_idx").on(t.userId),
+    check("love_person_version_positive", sql`${t.version} > 0`),
+    unique("love_person_owner_id").on(t.userId, t.id),
+    check("love_person_name", sql`length(btrim(${t.displayName})) > 0`),
+    check(
+      "love_person_compatibility_range",
+      sql`${t.compatibility} BETWEEN 1 AND 10`,
+    ),
+    check("love_person_chemistry_range", sql`${t.chemistry} BETWEEN 1 AND 10`),
+    check("love_person_overall_range", sql`${t.overall} BETWEEN 1 AND 10`),
+    check("love_person_looks_range", sql`${t.looks} BETWEEN 1 AND 10`),
+    check(
+      "love_person_personality_range",
+      sql`${t.personality} BETWEEN 1 AND 10`,
+    ),
+    check("love_person_humor_range", sql`${t.humor} BETWEEN 1 AND 10`),
+    check(
+      "love_person_ageAtFirstMeeting_range",
+      sql`${t.ageAtFirstMeeting} BETWEEN 0 AND 130`,
+    ),
+    check(
+      "love_person_myAgeAtFirstMeeting_range",
+      sql`${t.myAgeAtFirstMeeting} BETWEEN 0 AND 130`,
+    ),
+    check(
+      "love_person_remote_scope",
+      sql`${t.remoteRegion} IS NULL OR (${t.workArrangement} IS NOT NULL AND ${t.workArrangement} = 'remote')`,
+    ),
+  ],
+);
+
+export const loveEncounterTable = pgTable(
+  "love_encounter",
+  (t) => ({
+    id: t.text().primaryKey(),
+    userId: t
+      .text()
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    version: t.integer().notNull().default(1),
+    requestId: t.text().notNull(),
+    requestHash: t.text().notNull(),
+    createdAt: t.timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: t.timestamp({ withTimezone: true }).notNull().defaultNow(),
+    personId: t.text().notNull(),
+    position: t.integer().notNull(),
+    kind: t.text().$type<LoveEncounterFields["kind"]>(),
+    medium: t.text().$type<LoveEncounterFields["medium"]>(),
+    initiator: t.text().$type<LoveEncounterFields["initiator"]>(),
+    status: t.text().$type<LoveEncounterFields["status"]>(),
+    platform: t.text(),
+    countryCode: t.text(),
+    subdivisionCode: t.text(),
+    city: t.text(),
+    venueName: t.text(),
+    placeId: t.text(),
+    placeProvider: t.text(),
+    mapUrl: t.text(),
+    description: t.text(),
+    reflection: t.text(),
+    occurredAt: t.timestamp({ withTimezone: true }),
+    activities: t.text().array(),
+    timeContext: t.jsonb().$type<LoveEncounterFields["timeContext"]>(),
+    stops: t.jsonb().$type<LoveEncounterFields["stops"]>(),
+    experienceRating: t.integer(),
+    chemistry: t.integer(),
+    compatibility: t.integer(),
+  }),
+  (t) => [
+    unique("love_encounter_owner_request").on(t.userId, t.requestId),
+    index("love_encounter_owner_idx").on(t.userId),
+    check("love_encounter_version_positive", sql`${t.version} > 0`),
+    foreignKey({
+      columns: [t.userId, t.personId],
+      foreignColumns: [lovePersonTable.userId, lovePersonTable.id],
+    })
+      .onDelete("cascade")
+      .onUpdate("cascade"),
+    index("love_encounter_person_order").on(t.userId, t.personId, t.position),
+    check("love_encounter_position", sql`${t.position} >= 0`),
+    check(
+      "love_encounter_experienceRating_range",
+      sql`${t.experienceRating} BETWEEN 1 AND 10`,
+    ),
+    check(
+      "love_encounter_chemistry_range",
+      sql`${t.chemistry} BETWEEN 1 AND 10`,
+    ),
+    check(
+      "love_encounter_compatibility_range",
+      sql`${t.compatibility} BETWEEN 1 AND 10`,
+    ),
+  ],
+);
+
+export const loveEntryTable = pgTable(
+  "love_entry",
+  (t) => ({
+    id: t.text().primaryKey(),
+    userId: t
+      .text()
+      .notNull()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    version: t.integer().notNull().default(1),
+    requestId: t.text().notNull(),
+    requestHash: t.text().notNull(),
+    createdAt: t.timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: t.timestamp({ withTimezone: true }).notNull().defaultNow(),
+    title: t.text(),
+    body: t.text().notNull(),
+    originalBody: t.text().notNull(),
+    sourceKind: t.text().$type<LoveEntryFields["sourceKind"]>().notNull(),
+    occurrenceContext: t.jsonb().$type<LoveEntryFields["occurrenceContext"]>(),
+  }),
+  (t) => [
+    unique("love_entry_owner_request").on(t.userId, t.requestId),
+    index("love_entry_owner_idx").on(t.userId),
+    check("love_entry_version_positive", sql`${t.version} > 0`),
+  ],
+);
+
+export const loveEntryPersonTable = pgTable(
+  "love_entry_person",
+  (t) => ({
+    entryId: t
+      .text()
+      .notNull()
+      .references(() => loveEntryTable.id, { onDelete: "cascade" }),
+    personId: t
+      .text()
+      .notNull()
+      .references(() => lovePersonTable.id, { onDelete: "cascade" }),
+  }),
+  (t) => [
+    primaryKey({ columns: [t.entryId, t.personId] }),
+    index("love_entry_person_target_idx").on(t.personId),
+  ],
+);
+
+export const loveEntryEncounterTable = pgTable(
+  "love_entry_encounter",
+  (t) => ({
+    entryId: t
+      .text()
+      .notNull()
+      .references(() => loveEntryTable.id, { onDelete: "cascade" }),
+    encounterId: t
+      .text()
+      .notNull()
+      .references(() => loveEncounterTable.id, { onDelete: "cascade" }),
+  }),
+  (t) => [
+    primaryKey({ columns: [t.entryId, t.encounterId] }),
+    index("love_entry_encounter_target_idx").on(t.encounterId),
+  ],
+);
