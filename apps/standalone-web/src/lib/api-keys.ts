@@ -1,7 +1,7 @@
 export const SWIPESTATS_API_KEY_PREFIX = "swipestats_";
 export const SWIPESTATS_API_KEY_PERMISSIONS = { swipestats: ["read"] };
-export const API_KEY_LIFETIMES = [30, 90, 365] as const;
-export const LOVE_STORIES_ACCESS = ["none", "read", "write"] as const;
+export const API_KEY_LIFETIMES = [30, 90, 365, null] as const;
+export const LOVE_STORIES_ACCESS = ["read", "write"] as const;
 export type LoveStoriesAccess = (typeof LOVE_STORIES_ACCESS)[number];
 export type McpPermission =
   | "swipestats:read"
@@ -11,9 +11,7 @@ export type McpPermission =
 export function apiKeyPermissions(access: LoveStoriesAccess) {
   return {
     ...SWIPESTATS_API_KEY_PERMISSIONS,
-    ...(access === "none"
-      ? {}
-      : { loveStories: access === "write" ? ["read", "write"] : ["read"] }),
+    loveStories: access === "write" ? ["read", "write"] : ["read"],
   };
 }
 
@@ -40,7 +38,7 @@ export function apiKeyScopes(value: unknown): McpPermission[] {
   return scopes;
 }
 
-export function loveStoriesAccess(value: unknown): LoveStoriesAccess {
+export function loveStoriesAccess(value: unknown): LoveStoriesAccess | "none" {
   const scopes = apiKeyScopes(value);
   return scopes.includes("loveStories:write")
     ? "write"

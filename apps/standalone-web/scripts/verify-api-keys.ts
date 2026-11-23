@@ -162,11 +162,43 @@ try {
     () => guest.api.apiKeys.create({ name: "Forbidden guest key" }),
     "FORBIDDEN",
   );
+  // Catch plugin defaults silently turning an explicit never expiry into 90 days.
+  for (const expiresInDays of [null, undefined, 365] as const) {
+    const before = Date.now();
+    const lifetimeKey = await a.api.apiKeys.create({
+      name: "Disposable lifetime check",
+      expiresInDays,
+    });
+    const [row] = await sql<{ expiresAt: Date | null }[]>`
+      select expires_at as "expiresAt" from apikey where id=${lifetimeKey.id}`;
+    assert.ok(row);
+    if (expiresInDays === null) {
+      assert.equal(lifetimeKey.expiresAt, null);
+      assert.equal(row.expiresAt, null);
+      assert.equal(
+        (await a.api.apiKeys.list()).find((item) => item.id === lifetimeKey.id)
+          ?.expiresAt,
+        null,
+      );
+    } else {
+      const expiry = lifetimeKey.expiresAt!.getTime();
+      const lifetime = (expiresInDays ?? 90) * 86400000;
+      assert.ok(expiry >= before + lifetime && expiry <= Date.now() + lifetime);
+      assert.equal(row.expiresAt?.getTime(), expiry);
+    }
+    const defaultTools = await mcp(lifetimeKey.key);
+    assert.equal(defaultTools.status, 200);
+    assert.equal(defaultTools.body?.result?.tools?.length, 19);
+    await a.api.apiKeys.revoke({ id: lifetimeKey.id });
+    assert.equal((await mcp(lifetimeKey.key)).status, 401);
+  }
   const key = await a.api.apiKeys.create({
     name: "Disposable MCP check",
     expiresInDays: 30,
   });
   assert.ok(key.key.startsWith("swipestats_"));
+  // Existing analytics-only grants keep their original permissions.
+  await sql`update apikey set permissions=${JSON.stringify({ swipestats: ["read"] })} where id=${key.id}`;
   const [stored] = await sql<
     { key: string; permissions: string }[]
   >`select key, permissions from apikey where id=${key.id}`;
@@ -251,7 +283,6 @@ try {
   });
   const writer = await a.api.apiKeys.create({
     name: "Story writer",
-    loveStoriesAccess: "write",
   });
   const foreign = await b.api.loveStories.person.create({
     displayName: "Foreign fictional person",
@@ -456,7 +487,7 @@ try {
   );
   assert.equal((await mcp(cascading.key)).status, 401);
   console.log(
-    "PASS: hashed keys, safe listing, owner isolation, both headers, no session escalation, scoped permissions, expiry, disabled/banned/guest owners, rate limits, revocation, deletion cascade, Love Stories scope isolation, JSON dates, all 16 tools, original wording, stale edits and replay safety",
+    "PASS: hashed keys, safe listing, owner isolation, both headers, no session escalation, scoped permissions, never/default/finite expiry, default write access, disabled/banned/guest owners, rate limits, revocation, deletion cascade, Love Stories scope isolation, JSON dates, all 16 tools, original wording, stale edits and replay safety",
   );
 } finally {
   for (const id of users) await sql`delete from "user" where id=${id}`;

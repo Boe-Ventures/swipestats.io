@@ -57,9 +57,10 @@ export const apiKeysRouter = {
     .input(
       z.strictObject({
         name: z.string().trim().min(1).max(80),
-        loveStoriesAccess: z.enum(LOVE_STORIES_ACCESS).default("none"),
+        loveStoriesAccess: z.enum(LOVE_STORIES_ACCESS).default("write"),
         expiresInDays: z
           .union([z.literal(30), z.literal(90), z.literal(365)])
+          .nullable()
           .default(90),
       }),
     )
@@ -68,7 +69,10 @@ export const apiKeysRouter = {
         body: {
           userId: context.session.user.id,
           name: input.name,
-          expiresIn: input.expiresInDays * 24 * 60 * 60,
+          expiresIn:
+            input.expiresInDays === null
+              ? null
+              : input.expiresInDays * 24 * 60 * 60,
           permissions: apiKeyPermissions(input.loveStoriesAccess),
         },
       });

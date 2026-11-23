@@ -21,8 +21,8 @@ export function ApiKeysCard() {
   const registered = !!session.data?.user && !session.data.user.isAnonymous;
   const cache = useQueryClient();
   const [name, setName] = useState("");
-  const [access, setAccess] = useState<LoveStoriesAccess>("none");
-  const [days, setDays] = useState<30 | 90 | 365>(90);
+  const [access, setAccess] = useState<LoveStoriesAccess>("write");
+  const [days, setDays] = useState<(typeof API_KEY_LIFETIMES)[number]>(90);
   const [credential, setCredential] = useState<{
     id: string;
     key: string;
@@ -68,9 +68,8 @@ export function ApiKeysCard() {
       </CardHeader>
       <CardContent className="space-y-5">
         <p className="text-muted-foreground text-sm">
-          Keys can read your uploaded-profile list, subscription status and
-          SwipeRank summary. Choose whether this key can also access your
-          private Love Stories.
+          Keys can access your SwipeStats analytics and Love Stories. Choose
+          read and write access, or keep this key read only.
         </p>
         {session.isPending ? (
           <p className="text-sm">Loading API keys…</p>
@@ -107,26 +106,29 @@ export function ApiKeysCard() {
                   <SimpleSelect
                     aria-label="API key expiration"
                     className="w-full"
-                    value={String(days)}
+                    value={days === null ? "never" : String(days)}
                     options={API_KEY_LIFETIMES.map((value) => ({
-                      value: String(value),
-                      label: `${value} days`,
+                      value: value === null ? "never" : String(value),
+                      label: value === null ? "Never expires" : `${value} days`,
                     }))}
                     onValueChange={(value) =>
-                      setDays(Number(value) as 30 | 90 | 365)
+                      setDays(
+                        value === "never"
+                          ? null
+                          : (Number(value) as 30 | 90 | 365),
+                      )
                     }
                     disabled={create.isPending || !!credential}
                   />
                 </div>
               </div>
               <div className="space-y-2">
-                <span className="text-sm font-medium">Love Stories access</span>
+                <span className="text-sm font-medium">Access</span>
                 <SimpleSelect
-                  aria-label="Love Stories access"
+                  aria-label="API key access"
                   className="w-full"
                   value={access}
                   options={[
-                    { value: "none", label: "No access" },
                     { value: "read", label: "Read only" },
                     { value: "write", label: "Read and write" },
                   ]}
@@ -136,9 +138,7 @@ export function ApiKeysCard() {
                 <p className="text-muted-foreground text-sm">
                   {access === "write"
                     ? "Allows reading, creating, editing and permanently deleting your people, encounters and reflections."
-                    : access === "read"
-                      ? "Allows reading and exporting your people, encounters and reflections."
-                      : "Your Love Stories stay inaccessible to this key."}
+                    : "Allows reading your analytics and exporting your people, encounters and reflections."}
                 </p>
               </div>
               <Button type="submit" disabled={create.isPending || !!credential}>
@@ -234,10 +234,9 @@ export function ApiKeysCard() {
                       </p>
                       <p className="text-muted-foreground text-xs">
                         {key.start}… ·{" "}
-                        {key.expiresAt && key.expiresAt <= new Date()
-                          ? "Expired"
-                          : "Expires"}{" "}
-                        {key.expiresAt?.toLocaleDateString()}
+                        {key.expiresAt
+                          ? `${key.expiresAt <= new Date() ? "Expired" : "Expires"} ${key.expiresAt.toLocaleDateString()}`
+                          : "Never expires"}
                       </p>
                       <p className="text-muted-foreground text-xs">
                         {key.lastRequest

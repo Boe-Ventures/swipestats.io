@@ -130,7 +130,9 @@ Open `/experiments/love-stories` to compare integrated and standalone presentati
 
 SwipeStats now follows the Cockpit and Bifrost API-key pattern using
 `@better-auth/api-key` 1.6.23. Account Settings offers named personal keys with
-30, 90 or 365 day expiry (90 by default), one-time copying and revocation.
+30, 90 or 365 day expiry (90 by default), or Never expires, one-time copying
+and revocation. Explicit `expiresInDays: null` persists a null expiry; omitted
+expiry still defaults to 90 days. Existing keys are unchanged.
 Only hashes are stored. The `apikey` table comes from generated migration
 `0022_swipestats_api_keys`, applied only to the isolated experiment database.
 The standalone and workspace lockfiles include the dependency.
@@ -142,9 +144,10 @@ sessions or issue other keys. Session-only oRPC operations manage keys, with
 owner-filtered lists and revocation; public plugin management endpoints are
 blocked. OAuth remains supported. OpenAPI now contains 164 operations.
 
-The base grant enables the existing three read-only MCP tools. At creation, a
-key may additionally request Love Stories read access (six tools) or read/write
-access (all sixteen tools). Existing keys and OAuth grants gain no new access.
+New keys default to read/write access: three analytics tools and all sixteen
+Love Stories tools. Read-only remains available (three analytics and six Love
+Stories tools); analytics-only is no longer a creation option. Existing keys
+and OAuth grants retain their original permissions.
 The tool catalog is filtered by scope, with a live grant check before execution. No real
 user key has been issued, no external connector configured, and no deployment
 performed by this change.

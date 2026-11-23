@@ -355,7 +355,8 @@ export const auth = betterAuth({
       defaultPrefix: SWIPESTATS_API_KEY_PREFIX,
       requireName: true,
       enableSessionForAPIKeys: false,
-      keyExpiration: { defaultExpiresIn: 90 * 24 * 60 * 60 },
+      // The domain supplies 90 days by default; explicit null means never.
+      keyExpiration: { defaultExpiresIn: null },
       rateLimit: { enabled: true, timeWindow: 60_000, maxRequests: 120 },
     }),
     username({
