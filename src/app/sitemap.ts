@@ -50,6 +50,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   return [
     // Main pages
     {
+      url: `${baseUrl}/profile-compare`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.8,
+    },
+    {
       url: baseUrl,
       lastModified: new Date(),
       changeFrequency: "yearly",

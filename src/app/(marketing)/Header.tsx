@@ -36,6 +36,7 @@ const navigation = {
     },
   ],
   simple: [
+    { name: "Profile Compare", href: "/profile-compare" },
     { name: "SwipeRank", href: "/leaderboard" },
     { name: "Research", href: "/research" },
     { name: "Blog", href: "/blog" },

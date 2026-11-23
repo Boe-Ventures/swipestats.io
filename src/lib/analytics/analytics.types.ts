@@ -44,6 +44,7 @@ export const ANONYMOUS_SOURCES = [
   "try_gateway",
   "roast_share",
   "home_banner",
+  "profile_compare_landing",
   "direct",
 ] as const;
 
