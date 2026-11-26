@@ -1,0 +1,13 @@
+# CLI uploads must exclude private local evidence as well as environment files.
+**/.migration/**
+**/.env*
+**/node_modules/**
+**/.next/**
+**/.turbo/**
+**/.velite/**
+**/logs/**
+artifacts/local/**
+.claude/**
+.codex/**
+.mcp.json
+**/*.tsbuildinfo
