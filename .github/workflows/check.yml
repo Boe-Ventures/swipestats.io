@@ -32,5 +32,5 @@ jobs:
         with:
           bun-version: "1.4.4"
       - run: bun install --frozen-lockfile
-      # bun build runs database migrations. This gate must only run checks.
+      # Keep validation independent of deployment and database migrations.
       - run: bun check

@@ -5,8 +5,9 @@ branches: `production` and shared `dev`. Local developers and Vercel Preview
 deployments intentionally share `dev`; this is a speed tradeoff and means it may
 temporarily contain a migration from a feature branch that is not yet on `main`.
 
-`bun run build` builds the application first and then runs `bun db:migrate`.
-Baselining is not part of a normal build.
+`bun run build` only builds the application. Apply pending migrations explicitly
+to the intended database before promoting a deployment that needs them.
+Neither migration execution nor baselining is part of a normal build.
 
 ## Normal schema-change flow
 
