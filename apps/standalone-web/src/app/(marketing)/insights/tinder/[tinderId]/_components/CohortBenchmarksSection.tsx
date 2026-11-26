@@ -32,6 +32,8 @@ import {
   swipeRankPeriodKey,
 } from "@/lib/swipe-rank/format";
 import { useDomain } from "@/domain/react";
+import { useSubscription } from "@/hooks/useSubscription";
+import { useUpgrade } from "@/contexts/UpgradeContext";
 
 import { useTinderProfile } from "../TinderProfileProvider";
 
@@ -179,6 +181,40 @@ function BenchmarkMetric({
 }
 
 export function CohortBenchmarksSection() {
+  const { isSubscribed, isLoading } = useSubscription();
+  const { openUpgradeModal } = useUpgrade();
+
+  if (isLoading) {
+    return <Skeleton className="h-48 w-full rounded-xl" />;
+  }
+
+  if (!isSubscribed) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-2xl">
+            <SlidersHorizontal className="h-5 w-5" />
+            How you compare
+            <Badge variant="secondary">Plus</Badge>
+          </CardTitle>
+          <CardDescription>
+            See how your match rate, like rate, and swipe activity compare with
+            other profiles, globally or by gender and interest.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Button onClick={() => openUpgradeModal({ tier: "PLUS" })}>
+            Unlock comparisons with Plus
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return <PaidCohortBenchmarks />;
+}
+
+function PaidCohortBenchmarks() {
   const domain = useDomain();
   const { tinderId } = useTinderProfile();
   const [selectedPeriodKey, setSelectedPeriodKey] = useState("");
@@ -229,7 +265,7 @@ export function CohortBenchmarksSection() {
       <Card>
         <CardHeader>
           <Skeleton className="h-7 w-48" />
-          <Skeleton className="h-4 w-80" />
+          <Skeleton className="h-4 w-full max-w-80" />
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-3">
           <Skeleton className="h-80 w-full" />
@@ -282,14 +318,21 @@ export function CohortBenchmarksSection() {
             </CardDescription>
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
             <Select
               value={swipeRankPeriodKey(selected.period)}
+              items={kindPeriods.map((item) => ({
+                value: swipeRankPeriodKey(item.period),
+                label: formatSwipeRankPeriodLabel(item.period),
+              }))}
               onValueChange={(next) =>
                 next !== null && setSelectedPeriodKey(next)
               }
             >
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger
+                aria-label="Comparison month"
+                className="w-full data-[size=default]:h-11 sm:w-[180px]"
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -303,10 +346,12 @@ export function CohortBenchmarksSection() {
                 ))}
               </SelectContent>
             </Select>
-            <div className="flex rounded-md border p-1">
+            <div className="flex h-11 w-full items-center rounded-md border p-1 sm:w-auto">
               <Button
                 type="button"
                 size="sm"
+                className="flex-1 sm:flex-none"
+                aria-pressed={effectiveMode === "GLOBAL"}
                 variant={effectiveMode === "GLOBAL" ? "secondary" : "ghost"}
                 onClick={() => setCohortMode("GLOBAL")}
               >
@@ -315,6 +360,8 @@ export function CohortBenchmarksSection() {
               <Button
                 type="button"
                 size="sm"
+                className="flex-1 sm:flex-none"
+                aria-pressed={effectiveMode === "PEER"}
                 variant={effectiveMode === "PEER" ? "secondary" : "ghost"}
                 disabled={!peerFilters}
                 onClick={() => setCohortMode("PEER")}

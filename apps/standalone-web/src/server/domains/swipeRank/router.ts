@@ -29,6 +29,7 @@ import { reviewSwipeRankProfile } from "@/server/services/swipe-rank/ai-review.s
 import {
   adminProcedure,
   publicProcedure,
+  tinderBenchmarkProcedure,
   tinderProfileOwnerProcedure,
 } from "../procedure";
 
@@ -110,7 +111,7 @@ export const swipeRankRouter = {
     }),
 
   /** Private: period-correct distributions for the owner and a chosen field. */
-  benchmark: tinderProfileOwnerProcedure
+  benchmark: tinderBenchmarkProcedure
     .input(
       z.object({
         period: periodSchema,

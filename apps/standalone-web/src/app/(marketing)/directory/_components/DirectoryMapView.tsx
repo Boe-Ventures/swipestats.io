@@ -166,6 +166,24 @@ export function DirectoryMapView({
     return `${years} year${years > 1 ? "s" : ""}`;
   };
 
+  if (!env.NEXT_PUBLIC_MAPBOX_PUBLIC_API_KEY?.trim()) {
+    return (
+      <div className="bg-muted/30 rounded-lg border p-8 text-center">
+        <MapPin className="text-muted-foreground mx-auto mb-3 h-8 w-8" />
+        <p className="font-medium">Map unavailable right now</p>
+        <p className="text-muted-foreground mt-2 text-sm">
+          You can still explore the recent profiles below.
+        </p>
+        <a
+          href="#recent-profiles"
+          className="mt-4 inline-block text-sm font-medium underline underline-offset-4"
+        >
+          Browse recent profiles
+        </a>
+      </div>
+    );
+  }
+
   if (profilesWithCoords.length === 0) {
     return (
       <div className="bg-muted/30 flex h-[60vh] items-center justify-center rounded-lg border">

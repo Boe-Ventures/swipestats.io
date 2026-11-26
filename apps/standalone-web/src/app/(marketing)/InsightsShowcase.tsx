@@ -81,6 +81,21 @@ type DemoData = {
  * Lazy loads data from public folder when component becomes visible
  */
 export function InsightsShowcase() {
+  return (
+    <div className="dark:border-border dark:bg-background dark:[&_[data-slot=card]]:border-border/70 mx-auto max-w-[1120px] rounded-2xl border border-gray-200 bg-gray-50 p-2 shadow-[0_8px_24px_oklch(0.2_0.02_286/0.08),0_18px_44px_oklch(0.2_0.02_286/0.1)] sm:rounded-3xl sm:p-6 [&_[data-slot=card]]:border-gray-200/70 [&_[data-slot=card]]:shadow-none!">
+      <p className="dark:text-muted-foreground mb-3 flex items-center justify-center gap-2 px-2 pt-2 text-center text-[12.5px] font-semibold text-gray-600 sm:pt-0">
+        <span
+          className="h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-500"
+          aria-hidden="true"
+        />
+        <span>Real data. Explore the demo.</span>
+      </p>
+      <InsightsShowcaseContent />
+    </div>
+  );
+}
+
+function InsightsShowcaseContent() {
   const [demoData, setDemoData] = useState<DemoData | null>(null);
   const [isVisible, setIsVisible] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);

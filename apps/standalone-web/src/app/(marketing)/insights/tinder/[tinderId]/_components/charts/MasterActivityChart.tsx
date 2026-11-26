@@ -461,14 +461,14 @@ export function MasterActivityChart() {
             </div>
             <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
               <FormProvider {...form}>
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="grid grid-cols-2 items-center gap-2 sm:flex sm:flex-wrap">
                   {/* Add Event Button (only when not readonly) */}
                   {!readonly && (
                     <Button
                       type="button"
                       variant="outline"
                       onClick={() => setEventDialogOpen(true)}
-                      className="gap-2"
+                      className="col-span-2 gap-2"
                     >
                       <Plus className="h-4 w-4" />
                       Add Event
@@ -480,8 +480,12 @@ export function MasterActivityChart() {
                     control={form.control}
                     name="granularity"
                     render={({ field, fieldState }) => (
-                      <Field data-invalid={fieldState.invalid}>
+                      <Field
+                        className="min-w-0 sm:w-auto"
+                        data-invalid={fieldState.invalid}
+                      >
                         <GranularitySelector
+                          className="w-full sm:w-[140px]"
                           value={field.value}
                           onChange={field.onChange}
                         />
@@ -494,7 +498,10 @@ export function MasterActivityChart() {
                     control={form.control}
                     name="timeRange"
                     render={({ field, fieldState }) => (
-                      <Field data-invalid={fieldState.invalid}>
+                      <Field
+                        className="min-w-0 sm:w-auto"
+                        data-invalid={fieldState.invalid}
+                      >
                         <Select
                           value={field.value}
                           onValueChange={field.onChange}
@@ -502,7 +509,8 @@ export function MasterActivityChart() {
                           <SelectTrigger
                             id={field.name}
                             aria-invalid={fieldState.invalid}
-                            className="w-[132px] sm:w-[140px]"
+                            className="w-full sm:w-[140px]"
+                            aria-label="Select time range"
                           >
                             <SelectValue placeholder="Select range">
                               {
@@ -536,7 +544,10 @@ export function MasterActivityChart() {
                       control={form.control}
                       name="dateRange"
                       render={({ field, fieldState }) => (
-                        <Field data-invalid={fieldState.invalid}>
+                        <Field
+                          className="col-span-2 min-w-0 sm:w-auto"
+                          data-invalid={fieldState.invalid}
+                        >
                           <Popover>
                             <PopoverTrigger
                               render={
@@ -546,7 +557,7 @@ export function MasterActivityChart() {
                                   id={field.name}
                                   aria-invalid={fieldState.invalid}
                                   className={cn(
-                                    "w-[240px] justify-start pl-3 text-left font-normal",
+                                    "w-full min-w-0 justify-start pl-3 text-left font-normal sm:w-[240px]",
                                     !field.value?.from &&
                                       "text-muted-foreground",
                                   )}
@@ -606,7 +617,7 @@ export function MasterActivityChart() {
           )}
 
           {/* Metric Toggle Pills */}
-          <div className="-mx-4 flex flex-nowrap gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0">
+          <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
             {Object.entries(chartConfig).map(([key, config]) => {
               const isVisible = visibleMetrics.has(key);
               const total = periodTotals[key as keyof typeof periodTotals];
@@ -616,7 +627,7 @@ export function MasterActivityChart() {
                   onClick={() => toggleMetric(key)}
                   aria-pressed={isVisible}
                   className={cn(
-                    "flex shrink-0 items-center gap-2 rounded-full px-3 py-2 text-sm font-medium transition-all duration-200 sm:px-4",
+                    "grid min-w-0 grid-cols-[auto_1fr] items-center gap-x-1.5 gap-y-0.5 rounded-xl px-2.5 py-2 text-left text-xs font-medium transition-all duration-200 sm:flex sm:gap-2 sm:rounded-full sm:px-4 sm:text-sm",
                     isVisible
                       ? "dark:text-foreground bg-[var(--metric-color)] text-white shadow-md dark:bg-[color-mix(in_srgb,var(--metric-color)_16%,var(--card))] dark:ring-1 dark:ring-[var(--metric-color)]"
                       : "bg-muted text-muted-foreground hover:bg-muted/80",
@@ -636,7 +647,9 @@ export function MasterActivityChart() {
                     }}
                   />
                   <span>{config.label}</span>
-                  <span className="tabular-nums">{total.toLocaleString()}</span>
+                  <span className="col-start-2 tabular-nums">
+                    {total.toLocaleString()}
+                  </span>
                 </button>
               );
             })}

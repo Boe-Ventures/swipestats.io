@@ -1,14 +1,6 @@
 "use client";
 
-import {
-  Heart,
-  LogOut,
-  User,
-  Settings,
-  Sun,
-  Moon,
-  Monitor,
-} from "lucide-react";
+import { LogOut, User, Settings, Sun, Moon, Monitor } from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -137,10 +129,6 @@ export function UserDropdown({ user }: UserDropdownProps) {
           <DropdownMenuLinkItem href="/app/dashboard">
             <User className="mr-2 h-4 w-4" />
             Dashboard
-          </DropdownMenuLinkItem>
-          <DropdownMenuLinkItem href="/app/love-stories">
-            <Heart className="mr-2 h-4 w-4" />
-            Love Stories
           </DropdownMenuLinkItem>
           <DropdownMenuLinkItem href="/app/account">
             <Settings className="mr-2 h-4 w-4" />

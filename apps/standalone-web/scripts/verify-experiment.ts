@@ -122,6 +122,32 @@ try {
   const events = await a.api.event.list();
   assert.ok(events.some((e) => e.id === event.id));
   assert.ok(events[0]?.startDate instanceof Date);
+  // Both HTTP projections must retain ownership and reject GET mutations.
+  // Direct router tests do not cover transport dispatch or JSON validation.
+  for (const prefix of ["/api/domain", "/api/rpc"]) {
+    const response = await fetch(base + prefix + "/event/delete", {
+      headers: { cookie: a.cookie },
+    });
+    assert.equal(response.status, 404, `${prefix} must reject GET mutations`);
+  }
+  const openApiDenied = await fetch(base + "/api/rpc/event/delete", {
+    method: "POST",
+    headers: { cookie: b.cookie, "content-type": "application/json" },
+    body: JSON.stringify({ id: event.id }),
+  });
+  assert.equal(openApiDenied.status, 404);
+  const openApiAnonymous = await fetch(base + "/api/rpc/user/me", {
+    method: "POST",
+  });
+  assert.equal(openApiAnonymous.status, 401);
+  const invalidInput = await fetch(base + "/api/rpc/event/create", {
+    method: "POST",
+    headers: { cookie: a.cookie, "content-type": "application/json" },
+    body: JSON.stringify({ name: "Invalid fixture" }),
+  });
+  assert.equal(invalidInput.status, 400);
+  assert.ok((await a.api.event.list()).some((e) => e.id === event.id));
+  report.httpTransportBoundaries = true;
   assert.ok(!(await b.api.event.list()).some((e) => e.id === event.id));
   await deny(() => b.api.event.delete({ id: event.id }), "NOT_FOUND");
   await deny(() => a.api.admin.listRecentProfiles({ limit: 10 }), "FORBIDDEN");

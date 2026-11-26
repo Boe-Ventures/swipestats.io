@@ -110,7 +110,7 @@ function DirectoryContent() {
         {/* Stacked Views: Map + Coming Soon + Grid */}
         {!isLoading && !error && data && data.profiles.length > 0 && (
           <>
-            {/* Map View - Always Shown */}
+            {/* Map View */}
             <div className="space-y-4">
               <h2 className="text-2xl font-bold">Profile Map</h2>
               <DirectoryMapView profiles={data.profiles} totalCount={21} />
@@ -134,7 +134,7 @@ function DirectoryContent() {
             </div>
 
             {/* Grid View - Always Shown */}
-            <div className="space-y-4">
+            <div id="recent-profiles" className="scroll-mt-24 space-y-4">
               <h2 className="text-2xl font-bold">Recent Profiles</h2>
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {renderGridItems()}

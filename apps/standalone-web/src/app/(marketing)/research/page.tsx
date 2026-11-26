@@ -108,14 +108,16 @@ function HeroDataCard() {
       </span>
 
       <div className="overflow-hidden rounded-t-2xl bg-gray-950 shadow-[0_10px_30px_oklch(0.2_0.02_286/0.1),0_30px_60px_oklch(0.2_0.02_286/0.12)]">
-        <div className="flex items-center gap-2 border-b border-white/10 px-4 py-[13px]">
-          <span className="h-[11px] w-[11px] rounded-full bg-[#ff5f57]" />
-          <span className="h-[11px] w-[11px] rounded-full bg-[#febc2e]" />
-          <span className="h-[11px] w-[11px] rounded-full bg-[#28c840]" />
-          <span className="dark:text-muted-foreground ml-2.5 font-mono text-[12.5px] text-gray-400">
+        <div className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-2 border-b border-white/10 px-4 py-[13px] sm:flex sm:gap-2">
+          <div className="flex shrink-0 gap-2" aria-hidden="true">
+            <span className="h-[11px] w-[11px] rounded-full bg-[#ff5f57]" />
+            <span className="h-[11px] w-[11px] rounded-full bg-[#febc2e]" />
+            <span className="h-[11px] w-[11px] rounded-full bg-[#28c840]" />
+          </div>
+          <span className="dark:text-muted-foreground order-3 col-span-2 min-w-0 font-mono text-[12.5px] text-gray-400 sm:order-none sm:ml-2.5">
             profile · line 1 of 11,000+
           </span>
-          <span className="dark:text-muted-foreground ml-auto rounded-md bg-white/[0.06] px-2.5 py-[3px] font-mono text-[11px] text-gray-500">
+          <span className="dark:text-muted-foreground ml-auto shrink-0 rounded-md bg-white/[0.06] px-2.5 py-[3px] font-mono text-[11px] text-gray-500">
             JSONL
           </span>
         </div>
@@ -241,11 +243,11 @@ function HeroSection() {
       <div className="mx-auto max-w-[1216px] px-6 lg:px-8">
         <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
           <div>
-            <Eyebrow>
-              <span className="inline-flex items-center gap-2 rounded-full border border-rose-600/20 bg-rose-50 px-3 py-1.5 text-[13px] font-semibold tracking-normal text-rose-700 normal-case dark:bg-rose-950/40 dark:text-rose-400">
+            <Eyebrow className="flex flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:items-center">
+              <span className="inline-flex shrink-0 items-center gap-2 rounded-full border border-rose-600/20 bg-rose-50 px-3 py-1.5 text-[13px] font-semibold tracking-normal whitespace-nowrap text-rose-700 normal-case dark:bg-rose-950/40 dark:text-rose-400">
                 Trusted by researchers
               </span>
-              <span className="dark:text-muted-foreground text-gray-500">
+              <span className="dark:text-muted-foreground text-[11px] tracking-[0.08em] text-gray-500 sm:text-[12.5px]">
                 University of Chicago · APA
               </span>
             </Eyebrow>
@@ -277,24 +279,22 @@ function HeroSection() {
                 Download free sample
               </Link>
             </div>
-            <div className="mt-10 flex flex-wrap items-center gap-7">
+            <div className="mt-8 grid gap-4 sm:mt-10 sm:grid-cols-3 sm:gap-5">
               {[
                 { n: "11,000+", l: "profiles analyzed" },
                 { n: "965k+", l: "YouTube views from our data" },
                 { n: "50+", l: "research citations" },
-              ].map((t, i) => (
-                <div key={t.l} className="flex items-center gap-7">
-                  {i > 0 && (
-                    <div className="dark:bg-accent h-[34px] w-px bg-gray-200" />
-                  )}
-                  <div className="flex flex-col gap-0.5">
-                    <span className="dark:text-foreground text-[22px] font-bold tracking-[-0.02em] text-gray-900 tabular-nums">
-                      {t.n}
-                    </span>
-                    <span className="dark:text-muted-foreground text-[12.5px] text-gray-500">
-                      {t.l}
-                    </span>
-                  </div>
+              ].map((t) => (
+                <div
+                  key={t.l}
+                  className="grid grid-cols-[6rem_1fr] items-baseline gap-3 sm:flex sm:flex-col sm:gap-0.5"
+                >
+                  <span className="dark:text-foreground text-[22px] font-bold tracking-[-0.02em] text-gray-900 tabular-nums">
+                    {t.n}
+                  </span>
+                  <span className="dark:text-muted-foreground text-[12.5px] text-gray-500">
+                    {t.l}
+                  </span>
                 </div>
               ))}
             </div>
@@ -491,17 +491,17 @@ function SchemaSection() {
           lead="Each profile line contains profile fields, computed statistics, daily activity, and a match count. Raw conversations and photos are excluded from purchased downloads."
         />
 
-        <div className="mt-9 grid grid-cols-2 gap-3 md:grid-cols-4">
+        <div className="mt-9 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {keys.map((k) => (
             <div
               key={k.name}
               className="dark:border-border dark:bg-card rounded-xl border border-gray-200 bg-white p-4"
             >
-              <div className="flex items-center justify-between">
+              <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="dark:text-foreground font-mono text-[14px] font-semibold text-gray-900">
                   {k.name}
                 </span>
-                <span className="rounded-[5px] bg-rose-50 px-[7px] py-0.5 font-mono text-[11px] text-rose-600 dark:bg-rose-950/40 dark:text-rose-400">
+                <span className="shrink-0 rounded-[5px] bg-rose-50 px-[7px] py-0.5 font-mono text-[11px] whitespace-nowrap text-rose-600 dark:bg-rose-950/40 dark:text-rose-400">
                   {k.cnt}
                 </span>
               </div>
@@ -514,7 +514,7 @@ function SchemaSection() {
 
         <div className="mt-10 grid grid-cols-1 items-start gap-8 lg:grid-cols-2">
           <div className="dark:border-border dark:bg-card rounded-2xl border border-gray-200 bg-white p-[22px] shadow-[0_1px_2px_oklch(0.2_0.02_286/0.05)]">
-            <div className="mb-[18px] flex items-baseline justify-between">
+            <div className="mb-[18px] flex flex-wrap items-baseline justify-between gap-2">
               <span className="dark:text-foreground text-[14px] font-bold text-gray-900">
                 Sample rows:{" "}
                 <span className="dark:text-muted-foreground font-mono text-gray-500">
@@ -645,13 +645,7 @@ function DashboardSection() {
 
         {/* the real, data-driven insights (same charts that ship), framed as the live demo */}
         <div className="mt-11">
-          <div className="dark:border-border dark:bg-background dark:[&_[data-slot=card]]:border-border/70 rounded-3xl border border-gray-200 bg-gray-50 p-4 shadow-[0_10px_30px_oklch(0.2_0.02_286/0.1),0_30px_60px_oklch(0.2_0.02_286/0.12)] sm:p-6 [&_[data-slot=card]]:border-gray-200/70 [&_[data-slot=card]]:shadow-none!">
-            <p className="dark:text-muted-foreground mb-3 flex items-center justify-center gap-2 text-[12.5px] font-semibold text-gray-600">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              Explore an example profile in the SwipeStats interface.
-            </p>
-            <InsightsShowcase />
-          </div>
+          <InsightsShowcase />
         </div>
 
         <div className="mt-8 text-center">

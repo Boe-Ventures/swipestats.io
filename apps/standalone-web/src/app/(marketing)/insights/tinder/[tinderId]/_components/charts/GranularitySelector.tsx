@@ -6,15 +6,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { TimeGranularity } from "@/lib/utils/aggregateUsage";
+import { cn } from "@/components/ui/lib/utils";
 
 type GranularitySelectorProps = {
   value: TimeGranularity;
   onChange: (value: TimeGranularity) => void;
+  className?: string;
 };
 
 export function GranularitySelector({
   value,
   onChange,
+  className,
 }: GranularitySelectorProps) {
   return (
     <Select
@@ -22,7 +25,7 @@ export function GranularitySelector({
       onValueChange={(nextValue) => nextValue !== null && onChange(nextValue)}
     >
       <SelectTrigger
-        className="w-[132px] sm:w-[140px]"
+        className={cn("w-[132px] sm:w-[140px]", className)}
         aria-label="Select granularity"
       >
         <SelectValue placeholder="Select granularity">

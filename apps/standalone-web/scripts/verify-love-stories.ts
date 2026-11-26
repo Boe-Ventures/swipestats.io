@@ -263,74 +263,78 @@ try {
     "PASS: ownership, replay keys, partial edits, stale conflicts, ordering, links, source preservation, export",
   );
 
-  const browser = await chromium.launch({ headless: true });
-  try {
-    const context = await browser.newContext({
-      viewport: { width: 1280, height: 960 },
-    });
-    await context.addCookies(
-      a.cookie.split("; ").map((part) => {
-        const [name, ...rest] = part.split("=");
-        return { name: name!, value: rest.join("="), url: base };
-      }),
-    );
-    const page = await context.newPage();
-    const errors: string[] = [];
-    page.on("pageerror", (error) => errors.push(error.message));
-    await page.goto(base + "/experiments/love-stories/workspace");
-    await page
-      .getByRole("button", { name: "Mira (fictional)", exact: true })
-      .click();
-    await page
-      .getByRole("heading", { name: "Encounters", exact: true })
-      .waitFor();
-    await page
-      .getByRole("button", { name: "Add encounter", exact: true })
-      .click();
-    await page.getByRole("combobox", { name: "Kind", exact: true }).click();
-    await page.getByRole("option", { name: "Message", exact: true }).click();
-    await page.getByRole("combobox", { name: "Medium", exact: true }).click();
-    await page.getByRole("option", { name: "Messaging", exact: true }).click();
-    await page
-      .getByLabel("Platform (Instagram, WhatsApp, etc.)", { exact: true })
-      .fill("instagram");
-    await page
-      .getByLabel("What happened", { exact: true })
-      .fill("Fictional browser persistence check");
-    await page.getByRole("button", { name: "Save", exact: true }).click();
-    await page
-      .getByText("Fictional browser persistence check", { exact: true })
-      .waitFor();
-    await page.reload();
-    await page
-      .getByRole("button", { name: "Mira (fictional)", exact: true })
-      .click();
-    await page
-      .getByText("Fictional browser persistence check", { exact: true })
-      .waitFor();
-    await page.getByText("Corrected wording", { exact: true }).waitFor();
-    assert.equal(await page.locator(".ph-no-capture.amp-block").count(), 1);
-    await page.screenshot({
-      path: "/tmp/love-stories-workspace-desktop.png",
-      fullPage: true,
-    });
-    await page.setViewportSize({ width: 390, height: 844 });
-    assert.equal(
-      await page.evaluate(
-        () => document.documentElement.scrollWidth <= window.innerWidth,
-      ),
-      true,
-    );
-    await page.screenshot({
-      path: "/tmp/love-stories-workspace-mobile.png",
-      fullPage: true,
-    });
-    assert.deepEqual(errors, []);
-    console.log(
-      "PASS: browser save/reload, replay exclusion, desktop/mobile layout",
-    );
-  } finally {
-    await browser.close();
+  if (process.env.EXPERIMENT_SKIP_BROWSER !== "1") {
+    const browser = await chromium.launch({ headless: true });
+    try {
+      const context = await browser.newContext({
+        viewport: { width: 1280, height: 960 },
+      });
+      await context.addCookies(
+        a.cookie.split("; ").map((part) => {
+          const [name, ...rest] = part.split("=");
+          return { name: name!, value: rest.join("="), url: base };
+        }),
+      );
+      const page = await context.newPage();
+      const errors: string[] = [];
+      page.on("pageerror", (error) => errors.push(error.message));
+      await page.goto(base + "/experiments/love-stories/workspace");
+      await page
+        .getByRole("button", { name: "Mira (fictional)", exact: true })
+        .click();
+      await page
+        .getByRole("heading", { name: "Encounters", exact: true })
+        .waitFor();
+      await page
+        .getByRole("button", { name: "Add encounter", exact: true })
+        .click();
+      await page.getByRole("combobox", { name: "Kind", exact: true }).click();
+      await page.getByRole("option", { name: "Message", exact: true }).click();
+      await page.getByRole("combobox", { name: "Medium", exact: true }).click();
+      await page
+        .getByRole("option", { name: "Messaging", exact: true })
+        .click();
+      await page
+        .getByLabel("Platform (Instagram, WhatsApp, etc.)", { exact: true })
+        .fill("instagram");
+      await page
+        .getByLabel("What happened", { exact: true })
+        .fill("Fictional browser persistence check");
+      await page.getByRole("button", { name: "Save", exact: true }).click();
+      await page
+        .getByText("Fictional browser persistence check", { exact: true })
+        .waitFor();
+      await page.reload();
+      await page
+        .getByRole("button", { name: "Mira (fictional)", exact: true })
+        .click();
+      await page
+        .getByText("Fictional browser persistence check", { exact: true })
+        .waitFor();
+      await page.getByText("Corrected wording", { exact: true }).waitFor();
+      assert.equal(await page.locator(".ph-no-capture.amp-block").count(), 1);
+      await page.screenshot({
+        path: "/tmp/love-stories-workspace-desktop.png",
+        fullPage: true,
+      });
+      await page.setViewportSize({ width: 390, height: 844 });
+      assert.equal(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= window.innerWidth,
+        ),
+        true,
+      );
+      await page.screenshot({
+        path: "/tmp/love-stories-workspace-mobile.png",
+        fullPage: true,
+      });
+      assert.deepEqual(errors, []);
+      console.log(
+        "PASS: browser save/reload, replay exclusion, desktop/mobile layout",
+      );
+    } finally {
+      await browser.close();
+    }
   }
 
   // Exercise the actual transfer helper with disposable source/target accounts.
@@ -340,7 +344,11 @@ try {
   await withTransaction((tx) => transferLoveStoriesInTx(tx, a.id, b.id));
   assert.equal((await a.api.person.list({})).length, 0);
   assert.equal((await b.api.person.get({ id: p.id })).userId, b.id);
-  assert.ok((await b.api.encounter.list({ personId: p.id })).length >= 3);
+  assert.equal(
+    (await b.api.encounter.list({ personId: p.id })).length,
+    exported.encounters.length +
+      (process.env.EXPERIMENT_SKIP_BROWSER === "1" ? 0 : 1),
+  );
   assert.equal((await b.api.entry.get({ id: en.id })).encounterIds.length, 2);
   await denied(() => a.api.entry.get({ id: en.id }), "NOT_FOUND");
   const snapshot = await b.api.export();

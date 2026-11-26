@@ -144,17 +144,7 @@ function Hero() {
 
         {/* the real, richer insights showcase, framed as the live demo */}
         <div className="mt-12">
-          <div className="dark:border-border dark:bg-background dark:[&_[data-slot=card]]:border-border/70 mx-auto max-w-[1120px] rounded-3xl border border-gray-200 bg-gray-50 p-4 shadow-[0_8px_24px_oklch(0.2_0.02_286/0.08),0_18px_44px_oklch(0.2_0.02_286/0.1)] sm:p-6 [&_[data-slot=card]]:border-gray-200/70 [&_[data-slot=card]]:shadow-none!">
-            <p className="dark:text-muted-foreground mb-3 flex items-center justify-center gap-2 text-center text-[12.5px] font-semibold text-gray-600">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              <span className="sm:hidden">Real data. Explore the demo.</span>
-              <span className="hidden sm:inline">
-                Real demo, real data. Click through an anonymized profile
-                yourself.
-              </span>
-            </p>
-            <InsightsShowcase />
-          </div>
+          <InsightsShowcase />
         </div>
 
         <div className="mt-8 text-center">

@@ -95,7 +95,7 @@ export function ProfileOverview({ className }: { className?: string }) {
 
       <CardContent className="space-y-4">
         {/* Main Stats - Compact Row */}
-        <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:gap-x-8 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-x-4 gap-y-3 sm:gap-x-6 xl:grid-cols-4">
           <StatItem
             label="Total Swipes"
             value={
@@ -116,7 +116,8 @@ export function ProfileOverview({ className }: { className?: string }) {
             }
           />
           <StatItem
-            label="Usage Messages Sent"
+            label="Messages Sent"
+            description="Messages sent recorded in Tinder's usage history."
             value={
               globalMeta?.messagesSentTotal != null
                 ? globalMeta.messagesSentTotal.toLocaleString()
@@ -124,7 +125,7 @@ export function ProfileOverview({ className }: { className?: string }) {
             }
           />
           <StatItem
-            label="Match yield"
+            label="Match Rate"
             value={
               globalMeta?.matchRate != null
                 ? `${(globalMeta.matchRate * 100).toFixed(1)}%`
@@ -173,11 +174,24 @@ export function ProfileOverview({ className }: { className?: string }) {
   );
 }
 
-function StatItem({ label, value }: { label: string; value: string }) {
+function StatItem({
+  label,
+  value,
+  description,
+}: {
+  label: string;
+  value: string;
+  description?: string;
+}) {
   return (
-    <div>
-      <p className="text-muted-foreground text-sm font-medium">{label}</p>
-      <p className="text-2xl font-bold tabular-nums">{value}</p>
+    <div className="flex min-w-0 flex-col">
+      <p
+        className="text-muted-foreground text-sm font-medium"
+        title={description}
+      >
+        {label}
+      </p>
+      <p className="mt-auto text-2xl font-bold tabular-nums">{value}</p>
     </div>
   );
 }

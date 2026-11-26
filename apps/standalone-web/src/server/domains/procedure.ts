@@ -121,6 +121,23 @@ export const tinderProfileOwnerProcedure = publicProcedure
 export const AI_ENTITLEMENT_MESSAGE =
   "This AI feature requires a PLUS or ELITE subscription.";
 
+/** Owner-only percentile distributions require an active Plus or Elite plan. */
+export const tinderBenchmarkProcedure = tinderProfileOwnerProcedure.use(
+  async ({ context: ctx, next }) => {
+    const user = await ctx.db.query.userTable.findFirst({
+      where: eq(userTable.id, ctx.session.user.id),
+    });
+    if (!user) throw new DomainError({ code: "UNAUTHORIZED" });
+    if (!canAccessFeature(user, "demographicComparison")) {
+      throw new DomainError({
+        code: "FORBIDDEN",
+        message: "Cohort comparisons require a PLUS or ELITE subscription.",
+      });
+    }
+    return next();
+  },
+);
+
 export const aiProcedure = publicProcedure.use(
   async ({ context: ctx, next }) => {
     if (!ctx.session?.user) {
