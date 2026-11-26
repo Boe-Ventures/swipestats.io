@@ -1,6 +1,6 @@
 {
-  "installCommand": "npm install --global bun@1.4.0 && cd ../.. && bun install --frozen-lockfile",
-  "buildCommand": "DRAUPNIR_WORKSPACE_ROOT=\"$(cd ../.. && pwd)\" bun run build",
+  "installCommand": "npm install --global --allow-scripts=bun bun@1.4.0 && export PATH=\"$(npm prefix -g)/bin:$PATH\" && cd ../.. && bun --version && bun install --frozen-lockfile",
+  "buildCommand": "PATH=\"$(npm prefix -g)/bin:$PATH\" DRAUPNIR_WORKSPACE_ROOT=\"$(cd ../.. && pwd)\" bun run build",
   "crons": [
     {
       "path": "/api/cron/deploy",
