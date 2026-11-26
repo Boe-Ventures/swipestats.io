@@ -100,7 +100,7 @@ export default function HeaderClient({ navigation }: HeaderClientProps) {
       </div>
 
       {/* Desktop Navigation */}
-      <PopoverGroup className="hidden lg:flex lg:gap-x-12">
+      <PopoverGroup className="hidden lg:flex lg:gap-x-2 xl:gap-x-6">
         {/* Temporarily hidden Product dropdown */}
         {/* <Popover className="relative">
           {({ close }) => (
