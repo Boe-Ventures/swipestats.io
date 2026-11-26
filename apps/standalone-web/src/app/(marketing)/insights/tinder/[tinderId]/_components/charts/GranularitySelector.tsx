@@ -1,0 +1,44 @@
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { TimeGranularity } from "@/lib/utils/aggregateUsage";
+import { cn } from "@/components/ui/lib/utils";
+
+type GranularitySelectorProps = {
+  value: TimeGranularity;
+  onChange: (value: TimeGranularity) => void;
+  className?: string;
+};
+
+export function GranularitySelector({
+  value,
+  onChange,
+  className,
+}: GranularitySelectorProps) {
+  return (
+    <Select
+      value={value}
+      onValueChange={(nextValue) => nextValue !== null && onChange(nextValue)}
+    >
+      <SelectTrigger
+        className={cn("w-[132px] sm:w-[140px]", className)}
+        aria-label="Select granularity"
+      >
+        <SelectValue placeholder="Select granularity">
+          {value.charAt(0).toUpperCase() + value.slice(1)}
+        </SelectValue>
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="daily">Daily</SelectItem>
+        <SelectItem value="weekly">Weekly</SelectItem>
+        <SelectItem value="monthly">Monthly</SelectItem>
+        <SelectItem value="quarterly">Quarterly</SelectItem>
+        <SelectItem value="yearly">Yearly</SelectItem>
+      </SelectContent>
+    </Select>
+  );
+}

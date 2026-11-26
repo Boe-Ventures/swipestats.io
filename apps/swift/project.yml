@@ -1,0 +1,25 @@
+name: DraupnirSwift
+options:
+  bundleIdPrefix: ventures.boe.draupnir
+packages:
+  DraupnirSwift:
+    path: .
+targets:
+  DraupnirIOS:
+    type: application
+    platform: iOS
+    deploymentTarget: "17.0"
+    sources: [Apps/iOS]
+    dependencies:
+      - package: DraupnirSwift
+        product: DraupnirUI
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ventures.boe.draupnir.ios
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_NSLocalNetworkUsageDescription: Connect to your local Draupnir development server.
+    info:
+      path: Apps/iOS/Info.plist
+      properties:
+        NSAppTransportSecurity:
+          NSAllowsLocalNetworking: true

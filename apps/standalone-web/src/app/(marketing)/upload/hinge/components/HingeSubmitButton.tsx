@@ -1,0 +1,356 @@
+"use client";
+
+import { useState, useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { upload } from "@vercel/blob/client";
+import { SubmitButton } from "../../_components/SubmitButton";
+import { useDomain } from "@/domain/react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import type { SwipestatsHingeProfilePayload } from "@/lib/interfaces/HingeDataJSON";
+import { authClient } from "@/server/better-auth/client";
+import type { HingeConsentState } from "@/lib/interfaces/HingeConsent";
+import {
+  getBrowserTimezone,
+  getCountryFromTimezone,
+} from "@/lib/utils/timezone";
+import { useAnalytics } from "@/contexts/AnalyticsProvider";
+import { shouldReuseTransientUpload } from "@/lib/upload/transient-upload";
+import {
+  canReuseHingeTransientUpload,
+  prepareHingeTransientUpload,
+} from "@/lib/upload/hinge-transient-upload";
+import { ConversionModal } from "@/app/app/dashboard/ConversionModal";
+import { Button } from "@/components/ui/button";
+import { transientDataBlobPath } from "@/lib/blob-paths";
+
+interface HingeSubmitButtonProps {
+  payload: SwipestatsHingeProfilePayload;
+  isUpdate: boolean;
+  disabled?: boolean;
+  consent: HingeConsentState;
+  uploadContext?: {
+    scenario: "new_profile" | "new_user" | "same_hingeId" | "different_hingeId";
+    identityMismatch?: boolean;
+    requiresGuestChoice?: boolean;
+    userProfile?: { hingeId: string } | null;
+  } | null;
+}
+
+export function HingeSubmitButton({
+  payload,
+  isUpdate: _isUpdate,
+  disabled,
+  consent,
+  uploadContext,
+}: HingeSubmitButtonProps) {
+  const { trackEvent } = useAnalytics();
+  const [conversionOpen, setConversionOpen] = useState(false);
+  const [replacementChoice, setReplacementChoice] = useState<{
+    profileId: string;
+    payload: SwipestatsHingeProfilePayload;
+  } | null>(null);
+  const guestProfileId = uploadContext?.requiresGuestChoice
+    ? uploadContext.userProfile?.hingeId
+    : undefined;
+  // A new extraction resets the choice even when its signup timestamp matches.
+  const replacementConfirmed =
+    !!guestProfileId &&
+    replacementChoice?.profileId === guestProfileId &&
+    replacementChoice.payload === payload;
+  const router = useRouter();
+  const [isCreatingSession, setIsCreatingSession] = useState(false);
+  const [uploadState, setUploadState] = useState<
+    "idle" | "uploading" | "processing"
+  >("idle");
+  const [uploadedBlob, setUploadedBlob] = useState<{
+    uploadId: string;
+    url: string;
+    payloadKey: string;
+  } | null>(null);
+
+  // Use Better Auth's built-in session hook
+  const { data: session } = authClient.useSession();
+
+  // Detect timezone and country once on mount
+  const browserTimezone = useMemo(() => getBrowserTimezone(), []);
+  const browserCountry = useMemo(
+    () => getCountryFromTimezone(browserTimezone),
+    [browserTimezone],
+  );
+
+  const domain = useDomain();
+  const queryClient = useQueryClient();
+
+  // Mutation options shared across all endpoints
+  const mutationOptions = {
+    onSuccess: async (data: { hingeId: string }) => {
+      await Promise.all([
+        queryClient.invalidateQueries(
+          domain.event.list.queryOptions({ input: undefined }),
+        ),
+        queryClient.invalidateQueries(
+          domain.hingeProfile.getWithStats.queryOptions({
+            input: {
+              hingeId: data.hingeId,
+            },
+          }),
+        ),
+      ]);
+      router.push(`/insights/hinge/${data.hingeId}`);
+    },
+    onError: (error: { message?: string; code?: string }) => {
+      if (!shouldReuseTransientUpload(error)) setUploadedBlob(null);
+      if (
+        ["PRECONDITION_FAILED", "CONFLICT", "NOT_FOUND"].includes(
+          error.code ?? "",
+        )
+      ) {
+        void queryClient.invalidateQueries({
+          queryKey: domain.hingeProfile.getUploadContext.key(),
+        });
+      }
+      setUploadState("idle");
+      setIsCreatingSession(false);
+      console.error("Error uploading profile:", error);
+      const message =
+        error.message || "Failed to upload profile. Please try again.";
+      alert(message);
+    },
+  };
+
+  // Three separate mutations for each endpoint
+  const createMutation = useMutation(
+    domain.hingeProfile.createProfile.mutationOptions(mutationOptions),
+  );
+  const updateMutation = useMutation(
+    domain.hingeProfile.updateProfile.mutationOptions(mutationOptions),
+  );
+  const mergeMutation = useMutation(
+    domain.hingeProfile.mergeAccounts.mutationOptions(mutationOptions),
+  );
+
+  const scenario = uploadContext?.scenario;
+  const isActionableScenario =
+    scenario === "new_profile" ||
+    scenario === "new_user" ||
+    scenario === "same_hingeId" ||
+    scenario === "different_hingeId";
+
+  const handleSubmit = async () => {
+    // The button is already disabled while loading; this guards the function
+    // itself against a same-frame double-fire before the disabled state applies.
+    if (!canSubmit || isLoading) return;
+    // Never create a session or public transport blob for a state that cannot
+    // reach a processing endpoint (for example while context is loading).
+    if (!isActionableScenario) return;
+
+    // Track submit click
+    const photoCount = Array.isArray(payload.anonymizedHingeJson.Media)
+      ? payload.anonymizedHingeJson.Media.length
+      : 0;
+    const hasPhotosData = photoCount > 0;
+
+    trackEvent("upload_submit_clicked", {
+      provider: "hinge",
+      hingeId: payload.hingeId,
+      photoCount: consent.sharePhotos ? photoCount : 0, // 0 if no consent
+      hasPhotos: hasPhotosData,
+      hasPhotosConsent: consent.sharePhotos,
+      matchCount: payload.anonymizedHingeJson.CsvActivity
+        ? null
+        : payload.anonymizedHingeJson.Matches.length,
+      scenario: uploadContext?.scenario || "unknown",
+    });
+
+    try {
+      // Step 1: Ensure session exists
+      if (!session) {
+        setIsCreatingSession(true);
+        const { error } = await authClient.signIn.anonymous({
+          fetchOptions: {
+            headers: {
+              "X-Anonymous-Source": "upload_flow",
+            },
+          },
+        });
+        if (error) {
+          setIsCreatingSession(false);
+          alert("Failed to create session. Please try again.");
+          return;
+        }
+        setIsCreatingSession(false);
+      }
+
+      // Step 2: Upload to blob (skip only for an exact payload retry).
+      const preparedUpload = prepareHingeTransientUpload(payload, consent);
+      let blobUrl = canReuseHingeTransientUpload(
+        uploadedBlob?.payloadKey,
+        preparedUpload.payloadKey,
+      )
+        ? uploadedBlob!.url
+        : null;
+      const uploadId = blobUrl ? uploadedBlob!.uploadId : crypto.randomUUID();
+      if (!blobUrl) {
+        setUploadState("uploading");
+        console.log("📤 Uploading to blob storage...");
+
+        // Create JSON blob
+        const jsonBlob = new Blob([preparedUpload.blobBody], {
+          type: "application/json",
+        });
+
+        // Upload to Vercel Blob with structured path
+        const result = await upload(
+          transientDataBlobPath("hinge", preparedUpload.hingeId, uploadId),
+          jsonBlob,
+          {
+            access: "public",
+            handleUploadUrl: "/api/blob/client-upload",
+            clientPayload: JSON.stringify({
+              resourceType: "hinge_data",
+              hingeId: preparedUpload.hingeId,
+              uploadId,
+            }),
+          },
+        );
+
+        blobUrl = result.url;
+        setUploadedBlob({
+          uploadId,
+          url: blobUrl,
+          payloadKey: preparedUpload.payloadKey,
+        });
+        console.log("✅ Hinge data uploaded to blob storage");
+      } else {
+        console.log("♻️ Reusing the matching Hinge upload for retry");
+      }
+
+      // Step 3: Process profile
+      setUploadState("processing");
+      const uploadData = {
+        hingeId: payload.hingeId,
+        uploadId,
+        blobUrl,
+        timezone: browserTimezone,
+        country: browserCountry,
+        consentPhotos: consent.sharePhotos,
+        consentWork: consent.shareWorkInfo,
+        guestReplacementProfileId: replacementConfirmed
+          ? guestProfileId
+          : undefined,
+      };
+
+      // Route to appropriate endpoint based on scenario
+      if (scenario === "new_profile" || scenario === "new_user") {
+        createMutation.mutate(uploadData);
+      } else if (scenario === "same_hingeId") {
+        updateMutation.mutate(uploadData);
+      } else if (scenario === "different_hingeId") {
+        mergeMutation.mutate(uploadData);
+      } else {
+        console.error("Unknown upload scenario:", scenario);
+        alert("Unable to determine upload type. Please refresh and try again.");
+        setUploadState("idle");
+      }
+    } catch (error) {
+      console.error("Upload error:", error);
+      const errorMessage =
+        error instanceof Error ? error.message : "Upload failed";
+
+      if (errorMessage.toLowerCase().includes("upload")) {
+        // Blob upload failed - clear cache and show error
+        setUploadedBlob(null);
+        alert("Upload failed. Please check your connection and try again.");
+      } else {
+        // Processing failed - keep blob URL cached for retry
+        alert("Processing failed. Please try again.");
+      }
+      setUploadState("idle");
+      setIsCreatingSession(false);
+    }
+  };
+
+  const termsAccepted = consent.terms;
+  const canSubmit =
+    !disabled &&
+    termsAccepted &&
+    isActionableScenario &&
+    (!guestProfileId || replacementConfirmed);
+  const isLoading =
+    isCreatingSession ||
+    uploadState !== "idle" ||
+    createMutation.isPending ||
+    updateMutation.isPending ||
+    mergeMutation.isPending;
+
+  // Determine loading text
+  let loadingText = guestProfileId
+    ? "Replace guest data & view insights"
+    : "Upload & View Insights";
+  if (uploadState === "uploading") {
+    loadingText = "Uploading...";
+  } else if (uploadState === "processing") {
+    loadingText = "Processing...";
+  }
+
+  return (
+    <div className="space-y-4">
+      {guestProfileId && (
+        <div className="rounded-lg border p-4">
+          <h3 className="font-semibold">Keep your history or replace it</h3>
+          <p className="text-muted-foreground mt-2 text-sm">
+            Create a free account to keep your previous uploads and add this
+            data. Or replace your guest profile with just the files you selected
+            here.
+          </p>
+          <Button
+            type="button"
+            variant="outline"
+            className="mt-3"
+            onClick={() => setConversionOpen(true)}
+            disabled={isLoading}
+          >
+            Create account / sign in
+          </Button>
+          <label className="mt-4 flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={replacementConfirmed}
+              disabled={isLoading}
+              onChange={(event) =>
+                setReplacementChoice(
+                  event.target.checked && guestProfileId
+                    ? { profileId: guestProfileId, payload }
+                    : null,
+                )
+              }
+            />
+            <span>
+              Replace my guest data. Previous imported matches, messages, photos
+              and prompts will be replaced by these files.
+            </span>
+          </label>
+        </div>
+      )}
+      <SubmitButton
+        onClick={handleSubmit}
+        disabled={!canSubmit || isLoading}
+        isLoading={isLoading}
+      >
+        {loadingText}
+      </SubmitButton>
+      <ConversionModal
+        open={conversionOpen}
+        onOpenChange={setConversionOpen}
+        onConverted={async () => {
+          setReplacementChoice(null);
+          setUploadedBlob(null);
+          await queryClient.invalidateQueries({
+            queryKey: domain.hingeProfile.getUploadContext.key(),
+          });
+        }}
+      />
+    </div>
+  );
+}

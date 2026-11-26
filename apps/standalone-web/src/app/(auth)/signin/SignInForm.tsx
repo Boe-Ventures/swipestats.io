@@ -1,0 +1,219 @@
+"use client";
+
+import { ClientAuthForm } from "../../../components/auth/ClientAuthForm";
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Loader2, UserCircle2 } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Field, FieldLabel } from "@/components/ui/form-new";
+import { getAuthPageHref, getCallbackURL } from "@/lib/auth-utils";
+import { authClient } from "@/server/better-auth/client";
+import { ForgotPasswordDialog } from "./ForgotPasswordDialog";
+
+export function SignInForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackURL = getCallbackURL(searchParams);
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const [isAnonymousLoading, setIsAnonymousLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
+
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const { data, error } = await authClient.signIn.username({
+        username,
+        password,
+      });
+
+      if (error) {
+        setError(error.message ?? "Failed to sign in");
+      } else if (data) {
+        if (
+          "redirect" in data &&
+          data.redirect &&
+          "url" in data &&
+          typeof data.url === "string"
+        ) {
+          window.location.assign(data.url);
+          return;
+        }
+        router.push(callbackURL);
+        router.refresh();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAnonymousSignIn = async () => {
+    setIsAnonymousLoading(true);
+    setError(null);
+
+    try {
+      const { data, error } = await authClient.signIn.anonymous(
+        {
+          fetchOptions: {
+            headers: {
+              "X-Anonymous-Source": "direct",
+            },
+          },
+        },
+        undefined, // query params
+      );
+
+      if (error) {
+        setError(error.message ?? "Failed to sign in anonymously");
+      } else if (data) {
+        if (
+          "redirect" in data &&
+          data.redirect &&
+          "url" in data &&
+          typeof data.url === "string"
+        ) {
+          window.location.assign(data.url);
+          return;
+        }
+        router.push(callbackURL);
+        router.refresh();
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "An error occurred");
+    } finally {
+      setIsAnonymousLoading(false);
+    }
+  };
+
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-center text-2xl">Welcome back</CardTitle>
+          <p className="dark:text-muted-foreground text-center text-sm text-gray-600">
+            Sign in to your account
+          </p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          <ClientAuthForm onSubmit={handleSignIn} className="space-y-4">
+            <Field>
+              <FieldLabel htmlFor="username">Username</FieldLabel>
+              <Input
+                id="username"
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="cooluser123"
+                required
+                disabled={isLoading}
+              />
+            </Field>
+
+            <Field>
+              <FieldLabel htmlFor="password">Password</FieldLabel>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                minLength={8}
+                disabled={isLoading}
+              />
+              <div className="text-right">
+                <button
+                  type="button"
+                  onClick={() => setIsForgotPasswordOpen(true)}
+                  className="text-sm text-rose-600 hover:text-rose-500 hover:underline dark:text-rose-400"
+                >
+                  Forgot password?
+                </button>
+              </div>
+            </Field>
+
+            <Button
+              type="submit"
+              className="w-full bg-rose-600 hover:bg-rose-500"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Signing in...
+                </>
+              ) : (
+                "Sign in"
+              )}
+            </Button>
+          </ClientAuthForm>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="dark:border-border w-full border-t border-gray-200" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="dark:bg-card dark:text-muted-foreground bg-white px-4 text-gray-500">
+                or continue without account
+              </span>
+            </div>
+          </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full"
+            onClick={handleAnonymousSignIn}
+            disabled={isAnonymousLoading}
+          >
+            {isAnonymousLoading ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Loading...
+              </>
+            ) : (
+              <>
+                <UserCircle2 className="mr-2 h-4 w-4" />
+                Continue as Guest
+              </>
+            )}
+          </Button>
+
+          <div className="dark:text-muted-foreground text-center text-sm text-gray-600">
+            Don&apos;t have an account?{" "}
+            <Link
+              href={getAuthPageHref("/signup", searchParams)}
+              className="text-rose-600 hover:text-rose-500 hover:underline dark:text-rose-400"
+            >
+              Sign up
+            </Link>
+          </div>
+        </CardContent>
+      </Card>
+
+      <ForgotPasswordDialog
+        open={isForgotPasswordOpen}
+        onOpenChange={setIsForgotPasswordOpen}
+        defaultEmail=""
+      />
+    </>
+  );
+}

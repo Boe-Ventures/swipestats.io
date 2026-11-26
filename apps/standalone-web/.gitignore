@@ -1,0 +1,99 @@
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+
+# testing
+/coverage
+
+# database
+/prisma/db.sqlite
+/prisma/db.sqlite-journal
+db.sqlite
+
+# next.js
+/.next/
+/out/
+next-env.d.ts
+
+# production
+/build
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# local env files
+# do not commit any .env files to git, except for the .env.example file. https://create.t3.gg/en/usage/env-variables#using-environment-variables
+.env
+.env*.local
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+
+# eslint
+.eslintcache
+
+# idea files
+.idea
+
+# Velite generated files
+.velite
+public/static
+
+src/scripts/data-files
+
+# Test data (extracted JSON files for testing)
+test-data/
+
+# Showcase blog post for testing components
+content/posts/showcase.mdx
+
+# Local workflow configurations
+/workflows/
+
+generated-videos/
+
+# LLM analysis output (research datasets with PII)
+src/scripts/llm-analysis/output/*.jsonl
+src/scripts/llm-analysis/summaries/
+
+docs/plans/
+
+# MCP server config (contains credentials)
+.mcp.json
+
+# Private content planning (local only)
+temp/
+
+# Growth automation scripts (local only)
+growth/
+
+# Content plan (local only)
+CONTENT-PLAN.md
+02-areas/
+
+# Claude (local only)
+.claude/
+
+# design-sync (claude.ai/design) - machinery + build output stay local
+.ds-sync/
+ds-bundle/
+.ds-dist/
+.design-sync/.cache/
+.design-sync/learnings/
+.design-sync/node_modules
+
+# Server logs (local only)
+/logs

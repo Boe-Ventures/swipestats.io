@@ -1,0 +1,208 @@
+"use client";
+
+import { useEffect } from "react";
+import { z } from "zod";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Controller,
+  useForm,
+  zodResolver,
+  Field,
+  FieldLabel,
+  FieldDescription,
+  FieldError,
+} from "@/components/ui/form-new";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { CountrySelect } from "@/components/ui/form-inputs/CountrySelect";
+import { useDomain } from "@/domain/react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { getContinentFromCountry } from "@/lib/utils/continent";
+import { MapPin } from "lucide-react";
+
+const locationSchema = z.object({
+  timeZone: z.string().optional(),
+  city: z.string().optional(),
+  country: z.string().length(2).optional(), // ISO-2 only
+  region: z.string().optional(),
+});
+
+type LocationFormData = z.infer<typeof locationSchema>;
+
+export function LocationForm() {
+  const domain = useDomain();
+  const queryClient = useQueryClient();
+  const { data: user } = useQuery(domain.user.me.queryOptions());
+
+  const form = useForm<LocationFormData>({
+    resolver: zodResolver(locationSchema),
+    defaultValues: {
+      timeZone: "",
+      city: "",
+      country: "",
+      region: "",
+    },
+  });
+
+  const updateLocation = useMutation(
+    domain.user.updateLocation.mutationOptions({
+      onSuccess: () => {
+        void queryClient.invalidateQueries(domain.user.me.queryOptions());
+      },
+    }),
+  );
+
+  const detectMutation = useMutation(
+    domain.user.detectLocation.mutationOptions({
+      onSuccess: (result) => {
+        if (!result.detected) return;
+        // Invalidate user query to trigger refetch and update form
+        void queryClient.invalidateQueries(domain.user.me.queryOptions());
+      },
+    }),
+  );
+
+  // Load user data into form
+  useEffect(() => {
+    if (user) {
+      form.reset({
+        timeZone: user.timeZone ?? "",
+        city: user.city ?? "",
+        country: user.country ?? "",
+        region: user.region ?? "",
+      });
+    }
+  }, [user, form]);
+
+  // Watch country for continent display
+  const selectedCountry = form.watch("country");
+  const continent = getContinentFromCountry(selectedCountry);
+
+  const onSubmit = (data: LocationFormData) => {
+    updateLocation.mutate(data);
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Location</CardTitle>
+        <p className="text-muted-foreground text-sm">
+          Your location affects cohort comparisons and analytics. Update to
+          compare with users in your region.
+        </p>
+        <CardAction>
+          <Button
+            type="button"
+            onClick={() => detectMutation.mutate()}
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            disabled={detectMutation.isPending}
+          >
+            <MapPin className="h-4 w-4" />
+            <span className="hidden sm:inline">
+              {detectMutation.isPending ? "Detecting..." : "Detect Location"}
+            </span>
+          </Button>
+        </CardAction>
+      </CardHeader>
+      <CardContent>
+        {detectMutation.data && !detectMutation.data.detected && (
+          <p role="status" className="text-muted-foreground mb-4 text-sm">
+            {detectMutation.data.message}
+          </p>
+        )}
+        {detectMutation.isError && (
+          <p role="alert" className="text-destructive mb-4 text-sm">
+            {detectMutation.error.message}
+          </p>
+        )}
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          {/* Timezone */}
+          <Controller
+            control={form.control}
+            name="timeZone"
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel htmlFor={field.name}>Timezone</FieldLabel>
+                <Input
+                  {...field}
+                  id={field.name}
+                  aria-invalid={fieldState.invalid}
+                  placeholder="e.g., America/New_York, Europe/London"
+                />
+                <FieldDescription>
+                  Use IANA timezone format (e.g., America/New_York,
+                  Europe/London)
+                </FieldDescription>
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </Field>
+            )}
+          />
+
+          {/* City */}
+          <Controller
+            control={form.control}
+            name="city"
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel htmlFor={field.name}>City</FieldLabel>
+                <Input
+                  {...field}
+                  id={field.name}
+                  aria-invalid={fieldState.invalid}
+                  placeholder="e.g., Oslo, New York"
+                />
+                <FieldDescription>City name in English</FieldDescription>
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </Field>
+            )}
+          />
+
+          {/* Country - Use existing CountrySelect component */}
+          <CountrySelect
+            control={form.control}
+            name="country"
+            label="Country"
+            placeholder="Select a country..."
+          />
+
+          {/* Continent - Read-only display */}
+          <div className="space-y-2">
+            <Label>Continent</Label>
+            <Input value={continent || ""} disabled className="bg-muted" />
+            <p className="text-muted-foreground text-xs">
+              Auto-derived from country
+            </p>
+          </div>
+
+          <Button type="submit" disabled={updateLocation.isPending}>
+            {updateLocation.isPending ? "Saving..." : "Save Changes"}
+          </Button>
+
+          {updateLocation.isSuccess && (
+            <p className="text-sm text-green-600 dark:text-green-400">
+              Location updated successfully!
+            </p>
+          )}
+          {updateLocation.isError && (
+            <p className="text-destructive text-sm">
+              Error: {updateLocation.error.message}
+            </p>
+          )}
+        </form>
+      </CardContent>
+    </Card>
+  );
+}

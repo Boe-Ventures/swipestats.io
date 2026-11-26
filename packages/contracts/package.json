@@ -1,0 +1,21 @@
+{
+  "name": "@draupnir/contracts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./posts": "./src/posts.ts",
+    "./organizations": "./src/organizations.ts",
+    "./billing": "./src/billing.ts",
+    "./assistant": "./src/assistant.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "typescript": "catalog:"
+  }
+}
