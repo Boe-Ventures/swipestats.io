@@ -39,6 +39,7 @@
     "**/*.tsx",
     "**/*.cjs",
     "**/*.js",
+    "src/app/.well-known/**/*.ts",
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts",
     ".velite/**/*.ts",
