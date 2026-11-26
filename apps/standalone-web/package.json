@@ -191,7 +191,7 @@
   "ct3aMetadata": {
     "initVersion": "7.40.0"
   },
-  "packageManager": "bun",
+  "packageManager": "bun@1.4.0",
   "trustedDependencies": [
     "unrs-resolver"
   ],
