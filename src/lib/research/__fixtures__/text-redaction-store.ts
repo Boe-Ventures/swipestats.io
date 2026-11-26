@@ -108,15 +108,39 @@ try {
   };
   const receipt = makeReceipt(initial.source, sanitized, 0.9);
 
-  // A failure after writing message text must roll back both the text and receipt.
+  // A mixed page includes multiple conversations and an empty conversation.
+  await pg.exec(`
+    INSERT INTO match VALUES ('t-second', 'tinder-source', null, null), ('t-empty', 'tinder-source', null, null);
+    INSERT INTO message VALUES ('t-second-msg','t-second','hello again','ORIGINAL SECOND',null,0,'2026-11-18','TEXT');
+  `);
+  const extra = (await store.page(tinder, "")).filter(
+    (row) => row.source.id !== initial.source.id,
+  );
+  const entries = [
+    { sanitized, receipt },
+    ...extra.map(({ source }) => ({
+      sanitized: source,
+      receipt: makeReceipt(source, source, 0.01),
+    })),
+  ];
+
+  // A failure after bulk-writing text must roll back the entire page.
   failReceiptWrite = true;
-  await expect(
-    store.save(tinder, initial.source, sanitized, receipt),
-  ).rejects.toThrow("Injected");
+  await expect(store.saveBatch(tinder, entries)).rejects.toThrow("Injected");
   failReceiptWrite = false;
-  expect((await store.page(tinder, ""))[0]!.sanitized).toBeNull();
-  await store.save(tinder, initial.source, sanitized, receipt);
-  const saved = (await store.page(tinder, ""))[0]!;
+  const rolledBack = await store.page(tinder, "");
+  expect(rolledBack.every((row) => row.receipt === null)).toBe(true);
+  expect(
+    rolledBack
+      .filter((row) => row.source.messages.length)
+      .every((row) => row.sanitized === null),
+  ).toBe(true);
+  await store.saveBatch(tinder, entries);
+  const savedPage = await store.page(tinder, "");
+  expect(
+    savedPage.every((row) => isCurrent(row.source, row.sanitized, row.receipt)),
+  ).toBe(true);
+  const saved = savedPage.find((row) => row.source.id === initial.source.id)!;
   expect(isCurrent(saved.source, saved.sanitized, saved.receipt)).toBe(true);
   const exported = JSON.stringify(
     researchConversation(tinder, saved.source, saved.sanitized, saved.receipt),
@@ -134,37 +158,47 @@ try {
 
   // Screen-negative conversations are explicitly completed unchanged.
   const h = (await store.page(hinge, ""))[0]!;
-  await store.save(
-    hinge,
-    h.source,
-    h.source,
-    makeReceipt(h.source, h.source, 0.01),
-  );
+  await store.saveBatch(hinge, [
+    { sanitized: h.source, receipt: makeReceipt(h.source, h.source, 0.01) },
+  ]);
   expect((await store.pendingMembers()).length).toBe(0);
-  expect((await store.page(tinder, "t-match")).length).toBe(0);
+  expect((await store.page(tinder, "t-second")).length).toBe(0);
 
-  // A message arriving during model inference invalidates the whole context.
+  // Source changes during offline inference are rejected at export, not save.
   await pg.exec(
     `INSERT INTO message VALUES ('t-new','t-match','and that is my snap','new original',null,1,'2026-11-18','TEXT')`,
   );
-  await expect(
-    store.save(tinder, initial.source, sanitized, receipt),
-  ).rejects.toThrow("Source changed");
-  const stale = (await store.page(tinder, ""))[0]!;
+  await store.saveBatch(tinder, entries);
+  const stale = (await store.page(tinder, "")).find(
+    (row) => row.source.id === initial.source.id,
+  )!;
   expect(() =>
     researchConversation(tinder, stale.source, stale.sanitized, stale.receipt),
   ).toThrow("blocked");
   expect((await store.pendingMembers()).length).toBe(1);
   await expect(
-    store.save(
-      { ...tinder, sourceId: "other-owner" },
-      initial.source,
-      sanitized,
-      receipt,
+    store.saveBatch({ ...tinder, sourceId: "other-owner" }, entries),
+  ).rejects.toThrow("ownership changed");
+
+  // Also block same-message content edits, even when every message has output.
+  await pg.exec(
+    `DELETE FROM message WHERE id='t-new'; UPDATE message SET content='new private contact' WHERE id='t-msg'`,
+  );
+  await store.saveBatch(tinder, entries);
+  const edited = (await store.page(tinder, "")).find(
+    (row) => row.source.id === initial.source.id,
+  )!;
+  expect(edited.sanitized).not.toBeNull();
+  expect(() =>
+    researchConversation(
+      tinder,
+      edited.source,
+      edited.sanitized,
+      edited.receipt,
     ),
-  ).rejects.toThrow("Source changed");
+  ).toThrow("blocked");
   console.log(
-    "Text-store integration passed: both providers, migration, rollback, freshness, ownership, pending selection and export exclusion",
+    "Text-store integration passed: both providers, migration, page rollback, ownership, pending selection and stale export exclusion",
   );
 } finally {
   await store.close();
