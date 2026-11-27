@@ -78,6 +78,7 @@ try {
       backgroundSource: "self_described",
       eyeColor: "green",
       heightCategory: "tall",
+      tattooCoverage: "not_recalled",
     },
   });
   assert.equal(await service.getSelfProfile("voice-other"), null);
@@ -95,6 +96,7 @@ try {
   });
   assert.equal(changed.eyeColor, "green");
   assert.equal(changed.heightCategory, "tall");
+  assert.equal(changed.tattooCoverage, "not_recalled");
   assert.equal(changed.heightCm, null);
   await denied(
     () =>
@@ -192,6 +194,7 @@ try {
     backgroundSource: "my_impression",
     eyeColor: "hazel",
     heightCategory: "average",
+    tattooCoverage: "light",
     workArrangement: "remote",
     remoteRegion: "worldwide",
   });
@@ -373,6 +376,7 @@ try {
   assert.equal(mergedProfile.backgroundSource, "told_to_me");
   assert.equal(mergedProfile.eyeColor, "hazel");
   assert.equal(mergedProfile.heightCategory, "average");
+  assert.equal(mergedProfile.tattooCoverage, "light");
   assert.equal(result.person.summary, "Current account");
   assert.equal(result.person.occupation, "Designer");
   assert.equal(result.person.workArrangement, "in_office");
@@ -489,12 +493,13 @@ try {
     name: "updateLoveStorySelfProfile",
     arguments: {
       version: changed.version,
-      changes: { eyeColor: null, heightCategory: null },
+      changes: { eyeColor: null, heightCategory: null, tattooCoverage: null },
     },
   });
   assert.ok(!selfSaved.result.isError);
   assert.equal((await service.getSelfProfile(owner))?.eyeColor, null);
   assert.equal((await service.getSelfProfile(owner))?.heightCategory, null);
+  assert.equal((await service.getSelfProfile(owner))?.tattooCoverage, null);
   const badBackground = await mcp(full, "tools/call", {
     name: "updateLoveStorySelfProfile",
     arguments: {
@@ -511,6 +516,14 @@ try {
     },
   });
   assert.ok(badHeight.result.isError);
+  const badTattoo = await mcp(full, "tools/call", {
+    name: "updateLoveStorySelfProfile",
+    arguments: {
+      version: changed.version + 1,
+      changes: { tattooCoverage: "many" },
+    },
+  });
+  assert.ok(badTattoo.result.isError);
   const foreignSelf = await mcp(full, "tools/call", {
     name: "updateLoveStorySelfProfile",
     arguments: {

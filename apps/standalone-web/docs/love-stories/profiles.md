@@ -14,10 +14,13 @@ Self profiles and love interests share the `profileFields` contract:
 | Where someone lives   | Current country and city; optional residence history                      |
 | Background            | Multiple controlled groups, optional detail, source and uncertainty notes |
 | Eye color             | One optional value plus notes                                             |
-| Height description | Optional short, average, tall, very tall or ultra tall |
+| Height description    | Optional short, average, tall, very tall or ultra tall                    |
+| Tattoo coverage       | Optional not recalled, none, light, moderate or extensive                 |
 | Other appearance      | Optional height and free text                                             |
 
 Height descriptions are subjective. `heightCategory` is independent of `heightCm`: neither is inferred or cleared when the other changes. Leave either unknown value empty; there are no fixed centimetre thresholds.
+
+`tattooCoverage` describes remembered coverage, not a tattoo count. `not_recalled` is distinct from `none` (explicitly no tattoos), and null means unrecorded. Light, moderate and extensive are subjective descriptions without numerical thresholds. An unspecified mention of tattoos does not establish their coverage; preserve any context in appearance notes.
 
 Country codes use uppercase two-letter codes. Additional origins cannot repeat
 the primary origin. Unknown values remain null or empty; a meeting location does
