@@ -75,6 +75,7 @@ const personSections: Section[] = [
       "backgroundNotes",
       "eyeColor",
       "eyeColorNotes",
+      "heightCategory",
       "heightCm",
       "appearance",
     ],

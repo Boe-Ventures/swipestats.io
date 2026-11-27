@@ -83,6 +83,13 @@ export const eyeColors = [
   "amber",
   "other",
 ] as const;
+export const heightCategories = [
+  "short",
+  "average",
+  "tall",
+  "very_tall",
+  "ultra_tall",
+] as const;
 const countryCodes = z
   .array(z.string().regex(/^[A-Z]{2}$/))
   .max(20)
@@ -135,6 +142,13 @@ export const profileFields = z.strictObject({
   backgroundNotes: optionalText,
   eyeColor: z.enum(eyeColors).nullable().optional(),
   eyeColorNotes: optionalText,
+  heightCategory: z
+    .enum(heightCategories)
+    .nullable()
+    .optional()
+    .describe(
+      "Subjective height description supplied by the user. Independent of centimetres; do not infer either value from the other.",
+    ),
   heightCm: z.number().int().min(1).max(300).nullable().optional(),
   appearance: prose.nullable().optional(),
 });

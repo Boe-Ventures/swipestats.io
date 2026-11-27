@@ -18,6 +18,7 @@ import {
   backgroundGroups,
   backgroundGroupLabel,
   eyeColors,
+  heightCategories,
   type ProfileFields,
   encounterFields,
   entryFields,
@@ -97,6 +98,11 @@ const profileFormFields: Field[] = [
   },
   { name: "eyeColor", label: "Eye color", options: [...eyeColors] },
   { name: "eyeColorNotes", label: "Eye color details" },
+  {
+    name: "heightCategory",
+    label: "Height description (subjective)",
+    options: [...heightCategories],
+  },
   { name: "heightCm", label: "Height (cm)", type: "number", min: 1, max: 300 },
   { name: "appearance", label: "Appearance notes", type: "textarea" },
 ];
@@ -490,6 +496,10 @@ function ProfileDetails({ value }: { value: ProfileFields }) {
     ["Background notes", value.backgroundNotes],
     ["Eye color", value.eyeColor ? title(value.eyeColor) : null],
     ["Eye color details", value.eyeColorNotes],
+    [
+      "Height description",
+      value.heightCategory ? title(value.heightCategory) : null,
+    ],
     ["Height", value.heightCm ? `${value.heightCm} cm` : null],
     ["Appearance", value.appearance],
   ].filter(([, value]) => value);

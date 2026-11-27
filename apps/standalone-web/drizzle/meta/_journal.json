@@ -169,6 +169,13 @@
       "when": 1795767607176,
       "tag": "0023_love_stories_self_profile",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1795775257199,
+      "tag": "0024_love_stories_height_category",
+      "breakpoints": true
     }
   ]
 }

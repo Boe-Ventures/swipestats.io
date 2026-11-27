@@ -14,7 +14,10 @@ Self profiles and love interests share the `profileFields` contract:
 | Where someone lives   | Current country and city; optional residence history                      |
 | Background            | Multiple controlled groups, optional detail, source and uncertainty notes |
 | Eye color             | One optional value plus notes                                             |
+| Height description | Optional short, average, tall, very tall or ultra tall |
 | Other appearance      | Optional height and free text                                             |
+
+Height descriptions are subjective. `heightCategory` is independent of `heightCm`: neither is inferred or cleared when the other changes. Leave either unknown value empty; there are no fixed centimetre thresholds.
 
 Country codes use uppercase two-letter codes. Additional origins cannot repeat
 the primary origin. Unknown values remain null or empty; a meeting location does
