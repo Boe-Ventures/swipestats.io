@@ -77,6 +77,7 @@ try {
       backgroundGroups: ["white"],
       backgroundSource: "self_described",
       eyeColor: "green",
+      heightCategory: "tall",
     },
   });
   assert.equal(await service.getSelfProfile("voice-other"), null);
@@ -93,6 +94,8 @@ try {
     changes: { originCountryCode: "NO", additionalOriginCountryCodes: ["ES"] },
   });
   assert.equal(changed.eyeColor, "green");
+  assert.equal(changed.heightCategory, "tall");
+  assert.equal(changed.heightCm, null);
   await denied(
     () =>
       service.updateSelfProfile(owner, {
@@ -188,6 +191,7 @@ try {
     backgroundGroups: ["white"],
     backgroundSource: "my_impression",
     eyeColor: "hazel",
+    heightCategory: "average",
     workArrangement: "remote",
     remoteRegion: "worldwide",
   });
@@ -368,6 +372,7 @@ try {
   assert.deepEqual(mergedProfile.backgroundGroups, ["east_asian"]);
   assert.equal(mergedProfile.backgroundSource, "told_to_me");
   assert.equal(mergedProfile.eyeColor, "hazel");
+  assert.equal(mergedProfile.heightCategory, "average");
   assert.equal(result.person.summary, "Current account");
   assert.equal(result.person.occupation, "Designer");
   assert.equal(result.person.workArrangement, "in_office");
@@ -482,10 +487,14 @@ try {
   assert.ok(!selfRead.result.isError);
   const selfSaved = await mcp(full, "tools/call", {
     name: "updateLoveStorySelfProfile",
-    arguments: { version: changed.version, changes: { eyeColor: null } },
+    arguments: {
+      version: changed.version,
+      changes: { eyeColor: null, heightCategory: null },
+    },
   });
   assert.ok(!selfSaved.result.isError);
   assert.equal((await service.getSelfProfile(owner))?.eyeColor, null);
+  assert.equal((await service.getSelfProfile(owner))?.heightCategory, null);
   const badBackground = await mcp(full, "tools/call", {
     name: "updateLoveStorySelfProfile",
     arguments: {
@@ -494,6 +503,14 @@ try {
     },
   });
   assert.ok(badBackground.result.isError);
+  const badHeight = await mcp(full, "tools/call", {
+    name: "updateLoveStorySelfProfile",
+    arguments: {
+      version: changed.version + 1,
+      changes: { heightCategory: "invented_category" },
+    },
+  });
+  assert.ok(badHeight.result.isError);
   const foreignSelf = await mcp(full, "tools/call", {
     name: "updateLoveStorySelfProfile",
     arguments: {
