@@ -90,6 +90,23 @@ export const heightCategories = [
   "very_tall",
   "ultra_tall",
 ] as const;
+export const tattooCoverages = [
+  "not_recalled",
+  "none",
+  "light",
+  "moderate",
+  "extensive",
+] as const;
+export const tattooCoverageLabels: Record<
+  (typeof tattooCoverages)[number],
+  string
+> = {
+  not_recalled: "Don't remember",
+  none: "No tattoos",
+  light: "Light",
+  moderate: "Moderate",
+  extensive: "Extensive",
+};
 const countryCodes = z
   .array(z.string().regex(/^[A-Z]{2}$/))
   .max(20)
@@ -142,6 +159,13 @@ export const profileFields = z.strictObject({
   backgroundNotes: optionalText,
   eyeColor: z.enum(eyeColors).nullable().optional(),
   eyeColorNotes: optionalText,
+  tattooCoverage: z
+    .enum(tattooCoverages)
+    .nullable()
+    .optional()
+    .describe(
+      "Subjective tattoo coverage supplied by the user. not_recalled means coverage is not remembered, none means explicitly no tattoos, and null means unrecorded. Do not infer coverage from an unspecified mention of tattoos.",
+    ),
   heightCategory: z
     .enum(heightCategories)
     .nullable()

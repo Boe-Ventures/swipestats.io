@@ -19,6 +19,8 @@ import {
   backgroundGroupLabel,
   eyeColors,
   heightCategories,
+  tattooCoverages,
+  tattooCoverageLabels,
   type ProfileFields,
   encounterFields,
   entryFields,
@@ -104,6 +106,12 @@ const profileFormFields: Field[] = [
     options: [...heightCategories],
   },
   { name: "heightCm", label: "Height (cm)", type: "number", min: 1, max: 300 },
+  {
+    name: "tattooCoverage",
+    label: "Tattoo coverage",
+    options: [...tattooCoverages],
+    optionLabels: tattooCoverageLabels,
+  },
   { name: "appearance", label: "Appearance notes", type: "textarea" },
 ];
 
@@ -501,6 +509,10 @@ function ProfileDetails({ value }: { value: ProfileFields }) {
       value.heightCategory ? title(value.heightCategory) : null,
     ],
     ["Height", value.heightCm ? `${value.heightCm} cm` : null],
+    [
+      "Tattoo coverage",
+      value.tattooCoverage ? tattooCoverageLabels[value.tattooCoverage] : null,
+    ],
     ["Appearance", value.appearance],
   ].filter(([, value]) => value);
   return (

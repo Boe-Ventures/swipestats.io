@@ -547,6 +547,7 @@ export const loveStoriesService = {
         ["Eye color", source.eyeColor],
         ["Eye color notes", source.eyeColorNotes],
         ["Height description", source.heightCategory],
+        ["Tattoo coverage", source.tattooCoverage],
       ]
         .filter(([, value]) => value?.trim())
         .map(([label, value]) => `${label}\n${value}`)

@@ -176,6 +176,13 @@
       "when": 1795775257199,
       "tag": "0024_love_stories_height_category",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1795785962109,
+      "tag": "0025_love_stories_tattoo_coverage",
+      "breakpoints": true
     }
   ]
 }
