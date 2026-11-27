@@ -1,0 +1,8 @@
+{
+  "app": "swipestats-draupnir",
+  "packageManager": "bun",
+  "defaultMode": "local",
+  "directPort": 3200,
+  "originEnv": ["NEXT_PUBLIC_BASE_URL", "BETTER_AUTH_URL"],
+  "healthPath": "/signin"
+}

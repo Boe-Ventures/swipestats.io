@@ -90,9 +90,12 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const res = NextResponse.redirect(new URL(redirectPath, req.url), {
-    status: 302,
-  });
+  const res = NextResponse.redirect(
+    new URL(redirectPath, process.env.LOCAL_DEV_ORIGIN ?? req.url),
+    {
+      status: 302,
+    },
+  );
 
   const attrs = ctx.authCookies.sessionToken.attributes;
   const parts = [`${cookieName}=${signedValue}`];

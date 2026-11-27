@@ -35,7 +35,13 @@ const agentDiscoveryLinkHeader = [
 ].join(", ");
 
 const config: NextConfig = {
-  allowedDevOrigins: ["swipestats.localhost", "*.swipestats.localhost"],
+  allowedDevOrigins: [
+    ...(process.env.NODE_ENV === "development" && process.env.LOCAL_DEV_ORIGIN
+      ? [new URL(process.env.LOCAL_DEV_ORIGIN).hostname]
+      : []),
+    "swipestats.localhost",
+    "*.swipestats.localhost",
+  ],
 
   /** Enable MDX pages */
   pageExtensions: ["ts", "tsx", "md", "mdx"],

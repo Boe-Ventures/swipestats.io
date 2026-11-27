@@ -19,7 +19,7 @@
     }
   },
   "scripts": {
-    "dev": "DRAUPNIR_WORKSPACE_ROOT=\"$PWD\" sh -c 'cd apps/standalone-web && bun run dev:direct --port 3200'",
+    "dev": "DRAUPNIR_WORKSPACE_ROOT=\"$PWD\" bun run --cwd apps/standalone-web dev",
     "dev:all": "turbo run dev --env-mode=loose",
     "build": "DRAUPNIR_WORKSPACE_ROOT=\"$PWD\" sh -c 'cd apps/standalone-web && bun run build'",
     "check": "DRAUPNIR_WORKSPACE_ROOT=\"$PWD\" sh -c 'cd apps/standalone-web && bun run check'",
@@ -43,7 +43,12 @@
     "build:swift": "bun run --cwd apps/swift native:build",
     "test:swift": "bun run --cwd apps/swift native:test",
     "dev:swift": "bun run --cwd apps/swift native:dev",
-    "export:standalone": "bun scripts/export-standalone.ts"
+    "export:standalone": "bun scripts/export-standalone.ts",
+    "dev:local": "DRAUPNIR_WORKSPACE_ROOT=\"$PWD\" bun run --cwd apps/standalone-web dev:local",
+    "dev:direct": "DRAUPNIR_WORKSPACE_ROOT=\"$PWD\" bun run --cwd apps/standalone-web dev:direct",
+    "dev:shared": "DRAUPNIR_WORKSPACE_ROOT=\"$PWD\" bun run --cwd apps/standalone-web dev:shared",
+    "dev:doctor": "DRAUPNIR_WORKSPACE_ROOT=\"$PWD\" bun run --cwd apps/standalone-web dev:doctor",
+    "test:local-dev": "bun run --cwd apps/standalone-web test:local-dev"
   },
   "devDependencies": {
     "turbo": "^2.5.8",

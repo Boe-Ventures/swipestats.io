@@ -95,8 +95,8 @@ export const env = createEnv({
     // localhost default. Portless sets PORTLESS_URL before spawning Next.js;
     // it must win over a localhost URL that may already be present in .env.
     NEXT_PUBLIC_BASE_URL:
-      process.env.PORTLESS_URL ??
       process.env.NEXT_PUBLIC_BASE_URL ??
+      process.env.PORTLESS_URL ??
       (process.env.VERCEL_ENV === "production"
         ? "https://www.swipestats.io"
         : process.env.VERCEL_BRANCH_URL

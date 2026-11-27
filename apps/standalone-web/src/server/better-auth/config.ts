@@ -30,26 +30,20 @@ import { resend } from "@/server/clients/resend.client";
 
 const developmentTrustedOrigins =
   env.NODE_ENV === "development"
-    ? [
-        // Direct Next.js dev servers on any available loopback port.
-        "http://localhost:*",
-        "https://localhost:*",
-        "http://127.0.0.1:*",
-        "https://127.0.0.1:*",
-
-        // Portless uses stable HTTPS names such as swipestats.localhost and
-        // branch-name.swipestats.localhost for linked worktrees.
-        "http://*.localhost",
-        "https://*.localhost",
-
-        // MCP-managed LocalCan public development tunnel.
-        "https://*.local",
-        "https://swipestats-*.localcan.dev",
-        "https://swipestats.localcan.dev",
-      ]
+    ? [process.env.LOCAL_DEV_ORIGIN ?? env.NEXT_PUBLIC_BASE_URL]
     : [];
 
 export const auth = betterAuth({
+  ...(process.env.NODE_ENV === "development"
+    ? {
+        advanced: {
+          cookiePrefix:
+            process.env.LOCAL_DEV_COOKIE_PREFIX ??
+            `swipestats-draupnir-dev-${new URL(env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000").host.replace(/[^a-zA-Z0-9-]/g, "-")}`,
+        },
+      }
+    : {}),
+
   // Base URL for generating verification links and OAuth redirects
   baseURL: env.NEXT_PUBLIC_BASE_URL,
   // Enable experimental joins for 2-3x performance improvement on session lookups
@@ -338,6 +332,9 @@ export const auth = betterAuth({
     },
   },
   trustedOrigins: [
+    ...(process.env.NODE_ENV === "development" && process.env.LOCAL_DEV_ORIGIN
+      ? [process.env.LOCAL_DEV_ORIGIN]
+      : []),
     ...developmentTrustedOrigins,
     // Trust all of THIS project's Vercel preview + per-deployment URLs. The
     // stable branch alias is already covered via baseURL (VERCEL_BRANCH_URL),
