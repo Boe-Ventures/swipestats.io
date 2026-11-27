@@ -89,6 +89,16 @@ const createHelp =
 const editHelp =
   " Use the latest version from a read. On CONFLICT, reload and reconcile before retrying. Omitted fields stay unchanged; null clears a nullable field.";
 const loveStoryTools = {
+  getLoveStorySelfProfile: readTool(
+    love.self.get,
+    "Read your private Love Stories self profile. Returns null if not yet created. Separate from imported dating-app profiles and love interests.",
+  ),
+  updateLoveStorySelfProfile: writeTool(
+    love.self.update,
+    "Create or update your own private profile. Read first: use version null only when no profile exists. Record only supplied details. Origin, nationality, residence and encounter location are distinct. Background groups may be multiple; preserve their source and uncertainty. No automatic Tinder/Hinge import." +
+      editHelp,
+    { destructive: true },
+  ),
   listLoveStoryPeople: readTool(
     love.person.list,
     "Find existing people before creating one. Optionally search names and aliases with query. Returns identifying context and versions, paginated by limit and offset.",
@@ -192,7 +202,7 @@ const loveStoryTools = {
   ),
   exportLoveStories: readTool(
     love.export,
-    "Export all of your private Love Stories people, encounters, entries and links. Use only when the user requests a complete export or review.",
+    "Export your private self profile and all Love Stories people, encounters, entries and links. Use only when the user requests a complete export or review.",
   ),
 };
 

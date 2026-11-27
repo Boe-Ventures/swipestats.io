@@ -1,6 +1,7 @@
 "use client";
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
+import { countries } from "countries-list";
 import { Fields, type Field } from "./fields";
 import {
   Accordion,
@@ -13,6 +14,11 @@ import { domain, domainClient, type RouterOutputs } from "@/domain/react";
 import { authClient } from "@/server/better-auth/client";
 import {
   personFields,
+  profileFields,
+  backgroundGroups,
+  backgroundGroupLabel,
+  eyeColors,
+  type ProfileFields,
   encounterFields,
   entryFields,
 } from "@/lib/love-stories/model";
@@ -23,27 +29,83 @@ const button =
 const primary = `${button} bg-stone-800 text-white hover:bg-stone-700`;
 type Encounter = RouterOutputs["loveStories"]["encounter"]["list"][number];
 type Entry = RouterOutputs["loveStories"]["entry"]["get"];
+const countryOptions = Object.keys(countries).sort((a, b) =>
+  countryName(a).localeCompare(countryName(b)),
+);
+function countryName(code: string) {
+  return countries[code as keyof typeof countries]?.name ?? code;
+}
+const countryLabels = Object.fromEntries(
+  countryOptions.map((code) => [code, countryName(code)]),
+);
+const profileFormFields: Field[] = [
+  {
+    name: "originCountryCode",
+    label: "Where from (primary country)",
+    options: countryOptions,
+    optionLabels: countryLabels,
+  },
+  {
+    name: "additionalOriginCountryCodes",
+    label: "Also from",
+    type: "multi",
+    options: countryOptions,
+    optionLabels: countryLabels,
+  },
+  { name: "originCity", label: "Hometown" },
+  { name: "originSubdivisionCode", label: "Origin state / region" },
+  {
+    name: "nationalityCodes",
+    label: "Nationalities",
+    type: "multi",
+    options: countryOptions,
+    optionLabels: countryLabels,
+  },
+  {
+    name: "currentResidenceCountryCode",
+    label: "Current home country",
+    options: countryOptions,
+    optionLabels: countryLabels,
+  },
+  { name: "currentResidenceCity", label: "Current home city" },
+  { name: "currentResidenceSubdivisionCode", label: "Current state / region" },
+  {
+    name: "backgroundGroups",
+    label: "Background (select any that apply)",
+    type: "multi",
+    options: [...backgroundGroups],
+    optionLabels: {
+      middle_eastern_north_african: "Middle Eastern / North African",
+      hispanic_latino: "Hispanic / Latino",
+    },
+  },
+  { name: "backgroundDetail", label: "More specific background" },
+  {
+    name: "backgroundSource",
+    label: "How this background is known",
+    options: ["self_described", "told_to_me", "my_impression"],
+    optionLabels: {
+      self_described: "Self-described",
+      told_to_me: "Told to me",
+      my_impression: "My impression",
+    },
+  },
+  {
+    name: "backgroundNotes",
+    label: "Background notes or uncertainty",
+    type: "textarea",
+  },
+  { name: "eyeColor", label: "Eye color", options: [...eyeColors] },
+  { name: "eyeColorNotes", label: "Eye color details" },
+  { name: "heightCm", label: "Height (cm)", type: "number", min: 1, max: 300 },
+  { name: "appearance", label: "Appearance notes", type: "textarea" },
+];
+
 const personFormFields: Field[] = [
   { name: "displayName", label: "Name", required: true },
   { name: "tagline", label: "A few words about them" },
   { name: "summary", label: "Your overall reflection", type: "textarea" },
-  {
-    name: "currentResidenceCountryCode",
-    label: "Current country (two-letter code)",
-  },
-  {
-    name: "currentResidenceSubdivisionCode",
-    label: "Current state / region code",
-  },
-  { name: "currentResidenceCity", label: "Current city" },
-  { name: "originCountryCode", label: "Origin country (two-letter code)" },
-  { name: "originSubdivisionCode", label: "Origin state / region code" },
-  { name: "originCity", label: "Origin city" },
-  {
-    name: "nationalityCodes",
-    label: "Nationality codes, separated by commas",
-    type: "list",
-  },
+  ...profileFormFields,
   {
     name: "ageAtFirstMeeting",
     label: "Their age when you met",
@@ -174,6 +236,12 @@ function readFields(form: HTMLFormElement, fields: Field[]) {
   const data = new FormData(form);
   return Object.fromEntries(
     fields.map((field) => {
+      if (field.type === "multi") {
+        const values = data
+          .getAll(field.name)
+          .filter((v): v is string => typeof v === "string" && !!v);
+        return [field.name, values.length ? values : null];
+      }
       const formValue = data.get(field.name);
       const raw = typeof formValue === "string" ? formValue : "";
       const value = raw.trim();
@@ -381,6 +449,110 @@ function EntryCard({
     </article>
   );
 }
+function ProfileDetails({ value }: { value: ProfileFields }) {
+  const rows = [
+    [
+      "From",
+      [
+        value.originCity,
+        value.originCountryCode ? countryName(value.originCountryCode) : null,
+      ]
+        .filter(Boolean)
+        .join(", "),
+    ],
+    [
+      "Also from",
+      value.additionalOriginCountryCodes?.map(countryName).join(", "),
+    ],
+    ["Nationality", value.nationalityCodes?.map(countryName).join(", ")],
+    [
+      "Current home",
+      [
+        value.currentResidenceCity,
+        value.currentResidenceCountryCode
+          ? countryName(value.currentResidenceCountryCode)
+          : null,
+      ]
+        .filter(Boolean)
+        .join(", "),
+    ],
+    [
+      "Background",
+      value.backgroundGroups?.length
+        ? `${backgroundGroupLabel(value.backgroundGroups)}${value.backgroundGroups.length > 1 ? ` (${value.backgroundGroups.map(title).join(", ")})` : ""}`
+        : null,
+    ],
+    ["Background detail", value.backgroundDetail],
+    [
+      "Background source",
+      value.backgroundSource ? title(value.backgroundSource) : null,
+    ],
+    ["Background notes", value.backgroundNotes],
+    ["Eye color", value.eyeColor ? title(value.eyeColor) : null],
+    ["Eye color details", value.eyeColorNotes],
+    ["Height", value.heightCm ? `${value.heightCm} cm` : null],
+    ["Appearance", value.appearance],
+  ].filter(([, value]) => value);
+  return (
+    <dl className="mt-5 grid gap-3 text-sm sm:grid-cols-2">
+      {rows.map(([label, value]) => (
+        <div key={label}>
+          <dt className="text-stone-500">{label}</dt>
+          <dd className="whitespace-pre-wrap">{value}</dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+function SelfProfile() {
+  const [editing, setEditing] = useState(false);
+  const profile = useQuery(
+    domain.loveStories.self.get.queryOptions({ refetchOnWindowFocus: false }),
+  );
+  if (profile.error)
+    return (
+      <p role="alert">Could not load your profile. Reload and try again.</p>
+    );
+  if (profile.isPending) return <p>Loading your profile…</p>;
+  const value = profile.data;
+  return (
+    <section className="space-y-5">
+      <header>
+        <h2 className="font-serif text-3xl">My profile</h2>
+        <p className="mt-3 text-sm text-stone-600">
+          Your private background and current home. Kept separate from people
+          you meet and imported Tinder or Hinge profiles.
+        </p>
+        <p className="mt-2 text-sm text-stone-600">
+          Where an interaction happened belongs on its encounter. Leave anything
+          unknown blank.
+        </p>
+      </header>
+      {editing ? (
+        <EditForm
+          heading="About me"
+          fields={profileFormFields}
+          initial={value ?? { backgroundSource: "self_described" }}
+          save={(raw) =>
+            api.self.update({
+              version: value?.version ?? null,
+              changes: profileFields.parse(raw),
+            })
+          }
+          onDone={() => setEditing(false)}
+        />
+      ) : (
+        <>
+          <ProfileDetails value={value ?? {}} />
+          <button className={primary} onClick={() => setEditing(true)}>
+            {value ? "Edit my profile" : "Add my details"}
+          </button>
+        </>
+      )}
+    </section>
+  );
+}
+
 function PersonStory({
   personId,
   onDeleted,
@@ -476,6 +648,7 @@ function PersonStory({
             : ""}
         </p>
       </header>
+      <ProfileDetails value={p} />
       {personEdit ? (
         <EditForm
           heading="Edit person"
@@ -758,6 +931,7 @@ export function LoveStoriesWorkspace({
   const session = authClient.useSession();
   const [selected, setSelected] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [showSelf, setShowSelf] = useState(false);
   const [offset, setOffset] = useState(0);
   const people = useQuery(
     domain.loveStories.person.list.queryOptions({
@@ -802,8 +976,21 @@ export function LoveStoriesWorkspace({
           <div className="grid gap-10 md:grid-cols-[240px_1fr]">
             <aside>
               <button
+                className={`${button} mb-3 w-full ${showSelf ? "bg-white" : ""}`}
+                onClick={() => {
+                  setShowSelf(true);
+                  setCreating(false);
+                  setSelected(null);
+                }}
+              >
+                My profile
+              </button>
+              <button
                 className={`${primary} mb-5 w-full`}
-                onClick={() => setCreating(true)}
+                onClick={() => {
+                  setShowSelf(false);
+                  setCreating(true);
+                }}
               >
                 Add person
               </button>
@@ -816,6 +1003,7 @@ export function LoveStoriesWorkspace({
                     key={p.id}
                     className={`w-full rounded-xl p-3 text-left ${selected === p.id ? "bg-white ring-1 ring-stone-300" : "hover:bg-white/60"}`}
                     onClick={() => {
+                      setShowSelf(false);
                       setSelected(p.id);
                       setCreating(false);
                     }}
@@ -845,7 +1033,9 @@ export function LoveStoriesWorkspace({
               </div>
             </aside>
             <div>
-              {creating ? (
+              {showSelf ? (
+                <SelfProfile />
+              ) : creating ? (
                 <EditForm
                   heading="Someone worth remembering"
                   fields={[personFormFields[0]!, personFormFields[1]!]}

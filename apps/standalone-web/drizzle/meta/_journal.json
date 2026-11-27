@@ -162,6 +162,13 @@
       "when": 1795407223731,
       "tag": "0022_swipestats_api_keys",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1795767607176,
+      "tag": "0023_love_stories_self_profile",
+      "breakpoints": true
     }
   ]
 }

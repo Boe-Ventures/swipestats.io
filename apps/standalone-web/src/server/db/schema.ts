@@ -1,5 +1,6 @@
 import type {
   PersonFields as LovePersonFields,
+  ProfileFields as LoveProfileFields,
   EncounterFields as LoveEncounterFields,
   EntryFields as LoveEntryFields,
 } from "@/lib/love-stories/model";
@@ -3220,6 +3221,44 @@ export * from "./oauth-provider-schema";
 
 // ---- LOVE STORIES: PRIVATE OWNER RECORDS --------------------------
 
+export const loveSelfProfileTable = pgTable(
+  "love_self_profile",
+  (t) => ({
+    userId: t
+      .text()
+      .primaryKey()
+      .references(() => userTable.id, { onDelete: "cascade" }),
+    version: t.integer().notNull().default(1),
+    createdAt: t.timestamp({ withTimezone: true }).notNull().defaultNow(),
+    updatedAt: t.timestamp({ withTimezone: true }).notNull().defaultNow(),
+    originCountryCode: t.text(),
+    originSubdivisionCode: t.text(),
+    originCity: t.text(),
+    originPlaceId: t.text(),
+    originLabel: t.text(),
+    nationalityCodes: t.text().array(),
+    additionalOriginCountryCodes: t.text().array(),
+    backgroundGroups: t
+      .text()
+      .array()
+      .$type<LoveProfileFields["backgroundGroups"]>(),
+    backgroundDetail: t.text(),
+    backgroundSource: t.text().$type<LoveProfileFields["backgroundSource"]>(),
+    backgroundNotes: t.text(),
+    eyeColor: t.text().$type<LoveProfileFields["eyeColor"]>(),
+    eyeColorNotes: t.text(),
+    currentResidenceCountryCode: t.text(),
+    currentResidenceSubdivisionCode: t.text(),
+    currentResidenceCity: t.text(),
+    currentResidencePlaceId: t.text(),
+    currentResidenceLabel: t.text(),
+    residenceHistory: t.jsonb().$type<LoveProfileFields["residenceHistory"]>(),
+    heightCm: t.integer(),
+    appearance: t.text(),
+  }),
+  (t) => [check("love_self_profile_version_positive", sql`${t.version} > 0`)],
+);
+
 export const lovePersonTable = pgTable(
   "love_person",
   (t) => ({
@@ -3263,6 +3302,17 @@ export const lovePersonTable = pgTable(
     aliases: t.text().array(),
     labels: t.text().array(),
     nationalityCodes: t.text().array(),
+    additionalOriginCountryCodes: t.text().array(),
+    backgroundGroups: t
+      .text()
+      .array()
+      .$type<LoveProfileFields["backgroundGroups"]>(),
+    backgroundDetail: t.text(),
+    backgroundSource: t.text().$type<LoveProfileFields["backgroundSource"]>(),
+    backgroundNotes: t.text(),
+    eyeColor: t.text().$type<LoveProfileFields["eyeColor"]>(),
+    eyeColorNotes: t.text(),
+
     sideOccupations: t.text().array(),
     interests: t.text().array(),
     ageAtFirstMeeting: t.integer(),

@@ -2,6 +2,7 @@ import { z } from "zod";
 import { protectedProcedure } from "../procedure";
 import {
   personFields,
+  profileFields,
   encounterFields,
   entryFields,
   entryLinks,
@@ -16,6 +17,21 @@ import {
 import { loveStoriesService as service } from "@/server/services/love-stories/service";
 
 export const loveStoriesRouter = {
+  self: {
+    get: protectedProcedure.handler(({ context }) =>
+      service.getSelfProfile(context.session.user.id),
+    ),
+    update: protectedProcedure
+      .input(
+        z.strictObject({
+          version: z.number().int().positive().nullable(),
+          changes: profileFields,
+        }),
+      )
+      .handler(({ context, input }) =>
+        service.updateSelfProfile(context.session.user.id, input),
+      ),
+  },
   export: protectedProcedure.handler(({ context }) =>
     service.exportData(context.session.user.id),
   ),

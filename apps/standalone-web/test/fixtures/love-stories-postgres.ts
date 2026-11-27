@@ -39,10 +39,11 @@ await mock.module("@/server/db", () => ({
     db.transaction(callback),
 }));
 await mock.module("server-only", () => ({}));
-const { loveStoriesService: service } =
+const { loveStoriesService: service, transferLoveStoriesInTx } =
   await import("@/server/services/love-stories/service");
 const { connectorContext, swipeStatsMcpHandler } =
   await import("@/server/mcp/server");
+const { withTransaction } = await import("@/server/db");
 const page = { limit: 100, offset: 0 };
 async function denied(fn: () => Promise<unknown>, code?: string) {
   await assert.rejects(fn, (e: unknown) => {
@@ -66,11 +67,116 @@ try {
     },
   ]);
   const owner = "voice-owner";
+  // Self-profile isolation, optimistic concurrency, export and account lifecycle.
+  // Static checks cannot catch data loss or cross-owner leakage in these transactions.
+  assert.equal(await service.getSelfProfile(owner), null);
+  const self = await service.updateSelfProfile(owner, {
+    version: null,
+    changes: {
+      nationalityCodes: ["NO"],
+      backgroundGroups: ["white"],
+      backgroundSource: "self_described",
+      eyeColor: "green",
+    },
+  });
+  assert.equal(await service.getSelfProfile("voice-other"), null);
+  await denied(
+    () =>
+      service.updateSelfProfile(owner, {
+        version: null,
+        changes: { eyeColor: "blue" },
+      }),
+    "CONFLICT",
+  );
+  const changed = await service.updateSelfProfile(owner, {
+    version: self.version,
+    changes: { originCountryCode: "NO", additionalOriginCountryCodes: ["ES"] },
+  });
+  assert.equal(changed.eyeColor, "green");
+  await denied(
+    () =>
+      service.updateSelfProfile(owner, {
+        version: self.version,
+        changes: { eyeColor: "blue" },
+      }),
+    "CONFLICT",
+  );
+  await denied(
+    () =>
+      service.updateSelfProfile(owner, {
+        version: changed.version,
+        changes: { additionalOriginCountryCodes: ["NO"] },
+      }),
+    "BAD_REQUEST",
+  );
+  assert.deepEqual(
+    (await service.exportData(owner)).selfProfile?.nationalityCodes,
+    ["NO"],
+  );
+  assert.equal((await service.exportData("voice-other")).selfProfile, null);
+  await db.insert(schema.userTable).values([
+    { id: "profile-transfer-from", email: "from@example.invalid" },
+    { id: "profile-transfer-to", email: "to@example.invalid" },
+    { id: "profile-transfer-empty", email: "empty@example.invalid" },
+  ]);
+  await service.updateSelfProfile("profile-transfer-from", {
+    version: null,
+    changes: {
+      eyeColor: "green",
+      eyeColorNotes: "Green in daylight",
+      originCity: "Bergen",
+      originCountryCode: "NO",
+      heightCm: 180,
+      backgroundGroups: ["white"],
+      backgroundSource: "self_described",
+    },
+  });
+  await service.updateSelfProfile("profile-transfer-to", {
+    version: null,
+    changes: {
+      eyeColor: "brown",
+      originCountryCode: "US",
+      backgroundGroups: ["east_asian"],
+      backgroundSource: "my_impression",
+    },
+  });
+  await withTransaction((tx) =>
+    transferLoveStoriesInTx(tx, "profile-transfer-from", "profile-transfer-to"),
+  );
+  assert.equal(await service.getSelfProfile("profile-transfer-from"), null);
+  const moved = await service.getSelfProfile("profile-transfer-to");
+  assert.equal(moved?.eyeColor, "brown");
+  assert.equal(moved?.eyeColorNotes, null);
+  assert.equal(moved?.originCity, null);
+  assert.equal(moved?.originCountryCode, "US");
+  assert.equal(moved?.heightCm, 180);
+  assert.equal(moved?.backgroundSource, "my_impression");
+  const transferExport = await service.exportData("profile-transfer-to");
+  assert.ok(
+    transferExport.entries.some((e) => e.originalBody.includes('"green"')),
+  );
+  await withTransaction((tx) =>
+    transferLoveStoriesInTx(
+      tx,
+      "profile-transfer-to",
+      "profile-transfer-empty",
+    ),
+  );
+  assert.equal(
+    (await service.getSelfProfile("profile-transfer-empty"))?.eyeColor,
+    "brown",
+  );
+  await db
+    .delete(schema.userTable)
+    .where(eq(schema.userTable.id, "profile-transfer-empty"));
+  assert.equal(await service.getSelfProfile("profile-transfer-empty"), null);
   const keep = await service.createPerson(owner, {
     requestId: randomUUID(),
     displayName: "Mira",
     summary: "Current account",
     workArrangement: "in_office",
+    backgroundGroups: ["east_asian"],
+    backgroundSource: "told_to_me",
     aliases: ["M"],
   });
   const source = await service.createPerson(owner, {
@@ -79,6 +185,9 @@ try {
     aliases: ["Cafe friend"],
     summary: "Earlier feelings worth keeping",
     occupation: "Designer",
+    backgroundGroups: ["white"],
+    backgroundSource: "my_impression",
+    eyeColor: "hazel",
     workArrangement: "remote",
     remoteRegion: "worldwide",
   });
@@ -255,6 +364,10 @@ try {
   await sql.unsafe("DROP TRIGGER fail_test_merge ON love_person");
 
   const result = await service.mergePeople(owner, input);
+  const mergedProfile = await service.getPerson(owner, keep.id);
+  assert.deepEqual(mergedProfile.backgroundGroups, ["east_asian"]);
+  assert.equal(mergedProfile.backgroundSource, "told_to_me");
+  assert.equal(mergedProfile.eyeColor, "hazel");
   assert.equal(result.person.summary, "Current account");
   assert.equal(result.person.occupation, "Designer");
   assert.equal(result.person.workArrangement, "in_office");
@@ -353,7 +466,7 @@ try {
     };
   }
   const inventory = await mcp(full, "tools/list");
-  assert.equal(inventory.result.tools?.length, 21);
+  assert.equal(inventory.result.tools?.length, 23);
   assert.ok(
     inventory.result.tools?.some(
       (tool) => tool.name === "mergeLoveStoryPeople",
@@ -362,6 +475,34 @@ try {
   const read = { ...full, scopes: ["swipestats:read"] };
   assert.equal((await mcp(read, "tools/list")).result.tools?.length, 3);
   await denied(() => connectorContext(read, "loveStories:write"));
+  const selfRead = await mcp(full, "tools/call", {
+    name: "getLoveStorySelfProfile",
+    arguments: {},
+  });
+  assert.ok(!selfRead.result.isError);
+  const selfSaved = await mcp(full, "tools/call", {
+    name: "updateLoveStorySelfProfile",
+    arguments: { version: changed.version, changes: { eyeColor: null } },
+  });
+  assert.ok(!selfSaved.result.isError);
+  assert.equal((await service.getSelfProfile(owner))?.eyeColor, null);
+  const badBackground = await mcp(full, "tools/call", {
+    name: "updateLoveStorySelfProfile",
+    arguments: {
+      version: changed.version + 1,
+      changes: { backgroundGroups: ["invented_category"] },
+    },
+  });
+  assert.ok(badBackground.result.isError);
+  const foreignSelf = await mcp(full, "tools/call", {
+    name: "updateLoveStorySelfProfile",
+    arguments: {
+      userId: "voice-other",
+      version: null,
+      changes: { eyeColor: "blue" },
+    },
+  });
+  assert.ok(foreignSelf.result.isError);
   const captured = await mcp(full, "tools/call", {
     name: "createLoveStoryEntry",
     arguments: {
