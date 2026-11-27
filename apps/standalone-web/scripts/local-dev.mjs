@@ -15,6 +15,13 @@ import { dirname, join, resolve } from "node:path";
 import { setTimeout as delay } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 
+export function localCaPath(environment = process.env, home = homedir()) {
+  return join(
+    environment.PORTLESS_STATE_DIR || join(home, ".portless"),
+    "ca.pem",
+  );
+}
+
 export function identity(app, checkout) {
   if (!/^[a-z][a-z0-9-]{0,35}$/.test(app))
     throw new Error("Invalid local-dev app ID");
@@ -256,9 +263,7 @@ async function main() {
           report.runtime.status = await httpStatus(
             record.origin,
             record.caFile ??
-              (record.mode === "local"
-                ? join(homedir(), ".portless", "ca.pem")
-                : undefined),
+              (record.mode === "local" ? localCaPath() : undefined),
           );
         } catch {
           report.runtime.error =
@@ -379,7 +384,7 @@ async function main() {
       origin,
       port,
       cookiePrefix: env.LOCAL_DEV_COOKIE_PREFIX,
-      caFile: process.env.NODE_EXTRA_CA_CERTS,
+      caFile: actualMode === "local" ? localCaPath() : undefined,
     };
     releaseRecord = acquireLease(recordPath, record);
     console.log(`[dev] ${actualMode}: ${origin}`);
@@ -414,10 +419,7 @@ async function main() {
         if (
           (await httpStatus(
             `${origin}${config.healthPath ?? "/"}`,
-            actualMode === "local"
-              ? (process.env.NODE_EXTRA_CA_CERTS ??
-                  join(homedir(), ".portless", "ca.pem"))
-              : undefined,
+            actualMode === "local" ? localCaPath() : undefined,
           )) < 500
         ) {
           console.log(`[dev] Ready: ${origin}`);

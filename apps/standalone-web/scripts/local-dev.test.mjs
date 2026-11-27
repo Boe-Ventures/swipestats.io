@@ -8,6 +8,7 @@ import {
   acquireLease,
   identity,
   launchEnvironment,
+  localCaPath,
   portNumber,
   sharedService,
 } from "./local-dev.mjs";
@@ -223,4 +224,21 @@ test("direct launcher propagates the origin, rejects a busy port, and cleans up 
     }
     rmSync(dir, { recursive: true, force: true });
   }
+});
+
+test("local HTTPS trusts the Portless CA independently of inherited extra certificates", () => {
+  assert.equal(
+    localCaPath({ NODE_EXTRA_CA_CERTS: "/corporate/ca.pem" }, "/home/dev"),
+    "/home/dev/.portless/ca.pem",
+  );
+  assert.equal(
+    localCaPath(
+      {
+        PORTLESS_STATE_DIR: "/custom/portless",
+        NODE_EXTRA_CA_CERTS: "/corporate/ca.pem",
+      },
+      "/home/dev",
+    ),
+    "/custom/portless/ca.pem",
+  );
 });
