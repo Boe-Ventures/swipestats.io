@@ -31,9 +31,9 @@
     "data-layer:repair-hinge-media": "bun run src/scripts/data-layer/repair-hinge-media-duplicates.ts",
     "data-layer:repair-profile-meta": "bun run src/scripts/data-layer/repair-profile-meta.ts",
     "data-layer:repair-tinder-dates": "bun run src/scripts/data-layer/repair-tinder-calendar-dates.ts",
-    "dev": "portless",
-    "dev:direct": "next dev --turbopack",
-    "dev:webpack": "next dev --webpack",
+    "dev": "node scripts/local-dev.mjs",
+    "dev:direct": "node scripts/local-dev.mjs direct",
+    "dev:webpack": "LOCAL_DEV_BUNDLER=webpack node scripts/local-dev.mjs",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,mdx,json}\" --cache",
     "format:write": "prettier --write \"**/*.{ts,tsx,js,jsx,mdx,json}\" --cache",
     "lint": "eslint . --cache",
@@ -62,11 +62,13 @@
     "test:tinder:postgres": "bun scripts/test-tinder-ownership-postgres.ts",
     "test:hinge:postgres": "bun scripts/test-hinge-ownership-postgres.ts",
     "privacy:benchmark-text-codex": "bun run src/scripts/llm-analysis/benchmark-text-codex.ts",
-    "privacy:research-text": "bun run src/scripts/llm-analysis/process-research-text.ts"
-  },
-  "portless": {
-    "name": "swipestats",
-    "script": "dev:direct"
+    "privacy:research-text": "bun run src/scripts/llm-analysis/process-research-text.ts",
+    "dev:local": "node scripts/local-dev.mjs local",
+    "dev:shared": "node scripts/local-dev.mjs shared",
+    "dev:doctor": "node scripts/local-dev.mjs doctor",
+    "dev:server": "next dev --turbopack",
+    "test:local-dev": "node --test scripts/local-dev.test.mjs",
+    "dev:server:webpack": "next dev --webpack"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "4.0.20",

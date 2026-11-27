@@ -49,7 +49,10 @@ function safeRedirectPath(value: string | null) {
 }
 
 export async function GET(req: NextRequest) {
-  if (env.NODE_ENV !== "development") {
+  if (
+    env.NODE_ENV !== "development" ||
+    process.env.LOCAL_DEV_MODE === "shared"
+  ) {
     return notFound();
   }
 
@@ -90,9 +93,12 @@ export async function GET(req: NextRequest) {
     });
   }
 
-  const res = NextResponse.redirect(new URL(redirectPath, req.url), {
-    status: 302,
-  });
+  const res = NextResponse.redirect(
+    new URL(redirectPath, process.env.LOCAL_DEV_ORIGIN ?? req.url),
+    {
+      status: 302,
+    },
+  );
 
   const attrs = ctx.authCookies.sessionToken.attributes;
   const parts = [`${cookieName}=${signedValue}`];
