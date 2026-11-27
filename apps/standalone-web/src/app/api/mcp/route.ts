@@ -58,7 +58,6 @@ async function handle(request: Request) {
           issuer: SWIPESTATS_AUTH_ISSUER,
         },
         jwksUrl: SWIPESTATS_JWKS_URL,
-        scopes: [SWIPESTATS_MCP_SCOPE],
       });
       if (typeof claims.sub !== "string" || typeof claims.azp !== "string")
         return unauthorized();

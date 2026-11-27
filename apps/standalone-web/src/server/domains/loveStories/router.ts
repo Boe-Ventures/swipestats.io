@@ -9,6 +9,8 @@ import {
   versionedId,
   recordId,
   pageInput,
+  personListInput,
+  mergePeopleInput,
 } from "@/lib/love-stories/model";
 import { loveStoriesService as service } from "@/server/services/love-stories/service";
 
@@ -18,7 +20,7 @@ export const loveStoriesRouter = {
   ),
   person: {
     list: protectedProcedure
-      .input(pageInput)
+      .input(personListInput)
       .handler(({ context, input }) =>
         service.listPeople(context.session.user.id, input),
       ),
@@ -41,6 +43,11 @@ export const loveStoriesRouter = {
       .input(versionedId)
       .handler(({ context, input }) =>
         service.deletePerson(context.session.user.id, input),
+      ),
+    merge: protectedProcedure
+      .input(mergePeopleInput)
+      .handler(({ context, input }) =>
+        service.mergePeople(context.session.user.id, input),
       ),
   },
   encounter: {
