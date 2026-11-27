@@ -128,6 +128,78 @@ try {
     personIds: [keep.id, source.id],
     encounterIds: [second.id, third.id],
   });
+  // File imports preserve exact text and remain replayable after the file expires.
+  const transcript =
+    "# A walk\r\n\r\nI felt hopeful, but I am unsure of the date. 🙂  ";
+  const importInput = {
+    requestId: randomUUID(),
+    fileUrl:
+      "https://fixture.private.blob.vercel-storage.com/walk.md?signature=fixture",
+    personIds: [keep.id],
+    encounterIds: [first.id],
+  };
+  const beforeImportFetch = globalThis.fetch;
+  let importFetches = 0;
+  globalThis.fetch = (async () => {
+    importFetches++;
+    return new Response(transcript, {
+      headers: { "content-type": "text/markdown" },
+    });
+  }) as unknown as typeof fetch;
+  try {
+    const imported = await service.importTranscript(owner, importInput);
+    assert.equal(imported.characterCount, transcript.length);
+    const saved = await service.getEntry(owner, imported.id);
+    assert.equal(saved.body, transcript);
+    assert.equal(saved.originalBody, transcript);
+    assert.equal(saved.sourceKind, "transcript");
+    assert.deepEqual(saved.personIds, [keep.id]);
+    assert.deepEqual(saved.encounterIds, [first.id]);
+    await service.updateEntry(owner, {
+      id: saved.id,
+      version: saved.version,
+      changes: { body: "Cleaned transcript" },
+    });
+    assert.equal(
+      (await service.getEntry(owner, saved.id)).originalBody,
+      transcript,
+    );
+    globalThis.fetch = (async () => {
+      throw new Error("File expired");
+    }) as unknown as typeof fetch;
+    assert.equal(
+      (await service.importTranscript(owner, importInput)).id,
+      saved.id,
+    );
+    assert.equal(importFetches, 1);
+    await denied(
+      () =>
+        service.importTranscript(owner, {
+          ...importInput,
+          title: "Changed retry",
+        }),
+      "CONFLICT",
+    );
+    await denied(() => service.getEntry("voice-other", saved.id), "NOT_FOUND");
+    globalThis.fetch = (async () =>
+      new Response(transcript)) as unknown as typeof fetch;
+    const entriesBefore = (await service.listEntries(owner, page)).length;
+    await denied(
+      () =>
+        service.importTranscript(owner, {
+          ...importInput,
+          requestId: randomUUID(),
+          personIds: [foreign.id],
+        }),
+      "NOT_FOUND",
+    );
+    assert.equal(
+      (await service.listEntries(owner, page)).length,
+      entriesBefore,
+    );
+  } finally {
+    globalThis.fetch = beforeImportFetch;
+  }
   const input = {
     keep: { id: keep.id, version: keep.version },
     merge: { id: source.id, version: source.version },
@@ -175,7 +247,7 @@ try {
       .length,
     2,
   );
-  assert.equal((await service.listEntries(owner, page)).length, 1);
+  assert.equal((await service.listEntries(owner, page)).length, 2);
   assert.equal(
     (await service.getEntry(owner, journal.id)).version,
     journal.version,
@@ -227,22 +299,18 @@ try {
   );
 
   // One current OAuth account grant drives the actual MCP tool inventory/calls.
-  await db
-    .insert(schema.oauthClientTable)
-    .values({
-      id: "voice-client",
-      clientId: "voice-client",
-      redirectUris: ["https://example.invalid/callback"],
-      scopes: ["swipestats:all"],
-    });
-  await db
-    .insert(schema.oauthConsentTable)
-    .values({
-      id: "voice-consent",
-      clientId: "voice-client",
-      userId: owner,
-      scopes: ["swipestats:all"],
-    });
+  await db.insert(schema.oauthClientTable).values({
+    id: "voice-client",
+    clientId: "voice-client",
+    redirectUris: ["https://example.invalid/callback"],
+    scopes: ["swipestats:all"],
+  });
+  await db.insert(schema.oauthConsentTable).values({
+    id: "voice-consent",
+    clientId: "voice-client",
+    userId: owner,
+    scopes: ["swipestats:all"],
+  });
   const full = {
     token: "fixture",
     clientId: "voice-client",
@@ -285,7 +353,7 @@ try {
     };
   }
   const inventory = await mcp(full, "tools/list");
-  assert.equal(inventory.result.tools?.length, 20);
+  assert.equal(inventory.result.tools?.length, 21);
   assert.ok(
     inventory.result.tools?.some(
       (tool) => tool.name === "mergeLoveStoryPeople",
@@ -426,7 +494,7 @@ try {
     const request = new Request(input);
     assert.equal(request.url, `${base}/api/auth/jwks`);
     return auth.handler(request);
-  }) as typeof fetch;
+  }) as unknown as typeof fetch;
   try {
     async function authenticatedCall(token: string) {
       return mcpRoute(
@@ -472,7 +540,7 @@ try {
     globalThis.fetch = originalFetch;
   }
   console.log(
-    "PASS: person merge preserves ownership, notes, ordering and links atomically; OAuth MCP inventory, summary capture and revocation verified",
+    "PASS: person merge preserves ownership, notes, ordering and links atomically; OAuth MCP inventory, summary/transcript capture and revocation verified",
   );
 } finally {
   await sql.end();

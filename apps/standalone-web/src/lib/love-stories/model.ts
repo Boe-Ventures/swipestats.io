@@ -174,9 +174,10 @@ export const encounterFields = placeSchema.extend({
     .nullable()
     .optional(),
 });
+export const MAX_ENTRY_CHARACTERS = 100000;
 export const entryFields = z.strictObject({
   title: optionalText,
-  body: z.string().min(1).max(100000),
+  body: z.string().min(1).max(MAX_ENTRY_CHARACTERS),
   sourceKind: z.enum(["typed", "transcript", "import", "summary"]),
   occurrenceContext: timeContextSchema
     .omit({ relativeToEncounterId: true, offsetDays: true, plannedFor: true })
@@ -203,6 +204,14 @@ export const mergePeopleInput = z.strictObject({
   keep: versionedId,
   merge: versionedId,
 });
+export const importTranscriptInput = entryFields
+  .omit({ body: true, sourceKind: true })
+  .extend({
+    ...createKey.shape,
+    ...entryLinks.shape,
+    fileUrl: z.url().max(8192),
+  });
+export type ImportTranscriptInput = z.infer<typeof importTranscriptInput>;
 export type PersonFields = z.infer<typeof personFields>;
 export type EncounterFields = z.infer<typeof encounterFields>;
 export type EntryFields = z.infer<typeof entryFields>;

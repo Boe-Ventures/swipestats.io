@@ -15,7 +15,9 @@ import type {
   PersonFields,
   EncounterFields,
   EntryFields,
+  ImportTranscriptInput,
 } from "@/lib/love-stories/model";
+import { readTranscriptFile } from "./transcript";
 import { personFields } from "@/lib/love-stories/model";
 
 function missing(): never {
@@ -691,6 +693,55 @@ export const loveStoriesService = {
       personIds: people.map((p) => p.id),
       encounterIds: encounters.map((e) => e.id),
     };
+  },
+  async importTranscript(userId: string, input: ImportTranscriptInput) {
+    const { requestId, fileUrl, personIds, encounterIds, ...fields } = input;
+    const hash = fingerprint({
+      operation: "importTranscript",
+      fileUrl,
+      personIds,
+      encounterIds,
+      ...fields,
+    });
+    const receipt = (row: typeof entry.$inferSelect) => ({
+      id: row.id,
+      title: row.title,
+      sourceKind: row.sourceKind,
+      version: row.version,
+      characterCount: row.originalBody.length,
+    });
+    const [existing] = await db
+      .select()
+      .from(entry)
+      .where(and(eq(entry.userId, userId), eq(entry.requestId, requestId)));
+    const previous = replay(existing, hash);
+    if (previous) return receipt(previous);
+    // Fetch outside the owner lock. Recheck the request key inside the transaction.
+    const body = await readTranscriptFile(fileUrl);
+    return write(userId, async (tx) => {
+      const [concurrent] = await tx
+        .select()
+        .from(entry)
+        .where(and(eq(entry.userId, userId), eq(entry.requestId, requestId)));
+      const previous = replay(concurrent, hash);
+      if (previous) return receipt(previous);
+      const id = createId("lent");
+      const [row] = await tx
+        .insert(entry)
+        .values({
+          ...fields,
+          id,
+          userId,
+          body,
+          originalBody: body,
+          sourceKind: "transcript",
+          requestId,
+          requestHash: hash,
+        })
+        .returning();
+      await replaceLinks(tx, userId, id, { personIds, encounterIds });
+      return receipt(row!);
+    });
   },
   createEntry(
     userId: string,

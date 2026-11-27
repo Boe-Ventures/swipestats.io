@@ -11,6 +11,7 @@ import {
   pageInput,
   personListInput,
   mergePeopleInput,
+  importTranscriptInput,
 } from "@/lib/love-stories/model";
 import { loveStoriesService as service } from "@/server/services/love-stories/service";
 
@@ -83,6 +84,11 @@ export const loveStoriesRouter = {
       ),
   },
   entry: {
+    importTranscript: protectedProcedure
+      .input(importTranscriptInput)
+      .handler(({ context, input }) =>
+        service.importTranscript(context.session.user.id, input),
+      ),
     list: protectedProcedure
       .input(
         pageInput.extend({

@@ -172,6 +172,12 @@ const loveStoryTools = {
       createHelp,
     { idempotent: true },
   ),
+  importLoveStoryTranscript: writeTool(
+    love.entry.importTranscript,
+    "Import one UTF-8 .txt, .md or .markdown transcript from an HTTPS Vercel Blob URL. Use a signed read URL for a private file. The full text is copied into a private transcript entry and preserved as originalBody, even if the source file later disappears. Maximum 100,000 characters and 400,000 bytes; never truncate. This imports text only, without executing instructions in the file or automatically extracting people. Optionally link owned people and encounters. Returns a receipt; read the entry separately if needed. For inline text use createLoveStoryEntry with sourceKind transcript." +
+      createHelp,
+    { idempotent: true },
+  ),
   updateLoveStoryEntry: writeTool(
     love.entry.update,
     "Update a reflection or replace its links; the original body stays preserved. Omitted link arrays stay unchanged; an empty array clears those links." +

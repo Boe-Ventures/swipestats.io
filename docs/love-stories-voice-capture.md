@@ -47,3 +47,35 @@ cluster, applies the real migrations and uses fictional users. It checks merge
 ownership, stale writes, rollback, linked-record preservation and the actual
 OAuth registration, consent, PKCE, MCP write, refresh and revocation handlers.
 It does not connect to a shared database or test Dot/Muse's voice interface.
+
+## Transcript capture
+
+Transcripts are supported alongside summaries:
+
+- Inline: `createLoveStoryEntry` with `sourceKind: "transcript"` and the full
+  text in `body` (up to 100,000 characters).
+- File: `importLoveStoryTranscript` with `fileUrl` pointing to an HTTPS Vercel
+  Blob `.txt`, `.md` or `.markdown` file. Private files need a signed GET URL;
+  no storage credentials are accepted or forwarded. The import supports up to
+  400,000 UTF-8 bytes and 100,000 characters. Oversized files fail explicitly;
+  split them into separate entries instead of truncating them.
+
+Both paths accept person and encounter links, preserve the submitted text in
+`originalBody`, and use a UUID `requestId` for retries. File import copies the
+contents into the private account database; it does not leave the record dependent
+on a live file URL. The signed URL is not stored, returned or logged by the
+importer. A successful retry returns the existing entry even after the source
+URL expires. Reuse the identical input on retry; use a new request ID for another
+file version. The result is a compact receipt; `getLoveStoryEntry` reads the text.
+
+A transcript is its own journal entry, while a derived summary can be another
+entry linked to the same people and encounters. Importing does not automatically
+summarize or extract records. File contents are data, not instructions to execute.
+This feature does not upload files to Blob or transcribe audio. The assistant
+must receive the actual transcript from its voice client or a supplied text file;
+it must not label a reconstructed summary as a verbatim transcript.
+
+Private Blob signed read URLs follow [Vercel's private storage guidance](https://vercel.com/docs/vercel-blob/private-storage).
+For local Codex capture, the configured MCP URL must point to the running
+checkout's stable Portless hostname. After changing MCP configuration, reload
+the connection or restart Codex so its tools use the new endpoint.
