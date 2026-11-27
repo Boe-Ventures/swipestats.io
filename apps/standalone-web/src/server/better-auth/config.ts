@@ -6,6 +6,7 @@ import {
   SWIPESTATS_AUTH_ISSUER,
   SWIPESTATS_MCP_RESOURCE,
   SWIPESTATS_OAUTH_SCOPES,
+  SWIPESTATS_SUPPORTED_OAUTH_SCOPES,
 } from "@/server/mcp/config";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
@@ -430,13 +431,13 @@ export const auth = betterAuth({
     oauthProvider({
       loginPage: "/signin",
       consentPage: "/consent",
-      scopes: [...SWIPESTATS_OAUTH_SCOPES],
+      scopes: SWIPESTATS_SUPPORTED_OAUTH_SCOPES,
       validAudiences: [SWIPESTATS_MCP_RESOURCE],
       grantTypes: ["authorization_code", "refresh_token"],
       allowDynamicClientRegistration: true,
       allowUnauthenticatedClientRegistration: true,
       clientRegistrationDefaultScopes: [...SWIPESTATS_OAUTH_SCOPES],
-      clientRegistrationAllowedScopes: [...SWIPESTATS_OAUTH_SCOPES],
+      clientRegistrationAllowedScopes: SWIPESTATS_SUPPORTED_OAUTH_SCOPES,
       silenceWarnings: { oauthAuthServerConfig: true },
       customAccessTokenClaims: async ({ user }) => {
         if (!user?.id) throw new Error("A signed-in account is required");

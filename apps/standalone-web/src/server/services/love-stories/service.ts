@@ -1,5 +1,5 @@
-import { createHash } from "node:crypto";
-import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
+import { createHash, randomUUID } from "node:crypto";
+import { and, asc, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { db, withTransaction, type TransactionClient } from "@/server/db";
 import {
   lovePersonTable as person,
@@ -15,7 +15,10 @@ import type {
   PersonFields,
   EncounterFields,
   EntryFields,
+  ImportTranscriptInput,
 } from "@/lib/love-stories/model";
+import { readTranscriptFile } from "./transcript";
+import { personFields } from "@/lib/love-stories/model";
 
 function missing(): never {
   throw new DomainError({ code: "NOT_FOUND", message: "Record not found" });
@@ -210,17 +213,37 @@ export const loveStoriesService = {
       };
     });
   },
-  async listPeople(userId: string, page: { limit: number; offset: number }) {
+  async listPeople(
+    userId: string,
+    page: { limit: number; offset: number; query?: string },
+  ) {
+    const pattern = page.query?.trim()
+      ? `%${page.query.trim().replace(/[\\%_]/g, "\\$&")}%`
+      : undefined;
     const rows = await db
       .select({
         id: person.id,
         displayName: person.displayName,
+        aliases: person.aliases,
         tagline: person.tagline,
+        firstMetYear: person.firstMetYear,
+        originCity: person.originCity,
+        currentResidenceCity: person.currentResidenceCity,
         version: person.version,
         updatedAt: person.updatedAt,
       })
       .from(person)
-      .where(eq(person.userId, userId))
+      .where(
+        and(
+          eq(person.userId, userId),
+          pattern
+            ? or(
+                ilike(person.displayName, pattern),
+                sql`exists (select 1 from unnest(${person.aliases}) as a(name) where a.name ilike ${pattern})`,
+              )
+            : undefined,
+        ),
+      )
       .orderBy(desc(person.updatedAt), asc(person.id))
       .limit(page.limit)
       .offset(page.offset);
@@ -284,6 +307,158 @@ export const loveStoriesService = {
         .delete(person)
         .where(and(eq(person.userId, userId), eq(person.id, input.id)));
       return { success: true };
+    });
+  },
+  mergePeople(
+    userId: string,
+    input: {
+      keep: { id: string; version: number };
+      merge: { id: string; version: number };
+    },
+  ) {
+    return write(userId, async (tx) => {
+      if (input.keep.id === input.merge.id) bad("Choose two different people.");
+      const keep = await ownedPerson(tx, userId, input.keep.id);
+      const source = await ownedPerson(tx, userId, input.merge.id);
+      assertVersion(keep, input.keep.version);
+      assertVersion(source, input.merge.version);
+
+      const combined = Object.fromEntries(
+        (Object.keys(personFields.shape) as (keyof PersonFields)[]).map(
+          (key) => {
+            const value = keep[key];
+            const empty =
+              value == null ||
+              value === "" ||
+              (Array.isArray(value) && value.length === 0);
+            return [key, empty ? source[key] : value];
+          },
+        ),
+      );
+      combined.aliases = [
+        ...new Set([
+          ...(keep.aliases ?? []),
+          source.displayName,
+          ...(source.aliases ?? []),
+        ]),
+      ].filter((name) => name !== keep.displayName);
+      // A conflicting work arrangement follows the kept person's choice.
+      if (combined.workArrangement !== "remote") combined.remoteRegion = null;
+      const parsed = personFields.safeParse(combined);
+      if (!parsed.success)
+        bad(
+          "The combined person exceeds a field limit. Update the people before merging.",
+        );
+      validatePerson(parsed.data);
+
+      const sourceEncounters = await tx
+        .select()
+        .from(encounter)
+        .where(
+          and(eq(encounter.userId, userId), eq(encounter.personId, source.id)),
+        )
+        .orderBy(asc(encounter.position), asc(encounter.id));
+      const [last] = await tx
+        .select({ position: encounter.position })
+        .from(encounter)
+        .where(
+          and(eq(encounter.userId, userId), eq(encounter.personId, keep.id)),
+        )
+        .orderBy(desc(encounter.position))
+        .limit(1);
+      for (const [index, row] of sourceEncounters.entries()) {
+        await tx
+          .update(encounter)
+          .set({
+            personId: keep.id,
+            position: (last?.position ?? -1) + index + 1,
+            version: row.version + 1,
+            updatedAt: new Date(),
+          })
+          .where(and(eq(encounter.userId, userId), eq(encounter.id, row.id)));
+      }
+
+      const linkedEntries = await tx
+        .select({ id: entry.id })
+        .from(entry)
+        .innerJoin(entryPerson, eq(entryPerson.entryId, entry.id))
+        .where(
+          and(eq(entry.userId, userId), eq(entryPerson.personId, source.id)),
+        );
+      if (linkedEntries.length) {
+        await tx
+          .insert(entryPerson)
+          .values(
+            linkedEntries.map(({ id }) => ({
+              entryId: id,
+              personId: keep.id,
+            })),
+          )
+          .onConflictDoNothing();
+        await tx
+          .update(entry)
+          .set({
+            version: sql`${entry.version} + 1`,
+            updatedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(entry.userId, userId),
+              inArray(
+                entry.id,
+                linkedEntries.map(({ id }) => id),
+              ),
+            ),
+          );
+      }
+
+      const notes = [
+        ["Summary", source.summary],
+        ["Contact context", source.contactContext],
+        ["Appearance", source.appearance],
+      ]
+        .filter(([, value]) => value?.trim())
+        .map(([label, value]) => `${label}\n${value}`)
+        .join("\n\n");
+      let preservedNotesEntryId: string | null = null;
+      if (notes) {
+        preservedNotesEntryId = createId("lent");
+        const body = `Notes from the duplicate person ${source.displayName}, merged into ${keep.displayName}. These preserve the earlier account.\n\n${notes}`;
+        await tx.insert(entry).values({
+          id: preservedNotesEntryId,
+          userId,
+          title: `Notes merged from ${source.displayName}`,
+          body,
+          originalBody: body,
+          sourceKind: "summary",
+          requestId: randomUUID(),
+          requestHash: fingerprint({ body }),
+        });
+        await tx
+          .insert(entryPerson)
+          .values({ entryId: preservedNotesEntryId, personId: keep.id });
+      }
+      const [row] = await tx
+        .update(person)
+        .set({
+          ...parsed.data,
+          version: keep.version + 1,
+          updatedAt: new Date(),
+        })
+        .where(and(eq(person.userId, userId), eq(person.id, keep.id)))
+        .returning();
+      // Move every child before deleting: the source person's FK cascades must
+      // never remove encounters or their linked journal entries.
+      await tx
+        .delete(person)
+        .where(and(eq(person.userId, userId), eq(person.id, source.id)));
+      return {
+        person: publicRecord(row!),
+        removedPersonId: source.id,
+        movedEncounters: sourceEncounters.length,
+        linkedEntries: linkedEntries.length,
+        preservedNotesEntryId,
+      };
     });
   },
   async listEncounters(
@@ -518,6 +693,55 @@ export const loveStoriesService = {
       personIds: people.map((p) => p.id),
       encounterIds: encounters.map((e) => e.id),
     };
+  },
+  async importTranscript(userId: string, input: ImportTranscriptInput) {
+    const { requestId, fileUrl, personIds, encounterIds, ...fields } = input;
+    const hash = fingerprint({
+      operation: "importTranscript",
+      fileUrl,
+      personIds,
+      encounterIds,
+      ...fields,
+    });
+    const receipt = (row: typeof entry.$inferSelect) => ({
+      id: row.id,
+      title: row.title,
+      sourceKind: row.sourceKind,
+      version: row.version,
+      characterCount: row.originalBody.length,
+    });
+    const [existing] = await db
+      .select()
+      .from(entry)
+      .where(and(eq(entry.userId, userId), eq(entry.requestId, requestId)));
+    const previous = replay(existing, hash);
+    if (previous) return receipt(previous);
+    // Fetch outside the owner lock. Recheck the request key inside the transaction.
+    const body = await readTranscriptFile(fileUrl);
+    return write(userId, async (tx) => {
+      const [concurrent] = await tx
+        .select()
+        .from(entry)
+        .where(and(eq(entry.userId, userId), eq(entry.requestId, requestId)));
+      const previous = replay(concurrent, hash);
+      if (previous) return receipt(previous);
+      const id = createId("lent");
+      const [row] = await tx
+        .insert(entry)
+        .values({
+          ...fields,
+          id,
+          userId,
+          body,
+          originalBody: body,
+          sourceKind: "transcript",
+          requestId,
+          requestHash: hash,
+        })
+        .returning();
+      await replaceLinks(tx, userId, id, { personIds, encounterIds });
+      return receipt(row!);
+    });
   },
   createEntry(
     userId: string,

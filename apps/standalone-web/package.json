@@ -61,6 +61,7 @@
     "data-layer:rekey-hinge-profiles": "bun run src/scripts/data-layer/rekey-hinge-profiles.ts",
     "test:tinder:postgres": "bun scripts/test-tinder-ownership-postgres.ts",
     "test:hinge:postgres": "bun scripts/test-hinge-ownership-postgres.ts",
+    "test:love-stories:postgres": "bun scripts/test-love-stories-postgres.ts",
     "privacy:benchmark-text-codex": "bun run src/scripts/llm-analysis/benchmark-text-codex.ts",
     "privacy:research-text": "bun run src/scripts/llm-analysis/process-research-text.ts",
     "dev:local": "node scripts/local-dev.mjs local",

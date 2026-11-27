@@ -23,8 +23,8 @@ export function ConnectionsCard() {
       <CardHeader>
         <CardTitle>Connected assistants</CardTitle>
         <CardDescription>
-          Manage assistants authorized to read your SwipeStats profiles and
-          results. Disconnecting stops further access.
+          Manage assistants connected to SwipeStats and Love Stories.
+          Disconnecting stops further access.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
@@ -42,7 +42,14 @@ export function ConnectionsCard() {
               key={connection.clientId}
               className="flex items-center justify-between gap-4"
             >
-              <span>{connection.name ?? "Connected application"}</span>
+              <div>
+                <p>{connection.name ?? "Connected application"}</p>
+                <p className="text-muted-foreground text-sm">
+                  {connection.scopes.includes("swipestats:all")
+                    ? "SwipeStats and Love Stories"
+                    : "Analytics only. Reconnect for Love Stories access."}
+                </p>
+              </div>
               <Button
                 variant="outline"
                 disabled={revoke.isPending}

@@ -21,6 +21,8 @@ const SCOPE_LABELS: Record<string, string> = {
   profile: "View your name and profile",
   email: "View your email address",
   offline_access: "Stay connected when you are away",
+  "swipestats:all":
+    "Access your SwipeStats analytics and read, create, edit, merge and delete your Love Stories people, encounters and journal entries",
   "swipestats:read":
     "Read your uploaded profile list, subscription status and SwipeRank results",
 };
@@ -93,7 +95,7 @@ export function ConsentForm() {
       <Separator />
       <CardContent className="space-y-4 pt-6">
         <ul className="space-y-3">
-          {(scopes.length ? scopes : ["swipestats:read"]).map((scope) => (
+          {(scopes.length ? scopes : ["swipestats:all"]).map((scope) => (
             <li key={scope} className="flex items-start gap-3 text-sm">
               <CheckCircle2 className="text-muted-foreground mt-0.5 size-4 shrink-0" />
               <span>{SCOPE_LABELS[scope] ?? scope}</span>

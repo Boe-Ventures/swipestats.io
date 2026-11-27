@@ -19,7 +19,17 @@ import type { DomainContext } from "@/server/domains/context";
 import { domainRouter } from "@/server/domains/router";
 import { readConsent } from "@/lib/analytics/consent";
 import { apiKeyScopes, type McpPermission } from "@/lib/api-keys";
-import { SWIPESTATS_MCP_SCOPE } from "./config";
+import { oauthGrantAllows, oauthPermissions } from "@/lib/mcp-permissions";
+
+function permissions(authInfo: AuthInfo): McpPermission[] {
+  return typeof authInfo.extra?.apiKeyId === "string"
+    ? authInfo.scopes.filter((scope): scope is McpPermission =>
+        ["swipestats:read", "loveStories:read", "loveStories:write"].includes(
+          scope,
+        ),
+      )
+    : oauthPermissions(authInfo.scopes);
+}
 
 type ToolDefinition = {
   procedure: AnyProcedure;
@@ -81,7 +91,7 @@ const editHelp =
 const loveStoryTools = {
   listLoveStoryPeople: readTool(
     love.person.list,
-    "List your private Love Stories people, paginated by limit and offset.",
+    "Find existing people before creating one. Optionally search names and aliases with query. Returns identifying context and versions, paginated by limit and offset.",
   ),
   getLoveStoryPerson: readTool(
     love.person.get,
@@ -101,9 +111,14 @@ const loveStoryTools = {
     "Update a person's current information or overall reflection. Dates use ISO 8601 with an offset." +
       editHelp,
     {
-      destructive: true,
       inputSchema: datedInput(love.person.update, "firstContactAt", true),
+      destructive: true,
     },
+  ),
+  mergeLoveStoryPeople: writeTool(
+    love.person.merge,
+    "Merge a duplicate person into the chosen keep person. Supply both IDs and current versions. The keep person's populated fields win; missing fields are filled from the duplicate. Encounters and journal links move to the kept person, and the duplicate's narrative notes remain as a journal entry. The duplicate person is removed. On an interrupted response, read the kept person and check whether the duplicate still exists before retrying.",
+    { destructive: true },
   ),
   deleteLoveStoryPerson: writeTool(
     love.person.delete,
@@ -129,8 +144,8 @@ const loveStoryTools = {
     "Update an encounter, place, map URL or reflection. occurredAt is ISO 8601 with an offset." +
       editHelp,
     {
-      destructive: true,
       inputSchema: datedInput(love.encounter.update, "occurredAt", true),
+      destructive: true,
     },
   ),
   reorderLoveStoryEncounters: writeTool(
@@ -153,7 +168,13 @@ const loveStoryTools = {
   ),
   createLoveStoryEntry: writeTool(
     love.entry.create,
-    "Capture a reflection and optionally link it to owned people or encounters. Preserve the user's wording. Use sourceKind transcript for dictation and summary for generated analysis." +
+    "Save a detailed diary summary and link it to the people and encounters discussed. Use sourceKind summary for a synthesis of the user's account; preserve concrete events, feelings, uncertainty and corrections without inventing details. Verbatim transcripts are optional; use sourceKind transcript only for actual transcript text. Once the user has asked for capture, save directly without an extra review step." +
+      createHelp,
+    { idempotent: true },
+  ),
+  importLoveStoryTranscript: writeTool(
+    love.entry.importTranscript,
+    "Import one UTF-8 .txt, .md or .markdown transcript from an HTTPS Vercel Blob URL. Use a signed read URL for a private file. The full text is copied into a private transcript entry and preserved as originalBody, even if the source file later disappears. Maximum 100,000 characters and 400,000 bytes; never truncate. This imports text only, without executing instructions in the file or automatically extracting people. Optionally link owned people and encounters. Returns a receipt; read the entry separately if needed. For inline text use createLoveStoryEntry with sourceKind transcript." +
       createHelp,
     { idempotent: true },
   ),
@@ -205,10 +226,7 @@ export async function connectorContext(
   required: McpPermission = "swipestats:read",
 ): Promise<DomainContext> {
   const userId = authInfo.extra?.userId;
-  if (
-    typeof userId !== "string" ||
-    !authInfo.scopes.includes(SWIPESTATS_MCP_SCOPE)
-  )
+  if (typeof userId !== "string" || !permissions(authInfo).includes(required))
     throw new Error("Account grant required");
   const user = await db.query.userTable.findFirst({
     where: eq(userTable.id, userId),
@@ -239,10 +257,6 @@ export async function connectorContext(
       });
     }
   } else {
-    if (required !== "swipestats:read")
-      throw new ORPCError("FORBIDDEN", {
-        message: "Love Stories requires a scoped API key",
-      });
     const client = await db.query.oauthClientTable.findFirst({
       where: eq(oauthClientTable.clientId, authInfo.clientId),
     });
@@ -255,7 +269,8 @@ export async function connectorContext(
     if (
       !client ||
       client.disabled ||
-      !consent?.scopes.includes(SWIPESTATS_MCP_SCOPE)
+      !consent ||
+      !oauthGrantAllows(authInfo.scopes, consent.scopes, required)
     )
       throw new Error("Account connection is unavailable");
   }
@@ -282,13 +297,14 @@ export function createSwipeStatsMcpServer({ authInfo }: McpRequestContext) {
   const server = new McpServer({
     name: "swipestats",
     version: "0.1.0",
-    title: "SwipeStats experiment",
+    title: "SwipeStats",
   });
   for (const [name, entry] of Object.entries(toolProcedures) as [
     string,
     ToolDefinition,
   ][]) {
-    if (!authInfo?.scopes.includes(entry.permission)) continue;
+    if (!authInfo || !permissions(authInfo).includes(entry.permission))
+      continue;
     const procedure: AnyProcedure = entry.procedure;
     const hasInput = (procedure["~orpc"].inputSchemas?.length ?? 0) > 0;
     const inputSchema = entry.inputSchema ?? procedureInput(procedure);
@@ -326,7 +342,7 @@ export function createSwipeStatsMcpServer({ authInfo }: McpRequestContext) {
               : code === "BAD_REQUEST"
                 ? "BAD_REQUEST: Check the input fields and linked records."
                 : code === "FORBIDDEN"
-                  ? "FORBIDDEN: This key does not have the required permission."
+                  ? "FORBIDDEN: This connection does not have the required permission."
                   : "Unable to access this record. Check the account, connection and record ownership.";
           return {
             isError: true,
