@@ -49,7 +49,10 @@ function safeRedirectPath(value: string | null) {
 }
 
 export async function GET(req: NextRequest) {
-  if (env.NODE_ENV !== "development") {
+  if (
+    env.NODE_ENV !== "development" ||
+    process.env.LOCAL_DEV_MODE === "shared"
+  ) {
     return notFound();
   }
 
