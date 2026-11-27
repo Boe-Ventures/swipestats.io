@@ -125,6 +125,8 @@ try {
       eyeColor: "green",
       eyeColorNotes: "Green in daylight",
       originCity: "Bergen",
+      originCountryCode: "NO",
+      heightCm: 180,
       backgroundGroups: ["white"],
       backgroundSource: "self_described",
     },
@@ -133,6 +135,7 @@ try {
     version: null,
     changes: {
       eyeColor: "brown",
+      originCountryCode: "US",
       backgroundGroups: ["east_asian"],
       backgroundSource: "my_impression",
     },
@@ -144,7 +147,9 @@ try {
   const moved = await service.getSelfProfile("profile-transfer-to");
   assert.equal(moved?.eyeColor, "brown");
   assert.equal(moved?.eyeColorNotes, null);
-  assert.equal(moved?.originCity, "Bergen");
+  assert.equal(moved?.originCity, null);
+  assert.equal(moved?.originCountryCode, "US");
+  assert.equal(moved?.heightCm, 180);
   assert.equal(moved?.backgroundSource, "my_impression");
   const transferExport = await service.exportData("profile-transfer-to");
   assert.ok(

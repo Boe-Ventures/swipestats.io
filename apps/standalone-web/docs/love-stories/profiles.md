@@ -37,7 +37,7 @@ The workspace exposes these fields under **My profile** and each person's edit
 form. Journal exports use schema version 2 and include `selfProfile`. Account
 transfer preserves the previous self profile in private journal entries before
 filling missing destination values. Background descriptions and their attribution,
-and eye colors and their notes, travel together. Account deletion cascades to the
+eye colors and their notes, and country/city/place details travel together. Account deletion cascades to the
 self profile. No profiles are copied between development and production.
 
 Validation: `bun check` and `bun test:love-stories:postgres`. The latter creates a

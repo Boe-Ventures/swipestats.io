@@ -992,6 +992,35 @@ export async function transferLoveStoriesInTx(
         }),
       );
       preserveProfileAttribution(merged, targetProfile, sourceProfile);
+      // A country and its city/place details must describe the same location.
+      const locationGroups = [
+        [
+          "originCountryCode",
+          "originSubdivisionCode",
+          "originCity",
+          "originPlaceId",
+          "originLabel",
+          "additionalOriginCountryCodes",
+        ],
+        [
+          "currentResidenceCountryCode",
+          "currentResidenceSubdivisionCode",
+          "currentResidenceCity",
+          "currentResidencePlaceId",
+          "currentResidenceLabel",
+        ],
+      ] as const;
+      for (const keys of locationGroups) {
+        const winner = keys.some((key) => {
+          const value = targetProfile[key];
+          return Array.isArray(value)
+            ? value.length > 0
+            : value != null && value !== "";
+        })
+          ? targetProfile
+          : sourceProfile;
+        for (const key of keys) merged[key] = winner[key];
+      }
       merged.additionalOriginCountryCodes =
         (merged.additionalOriginCountryCodes as string[] | null)?.filter(
           (code) => code !== merged.originCountryCode,
