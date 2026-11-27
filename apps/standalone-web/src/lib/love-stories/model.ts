@@ -63,22 +63,44 @@ export const timeContextSchema = z.strictObject({
   offsetDays: z.number().int().min(-36500).max(36500).optional(),
   plannedFor: z.iso.datetime({ offset: true }).optional(),
 });
-export const personFields = z.strictObject({
-  displayName: z.string().trim().min(1).max(200),
-  aliases: strings,
-  tagline: optionalText,
-  summary: prose.nullable().optional(),
-  labels: strings,
+export const backgroundGroups = [
+  "white",
+  "black",
+  "east_asian",
+  "southeast_asian",
+  "south_asian",
+  "middle_eastern_north_african",
+  "hispanic_latino",
+  "indigenous",
+  "other",
+] as const;
+export const eyeColors = [
+  "brown",
+  "blue",
+  "green",
+  "hazel",
+  "gray",
+  "amber",
+  "other",
+] as const;
+const countryCodes = z
+  .array(z.string().regex(/^[A-Z]{2}$/))
+  .max(20)
+  .refine(
+    (values) => new Set(values).size === values.length,
+    "Choose each country once",
+  )
+  .nullable()
+  .optional();
+
+// Shared facts about the diarist and interests. Meeting-specific fields stay on people/encounters.
+export const profileFields = z.strictObject({
   originCountryCode: country,
   originSubdivisionCode: optionalText,
   originCity: optionalText,
   originPlaceId: optionalText,
   originLabel: optionalText,
-  nationalityCodes: z
-    .array(z.string().regex(/^[A-Z]{2}$/))
-    .max(20)
-    .nullable()
-    .optional(),
+  nationalityCodes: countryCodes,
   currentResidenceCountryCode: country,
   currentResidenceSubdivisionCode: optionalText,
   currentResidenceCity: optionalText,
@@ -95,6 +117,42 @@ export const personFields = z.strictObject({
     .max(100)
     .nullable()
     .optional(),
+  additionalOriginCountryCodes: countryCodes,
+  backgroundGroups: z
+    .array(z.enum(backgroundGroups))
+    .max(backgroundGroups.length)
+    .refine(
+      (values) => new Set(values).size === values.length,
+      "Choose each background once",
+    )
+    .nullable()
+    .optional(),
+  backgroundDetail: optionalText,
+  backgroundSource: z
+    .enum(["self_described", "told_to_me", "my_impression"])
+    .nullable()
+    .optional(),
+  backgroundNotes: optionalText,
+  eyeColor: z.enum(eyeColors).nullable().optional(),
+  eyeColorNotes: optionalText,
+  heightCm: z.number().int().min(1).max(300).nullable().optional(),
+  appearance: prose.nullable().optional(),
+});
+export type ProfileFields = z.infer<typeof profileFields>;
+export function backgroundGroupLabel(
+  groups: readonly string[] | null | undefined,
+) {
+  if (!groups?.length) return "Not specified";
+  if (groups.length > 1) return "Multiple backgrounds";
+  return groups[0]!.replaceAll("_", " ");
+}
+
+export const personFields = profileFields.extend({
+  displayName: z.string().trim().min(1).max(200),
+  aliases: strings,
+  tagline: optionalText,
+  summary: prose.nullable().optional(),
+  labels: strings,
   ageAtFirstMeeting: age,
   myAgeAtFirstMeeting: age,
   ageIsEstimated: z.boolean().nullable().optional(),
@@ -114,8 +172,6 @@ export const personFields = z.strictObject({
     .nullable()
     .optional(),
   interests: strings,
-  heightCm: z.number().int().min(1).max(300).nullable().optional(),
-  appearance: prose.nullable().optional(),
   firstContactMethod: optionalText,
   firstContactInitiator: z
     .enum(["me", "them", "mutual", "unknown"])

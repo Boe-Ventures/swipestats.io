@@ -3,6 +3,7 @@ import { and, asc, desc, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import { db, withTransaction, type TransactionClient } from "@/server/db";
 import {
   lovePersonTable as person,
+  loveSelfProfileTable as selfProfile,
   loveEncounterTable as encounter,
   loveEntryTable as entry,
   loveEntryPersonTable as entryPerson,
@@ -13,12 +14,17 @@ import { createId } from "@/server/db/utils";
 import { DomainError } from "@/server/domains/error";
 import type {
   PersonFields,
+  ProfileFields,
   EncounterFields,
   EntryFields,
   ImportTranscriptInput,
 } from "@/lib/love-stories/model";
 import { readTranscriptFile } from "./transcript";
-import { personFields } from "@/lib/love-stories/model";
+import {
+  personFields,
+  profileFields,
+  MAX_ENTRY_CHARACTERS,
+} from "@/lib/love-stories/model";
 
 function missing(): never {
   throw new DomainError({ code: "NOT_FOUND", message: "Record not found" });
@@ -109,7 +115,42 @@ async function ownedEntry(tx: TransactionClient, userId: string, id: string) {
     .where(and(eq(entry.userId, userId), eq(entry.id, id)));
   return row ?? missing();
 }
+// Keep a description and its evidence together when resolving profile conflicts.
+function preserveProfileAttribution(
+  merged: Record<string, unknown>,
+  keep: ProfileFields,
+  source: ProfileFields,
+) {
+  const groups = [
+    [
+      "backgroundGroups",
+      "backgroundDetail",
+      "backgroundSource",
+      "backgroundNotes",
+    ],
+    ["eyeColor", "eyeColorNotes"],
+  ] as const;
+  for (const keys of groups) {
+    const winner = keys.some((key) => {
+      const value = keep[key];
+      return Array.isArray(value)
+        ? value.length > 0
+        : value != null && value !== "";
+    })
+      ? keep
+      : source;
+    for (const key of keys) merged[key] = winner[key];
+  }
+}
+function validateProfile(value: ProfileFields) {
+  if (
+    value.originCountryCode &&
+    value.additionalOriginCountryCodes?.includes(value.originCountryCode)
+  )
+    bad("Additional origins must differ from the primary origin.");
+}
 function validatePerson(value: Partial<PersonFields>) {
+  validateProfile(value);
   if (value.remoteRegion && value.workArrangement !== "remote")
     bad("Remote region requires a remote work arrangement.");
 }
@@ -168,7 +209,78 @@ async function replaceLinks(
       );
   }
 }
+// Preserve long merge/transfer notes without exceeding the journal entry limit.
+async function preserveNotes(
+  tx: TransactionClient,
+  userId: string,
+  title: string,
+  text: string,
+  personId?: string,
+) {
+  let firstId: string | null = null;
+  let remaining = text;
+  while (remaining.length) {
+    let end = Math.min(remaining.length, MAX_ENTRY_CHARACTERS);
+    const last = remaining.charCodeAt(end - 1);
+    if (end < remaining.length && last >= 0xd800 && last <= 0xdbff) end--;
+    const body = remaining.slice(0, end);
+    remaining = remaining.slice(end);
+    const id = createId("lent");
+    firstId ??= id;
+    await tx.insert(entry).values({
+      id,
+      userId,
+      title,
+      body,
+      originalBody: body,
+      sourceKind: "import",
+      requestId: randomUUID(),
+      requestHash: fingerprint(body),
+    });
+    if (personId)
+      await tx.insert(entryPerson).values({ entryId: id, personId });
+  }
+  return firstId;
+}
 export const loveStoriesService = {
+  async getSelfProfile(userId: string) {
+    const [row] = await db
+      .select()
+      .from(selfProfile)
+      .where(eq(selfProfile.userId, userId));
+    return row ?? null;
+  },
+  updateSelfProfile(
+    userId: string,
+    input: { version: number | null; changes: ProfileFields },
+  ) {
+    return write(userId, async (tx) => {
+      const [current] = await tx
+        .select()
+        .from(selfProfile)
+        .where(eq(selfProfile.userId, userId));
+      if (current ? current.version !== input.version : input.version !== null)
+        conflict();
+      validateProfile({ ...current, ...input.changes });
+      if (!current) {
+        const [row] = await tx
+          .insert(selfProfile)
+          .values({ ...input.changes, userId })
+          .returning();
+        return row!;
+      }
+      const [row] = await tx
+        .update(selfProfile)
+        .set({
+          ...input.changes,
+          version: current.version + 1,
+          updatedAt: new Date(),
+        })
+        .where(eq(selfProfile.userId, userId))
+        .returning();
+      return row!;
+    });
+  },
   exportData(userId: string) {
     return write(userId, async (tx) => {
       const people = await tx
@@ -203,7 +315,14 @@ export const loveStoriesService = {
         .innerJoin(encounter, eq(encounter.id, entryEncounter.encounterId))
         .where(and(eq(entry.userId, userId), eq(encounter.userId, userId)));
       return {
-        schemaVersion: 1,
+        schemaVersion: 2,
+        selfProfile:
+          (
+            await tx
+              .select()
+              .from(selfProfile)
+              .where(eq(selfProfile.userId, userId))
+          )[0] ?? null,
         exportedAt: new Date(),
         people: people.map(publicRecord),
         encounters: encounters.map(publicRecord),
@@ -335,6 +454,11 @@ export const loveStoriesService = {
           },
         ),
       );
+      preserveProfileAttribution(combined, keep, source);
+      combined.additionalOriginCountryCodes =
+        (combined.additionalOriginCountryCodes as string[] | null)?.filter(
+          (code) => code !== combined.originCountryCode,
+        ) ?? null;
       combined.aliases = [
         ...new Set([
           ...(keep.aliases ?? []),
@@ -416,27 +540,25 @@ export const loveStoriesService = {
         ["Summary", source.summary],
         ["Contact context", source.contactContext],
         ["Appearance", source.appearance],
+        ["Background", source.backgroundGroups?.join(", ")],
+        ["Background detail", source.backgroundDetail],
+        ["Background source", source.backgroundSource],
+        ["Background notes", source.backgroundNotes],
+        ["Eye color", source.eyeColor],
+        ["Eye color notes", source.eyeColorNotes],
       ]
         .filter(([, value]) => value?.trim())
         .map(([label, value]) => `${label}\n${value}`)
         .join("\n\n");
       let preservedNotesEntryId: string | null = null;
       if (notes) {
-        preservedNotesEntryId = createId("lent");
-        const body = `Notes from the duplicate person ${source.displayName}, merged into ${keep.displayName}. These preserve the earlier account.\n\n${notes}`;
-        await tx.insert(entry).values({
-          id: preservedNotesEntryId,
+        preservedNotesEntryId = await preserveNotes(
+          tx,
           userId,
-          title: `Notes merged from ${source.displayName}`,
-          body,
-          originalBody: body,
-          sourceKind: "summary",
-          requestId: randomUUID(),
-          requestHash: fingerprint({ body }),
-        });
-        await tx
-          .insert(entryPerson)
-          .values({ entryId: preservedNotesEntryId, personId: keep.id });
+          `Notes merged from ${source.displayName}`,
+          `Notes from the duplicate person ${source.displayName}, merged into ${keep.displayName}. These preserve the earlier account.\n\n${notes}`,
+          keep.id,
+        );
       }
       const [row] = await tx
         .update(person)
@@ -817,6 +939,76 @@ export async function transferLoveStoriesInTx(
   toUserId: string,
 ) {
   await lockLoveStoriesOwners(tx, [fromUserId, toUserId]);
+  const [sourceProfile] = await tx
+    .select()
+    .from(selfProfile)
+    .where(eq(selfProfile.userId, fromUserId));
+  if (sourceProfile) {
+    const [targetProfile] = await tx
+      .select()
+      .from(selfProfile)
+      .where(eq(selfProfile.userId, toUserId));
+    if (!targetProfile) {
+      await tx
+        .update(selfProfile)
+        .set({
+          userId: toUserId,
+          version: sourceProfile.version + 1,
+          updatedAt: new Date(),
+        })
+        .where(eq(selfProfile.userId, fromUserId));
+    } else {
+      // Preserve the complete previous profile before filling only missing target values.
+      const original = JSON.stringify(
+        profileFields.parse(
+          Object.fromEntries(
+            Object.keys(profileFields.shape).map((key) => [
+              key,
+              sourceProfile[key as keyof ProfileFields],
+            ]),
+          ),
+        ),
+        null,
+        2,
+      );
+      await preserveNotes(
+        tx,
+        toUserId,
+        "Profile preserved during account transfer",
+        original,
+      );
+      const merged = Object.fromEntries(
+        Object.keys(profileFields.shape).map((key) => {
+          const field = key as keyof ProfileFields;
+          const value = targetProfile[field];
+          return [
+            key,
+            value == null ||
+            value === "" ||
+            (Array.isArray(value) && !value.length)
+              ? sourceProfile[field]
+              : value,
+          ];
+        }),
+      );
+      preserveProfileAttribution(merged, targetProfile, sourceProfile);
+      merged.additionalOriginCountryCodes =
+        (merged.additionalOriginCountryCodes as string[] | null)?.filter(
+          (code) => code !== merged.originCountryCode,
+        ) ?? null;
+      const fields = profileFields.parse(merged);
+      validateProfile(fields);
+      await tx
+        .update(selfProfile)
+        .set({
+          ...fields,
+          version: targetProfile.version + 1,
+          updatedAt: new Date(),
+        })
+        .where(eq(selfProfile.userId, toUserId));
+      await tx.delete(selfProfile).where(eq(selfProfile.userId, fromUserId));
+    }
+  }
   // Children follow the composite Person owner foreign key. Entry links use
   // stable IDs and remain intact throughout the same account-transfer transaction.
   await tx

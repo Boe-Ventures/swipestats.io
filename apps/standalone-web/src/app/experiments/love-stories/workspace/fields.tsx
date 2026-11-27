@@ -28,8 +28,9 @@ import { Textarea } from "@/components/ui/textarea";
 export type Field = {
   name: string;
   label: string;
-  type?: "number" | "textarea" | "list" | "url" | "date" | "time";
+  type?: "number" | "textarea" | "list" | "url" | "date" | "time" | "multi";
   options?: string[];
+  optionLabels?: Record<string, string>;
   required?: boolean;
   min?: number;
   max?: number;
@@ -44,7 +45,7 @@ const personSections: Section[] = [
   },
   {
     title: "Current residence",
-    description: "Where they live now.",
+    description: "Current home, separate from where encounters happened.",
     names: [
       "currentResidenceCountryCode",
       "currentResidenceSubdivisionCode",
@@ -53,12 +54,29 @@ const personSections: Section[] = [
   },
   {
     title: "Origin & nationality",
-    description: "Where they are from and their nationality.",
+    description:
+      "One primary country of origin, optional other origins, and any nationalities.",
     names: [
       "originCountryCode",
+      "additionalOriginCountryCodes",
       "originSubdivisionCode",
       "originCity",
       "nationalityCodes",
+    ],
+  },
+  {
+    title: "Background & appearance",
+    description:
+      "Optional details. Keep impressions and uncertainty in the notes.",
+    names: [
+      "backgroundGroups",
+      "backgroundDetail",
+      "backgroundSource",
+      "backgroundNotes",
+      "eyeColor",
+      "eyeColorNotes",
+      "heightCm",
+      "appearance",
     ],
   },
   {
@@ -199,6 +217,87 @@ function DateControl({
   );
 }
 
+function MultiChoiceControl({
+  id,
+  field,
+  initial,
+}: {
+  id: string;
+  field: Field;
+  initial: unknown;
+}) {
+  const [values, setValues] = useState<string[]>(
+    Array.isArray(initial) ? (initial as string[]) : [],
+  );
+  const label = (value: string) =>
+    field.optionLabels?.[value] ?? optionLabel(value);
+  if ((field.options?.length ?? 0) <= 12)
+    return (
+      <div
+        id={id}
+        className="grid gap-2 sm:grid-cols-2"
+        role="group"
+        aria-label={field.label}
+      >
+        {field.options?.map((value) => (
+          <label key={value} className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              name={field.name}
+              value={value}
+              checked={values.includes(value)}
+              onChange={(event) =>
+                setValues(
+                  event.target.checked
+                    ? [...values, value]
+                    : values.filter((v) => v !== value),
+                )
+              }
+            />
+            {label(value)}
+          </label>
+        ))}
+      </div>
+    );
+  return (
+    <div id={id} className="space-y-2">
+      <select
+        aria-label={field.label}
+        className="w-full rounded-md border p-2"
+        value=""
+        onChange={(event) => {
+          if (event.target.value) setValues([...values, event.target.value]);
+        }}
+      >
+        <option value="">Add a country</option>
+        {field.options
+          ?.filter((v) => !values.includes(v))
+          .map((value) => (
+            <option key={value} value={value}>
+              {label(value)}
+            </option>
+          ))}
+      </select>
+      <div className="flex flex-wrap gap-2">
+        {values.map((value) => (
+          <span key={value} className="rounded border px-2 py-1 text-sm">
+            <input type="hidden" name={field.name} value={value} />
+            {label(value)}
+            <button
+              type="button"
+              className="ml-2"
+              aria-label={`Remove ${label(value)} from ${field.label}`}
+              onClick={() => setValues(values.filter((v) => v !== value))}
+            >
+              ×
+            </button>
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function FormField({ field, initial }: { field: Field; initial: unknown }) {
   const id = useId();
   const value = Array.isArray(initial)
@@ -210,7 +309,7 @@ function FormField({ field, initial }: { field: Field; initial: unknown }) {
     { value: "", label: "Not specified" },
     ...(field.options ?? []).map((value) => ({
       value,
-      label: optionLabel(value),
+      label: field.optionLabels?.[value] ?? optionLabel(value),
     })),
   ];
   const common = {
@@ -227,7 +326,9 @@ function FormField({ field, initial }: { field: Field; initial: unknown }) {
       <label htmlFor={id} className="text-sm font-medium">
         {field.label}
       </label>
-      {field.options ? (
+      {field.type === "multi" ? (
+        <MultiChoiceControl id={id} field={field} initial={initial} />
+      ) : field.options ? (
         <Select name={field.name} defaultValue={value} items={options}>
           <SelectTrigger id={id} aria-label={field.label} className="w-full">
             <SelectValue />
@@ -309,22 +410,28 @@ export function Fields({
   if (!sections) return grid(fields);
   return (
     <div className="space-y-8">
-      {sections.map((section) => (
-        <section
-          key={section.title}
-          className="border-t pt-6 first:border-t-0 first:pt-0"
-        >
-          <h4 className="text-base font-medium">{section.title}</h4>
-          <p className="text-muted-foreground mt-2 mb-5 text-sm">
-            {section.description}
-          </p>
-          {grid(
-            section.names.map(
-              (name) => fields.find((field) => field.name === name)!,
-            ),
-          )}
-        </section>
-      ))}
+      {sections
+        .filter((section) =>
+          section.names.some((name) =>
+            fields.some((field) => field.name === name),
+          ),
+        )
+        .map((section) => (
+          <section
+            key={section.title}
+            className="border-t pt-6 first:border-t-0 first:pt-0"
+          >
+            <h4 className="text-base font-medium">{section.title}</h4>
+            <p className="text-muted-foreground mt-2 mb-5 text-sm">
+              {section.description}
+            </p>
+            {grid(
+              section.names.flatMap((name) =>
+                fields.filter((field) => field.name === name),
+              ),
+            )}
+          </section>
+        ))}
     </div>
   );
 }
